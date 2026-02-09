@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +19,11 @@ const formasPagamento = [
 ];
 
 export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: () => base44.entities.Vendedor.list('nome'),
+  });
+
   const [formData, setFormData] = useState(venda || {
     produto: '',
     assessor_comercial: '',
@@ -28,16 +35,29 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     cpf_cnpj: '',
     cliente: '',
     bitrix: '',
-    observacao: ''
+    observacao: '',
+    vendedor_id: '',
+    percentual_comissao: 10
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const dataToSave = {
       ...formData,
-      valor: parseFloat(formData.valor) || 0
+      valor: parseFloat(formData.valor) || 0,
+      percentual_comissao: parseFloat(formData.percentual_comissao) || 0
     };
     onSave(dataToSave);
+  };
+
+  const handleVendedorChange = (vendedorId) => {
+    const vendedor = vendedores.find(v => v.id === vendedorId);
+    setFormData({
+      ...formData,
+      vendedor_id: vendedorId,
+      assessor_comercial: vendedor?.nome || '',
+      percentual_comissao: vendedor?.percentual_comissao || 10
+    });
   };
 
   return (
@@ -58,11 +78,32 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
               />
             </div>
             <div>
-              <Label htmlFor="assessor_comercial">Assessor Comercial *</Label>
+              <Label htmlFor="vendedor_id">Vendedor *</Label>
+              <Select
+                value={formData.vendedor_id}
+                onValueChange={handleVendedorChange}
+                required
+              >
+                <SelectTrigger id="vendedor_id">
+                  <SelectValue placeholder="Selecione o vendedor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendedores.map((vendedor) => (
+                    <SelectItem key={vendedor.id} value={vendedor.id}>
+                      {vendedor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="percentual_comissao">Comissão (%) *</Label>
               <Input
-                id="assessor_comercial"
-                value={formData.assessor_comercial}
-                onChange={(e) => setFormData({ ...formData, assessor_comercial: e.target.value })}
+                id="percentual_comissao"
+                type="number"
+                step="0.1"
+                value={formData.percentual_comissao}
+                onChange={(e) => setFormData({ ...formData, percentual_comissao: e.target.value })}
                 required
               />
             </div>

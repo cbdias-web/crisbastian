@@ -3,17 +3,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, DollarSign, CheckCircle } from 'lucide-react';
+import { Loader2, DollarSign, CheckCircle, Pencil, X, Save } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function Comissoes() {
   const [filtroVendedor, setFiltroVendedor] = useState('todos');
   const [filtroPago, setFiltroPago] = useState('todos');
+  const [editingComissao, setEditingComissao] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
   const queryClient = useQueryClient();
 
   const { data: comissoes = [], isLoading } = useQuery({
@@ -31,6 +33,33 @@ export default function Comissoes() {
 
   const marcarComoPago = (comissao) => {
     updateMutation.mutate({ id: comissao.id, data: { pago: !comissao.pago } });
+  };
+
+  const handleEdit = (comissao) => {
+    setEditingComissao(comissao.id);
+    setEditFormData({
+      percentual: comissao.percentual,
+      valor_comissao: comissao.valor_comissao
+    });
+  };
+
+  const handleSaveEdit = (comissao) => {
+    const novoPercentual = parseFloat(editFormData.percentual);
+    const novoValorComissao = (comissao.valor_venda * novoPercentual) / 100;
+    
+    updateMutation.mutate({
+      id: comissao.id,
+      data: {
+        percentual: novoPercentual,
+        valor_comissao: novoValorComissao
+      }
+    });
+    setEditingComissao(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingComissao(null);
+    setEditFormData({});
   };
 
   const vendedoresUnicos = [...new Set(comissoes.map(c => c.vendedor_nome))].filter(Boolean);
@@ -166,9 +195,25 @@ export default function Comissoes() {
                     <TableCell>
                       {comissao.valor_venda?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </TableCell>
-                    <TableCell>{comissao.percentual}%</TableCell>
+                    <TableCell>
+                      {editingComissao === comissao.id ? (
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={editFormData.percentual}
+                          onChange={(e) => setEditFormData({ ...editFormData, percentual: e.target.value })}
+                          className="w-20"
+                        />
+                      ) : (
+                        `${comissao.percentual}%`
+                      )}
+                    </TableCell>
                     <TableCell className="font-semibold text-green-600">
-                      {comissao.valor_comissao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {editingComissao === comissao.id ? (
+                        ((comissao.valor_venda * parseFloat(editFormData.percentual || 0)) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                      ) : (
+                        comissao.valor_comissao?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge variant={comissao.pago ? 'default' : 'secondary'}>
@@ -176,13 +221,31 @@ export default function Comissoes() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => marcarComoPago(comissao)}
-                      >
-                        {comissao.pago ? 'Marcar como Pendente' : 'Marcar como Paga'}
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        {editingComissao === comissao.id ? (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(comissao)}>
+                              <Save className="w-4 h-4 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                              <X className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(comissao)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => marcarComoPago(comissao)}
+                            >
+                              {comissao.pago ? 'Pendente' : 'Paga'}
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

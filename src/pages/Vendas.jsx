@@ -25,18 +25,58 @@ export default function Vendas() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Venda.create(data),
+    mutationFn: async (data) => {
+      const venda = await base44.entities.Venda.create(data);
+      
+      // Criar comissão automaticamente
+      if (data.vendedor_id && data.valor && data.percentual_comissao) {
+        const valorComissao = (data.valor * data.percentual_comissao) / 100;
+        await base44.entities.Comissao.create({
+          venda_id: venda.id,
+          vendedor_id: data.vendedor_id,
+          vendedor_nome: data.assessor_comercial,
+          valor_venda: data.valor,
+          percentual: data.percentual_comissao,
+          valor_comissao: valorComissao,
+          data_venda: data.data,
+          pago: false
+        });
+      }
+      
+      return venda;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
+      queryClient.invalidateQueries(['comissoes']);
       setShowForm(false);
       toast.success('Venda criada com sucesso!');
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Venda.update(id, data),
+    mutationFn: async ({ id, data }) => {
+      const venda = await base44.entities.Venda.update(id, data);
+      
+      // Atualizar comissão existente
+      const comissoes = await base44.entities.Comissao.filter({ venda_id: id });
+      if (comissoes.length > 0) {
+        const comissao = comissoes[0];
+        const valorComissao = (data.valor * data.percentual_comissao) / 100;
+        await base44.entities.Comissao.update(comissao.id, {
+          vendedor_id: data.vendedor_id,
+          vendedor_nome: data.assessor_comercial,
+          valor_venda: data.valor,
+          percentual: data.percentual_comissao,
+          valor_comissao: valorComissao,
+          data_venda: data.data
+        });
+      }
+      
+      return venda;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
+      queryClient.invalidateQueries(['comissoes']);
       setShowForm(false);
       setEditingVenda(null);
       toast.success('Venda atualizada com sucesso!');
