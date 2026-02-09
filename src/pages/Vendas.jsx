@@ -10,7 +10,7 @@ import VendaForm from '../components/vendas/VendaForm';
 import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 
 export default function Vendas() {

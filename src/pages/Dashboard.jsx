@@ -8,7 +8,7 @@ import ProdutosChart from '../components/dashboard/ProdutosChart';
 import Filtros from '../components/dashboard/Filtros';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 import { Table2, Loader2 } from 'lucide-react';
 import { parseISO, isWithinInterval } from 'date-fns';
 
