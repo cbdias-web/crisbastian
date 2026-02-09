@@ -49,14 +49,24 @@
  */
 import Dashboard from './pages/Dashboard';
 import Vendas from './pages/Vendas';
+import Vendedores from './pages/Vendedores';
+import Produtos from './pages/Produtos';
+import Comissoes from './pages/Comissoes';
+import Importar from './pages/Importar';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Dashboard": Dashboard,
     "Vendas": Vendas,
+    "Vendedores": Vendedores,
+    "Produtos": Produtos,
+    "Comissoes": Comissoes,
+    "Importar": Importar,
 }
 
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };
