@@ -6,6 +6,8 @@ import VendasChart from '../components/dashboard/VendasChart';
 import VendedoresChart from '../components/dashboard/VendedoresChart';
 import ProdutosChart from '../components/dashboard/ProdutosChart';
 import Filtros from '../components/dashboard/Filtros';
+import VendasRecentes from '../components/dashboard/VendasRecentes';
+import RankingVendedores from '../components/dashboard/RankingVendedores';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -79,6 +81,11 @@ export default function Dashboard() {
         </div>
 
         <ProdutosChart vendas={filteredVendas} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <VendasRecentes vendas={filteredVendas} />
+          <RankingVendedores vendas={filteredVendas} />
+        </div>
       </div>
     </div>
   );
