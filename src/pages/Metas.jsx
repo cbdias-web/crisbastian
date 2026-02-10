@@ -15,6 +15,7 @@ import { format, startOfMonth, endOfMonth } from 'date-fns';
 export default function Metas() {
   const [showForm, setShowForm] = useState(false);
   const [editingMeta, setEditingMeta] = useState(null);
+  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     mes: format(new Date(), 'yyyy-MM'),
     tipo: 'individual',
@@ -23,6 +24,12 @@ export default function Metas() {
     valor_meta: ''
   });
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: metas = [], isLoading: loadingMetas } = useQuery({
     queryKey: ['metas'],
@@ -128,10 +135,12 @@ export default function Metas() {
             <h1 className="text-3xl font-bold text-gray-900">Metas</h1>
             <p className="text-gray-600 mt-1">Gerencie metas individuais e da equipe</p>
           </div>
-          <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Meta
-          </Button>
+          {isAdmin && (
+            <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Meta
+            </Button>
+          )}
         </div>
 
         {showForm && (
@@ -248,22 +257,24 @@ export default function Metas() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(meta)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm('Tem certeza que deseja excluir esta meta?')) {
-                                deleteMutation.mutate(meta.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
-                        </div>
+                        {isAdmin && (
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(meta)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Tem certeza que deseja excluir esta meta?')) {
+                                  deleteMutation.mutate(meta.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
