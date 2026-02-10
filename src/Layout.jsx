@@ -1,18 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
+import { base44 } from '@/api/base44Client';
 import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target } from 'lucide-react';
 
 export default function Layout({ children, currentPageName }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
+
   const menuItems = [
-    { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
-    { name: 'Vendas', icon: Table2, page: 'Vendas' },
-    { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
-    { name: 'Metas', icon: Target, page: 'Metas' },
-    { name: 'Vendedores', icon: Users, page: 'Vendedores' },
-    { name: 'Produtos', icon: Package, page: 'Produtos' },
-    { name: 'Importar', icon: Upload, page: 'Importar' },
-  ];
+    { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
+    { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
+    { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
+    { name: 'Metas', icon: Target, page: 'Metas', allowUser: false },
+    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: false },
+    { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
+    { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
+  ].filter(item => isAdmin || item.allowUser);
 
   return (
     <div className="flex min-h-screen bg-gray-100">

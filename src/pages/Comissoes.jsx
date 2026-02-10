@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, DollarSign, CheckCircle, Pencil, X, Save } from 'lucide-react';
+import { Loader2, DollarSign, CheckCircle, Pencil, X, Save, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -28,6 +28,14 @@ export default function Comissoes() {
     onSuccess: () => {
       queryClient.invalidateQueries(['comissoes']);
       toast.success('Comissão atualizada!');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Comissao.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['comissoes']);
+      toast.success('Comissão removida!');
     },
   });
 
@@ -242,6 +250,17 @@ export default function Comissoes() {
                               onClick={() => marcarComoPago(comissao)}
                             >
                               {comissao.pago ? 'Pendente' : 'Paga'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Tem certeza que deseja remover esta comissão?')) {
+                                  deleteMutation.mutate(comissao.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
                             </Button>
                           </>
                         )}

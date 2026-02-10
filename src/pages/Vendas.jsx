@@ -17,7 +17,14 @@ export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
   const [editingVenda, setEditingVenda] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: vendas = [], isLoading } = useQuery({
     queryKey: ['vendas'],
@@ -179,12 +186,14 @@ export default function Vendas() {
             <p className="text-gray-600 mt-1">Controle completo das suas vendas</p>
           </div>
           <div className="flex gap-3">
-            <Link to={createPageUrl('Dashboard')}>
-              <Button variant="outline">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
+            {isAdmin && (
+              <Link to={createPageUrl('Dashboard')}>
+                <Button variant="outline">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+            )}
             <Button 
               onClick={() => {
                 setEditingVenda(null);
@@ -215,14 +224,18 @@ export default function Vendas() {
             <div className="flex justify-between items-center">
               <CardTitle>Todas as Vendas ({filteredVendas.length})</CardTitle>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" onClick={exportarClientes}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Clientes
-                </Button>
-                <Button variant="outline" size="sm" onClick={exportarVendas}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Vendas
-                </Button>
+                {isAdmin && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={exportarClientes}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Clientes
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={exportarVendas}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Vendas
+                    </Button>
+                  </>
+                )}
                 <div className="flex items-center gap-2">
                   <Search className="w-4 h-4 text-gray-400" />
                   <Input
@@ -279,20 +292,24 @@ export default function Vendas() {
                               </a>
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(venda)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(venda.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEdit(venda)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(venda.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
