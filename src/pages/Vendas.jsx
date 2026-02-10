@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -120,6 +120,48 @@ export default function Vendas() {
     );
   });
 
+  const exportarVendas = () => {
+    const csv = [
+      ['Data', 'Produto', 'Cliente', 'CPF/CNPJ', 'Vendedor', 'Valor', 'Forma Pagamento'],
+      ...filteredVendas.map(v => [
+        v.data ? format(parseISO(v.data), 'dd/MM/yyyy') : '',
+        v.produto || '',
+        v.cliente || '',
+        v.cpf_cnpj || '',
+        v.assessor_comercial || '',
+        v.valor || '',
+        v.forma_pagamento || ''
+      ])
+    ].map(row => row.join(';')).join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `vendas_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    toast.success('Vendas exportadas!');
+  };
+
+  const exportarClientes = () => {
+    const clientesUnicos = [...new Set(filteredVendas
+      .filter(v => v.cliente && v.cliente.trim())
+      .map(v => ({ cliente: v.cliente, cpf_cnpj: v.cpf_cnpj }))
+      .map(c => JSON.stringify(c)))]
+      .map(c => JSON.parse(c));
+    
+    const csv = [
+      ['Cliente', 'CPF/CNPJ'],
+      ...clientesUnicos.map(c => [c.cliente, c.cpf_cnpj || ''])
+    ].map(row => row.join(';')).join('\n');
+    
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `clientes_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.click();
+    toast.success('Clientes exportados!');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -172,14 +214,24 @@ export default function Vendas() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Todas as Vendas ({filteredVendas.length})</CardTitle>
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por produto, vendedor, cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-80"
-                />
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={exportarClientes}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Clientes
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportarVendas}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Vendas
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por produto, vendedor, cliente..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-80"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>

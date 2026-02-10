@@ -24,6 +24,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     queryFn: () => base44.entities.Vendedor.list('nome'),
   });
 
+  const { data: produtos = [] } = useQuery({
+    queryKey: ['produtos'],
+    queryFn: () => base44.entities.Produto.filter({ ativo: true }, 'nome'),
+  });
+
   const [formData, setFormData] = useState(venda || {
     produto: '',
     assessor_comercial: '',
@@ -70,12 +75,22 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="produto">Produto *</Label>
-              <Input
-                id="produto"
+              <Select
                 value={formData.produto}
-                onChange={(e) => setFormData({ ...formData, produto: e.target.value })}
+                onValueChange={(value) => setFormData({ ...formData, produto: value })}
                 required
-              />
+              >
+                <SelectTrigger id="produto">
+                  <SelectValue placeholder="Selecione o produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {produtos.map((produto) => (
+                    <SelectItem key={produto.id} value={produto.nome}>
+                      {produto.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="vendedor_id">Vendedor *</Label>

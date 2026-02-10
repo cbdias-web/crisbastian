@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target } from 'lucide-react';
 
 export default function Layout({ children, currentPageName }) {
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
     { name: 'Vendas', icon: Table2, page: 'Vendas' },
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
+    { name: 'Metas', icon: Target, page: 'Metas' },
     { name: 'Vendedores', icon: Users, page: 'Vendedores' },
     { name: 'Produtos', icon: Package, page: 'Produtos' },
     { name: 'Importar', icon: Upload, page: 'Importar' },
