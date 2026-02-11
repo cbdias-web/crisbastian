@@ -113,11 +113,19 @@ export default function Metas() {
     const vendasFiltradas = vendas.filter(v => {
       if (!v.data) return false;
       const dataVenda = new Date(v.data);
+      const dentroDoMes = dataVenda >= inicio && dataVenda <= fim;
+      
+      if (!dentroDoMes) return false;
       
       if (meta.tipo === 'equipe') {
-        return dataVenda >= inicio && dataVenda <= fim;
+        return true;
       } else {
-        return dataVenda >= inicio && dataVenda <= fim && v.vendedor_id === meta.vendedor_id;
+        // Comparar por vendedor_id se existir, caso contrário por nome
+        if (v.vendedor_id && meta.vendedor_id) {
+          return v.vendedor_id === meta.vendedor_id;
+        } else {
+          return v.assessor_comercial === meta.vendedor_nome;
+        }
       }
     });
 
