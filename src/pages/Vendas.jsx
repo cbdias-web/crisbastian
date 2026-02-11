@@ -29,7 +29,7 @@ export default function Vendas() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const { data: vendas = [], isLoading } = useQuery({
     queryKey: ['vendas'],
@@ -327,6 +327,7 @@ export default function Vendas() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Vendedor</TableHead>
+                    <TableHead>Time</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Forma Pgto</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
@@ -341,6 +342,9 @@ export default function Vendas() {
                       <TableCell className="font-medium">{venda.produto}</TableCell>
                       <TableCell>{venda.cliente || '-'}</TableCell>
                       <TableCell>{venda.assessor_comercial}</TableCell>
+                      <TableCell>
+                        {venda.time && <Badge variant="secondary">{venda.time}</Badge>}
+                      </TableCell>
                       <TableCell className="font-semibold text-green-600">
                         {venda.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </TableCell>
@@ -386,7 +390,7 @@ export default function Vendas() {
                   ))}
                   {filteredVendas.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         Nenhuma venda encontrada
                       </TableCell>
                     </TableRow>

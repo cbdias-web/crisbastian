@@ -11,7 +11,7 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },

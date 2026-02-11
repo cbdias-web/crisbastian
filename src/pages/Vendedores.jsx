@@ -27,6 +27,19 @@ export default function Vendedores() {
     queryFn: () => base44.entities.Vendedor.list('-created_date'),
   });
 
+  const { data: usuarios = [] } = useQuery({
+    queryKey: ['usuarios'],
+    queryFn: () => base44.entities.User.list(),
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, permissao_admin }) => base44.entities.User.update(id, { permissao_admin }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['usuarios']);
+      toast.success('Permissão atualizada com sucesso!');
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Vendedor.create(data),
     onSuccess: () => {
@@ -171,41 +184,67 @@ export default function Vendedores() {
                   <TableHead>Time</TableHead>
                   <TableHead>Comissão (%)</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Permissão Admin</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vendedores.map((vendedor) => (
-                  <TableRow key={vendedor.id}>
-                    <TableCell className="font-medium">{vendedor.nome}</TableCell>
-                    <TableCell>{vendedor.email || '-'}</TableCell>
-                    <TableCell>{vendedor.time || '-'}</TableCell>
-                    <TableCell>{vendedor.percentual_comissao}%</TableCell>
-                    <TableCell>
-                      <Badge variant={vendedor.ativo ? 'default' : 'secondary'}>
-                        {vendedor.ativo ? 'Ativo' : 'Inativo'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(vendedor)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            if (confirm('Tem certeza que deseja excluir este vendedor?')) {
-                              deleteMutation.mutate(vendedor.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {vendedores.map((vendedor) => {
+                  const usuario = usuarios.find(u => u.email === vendedor.email);
+                  const temPermissao = usuario?.permissao_admin || false;
+                  
+                  return (
+                    <TableRow key={vendedor.id}>
+                      <TableCell className="font-medium">{vendedor.nome}</TableCell>
+                      <TableCell>{vendedor.email || '-'}</TableCell>
+                      <TableCell>{vendedor.time || '-'}</TableCell>
+                      <TableCell>{vendedor.percentual_comissao}%</TableCell>
+                      <TableCell>
+                        <Badge variant={vendedor.ativo ? 'default' : 'secondary'}>
+                          {vendedor.ativo ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {vendedor.email && usuario ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={temPermissao}
+                              onChange={(e) => {
+                                updateUserMutation.mutate({
+                                  id: usuario.id,
+                                  permissao_admin: e.target.checked
+                                });
+                              }}
+                              className="w-4 h-4 cursor-pointer"
+                            />
+                            <span className="text-sm">{temPermissao ? 'Sim' : 'Não'}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(vendedor)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm('Tem certeza que deseja excluir este vendedor?')) {
+                                deleteMutation.mutate(vendedor.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>

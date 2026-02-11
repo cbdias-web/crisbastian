@@ -30,7 +30,7 @@ export default function Metas() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const { data: metas = [], isLoading: loadingMetas } = useQuery({
     queryKey: ['metas'],
