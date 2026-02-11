@@ -186,11 +186,20 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
             </div>
             <div>
               <Label htmlFor="time">Time</Label>
-              <Input
-                id="time"
+              <Select
                 value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-              />
+                onValueChange={(value) => setFormData({ ...formData, time: value })}
+              >
+                <SelectTrigger id="time">
+                  <SelectValue placeholder="Selecione o time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TIME 1">TIME 1</SelectItem>
+                  <SelectItem value="TIME 2">TIME 2</SelectItem>
+                  <SelectItem value="TIME 3">TIME 3</SelectItem>
+                  <SelectItem value="CONSÓRCIO">CONSÓRCIO</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="bitrix">Link Bitrix</Label>

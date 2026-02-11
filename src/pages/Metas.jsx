@@ -107,16 +107,21 @@ export default function Metas() {
 
   const calcularRealizado = (meta) => {
     const [ano, mes] = meta.mes.split('-');
-    const inicio = startOfMonth(new Date(ano, mes - 1));
-    const fim = endOfMonth(inicio);
+    const inicio = new Date(parseInt(ano), parseInt(mes) - 1, 1);
+    const fim = new Date(parseInt(ano), parseInt(mes), 0, 23, 59, 59);
 
     const vendasFiltradas = vendas.filter(v => {
+      if (!v.data) return false;
       const dataVenda = new Date(v.data);
-      const mesmoVendedor = meta.tipo === 'equipe' || v.vendedor_id === meta.vendedor_id;
-      return dataVenda >= inicio && dataVenda <= fim && mesmoVendedor;
+      
+      if (meta.tipo === 'equipe') {
+        return dataVenda >= inicio && dataVenda <= fim;
+      } else {
+        return dataVenda >= inicio && dataVenda <= fim && v.vendedor_id === meta.vendedor_id;
+      }
     });
 
-    return vendasFiltradas.reduce((sum, v) => sum + (v.valor || 0), 0);
+    return vendasFiltradas.reduce((sum, v) => sum + (parseFloat(v.valor) || 0), 0);
   };
 
   if (loadingMetas) {

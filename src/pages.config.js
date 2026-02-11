@@ -50,10 +50,10 @@
 import Comissoes from './pages/Comissoes';
 import Dashboard from './pages/Dashboard';
 import Importar from './pages/Importar';
+import Metas from './pages/Metas';
 import Produtos from './pages/Produtos';
 import Vendas from './pages/Vendas';
 import Vendedores from './pages/Vendedores';
-import Metas from './pages/Metas';
 import __Layout from './Layout.jsx';
 
 
@@ -61,10 +61,10 @@ export const PAGES = {
     "Comissoes": Comissoes,
     "Dashboard": Dashboard,
     "Importar": Importar,
+    "Metas": Metas,
     "Produtos": Produtos,
     "Vendas": Vendas,
     "Vendedores": Vendedores,
-    "Metas": Metas,
 }
 
 export const pagesConfig = {

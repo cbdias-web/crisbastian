@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -18,6 +20,9 @@ export default function Vendas() {
   const [editingVenda, setEditingVenda] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState(null);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [produtoFiltro, setProdutoFiltro] = useState('todos');
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -29,6 +34,11 @@ export default function Vendas() {
   const { data: vendas = [], isLoading } = useQuery({
     queryKey: ['vendas'],
     queryFn: () => base44.entities.Venda.list('-data'),
+  });
+
+  const { data: produtos = [] } = useQuery({
+    queryKey: ['produtos'],
+    queryFn: () => base44.entities.Produto.list('nome'),
   });
 
   const createMutation = useMutation({
@@ -119,12 +129,17 @@ export default function Vendas() {
 
   const filteredVendas = vendas.filter(venda => {
     const term = searchTerm.toLowerCase();
-    return (
+    const matchSearch = (
       venda.produto?.toLowerCase().includes(term) ||
       venda.assessor_comercial?.toLowerCase().includes(term) ||
       venda.cliente?.toLowerCase().includes(term) ||
       venda.cpf_cnpj?.includes(term)
     );
+
+    const matchData = (!dataInicio || venda.data >= dataInicio) && (!dataFim || venda.data <= dataFim);
+    const matchProduto = produtoFiltro === 'todos' || venda.produto === produtoFiltro;
+
+    return matchSearch && matchData && matchProduto;
   });
 
   const exportarVendas = () => {
@@ -218,6 +233,61 @@ export default function Vendas() {
             isLoading={createMutation.isPending || updateMutation.isPending}
           />
         )}
+
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label>Data Início</Label>
+                <Input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Data Fim</Label>
+                <Input
+                  type="date"
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Produto</Label>
+                <Select value={produtoFiltro} onValueChange={setProdutoFiltro}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Produtos</SelectItem>
+                    {produtos.map((p) => (
+                      <SelectItem key={p.id} value={p.nome}>{p.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setDataInicio('');
+                    setDataFim('');
+                    setProdutoFiltro('todos');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

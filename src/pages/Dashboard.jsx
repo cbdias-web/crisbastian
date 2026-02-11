@@ -8,6 +8,7 @@ import ProdutosChart from '../components/dashboard/ProdutosChart';
 import Filtros from '../components/dashboard/Filtros';
 import VendasRecentes from '../components/dashboard/VendasRecentes';
 import RankingVendedores from '../components/dashboard/RankingVendedores';
+import MetasProgress from '../components/dashboard/MetasProgress';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -18,8 +19,8 @@ export default function Dashboard() {
   const [filtros, setFiltros] = useState({
     dataInicio: '',
     dataFim: '',
-    produto: 'todos',
-    vendedor: 'todos'
+    produtos: [],
+    vendedores: []
   });
 
   const { data: vendas = [], isLoading } = useQuery({
@@ -38,10 +39,10 @@ export default function Dashboard() {
       const fim = parseISO(filtros.dataFim);
       if (vendaData > fim) return false;
     }
-    if (filtros.produto !== 'todos' && venda.produto !== filtros.produto) {
+    if (filtros.produtos && filtros.produtos.length > 0 && !filtros.produtos.includes(venda.produto)) {
       return false;
     }
-    if (filtros.vendedor !== 'todos' && venda.assessor_comercial !== filtros.vendedor) {
+    if (filtros.vendedores && filtros.vendedores.length > 0 && !filtros.vendedores.includes(venda.assessor_comercial)) {
       return false;
     }
     return true;
@@ -74,6 +75,8 @@ export default function Dashboard() {
         <Filtros vendas={vendas} filtros={filtros} setFiltros={setFiltros} />
 
         <StatsCards vendas={vendas} filteredVendas={filteredVendas} />
+
+        <MetasProgress vendas={filteredVendas} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <VendasChart vendas={filteredVendas} />
