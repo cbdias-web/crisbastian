@@ -21,6 +21,7 @@ export default function Metas() {
     tipo: 'individual',
     vendedor_id: '',
     vendedor_nome: '',
+    time: '',
     valor_meta: ''
   });
   const queryClient = useQueryClient();
@@ -73,7 +74,7 @@ export default function Metas() {
   });
 
   const resetForm = () => {
-    setFormData({ mes: format(new Date(), 'yyyy-MM'), tipo: 'individual', vendedor_id: '', vendedor_nome: '', valor_meta: '' });
+    setFormData({ mes: format(new Date(), 'yyyy-MM'), tipo: 'individual', vendedor_id: '', vendedor_nome: '', time: '', valor_meta: '' });
     setShowForm(false);
     setEditingMeta(null);
   };
@@ -119,6 +120,8 @@ export default function Metas() {
       
       if (meta.tipo === 'equipe') {
         return true;
+      } else if (meta.tipo === 'time') {
+        return v.time === meta.time;
       } else {
         // Comparar por vendedor_id se existir, caso contrário por nome
         if (v.vendedor_id && meta.vendedor_id) {
@@ -180,6 +183,7 @@ export default function Metas() {
                     <SelectContent>
                       <SelectItem value="individual">Individual</SelectItem>
                       <SelectItem value="equipe">Equipe</SelectItem>
+                      <SelectItem value="time">Time</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -194,6 +198,22 @@ export default function Metas() {
                         {vendedores.map((v) => (
                           <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {formData.tipo === 'time' && (
+                  <div>
+                    <Label>Time *</Label>
+                    <Select value={formData.time} onValueChange={(value) => setFormData({ ...formData, time: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TIME 1">TIME 1</SelectItem>
+                        <SelectItem value="TIME 2">TIME 2</SelectItem>
+                        <SelectItem value="TIME 3">TIME 3</SelectItem>
+                        <SelectItem value="CONSÓRCIO">CONSÓRCIO</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -247,11 +267,13 @@ export default function Metas() {
                     <TableRow key={meta.id}>
                       <TableCell>{meta.mes}</TableCell>
                       <TableCell>
-                        <Badge variant={meta.tipo === 'equipe' ? 'default' : 'secondary'}>
+                        <Badge variant={meta.tipo === 'equipe' ? 'default' : meta.tipo === 'time' ? 'outline' : 'secondary'}>
                           {meta.tipo}
                         </Badge>
                       </TableCell>
-                      <TableCell>{meta.vendedor_nome || 'Toda equipe'}</TableCell>
+                      <TableCell>
+                        {meta.tipo === 'equipe' ? 'Toda equipe' : meta.tipo === 'time' ? meta.time : meta.vendedor_nome}
+                      </TableCell>
                       <TableCell className="font-semibold">
                         {meta.valor_meta?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </TableCell>

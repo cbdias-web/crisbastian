@@ -20,7 +20,8 @@ export default function Dashboard() {
     dataInicio: '',
     dataFim: '',
     produtos: [],
-    vendedores: []
+    vendedores: [],
+    times: []
   });
 
   const { data: vendas = [], isLoading } = useQuery({
@@ -43,6 +44,9 @@ export default function Dashboard() {
       return false;
     }
     if (filtros.vendedores && filtros.vendedores.length > 0 && !filtros.vendedores.includes(venda.assessor_comercial)) {
+      return false;
+    }
+    if (filtros.times && filtros.times.length > 0 && !filtros.times.includes(venda.time)) {
       return false;
     }
     return true;

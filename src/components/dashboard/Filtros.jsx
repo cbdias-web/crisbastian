@@ -9,13 +9,15 @@ import { X } from "lucide-react";
 export default function Filtros({ vendas, filtros, setFiltros }) {
   const produtos = [...new Set(vendas.map(v => v.produto).filter(Boolean))].sort();
   const vendedores = [...new Set(vendas.map(v => v.assessor_comercial).filter(Boolean))].sort();
+  const times = [...new Set(vendas.map(v => v.time).filter(Boolean))].sort();
 
   const limparFiltros = () => {
     setFiltros({
       dataInicio: '',
       dataFim: '',
       produtos: [],
-      vendedores: []
+      vendedores: [],
+      times: []
     });
   };
 
@@ -37,9 +39,19 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
     }
   };
 
+  const toggleTime = (time) => {
+    const timesAtuais = filtros.times || [];
+    if (timesAtuais.includes(time)) {
+      setFiltros({ ...filtros, times: timesAtuais.filter(t => t !== time) });
+    } else {
+      setFiltros({ ...filtros, times: [...timesAtuais, time] });
+    }
+  };
+
   const temFiltrosAtivos = filtros.dataInicio || filtros.dataFim || 
                           (filtros.produtos && filtros.produtos.length > 0) || 
-                          (filtros.vendedores && filtros.vendedores.length > 0);
+                          (filtros.vendedores && filtros.vendedores.length > 0) ||
+                          (filtros.times && filtros.times.length > 0);
 
   return (
     <Card>
@@ -106,6 +118,24 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
                   onClick={() => toggleVendedor(vendedor)}
                 >
                   {vendedor}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>
+              Times {filtros.times?.length > 0 && `(${filtros.times.length} selecionados)`}
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {times.map((time) => (
+                <Badge
+                  key={time}
+                  variant={filtros.times?.includes(time) ? 'default' : 'outline'}
+                  className="cursor-pointer hover:bg-blue-100 transition-colors"
+                  onClick={() => toggleTime(time)}
+                >
+                  {time}
                 </Badge>
               ))}
             </div>
