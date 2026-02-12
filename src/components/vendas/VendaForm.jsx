@@ -42,7 +42,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     bitrix: '',
     observacao: '',
     vendedor_id: '',
-    percentual_comissao: 10
+    percentual_comissao: 10,
+    espelhamento: '',
+    espelhamento_id: '',
+    percentual_comissao_espelhamento: 0
   });
 
   const handleSubmit = (e) => {
@@ -50,7 +53,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     const dataToSave = {
       ...formData,
       valor: parseFloat(formData.valor) || 0,
-      percentual_comissao: parseFloat(formData.percentual_comissao) || 0
+      percentual_comissao: parseFloat(formData.percentual_comissao) || 0,
+      percentual_comissao_espelhamento: parseFloat(formData.percentual_comissao_espelhamento) || 0
     };
     onSave(dataToSave);
   };
@@ -62,6 +66,16 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
       vendedor_id: vendedorId,
       assessor_comercial: vendedor?.nome || '',
       percentual_comissao: vendedor?.percentual_comissao || 10
+    });
+  };
+
+  const handleEspelhamentoChange = (vendedorId) => {
+    const vendedor = vendedores.find(v => v.id === vendedorId);
+    setFormData({
+      ...formData,
+      espelhamento_id: vendedorId,
+      espelhamento: vendedor?.nome || '',
+      percentual_comissao_espelhamento: vendedor?.percentual_comissao || 10
     });
   };
 
@@ -112,7 +126,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="percentual_comissao">Comissão (%) *</Label>
+              <Label htmlFor="percentual_comissao">Comissão Vendedor (%) *</Label>
               <Input
                 id="percentual_comissao"
                 type="number"
@@ -120,6 +134,35 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
                 value={formData.percentual_comissao}
                 onChange={(e) => setFormData({ ...formData, percentual_comissao: e.target.value })}
                 required
+              />
+            </div>
+            <div>
+              <Label htmlFor="espelhamento_id">Espelhamento</Label>
+              <Select
+                value={formData.espelhamento_id}
+                onValueChange={handleEspelhamentoChange}
+              >
+                <SelectTrigger id="espelhamento_id">
+                  <SelectValue placeholder="Selecione (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Nenhum</SelectItem>
+                  {vendedores.map((vendedor) => (
+                    <SelectItem key={vendedor.id} value={vendedor.id}>
+                      {vendedor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="percentual_comissao_espelhamento">Comissão Espelhamento (%)</Label>
+              <Input
+                id="percentual_comissao_espelhamento"
+                type="number"
+                step="0.1"
+                value={formData.percentual_comissao_espelhamento}
+                onChange={(e) => setFormData({ ...formData, percentual_comissao_espelhamento: e.target.value })}
               />
             </div>
             <div>

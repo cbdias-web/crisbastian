@@ -60,11 +60,27 @@ export default function Vendas() {
         });
       }
       
+      // Criar comissão de espelhamento se houver
+      if (data.espelhamento_id && data.valor && data.percentual_comissao_espelhamento) {
+        const valorComissaoEspelhamento = (data.valor * data.percentual_comissao_espelhamento) / 100;
+        await base44.entities.ComissaoEspelhamento.create({
+          venda_id: venda.id,
+          vendedor_id: data.espelhamento_id,
+          vendedor_nome: data.espelhamento,
+          valor_venda: data.valor,
+          percentual: data.percentual_comissao_espelhamento,
+          valor_comissao: valorComissaoEspelhamento,
+          data_venda: data.data,
+          pago: false
+        });
+      }
+      
       return venda;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
+      queryClient.invalidateQueries(['comissoesEspelhamento']);
       setShowForm(false);
       toast.success('Venda criada com sucesso!');
     },
@@ -89,11 +105,42 @@ export default function Vendas() {
         });
       }
       
+      // Atualizar ou criar comissão de espelhamento
+      const comissoesEspelhamento = await base44.entities.ComissaoEspelhamento.filter({ venda_id: id });
+      if (data.espelhamento_id && data.percentual_comissao_espelhamento) {
+        const valorComissaoEspelhamento = (data.valor * data.percentual_comissao_espelhamento) / 100;
+        if (comissoesEspelhamento.length > 0) {
+          await base44.entities.ComissaoEspelhamento.update(comissoesEspelhamento[0].id, {
+            vendedor_id: data.espelhamento_id,
+            vendedor_nome: data.espelhamento,
+            valor_venda: data.valor,
+            percentual: data.percentual_comissao_espelhamento,
+            valor_comissao: valorComissaoEspelhamento,
+            data_venda: data.data
+          });
+        } else {
+          await base44.entities.ComissaoEspelhamento.create({
+            venda_id: id,
+            vendedor_id: data.espelhamento_id,
+            vendedor_nome: data.espelhamento,
+            valor_venda: data.valor,
+            percentual: data.percentual_comissao_espelhamento,
+            valor_comissao: valorComissaoEspelhamento,
+            data_venda: data.data,
+            pago: false
+          });
+        }
+      } else if (comissoesEspelhamento.length > 0) {
+        // Remover se espelhamento foi removido
+        await base44.entities.ComissaoEspelhamento.delete(comissoesEspelhamento[0].id);
+      }
+      
       return venda;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
+      queryClient.invalidateQueries(['comissoesEspelhamento']);
       setShowForm(false);
       setEditingVenda(null);
       toast.success('Venda atualizada com sucesso!');
