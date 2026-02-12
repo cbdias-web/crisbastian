@@ -16,7 +16,14 @@ export default function Comissoes() {
   const [filtroPago, setFiltroPago] = useState('todos');
   const [editingComissao, setEditingComissao] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [user, setUser] = useState(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const { data: comissoes = [], isLoading } = useQuery({
     queryKey: ['comissoes'],
@@ -152,19 +159,21 @@ export default function Comissoes() {
             <div className="flex justify-between items-center">
               <CardTitle>Todas as Comissões ({comissoesFiltradas.length})</CardTitle>
               <div className="flex gap-4">
-                <div>
-                  <Label className="text-xs">Vendedor</Label>
-                  <select
-                    value={filtroVendedor}
-                    onChange={(e) => setFiltroVendedor(e.target.value)}
-                    className="border rounded px-3 py-1 text-sm"
-                  >
-                    <option value="todos">Todos</option>
-                    {vendedoresUnicos.map(v => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
-                </div>
+                {isAdmin && (
+                  <div>
+                    <Label className="text-xs">Vendedor</Label>
+                    <select
+                      value={filtroVendedor}
+                      onChange={(e) => setFiltroVendedor(e.target.value)}
+                      className="border rounded px-3 py-1 text-sm"
+                    >
+                      <option value="todos">Todos</option>
+                      {vendedoresUnicos.map(v => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <Label className="text-xs">Status</Label>
                   <select
