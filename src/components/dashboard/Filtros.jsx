@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 
 export default function Filtros({ vendas, filtros, setFiltros }) {
@@ -15,43 +15,13 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
     setFiltros({
       dataInicio: '',
       dataFim: '',
-      produtos: [],
-      vendedores: [],
-      times: []
+      produto: '',
+      vendedor: '',
+      time: ''
     });
   };
 
-  const toggleProduto = (produto) => {
-    const produtosAtuais = filtros.produtos || [];
-    if (produtosAtuais.includes(produto)) {
-      setFiltros({ ...filtros, produtos: produtosAtuais.filter(p => p !== produto) });
-    } else {
-      setFiltros({ ...filtros, produtos: [...produtosAtuais, produto] });
-    }
-  };
-
-  const toggleVendedor = (vendedor) => {
-    const vendedoresAtuais = filtros.vendedores || [];
-    if (vendedoresAtuais.includes(vendedor)) {
-      setFiltros({ ...filtros, vendedores: vendedoresAtuais.filter(v => v !== vendedor) });
-    } else {
-      setFiltros({ ...filtros, vendedores: [...vendedoresAtuais, vendedor] });
-    }
-  };
-
-  const toggleTime = (time) => {
-    const timesAtuais = filtros.times || [];
-    if (timesAtuais.includes(time)) {
-      setFiltros({ ...filtros, times: timesAtuais.filter(t => t !== time) });
-    } else {
-      setFiltros({ ...filtros, times: [...timesAtuais, time] });
-    }
-  };
-
-  const temFiltrosAtivos = filtros.dataInicio || filtros.dataFim || 
-                          (filtros.produtos && filtros.produtos.length > 0) || 
-                          (filtros.vendedores && filtros.vendedores.length > 0) ||
-                          (filtros.times && filtros.times.length > 0);
+  const temFiltrosAtivos = filtros.dataInicio || filtros.dataFim || filtros.produto || filtros.vendedor || filtros.time;
 
   return (
     <Card>
@@ -65,80 +35,66 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
             </Button>
           )}
         </div>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dataInicio">Data Início</Label>
-              <Input
-                id="dataInicio"
-                type="date"
-                value={filtros.dataInicio}
-                onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="dataFim">Data Fim</Label>
-              <Input
-                id="dataFim"
-                type="date"
-                value={filtros.dataFim}
-                onChange={(e) => setFiltros({ ...filtros, dataFim: e.target.value })}
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div>
+            <Label htmlFor="dataInicio">Data Início</Label>
+            <Input
+              id="dataInicio"
+              type="date"
+              value={filtros.dataInicio}
+              onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
+            />
           </div>
-
-          <div className="space-y-2">
-            <Label>
-              Produtos {filtros.produtos?.length > 0 && `(${filtros.produtos.length} selecionados)`}
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {produtos.map((produto) => (
-                <Badge
-                  key={produto}
-                  variant={filtros.produtos?.includes(produto) ? 'default' : 'outline'}
-                  className="cursor-pointer hover:bg-blue-100 transition-colors"
-                  onClick={() => toggleProduto(produto)}
-                >
-                  {produto}
-                </Badge>
-              ))}
-            </div>
+          <div>
+            <Label htmlFor="dataFim">Data Fim</Label>
+            <Input
+              id="dataFim"
+              type="date"
+              value={filtros.dataFim}
+              onChange={(e) => setFiltros({ ...filtros, dataFim: e.target.value })}
+            />
           </div>
-
-          <div className="space-y-2">
-            <Label>
-              Vendedores {filtros.vendedores?.length > 0 && `(${filtros.vendedores.length} selecionados)`}
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {vendedores.map((vendedor) => (
-                <Badge
-                  key={vendedor}
-                  variant={filtros.vendedores?.includes(vendedor) ? 'default' : 'outline'}
-                  className="cursor-pointer hover:bg-blue-100 transition-colors"
-                  onClick={() => toggleVendedor(vendedor)}
-                >
-                  {vendedor}
-                </Badge>
-              ))}
-            </div>
+          <div>
+            <Label>Produto</Label>
+            <Select value={filtros.produto || ''} onValueChange={(value) => setFiltros({ ...filtros, produto: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Todos</SelectItem>
+                {produtos.map((produto) => (
+                  <SelectItem key={produto} value={produto}>{produto}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          <div className="space-y-2">
-            <Label>
-              Times {filtros.times?.length > 0 && `(${filtros.times.length} selecionados)`}
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {times.map((time) => (
-                <Badge
-                  key={time}
-                  variant={filtros.times?.includes(time) ? 'default' : 'outline'}
-                  className="cursor-pointer hover:bg-blue-100 transition-colors"
-                  onClick={() => toggleTime(time)}
-                >
-                  {time}
-                </Badge>
-              ))}
-            </div>
+          <div>
+            <Label>Vendedor</Label>
+            <Select value={filtros.vendedor || ''} onValueChange={(value) => setFiltros({ ...filtros, vendedor: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Todos</SelectItem>
+                {vendedores.map((vendedor) => (
+                  <SelectItem key={vendedor} value={vendedor}>{vendedor}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Time</Label>
+            <Select value={filtros.time || ''} onValueChange={(value) => setFiltros({ ...filtros, time: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Todos</SelectItem>
+                {times.map((time) => (
+                  <SelectItem key={time} value={time}>{time}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </CardContent>
