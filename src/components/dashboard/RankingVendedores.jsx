@@ -14,11 +14,19 @@ export default function RankingVendedores({ vendas }) {
     return acc;
   }, {});
 
-  const ranking = Object.values(vendasPorVendedor)
+  // Separar CONSÓRCIO dos demais vendedores
+  const todosVendedores = Object.values(vendasPorVendedor);
+  const consorcio = todosVendedores.find(v => v.vendedor === 'CONSÓRCIO');
+  const vendedoresRankeados = todosVendedores
+    .filter(v => v.vendedor !== 'CONSÓRCIO')
     .sort((a, b) => b.total - a.total)
     .slice(0, 5);
 
-  const getMedalIcon = (index) => {
+  // Adicionar CONSÓRCIO no final se existir
+  const ranking = consorcio ? [...vendedoresRankeados, consorcio] : vendedoresRankeados;
+
+  const getMedalIcon = (index, isConsorcio) => {
+    if (isConsorcio) return <span className="w-5 h-5 flex items-center justify-center text-gray-400">-</span>;
     if (index === 0) return <Trophy className="w-5 h-5 text-yellow-500" />;
     if (index === 1) return <Medal className="w-5 h-5 text-gray-400" />;
     if (index === 2) return <Medal className="w-5 h-5 text-amber-600" />;
@@ -35,20 +43,26 @@ export default function RankingVendedores({ vendas }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {ranking.map((item, index) => (
-            <div key={item.vendedor} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              {getMedalIcon(index)}
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{item.vendedor}</p>
-                <p className="text-sm text-gray-600">{item.quantidade} vendas</p>
+          {ranking.map((item, index) => {
+            const isConsorcio = item.vendedor === 'CONSÓRCIO';
+            return (
+              <div 
+                key={item.vendedor} 
+                className={`flex items-center gap-3 p-3 rounded-lg ${isConsorcio ? 'bg-gray-100 border-t border-gray-300 mt-2' : 'bg-gray-50'}`}
+              >
+                {getMedalIcon(index, isConsorcio)}
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.vendedor}</p>
+                  <p className="text-sm text-gray-600">{item.quantidade} vendas</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-blue-600">
+                    {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-blue-600">
-                  {item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </CardContent>
     </Card>
