@@ -68,46 +68,94 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
             />
           </div>
           <div>
-            <Label>Produto</Label>
-            <Select value={filtros.produto || ''} onValueChange={(value) => setFiltros({ ...filtros, produto: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>Todos</SelectItem>
-                {produtos.map((produto) => (
-                  <SelectItem key={produto} value={produto}>{produto}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Produtos</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {filtros.produtos.length === 0 ? 'Todos' : `${filtros.produtos.length} selecionado(s)`}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 max-h-64 overflow-y-auto">
+                <div className="space-y-2">
+                  {produtos.map((produto) => (
+                    <div key={produto} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`produto-${produto}`}
+                        checked={filtros.produtos.includes(produto)}
+                        onCheckedChange={() => toggleItem('produtos', produto)}
+                      />
+                      <label
+                        htmlFor={`produto-${produto}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {produto}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
-            <Label>Vendedor</Label>
-            <Select value={filtros.vendedor || ''} onValueChange={(value) => setFiltros({ ...filtros, vendedor: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>Todos</SelectItem>
-                {vendedores.map((vendedor) => (
-                  <SelectItem key={vendedor} value={vendedor}>{vendedor}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Vendedores</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {filtros.vendedores.length === 0 ? 'Todos' : `${filtros.vendedores.length} selecionado(s)`}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 max-h-64 overflow-y-auto">
+                <div className="space-y-2">
+                  {vendedores.map((vendedor) => (
+                    <div key={vendedor} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`vendedor-${vendedor}`}
+                        checked={filtros.vendedores.includes(vendedor)}
+                        onCheckedChange={() => toggleItem('vendedores', vendedor)}
+                      />
+                      <label
+                        htmlFor={`vendedor-${vendedor}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {vendedor}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
-            <Label>Time</Label>
-            <Select value={filtros.time || ''} onValueChange={(value) => setFiltros({ ...filtros, time: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>Todos</SelectItem>
-                {times.map((time) => (
-                  <SelectItem key={time} value={time}>{time}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Times</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  {filtros.times.length === 0 ? 'Todos' : `${filtros.times.length} selecionado(s)`}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-56 max-h-64 overflow-y-auto">
+                <div className="space-y-2">
+                  {times.map((time) => (
+                    <div key={time} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`time-${time}`}
+                        checked={filtros.times.includes(time)}
+                        onCheckedChange={() => toggleItem('times', time)}
+                      />
+                      <label
+                        htmlFor={`time-${time}`}
+                        className="text-sm cursor-pointer flex-1"
+                      >
+                        {time}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardContent>
