@@ -158,23 +158,31 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
               />
             </div>
             <div>
-              <Label htmlFor="espelhamento_id">Espelhamento</Label>
-              <Select
-                value={formData.espelhamento_id}
-                onValueChange={handleEspelhamentoChange}
-              >
-                <SelectTrigger id="espelhamento_id">
-                  <SelectValue placeholder="Selecione (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>Nenhum</SelectItem>
-                  {vendedores.map((vendedor) => (
-                    <SelectItem key={vendedor.id} value={vendedor.id}>
-                      {vendedor.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="espelhamento">Espelhamento (quem indicou)</Label>
+              <div className="space-y-2">
+                <Input
+                  id="espelhamento"
+                  value={espelhamentoTexto}
+                  onChange={(e) => handleEspelhamentoTextoChange(e.target.value)}
+                  placeholder="Digite o nome ou selecione abaixo"
+                />
+                <Select
+                  value={formData.espelhamento_id}
+                  onValueChange={handleEspelhamentoChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ou selecione um vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>Nenhum</SelectItem>
+                    {vendedores.map((vendedor) => (
+                      <SelectItem key={vendedor.id} value={vendedor.id}>
+                        {vendedor.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label htmlFor="percentual_comissao_espelhamento">Comissão Espelhamento (%)</Label>
