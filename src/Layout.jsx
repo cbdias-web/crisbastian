@@ -2,14 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved === 'true';
+  });
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
@@ -25,10 +39,18 @@ export default function Layout({ children, currentPageName }) {
   ].filter(item => isAdmin || item.allowUser);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="w-64 bg-white shadow-lg">
-        <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold text-blue-600">Sistema de Vendas</h1>
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+      <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg">
+        <div className="p-6 border-b dark:border-gray-700 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">Sistema de Vendas</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDarkMode(!darkMode)}
+            className="dark:text-gray-300"
+          >
+            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </Button>
         </div>
         <nav className="p-4">
           {menuItems.map((item) => {
@@ -41,7 +63,7 @@ export default function Layout({ children, currentPageName }) {
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
                   isActive
                     ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <Icon className="w-5 h-5" />
