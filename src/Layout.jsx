@@ -39,7 +39,7 @@ export default function Layout({ children, currentPageName }) {
   ].filter(item => isAdmin || item.allowUser);
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
       <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg">
         <div className="p-6 border-b dark:border-gray-700 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">Sistema de Vendas</h1>
