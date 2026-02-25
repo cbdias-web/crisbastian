@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [filtros, setFiltros] = useState({
     dataInicio: dataInicioMes,
     dataFim: '',
-    produtos: [],
+    produto: '',
     vendedor: '',
     time: ''
   });
@@ -43,7 +43,7 @@ export default function Dashboard() {
       const fim = parseISO(filtros.dataFim);
       if (vendaData > fim) return false;
     }
-    if (filtros.produtos.length > 0 && !filtros.produtos.includes(venda.produto)) {
+    if (filtros.produto && venda.produto !== filtros.produto) {
       return false;
     }
     if (filtros.vendedor && venda.assessor_comercial !== filtros.vendedor) {
