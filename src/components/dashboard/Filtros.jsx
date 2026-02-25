@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import { startOfMonth, format } from 'date-fns';
 
@@ -18,22 +17,13 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
     setFiltros({
       dataInicio: dataInicioMes,
       dataFim: '',
-      produtos: [],
+      produto: '',
       vendedor: '',
       time: ''
     });
   };
 
-  const toggleProduto = (produto) => {
-    setFiltros({
-      ...filtros,
-      produtos: filtros.produtos.includes(produto)
-        ? filtros.produtos.filter(p => p !== produto)
-        : [...filtros.produtos, produto]
-    });
-  };
-
-  const temFiltrosAtivos = filtros.dataFim || filtros.produtos.length > 0 || filtros.vendedor || filtros.time;
+  const temFiltrosAtivos = filtros.dataFim || filtros.produto || filtros.vendedor || filtros.time;
 
   return (
     <Card>
@@ -47,7 +37,7 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
             </Button>
           )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <Label htmlFor="dataInicio">Data Início</Label>
             <Input
@@ -65,6 +55,20 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
               value={filtros.dataFim}
               onChange={(e) => setFiltros({ ...filtros, dataFim: e.target.value })}
             />
+          </div>
+          <div>
+            <Label>Produto</Label>
+            <Select value={filtros.produto || ''} onValueChange={(value) => setFiltros({ ...filtros, produto: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Todos</SelectItem>
+                {produtos.map((produto) => (
+                  <SelectItem key={produto} value={produto}>{produto}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>Vendedor</Label>
@@ -93,26 +97,6 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </div>
-        <div>
-          <Label className="mb-3 block">Produtos (selecione múltiplos)</Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {produtos.map((produto) => (
-              <div key={produto} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`produto-${produto}`}
-                  checked={filtros.produtos.includes(produto)}
-                  onCheckedChange={() => toggleProduto(produto)}
-                />
-                <label
-                  htmlFor={`produto-${produto}`}
-                  className="text-sm font-medium leading-none cursor-pointer"
-                >
-                  {produto}
-                </label>
-              </div>
-            ))}
           </div>
         </div>
       </CardContent>
