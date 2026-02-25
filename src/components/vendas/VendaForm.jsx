@@ -48,6 +48,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     percentual_comissao_espelhamento: 0
   });
 
+  const [espelhamentoTexto, setEspelhamentoTexto] = useState(venda?.espelhamento || '');
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const dataToSave = {
@@ -71,11 +73,30 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
 
   const handleEspelhamentoChange = (vendedorId) => {
     const vendedor = vendedores.find(v => v.id === vendedorId);
+    if (vendedorId) {
+      setEspelhamentoTexto(vendedor?.nome || '');
+      setFormData({
+        ...formData,
+        espelhamento_id: vendedorId,
+        espelhamento: vendedor?.nome || '',
+        percentual_comissao_espelhamento: vendedor?.percentual_comissao || 10
+      });
+    } else {
+      setFormData({
+        ...formData,
+        espelhamento_id: '',
+        espelhamento: '',
+        percentual_comissao_espelhamento: 0
+      });
+    }
+  };
+
+  const handleEspelhamentoTextoChange = (texto) => {
+    setEspelhamentoTexto(texto);
     setFormData({
       ...formData,
-      espelhamento_id: vendedorId,
-      espelhamento: vendedor?.nome || '',
-      percentual_comissao_espelhamento: vendedor?.percentual_comissao || 10
+      espelhamento: texto,
+      espelhamento_id: ''
     });
   };
 

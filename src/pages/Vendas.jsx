@@ -23,6 +23,7 @@ export default function Vendas() {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [produtoFiltro, setProdutoFiltro] = useState('todos');
+  const [vendedorFiltro, setVendedorFiltro] = useState('todos');
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -39,6 +40,11 @@ export default function Vendas() {
   const { data: produtos = [] } = useQuery({
     queryKey: ['produtos'],
     queryFn: () => base44.entities.Produto.list('nome'),
+  });
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores'],
+    queryFn: () => base44.entities.Vendedor.list('nome'),
   });
 
   const createMutation = useMutation({
@@ -185,9 +191,12 @@ export default function Vendas() {
 
     const matchData = (!dataInicio || venda.data >= dataInicio) && (!dataFim || venda.data <= dataFim);
     const matchProduto = produtoFiltro === 'todos' || venda.produto === produtoFiltro;
+    const matchVendedor = vendedorFiltro === 'todos' || venda.assessor_comercial === vendedorFiltro;
 
-    return matchSearch && matchData && matchProduto;
+    return matchSearch && matchData && matchProduto && matchVendedor;
   });
+
+  const totalAcumulado = filteredVendas.reduce((sum, v) => sum + (v.valor || 0), 0);
 
   const exportarVendas = () => {
     const csv = [
@@ -283,13 +292,18 @@ export default function Vendas() {
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filtros
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5" />
+                Filtros
+              </div>
+              <div className="text-lg font-bold text-green-600">
+                Total Acumulado: {totalAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label>Data Início</Label>
                 <Input
@@ -305,6 +319,20 @@ export default function Vendas() {
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
                 />
+              </div>
+              <div>
+                <Label>Vendedor</Label>
+                <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Vendedores</SelectItem>
+                    {vendedores.map((v) => (
+                      <SelectItem key={v.id} value={v.nome}>{v.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Produto</Label>
@@ -327,6 +355,7 @@ export default function Vendas() {
                     setDataInicio('');
                     setDataFim('');
                     setProdutoFiltro('todos');
+                    setVendedorFiltro('todos');
                   }}
                 >
                   Limpar Filtros

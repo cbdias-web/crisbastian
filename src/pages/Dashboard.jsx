@@ -9,17 +9,20 @@ import Filtros from '../components/dashboard/Filtros';
 import VendasRecentes from '../components/dashboard/VendasRecentes';
 import RankingVendedores from '../components/dashboard/RankingVendedores';
 import MetaEquipeChart from '../components/dashboard/MetaEquipeChart';
+import RelogioMeta from '../components/dashboard/RelogioMeta';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { Table2, Loader2 } from 'lucide-react';
-import { parseISO, isWithinInterval } from 'date-fns';
+import { parseISO, isWithinInterval, startOfMonth, format } from 'date-fns';
 
 export default function Dashboard() {
+  const dataInicioMes = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+  
   const [filtros, setFiltros] = useState({
-    dataInicio: '',
+    dataInicio: dataInicioMes,
     dataFim: '',
-    produto: '',
+    produtos: [],
     vendedor: '',
     time: ''
   });
@@ -40,7 +43,7 @@ export default function Dashboard() {
       const fim = parseISO(filtros.dataFim);
       if (vendaData > fim) return false;
     }
-    if (filtros.produto && venda.produto !== filtros.produto) {
+    if (filtros.produtos.length > 0 && !filtros.produtos.includes(venda.produto)) {
       return false;
     }
     if (filtros.vendedor && venda.assessor_comercial !== filtros.vendedor) {
@@ -79,6 +82,8 @@ export default function Dashboard() {
         <Filtros vendas={vendas} filtros={filtros} setFiltros={setFiltros} />
 
         <StatsCards vendas={vendas} filteredVendas={filteredVendas} />
+
+        <RelogioMeta vendas={filteredVendas} />
 
         <MetaEquipeChart vendas={filteredVendas} />
 
