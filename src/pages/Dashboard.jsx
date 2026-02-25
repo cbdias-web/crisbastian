@@ -22,9 +22,9 @@ export default function Dashboard() {
   const [filtros, setFiltros] = useState({
     dataInicio: dataInicioMes,
     dataFim: '',
-    produto: '',
-    vendedor: '',
-    time: ''
+    produtos: [],
+    vendedores: [],
+    times: []
   });
 
   const { data: vendas = [], isLoading } = useQuery({
@@ -43,13 +43,13 @@ export default function Dashboard() {
       const fim = parseISO(filtros.dataFim);
       if (vendaData > fim) return false;
     }
-    if (filtros.produto && venda.produto !== filtros.produto) {
+    if (filtros.produtos.length > 0 && !filtros.produtos.includes(venda.produto)) {
       return false;
     }
-    if (filtros.vendedor && venda.assessor_comercial !== filtros.vendedor) {
+    if (filtros.vendedores.length > 0 && !filtros.vendedores.includes(venda.assessor_comercial)) {
       return false;
     }
-    if (filtros.time && venda.time !== filtros.time) {
+    if (filtros.times.length > 0 && !filtros.times.includes(venda.time)) {
       return false;
     }
     return true;

@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X, ChevronDown } from "lucide-react";
 import { startOfMonth, format } from 'date-fns';
 
 export default function Filtros({ vendas, filtros, setFiltros }) {
@@ -17,13 +18,23 @@ export default function Filtros({ vendas, filtros, setFiltros }) {
     setFiltros({
       dataInicio: dataInicioMes,
       dataFim: '',
-      produto: '',
-      vendedor: '',
-      time: ''
+      produtos: [],
+      vendedores: [],
+      times: []
     });
   };
 
-  const temFiltrosAtivos = filtros.dataFim || filtros.produto || filtros.vendedor || filtros.time;
+  const toggleItem = (field, value) => {
+    const currentArray = filtros[field];
+    setFiltros({
+      ...filtros,
+      [field]: currentArray.includes(value)
+        ? currentArray.filter(item => item !== value)
+        : [...currentArray, value]
+    });
+  };
+
+  const temFiltrosAtivos = filtros.dataFim || filtros.produtos.length > 0 || filtros.vendedores.length > 0 || filtros.times.length > 0;
 
   return (
     <Card>
