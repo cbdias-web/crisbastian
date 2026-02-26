@@ -29,6 +29,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     queryFn: () => base44.entities.Produto.filter({ ativo: true }, 'nome'),
   });
 
+  const { data: espelhamentos = [] } = useQuery({
+    queryKey: ['espelhamentos'],
+    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
+  });
+
   const [formData, setFormData] = useState(venda || {
     produto: '',
     assessor_comercial: '',
@@ -71,15 +76,15 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
     });
   };
 
-  const handleEspelhamentoChange = (vendedorId) => {
-    const vendedor = vendedores.find(v => v.id === vendedorId);
-    if (vendedorId) {
-      setEspelhamentoTexto(vendedor?.nome || '');
+  const handleEspelhamentoChange = (espelhamentoId) => {
+    const espelhamento = espelhamentos.find(e => e.id === espelhamentoId);
+    if (espelhamentoId) {
+      setEspelhamentoTexto(espelhamento?.nome || '');
       setFormData({
         ...formData,
-        espelhamento_id: vendedorId,
-        espelhamento: vendedor?.nome || '',
-        percentual_comissao_espelhamento: vendedor?.percentual_comissao || 10
+        espelhamento_id: espelhamentoId,
+        espelhamento: espelhamento?.nome || '',
+        percentual_comissao_espelhamento: espelhamento?.percentual_comissao || 10
       });
     } else {
       setFormData({
@@ -159,30 +164,22 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
             </div>
             <div>
               <Label htmlFor="espelhamento">Espelhamento (quem indicou)</Label>
-              <div className="space-y-2">
-                <Input
-                  id="espelhamento"
-                  value={espelhamentoTexto}
-                  onChange={(e) => handleEspelhamentoTextoChange(e.target.value)}
-                  placeholder="Digite o nome ou selecione abaixo"
-                />
-                <Select
-                  value={formData.espelhamento_id}
-                  onValueChange={handleEspelhamentoChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Ou selecione um vendedor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>Nenhum</SelectItem>
-                    {vendedores.map((vendedor) => (
-                      <SelectItem key={vendedor.id} value={vendedor.id}>
-                        {vendedor.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={formData.espelhamento_id}
+                onValueChange={handleEspelhamentoChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um indicador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>Nenhum</SelectItem>
+                  {espelhamentos.map((espelhamento) => (
+                    <SelectItem key={espelhamento.id} value={espelhamento.id}>
+                      {espelhamento.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="percentual_comissao_espelhamento">Comissão Espelhamento (%)</Label>

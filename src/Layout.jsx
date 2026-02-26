@@ -32,8 +32,10 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
     { name: 'Comissões Espelhamento', icon: DollarSign, page: 'ComissoesEspelhamento', allowUser: false },
+    { name: 'Comissões Geral', icon: DollarSign, page: 'ComissoesGeral', allowUser: false },
     { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: false },
+    { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
   ].filter(item => isAdmin || item.allowUser);
