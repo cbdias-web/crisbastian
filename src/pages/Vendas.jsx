@@ -49,6 +49,22 @@ export default function Vendas() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
+      // Se houver nome de espelhamento mas não houver ID, criar/buscar o indicador
+      if (data.espelhamento && !data.espelhamento_id) {
+        const espelhamentosExistentes = await base44.entities.Espelhamento.filter({ nome: data.espelhamento });
+        if (espelhamentosExistentes.length > 0) {
+          data.espelhamento_id = espelhamentosExistentes[0].id;
+          data.percentual_comissao_espelhamento = data.percentual_comissao_espelhamento || espelhamentosExistentes[0].percentual_comissao;
+        } else {
+          const novoEspelhamento = await base44.entities.Espelhamento.create({
+            nome: data.espelhamento,
+            percentual_comissao: data.percentual_comissao_espelhamento || 10,
+            ativo: true
+          });
+          data.espelhamento_id = novoEspelhamento.id;
+        }
+      }
+      
       const venda = await base44.entities.Venda.create(data);
       
       // Criar comissão automaticamente
@@ -94,6 +110,22 @@ export default function Vendas() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
+      // Se houver nome de espelhamento mas não houver ID, criar/buscar o indicador
+      if (data.espelhamento && !data.espelhamento_id) {
+        const espelhamentosExistentes = await base44.entities.Espelhamento.filter({ nome: data.espelhamento });
+        if (espelhamentosExistentes.length > 0) {
+          data.espelhamento_id = espelhamentosExistentes[0].id;
+          data.percentual_comissao_espelhamento = data.percentual_comissao_espelhamento || espelhamentosExistentes[0].percentual_comissao;
+        } else {
+          const novoEspelhamento = await base44.entities.Espelhamento.create({
+            nome: data.espelhamento,
+            percentual_comissao: data.percentual_comissao_espelhamento || 10,
+            ativo: true
+          });
+          data.espelhamento_id = novoEspelhamento.id;
+        }
+      }
+      
       const venda = await base44.entities.Venda.update(id, data);
       
       // Atualizar comissão existente
