@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, DollarSign, CheckCircle, Pencil, X, Save, Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, DollarSign, CheckCircle, Pencil, X, Save, Trash2, Download, ChevronDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
 export default function ComissoesEspelhamento() {
-  const [filtroVendedor, setFiltroVendedor] = useState('todos');
+  const [filtroVendedores, setFiltroVendedores] = useState([]);
   const [filtroPago, setFiltroPago] = useState('todos');
   const [editingComissao, setEditingComissao] = useState(null);
   const [editFormData, setEditFormData] = useState({});
@@ -79,8 +81,39 @@ export default function ComissoesEspelhamento() {
 
   const vendedoresUnicos = [...new Set(comissoes.map(c => c.vendedor_nome))].filter(Boolean);
 
+  const toggleVendedor = (vendedor) => {
+    setFiltroVendedores(prev =>
+      prev.includes(vendedor)
+        ? prev.filter(v => v !== vendedor)
+        : [...prev, vendedor]
+    );
+  };
+
+  const exportarCSV = () => {
+    const headers = ['Data', 'Vendedor Espelhamento', 'Valor Venda', 'Percentual', 'Comissão', 'Status'];
+    const rows = comissoesFiltradas.map(c => [
+      c.data_venda ? format(parseISO(c.data_venda), 'dd/MM/yyyy') : '-',
+      c.vendedor_nome,
+      c.valor_venda,
+      c.percentual,
+      c.valor_comissao,
+      c.pago ? 'Paga' : 'Pendente'
+    ]);
+    
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `comissoes_espelhamento_${format(new Date(), 'dd-MM-yyyy')}.csv`;
+    link.click();
+  };
+
   const comissoesFiltradas = comissoes.filter(c => {
-    if (filtroVendedor !== 'todos' && c.vendedor_nome !== filtroVendedor) return false;
+    if (filtroVendedores.length > 0 && !filtroVendedores.includes(c.vendedor_nome)) return false;
     if (filtroPago === 'pago' && !c.pago) return false;
     if (filtroPago === 'pendente' && c.pago) return false;
     return true;
@@ -159,19 +192,40 @@ export default function ComissoesEspelhamento() {
             <div className="flex justify-between items-center">
               <CardTitle>Todas as Comissões ({comissoesFiltradas.length})</CardTitle>
               <div className="flex gap-4">
+                <Button variant="outline" size="sm" onClick={exportarCSV}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </Button>
                 {isAdmin && (
                   <div>
-                    <Label className="text-xs">Vendedor</Label>
-                    <select
-                      value={filtroVendedor}
-                      onChange={(e) => setFiltroVendedor(e.target.value)}
-                      className="border rounded px-3 py-1 text-sm"
-                    >
-                      <option value="todos">Todos</option>
-                      {vendedoresUnicos.map(v => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
+                    <Label className="text-xs">Vendedores Espelhamento</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-40 justify-between">
+                          {filtroVendedores.length === 0 ? 'Todos' : `${filtroVendedores.length} selecionado(s)`}
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 max-h-64 overflow-y-auto">
+                        <div className="space-y-2">
+                          {vendedoresUnicos.map((vendedor) => (
+                            <div key={vendedor} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`vendedor-${vendedor}`}
+                                checked={filtroVendedores.includes(vendedor)}
+                                onCheckedChange={() => toggleVendedor(vendedor)}
+                              />
+                              <label
+                                htmlFor={`vendedor-${vendedor}`}
+                                className="text-sm cursor-pointer flex-1"
+                              >
+                                {vendedor}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 )}
                 <div>
