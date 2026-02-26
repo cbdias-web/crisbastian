@@ -16,6 +16,7 @@ export default function Metas() {
   const [showForm, setShowForm] = useState(false);
   const [editingMeta, setEditingMeta] = useState(null);
   const [user, setUser] = useState(null);
+  const [vendedorFiltro, setVendedorFiltro] = useState('todos');
   const [formData, setFormData] = useState({
     mes: format(new Date(), 'yyyy-MM'),
     tipo: 'individual',
@@ -244,7 +245,22 @@ export default function Metas() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Todas as Metas ({metas.length})</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Todas as Metas ({metas.length})</CardTitle>
+              <div className="w-64">
+                <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filtrar por vendedor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Vendedores</SelectItem>
+                    {vendedores.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -255,65 +271,79 @@ export default function Metas() {
                   <TableHead>Vendedor</TableHead>
                   <TableHead>Meta</TableHead>
                   <TableHead>Realizado</TableHead>
+                  <TableHead>Gap/Superação</TableHead>
                   <TableHead>Atingimento</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {metas.map((meta) => {
-                  const realizado = calcularRealizado(meta);
-                  const percentual = meta.valor_meta > 0 ? (realizado / meta.valor_meta) * 100 : 0;
-                  return (
-                    <TableRow key={meta.id}>
-                      <TableCell>{meta.mes}</TableCell>
-                      <TableCell>
-                        <Badge variant={meta.tipo === 'equipe' ? 'default' : meta.tipo === 'time' ? 'outline' : 'secondary'}>
-                          {meta.tipo}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {meta.tipo === 'equipe' ? 'Toda equipe' : meta.tipo === 'time' ? meta.time : meta.vendedor_nome}
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {meta.valor_meta?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </TableCell>
-                      <TableCell className="font-semibold text-blue-600">
-                        {realizado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${percentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                              style={{ width: `${Math.min(percentual, 100)}%` }}
-                            />
+                {metas
+                  .filter(meta => {
+                    if (vendedorFiltro === 'todos') return true;
+                    return meta.vendedor_id === vendedorFiltro;
+                  })
+                  .map((meta) => {
+                    const realizado = calcularRealizado(meta);
+                    const percentual = meta.valor_meta > 0 ? (realizado / meta.valor_meta) * 100 : 0;
+                    const gap = realizado - meta.valor_meta;
+                    const gapPositivo = gap >= 0;
+                    
+                    return (
+                      <TableRow key={meta.id}>
+                        <TableCell>{meta.mes}</TableCell>
+                        <TableCell>
+                          <Badge variant={meta.tipo === 'equipe' ? 'default' : meta.tipo === 'time' ? 'outline' : 'secondary'}>
+                            {meta.tipo}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {meta.tipo === 'equipe' ? 'Toda equipe' : meta.tipo === 'time' ? meta.time : meta.vendedor_nome}
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          {meta.valor_meta?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </TableCell>
+                        <TableCell className="font-semibold text-blue-600">
+                          {realizado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-semibold ${gapPositivo ? 'text-green-600' : 'text-red-600'}`}>
+                            {gapPositivo ? '+' : ''}{gap.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${percentual >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                style={{ width: `${Math.min(percentual, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">{percentual.toFixed(0)}%</span>
                           </div>
-                          <span className="text-sm font-medium">{percentual.toFixed(0)}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {isAdmin && (
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleEdit(meta)}>
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                if (confirm('Tem certeza que deseja excluir esta meta?')) {
-                                  deleteMutation.mutate(meta.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isAdmin && (
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon" onClick={() => handleEdit(meta)}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm('Tem certeza que deseja excluir esta meta?')) {
+                                    deleteMutation.mutate(meta.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
               </TableBody>
             </Table>
           </CardContent>

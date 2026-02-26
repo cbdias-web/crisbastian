@@ -49,28 +49,28 @@
  */
 import Comissoes from './pages/Comissoes';
 import ComissoesEspelhamento from './pages/ComissoesEspelhamento';
+import ComissoesGeral from './pages/ComissoesGeral';
 import Dashboard from './pages/Dashboard';
+import Espelhamentos from './pages/Espelhamentos';
 import Importar from './pages/Importar';
 import Metas from './pages/Metas';
 import Produtos from './pages/Produtos';
 import Vendas from './pages/Vendas';
 import Vendedores from './pages/Vendedores';
-import ComissoesGeral from './pages/ComissoesGeral';
-import Espelhamentos from './pages/Espelhamentos';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "Comissoes": Comissoes,
     "ComissoesEspelhamento": ComissoesEspelhamento,
+    "ComissoesGeral": ComissoesGeral,
     "Dashboard": Dashboard,
+    "Espelhamentos": Espelhamentos,
     "Importar": Importar,
     "Metas": Metas,
     "Produtos": Produtos,
     "Vendas": Vendas,
     "Vendedores": Vendedores,
-    "ComissoesGeral": ComissoesGeral,
-    "Espelhamentos": Espelhamentos,
 }
 
 export const pagesConfig = {
