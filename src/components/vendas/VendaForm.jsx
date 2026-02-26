@@ -164,22 +164,30 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
             </div>
             <div>
               <Label htmlFor="espelhamento">Espelhamento (quem indicou)</Label>
-              <Select
-                value={formData.espelhamento_id}
-                onValueChange={handleEspelhamentoChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um indicador" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>Nenhum</SelectItem>
-                  {espelhamentos.map((espelhamento) => (
-                    <SelectItem key={espelhamento.id} value={espelhamento.id}>
-                      {espelhamento.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Input
+                  id="espelhamento"
+                  value={espelhamentoTexto}
+                  onChange={(e) => handleEspelhamentoTextoChange(e.target.value)}
+                  placeholder="Digite o nome do indicador"
+                />
+                <Select
+                  value={formData.espelhamento_id}
+                  onValueChange={handleEspelhamentoChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Ou selecione um indicador cadastrado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>Nenhum</SelectItem>
+                    {espelhamentos.map((espelhamento) => (
+                      <SelectItem key={espelhamento.id} value={espelhamento.id}>
+                        {espelhamento.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label htmlFor="percentual_comissao_espelhamento">Comissão Espelhamento (%)</Label>
