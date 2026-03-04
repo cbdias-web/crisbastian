@@ -73,11 +73,11 @@ export default function Vendedores() {
     toast.success("Vendedor excluído!");
   };
 
-  // Current month range for volume calc
-  const now = new Date();
-  const dateFrom = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dateTo = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  // Month range for volume calc
+  const [anoFiltro, mesFiltroNum] = mesFiltro.split("-");
+  const dateFrom = `${mesFiltro}-01`;
+  const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
+  const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
 
   const visibleVendedores = vendedores.filter(v =>
     statusFilter === "todos" ? true : statusFilter === "ativo" ? v.ativo !== false : v.ativo === false
