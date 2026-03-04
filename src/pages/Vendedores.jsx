@@ -186,6 +186,19 @@ export default function Vendedores() {
                     </div>
                   </div>
 
+                  {/* Barra de progresso da meta */}
+                  {valorMeta > 0 && (
+                    <div className="mb-3">
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                        <span>Meta: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorMeta)}</span>
+                        <span className={`font-semibold ${progresso >= 100 ? "text-emerald-600" : progresso >= 70 ? "text-blue-600" : "text-gray-500"}`}>{progresso.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div className={`${cor} h-2 rounded-full transition-all duration-500`} style={{ width: `${progresso}%` }} />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-xs text-gray-400">
                     <div className="flex items-center gap-2">
                       {v.time && <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
