@@ -248,9 +248,15 @@ export default function Metas() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Todas as Metas ({metas.length})</CardTitle>
-              <div className="w-64">
+              <div className="flex gap-2">
+                <Input
+                  type="month"
+                  value={mesFiltro}
+                  onChange={(e) => setMesFiltro(e.target.value)}
+                  className="w-40"
+                />
                 <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-52">
                     <SelectValue placeholder="Filtrar por vendedor" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,6 +266,9 @@ export default function Metas() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button variant="outline" size="sm" onClick={() => { setMesFiltro(''); setVendedorFiltro('todos'); }}>
+                  Todos os Meses
+                </Button>
               </div>
             </div>
           </CardHeader>
