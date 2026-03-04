@@ -146,6 +146,14 @@ export default function Vendedores() {
               const usuario = usuarios.find(u => u.email === v.email);
               const temPermissao = usuario?.permissao_admin || false;
 
+              // Meta individual do mês
+              const metaIndividual = metas.find(m =>
+                m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
+              );
+              const valorMeta = metaIndividual?.valor_meta || 0;
+              const progresso = valorMeta > 0 ? Math.min((volume / valorMeta) * 100, 100) : 0;
+              const cor = progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
+
               return (
                 <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-4">
