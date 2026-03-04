@@ -106,6 +106,12 @@ export default function Vendedores() {
 
         {/* Filter */}
         <div className="flex items-center gap-3">
+          <input
+            type="month"
+            value={mesFiltro}
+            onChange={e => setMesFiltro(e.target.value)}
+            className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600"
+          />
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
             className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
             <option value="ativo">Ativos</option>
