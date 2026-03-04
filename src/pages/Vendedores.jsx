@@ -22,6 +22,10 @@ export default function Vendedores() {
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ativo");
+  const [mesFiltro, setMesFiltro] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   const queryClient = useQueryClient();
 
