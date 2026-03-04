@@ -17,6 +17,7 @@ export default function Metas() {
   const [editingMeta, setEditingMeta] = useState(null);
   const [user, setUser] = useState(null);
   const [vendedorFiltro, setVendedorFiltro] = useState('todos');
+  const [mesFiltro, setMesFiltro] = useState(format(new Date(), 'yyyy-MM'));
   const [formData, setFormData] = useState({
     mes: format(new Date(), 'yyyy-MM'),
     tipo: 'individual',
