@@ -44,6 +44,11 @@ export default function Vendedores() {
     queryFn: () => base44.entities.Venda.list(),
   });
 
+  const { data: metas = [] } = useQuery({
+    queryKey: ["metas"],
+    queryFn: () => base44.entities.Meta.list(),
+  });
+
   const updateUserMutation = useMutation({
     mutationFn: ({ id, permissao_admin }) => base44.entities.User.update(id, { permissao_admin }),
     onSuccess: () => { queryClient.invalidateQueries(["usuarios"]); toast.success("Permissão atualizada!"); },
