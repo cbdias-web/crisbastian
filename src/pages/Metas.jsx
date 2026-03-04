@@ -289,8 +289,9 @@ export default function Metas() {
               <TableBody>
                 {metas
                   .filter(meta => {
-                    if (vendedorFiltro === 'todos') return true;
-                    return meta.vendedor_id === vendedorFiltro;
+                    const mesOk = !mesFiltro || meta.mes === mesFiltro;
+                    const vendedorOk = vendedorFiltro === 'todos' || meta.vendedor_id === vendedorFiltro;
+                    return mesOk && vendedorOk;
                   })
                   .map((meta) => {
                     const realizado = calcularRealizado(meta);
