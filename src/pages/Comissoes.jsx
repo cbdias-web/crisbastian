@@ -1,19 +1,18 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save, Trash2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save, Trash2, Calendar } from "lucide-react";
+import { format, parseISO, startOfMonth } from "date-fns";
 import { toast } from "sonner";
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
-function MultiSelect({ label, options, selected, onChange }) {
+const toDateStr = (d) => d.toISOString().split("T")[0];
+
+function MultiSelect({ options, selected, onChange }) {
   const [open, setOpen] = useState(false);
-  const lbl =
-    selected.length === 0 || selected.length === options.length
-      ? `Todos`
-      : `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
+  const lbl = selected.length === 0 || selected.length === options.length ? "Todos" : `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
   const toggle = (v) => onChange(selected.includes(v) ? selected.filter(i => i !== v) : [...selected, v]);
   const toggleAll = () => onChange(selected.length === options.length ? [] : [...options]);
   return (
@@ -48,6 +47,31 @@ function MultiSelect({ label, options, selected, onChange }) {
   );
 }
 
+function KPICards({ lista }) {
+  const total = lista.reduce((s, c) => s + (c.valor_comissao || 0), 0);
+  const totalPago = lista.filter(c => c.pago).reduce((s, c) => s + (c.valor_comissao || 0), 0);
+  const totalPendente = total - totalPago;
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {[
+        { label: "Total", value: total, icon: DollarSign, bg: "bg-blue-50", text: "text-[#1a3150]", iconBg: "bg-blue-100" },
+        { label: "Pagas", value: totalPago, icon: CheckCircle, bg: "bg-emerald-50", text: "text-emerald-700", iconBg: "bg-emerald-100" },
+        { label: "Pendentes", value: totalPendente, icon: DollarSign, bg: "bg-amber-50", text: "text-amber-700", iconBg: "bg-amber-100" },
+      ].map(card => (
+        <div key={card.label} className={`${card.bg} rounded-2xl p-4 flex items-center justify-between`}>
+          <div>
+            <p className="text-xs text-gray-500 font-medium">{card.label}</p>
+            <p className={`text-lg font-bold mt-0.5 ${card.text}`}>{formatCurrency(card.value)}</p>
+          </div>
+          <div className={`${card.iconBg} p-2.5 rounded-xl`}>
+            <card.icon className={`w-5 h-5 ${card.text}`} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
   const [filtroNomes, setFiltroNomes] = useState([]);
   const [filtroPago, setFiltroPago] = useState("todos");
@@ -67,9 +91,7 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
 
   const nomesUnicos = [...new Set(comissoes.map(c => c.vendedor_nome).filter(Boolean))];
 
-  useEffect(() => {
-    setFiltroNomes(nomesUnicos);
-  }, [comissoes.length]);
+  useEffect(() => { setFiltroNomes(nomesUnicos); }, [comissoes.length]);
 
   const filtradas = comissoes.filter(c => {
     if (filtroNomes.length > 0 && filtroNomes.length < nomesUnicos.length && !filtroNomes.includes(c.vendedor_nome)) return false;
@@ -78,18 +100,11 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
     return true;
   });
 
-  const total = filtradas.reduce((s, c) => s + (c.valor_comissao || 0), 0);
-  const totalPago = filtradas.filter(c => c.pago).reduce((s, c) => s + (c.valor_comissao || 0), 0);
-  const totalPendente = total - totalPago;
-
   const exportCSV = () => {
     const headers = ["Data", tipo === "espelhamento" ? "Indicador" : "Vendedor", "Valor Venda", "%", "Comissão", "Status"];
     const rows = filtradas.map(c => [
       c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "-",
-      c.vendedor_nome || "-",
-      c.valor_venda || 0,
-      c.percentual || 0,
-      c.valor_comissao || 0,
+      c.vendedor_nome || "-", c.valor_venda || 0, c.percentual || 0, c.valor_comissao || 0,
       c.pago ? "Paga" : "Pendente",
     ]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -97,37 +112,17 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `comissoes_${tipo}_${format(new Date(), "dd-MM-yyyy")}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    a.click(); URL.revokeObjectURL(a.href);
   };
 
   return (
     <div className="space-y-4">
-      {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {[
-          { label: "Total", value: total, icon: DollarSign, bg: "bg-blue-50", text: "text-[#1a3150]", iconBg: "bg-blue-100" },
-          { label: "Pagas", value: totalPago, icon: CheckCircle, bg: "bg-emerald-50", text: "text-emerald-700", iconBg: "bg-emerald-100" },
-          { label: "Pendentes", value: totalPendente, icon: DollarSign, bg: "bg-amber-50", text: "text-amber-700", iconBg: "bg-amber-100" },
-        ].map(card => (
-          <div key={card.label} className={`${card.bg} rounded-2xl p-4 flex items-center justify-between`}>
-            <div>
-              <p className="text-xs text-gray-500 font-medium">{card.label}</p>
-              <p className={`text-lg font-bold mt-0.5 ${card.text}`}>{formatCurrency(card.value)}</p>
-            </div>
-            <div className={`${card.iconBg} p-2.5 rounded-xl`}>
-              <card.icon className={`w-5 h-5 ${card.text}`} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filtros + tabela */}
+      <KPICards lista={filtradas} />
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-50 flex flex-wrap items-center gap-2 justify-between">
           <span className="text-sm font-semibold text-gray-700">{filtradas.length} registro{filtradas.length !== 1 ? "s" : ""}</span>
           <div className="flex flex-wrap gap-2 items-center">
-            <MultiSelect label="Nomes" options={nomesUnicos} selected={filtroNomes} onChange={setFiltroNomes} />
+            <MultiSelect options={nomesUnicos} selected={filtroNomes} onChange={setFiltroNomes} />
             <select value={filtroPago} onChange={e => setFiltroPago(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white text-gray-700">
               <option value="todos">Todos</option>
@@ -140,7 +135,6 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
             </button>
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -156,25 +150,20 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtradas.length === 0 ? (
-                <tr>
-                  <td colSpan={isAdmin ? 7 : 6} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td>
-                </tr>
+                <tr><td colSpan={isAdmin ? 7 : 6} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
               ) : filtradas.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-5 py-3 text-gray-600">{c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "—"}</td>
                   <td className="px-5 py-3 font-medium text-gray-900">{c.vendedor_nome || "—"}</td>
                   <td className="px-5 py-3 text-gray-600">{formatCurrency(c.valor_venda)}</td>
                   <td className="px-5 py-3 text-gray-600">
-                    {editingId === c.id ? (
-                      <input type="number" step="0.1" value={editPercentual}
-                        onChange={e => setEditPercentual(e.target.value)}
-                        className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
-                    ) : `${c.percentual}%`}
+                    {editingId === c.id
+                      ? <input type="number" step="0.1" value={editPercentual} onChange={e => setEditPercentual(e.target.value)}
+                          className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                      : `${c.percentual}%`}
                   </td>
                   <td className="px-5 py-3 font-semibold text-emerald-600">
-                    {editingId === c.id
-                      ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100)
-                      : formatCurrency(c.valor_comissao)}
+                    {editingId === c.id ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100) : formatCurrency(c.valor_comissao)}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c.pago ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
@@ -186,29 +175,20 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                       <div className="flex justify-end gap-1">
                         {editingId === c.id ? (
                           <>
-                            <button onClick={() => {
-                              const p = parseFloat(editPercentual);
-                              updateMutation.mutate({ id: c.id, data: { percentual: p, valor_comissao: (c.valor_venda * p) / 100 } });
-                              setEditingId(null);
-                            }} className="p-1.5 hover:bg-emerald-50 rounded-lg transition">
-                              <Save className="w-3.5 h-3.5 text-emerald-600" />
-                            </button>
-                            <button onClick={() => setEditingId(null)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                              <X className="w-3.5 h-3.5 text-red-400" />
-                            </button>
+                            <button onClick={() => { const p = parseFloat(editPercentual); updateMutation.mutate({ id: c.id, data: { percentual: p, valor_comissao: (c.valor_venda * p) / 100 } }); setEditingId(null); }}
+                              className="p-1.5 hover:bg-emerald-50 rounded-lg transition"><Save className="w-3.5 h-3.5 text-emerald-600" /></button>
+                            <button onClick={() => setEditingId(null)} className="p-1.5 hover:bg-red-50 rounded-lg transition"><X className="w-3.5 h-3.5 text-red-400" /></button>
                           </>
                         ) : (
                           <>
-                            <button onClick={() => { setEditingId(c.id); setEditPercentual(String(c.percentual)); }}
-                              className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                            <button onClick={() => { setEditingId(c.id); setEditPercentual(String(c.percentual)); }} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                               <Pencil className="w-3.5 h-3.5 text-gray-400" />
                             </button>
                             <button onClick={() => updateMutation.mutate({ id: c.id, data: { pago: !c.pago } })}
                               className={`px-2 py-1 text-[11px] rounded-lg font-medium transition ${c.pago ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
                               {c.pago ? "Pend." : "Pago"}
                             </button>
-                            <button onClick={() => { if (confirm("Remover esta comissão?")) deleteMutation.mutate(c.id); }}
-                              className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                            <button onClick={() => { if (confirm("Remover esta comissão?")) deleteMutation.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg transition">
                               <Trash2 className="w-3.5 h-3.5 text-red-400" />
                             </button>
                           </>
@@ -226,9 +206,104 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
   );
 }
 
+function ConsolidadoView({ comissoes, comissoesEsp }) {
+  const [filtroPago, setFiltroPago] = useState("todos");
+
+  // Junta vendedores + indicadores com tag de tipo
+  const todos = [
+    ...comissoes.map(c => ({ ...c, _tipo: "Vendedor" })),
+    ...comissoesEsp.map(c => ({ ...c, _tipo: "Indicador" })),
+  ].sort((a, b) => (b.data_venda || "").localeCompare(a.data_venda || ""));
+
+  const filtrados = todos.filter(c => {
+    if (filtroPago === "pago" && !c.pago) return false;
+    if (filtroPago === "pendente" && c.pago) return false;
+    return true;
+  });
+
+  const exportCSV = () => {
+    const headers = ["Data", "Tipo", "Nome", "Valor Venda", "%", "Comissão", "Status"];
+    const rows = filtrados.map(c => [
+      c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "-",
+      c._tipo, c.vendedor_nome || "-", c.valor_venda || 0, c.percentual || 0, c.valor_comissao || 0,
+      c.pago ? "Paga" : "Pendente",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `comissoes_consolidado_${format(new Date(), "dd-MM-yyyy")}.csv`;
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  return (
+    <div className="space-y-4">
+      <KPICards lista={filtrados} />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 flex flex-wrap items-center gap-2 justify-between">
+          <span className="text-sm font-semibold text-gray-700">{filtrados.length} registro{filtrados.length !== 1 ? "s" : ""}</span>
+          <div className="flex flex-wrap gap-2 items-center">
+            <select value={filtroPago} onChange={e => setFiltroPago(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white text-gray-700">
+              <option value="todos">Todos</option>
+              <option value="pago">Pagas</option>
+              <option value="pendente">Pendentes</option>
+            </select>
+            <button onClick={exportCSV}
+              className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">
+              <Download className="w-4 h-4" /> Exportar
+            </button>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-50 bg-gray-50/50">
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Nome</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Valor Venda</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">%</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Comissão</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {filtrados.length === 0 ? (
+                <tr><td colSpan={7} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
+              ) : filtrados.map((c, i) => (
+                <tr key={`${c._tipo}-${c.id}-${i}`} className="hover:bg-gray-50/50 transition">
+                  <td className="px-5 py-3 text-gray-600">{c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "—"}</td>
+                  <td className="px-5 py-3">
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c._tipo === "Vendedor" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
+                      {c._tipo}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 font-medium text-gray-900">{c.vendedor_nome || "—"}</td>
+                  <td className="px-5 py-3 text-gray-600">{formatCurrency(c.valor_venda)}</td>
+                  <td className="px-5 py-3 text-gray-600">{c.percentual}%</td>
+                  <td className="px-5 py-3 font-semibold text-emerald-600">{formatCurrency(c.valor_comissao)}</td>
+                  <td className="px-5 py-3">
+                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c.pago ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                      {c.pago ? "Paga" : "Pendente"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Comissoes() {
   const [aba, setAba] = useState("vendedores");
   const [user, setUser] = useState(null);
+  const now = new Date();
+  const [dataInicio, setDataInicio] = useState(toDateStr(startOfMonth(now)));
+  const [dataFim, setDataFim] = useState(toDateStr(now));
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -236,15 +311,24 @@ export default function Comissoes() {
 
   const isAdmin = user?.role === "admin" || user?.permissao_admin === true;
 
-  const { data: comissoes = [], isLoading: loadingV } = useQuery({
+  const { data: comissoesRaw = [], isLoading: loadingV } = useQuery({
     queryKey: ["comissoes"],
     queryFn: () => base44.entities.Comissao.list("-data_venda"),
   });
 
-  const { data: comissoesEsp = [], isLoading: loadingE } = useQuery({
+  const { data: comissoesEspRaw = [], isLoading: loadingE } = useQuery({
     queryKey: ["comissoesEspelhamento"],
     queryFn: () => base44.entities.ComissaoEspelhamento.list("-data_venda"),
   });
+
+  // Filtra por período
+  const filterByPeriod = (lista) => lista.filter(c => {
+    const d = c.data_venda || "";
+    return (!dataInicio || d >= dataInicio) && (!dataFim || d <= dataFim);
+  });
+
+  const comissoes = filterByPeriod(comissoesRaw);
+  const comissoesEsp = filterByPeriod(comissoesEspRaw);
 
   const loading = loadingV || loadingE;
 
@@ -256,6 +340,12 @@ export default function Comissoes() {
     );
   }
 
+  const tabs = [
+    { key: "vendedores", label: `Vendedores (${comissoes.length})` },
+    { key: "espelhamento", label: `Indicadores (${comissoesEsp.length})` },
+    { key: "consolidado", label: `Consolidado (${comissoes.length + comissoesEsp.length})` },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-5">
@@ -265,12 +355,19 @@ export default function Comissoes() {
           <p className="text-gray-400 text-sm mt-0.5">Gestão de comissões de vendedores e indicadores</p>
         </div>
 
+        {/* Filtro de período */}
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <Calendar className="w-4 h-4 text-gray-400 ml-1" />
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+          <span className="text-gray-400 text-sm">até</span>
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+        </div>
+
         {/* Abas */}
         <div className="flex gap-1 p-1 bg-white rounded-2xl border border-gray-100 shadow-sm w-fit">
-          {[
-            { key: "vendedores", label: `Vendedores (${comissoes.length})` },
-            { key: "espelhamento", label: `Indicadores (${comissoesEsp.length})` },
-          ].map(tab => (
+          {tabs.map(tab => (
             <button key={tab.key} onClick={() => setAba(tab.key)}
               className={`px-5 py-2 text-sm font-medium rounded-xl transition ${aba === tab.key ? "bg-[#1a3150] text-white shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}>
               {tab.label}
@@ -278,22 +375,14 @@ export default function Comissoes() {
           ))}
         </div>
 
-        {aba === "vendedores" ? (
-          <TabelaComissoes
-            comissoes={comissoes}
-            entity={base44.entities.Comissao}
-            queryKey="comissoes"
-            isAdmin={isAdmin}
-            tipo="vendedor"
-          />
-        ) : (
-          <TabelaComissoes
-            comissoes={comissoesEsp}
-            entity={base44.entities.ComissaoEspelhamento}
-            queryKey="comissoesEspelhamento"
-            isAdmin={isAdmin}
-            tipo="espelhamento"
-          />
+        {aba === "vendedores" && (
+          <TabelaComissoes comissoes={comissoes} entity={base44.entities.Comissao} queryKey="comissoes" isAdmin={isAdmin} tipo="vendedor" />
+        )}
+        {aba === "espelhamento" && (
+          <TabelaComissoes comissoes={comissoesEsp} entity={base44.entities.ComissaoEspelhamento} queryKey="comissoesEspelhamento" isAdmin={isAdmin} tipo="espelhamento" />
+        )}
+        {aba === "consolidado" && (
+          <ConsolidadoView comissoes={comissoes} comissoesEsp={comissoesEsp} />
         )}
       </div>
     </div>
