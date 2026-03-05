@@ -48,7 +48,6 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import Comissoes from './pages/Comissoes';
-import ComissoesGeral from './pages/ComissoesGeral';
 import Dashboard from './pages/Dashboard';
 import Espelhamentos from './pages/Espelhamentos';
 import Importar from './pages/Importar';
@@ -61,7 +60,6 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
     "Comissoes": Comissoes,
-    "ComissoesGeral": ComissoesGeral,
     "Dashboard": Dashboard,
     "Espelhamentos": Espelhamentos,
     "Importar": Importar,
