@@ -31,7 +31,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
-    { name: 'Comissões Geral', icon: DollarSign, page: 'ComissoesGeral', allowUser: false },
+
     { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: false },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
