@@ -405,7 +405,7 @@ export default function ImportarVendasModal({ onClose }) {
     queryClient.invalidateQueries(['clientes']);
     queryClient.invalidateQueries(['metas']);
 
-    setResultado({ importadas, falhas, ignoradas: linhas.filter(l => !l.valida).length });
+    setResultado({ importadas, falhas, duplicadas, ignoradas: linhas.filter(l => !l.valida).length });
     setStep('done');
   };
 
