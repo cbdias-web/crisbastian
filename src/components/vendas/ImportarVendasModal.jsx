@@ -326,6 +326,19 @@ export default function ImportarVendasModal({ onClose }) {
           percentual_comissao: row.percentual_comissao,
         };
 
+        // Verificação de duplicata: mesmo vendedor + valor + data + cliente
+        const duplicatas = await withRetry(() => base44.entities.Venda.filter({
+          vendedor_id: row.vendedor_id,
+          data: row.data,
+          valor: row.valor,
+          cliente: row.cliente || ''
+        }));
+        if (duplicatas.length > 0) {
+          importadas++; // conta como "ok" mas pula
+          setProgresso({ atual: i + 1, total: validas.length });
+          continue;
+        }
+
         const venda = await withRetry(() => base44.entities.Venda.create(vendaData));
 
         // Comissão do vendedor
