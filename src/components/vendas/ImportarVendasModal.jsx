@@ -339,14 +339,14 @@ export default function ImportarVendasModal({ onClose }) {
             valor_comissao: (row.valor * row.percentual_comissao) / 100,
             data_venda: row.data,
             pago: false
-          });
+          }));
         }
 
         // Comissão de espelhamento se houver
         if (row.espelhamento) {
           const esp = espelhamentos.find(e => e.nome?.trim().toUpperCase() === row.espelhamento.trim().toUpperCase());
           if (esp && row.percentual_espelhamento > 0) {
-            await base44.entities.ComissaoEspelhamento.create({
+            await withRetry(() => base44.entities.ComissaoEspelhamento.create({
               venda_id: venda.id,
               vendedor_id: esp.id,
               vendedor_nome: esp.nome,
