@@ -381,5 +381,6 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
         </div>
       </div>
     )}
+    </>
   );
 }
