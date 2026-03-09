@@ -211,18 +211,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     {clientesFiltrados.length === 0 && clienteSearch.trim() && (
                       <div className="px-4 py-2 text-xs text-gray-500">Nenhum cliente encontrado.</div>
                     )}
-                    <div className="border-t border-gray-100 p-2 flex gap-2">
-                      <input
-                        type="text"
-                        value={novoClienteNome}
-                        onChange={e => setNovoClienteNome(e.target.value)}
-                        onMouseDown={e => e.stopPropagation()}
-                        placeholder="Nome para novo cliente..."
-                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none"
-                      />
-                      <button type="button" onMouseDown={handleCriarCliente} disabled={criandoCliente || !novoClienteNome.trim()}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-[#1a3150] text-white rounded-lg text-xs font-medium disabled:opacity-50 hover:opacity-90">
-                        <UserPlus className="w-3 h-3" /> Criar
+                    <div className="border-t border-gray-100 p-2">
+                      <button type="button"
+                        onMouseDown={() => { setShowNovoClienteModal(true); setClienteDropdown(false); }}
+                        className="w-full flex items-center gap-1.5 px-3 py-2 bg-[#1a3150] text-white rounded-lg text-xs font-medium hover:opacity-90 justify-center">
+                        <UserPlus className="w-3.5 h-3.5" /> Cadastrar novo cliente
                       </button>
                     </div>
                   </div>
