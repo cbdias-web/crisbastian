@@ -59,12 +59,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   };
 
   const handleCriarCliente = async () => {
-    if (!novoClienteNome.trim()) return;
+    if (!novoCliente.nome.trim()) return;
     setCriandoCliente(true);
-    const novo = await base44.entities.Cliente.create({ nome: novoClienteNome.trim() });
-    setFormData(f => ({ ...f, cliente: novo.nome }));
+    const novo = await base44.entities.Cliente.create({ ...novoCliente, nome: novoCliente.nome.trim() });
+    setFormData(f => ({ ...f, cliente: novo.nome, cpf_cnpj: novo.cpf_cnpj || f.cpf_cnpj }));
     setClienteSearch(novo.nome);
-    setNovoClienteNome('');
+    setNovoCliente({ nome: '', cpf_cnpj: '', email: '', telefone: '', cidade: '', estado: '', observacao: '' });
+    setShowNovoClienteModal(false);
     setClienteDropdown(false);
     setCriandoCliente(false);
   };
