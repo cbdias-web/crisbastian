@@ -148,44 +148,91 @@ export default function ImportarVendasModal({ onClose }) {
     setUploading(true);
     setErros([]);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "object",
-          properties: {
-            vendas: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  produto: { type: "string" },
-                  assessor_comercial: { type: "string" },
-                  time: { type: "string" },
-                  valor: { type: "string" },
-                  data: { type: "string" },
-                  forma_pagamento: { type: "string" },
-                  cpf_cnpj: { type: "string" },
-                  cliente: { type: "string" },
-                  bitrix: { type: "string" },
-                  observacao: { type: "string" },
-                  percentual_comissao: { type: "string" },
-                  espelhamento: { type: "string" },
-                  percentual_espelhamento: { type: "string" }
+      let raw = [];
+
+      const isCSV = file.name.toLowerCase().endsWith('.csv');
+      const isExcel = file.name.toLowerCase().match(/\.xlsx?$/);
+
+      if (isCSV) {
+        // Try UTF-8 first, then fallback to Windows-1252 (common in Brazil)
+        let text = '';
+        try {
+          text = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = e => resolve(e.target.result);
+            r.onerror = reject;
+            r.readAsText(file, 'UTF-8');
+          });
+          // Detect encoding issues (replacement character)
+          if (text.includes('\uFFFD')) {
+            text = await new Promise((resolve, reject) => {
+              const r = new FileReader();
+              r.onload = e => resolve(e.target.result);
+              r.onerror = reject;
+              r.readAsText(file, 'Windows-1252');
+            });
+          }
+        } catch {
+          text = await new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = e => resolve(e.target.result);
+            r.onerror = reject;
+            r.readAsText(file, 'Windows-1252');
+          });
+        }
+        const csvRows = parseCSVText(text);
+        raw = csvRows.map(mapCSVRow);
+      } else if (isExcel) {
+        // For Excel files, upload and use ExtractDataFromUploadedFile
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const extractResult = await base44.integrations.Core.ExtractDataFromUploadedFile({
+          file_url,
+          json_schema: {
+            type: "object",
+            properties: {
+              vendas: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    produto: { type: "string" },
+                    assessor_comercial: { type: "string" },
+                    time: { type: "string" },
+                    valor: { type: "string" },
+                    data: { type: "string" },
+                    forma_pagamento: { type: "string" },
+                    cpf_cnpj: { type: "string" },
+                    cliente: { type: "string" },
+                    bitrix: { type: "string" },
+                    observacao: { type: "string" },
+                    percentual_comissao: { type: "string" },
+                    espelhamento: { type: "string" },
+                    percentual_espelhamento: { type: "string" }
+                  }
                 }
               }
             }
           }
+        });
+        if (extractResult.status !== 'success' || !extractResult.output?.vendas?.length) {
+          toast.error('Não foi possível extrair dados do arquivo Excel. Verifique o formato.');
+          setUploading(false);
+          return;
         }
-      });
-
-      if (extractResult.status !== 'success' || !extractResult.output?.vendas?.length) {
-        toast.error('Não foi possível extrair dados do arquivo. Verifique o formato.');
+        raw = extractResult.output.vendas;
+      } else {
+        toast.error('Formato não suportado. Use .csv, .xls ou .xlsx');
         setUploading(false);
         return;
       }
 
-      const raw = extractResult.output.vendas;
+      if (!raw.length) {
+        toast.error('Nenhuma linha encontrada no arquivo.');
+        setUploading(false);
+        return;
+      }
+
+      const rawNormalized = raw;
       const processadas = [];
       const errosLista = [];
 
