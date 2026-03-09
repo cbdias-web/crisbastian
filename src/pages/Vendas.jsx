@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
   const [editingVenda, setEditingVenda] = useState(null);
+  const [showImportar, setShowImportar] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState(null);
   const now = new Date();
