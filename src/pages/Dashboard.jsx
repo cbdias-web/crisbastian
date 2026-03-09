@@ -155,7 +155,7 @@ export default function Dashboard() {
     .sort((a, b) => b.vol - a.vol);
 
   const cards = [
-    { label: "Total de Vendas", value: totalVendas, icon: FileText, light: "bg-blue-50", text: "text-[#1a3150]" },
+    { label: "Vendas no Período", value: totalVendas, sub: `${vendas.length} total cadastradas`, icon: FileText, light: "bg-blue-50", text: "text-[#1a3150]" },
     { label: "Volume Total", value: formatCurrency(valorTotal), icon: TrendingUp, light: "bg-emerald-50", text: "text-emerald-700" },
     { label: "Ticket Médio", value: formatCurrency(ticketMedio), icon: DollarSign, light: "bg-amber-50", text: "text-amber-700" },
     { label: "Vendedores Ativos", value: vendedoresAtivos, icon: Users, light: "bg-violet-50", text: "text-violet-700" },
