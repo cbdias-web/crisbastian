@@ -288,6 +288,7 @@ export default function Vendas() {
               setEditingVenda(null);
             }}
             isLoading={createMutation.isPending || updateMutation.isPending}
+            isAdmin={isAdmin}
           />
         )}
 
