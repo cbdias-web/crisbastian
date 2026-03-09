@@ -7,18 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { X, Save } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertTriangle } from "lucide-react";
 
 const formasPagamento = [
-  "DÉBITO EM CONTA",
-  "CARTÃO DE CRÉDITO",
-  "BOLETO",
-  "PIX",
-  "TRANSFERÊNCIA",
-  "DINHEIRO"
+  "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
 ];
 
-export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
+export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin }) {
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
     queryFn: () => base44.entities.Vendedor.list('nome'),
@@ -35,74 +30,63 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
   });
 
   const [formData, setFormData] = useState(venda || {
-    produto: '',
-    assessor_comercial: '',
-    time: '',
-    valor: '',
-    data: '',
-    forma_pagamento: '',
-    parcelamento: '',
-    cpf_cnpj: '',
-    cliente: '',
-    bitrix: '',
-    observacao: '',
-    vendedor_id: '',
-    percentual_comissao: 10,
-    espelhamento: '',
-    espelhamento_id: '',
-    percentual_comissao_espelhamento: 0
+    produto: '', assessor_comercial: '', time: '', valor: '', data: '',
+    forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
+    bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
   });
 
-  const [espelhamentoTexto, setEspelhamentoTexto] = useState(venda?.espelhamento || '');
+  // Multi-indicador state — backward compat com campo antigo
+  const [indicadores, setIndicadores] = useState(() => {
+    if (venda?.indicadores?.length > 0) return venda.indicadores;
+    if (venda?.espelhamento_id) {
+      return [{ id: venda.espelhamento_id, nome: venda.espelhamento || '', percentual: venda.percentual_comissao_espelhamento || 10 }];
+    }
+    return [];
+  });
+
+  const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
+  const limiteExcedido = !isAdmin && totalPctIndicadores > 30;
+
+  const handleVendedorChange = (vendedorId) => {
+    const vendedor = vendedores.find(v => v.id === vendedorId);
+    setFormData({ ...formData, vendedor_id: vendedorId, assessor_comercial: vendedor?.nome || '', percentual_comissao: vendedor?.percentual_comissao || 10 });
+  };
+
+  const addIndicador = () => {
+    setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10 }]);
+  };
+
+  const removeIndicador = (idx) => {
+    setIndicadores(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const updateIndicadorEsp = (idx, espId) => {
+    const esp = espelhamentos.find(e => e.id === espId);
+    setIndicadores(prev => prev.map((ind, i) =>
+      i === idx ? { id: espId, nome: esp?.nome || '', percentual: esp?.percentual_comissao || 10 } : ind
+    ));
+  };
+
+  const updateIndicadorPct = (idx, pct) => {
+    setIndicadores(prev => prev.map((ind, i) =>
+      i === idx ? { ...ind, percentual: parseFloat(pct) || 0 } : ind
+    ));
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (limiteExcedido) return;
     const dataToSave = {
       ...formData,
       valor: parseFloat(formData.valor) || 0,
       percentual_comissao: parseFloat(formData.percentual_comissao) || 0,
-      percentual_comissao_espelhamento: parseFloat(formData.percentual_comissao_espelhamento) || 0
+      indicadores,
+      // backward compat
+      espelhamento: indicadores[0]?.nome || '',
+      espelhamento_id: indicadores[0]?.id || '',
+      percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
     };
     onSave(dataToSave);
-  };
-
-  const handleVendedorChange = (vendedorId) => {
-    const vendedor = vendedores.find(v => v.id === vendedorId);
-    setFormData({
-      ...formData,
-      vendedor_id: vendedorId,
-      assessor_comercial: vendedor?.nome || '',
-      percentual_comissao: vendedor?.percentual_comissao || 10
-    });
-  };
-
-  const handleEspelhamentoChange = (espelhamentoId) => {
-    const espelhamento = espelhamentos.find(e => e.id === espelhamentoId);
-    if (espelhamentoId) {
-      setEspelhamentoTexto(espelhamento?.nome || '');
-      setFormData({
-        ...formData,
-        espelhamento_id: espelhamentoId,
-        espelhamento: espelhamento?.nome || '',
-        percentual_comissao_espelhamento: espelhamento?.percentual_comissao || 10
-      });
-    } else {
-      setFormData({
-        ...formData,
-        espelhamento_id: '',
-        espelhamento: '',
-        percentual_comissao_espelhamento: 0
-      });
-    }
-  };
-
-  const handleEspelhamentoTextoChange = (texto) => {
-    setEspelhamentoTexto(texto);
-    setFormData({
-      ...formData,
-      espelhamento: texto,
-      espelhamento_id: ''
-    });
   };
 
   return (
@@ -114,162 +98,64 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="produto">Produto *</Label>
-              <Select
-                value={formData.produto}
-                onValueChange={(value) => setFormData({ ...formData, produto: value })}
-                required
-              >
-                <SelectTrigger id="produto">
-                  <SelectValue placeholder="Selecione o produto" />
-                </SelectTrigger>
+              <Label>Produto *</Label>
+              <Select value={formData.produto} onValueChange={v => setFormData({ ...formData, produto: v })} required>
+                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
                 <SelectContent>
-                  {produtos.map((produto) => (
-                    <SelectItem key={produto.id} value={produto.nome}>
-                      {produto.nome}
-                    </SelectItem>
-                  ))}
+                  {produtos.map(p => <SelectItem key={p.id} value={p.nome}>{p.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="vendedor_id">Vendedor *</Label>
-              <Select
-                value={formData.vendedor_id}
-                onValueChange={handleVendedorChange}
-                required
-              >
-                <SelectTrigger id="vendedor_id">
-                  <SelectValue placeholder="Selecione o vendedor" />
-                </SelectTrigger>
+              <Label>Vendedor *</Label>
+              <Select value={formData.vendedor_id} onValueChange={handleVendedorChange} required>
+                <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
                 <SelectContent>
-                  {vendedores.map((vendedor) => (
-                    <SelectItem key={vendedor.id} value={vendedor.id}>
-                      {vendedor.nome}
-                    </SelectItem>
-                  ))}
+                  {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="percentual_comissao">Comissão Vendedor (%) *</Label>
-              <Input
-                id="percentual_comissao"
-                type="number"
-                step="0.1"
-                value={formData.percentual_comissao}
-                onChange={(e) => setFormData({ ...formData, percentual_comissao: e.target.value })}
-                required
-              />
+              <Label>Comissão Vendedor (%)</Label>
+              <Input type="number" step="0.1" value={formData.percentual_comissao}
+                onChange={e => setFormData({ ...formData, percentual_comissao: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="espelhamento">Espelhamento (quem indicou)</Label>
-              <div className="space-y-2">
-                <Input
-                  id="espelhamento"
-                  value={espelhamentoTexto}
-                  onChange={(e) => handleEspelhamentoTextoChange(e.target.value)}
-                  placeholder="Digite o nome do indicador"
-                />
-                <Select
-                  value={formData.espelhamento_id}
-                  onValueChange={handleEspelhamentoChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Ou selecione um indicador cadastrado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={null}>Nenhum</SelectItem>
-                    {espelhamentos.map((espelhamento) => (
-                      <SelectItem key={espelhamento.id} value={espelhamento.id}>
-                        {espelhamento.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Label>Valor *</Label>
+              <Input type="number" step="0.01" value={formData.valor}
+                onChange={e => setFormData({ ...formData, valor: e.target.value })} required />
             </div>
             <div>
-              <Label htmlFor="percentual_comissao_espelhamento">Comissão Espelhamento (%)</Label>
-              <Input
-                id="percentual_comissao_espelhamento"
-                type="number"
-                step="0.1"
-                value={formData.percentual_comissao_espelhamento}
-                onChange={(e) => setFormData({ ...formData, percentual_comissao_espelhamento: e.target.value })}
-              />
+              <Label>Data *</Label>
+              <Input type="date" value={formData.data}
+                onChange={e => setFormData({ ...formData, data: e.target.value })} required />
             </div>
             <div>
-              <Label htmlFor="valor">Valor *</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                value={formData.valor}
-                onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="data">Data *</Label>
-              <Input
-                id="data"
-                type="date"
-                value={formData.data}
-                onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="forma_pagamento">Forma de Pagamento</Label>
-              <Select
-                value={formData.forma_pagamento}
-                onValueChange={(value) => setFormData({ ...formData, forma_pagamento: value })}
-              >
-                <SelectTrigger id="forma_pagamento">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
+              <Label>Forma de Pagamento</Label>
+              <Select value={formData.forma_pagamento} onValueChange={v => setFormData({ ...formData, forma_pagamento: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {formasPagamento.map((forma) => (
-                    <SelectItem key={forma} value={forma}>{forma}</SelectItem>
-                  ))}
+                  {formasPagamento.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="parcelamento">Parcelamento</Label>
-              <Input
-                id="parcelamento"
-                type="date"
-                value={formData.parcelamento}
-                onChange={(e) => setFormData({ ...formData, parcelamento: e.target.value })}
-              />
+              <Label>Parcelamento</Label>
+              <Input type="date" value={formData.parcelamento || ''}
+                onChange={e => setFormData({ ...formData, parcelamento: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="cliente">Cliente</Label>
-              <Input
-                id="cliente"
-                value={formData.cliente}
-                onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
-              />
+              <Label>Cliente</Label>
+              <Input value={formData.cliente || ''} onChange={e => setFormData({ ...formData, cliente: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="cpf_cnpj">CPF/CNPJ</Label>
-              <Input
-                id="cpf_cnpj"
-                value={formData.cpf_cnpj}
-                onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
-              />
+              <Label>CPF/CNPJ</Label>
+              <Input value={formData.cpf_cnpj || ''} onChange={e => setFormData({ ...formData, cpf_cnpj: e.target.value })} />
             </div>
             <div>
-              <Label htmlFor="time">Time</Label>
-              <Select
-                value={formData.time}
-                onValueChange={(value) => setFormData({ ...formData, time: value })}
-              >
-                <SelectTrigger id="time">
-                  <SelectValue placeholder="Selecione o time" />
-                </SelectTrigger>
+              <Label>Time</Label>
+              <Select value={formData.time || ''} onValueChange={v => setFormData({ ...formData, time: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione o time" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TIME 1">TIME 1</SelectItem>
                   <SelectItem value="TIME 2">TIME 2</SelectItem>
@@ -279,32 +165,78 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading }) {
               </Select>
             </div>
             <div>
-              <Label htmlFor="bitrix">Link Bitrix</Label>
-              <Input
-                id="bitrix"
-                value={formData.bitrix}
-                onChange={(e) => setFormData({ ...formData, bitrix: e.target.value })}
-              />
+              <Label>Link Bitrix</Label>
+              <Input value={formData.bitrix || ''} onChange={e => setFormData({ ...formData, bitrix: e.target.value })} />
             </div>
           </div>
+
+          {/* Indicadores (Espelhamento) - múltiplos */}
+          <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700">Indicadores (Espelhamento)</h3>
+                {indicadores.length > 0 && (
+                  <p className={`text-xs mt-0.5 ${limiteExcedido ? "text-red-600 font-semibold" : totalPctIndicadores > 25 ? "text-amber-600" : "text-gray-400"}`}>
+                    Total indicadores: {totalPctIndicadores.toFixed(1)}%{!isAdmin ? " (máx 30%)" : ""}
+                  </p>
+                )}
+              </div>
+              <button type="button" onClick={addIndicador}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#1a3150] text-white rounded-lg hover:opacity-90 transition">
+                <Plus className="w-3.5 h-3.5" /> Adicionar Indicador
+              </button>
+            </div>
+
+            {limiteExcedido && (
+              <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-600">O total de comissões dos indicadores não pode ultrapassar 30%. Apenas administradores podem definir percentuais maiores.</p>
+              </div>
+            )}
+
+            {indicadores.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-2">Nenhum indicador adicionado</p>
+            ) : (
+              <div className="space-y-2">
+                {indicadores.map((ind, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Select value={ind.id} onValueChange={espId => updateIndicadorEsp(idx, espId)}>
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Selecione o indicador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {espelhamentos.map(e => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-20">
+                      <Input type="number" step="0.1" value={ind.percentual}
+                        onChange={e => updateIndicadorPct(idx, e.target.value)}
+                        className="h-9 text-sm text-center" />
+                    </div>
+                    <span className="text-xs text-gray-400 flex-shrink-0">%</span>
+                    <button type="button" onClick={() => removeIndicador(idx)}
+                      className="p-1.5 hover:bg-red-50 rounded-lg transition flex-shrink-0">
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div>
-            <Label htmlFor="observacao">Observação</Label>
-            <Textarea
-              id="observacao"
-              value={formData.observacao}
-              onChange={(e) => setFormData({ ...formData, observacao: e.target.value })}
-              rows={3}
-            />
+            <Label>Observação</Label>
+            <Textarea value={formData.observacao || ''} onChange={e => setFormData({ ...formData, observacao: e.target.value })} rows={3} />
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-            <X className="w-4 h-4 mr-2" />
-            Cancelar
+            <X className="w-4 h-4 mr-2" /> Cancelar
           </Button>
-          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoading}>
-            <Save className="w-4 h-4 mr-2" />
-            Salvar
+          <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isLoading || limiteExcedido}>
+            <Save className="w-4 h-4 mr-2" /> Salvar
           </Button>
         </CardFooter>
       </form>
