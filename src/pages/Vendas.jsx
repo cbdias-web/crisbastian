@@ -304,6 +304,15 @@ export default function Vendas() {
                 </Button>
               </Link>
             )}
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => setShowImportar(true)}
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Importar Histórico
+              </Button>
+            )}
             <Button 
               onClick={() => {
                 setEditingVenda(null);
