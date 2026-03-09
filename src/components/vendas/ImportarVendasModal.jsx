@@ -335,7 +335,7 @@ export default function ImportarVendasModal({ onClose }) {
           cliente: row.cliente || ''
         }));
         if (duplicatas.length > 0) {
-          importadas++; // conta como "ok" mas pula
+          duplicadas++;
           setProgresso({ atual: i + 1, total: validas.length });
           continue;
         }
