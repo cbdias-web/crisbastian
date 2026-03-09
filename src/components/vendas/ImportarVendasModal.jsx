@@ -49,6 +49,74 @@ function normalizarValor(val) {
   return parseFloat(s) || 0;
 }
 
+// Parse a single CSV row respecting quoted fields
+function parseCSVRow(line, delimiter) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') { inQuotes = !inQuotes; }
+    else if (char === delimiter && !inQuotes) { result.push(current); current = ''; }
+    else { current += char; }
+  }
+  result.push(current);
+  return result;
+}
+
+// Parse full CSV text into array of objects
+function parseCSVText(text) {
+  const firstLine = text.split('\n')[0];
+  const delimiter = firstLine.includes(';') ? ';' : ',';
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const headers = parseCSVRow(lines[0], delimiter).map(h =>
+    h.trim().toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, '_')
+      .replace(/[^a-z0-9_]/g, '')
+  );
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVRow(lines[i], delimiter);
+    if (values.every(v => !v.trim())) continue;
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (values[idx] || '').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Flexible field getter trying multiple possible column names
+function getField(row, ...keys) {
+  for (const k of keys) {
+    const normalized = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+    const val = row[normalized] || row[k] || '';
+    if (val) return val;
+  }
+  return '';
+}
+
+function mapCSVRow(row) {
+  return {
+    produto: getField(row, 'produto', 'product', 'nome_produto', 'servico'),
+    assessor_comercial: getField(row, 'assessor_comercial', 'assessor', 'vendedor', 'seller', 'nome_vendedor', 'comercial'),
+    time: getField(row, 'time', 'equipe', 'team'),
+    valor: getField(row, 'valor', 'value', 'preco', 'price', 'entrada', 'adesao', 'valor_entrada'),
+    data: getField(row, 'data', 'date', 'data_venda', 'data_da_venda'),
+    forma_pagamento: getField(row, 'forma_pagamento', 'forma_de_pagamento', 'pagamento', 'payment', 'forma'),
+    cpf_cnpj: getField(row, 'cpf_cnpj', 'cpf', 'cnpj', 'documento', 'cpf/cnpj'),
+    cliente: getField(row, 'cliente', 'client', 'nome_cliente', 'customer', 'nome'),
+    bitrix: getField(row, 'bitrix', 'link_bitrix', 'crm', 'link'),
+    observacao: getField(row, 'observacao', 'obs', 'observacoes', 'notes', 'nota'),
+    percentual_comissao: getField(row, 'percentual_comissao', 'comissao', 'pct_comissao', 'commission', 'percentual'),
+    espelhamento: getField(row, 'espelhamento', 'indicador', 'indicator', 'referral'),
+    percentual_espelhamento: getField(row, 'percentual_espelhamento', 'pct_espelhamento', 'comissao_indicador'),
+  };
+}
+
 export default function ImportarVendasModal({ onClose }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState('upload'); // upload | preview | processing | done
