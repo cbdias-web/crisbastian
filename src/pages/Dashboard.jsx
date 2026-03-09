@@ -207,6 +207,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{card.label}</p>
                   <p className="text-xl font-bold text-gray-900 mt-1">{card.value}</p>
+                  {card.sub && <p className="text-xs text-gray-400 mt-0.5">{card.sub}</p>}
                 </div>
                 <div className={`p-2.5 rounded-xl ${card.light}`}>
                   <card.icon className={`w-5 h-5 ${card.text}`} />
