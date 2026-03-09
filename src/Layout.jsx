@@ -33,6 +33,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
 
     { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
+    { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: false },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
