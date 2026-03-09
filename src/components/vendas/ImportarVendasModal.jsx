@@ -326,11 +326,11 @@ export default function ImportarVendasModal({ onClose }) {
           percentual_comissao: row.percentual_comissao,
         };
 
-        const venda = await base44.entities.Venda.create(vendaData);
+        const venda = await withRetry(() => base44.entities.Venda.create(vendaData));
 
         // Comissão do vendedor
         if (row.vendedor_id && row.valor > 0 && row.percentual_comissao > 0) {
-          await base44.entities.Comissao.create({
+          await withRetry(() => base44.entities.Comissao.create({
             venda_id: venda.id,
             vendedor_id: row.vendedor_id,
             vendedor_nome: row.assessor_comercial,
