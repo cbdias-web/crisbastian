@@ -83,12 +83,34 @@ export default function Vendas() {
         }
       }
 
+      // Auto-vincula o cliente ao vendedor da venda
+      if (data.cliente && data.cliente.trim() && data.vendedor_id) {
+        const clientesExistentes = await base44.entities.Cliente.filter({ nome: data.cliente.trim() });
+        if (clientesExistentes.length > 0) {
+          const cli = clientesExistentes[0];
+          if (!cli.vendedor_id) {
+            await base44.entities.Cliente.update(cli.id, {
+              vendedor_id: data.vendedor_id,
+              vendedor_nome: data.assessor_comercial
+            });
+          }
+        } else {
+          await base44.entities.Cliente.create({
+            nome: data.cliente.trim(),
+            cpf_cnpj: data.cpf_cnpj || '',
+            vendedor_id: data.vendedor_id,
+            vendedor_nome: data.assessor_comercial
+          });
+        }
+      }
+
       return venda;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
       queryClient.invalidateQueries(['comissoesEspelhamento']);
+      queryClient.invalidateQueries(['clientes']);
       setShowForm(false);
       toast.success('Venda criada com sucesso!');
     },
