@@ -41,19 +41,25 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
-      <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg">
-        <div className="p-6 border-b dark:border-gray-700 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">Sistema de Vendas</h1>
+      <aside className="w-64 shadow-xl flex flex-col" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
+        <div className="p-6 pb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-white tracking-wide">Villela Exchange</h1>
+            <p className="text-[11px] text-blue-300/60 mt-0.5 uppercase tracking-widest">Gestão Comercial</p>
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setDarkMode(!darkMode)}
-            className="dark:text-gray-300"
+            className="text-blue-200/70 hover:text-white hover:bg-white/10"
           >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
         </div>
-        <nav className="p-4">
+        <div className="px-5 pb-2">
+          <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em]">Menu</p>
+        </div>
+        <nav className="px-3 pb-4 flex-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
@@ -61,14 +67,14 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.page}
                 to={createPageUrl(item.page)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
                   isActive
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-white/15 text-white font-semibold shadow-sm'
+                    : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.name}</span>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm font-medium">{item.name}</span>
               </Link>
             );
           })}
