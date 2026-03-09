@@ -314,7 +314,6 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
           </Button>
         </CardFooter>
       </form>
-    </Card>
 
     {/* Modal novo cliente */}
 
