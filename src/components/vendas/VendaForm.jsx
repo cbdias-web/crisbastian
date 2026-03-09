@@ -375,7 +375,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
               Cancelar
             </button>
-            <button type="button" onClick={handleCriarCliente} disabled={criandoCliente || !novoCliente.nome.trim()}
+            <button type="button" onClick={handleCriarCliente} disabled={criandoCliente || !novoCliente.nome.trim() || !novoCliente.cpf_cnpj?.trim() || !novoCliente.email?.trim() || !novoCliente.telefone?.trim() || !novoCliente.cidade?.trim() || !novoCliente.estado?.trim()}
               className="flex-1 px-4 py-2 text-sm bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium disabled:opacity-50">
               {criandoCliente ? 'Salvando...' : 'Salvar Cliente'}
             </button>

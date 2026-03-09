@@ -33,27 +33,27 @@ function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>CPF / CNPJ</Label>
+              <Label>CPF / CNPJ *</Label>
               <Input value={form.cpf_cnpj || ""} onChange={e => set("cpf_cnpj", e.target.value)} placeholder="000.000.000-00" />
             </div>
             <div>
-              <Label>Telefone</Label>
+              <Label>Telefone *</Label>
               <Input value={form.telefone || ""} onChange={e => set("telefone", e.target.value)} placeholder="(11) 99999-9999" />
             </div>
             <div>
-              <Label>Email</Label>
+              <Label>Email *</Label>
               <Input value={form.email || ""} onChange={e => set("email", e.target.value)} placeholder="email@exemplo.com" />
             </div>
             <div>
-              <Label>Cidade</Label>
+              <Label>Cidade *</Label>
               <Input value={form.cidade || ""} onChange={e => set("cidade", e.target.value)} placeholder="Cidade" />
             </div>
             <div>
-              <Label>Estado (UF)</Label>
+              <Label>Estado (UF) *</Label>
               <Input value={form.estado || ""} maxLength={2} onChange={e => set("estado", e.target.value.toUpperCase())} placeholder="SP" />
             </div>
             <div>
-              <Label>Vendedor Responsável</Label>
+              <Label>Vendedor Responsável *</Label>
               <select
                 value={form.vendedor_id || ""}
                 onChange={e => handleVendedor(e.target.value)}
@@ -73,7 +73,11 @@ function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
         </div>
         <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
           <Button variant="outline" onClick={onClose} disabled={isLoading}><X className="w-4 h-4 mr-2" />Cancelar</Button>
-          <Button onClick={() => onSave(form)} disabled={isLoading || !form.nome.trim()} className="bg-[#1a3150] hover:bg-[#0f1e35]">
+          <Button
+            onClick={() => onSave(form)}
+            disabled={isLoading || !form.nome.trim() || !form.cpf_cnpj?.trim() || !form.email?.trim() || !form.telefone?.trim() || !form.cidade?.trim() || !form.estado?.trim() || !form.vendedor_id}
+            className="bg-[#1a3150] hover:bg-[#0f1e35]"
+          >
             <Save className="w-4 h-4 mr-2" />Salvar
           </Button>
         </div>
