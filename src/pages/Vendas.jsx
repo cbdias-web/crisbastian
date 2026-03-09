@@ -20,8 +20,9 @@ export default function Vendas() {
   const [editingVenda, setEditingVenda] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState(null);
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const now = new Date();
+  const [dataInicio, setDataInicio] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`);
+  const [dataFim, setDataFim] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
   const [produtoFiltro, setProdutoFiltro] = useState('todos');
   const [vendedorFiltro, setVendedorFiltro] = useState('todos');
   const queryClient = useQueryClient();
