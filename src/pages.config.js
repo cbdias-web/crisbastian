@@ -55,6 +55,7 @@ import Metas from './pages/Metas';
 import Produtos from './pages/Produtos';
 import Vendas from './pages/Vendas';
 import Vendedores from './pages/Vendedores';
+import Clientes from './pages/Clientes';
 import __Layout from './Layout.jsx';
 
 
@@ -67,6 +68,7 @@ export const PAGES = {
     "Produtos": Produtos,
     "Vendas": Vendas,
     "Vendedores": Vendedores,
+    "Clientes": Clientes,
 }
 
 export const pagesConfig = {
