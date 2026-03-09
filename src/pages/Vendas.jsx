@@ -156,9 +156,22 @@ export default function Vendas() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Venda.delete(id),
+    mutationFn: async (id) => {
+      // Remove comissões associadas antes de excluir a venda
+      const [comissoes, comissoesEsp] = await Promise.all([
+        base44.entities.Comissao.filter({ venda_id: id }),
+        base44.entities.ComissaoEspelhamento.filter({ venda_id: id }),
+      ]);
+      await Promise.all([
+        ...comissoes.map(c => base44.entities.Comissao.delete(c.id)),
+        ...comissoesEsp.map(c => base44.entities.ComissaoEspelhamento.delete(c.id)),
+      ]);
+      return base44.entities.Venda.delete(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
+      queryClient.invalidateQueries(['comissoes']);
+      queryClient.invalidateQueries(['comissoesEspelhamento']);
       toast.success('Venda excluída com sucesso!');
     },
   });
