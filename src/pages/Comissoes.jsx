@@ -406,7 +406,7 @@ export default function Comissoes() {
           <TabelaComissoes comissoes={comissoesEsp} entity={base44.entities.ComissaoEspelhamento} queryKey="comissoesEspelhamento" isAdmin={isAdmin} tipo="espelhamento" />
         )}
         {aba === "consolidado" && (
-          <ConsolidadoView comissoes={comissoes} comissoesEsp={comissoesEsp} />
+          <ConsolidadoView comissoes={comissoes} comissoesEsp={comissoesEsp} isAdmin={isAdmin} />
         )}
       </div>
     </div>
