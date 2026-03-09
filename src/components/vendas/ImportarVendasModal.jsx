@@ -279,6 +279,8 @@ export default function ImportarVendasModal({ onClose }) {
     setUploading(false);
   };
 
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
   const handleImportar = async () => {
     const validas = linhas.filter(l => l.valida);
     if (!validas.length) return;
@@ -291,6 +293,8 @@ export default function ImportarVendasModal({ onClose }) {
 
     for (let i = 0; i < validas.length; i++) {
       const row = validas[i];
+      // Aguarda 600ms entre registros para evitar rate limit
+      if (i > 0) await sleep(600);
       try {
         const vendaData = {
           produto: row.produto,
