@@ -183,9 +183,49 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <Input type="date" value={formData.parcelamento || ''}
                 onChange={e => setFormData({ ...formData, parcelamento: e.target.value })} />
             </div>
-            <div>
+            <div className="md:col-span-2" ref={clienteRef}>
               <Label>Cliente</Label>
-              <Input value={formData.cliente || ''} onChange={e => setFormData({ ...formData, cliente: e.target.value })} />
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={clienteSearch}
+                  onChange={e => { setClienteSearch(e.target.value); setFormData(f => ({ ...f, cliente: e.target.value })); setClienteDropdown(true); }}
+                  onFocus={() => setClienteDropdown(true)}
+                  placeholder="Buscar ou digitar nome do cliente..."
+                  className="w-full pl-9 pr-4 py-2 border border-input rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-ring bg-background"
+                />
+                {clienteDropdown && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
+                    {clientesFiltrados.map(c => (
+                      <button key={c.id} type="button" onMouseDown={() => selecionarCliente(c)}
+                        className="w-full flex items-start gap-2 px-4 py-2.5 hover:bg-gray-50 text-left text-sm">
+                        <div>
+                          <p className="font-medium text-gray-900">{c.nome}</p>
+                          {c.cpf_cnpj && <p className="text-xs text-gray-400">{c.cpf_cnpj}</p>}
+                        </div>
+                      </button>
+                    ))}
+                    {clientesFiltrados.length === 0 && clienteSearch.trim() && (
+                      <div className="px-4 py-2 text-xs text-gray-500">Nenhum cliente encontrado.</div>
+                    )}
+                    <div className="border-t border-gray-100 p-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={novoClienteNome}
+                        onChange={e => setNovoClienteNome(e.target.value)}
+                        onMouseDown={e => e.stopPropagation()}
+                        placeholder="Nome para novo cliente..."
+                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none"
+                      />
+                      <button type="button" onMouseDown={handleCriarCliente} disabled={criandoCliente || !novoClienteNome.trim()}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-[#1a3150] text-white rounded-lg text-xs font-medium disabled:opacity-50 hover:opacity-90">
+                        <UserPlus className="w-3 h-3" /> Criar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <Label>CPF/CNPJ</Label>
