@@ -29,6 +29,45 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
   });
 
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list('nome'),
+  });
+
+  const [clienteSearch, setClienteSearch] = useState(venda?.cliente || '');
+  const [clienteDropdown, setClienteDropdown] = useState(false);
+  const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [criandoCliente, setCriandoCliente] = useState(false);
+  const clienteRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (clienteRef.current && !clienteRef.current.contains(e.target)) setClienteDropdown(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const clientesFiltrados = clientes.filter(c =>
+    c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) ||
+    c.cpf_cnpj?.includes(clienteSearch)
+  ).slice(0, 8);
+
+  const selecionarCliente = (c) => {
+    setFormData(f => ({ ...f, cliente: c.nome, cpf_cnpj: c.cpf_cnpj || f.cpf_cnpj }));
+    setClienteSearch(c.nome);
+    setClienteDropdown(false);
+  };
+
+  const handleCriarCliente = async () => {
+    if (!novoClienteNome.trim()) return;
+    setCriandoCliente(true);
+    const novo = await base44.entities.Cliente.create({ nome: novoClienteNome.trim() });
+    setFormData(f => ({ ...f, cliente: novo.nome }));
+    setClienteSearch(novo.nome);
+    setNovoClienteNome('');
+    setClienteDropdown(false);
+    setCriandoCliente(false);
+  };
+
   const [formData, setFormData] = useState(venda || {
     produto: '', assessor_comercial: '', time: '', valor: '', data: '',
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
