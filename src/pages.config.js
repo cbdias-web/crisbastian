@@ -47,6 +47,7 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import Clientes from './pages/Clientes';
 import Comissoes from './pages/Comissoes';
 import Dashboard from './pages/Dashboard';
 import Espelhamentos from './pages/Espelhamentos';
@@ -55,11 +56,11 @@ import Metas from './pages/Metas';
 import Produtos from './pages/Produtos';
 import Vendas from './pages/Vendas';
 import Vendedores from './pages/Vendedores';
-import Clientes from './pages/Clientes';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "Clientes": Clientes,
     "Comissoes": Comissoes,
     "Dashboard": Dashboard,
     "Espelhamentos": Espelhamentos,
@@ -68,7 +69,6 @@ export const PAGES = {
     "Produtos": Produtos,
     "Vendas": Vendas,
     "Vendedores": Vendedores,
-    "Clientes": Clientes,
 }
 
 export const pagesConfig = {

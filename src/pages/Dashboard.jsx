@@ -65,14 +65,13 @@ function MultiSelect({ label, options, selected, onChange }) {
 
 export default function Dashboard() {
   const now = new Date();
-  const fwd = firstWorkingDay(now.getFullYear(), now.getMonth());
 
   const [vendas, setVendas] = useState([]);
   const [vendedores, setVendedores] = useState([]);
   const [metas, setMetas] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [dataInicio, setDataInicio] = useState(toDateStr(fwd));
+  const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [selectedProdutos, setSelectedProdutos] = useState([]);
