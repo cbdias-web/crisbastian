@@ -36,7 +36,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const [clienteSearch, setClienteSearch] = useState(venda?.cliente || '');
   const [clienteDropdown, setClienteDropdown] = useState(false);
-  const [novoClienteNome, setNovoClienteNome] = useState('');
+  const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
+  const [novoCliente, setNovoCliente] = useState({ nome: '', cpf_cnpj: '', email: '', telefone: '', cidade: '', estado: '', observacao: '' });
   const [criandoCliente, setCriandoCliente] = useState(false);
   const clienteRef = useRef(null);
 
