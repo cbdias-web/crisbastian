@@ -343,16 +343,42 @@ export default function Vendas() {
           />
         )}
 
+        {/* Contadores */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-blue-50">
+              <BarChart3 className="w-5 h-5 text-[#1a3150]" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Total Cadastradas</p>
+              <p className="text-2xl font-bold text-gray-900">{vendas.length}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-amber-50">
+              <Filter className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">No Período Filtrado</p>
+              <p className="text-2xl font-bold text-gray-900">{filteredVendas.length}</p>
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-emerald-50">
+              <Search className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Volume do Período</p>
+              <p className="text-2xl font-bold text-emerald-600">{totalAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            </div>
+          </div>
+        </div>
+
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5" />
-                Filtros
-              </div>
-              <div className="text-lg font-bold text-green-600">
-                Total Acumulado: {totalAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </div>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filtros
             </CardTitle>
           </CardHeader>
           <CardContent>
