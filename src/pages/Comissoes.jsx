@@ -301,12 +301,13 @@ function ConsolidadoView({ comissoes, comissoesEsp }) {
 export default function Comissoes() {
   const [aba, setAba] = useState("vendedores");
   const [user, setUser] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false);
   const now = new Date();
   const [dataInicio, setDataInicio] = useState(toDateStr(startOfMonth(now)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(u => { setUser(u); setUserLoaded(true); }).catch(() => setUserLoaded(true));
   }, []);
 
   const isAdmin = user?.role === "admin" || user?.permissao_admin === true;
@@ -330,7 +331,7 @@ export default function Comissoes() {
   const comissoes = filterByPeriod(comissoesRaw);
   const comissoesEsp = filterByPeriod(comissoesEspRaw);
 
-  const loading = loadingV || loadingE;
+  const loading = loadingV || loadingE || !userLoaded;
 
   if (loading) {
     return (
