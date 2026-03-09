@@ -563,6 +563,12 @@ export default function ImportarVendasModal({ onClose }) {
                   <p className="text-3xl font-bold text-emerald-600">{resultado.importadas}</p>
                   <p className="text-xs text-emerald-700 mt-1">Importadas</p>
                 </div>
+                {resultado.duplicadas > 0 && (
+                  <div className="bg-blue-50 rounded-xl p-4 min-w-[100px]">
+                    <p className="text-3xl font-bold text-blue-600">{resultado.duplicadas}</p>
+                    <p className="text-xs text-blue-700 mt-1">Duplicatas (puladas)</p>
+                  </div>
+                )}
                 {resultado.ignoradas > 0 && (
                   <div className="bg-amber-50 rounded-xl p-4 min-w-[100px]">
                     <p className="text-3xl font-bold text-amber-600">{resultado.ignoradas}</p>
