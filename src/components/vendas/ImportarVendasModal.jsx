@@ -281,6 +281,21 @@ export default function ImportarVendasModal({ onClose }) {
 
   const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
+  const withRetry = async (fn, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (err?.message?.includes('429') || err?.message?.includes('Rate limit')) {
+          await sleep(2000 * (attempt + 1));
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw new Error('Rate limit após múltiplas tentativas');
+  };
+
   const handleImportar = async () => {
     const validas = linhas.filter(l => l.valida);
     if (!validas.length) return;
