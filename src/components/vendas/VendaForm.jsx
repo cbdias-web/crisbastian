@@ -70,8 +70,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     setCriandoCliente(false);
   };
 
+  const hoje = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState(venda || {
-    produto: '', assessor_comercial: '', time: '', valor: '', data: '',
+    produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
   });
