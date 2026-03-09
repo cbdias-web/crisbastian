@@ -172,7 +172,7 @@ export default function ImportarVendasModal({ onClose }) {
               r.readAsText(file, 'Windows-1252');
             });
           }
-        } catch {
+        } catch (_e) {
           text = await new Promise((resolve, reject) => {
             const r = new FileReader();
             r.onload = e => resolve(e.target.result);
