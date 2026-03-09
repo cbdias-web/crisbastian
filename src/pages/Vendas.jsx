@@ -49,54 +49,39 @@ export default function Vendas() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      // Se houver nome de espelhamento mas não houver ID, criar/buscar o indicador
-      if (data.espelhamento && !data.espelhamento_id) {
-        const espelhamentosExistentes = await base44.entities.Espelhamento.filter({ nome: data.espelhamento });
-        if (espelhamentosExistentes.length > 0) {
-          data.espelhamento_id = espelhamentosExistentes[0].id;
-          data.percentual_comissao_espelhamento = data.percentual_comissao_espelhamento || espelhamentosExistentes[0].percentual_comissao;
-        } else {
-          const novoEspelhamento = await base44.entities.Espelhamento.create({
-            nome: data.espelhamento,
-            percentual_comissao: data.percentual_comissao_espelhamento || 10,
-            ativo: true
-          });
-          data.espelhamento_id = novoEspelhamento.id;
-        }
-      }
-      
       const venda = await base44.entities.Venda.create(data);
-      
-      // Criar comissão automaticamente
+
+      // Comissão do vendedor
       if (data.vendedor_id && data.valor && data.percentual_comissao) {
-        const valorComissao = (data.valor * data.percentual_comissao) / 100;
         await base44.entities.Comissao.create({
           venda_id: venda.id,
           vendedor_id: data.vendedor_id,
           vendedor_nome: data.assessor_comercial,
           valor_venda: data.valor,
           percentual: data.percentual_comissao,
-          valor_comissao: valorComissao,
+          valor_comissao: (data.valor * data.percentual_comissao) / 100,
           data_venda: data.data,
           pago: false
         });
       }
-      
-      // Criar comissão de espelhamento se houver
-      if (data.espelhamento_id && data.valor && data.percentual_comissao_espelhamento) {
-        const valorComissaoEspelhamento = (data.valor * data.percentual_comissao_espelhamento) / 100;
-        await base44.entities.ComissaoEspelhamento.create({
-          venda_id: venda.id,
-          vendedor_id: data.espelhamento_id,
-          vendedor_nome: data.espelhamento,
-          valor_venda: data.valor,
-          percentual: data.percentual_comissao_espelhamento,
-          valor_comissao: valorComissaoEspelhamento,
-          data_venda: data.data,
-          pago: false
-        });
+
+      // Comissões dos indicadores (múltiplos)
+      const indicadores = data.indicadores || [];
+      for (const ind of indicadores) {
+        if (ind.id && ind.percentual > 0) {
+          await base44.entities.ComissaoEspelhamento.create({
+            venda_id: venda.id,
+            vendedor_id: ind.id,
+            vendedor_nome: ind.nome,
+            valor_venda: data.valor,
+            percentual: ind.percentual,
+            valor_comissao: (data.valor * ind.percentual) / 100,
+            data_venda: data.data,
+            pago: false
+          });
+        }
       }
-      
+
       return venda;
     },
     onSuccess: () => {
