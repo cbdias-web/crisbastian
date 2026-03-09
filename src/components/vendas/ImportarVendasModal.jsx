@@ -355,15 +355,15 @@ export default function ImportarVendasModal({ onClose }) {
               valor_comissao: (row.valor * row.percentual_espelhamento) / 100,
               data_venda: row.data,
               pago: false
-            });
+            }));
           }
         }
 
         // Auto-vincular cliente
         if (row.cliente?.trim() && row.vendedor_id) {
-          const clientesExist = await base44.entities.Cliente.filter({ nome: row.cliente.trim() });
+          const clientesExist = await withRetry(() => base44.entities.Cliente.filter({ nome: row.cliente.trim() }));
           if (clientesExist.length === 0) {
-            await base44.entities.Cliente.create({
+            await withRetry(() => base44.entities.Cliente.create({
               nome: row.cliente.trim(),
               cpf_cnpj: row.cpf_cnpj || '',
               vendedor_id: row.vendedor_id,
