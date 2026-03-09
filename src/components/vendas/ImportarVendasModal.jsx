@@ -232,7 +232,6 @@ export default function ImportarVendasModal({ onClose }) {
         return;
       }
 
-      const rawNormalized = raw;
       const processadas = [];
       const errosLista = [];
 
