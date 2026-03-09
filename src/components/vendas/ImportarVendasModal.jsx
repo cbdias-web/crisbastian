@@ -373,7 +373,7 @@ export default function ImportarVendasModal({ onClose }) {
             await withRetry(() => base44.entities.Cliente.update(clientesExist[0].id, {
               vendedor_id: row.vendedor_id,
               vendedor_nome: row.assessor_comercial
-            });
+            }));
           }
         }
 
