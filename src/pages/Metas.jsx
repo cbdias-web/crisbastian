@@ -247,7 +247,7 @@ export default function Metas() {
     const metaRecord = getMetaRecord(v.id);
     const meta = metaRecord?.valor_meta || 0;
     const faltando = Math.max(meta - volumeVendido, 0);
-    const pct = meta > 0 ? Math.min(Math.round((volumeVendido / meta) * 100), 100) : null;
+    const pct = meta > 0 ? Math.round((volumeVendido / meta) * 100) : null;
     const atingiu = meta > 0 && volumeVendido >= meta;
     return { ...v, volumeVendido, meta, faltando, pct, atingiu, qtdVendas: vendasV.length };
   });
@@ -259,7 +259,7 @@ export default function Metas() {
   }, 0);
   const producaoTime = vendas.filter(v => v.data && v.data >= dateFrom && v.data <= dateTo)
     .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
-  const metaTimePct = metaTime > 0 ? Math.min(Math.round((producaoTime / metaTime) * 100), 100) : null;
+  const metaTimePct = metaTime > 0 ? Math.round((producaoTime / metaTime) * 100) : null;
   const metaTimeAtingida = metaTime > 0 && producaoTime >= metaTime;
 
   const totalVolume = rows.reduce((s, r) => s + r.volumeVendido, 0);
@@ -323,12 +323,14 @@ export default function Metas() {
                 <div className="sm:w-64">
                   <div className="flex justify-between text-xs text-gray-500 mb-1.5">
                     <span>Progresso geral</span>
-                    <span className="font-semibold">{metaTimePct}%</span>
+                    <span className={`font-semibold ${metaTimePct > 100 ? "text-yellow-600" : ""}`}>
+                      {metaTimePct > 100 ? `🏆 ${metaTimePct}%` : `${metaTimePct}%`}
+                    </span>
                   </div>
                   <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-700 ${metaTimeAtingida ? "bg-emerald-500" : metaTimePct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                      style={{ width: `${metaTimePct}%` }}
+                      className={`h-full rounded-full transition-all duration-700 ${metaTimePct > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : metaTimeAtingida ? "bg-emerald-500" : metaTimePct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                      style={{ width: `${Math.min(metaTimePct, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -440,13 +442,15 @@ export default function Metas() {
                       <td className="px-5 py-4 min-w-[160px]">
                         {v.meta > 0 ? (
                           <div>
-                            <div className="flex justify-between text-xs text-gray-500 mb-1">
-                              <span>{v.pct}%</span>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className={v.pct > 100 ? "font-bold text-yellow-600" : "text-gray-500"}>
+                                {v.pct > 100 ? `🏆 ${v.pct}%` : `${v.pct}%`}
+                              </span>
                             </div>
                             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-700 ${v.atingiu ? "bg-emerald-500" : v.pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                                style={{ width: `${v.pct}%` }}
+                                className={`h-full rounded-full transition-all duration-700 ${v.pct > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : v.atingiu ? "bg-emerald-500" : v.pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                                style={{ width: `${Math.min(v.pct, 100)}%` }}
                               />
                             </div>
                           </div>
@@ -484,7 +488,7 @@ export default function Metas() {
                 <tbody className="divide-y divide-gray-50">
                   {outrasMetasDoMes.map(meta => {
                     const realizado = calcularRealizado(meta);
-                    const pct = meta.valor_meta > 0 ? Math.min(Math.round((realizado / meta.valor_meta) * 100), 100) : 0;
+                    const pct = meta.valor_meta > 0 ? Math.round((realizado / meta.valor_meta) * 100) : 0;
                     const gap = realizado - meta.valor_meta;
                     return (
                       <tr key={meta.id} className="hover:bg-gray-50/40 transition">
@@ -507,11 +511,13 @@ export default function Metas() {
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                                style={{ width: `${pct}%` }}
+                                className={`h-full rounded-full ${pct > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                                style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
-                            <span className="text-xs font-medium text-gray-600">{pct}%</span>
+                            <span className={`text-xs font-medium ${pct > 100 ? "text-yellow-600 font-bold" : "text-gray-600"}`}>
+                              {pct > 100 ? `🏆 ${pct}%` : `${pct}%`}
+                            </span>
                           </div>
                         </td>
                         {isAdmin && (

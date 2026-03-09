@@ -151,8 +151,8 @@ export default function Vendedores() {
                 m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
               );
               const valorMeta = metaIndividual?.valor_meta || 0;
-              const progresso = valorMeta > 0 ? Math.min((volume / valorMeta) * 100, 100) : 0;
-              const cor = progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
+              const progresso = valorMeta > 0 ? (volume / valorMeta) * 100 : 0;
+              const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
               return (
                 <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
@@ -191,10 +191,12 @@ export default function Vendedores() {
                     <div className="mb-3">
                       <div className="flex justify-between text-[10px] text-gray-400 mb-1">
                         <span>Meta: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorMeta)}</span>
-                        <span className={`font-semibold ${progresso >= 100 ? "text-emerald-600" : progresso >= 70 ? "text-blue-600" : "text-gray-500"}`}>{progresso.toFixed(0)}%</span>
+                        <span className={`font-semibold ${progresso > 100 ? "text-yellow-600" : progresso >= 100 ? "text-emerald-600" : progresso >= 70 ? "text-blue-600" : "text-gray-500"}`}>
+                          {progresso > 100 ? `🏆 ${progresso.toFixed(0)}%` : `${progresso.toFixed(0)}%`}
+                        </span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className={`${cor} h-2 rounded-full transition-all duration-500`} style={{ width: `${progresso}%` }} />
+                        <div className={`${cor} h-2 rounded-full transition-all duration-500`} style={{ width: `${Math.min(progresso, 100)}%` }} />
                       </div>
                     </div>
                   )}
