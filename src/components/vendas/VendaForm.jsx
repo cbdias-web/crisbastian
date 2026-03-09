@@ -315,5 +315,70 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
         </CardFooter>
       </form>
     </Card>
+
+    {/* Modal novo cliente */}
+    {showNovoClienteModal && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Novo Cliente</h3>
+            <button type="button" onClick={() => setShowNovoClienteModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Nome *</label>
+              <input value={novoCliente.nome} onChange={e => setNovoCliente(p => ({ ...p, nome: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="Nome completo" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CPF / CNPJ</label>
+              <input value={novoCliente.cpf_cnpj} onChange={e => setNovoCliente(p => ({ ...p, cpf_cnpj: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="000.000.000-00" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</label>
+                <input value={novoCliente.telefone} onChange={e => setNovoCliente(p => ({ ...p, telefone: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="(00) 00000-0000" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</label>
+                <input type="email" value={novoCliente.email} onChange={e => setNovoCliente(p => ({ ...p, email: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="email@exemplo.com" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Cidade</label>
+                <input value={novoCliente.cidade} onChange={e => setNovoCliente(p => ({ ...p, cidade: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Estado (UF)</label>
+                <input value={novoCliente.estado} onChange={e => setNovoCliente(p => ({ ...p, estado: e.target.value }))}
+                  maxLength={2} className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="SP" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Observação</label>
+              <textarea value={novoCliente.observacao} onChange={e => setNovoCliente(p => ({ ...p, observacao: e.target.value }))}
+                rows={2} className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] resize-none" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setShowNovoClienteModal(false)}
+              className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="button" onClick={handleCriarCliente} disabled={criandoCliente || !novoCliente.nome.trim()}
+              className="flex-1 px-4 py-2 text-sm bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium disabled:opacity-50">
+              {criandoCliente ? 'Salvando...' : 'Salvar Cliente'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
