@@ -378,7 +378,8 @@ export default function ImportarVendasModal({ onClose }) {
         }
 
         importadas++;
-      } catch {
+      } catch (err) {
+        console.error('Falha ao importar registro:', err);
         falhas++;
       }
       setProgresso({ atual: i + 1, total: validas.length });
