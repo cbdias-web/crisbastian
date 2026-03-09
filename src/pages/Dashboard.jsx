@@ -191,7 +191,11 @@ export default function Dashboard() {
             {produtoOptions.length > 0 && (
               <MultiSelect label="Produtos" options={produtoOptions} selected={selectedProdutos} onChange={setSelectedProdutos} />
             )}
-            <span className="ml-auto text-xs text-gray-400">{vendasFiltradas.length} venda{vendasFiltradas.length !== 1 ? "s" : ""} no período</span>
+            <span className="ml-auto text-xs text-gray-400">
+              {vendasFiltradas.length} venda{vendasFiltradas.length !== 1 ? "s" : ""} no período
+              <span className="mx-1 text-gray-300">·</span>
+              <span className="font-semibold text-gray-500">{vendas.length} total cadastradas</span>
+            </span>
           </div>
         </div>
 
