@@ -368,9 +368,9 @@ export default function ImportarVendasModal({ onClose }) {
               cpf_cnpj: row.cpf_cnpj || '',
               vendedor_id: row.vendedor_id,
               vendedor_nome: row.assessor_comercial
-            });
+            }));
           } else if (!clientesExist[0].vendedor_id) {
-            await base44.entities.Cliente.update(clientesExist[0].id, {
+            await withRetry(() => base44.entities.Cliente.update(clientesExist[0].id, {
               vendedor_id: row.vendedor_id,
               vendedor_nome: row.assessor_comercial
             });
