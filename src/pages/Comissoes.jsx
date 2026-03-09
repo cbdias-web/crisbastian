@@ -206,8 +206,18 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
   );
 }
 
-function ConsolidadoView({ comissoes, comissoesEsp }) {
+function ConsolidadoView({ comissoes, comissoesEsp, isAdmin }) {
   const [filtroPago, setFiltroPago] = useState("todos");
+  const queryClient = useQueryClient();
+
+  const updateVendedor = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Comissao.update(id, data),
+    onSuccess: () => { queryClient.invalidateQueries(["comissoes"]); toast.success("Atualizado!"); },
+  });
+  const updateEsp = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ComissaoEspelhamento.update(id, data),
+    onSuccess: () => { queryClient.invalidateQueries(["comissoesEspelhamento"]); toast.success("Atualizado!"); },
+  });
 
   // Junta vendedores + indicadores com tag de tipo
   const todos = [
