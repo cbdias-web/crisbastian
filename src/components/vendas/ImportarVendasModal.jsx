@@ -305,6 +305,7 @@ export default function ImportarVendasModal({ onClose }) {
 
     let importadas = 0;
     let falhas = 0;
+    let duplicadas = 0;
 
     for (let i = 0; i < validas.length; i++) {
       const row = validas[i];
