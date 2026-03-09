@@ -326,6 +326,10 @@ export default function Vendas() {
           </div>
         </div>
 
+        {showImportar && (
+          <ImportarVendasModal onClose={() => setShowImportar(false)} />
+        )}
+
         {showForm && (
           <VendaForm
             venda={editingVenda}
