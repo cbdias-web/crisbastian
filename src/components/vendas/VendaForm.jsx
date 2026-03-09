@@ -182,11 +182,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Parcelamento</Label>
-              <Input type="date" value={formData.parcelamento || ''}
-                onChange={e => setFormData({ ...formData, parcelamento: e.target.value })} />
-            </div>
+
             <div className="md:col-span-2" ref={clienteRef}>
               <Label>Cliente</Label>
               <div className="relative">
