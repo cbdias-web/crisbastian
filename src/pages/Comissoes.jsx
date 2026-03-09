@@ -276,11 +276,12 @@ function ConsolidadoView({ comissoes, comissoesEsp, isAdmin }) {
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">%</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Comissão</th>
                 <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                {isAdmin && <th className="px-5 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtrados.length === 0 ? (
-                <tr><td colSpan={7} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
+                <tr><td colSpan={isAdmin ? 8 : 7} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
               ) : filtrados.map((c, i) => (
                 <tr key={`${c._tipo}-${c.id}-${i}`} className="hover:bg-gray-50/50 transition">
                   <td className="px-5 py-3 text-gray-600">{c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "—"}</td>
@@ -298,6 +299,18 @@ function ConsolidadoView({ comissoes, comissoesEsp, isAdmin }) {
                       {c.pago ? "Paga" : "Pendente"}
                     </span>
                   </td>
+                  {isAdmin && (
+                    <td className="px-5 py-3 text-right">
+                      <button
+                        onClick={() => {
+                          const mutation = c._tipo === "Vendedor" ? updateVendedor : updateEsp;
+                          mutation.mutate({ id: c.id, data: { pago: !c.pago } });
+                        }}
+                        className={`px-2 py-1 text-[11px] rounded-lg font-medium transition ${c.pago ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
+                        {c.pago ? "Pend." : "Pago"}
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
