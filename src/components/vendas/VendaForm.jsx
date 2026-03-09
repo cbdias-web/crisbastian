@@ -131,7 +131,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   };
 
   return (
-    <Card>
+    <>
       <CardHeader>
         <CardTitle>{venda ? 'Editar Venda' : 'Nova Venda'}</CardTitle>
       </CardHeader>
