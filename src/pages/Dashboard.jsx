@@ -82,10 +82,12 @@ export default function Dashboard() {
       base44.entities.Venda.list("-data", 500),
       base44.entities.Vendedor.list(),
       base44.entities.Meta.list(),
-    ]).then(([v, vend, m]) => {
+      base44.entities.Comissao.list(),
+    ]).then(([v, vend, m, com]) => {
       setVendas(v);
       setVendedores(vend);
       setMetas(m);
+      setComissoes(com);
       setSelectedVendedores(vend.map(vv => vv.id));
       const prods = [...new Set(v.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
