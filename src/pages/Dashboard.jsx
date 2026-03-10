@@ -69,6 +69,7 @@ export default function Dashboard() {
   const [vendas, setVendas] = useState([]);
   const [vendedores, setVendedores] = useState([]);
   const [metas, setMetas] = useState([]);
+  const [comissoes, setComissoes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
