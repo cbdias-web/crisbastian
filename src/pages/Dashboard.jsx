@@ -113,6 +113,12 @@ export default function Dashboard() {
   const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
   const vendedoresAtivos = new Set(vendasFiltradas.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
 
+  // Comissão gerada (somente vendas do período filtrado)
+  const vendasFiltradasIds = new Set(vendasFiltradas.map(v => v.id));
+  const comissaoGerada = comissoes
+    .filter(c => vendasFiltradasIds.has(c.venda_id))
+    .reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+
   // Meta do time do mês atual
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const mesIni = `${mesAtual}-01`;
