@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
             const mesRefFormatado = bonusItem.mes_referencia ? 
                 cleanText(new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : '-';
             doc.text(mesRefFormatado, 16, y);
-            doc.text('BONUS (Auto+Manual)', 40, y);
+            doc.text('BONUS POR META', 40, y);
             doc.text('Bonus do mes', 90, y);
             doc.text('-', 125, y);
             doc.text('-', 150, y);

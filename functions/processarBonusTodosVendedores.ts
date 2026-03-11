@@ -53,15 +53,16 @@ Deno.serve(async (req) => {
 
             // Verificar se atingiu 100% da meta
             if (totalVendido >= meta.valor_meta) {
-                // Verificar se já existe bônus
+                // Verificar se já existe bônus automático (venda_id = 'BONUS_META')
                 const comissoesExistentes = await base44.asServiceRole.entities.Comissao.filter({
                     vendedor_id: meta.vendedor_id,
                     tipo: 'bonus',
-                    mes_referencia: mes
+                    mes_referencia: mes,
+                    venda_id: 'BONUS_META'
                 });
 
                 if (comissoesExistentes.length === 0) {
-                    // Criar bônus
+                    // Criar bônus automático
                     await base44.asServiceRole.entities.Comissao.create({
                         venda_id: 'BONUS_META',
                         vendedor_id: meta.vendedor_id,
