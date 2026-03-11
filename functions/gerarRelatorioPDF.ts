@@ -202,9 +202,10 @@ Deno.serve(async (req) => {
         doc.setFont('helvetica', 'bold');
         doc.text('Data', 16, y);
         doc.text('Cliente', 40, y);
-        doc.text('Produto', 95, y);
-        doc.text('Valor Venda', 135, y);
-        doc.text('Comissao', 165, y);
+        doc.text('Produto', 90, y);
+        doc.text('Valor Venda', 125, y);
+        doc.text('%', 150, y);
+        doc.text('Comissao', 160, y);
         doc.text('Status', 185, y);
 
         y += 6;
@@ -228,9 +229,10 @@ Deno.serve(async (req) => {
                 doc.setFont('helvetica', 'bold');
                 doc.text('Data', 16, y);
                 doc.text('Cliente', 40, y);
-                doc.text('Produto', 95, y);
-                doc.text('Valor Venda', 135, y);
-                doc.text('Comissao', 165, y);
+                doc.text('Produto', 90, y);
+                doc.text('Valor Venda', 125, y);
+                doc.text('%', 150, y);
+                doc.text('Comissao', 160, y);
                 doc.text('Status', 185, y);
                 y += 6;
                 doc.setTextColor(0, 0, 0);
@@ -242,14 +244,15 @@ Deno.serve(async (req) => {
             doc.setFontSize(8);
             doc.text(venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-', 16, y);
             
-            const clienteTexto = cleanText((venda.cliente || '-').substring(0, 25));
+            const clienteTexto = cleanText((venda.cliente || '-').substring(0, 20));
             doc.text(clienteTexto, 40, y);
             
-            const produtoTexto = cleanText((venda.produto || '-').substring(0, 20));
-            doc.text(produtoTexto, 95, y);
+            const produtoTexto = cleanText((venda.produto || '-').substring(0, 15));
+            doc.text(produtoTexto, 90, y);
             
-            doc.text(formatCurrency(venda.valor), 135, y);
-            doc.text(comissao ? formatCurrency(comissao.valor_comissao) : '-', 165, y);
+            doc.text(formatCurrency(venda.valor), 125, y);
+            doc.text(comissao ? comissao.percentual + '%' : '-', 150, y);
+            doc.text(comissao ? formatCurrency(comissao.valor_comissao) : '-', 160, y);
             
             const status = comissao?.pago ? 'Pago' : 'Pendente';
             if (comissao?.pago) {
@@ -277,9 +280,10 @@ Deno.serve(async (req) => {
                 doc.setFont('helvetica', 'bold');
                 doc.text('Data', 16, y);
                 doc.text('Cliente', 40, y);
-                doc.text('Produto', 95, y);
-                doc.text('Valor Venda', 135, y);
-                doc.text('Comissao', 165, y);
+                doc.text('Produto', 90, y);
+                doc.text('Valor Venda', 125, y);
+                doc.text('%', 150, y);
+                doc.text('Comissao', 160, y);
                 doc.text('Status', 185, y);
                 y += 6;
                 doc.setTextColor(0, 0, 0);
@@ -291,9 +295,10 @@ Deno.serve(async (req) => {
                 cleanText(new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : '-';
             doc.text(mesRefFormatado, 16, y);
             doc.text('BONUS POR META', 40, y);
-            doc.text('Atingiu 100% da meta', 95, y);
-            doc.text('-', 135, y);
-            doc.text(formatCurrency(bonusItem.valor_comissao), 165, y);
+            doc.text('Atingiu 100% da meta', 90, y);
+            doc.text('-', 125, y);
+            doc.text('-', 150, y);
+            doc.text(formatCurrency(bonusItem.valor_comissao), 160, y);
             
             const status = bonusItem.pago ? 'Pago' : 'Pendente';
             if (bonusItem.pago) {
