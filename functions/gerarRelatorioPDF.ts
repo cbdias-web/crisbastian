@@ -61,14 +61,21 @@ Deno.serve(async (req) => {
 
         // Buscar comissões (incluindo bônus)
         let comissoes;
+        let bonusAgrupados = []; // Para agrupar bônus automático + manual por mês
+        
         if (tipo === 'vendedor') {
             const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
-            comissoes = todasComissoes.filter(c => {
-                // Comissões normais vinculadas a vendas do período
+            
+            // Filtrar comissões normais
+            const comissoesNormais = todasComissoes.filter(c => {
                 if (c.venda_id && vendas.some(v => v.id === c.venda_id)) {
                     return c.vendedor_id === vendedor_id;
                 }
-                // Bônus do período (verificar se o mes_referencia está no range)
+                return false;
+            });
+            
+            // Filtrar bônus do período
+            const bonusDoPeriodo = todasComissoes.filter(c => {
                 if (c.tipo === 'bonus' && c.vendedor_id === vendedor_id && c.mes_referencia) {
                     if (!dataInicio && !dataFim) return true;
                     const mesRef = c.mes_referencia + '-01';
@@ -76,6 +83,26 @@ Deno.serve(async (req) => {
                 }
                 return false;
             });
+            
+            // Agrupar bônus por mês (somar automático + manual)
+            const bonusPorMes = {};
+            bonusDoPeriodo.forEach(b => {
+                if (!bonusPorMes[b.mes_referencia]) {
+                    bonusPorMes[b.mes_referencia] = {
+                        mes_referencia: b.mes_referencia,
+                        valor_total: 0,
+                        pago: b.pago,
+                        vendedor_id: b.vendedor_id,
+                        vendedor_nome: b.vendedor_nome
+                    };
+                }
+                bonusPorMes[b.mes_referencia].valor_total += parseFloat(b.valor_comissao) || 0;
+                // Se pelo menos um bônus está pendente, o status é pendente
+                if (!b.pago) bonusPorMes[b.mes_referencia].pago = false;
+            });
+            
+            bonusAgrupados = Object.values(bonusPorMes);
+            comissoes = comissoesNormais;
         } else {
             const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
             comissoes = todasComissoes.filter(c => 
@@ -84,11 +111,16 @@ Deno.serve(async (req) => {
             );
         }
 
-        // Calcular totais
+        // Calcular totais (incluindo bônus agrupados)
         const totalVendas = vendas.length;
         const valorTotalVendido = vendas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
-        const totalComissao = comissoes.reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
-        const comissaoPaga = comissoes.filter(c => c.pago).reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+        const totalComissaoVendas = comissoes.reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+        const totalBonus = bonusAgrupados.reduce((s, b) => s + (parseFloat(b.valor_total) || 0), 0);
+        const totalComissao = totalComissaoVendas + totalBonus;
+        
+        const comissaoPagaVendas = comissoes.filter(c => c.pago).reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+        const bonusPago = bonusAgrupados.filter(b => b.pago).reduce((s, b) => s + (parseFloat(b.valor_total) || 0), 0);
+        const comissaoPaga = comissaoPagaVendas + bonusPago;
         const comissaoPendente = totalComissao - comissaoPaga;
 
         console.log('Vendas encontradas:', totalVendas);
@@ -212,10 +244,7 @@ Deno.serve(async (req) => {
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
 
-        // Linhas da tabela (vendas + bônus)
-        const comissoesNormais = comissoes.filter(c => c.tipo !== 'bonus');
-        const bonus = comissoes.filter(c => c.tipo === 'bonus');
-
+        // Linhas da tabela (vendas + bônus agrupados)
         for (const venda of vendas) {
             if (y > 270) {
                 doc.addPage();
@@ -239,7 +268,7 @@ Deno.serve(async (req) => {
                 doc.setFont('helvetica', 'normal');
             }
 
-            const comissao = comissoesNormais.find(c => c.venda_id === venda.id);
+            const comissao = comissoes.find(c => c.venda_id === venda.id);
             
             doc.setFontSize(8);
             doc.text(venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-', 16, y);
@@ -266,8 +295,8 @@ Deno.serve(async (req) => {
             y += 6;
         }
 
-        // Adicionar bônus se existir
-        for (const bonusItem of bonus) {
+        // Adicionar bônus agrupados (automático + manual)
+        for (const bonusItem of bonusAgrupados) {
             if (y > 270) {
                 doc.addPage();
                 y = 20;
@@ -294,11 +323,11 @@ Deno.serve(async (req) => {
             const mesRefFormatado = bonusItem.mes_referencia ? 
                 cleanText(new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : '-';
             doc.text(mesRefFormatado, 16, y);
-            doc.text('BONUS POR META', 40, y);
-            doc.text('Atingiu 100% da meta', 90, y);
+            doc.text('BONUS (Auto+Manual)', 40, y);
+            doc.text('Bonus do mes', 90, y);
             doc.text('-', 125, y);
             doc.text('-', 150, y);
-            doc.text(formatCurrency(bonusItem.valor_comissao), 160, y);
+            doc.text(formatCurrency(bonusItem.valor_total), 160, y);
             
             const status = bonusItem.pago ? 'Pago' : 'Pendente';
             if (bonusItem.pago) {
