@@ -74,8 +74,15 @@ Deno.serve(async (req) => {
         const comissaoPaga = comissoes.filter(c => c.pago).reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
         const comissaoPendente = totalComissao - comissaoPaga;
 
-        // Gerar PDF
-        const doc = new jsPDF();
+        // Gerar PDF com suporte a UTF-8
+        const doc = new jsPDF({
+            putOnlyUsedFonts: true,
+            compress: true
+        });
+        
+        // Adicionar suporte a caracteres especiais
+        doc.setLanguage("pt-BR");
+        
         const pageWidth = doc.internal.pageSize.getWidth();
         let y = 20;
 
@@ -85,12 +92,12 @@ Deno.serve(async (req) => {
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(18);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text('Villela Exchange', 14, 15);
         
         doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text('Relatório de Comissões', 14, 22);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Relatorio de Comissoes', 14, 22);
         
         doc.setFontSize(8);
         const dataHoje = new Date().toLocaleDateString('pt-BR');
@@ -101,31 +108,31 @@ Deno.serve(async (req) => {
         // Informações do Vendedor/Indicador
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(12);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text(tipo === 'vendedor' ? 'VENDEDOR' : 'INDICADOR', 14, y);
         
         y += 8;
         doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
-        doc.text(`Nome: ${perfil.nome}`, 14, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Nome: ' + perfil.nome, 14, y);
         
         if (perfil.email) {
             y += 6;
-            doc.text(`Email: ${perfil.email}`, 14, y);
+            doc.text('Email: ' + perfil.email, 14, y);
         }
         
         if (tipo === 'vendedor' && perfil.time) {
             y += 6;
-            doc.text(`Time: ${perfil.time}`, 14, y);
+            doc.text('Time: ' + perfil.time, 14, y);
         }
 
         y += 10;
 
         // Período
         doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.text('PERÍODO:', 14, y);
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'bold');
+        doc.text('PERIODO:', 14, y);
+        doc.setFont('helvetica', 'normal');
         
         const periodoTexto = dataInicio && dataFim 
             ? `${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}`
@@ -140,31 +147,31 @@ Deno.serve(async (req) => {
         
         y += 8;
         doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text('RESUMO FINANCEIRO', 20, y);
         
         y += 8;
         doc.setFontSize(10);
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'normal');
         
         const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
         
-        doc.text(`Total de Vendas: ${totalVendas}`, 20, y);
-        doc.text(`Valor Total Vendido: ${formatCurrency(valorTotalVendido)}`, pageWidth / 2 + 10, y);
+        doc.text('Total de Vendas: ' + totalVendas, 20, y);
+        doc.text('Valor Total Vendido: ' + formatCurrency(valorTotalVendido), pageWidth / 2 + 10, y);
         
         y += 7;
-        doc.text(`Total em Comissões: ${formatCurrency(totalComissao)}`, 20, y);
-        doc.text(`Comissão Paga: ${formatCurrency(comissaoPaga)}`, pageWidth / 2 + 10, y);
+        doc.text('Total em Comissoes: ' + formatCurrency(totalComissao), 20, y);
+        doc.text('Comissao Paga: ' + formatCurrency(comissaoPaga), pageWidth / 2 + 10, y);
         
         y += 7;
-        doc.setFont(undefined, 'bold');
-        doc.text(`Comissão Pendente: ${formatCurrency(comissaoPendente)}`, 20, y);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Comissao Pendente: ' + formatCurrency(comissaoPendente), 20, y);
 
         y += 15;
 
         // Detalhamento por Venda
         doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text('DETALHAMENTO POR VENDA', 14, y);
         
         y += 8;
@@ -175,17 +182,17 @@ Deno.serve(async (req) => {
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(8);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text('Data', 16, y);
         doc.text('Cliente', 40, y);
         doc.text('Produto', 95, y);
         doc.text('Valor Venda', 135, y);
-        doc.text('Comissão', 165, y);
+        doc.text('Comissao', 165, y);
         doc.text('Status', 185, y);
 
         y += 6;
         doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'normal');
 
         // Linhas da tabela
         for (const venda of vendas) {
@@ -198,16 +205,16 @@ Deno.serve(async (req) => {
                 doc.rect(14, y - 4, pageWidth - 28, 8, 'F');
                 doc.setTextColor(255, 255, 255);
                 doc.setFontSize(8);
-                doc.setFont(undefined, 'bold');
+                doc.setFont('helvetica', 'bold');
                 doc.text('Data', 16, y);
                 doc.text('Cliente', 40, y);
                 doc.text('Produto', 95, y);
                 doc.text('Valor Venda', 135, y);
-                doc.text('Comissão', 165, y);
+                doc.text('Comissao', 165, y);
                 doc.text('Status', 185, y);
                 y += 6;
                 doc.setTextColor(0, 0, 0);
-                doc.setFont(undefined, 'normal');
+                doc.setFont('helvetica', 'normal');
             }
 
             const comissao = comissoes.find(c => c.venda_id === venda.id);
