@@ -225,7 +225,11 @@ Deno.serve(async (req) => {
             doc.text(comissao ? formatCurrency(comissao.valor_comissao) : '-', 165, y);
             
             const status = comissao?.pago ? 'Pago' : 'Pendente';
-            doc.setTextColor(comissao?.pago ? 34, 197, 94 : 251, 146, 60);
+            if (comissao?.pago) {
+                doc.setTextColor(34, 197, 94);
+            } else {
+                doc.setTextColor(251, 146, 60);
+            }
             doc.text(status, 185, y);
             doc.setTextColor(0, 0, 0);
 
