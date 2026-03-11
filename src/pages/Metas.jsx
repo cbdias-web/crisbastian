@@ -151,6 +151,8 @@ export default function Metas() {
   const [user, setUser] = useState(null);
   const [mes, setMes] = useState(currentMonth);
   const [inlineEditing, setInlineEditing] = useState(null); // { vendedor_id, value }
+  const [editingBonusId, setEditingBonusId] = useState(null);
+  const [bonusValue, setBonusValue] = useState("");
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalEditing, setModalEditing] = useState(null);
@@ -201,6 +203,19 @@ export default function Metas() {
     setInlineEditing(null);
     load();
     toast.success("Meta salva!");
+  };
+
+  const saveBonusValue = async () => {
+    if (!editingBonusId) return;
+    setSaving(true);
+    const existing = getMetaRecord(editingBonusId);
+    if (existing) {
+      await base44.entities.Meta.update(existing.id, { valor_bonus: parseFloat(bonusValue) || 0 });
+      toast.success("Bônus atualizado!");
+    }
+    setSaving(false);
+    setEditingBonusId(null);
+    load();
   };
 
   const handleModalSave = async (data) => {
@@ -467,12 +482,46 @@ export default function Metas() {
                             </div>
                             {(() => {
                               const metaRecord = getMetaRecord(v.id);
-                              return metaRecord?.valor_bonus > 0 ? (
-                                <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
-                                  <DollarSign className="w-3 h-3" />
-                                  Bônus: {formatCurrency(metaRecord.valor_bonus)}
-                                </p>
-                              ) : null;
+                              if (editingBonusId === v.id) {
+                                return (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={bonusValue}
+                                      onChange={e => setBonusValue(e.target.value)}
+                                      placeholder="Valor do bônus"
+                                      className="w-24 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-amber-500"
+                                      autoFocus
+                                    />
+                                    <button onClick={saveBonusValue} disabled={saving} className="p-1 hover:bg-emerald-50 rounded-lg transition">
+                                      <Save className="w-3 h-3 text-emerald-600" />
+                                    </button>
+                                    <button onClick={() => setEditingBonusId(null)} className="p-1 hover:bg-gray-100 rounded-lg transition">
+                                      <X className="w-3 h-3 text-gray-400" />
+                                    </button>
+                                  </div>
+                                );
+                              }
+                              if (metaRecord && v.meta > 0) {
+                                return (
+                                  <div className="flex items-center gap-1 mt-0.5 group/bonus">
+                                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                                      <DollarSign className="w-3 h-3" />
+                                      Bônus: {metaRecord.valor_bonus > 0 ? formatCurrency(metaRecord.valor_bonus) : "Não definido"}
+                                    </p>
+                                    {isAdmin && (
+                                      <button
+                                        onClick={() => { setEditingBonusId(v.id); setBonusValue(String(metaRecord.valor_bonus || "")); }}
+                                        className="p-0.5 opacity-0 group-hover/bonus:opacity-100 hover:bg-amber-50 rounded transition"
+                                      >
+                                        <Edit2 className="w-3 h-3 text-amber-500" />
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return null;
                             })()}
                           </div>
                         )}
