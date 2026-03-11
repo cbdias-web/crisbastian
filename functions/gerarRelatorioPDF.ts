@@ -1,6 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 import { jsPDF } from 'npm:jspdf@4.0.0';
 
+function removeAccents(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -114,16 +118,16 @@ Deno.serve(async (req) => {
         y += 8;
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text('Nome: ' + perfil.nome, 14, y);
+        doc.text('Nome: ' + removeAccents(perfil.nome || ''), 14, y);
         
         if (perfil.email) {
             y += 6;
-            doc.text('Email: ' + perfil.email, 14, y);
+            doc.text('Email: ' + removeAccents(perfil.email || ''), 14, y);
         }
         
         if (tipo === 'vendedor' && perfil.time) {
             y += 6;
-            doc.text('Time: ' + perfil.time, 14, y);
+            doc.text('Time: ' + removeAccents(perfil.time || ''), 14, y);
         }
 
         y += 10;
@@ -222,10 +226,10 @@ Deno.serve(async (req) => {
             doc.setFontSize(8);
             doc.text(venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-', 16, y);
             
-            const clienteTexto = (venda.cliente || '-').substring(0, 25);
+            const clienteTexto = removeAccents((venda.cliente || '-').substring(0, 25));
             doc.text(clienteTexto, 40, y);
             
-            const produtoTexto = (venda.produto || '-').substring(0, 20);
+            const produtoTexto = removeAccents((venda.produto || '-').substring(0, 20));
             doc.text(produtoTexto, 95, y);
             
             doc.text(formatCurrency(venda.valor), 135, y);
