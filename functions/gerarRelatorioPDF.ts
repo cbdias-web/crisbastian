@@ -78,14 +78,11 @@ Deno.serve(async (req) => {
         const comissaoPaga = comissoes.filter(c => c.pago).reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
         const comissaoPendente = totalComissao - comissaoPaga;
 
-        // Gerar PDF com suporte a UTF-8
-        const doc = new jsPDF({
-            putOnlyUsedFonts: true,
-            compress: true
-        });
-        
-        // Adicionar suporte a caracteres especiais
-        doc.setLanguage("pt-BR");
+        console.log('Vendas encontradas:', totalVendas);
+        console.log('Comissoes encontradas:', comissoes.length);
+
+        // Gerar PDF
+        const doc = new jsPDF();
         
         const pageWidth = doc.internal.pageSize.getWidth();
         let y = 20;
