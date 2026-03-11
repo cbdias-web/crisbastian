@@ -59,14 +59,23 @@ Deno.serve(async (req) => {
             }
         });
 
-        // Buscar comissões
+        // Buscar comissões (incluindo bônus)
         let comissoes;
         if (tipo === 'vendedor') {
             const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
-            comissoes = todasComissoes.filter(c => 
-                c.vendedor_id === vendedor_id && 
-                vendas.some(v => v.id === c.venda_id)
-            );
+            comissoes = todasComissoes.filter(c => {
+                // Comissões normais vinculadas a vendas do período
+                if (c.venda_id && vendas.some(v => v.id === c.venda_id)) {
+                    return c.vendedor_id === vendedor_id;
+                }
+                // Bônus do período (verificar se o mes_referencia está no range)
+                if (c.tipo === 'bonus' && c.vendedor_id === vendedor_id && c.mes_referencia) {
+                    if (!dataInicio && !dataFim) return true;
+                    const mesRef = c.mes_referencia + '-01';
+                    return (!dataInicio || mesRef >= dataInicio) && (!dataFim || mesRef <= dataFim);
+                }
+                return false;
+            });
         } else {
             const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
             comissoes = todasComissoes.filter(c => 
@@ -202,7 +211,10 @@ Deno.serve(async (req) => {
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
 
-        // Linhas da tabela
+        // Linhas da tabela (vendas + bônus)
+        const comissoesNormais = comissoes.filter(c => c.tipo !== 'bonus');
+        const bonus = comissoes.filter(c => c.tipo === 'bonus');
+
         for (const venda of vendas) {
             if (y > 270) {
                 doc.addPage();
@@ -225,7 +237,7 @@ Deno.serve(async (req) => {
                 doc.setFont('helvetica', 'normal');
             }
 
-            const comissao = comissoes.find(c => c.venda_id === venda.id);
+            const comissao = comissoesNormais.find(c => c.venda_id === venda.id);
             
             doc.setFontSize(8);
             doc.text(venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-', 16, y);
@@ -241,6 +253,50 @@ Deno.serve(async (req) => {
             
             const status = comissao?.pago ? 'Pago' : 'Pendente';
             if (comissao?.pago) {
+                doc.setTextColor(34, 197, 94);
+            } else {
+                doc.setTextColor(251, 146, 60);
+            }
+            doc.text(status, 185, y);
+            doc.setTextColor(0, 0, 0);
+
+            y += 6;
+        }
+
+        // Adicionar bônus se existir
+        for (const bonusItem of bonus) {
+            if (y > 270) {
+                doc.addPage();
+                y = 20;
+                
+                // Repetir cabeçalho
+                doc.setFillColor(26, 49, 80);
+                doc.rect(14, y - 4, pageWidth - 28, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Data', 16, y);
+                doc.text('Cliente', 40, y);
+                doc.text('Produto', 95, y);
+                doc.text('Valor Venda', 135, y);
+                doc.text('Comissao', 165, y);
+                doc.text('Status', 185, y);
+                y += 6;
+                doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
+            }
+
+            doc.setFontSize(8);
+            const mesRefFormatado = bonusItem.mes_referencia ? 
+                new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
+            doc.text(mesRefFormatado, 16, y);
+            doc.text('BONUS POR META', 40, y);
+            doc.text('Atingiu 100% da meta', 95, y);
+            doc.text('-', 135, y);
+            doc.text(formatCurrency(bonusItem.valor_comissao), 165, y);
+            
+            const status = bonusItem.pago ? 'Pago' : 'Pendente';
+            if (bonusItem.pago) {
                 doc.setTextColor(34, 197, 94);
             } else {
                 doc.setTextColor(251, 146, 60);
