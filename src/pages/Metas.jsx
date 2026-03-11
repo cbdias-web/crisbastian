@@ -324,7 +324,7 @@ export default function Metas() {
               <>
                 <button onClick={processarBonusDoMes} disabled={processandoBonus}
                   className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white text-sm rounded-xl hover:bg-amber-600 transition font-medium disabled:opacity-50">
-                  <Award className="w-4 h-4" />
+                  <DollarSign className="w-4 h-4" />
                   {processandoBonus ? "Processando..." : "Processar Bônus"}
                 </button>
                 <button onClick={() => { setModalEditing(null); setShowModal(true); }}
@@ -469,7 +469,7 @@ export default function Metas() {
                               const metaRecord = getMetaRecord(v.id);
                               return metaRecord?.valor_bonus > 0 ? (
                                 <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
-                                  <Award className="w-3 h-3" />
+                                  <DollarSign className="w-3 h-3" />
                                   Bônus: {formatCurrency(metaRecord.valor_bonus)}
                                 </p>
                               ) : null;
