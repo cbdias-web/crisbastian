@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Pencil, Trash2, X, Save } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, X, Save, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Espelhamentos() {
@@ -19,6 +19,11 @@ export default function Espelhamentos() {
     telefone: '',
     percentual_comissao: 10,
     ativo: true
+  });
+  const [geratingPDF, setGeratingPDF] = useState(null);
+  const [mesFiltro, setMesFiltro] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
   const queryClient = useQueryClient();
@@ -92,6 +97,36 @@ export default function Espelhamentos() {
     }
   };
 
+  const gerarRelatorio = async (indicador) => {
+    setGeratingPDF(indicador.id);
+    try {
+      const [anoFiltro, mesFiltroNum] = mesFiltro.split("-");
+      const dateFrom = `${mesFiltro}-01`;
+      const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
+      const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
+
+      const response = await base44.functions.invoke('gerarRelatorioPDF', {
+        tipo: 'indicador',
+        vendedor_id: indicador.id,
+        vendedor_nome: indicador.nome,
+        dataInicio: dateFrom,
+        dataFim: dateTo
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-indicador-${indicador.nome.replace(/\s+/g, '-')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGeratingPDF(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -108,10 +143,18 @@ export default function Espelhamentos() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Indicadores (Espelhamento)</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">Cadastro de indicadores para comissões de espelhamento</p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Indicador
-          </Button>
+          <div className="flex gap-2 items-center">
+            <input
+              type="month"
+              value={mesFiltro}
+              onChange={e => setMesFiltro(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+            />
+            <Button onClick={() => setShowForm(!showForm)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Indicador
+            </Button>
+          </div>
         </div>
 
         {showForm && (
@@ -205,6 +248,19 @@ export default function Espelhamentos() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => gerarRelatorio(espelhamento)}
+                          disabled={geratingPDF === espelhamento.id}
+                          title="Gerar relatório PDF"
+                        >
+                          {geratingPDF === espelhamento.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          ) : (
+                            <FileText className="w-4 h-4 text-blue-600" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

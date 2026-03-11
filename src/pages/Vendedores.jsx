@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -26,6 +26,7 @@ export default function Vendedores() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [geratingPDF, setGeratingPDF] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -76,6 +77,31 @@ export default function Vendedores() {
     setDeleteConfirm(null);
     queryClient.invalidateQueries(["vendedores"]);
     toast.success("Vendedor excluído!");
+  };
+
+  const gerarRelatorio = async (vendedor) => {
+    setGeratingPDF(vendedor.id);
+    try {
+      const response = await base44.functions.invoke('gerarRelatorioPDF', {
+        tipo: 'vendedor',
+        vendedor_id: vendedor.id,
+        vendedor_nome: vendedor.nome,
+        dataInicio: dateFrom,
+        dataFim: dateTo
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${vendedor.nome.replace(/\s+/g, '-')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGeratingPDF(null);
   };
 
   // Month range for volume calc
@@ -215,6 +241,18 @@ export default function Vendedores() {
                       )}
                     </div>
                     <div className="flex gap-1">
+                      <button 
+                        onClick={() => gerarRelatorio(v)} 
+                        disabled={geratingPDF === v.id}
+                        className="p-1.5 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
+                        title="Gerar relatório PDF"
+                      >
+                        {geratingPDF === v.id ? (
+                          <div className="w-3.5 h-3.5 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <FileText className="w-3.5 h-3.5 text-blue-500" />
+                        )}
+                      </button>
                       <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                         <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                       </button>
