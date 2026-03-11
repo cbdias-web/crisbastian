@@ -132,115 +132,164 @@ Deno.serve(async (req) => {
         const pageWidth = doc.internal.pageSize.getWidth();
         let y = 20;
 
-        // Cabeçalho
-        doc.setFillColor(15, 30, 53);
-        doc.rect(0, 0, pageWidth, 35, 'F');
+        // Cabeçalho azul escuro (mesma cor do Consórcio)
+        doc.setFillColor(26, 49, 80);
+        doc.rect(0, 0, pageWidth, 40, 'F');
         
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(18);
+        doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('Villela Exchange', 14, 15);
+        doc.text('Villela Exchange', 14, 20);
         
-        doc.setFontSize(10);
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
-        doc.text('Relatorio de Comissoes', 14, 22);
-        
-        doc.setFontSize(8);
-        const dataHoje = new Date().toLocaleDateString('pt-BR');
-        doc.text('Gerado em: ' + dataHoje, pageWidth - 14, 15, { align: 'right' });
+        doc.text('Relatorio de Comissoes', 14, 30);
 
-        y = 45;
+        y = 55;
 
-        // Informações do Vendedor/Indicador
+        // Título do relatório
         doc.setTextColor(0, 0, 0);
-        doc.setFontSize(12);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text(tipo === 'vendedor' ? 'VENDEDOR' : 'INDICADOR', 14, y);
+        doc.text('RELATORIO DE COMISSOES', 14, y);
         
-        y += 8;
-        doc.setFontSize(10);
+        y += 12;
+
+        // Informações do Vendedor/Indicador (estilo lista)
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text('Nome: ' + cleanText(perfil.nome || ''), 14, y);
+        doc.setTextColor(100, 100, 100);
+        
+        doc.text(tipo === 'vendedor' ? 'Vendedor:' : 'Indicador:', 14, y);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'bold');
+        doc.text(cleanText(perfil.nome || ''), 50, y);
         
         if (perfil.email) {
             y += 6;
-            doc.text('Email: ' + cleanText(perfil.email || ''), 14, y);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('E-mail:', 14, y);
+            doc.setTextColor(0, 0, 0);
+            doc.text(cleanText(perfil.email || ''), 50, y);
         }
         
         if (tipo === 'vendedor' && perfil.time) {
             y += 6;
-            doc.text('Time: ' + cleanText(perfil.time || ''), 14, y);
+            doc.setTextColor(100, 100, 100);
+            doc.text('Time:', 14, y);
+            doc.setTextColor(0, 0, 0);
+            doc.text(cleanText(perfil.time || ''), 50, y);
         }
 
-        y += 10;
-
-        // Período
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PERIODO:', 14, y);
-        doc.setFont('helvetica', 'normal');
-        
+        y += 6;
         const periodoTexto = dataInicio && dataFim 
             ? new Date(dataInicio).toLocaleDateString('pt-BR') + ' a ' + new Date(dataFim).toLocaleDateString('pt-BR')
             : 'Todos os registros';
-        doc.text(periodoTexto, 40, y);
+        doc.setTextColor(100, 100, 100);
+        doc.text('Periodo:', 14, y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(periodoTexto, 50, y);
+        
+        y += 6;
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Data de Emissao:', 14, y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(dataHoje, 50, y);
 
-        y += 12;
+        y += 14;
 
-        // Resumo Financeiro
-        doc.setFillColor(240, 240, 240);
-        doc.rect(14, y, pageWidth - 28, 40, 'F');
-        
-        y += 8;
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('RESUMO FINANCEIRO', 20, y);
-        
-        y += 8;
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        
+        // Resumo Financeiro (cards estilo Consórcio)
         const formatCurrency = (v) => {
             const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
             return 'R$ ' + formatted;
         };
         
-        doc.text('Total de Vendas: ' + totalVendas, 20, y);
-        doc.text('Valor Total Vendido: ' + formatCurrency(valorTotalVendido), pageWidth / 2 + 10, y);
+        // Background cinza claro
+        doc.setFillColor(245, 247, 250);
+        doc.rect(14, y, pageWidth - 28, 32, 'F');
         
-        y += 7;
-        doc.text('Total em Comissoes: ' + formatCurrency(totalComissao), 20, y);
-        doc.text('Comissao Paga: ' + formatCurrency(comissaoPaga), pageWidth / 2 + 10, y);
+        const cardWidth = (pageWidth - 36) / 4;
+        let cardX = 18;
         
-        y += 7;
+        // Card 1: Total Vendas
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text('TOTAL VENDAS', cardX, y + 6);
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Comissao Pendente: ' + formatCurrency(comissaoPendente), 20, y);
+        doc.setTextColor(0, 0, 0);
+        doc.text(totalVendas.toString(), cardX, y + 14);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('negociacoes', cardX, y + 20);
+        
+        // Card 2: Total Vendido
+        cardX += cardWidth;
+        doc.setFontSize(8);
+        doc.text('TOTAL VENDIDO', cardX, y + 6);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(formatCurrency(valorTotalVendido), cardX, y + 14);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('em credito', cardX, y + 20);
+        
+        // Card 3: Comissões
+        cardX += cardWidth;
+        doc.setFontSize(8);
+        doc.text('COMISSOES', cardX, y + 6);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(formatCurrency(totalComissao), cardX, y + 14);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('total', cardX, y + 20);
+        
+        // Card 4: Pendente
+        cardX += cardWidth;
+        doc.setFontSize(8);
+        doc.text('PENDENTE', cardX, y + 6);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(formatCurrency(comissaoPendente), cardX, y + 14);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('a receber', cardX, y + 20);
 
-        y += 15;
+        y += 40;
 
         // Detalhamento por Venda
-        doc.setFontSize(11);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
         doc.text('DETALHAMENTO POR VENDA', 14, y);
         
-        y += 8;
+        y += 10;
 
-        // Cabeçalho da tabela
-        doc.setFillColor(26, 49, 80);
-        doc.rect(14, y - 4, pageWidth - 28, 8, 'F');
+        // Cabeçalho da tabela (estilo Consórcio - fundo branco com texto cinza)
+        doc.setFillColor(255, 255, 255);
+        doc.rect(14, y - 5, pageWidth - 28, 7, 'F');
         
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text('Data', 16, y);
-        doc.text('Cliente', 40, y);
-        doc.text('Produto', 90, y);
-        doc.text('Valor Venda', 125, y);
-        doc.text('%', 150, y);
-        doc.text('Comissao', 160, y);
-        doc.text('Status', 185, y);
+        doc.text('CLIENTE', 16, y);
+        doc.text('MES REF.', 70, y);
+        doc.text('VALOR VENDA', 95, y);
+        doc.text('% COM.', 125, y);
+        doc.text('COMISSAO', 145, y);
+        doc.text('STATUS', 175, y);
 
-        y += 6;
+        y += 5;
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'normal');
 
@@ -251,19 +300,18 @@ Deno.serve(async (req) => {
                 y = 20;
                 
                 // Repetir cabeçalho
-                doc.setFillColor(26, 49, 80);
-                doc.rect(14, y - 4, pageWidth - 28, 8, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(8);
+                doc.setFillColor(255, 255, 255);
+                doc.rect(14, y - 5, pageWidth - 28, 7, 'F');
+                doc.setTextColor(100, 100, 100);
+                doc.setFontSize(7);
                 doc.setFont('helvetica', 'bold');
-                doc.text('Data', 16, y);
-                doc.text('Cliente', 40, y);
-                doc.text('Produto', 90, y);
-                doc.text('Valor Venda', 125, y);
-                doc.text('%', 150, y);
-                doc.text('Comissao', 160, y);
-                doc.text('Status', 185, y);
-                y += 6;
+                doc.text('CLIENTE', 16, y);
+                doc.text('MES REF.', 70, y);
+                doc.text('VALOR VENDA', 95, y);
+                doc.text('% COM.', 125, y);
+                doc.text('COMISSAO', 145, y);
+                doc.text('STATUS', 175, y);
+                y += 5;
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'normal');
             }
@@ -271,26 +319,27 @@ Deno.serve(async (req) => {
             const comissao = comissoes.find(c => c.venda_id === venda.id);
             
             doc.setFontSize(8);
-            doc.text(venda.data ? new Date(venda.data).toLocaleDateString('pt-BR') : '-', 16, y);
+            const clienteTexto = cleanText((venda.cliente || '-').substring(0, 28));
+            doc.text(clienteTexto, 16, y);
             
-            const clienteTexto = cleanText((venda.cliente || '-').substring(0, 20));
-            doc.text(clienteTexto, 40, y);
+            const mesRef = venda.data ? venda.data.substring(0, 7) : '-';
+            doc.text(mesRef, 70, y);
             
-            const produtoTexto = cleanText((venda.produto || '-').substring(0, 15));
-            doc.text(produtoTexto, 90, y);
+            doc.text(formatCurrency(venda.valor), 95, y);
+            doc.text(comissao ? comissao.percentual.toFixed(1) + '%' : '-', 125, y);
+            doc.text(comissao ? formatCurrency(comissao.valor_comissao) : '-', 145, y);
             
-            doc.text(formatCurrency(venda.valor), 125, y);
-            doc.text(comissao ? comissao.percentual + '%' : '-', 150, y);
-            doc.text(comissao ? formatCurrency(comissao.valor_comissao) : '-', 160, y);
-            
-            const status = comissao?.pago ? 'Pago' : 'Pendente';
             if (comissao?.pago) {
-                doc.setTextColor(34, 197, 94);
+                doc.setTextColor(255, 165, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.text('APROVADA', 175, y);
             } else {
                 doc.setTextColor(251, 146, 60);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PENDENTE', 175, y);
             }
-            doc.text(status, 185, y);
             doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
 
             y += 6;
         }
@@ -302,53 +351,51 @@ Deno.serve(async (req) => {
                 y = 20;
                 
                 // Repetir cabeçalho
-                doc.setFillColor(26, 49, 80);
-                doc.rect(14, y - 4, pageWidth - 28, 8, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(8);
+                doc.setFillColor(255, 255, 255);
+                doc.rect(14, y - 5, pageWidth - 28, 7, 'F');
+                doc.setTextColor(100, 100, 100);
+                doc.setFontSize(7);
                 doc.setFont('helvetica', 'bold');
-                doc.text('Data', 16, y);
-                doc.text('Cliente', 40, y);
-                doc.text('Produto', 90, y);
-                doc.text('Valor Venda', 125, y);
-                doc.text('%', 150, y);
-                doc.text('Comissao', 160, y);
-                doc.text('Status', 185, y);
-                y += 6;
+                doc.text('CLIENTE', 16, y);
+                doc.text('MES REF.', 70, y);
+                doc.text('VALOR VENDA', 95, y);
+                doc.text('% COM.', 125, y);
+                doc.text('COMISSAO', 145, y);
+                doc.text('STATUS', 175, y);
+                y += 5;
                 doc.setTextColor(0, 0, 0);
                 doc.setFont('helvetica', 'normal');
             }
 
             doc.setFontSize(8);
-            const mesRefFormatado = bonusItem.mes_referencia ? 
-                cleanText(new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : '-';
-            doc.text(mesRefFormatado, 16, y);
-            doc.text('BONUS POR META', 40, y);
-            doc.text('Bonus do mes', 90, y);
+            doc.text('BONUS POR META', 16, y);
+            doc.text(bonusItem.mes_referencia, 70, y);
+            doc.text('-', 95, y);
             doc.text('-', 125, y);
-            doc.text('-', 150, y);
-            doc.text(formatCurrency(bonusItem.valor_total), 160, y);
+            doc.text(formatCurrency(bonusItem.valor_total), 145, y);
             
-            const status = bonusItem.pago ? 'Pago' : 'Pendente';
             if (bonusItem.pago) {
-                doc.setTextColor(34, 197, 94);
+                doc.setTextColor(255, 165, 0);
+                doc.setFont('helvetica', 'bold');
+                doc.text('APROVADA', 175, y);
             } else {
                 doc.setTextColor(251, 146, 60);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PENDENTE', 175, y);
             }
-            doc.text(status, 185, y);
             doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
 
             y += 6;
         }
 
-        // Rodapé
+        // Rodapé (sem texto adicional, apenas número da página)
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
             doc.text('Pagina ' + i + ' de ' + pageCount, pageWidth / 2, 285, { align: 'center' });
-            doc.text('Villela Exchange - Relatorio Confidencial', pageWidth / 2, 290, { align: 'center' });
         }
 
         const pdfBytes = doc.output('arraybuffer');
