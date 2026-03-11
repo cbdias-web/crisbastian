@@ -116,11 +116,12 @@ export default function Vendedores() {
   };
 
   const abrirModalBonus = async (vendedor) => {
-    // Buscar bônus existente do mês
+    // Buscar apenas bônus MANUAL existente do mês
     const bonusExistente = await base44.entities.Comissao.filter({
       vendedor_id: vendedor.id,
       mes_referencia: mesFiltro,
-      tipo: 'bonus'
+      tipo: 'bonus',
+      venda_id: `BONUS_MANUAL_${mesFiltro}_${vendedor.id}`
     });
     
     const valorAtual = bonusExistente.length > 0 ? bonusExistente[0].valor_comissao : 0;
@@ -152,9 +153,9 @@ export default function Vendedores() {
         });
         toast.success('Bônus atualizado!');
       } else if (valor > 0) {
-        // Criar novo bônus
+        // Criar novo bônus manual
         await base44.entities.Comissao.create({
-          venda_id: `bonus-${mesFiltro}-${modalBonus.vendedor_id}`,
+          venda_id: `BONUS_MANUAL_${mesFiltro}_${modalBonus.vendedor_id}`,
           vendedor_id: modalBonus.vendedor_id,
           vendedor_nome: modalBonus.vendedor_nome,
           valor_venda: 0,
