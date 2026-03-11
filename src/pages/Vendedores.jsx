@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -27,6 +27,7 @@ export default function Vendedores() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
+  const [concedendoBonus, setConcedendoBonus] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -113,6 +114,19 @@ export default function Vendedores() {
     setGeratingPDF(null);
   };
 
+  const concederBonusManual = async (vendedor_id) => {
+    if (!confirm('Conceder bônus manualmente para este vendedor, mesmo sem atingir 100% da meta?')) return;
+    setConcedendoBonus(vendedor_id);
+    try {
+      const response = await base44.functions.invoke('concederBonusManual', { mes: mesFiltro, vendedor_id });
+      toast.success(response.data.message);
+      queryClient.invalidateQueries(['vendedores', 'vendas', 'metas']);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao conceder bônus');
+    }
+    setConcedendoBonus(null);
+  };
+
   // Month range for volume calc
   const [anoFiltro, mesFiltroNum] = mesFiltro.split("-");
   const dateFrom = `${mesFiltro}-01`;
@@ -197,6 +211,7 @@ export default function Vendedores() {
               );
               const valorMeta = metaIndividual?.valor_meta || 0;
               const progresso = valorMeta > 0 ? (volume / valorMeta) * 100 : 0;
+              const atingiu = valorMeta > 0 && volume >= valorMeta;
               const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
               return (
@@ -274,6 +289,16 @@ export default function Vendedores() {
                       </button>
                       {isAdmin && (
                         <>
+                          {valorMeta > 0 && !atingiu && (
+                            <button
+                              onClick={() => concederBonusManual(v.id)}
+                              disabled={concedendoBonus === v.id}
+                              className="p-1.5 hover:bg-amber-50 rounded-lg transition disabled:opacity-50"
+                              title="Conceder bônus manualmente"
+                            >
+                              <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                            </button>
+                          )}
                           <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                             <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                           </button>
