@@ -155,7 +155,10 @@ Deno.serve(async (req) => {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         
-        const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        const formatCurrency = (v) => {
+            const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
+            return 'R$ ' + formatted;
+        };
         
         doc.text('Total de Vendas: ' + totalVendas, 20, y);
         doc.text('Valor Total Vendido: ' + formatCurrency(valorTotalVendido), pageWidth / 2 + 10, y);
