@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Target, ChevronDown, Check, Edit2, Save, X, Plus, Loader2, Trash2 } from "lucide-react";
+import { Target, ChevronDown, Check, Edit2, Save, X, Plus, Loader2, Trash2, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
 const formatCurrency = (v) =>
