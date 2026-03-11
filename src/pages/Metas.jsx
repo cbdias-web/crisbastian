@@ -154,6 +154,7 @@ export default function Metas() {
   const [editingBonusId, setEditingBonusId] = useState(null);
   const [bonusValue, setBonusValue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [concedendoBonus, setConcedendoBonus] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalEditing, setModalEditing] = useState(null);
   const [processandoBonus, setProcessandoBonus] = useState(false);
@@ -253,6 +254,19 @@ export default function Metas() {
       toast.error('Erro ao processar bônus: ' + error.message);
     }
     setProcessandoBonus(false);
+  };
+
+  const concederBonusManual = async (vendedor_id) => {
+    if (!confirm('Conceder bônus manualmente para este vendedor, mesmo sem atingir 100% da meta?')) return;
+    setConcedendoBonus(vendedor_id);
+    try {
+      const response = await base44.functions.invoke('concederBonusManual', { mes, vendedor_id });
+      toast.success(response.data.message);
+      load();
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao conceder bônus');
+    }
+    setConcedendoBonus(null);
   };
 
   // Date range helpers
@@ -551,9 +565,21 @@ export default function Metas() {
                         ) : <span className="text-gray-300 text-sm">—</span>}
                       </td>
                       <td className="px-5 py-4">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                          {v.ativo !== false ? "Ativo" : "Inativo"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                            {v.ativo !== false ? "Ativo" : "Inativo"}
+                          </span>
+                          {isAdmin && v.meta > 0 && !v.atingiu && (
+                            <button
+                              onClick={() => concederBonusManual(v.id)}
+                              disabled={concedendoBonus === v.id}
+                              className="text-xs px-2.5 py-1 rounded-full font-medium bg-amber-50 text-amber-600 hover:bg-amber-100 transition disabled:opacity-50"
+                              title="Conceder bônus manualmente"
+                            >
+                              {concedendoBonus === v.id ? "..." : "Conceder Bônus"}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
