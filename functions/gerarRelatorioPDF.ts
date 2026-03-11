@@ -249,8 +249,8 @@ Deno.serve(async (req) => {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
-            doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, 285, { align: 'center' });
-            doc.text('Villela Exchange - Relatório Confidencial', pageWidth / 2, 290, { align: 'center' });
+            doc.text('Pagina ' + i + ' de ' + pageCount, pageWidth / 2, 285, { align: 'center' });
+            doc.text('Villela Exchange - Relatorio Confidencial', pageWidth / 2, 290, { align: 'center' });
         }
 
         const pdfBytes = doc.output('arraybuffer');
