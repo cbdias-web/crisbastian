@@ -27,7 +27,8 @@ export default function Vendedores() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
-  const [concedendoBonus, setConcedendoBonus] = useState(null);
+  const [modalBonus, setModalBonus] = useState(null); // {vendedor_id, vendedor_nome, valor_atual}
+  const [valorBonus, setValorBonus] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -114,17 +115,64 @@ export default function Vendedores() {
     setGeratingPDF(null);
   };
 
-  const concederBonusManual = async (vendedor_id) => {
-    if (!confirm('Conceder bônus manualmente para este vendedor, mesmo sem atingir 100% da meta?')) return;
-    setConcedendoBonus(vendedor_id);
+  const abrirModalBonus = async (vendedor) => {
+    // Buscar bônus existente do mês
+    const bonusExistente = await base44.entities.Comissao.filter({
+      vendedor_id: vendedor.id,
+      mes_referencia: mesFiltro,
+      tipo: 'bonus'
+    });
+    
+    const valorAtual = bonusExistente.length > 0 ? bonusExistente[0].valor_comissao : 0;
+    setValorBonus(valorAtual.toString());
+    setModalBonus({ 
+      vendedor_id: vendedor.id, 
+      vendedor_nome: vendedor.nome,
+      bonus_existente_id: bonusExistente.length > 0 ? bonusExistente[0].id : null
+    });
+  };
+
+  const salvarBonus = async () => {
+    if (!valorBonus || parseFloat(valorBonus) < 0) {
+      toast.error('Valor inválido');
+      return;
+    }
+
     try {
-      const response = await base44.functions.invoke('concederBonusManual', { mes: mesFiltro, vendedor_id });
-      toast.success(response.data.message);
+      const valor = parseFloat(valorBonus);
+      
+      if (valor === 0 && modalBonus.bonus_existente_id) {
+        // Remover bônus se valor for zero
+        await base44.entities.Comissao.delete(modalBonus.bonus_existente_id);
+        toast.success('Bônus removido!');
+      } else if (modalBonus.bonus_existente_id) {
+        // Atualizar bônus existente
+        await base44.entities.Comissao.update(modalBonus.bonus_existente_id, {
+          valor_comissao: valor
+        });
+        toast.success('Bônus atualizado!');
+      } else if (valor > 0) {
+        // Criar novo bônus
+        await base44.entities.Comissao.create({
+          venda_id: `bonus-${mesFiltro}-${modalBonus.vendedor_id}`,
+          vendedor_id: modalBonus.vendedor_id,
+          vendedor_nome: modalBonus.vendedor_nome,
+          valor_venda: 0,
+          percentual: 0,
+          valor_comissao: valor,
+          data_venda: new Date().toISOString().split('T')[0],
+          pago: false,
+          tipo: 'bonus',
+          mes_referencia: mesFiltro
+        });
+        toast.success('Bônus concedido!');
+      }
+      
+      setModalBonus(null);
       queryClient.invalidateQueries(['vendedores', 'vendas', 'metas']);
     } catch (error) {
-      toast.error(error.response?.data?.error || 'Erro ao conceder bônus');
+      toast.error(error.response?.data?.error || 'Erro ao salvar bônus');
     }
-    setConcedendoBonus(null);
   };
 
   // Month range for volume calc
@@ -289,16 +337,13 @@ export default function Vendedores() {
                       </button>
                       {isAdmin && (
                         <>
-                          {valorMeta > 0 && !atingiu && (
-                            <button
-                              onClick={() => concederBonusManual(v.id)}
-                              disabled={concedendoBonus === v.id}
-                              className="p-1.5 hover:bg-amber-50 rounded-lg transition disabled:opacity-50"
-                              title="Conceder bônus manualmente"
-                            >
-                              <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                            </button>
-                          )}
+                          <button
+                            onClick={() => abrirModalBonus(v)}
+                            className="p-1.5 hover:bg-amber-50 rounded-lg transition"
+                            title="Gerenciar bônus"
+                          >
+                            <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                          </button>
                           <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                             <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                           </button>
@@ -360,6 +405,61 @@ export default function Vendedores() {
                 <button onClick={save} disabled={saving || !form.nome}
                   className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium">
                   {saving ? "Salvando..." : "Salvar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Bônus */}
+        {modalBonus && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Gerenciar Bônus</h3>
+                  <p className="text-sm text-gray-400">{modalBonus.vendedor_nome}</p>
+                </div>
+                <button onClick={() => setModalBonus(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="mb-4">
+                <label className="text-xs font-medium text-gray-500 mb-1 block">
+                  Valor do Bônus (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={valorBonus}
+                  onChange={(e) => setValorBonus(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Mês de referência: {new Date(mesFiltro + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                </p>
+                {parseFloat(valorBonus) === 0 && modalBonus.bonus_existente_id && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ Valor zero irá remover o bônus existente
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <button 
+                  onClick={() => setModalBonus(null)} 
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={salvarBonus}
+                  className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition font-medium"
+                >
+                  Salvar
                 </button>
               </div>
             </div>
