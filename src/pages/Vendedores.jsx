@@ -35,9 +35,18 @@ export default function Vendedores() {
     queryFn: () => base44.entities.Vendedor.list("nome"),
   });
 
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === "admin" || user?.permissao_admin === true;
+
   const { data: usuarios = [] } = useQuery({
     queryKey: ["usuarios"],
     queryFn: () => base44.entities.User.list(),
+    enabled: isAdmin,
   });
 
   const { data: vendas = [] } = useQuery({
@@ -110,9 +119,15 @@ export default function Vendedores() {
   const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
   const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
 
-  const visibleVendedores = vendedores.filter(v =>
-    statusFilter === "todos" ? true : statusFilter === "ativo" ? v.ativo !== false : v.ativo === false
-  );
+  // Filtrar vendedores: se não é admin, mostra apenas o próprio perfil
+  const visibleVendedores = vendedores.filter(v => {
+    // Filtro de permissão
+    if (!isAdmin && user?.email && v.email !== user.email) return false;
+    // Filtro de status
+    if (statusFilter === "todos") return true;
+    if (statusFilter === "ativo") return v.ativo !== false;
+    return v.ativo === false;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -123,16 +138,18 @@ export default function Vendedores() {
             <h2 className="text-2xl font-bold text-gray-900">Vendedores</h2>
             <p className="text-gray-400 text-sm">{vendedores.length} vendedores na equipe</p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={() => exportCSV(visibleVendedores)}
-              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
-              <Download className="w-4 h-4" /> Exportar
-            </button>
-            <button onClick={openCreate}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition shadow-sm">
-              <Plus className="w-4 h-4" /> Novo Vendedor
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              <button onClick={() => exportCSV(visibleVendedores)}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                <Download className="w-4 h-4" /> Exportar
+              </button>
+              <button onClick={openCreate}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition shadow-sm">
+                <Plus className="w-4 h-4" /> Novo Vendedor
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Filter */}
@@ -143,12 +160,14 @@ export default function Vendedores() {
             onChange={e => setMesFiltro(e.target.value)}
             className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600"
           />
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
-            <option value="ativo">Ativos</option>
-            <option value="inativo">Inativos</option>
-            <option value="todos">Todos</option>
-          </select>
+          {isAdmin && (
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
+              <option value="ativo">Ativos</option>
+              <option value="inativo">Inativos</option>
+              <option value="todos">Todos</option>
+            </select>
+          )}
         </div>
 
         {/* Cards grid */}
@@ -231,7 +250,7 @@ export default function Vendedores() {
                     <div className="flex items-center gap-2">
                       {v.time && <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
                       {/* Admin permission toggle */}
-                      {v.email && usuario && (
+                      {isAdmin && v.email && usuario && (
                         <div className="flex items-center gap-1">
                           <input type="checkbox" checked={temPermissao}
                             onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
@@ -253,12 +272,16 @@ export default function Vendedores() {
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                         )}
                       </button>
-                      <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                        <Edit2 className="w-3.5 h-3.5 text-gray-400" />
-                      </button>
-                      <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                            <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                          <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

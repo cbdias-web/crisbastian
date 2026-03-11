@@ -34,7 +34,7 @@ export default function Layout({ children, currentPageName }) {
 
     { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
-    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: false },
+    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
