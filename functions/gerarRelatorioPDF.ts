@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
 
             doc.setFontSize(8);
             const mesRefFormatado = bonusItem.mes_referencia ? 
-                new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }) : '-';
+                cleanText(new Date(bonusItem.mes_referencia + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })) : '-';
             doc.text(mesRefFormatado, 16, y);
             doc.text('BONUS POR META', 40, y);
             doc.text('Atingiu 100% da meta', 95, y);
