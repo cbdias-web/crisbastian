@@ -152,15 +152,22 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
               {filtradas.length === 0 ? (
                 <tr><td colSpan={isAdmin ? 7 : 6} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
               ) : filtradas.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50/50 transition">
+                <tr key={c.id} className={`hover:bg-gray-50/50 transition ${c.tipo === 'bonus' ? 'bg-amber-50/30' : ''}`}>
                   <td className="px-5 py-3 text-gray-600">{c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "—"}</td>
-                  <td className="px-5 py-3 font-medium text-gray-900">{c.vendedor_nome || "—"}</td>
-                  <td className="px-5 py-3 text-gray-600">{formatCurrency(c.valor_venda)}</td>
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-gray-900">{c.vendedor_nome || "—"}</span>
+                      {c.tipo === 'bonus' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">BÔNUS</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-5 py-3 text-gray-600">{c.tipo === 'bonus' ? '—' : formatCurrency(c.valor_venda)}</td>
                   <td className="px-5 py-3 text-gray-600">
-                    {editingId === c.id
+                    {c.tipo === 'bonus' ? '—' : (editingId === c.id
                       ? <input type="number" step="0.1" value={editPercentual} onChange={e => setEditPercentual(e.target.value)}
                           className="w-16 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
-                      : `${c.percentual}%`}
+                      : `${c.percentual}%`)}
                   </td>
                   <td className="px-5 py-3 font-semibold text-emerald-600">
                     {editingId === c.id ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100) : formatCurrency(c.valor_comissao)}
@@ -181,16 +188,20 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                           </>
                         ) : (
                           <>
-                            <button onClick={() => { setEditingId(c.id); setEditPercentual(String(c.percentual)); }} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                              <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                            </button>
+                            {c.tipo !== 'bonus' && (
+                              <button onClick={() => { setEditingId(c.id); setEditPercentual(String(c.percentual)); }} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                                <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                              </button>
+                            )}
                             <button onClick={() => updateMutation.mutate({ id: c.id, data: { pago: !c.pago } })}
                               className={`px-2 py-1 text-[11px] rounded-lg font-medium transition ${c.pago ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"}`}>
                               {c.pago ? "Pend." : "Pago"}
                             </button>
-                            <button onClick={() => { if (confirm("Remover esta comissão?")) deleteMutation.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                            </button>
+                            {c.tipo === 'bonus' && (
+                              <button onClick={() => { if (confirm("Remover este bônus?")) deleteMutation.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -283,16 +294,21 @@ function ConsolidadoView({ comissoes, comissoesEsp, isAdmin }) {
               {filtrados.length === 0 ? (
                 <tr><td colSpan={isAdmin ? 8 : 7} className="px-5 py-10 text-center text-gray-400 text-sm">Nenhum registro encontrado</td></tr>
               ) : filtrados.map((c, i) => (
-                <tr key={`${c._tipo}-${c.id}-${i}`} className="hover:bg-gray-50/50 transition">
+                <tr key={`${c._tipo}-${c.id}-${i}`} className={`hover:bg-gray-50/50 transition ${c.tipo === 'bonus' ? 'bg-amber-50/30' : ''}`}>
                   <td className="px-5 py-3 text-gray-600">{c.data_venda ? format(parseISO(c.data_venda), "dd/MM/yyyy") : "—"}</td>
                   <td className="px-5 py-3">
-                    <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c._tipo === "Vendedor" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
-                      {c._tipo}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c._tipo === "Vendedor" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
+                        {c._tipo}
+                      </span>
+                      {c.tipo === 'bonus' && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">BÔNUS</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3 font-medium text-gray-900">{c.vendedor_nome || "—"}</td>
-                  <td className="px-5 py-3 text-gray-600">{formatCurrency(c.valor_venda)}</td>
-                  <td className="px-5 py-3 text-gray-600">{c.percentual}%</td>
+                  <td className="px-5 py-3 text-gray-600">{c.tipo === 'bonus' ? '—' : formatCurrency(c.valor_venda)}</td>
+                  <td className="px-5 py-3 text-gray-600">{c.tipo === 'bonus' ? '—' : `${c.percentual}%`}</td>
                   <td className="px-5 py-3 font-semibold text-emerald-600">{formatCurrency(c.valor_comissao)}</td>
                   <td className="px-5 py-3">
                     <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c.pago ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
