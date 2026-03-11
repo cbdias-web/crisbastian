@@ -113,6 +113,15 @@ function MetaFormModal({ vendedores, onSave, onClose, editingMeta }) {
             <input type="number" step="0.01" value={formData.valor_meta} onChange={e => setFormData(f => ({ ...f, valor_meta: e.target.value }))}
               className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
           </div>
+          {formData.tipo === "individual" && (
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor do Bônus (100% da Meta)</label>
+              <input type="number" step="0.01" value={formData.valor_bonus || ""} onChange={e => setFormData(f => ({ ...f, valor_bonus: e.target.value }))}
+                placeholder="R$ 0,00"
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+              <p className="text-xs text-gray-400 mt-1">Bônus concedido ao atingir 100% da meta</p>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 pt-2">
@@ -145,6 +154,7 @@ export default function Metas() {
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalEditing, setModalEditing] = useState(null);
+  const [processandoBonus, setProcessandoBonus] = useState(false);
 
   const load = () => {
     Promise.all([
@@ -194,11 +204,15 @@ export default function Metas() {
   };
 
   const handleModalSave = async (data) => {
+    const payload = { 
+      ...data, 
+      valor_bonus: data.valor_bonus ? parseFloat(data.valor_bonus) : 0 
+    };
     if (modalEditing) {
-      await base44.entities.Meta.update(modalEditing.id, data);
+      await base44.entities.Meta.update(modalEditing.id, payload);
       toast.success("Meta atualizada!");
     } else {
-      await base44.entities.Meta.create(data);
+      await base44.entities.Meta.create(payload);
       toast.success("Meta criada!");
     }
     setShowModal(false);
@@ -211,6 +225,19 @@ export default function Metas() {
     await base44.entities.Meta.delete(id);
     toast.success("Meta excluída!");
     load();
+  };
+
+  const processarBonusDoMes = async () => {
+    if (!confirm(`Processar bônus de todos os vendedores que atingiram a meta em ${mesLabel}?`)) return;
+    setProcessandoBonus(true);
+    try {
+      const response = await base44.functions.invoke('processarBonusTodosVendedores', { mes });
+      toast.success(`${response.data.bonus_criados} bônus criados de ${response.data.processados} vendedores processados!`);
+      load();
+    } catch (error) {
+      toast.error('Erro ao processar bônus: ' + error.message);
+    }
+    setProcessandoBonus(false);
   };
 
   // Date range helpers
@@ -294,11 +321,18 @@ export default function Metas() {
               placeholder="Selecionar vendedores"
             />
             {isAdmin && (
-              <button onClick={() => { setModalEditing(null); setShowModal(true); }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm rounded-xl hover:bg-[#0f1e35] transition font-medium">
-                <Plus className="w-4 h-4" />
-                Nova Meta
-              </button>
+              <>
+                <button onClick={processarBonusDoMes} disabled={processandoBonus}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 text-white text-sm rounded-xl hover:bg-amber-600 transition font-medium disabled:opacity-50">
+                  <Award className="w-4 h-4" />
+                  {processandoBonus ? "Processando..." : "Processar Bônus"}
+                </button>
+                <button onClick={() => { setModalEditing(null); setShowModal(true); }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm rounded-xl hover:bg-[#0f1e35] transition font-medium">
+                  <Plus className="w-4 h-4" />
+                  Nova Meta
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -417,18 +451,29 @@ export default function Metas() {
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 group">
-                            <span className="text-sm text-gray-600">
-                              {v.meta > 0 ? formatCurrency(v.meta) : <span className="text-gray-300">Não definida</span>}
-                            </span>
-                            {isAdmin && (
-                              <button
-                                onClick={() => setInlineEditing({ vendedor_id: v.id, value: v.meta || "" })}
-                                className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-lg transition"
-                              >
-                                {v.meta > 0 ? <Edit2 className="w-3.5 h-3.5 text-gray-400" /> : <Plus className="w-3.5 h-3.5 text-blue-400" />}
-                              </button>
-                            )}
+                          <div>
+                            <div className="flex items-center gap-2 group">
+                              <span className="text-sm text-gray-600">
+                                {v.meta > 0 ? formatCurrency(v.meta) : <span className="text-gray-300">Não definida</span>}
+                              </span>
+                              {isAdmin && (
+                                <button
+                                  onClick={() => setInlineEditing({ vendedor_id: v.id, value: v.meta || "" })}
+                                  className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-lg transition"
+                                >
+                                  {v.meta > 0 ? <Edit2 className="w-3.5 h-3.5 text-gray-400" /> : <Plus className="w-3.5 h-3.5 text-blue-400" />}
+                                </button>
+                              )}
+                            </div>
+                            {(() => {
+                              const metaRecord = getMetaRecord(v.id);
+                              return metaRecord?.valor_bonus > 0 ? (
+                                <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                                  <Award className="w-3 h-3" />
+                                  Bônus: {formatCurrency(metaRecord.valor_bonus)}
+                                </p>
+                              ) : null;
+                            })()}
                           </div>
                         )}
                       </td>
