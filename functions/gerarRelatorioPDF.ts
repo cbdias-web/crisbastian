@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         
         doc.setFontSize(8);
         const dataHoje = new Date().toLocaleDateString('pt-BR');
-        doc.text(`Gerado em: ${dataHoje}`, pageWidth - 14, 15, { align: 'right' });
+        doc.text('Gerado em: ' + dataHoje, pageWidth - 14, 15, { align: 'right' });
 
         y = 45;
 
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
         doc.setFont('helvetica', 'normal');
         
         const periodoTexto = dataInicio && dataFim 
-            ? `${new Date(dataInicio).toLocaleDateString('pt-BR')} a ${new Date(dataFim).toLocaleDateString('pt-BR')}`
+            ? new Date(dataInicio).toLocaleDateString('pt-BR') + ' a ' + new Date(dataFim).toLocaleDateString('pt-BR')
             : 'Todos os registros';
         doc.text(periodoTexto, 40, y);
 
@@ -259,7 +259,7 @@ Deno.serve(async (req) => {
             status: 200,
             headers: {
                 'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename=relatorio-${tipo}-${vendedor_nome.replace(/\s+/g, '-')}-${dataHoje.replace(/\//g, '-')}.pdf`
+                'Content-Disposition': 'attachment; filename=relatorio-' + tipo + '-' + vendedor_nome.replace(/\s+/g, '-') + '-' + dataHoje.replace(/\//g, '-') + '.pdf'
             }
         });
     } catch (error) {
