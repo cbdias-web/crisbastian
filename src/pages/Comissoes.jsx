@@ -77,6 +77,8 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
   const [filtroPago, setFiltroPago] = useState("todos");
   const [editingId, setEditingId] = useState(null);
   const [editPercentual, setEditPercentual] = useState("");
+  const [editingBonusId, setEditingBonusId] = useState(null);
+  const [editBonusValue, setEditBonusValue] = useState("");
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -170,7 +172,12 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                       : `${c.percentual}%`)}
                   </td>
                   <td className="px-5 py-3 font-semibold text-emerald-600">
-                    {editingId === c.id ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100) : formatCurrency(c.valor_comissao)}
+                    {editingId === c.id
+                      ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100)
+                      : editingBonusId === c.id
+                      ? <input type="number" step="0.01" value={editBonusValue} onChange={e => setEditBonusValue(e.target.value)}
+                          className="w-24 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                      : formatCurrency(c.valor_comissao)}
                   </td>
                   <td className="px-5 py-3">
                     <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${c.pago ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
@@ -186,10 +193,20 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                               className="p-1.5 hover:bg-emerald-50 rounded-lg transition"><Save className="w-3.5 h-3.5 text-emerald-600" /></button>
                             <button onClick={() => setEditingId(null)} className="p-1.5 hover:bg-red-50 rounded-lg transition"><X className="w-3.5 h-3.5 text-red-400" /></button>
                           </>
+                        ) : editingBonusId === c.id ? (
+                          <>
+                            <button onClick={() => { const val = parseFloat(editBonusValue); updateMutation.mutate({ id: c.id, data: { valor_comissao: val } }); setEditingBonusId(null); }}
+                              className="p-1.5 hover:bg-emerald-50 rounded-lg transition"><Save className="w-3.5 h-3.5 text-emerald-600" /></button>
+                            <button onClick={() => setEditingBonusId(null)} className="p-1.5 hover:bg-red-50 rounded-lg transition"><X className="w-3.5 h-3.5 text-red-400" /></button>
+                          </>
                         ) : (
                           <>
-                            {c.tipo !== 'bonus' && (
+                            {c.tipo !== 'bonus' ? (
                               <button onClick={() => { setEditingId(c.id); setEditPercentual(String(c.percentual)); }} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                                <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                              </button>
+                            ) : (
+                              <button onClick={() => { setEditingBonusId(c.id); setEditBonusValue(String(c.valor_comissao)); }} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                                 <Pencil className="w-3.5 h-3.5 text-gray-400" />
                               </button>
                             )}
