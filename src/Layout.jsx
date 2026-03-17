@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -12,9 +13,15 @@ export default function Layout({ children, currentPageName }) {
     return saved === 'true';
   });
   const [greeting, setGreeting] = useState('Olá');
+  const [editingName, setEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    base44.auth.me().then(u => {
+      setUser(u);
+      setDisplayName(u?.nome_tratamento || u?.full_name || u?.email || '');
+    }).catch(() => {});
     
     // Definir saudação baseada no horário
     const hour = new Date().getHours();
@@ -33,6 +40,24 @@ export default function Layout({ children, currentPageName }) {
   }, [darkMode]);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+
+  const saveDisplayName = async () => {
+    if (!displayName.trim()) {
+      toast.error('Nome não pode estar vazio');
+      return;
+    }
+    setSaving(true);
+    try {
+      await base44.auth.updateMe({ nome_tratamento: displayName.trim() });
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      setEditingName(false);
+      toast.success('Nome atualizado!');
+    } catch (error) {
+      toast.error('Erro ao salvar nome');
+    }
+    setSaving(false);
+  };
 
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
@@ -69,7 +94,47 @@ export default function Layout({ children, currentPageName }) {
           {user && (
             <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/20">
               <p className="text-[10px] text-blue-200/60 uppercase tracking-wider mb-1">{greeting}</p>
-              <p className="text-sm font-semibold text-white truncate">{user.full_name || user.email}</p>
+              {editingName ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && saveDisplayName()}
+                    className="flex-1 px-2 py-1 text-sm bg-white/20 border border-white/30 rounded text-white placeholder-white/50 focus:outline-none focus:border-white/60"
+                    placeholder="Seu nome"
+                    autoFocus
+                  />
+                  <button
+                    onClick={saveDisplayName}
+                    disabled={saving}
+                    className="p-1 hover:bg-white/20 rounded transition disabled:opacity-50"
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-300" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingName(false);
+                      setDisplayName(user?.nome_tratamento || user?.full_name || user?.email || '');
+                    }}
+                    className="p-1 hover:bg-white/20 rounded transition"
+                  >
+                    <X className="w-3.5 h-3.5 text-red-300" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2 group">
+                  <p className="text-sm font-semibold text-white truncate">
+                    {user?.nome_tratamento || user?.full_name || user?.email}
+                  </p>
+                  <button
+                    onClick={() => setEditingName(true)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/20 rounded transition"
+                  >
+                    <Edit2 className="w-3 h-3 text-blue-200" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
