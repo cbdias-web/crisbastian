@@ -208,6 +208,22 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Total Vendido - Destaque */}
+        <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-6 shadow-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-blue-200/70 font-medium uppercase tracking-wider mb-2">Total Vendido no Período</p>
+              <p className="text-4xl font-bold text-white">{formatCurrency(valorTotal)}</p>
+              <p className="text-sm text-blue-200/60 mt-2">
+                {totalVendas} venda{totalVendas !== 1 ? "s" : ""} · Ticket médio de {formatCurrency(ticketMedio)}
+              </p>
+            </div>
+            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <TrendingUp className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
           {cards.map((card) => (
