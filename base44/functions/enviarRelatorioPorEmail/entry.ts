@@ -366,9 +366,13 @@ Deno.serve(async (req) => {
         }
 
         const pdfBytes = doc.output('arraybuffer');
-        const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfFile = new File([pdfBlob], `relatorio-${vendedor_nome.replace(/\s+/g, '-')}.pdf`, { type: 'application/pdf' });
 
-        // Enviar e-mail com anexo em base64
+        // Upload do PDF para obter URL
+        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: pdfFile });
+
+        // Enviar e-mail com link para download
         await base44.asServiceRole.integrations.Core.SendEmail({
             to: vendedor_email,
             subject: `Relatório de Comissões - ${periodoTexto}`,
@@ -383,15 +387,10 @@ Deno.serve(async (req) => {
                     <li>Comissão total: ${formatCurrency(totalComissao)}</li>
                     <li>Comissão pendente: ${formatCurrency(comissaoPendente)}</li>
                 </ul>
-                <p>O relatório completo está em anexo.</p>
+                <p><strong><a href="${file_url}" style="display: inline-block; padding: 12px 24px; background-color: #1a3150; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 16px 0;">📄 Baixar Relatório Completo (PDF)</a></strong></p>
                 <p>Atenciosamente!</p>
                 <p><strong>VILLELA EXCHANGE</strong></p>
-            `,
-            attachments: [{
-                filename: `relatorio-${vendedor_nome.replace(/\s+/g, '-')}.pdf`,
-                content: pdfBase64,
-                encoding: 'base64'
-            }]
+            `
         });
 
         return Response.json({ 
