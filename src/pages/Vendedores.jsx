@@ -32,6 +32,7 @@ export default function Vendedores() {
   const [sendingEmail, setSendingEmail] = useState(null);
   const [selectedForEmail, setSelectedForEmail] = useState([]);
   const [sendingBulk, setSendingBulk] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -142,14 +143,17 @@ export default function Vendedores() {
     setSendingEmail(null);
   };
 
-  const enviarRelatoriosEmMassa = async () => {
-    const vendedoresSelecionados = comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
-    if (vendedoresSelecionados.length === 0) {
-      toast.error('Nenhum vendedor com e-mail selecionado');
+  const abrirModalEnvio = () => {
+    const vendedoresComEmail = comDados.filter(v => v.email);
+    if (vendedoresComEmail.length === 0) {
+      toast.error('Nenhum vendedor com e-mail cadastrado');
       return;
     }
-    
-    if (!confirm(`Enviar relatório para ${vendedoresSelecionados.length} vendedor(es)?`)) return;
+    setShowEmailModal(true);
+  };
+
+  const enviarRelatoriosEmMassa = async () => {
+    const vendedoresSelecionados = comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
     
     setSendingBulk(true);
     let sucessos = 0;
@@ -172,6 +176,7 @@ export default function Vendedores() {
     }
     
     setSendingBulk(false);
+    setShowEmailModal(false);
     setSelectedForEmail([]);
     
     if (erros === 0) {
@@ -179,6 +184,10 @@ export default function Vendedores() {
     } else {
       toast.warning(`${sucessos} enviado(s), ${erros} erro(s)`);
     }
+  };
+
+  const getSelecionadosParaEmail = () => {
+    return comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
   };
 
   const toggleSelectForEmail = (vendedorId) => {
@@ -329,18 +338,14 @@ export default function Vendedores() {
           </div>
           {isAdmin && (
             <div className="flex gap-2">
-              {selectedForEmail.length > 0 && (
-                <button 
-                  onClick={enviarRelatoriosEmMassa}
-                  disabled={sendingBulk}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition disabled:opacity-50">
-                  <Mail className="w-4 h-4" />
-                  {sendingBulk ? 'Enviando...' : `Enviar para ${selectedForEmail.length}`}
-                </button>
-              )}
               <button onClick={() => exportCSV(visibleVendedores)}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /> Exportar
+              </button>
+              <button 
+                onClick={abrirModalEnvio}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition shadow-sm">
+                <Send className="w-4 h-4" /> Enviar Relatórios
               </button>
               <button onClick={openCreate}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition shadow-sm">
@@ -382,22 +387,6 @@ export default function Vendedores() {
           <>
             {comDados.length > 0 && (
               <>
-                {isAdmin && comDados.filter(v => v.email).length > 0 && (
-                  <div className="mb-3">
-                    <button
-                      onClick={toggleSelectAllForEmail}
-                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
-                    >
-                      <input 
-                        type="checkbox" 
-                        checked={selectedForEmail.length === comDados.filter(v => v.email).length && selectedForEmail.length > 0}
-                        onChange={toggleSelectAllForEmail}
-                        className="w-4 h-4 accent-[#1a3150] cursor-pointer"
-                      />
-                      Selecionar todos para envio
-                    </button>
-                  </div>
-                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {comDados.map(v => {
               const vendasDoMes = vendas.filter(vd =>
@@ -418,17 +407,9 @@ export default function Vendedores() {
               const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
               return (
-                <div key={v.id} className={`bg-white rounded-2xl shadow-sm border p-5 hover:shadow-md transition ${selectedForEmail.includes(v.id) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
+                <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      {isAdmin && v.email && (
-                        <input
-                          type="checkbox"
-                          checked={selectedForEmail.includes(v.id)}
-                          onChange={() => toggleSelectForEmail(v.id)}
-                          className="w-4 h-4 accent-[#1a3150] cursor-pointer flex-shrink-0"
-                        />
-                      )}
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                         {v.nome?.charAt(0).toUpperCase()}
                       </div>
@@ -727,6 +708,121 @@ export default function Vendedores() {
                 >
                   Salvar
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Envio em Massa */}
+        {showEmailModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-gray-900">Enviar Relatórios por E-mail</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Selecione os vendedores que receberão o relatório do período</p>
+                </div>
+                <button onClick={() => setShowEmailModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
+                {/* Período */}
+                <div className="bg-blue-50 rounded-xl p-4 mb-5">
+                  <p className="text-xs text-gray-500 mb-1">Período do Relatório:</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    {new Date(dateFrom).toLocaleDateString('pt-BR')} até {new Date(dateTo).toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+
+                {/* Lista de Vendedores */}
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium text-gray-700">
+                      Vendedores (com e-mail cadastrado)
+                    </p>
+                    <button
+                      onClick={() => setSelectedForEmail([])}
+                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Desmarcar Todos
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {comDados.filter(v => v.email).map(v => {
+                      const vendasDoMes = vendas.filter(vd =>
+                        (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+                        vd.data && vd.data >= dateFrom && vd.data <= dateTo
+                      );
+                      const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+                      
+                      return (
+                        <div key={v.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          <input
+                            type="checkbox"
+                            checked={selectedForEmail.includes(v.id)}
+                            onChange={() => toggleSelectForEmail(v.id)}
+                            className="w-4 h-4 accent-blue-600 cursor-pointer"
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{v.nome}</p>
+                            <p className="text-xs text-gray-500">{v.email}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">{vendasDoMes.length} vendas</p>
+                            <p className="text-xs font-semibold text-gray-700">
+                              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(volume)} pendente
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Mensagem do E-mail */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <p className="text-xs font-medium text-gray-500 mb-2">Mensagem do E-mail:</p>
+                  <p className="text-xs text-gray-600 italic leading-relaxed">
+                    "Relatório para conferência e acompanhamento da comissão gerada no período especificado. Caso haja alguma divergência ou necessidade de ajuste, falar com a gestão do produto.
+                    <br /><br />
+                    Atenciosamente!<br />
+                    <strong>VILLELA EXCHANGE</strong>"
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  {selectedForEmail.length} vendedor(es) selecionado(s)
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowEmailModal(false)}
+                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={enviarRelatoriosEmMassa}
+                    disabled={sendingBulk || selectedForEmail.length === 0}
+                    className="flex items-center gap-2 px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50 font-medium"
+                  >
+                    {sendingBulk ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Enviar Relatórios
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
