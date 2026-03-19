@@ -29,6 +29,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
   });
 
+  // Lista combinada de indicadores (vendedores + espelhamentos)
+  const indicadoresDisponiveis = [
+    ...vendedores.filter(v => v.ativo !== false).map(v => ({ id: v.id, nome: v.nome, tipo: 'vendedor', percentual_comissao: v.percentual_comissao || 10 })),
+    ...espelhamentos.map(e => ({ id: e.id, nome: e.nome, tipo: 'indicador', percentual_comissao: e.percentual_comissao || 10 }))
+  ].sort((a, b) => a.nome.localeCompare(b.nome));
+
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes'],
     queryFn: () => base44.entities.Cliente.list('nome'),
@@ -108,10 +114,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     setIndicadores(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const updateIndicadorEsp = (idx, espId) => {
-    const esp = espelhamentos.find(e => e.id === espId);
+  const updateIndicadorEsp = (idx, selectedId) => {
+    const selected = indicadoresDisponiveis.find(item => item.id === selectedId);
     setIndicadores(prev => prev.map((ind, i) =>
-      i === idx ? { id: espId, nome: esp?.nome || '', percentual: esp?.percentual_comissao || 10 } : ind
+      i === idx ? { id: selectedId, nome: selected?.nome || '', percentual: selected?.percentual_comissao || 10, tipo: selected?.tipo || 'indicador' } : ind
     ));
   };
 
@@ -278,12 +284,23 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 {indicadores.map((ind, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <div className="flex-1">
-                      <Select value={ind.id} onValueChange={espId => updateIndicadorEsp(idx, espId)}>
+                      <Select value={ind.id} onValueChange={selectedId => updateIndicadorEsp(idx, selectedId)}>
                         <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="Selecione o indicador" />
+                          <SelectValue placeholder="Selecione vendedor ou indicador" />
                         </SelectTrigger>
                         <SelectContent>
-                          {espelhamentos.map(e => <SelectItem key={e.id} value={e.id}>{e.nome}</SelectItem>)}
+                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase">Vendedores</div>
+                          {indicadoresDisponiveis.filter(item => item.tipo === 'vendedor').map(v => (
+                            <SelectItem key={`v-${v.id}`} value={v.id}>
+                              {v.nome} <span className="text-xs text-gray-400">(Vendedor)</span>
+                            </SelectItem>
+                          ))}
+                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase border-t mt-1">Indicadores</div>
+                          {indicadoresDisponiveis.filter(item => item.tipo === 'indicador').map(e => (
+                            <SelectItem key={`e-${e.id}`} value={e.id}>
+                              {e.nome} <span className="text-xs text-gray-400">(Indicador)</span>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
