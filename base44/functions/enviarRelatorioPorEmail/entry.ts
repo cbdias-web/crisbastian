@@ -365,9 +365,14 @@ Deno.serve(async (req) => {
             doc.text('Pagina ' + i + ' de ' + pageCount, pageWidth / 2, 285, { align: 'center' });
         }
 
-        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        const pdfBytes = doc.output('arraybuffer');
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfFile = new File([pdfBlob], `relatorio-${vendedor_nome.replace(/\s+/g, '-')}-${dataHoje.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
 
-        // Enviar e-mail
+        // Upload do PDF
+        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: pdfFile });
+
+        // Enviar e-mail com anexo
         await base44.asServiceRole.integrations.Core.SendEmail({
             to: vendedor_email,
             subject: `Relatório de Comissões - ${periodoTexto}`,
@@ -382,9 +387,11 @@ Deno.serve(async (req) => {
                     <li>Comissão total: ${formatCurrency(totalComissao)}</li>
                     <li>Comissão pendente: ${formatCurrency(comissaoPendente)}</li>
                 </ul>
+                <p>O relatório completo está em anexo.</p>
                 <p>Atenciosamente!</p>
                 <p><strong>VILLELA EXCHANGE</strong></p>
-            `
+            `,
+            attachments: [{ filename: `relatorio-${vendedor_nome.replace(/\s+/g, '-')}.pdf`, url: file_url }]
         });
 
         return Response.json({ 
