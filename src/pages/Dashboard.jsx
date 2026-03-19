@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   TrendingUp, Users, FileText, DollarSign,
-  ArrowUpRight, ChevronDown, Check, Calendar
+  ArrowUpRight, ChevronDown, Check, Calendar, X, Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -73,6 +73,9 @@ export default function Dashboard() {
   const [comissoes, setComissoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileForm, setProfileForm] = useState({ full_name: "", email: "", nome_tratamento: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
@@ -183,12 +186,38 @@ export default function Dashboard() {
     );
   }
 
+  const openProfileModal = () => {
+    setProfileForm({
+      full_name: user?.full_name || "",
+      email: user?.email || "",
+      nome_tratamento: user?.nome_tratamento || ""
+    });
+    setShowProfileModal(true);
+  };
+
+  const saveProfile = async () => {
+    setSavingProfile(true);
+    try {
+      await base44.auth.updateMe({
+        nome_tratamento: profileForm.nome_tratamento
+      });
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      setShowProfileModal(false);
+      toast.success('Perfil atualizado!');
+    } catch (error) {
+      toast.error('Erro ao atualizar perfil');
+    }
+    setSavingProfile(false);
+  };
+
   const uploadAvatar = async (file) => {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       await base44.auth.updateMe({ avatar_url: file_url });
       const updatedUser = await base44.auth.me();
       setUser(updatedUser);
+      setProfileForm(prev => ({ ...prev }));
       toast.success('Avatar atualizado!');
     } catch (error) {
       toast.error('Erro ao atualizar avatar');
@@ -206,28 +235,22 @@ export default function Dashboard() {
           
           {/* User Profile */}
           {user && (
-            <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm">
+            <button
+              onClick={openProfileModal}
+              className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer"
+            >
               <div className="text-right">
                 <p className="text-[10px] text-gray-400 uppercase tracking-wider">Bem-vindo</p>
                 <p className="text-sm font-semibold text-gray-900">{user.nome_tratamento || user.full_name || user.email}</p>
               </div>
-              <div className="relative group">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden cursor-pointer">
-                  {user.avatar_url ? (
-                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  title="Clique para alterar avatar"
-                />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                )}
               </div>
-            </div>
+            </button>
           )}
         </div>
 
@@ -422,6 +445,97 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Modal de Perfil */}
+        {showProfileModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">Meu Perfil</h3>
+                <button onClick={() => setShowProfileModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                {/* Avatar */}
+                <div className="flex flex-col items-center gap-3 pb-4 border-b border-gray-100">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
+                      {user?.avatar_url ? (
+                        <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{(user?.nome_tratamento || user?.full_name || user?.email || '?').charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-lg">
+                      <Upload className="w-3.5 h-3.5" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-400">Clique no ícone para alterar o avatar</p>
+                </div>
+
+                {/* Nome completo (read-only) */}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Nome completo</label>
+                  <input
+                    type="text"
+                    value={profileForm.full_name}
+                    disabled
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+
+                {/* E-mail (read-only) */}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">E-mail</label>
+                  <input
+                    type="email"
+                    value={profileForm.email}
+                    disabled
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Nome de tratamento (editável) */}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">
+                    Nome de tratamento (como aparece no sistema)
+                  </label>
+                  <input
+                    type="text"
+                    value={profileForm.nome_tratamento}
+                    onChange={(e) => setProfileForm(prev => ({ ...prev, nome_tratamento: e.target.value }))}
+                    placeholder="Ex: João Silva"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                  />
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveProfile}
+                  disabled={savingProfile}
+                  className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium"
+                >
+                  {savingProfile ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
