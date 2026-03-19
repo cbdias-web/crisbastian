@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { FileText, Download, Calendar, Users } from "lucide-react";
+import { FileText, Download, Calendar, Users, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export default function RelatorioComissoes() {
@@ -17,6 +17,8 @@ export default function RelatorioComissoes() {
     return now.toISOString().split("T")[0];
   });
   const [generating, setGenerating] = useState(false);
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [selectedForEmail, setSelectedForEmail] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -56,6 +58,25 @@ export default function RelatorioComissoes() {
     }
   };
 
+  const toggleSelectForEmail = (tipo, id) => {
+    const key = `${tipo}_${id}`;
+    setSelectedForEmail(prev => 
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    );
+  };
+
+  const toggleSelectAllForEmail = () => {
+    const todosVendedoresComEmail = vendedores.filter(v => v.email).map(v => `vendedor_${v.id}`);
+    const todosIndicadoresComEmail = indicadores.filter(i => i.email).map(i => `indicador_${i.id}`);
+    const todos = [...todosVendedoresComEmail, ...todosIndicadoresComEmail];
+    
+    if (selectedForEmail.length === todos.length) {
+      setSelectedForEmail([]);
+    } else {
+      setSelectedForEmail(todos);
+    }
+  };
+
   const gerarRelatorio = async () => {
     if (selectedVendedores.length === 0 && selectedIndicadores.length === 0) {
       toast.error("Selecione pelo menos um vendedor ou indicador");
@@ -83,6 +104,76 @@ export default function RelatorioComissoes() {
       toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
     }
     setGenerating(false);
+  };
+
+  const enviarRelatoriosEmMassa = async () => {
+    if (selectedForEmail.length === 0) {
+      toast.error("Selecione ao menos um vendedor/indicador com e-mail");
+      return;
+    }
+
+    const vendedoresSelecionados = selectedForEmail
+      .filter(key => key.startsWith('vendedor_'))
+      .map(key => key.replace('vendedor_', ''))
+      .map(id => vendedores.find(v => v.id === id))
+      .filter(v => v && v.email);
+
+    const indicadoresSelecionados = selectedForEmail
+      .filter(key => key.startsWith('indicador_'))
+      .map(key => key.replace('indicador_', ''))
+      .map(id => indicadores.find(i => i.id === id))
+      .filter(i => i && i.email);
+
+    const total = vendedoresSelecionados.length + indicadoresSelecionados.length;
+    
+    if (!confirm(`Enviar relatório para ${total} pessoa(s)?`)) return;
+
+    setSendingEmails(true);
+    let sucessos = 0;
+    let erros = 0;
+
+    // Enviar para vendedores
+    for (const v of vendedoresSelecionados) {
+      try {
+        await base44.functions.invoke('enviarRelatorioPorEmail', {
+          tipo: 'vendedor',
+          vendedor_id: v.id,
+          vendedor_nome: v.nome,
+          vendedor_email: v.email,
+          dataInicio,
+          dataFim
+        });
+        sucessos++;
+      } catch (error) {
+        erros++;
+      }
+    }
+
+    // Enviar para indicadores
+    for (const i of indicadoresSelecionados) {
+      try {
+        await base44.functions.invoke('enviarRelatorioPorEmail', {
+          tipo: 'indicador',
+          vendedor_id: i.id,
+          vendedor_nome: i.nome,
+          vendedor_email: i.email,
+          dataInicio,
+          dataFim
+        });
+        sucessos++;
+      } catch (error) {
+        erros++;
+      }
+    }
+
+    setSendingEmails(false);
+    setSelectedForEmail([]);
+
+    if (erros === 0) {
+      toast.success(`${sucessos} relatório(s) enviado(s) com sucesso!`);
+    } else {
+      toast.warning(`${sucessos} enviado(s), ${erros} erro(s)`);
+    }
   };
 
   return (
@@ -123,7 +214,7 @@ export default function RelatorioComissoes() {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-400" />
               <h3 className="font-semibold text-gray-900 text-sm">Vendedores</h3>
-              <span className="text-xs text-gray-400">({selectedVendedores.length} selecionados)</span>
+              <span className="text-xs text-gray-400">({selectedVendedores.length} selecionados para relatório)</span>
             </div>
             <button
               onClick={toggleAllVendedores}
@@ -134,15 +225,24 @@ export default function RelatorioComissoes() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {vendedores.map(v => (
-              <label key={v.id} className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+              <div key={v.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${selectedForEmail.includes(`vendedor_${v.id}`) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
                 <input
                   type="checkbox"
                   checked={selectedVendedores.includes(v.id)}
                   onChange={() => toggleVendedor(v.id)}
                   className="w-4 h-4 accent-[#1a3150] cursor-pointer"
                 />
-                <span className="text-sm text-gray-700 truncate">{v.nome}</span>
-              </label>
+                <span className="text-sm text-gray-700 truncate flex-1">{v.nome}</span>
+                {v.email && (
+                  <input
+                    type="checkbox"
+                    checked={selectedForEmail.includes(`vendedor_${v.id}`)}
+                    onChange={() => toggleSelectForEmail('vendedor', v.id)}
+                    className="w-4 h-4 accent-green-600 cursor-pointer"
+                    title="Enviar por e-mail"
+                  />
+                )}
+              </div>
             ))}
           </div>
           {vendedores.length === 0 && (
@@ -156,7 +256,7 @@ export default function RelatorioComissoes() {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-400" />
               <h3 className="font-semibold text-gray-900 text-sm">Indicadores</h3>
-              <span className="text-xs text-gray-400">({selectedIndicadores.length} selecionados)</span>
+              <span className="text-xs text-gray-400">({selectedIndicadores.length} selecionados para relatório)</span>
             </div>
             <button
               onClick={toggleAllIndicadores}
@@ -167,15 +267,24 @@ export default function RelatorioComissoes() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {indicadores.map(i => (
-              <label key={i.id} className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+              <div key={i.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${selectedForEmail.includes(`indicador_${i.id}`) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
                 <input
                   type="checkbox"
                   checked={selectedIndicadores.includes(i.id)}
                   onChange={() => toggleIndicador(i.id)}
                   className="w-4 h-4 accent-[#1a3150] cursor-pointer"
                 />
-                <span className="text-sm text-gray-700 truncate">{i.nome}</span>
-              </label>
+                <span className="text-sm text-gray-700 truncate flex-1">{i.nome}</span>
+                {i.email && (
+                  <input
+                    type="checkbox"
+                    checked={selectedForEmail.includes(`indicador_${i.id}`)}
+                    onChange={() => toggleSelectForEmail('indicador', i.id)}
+                    className="w-4 h-4 accent-green-600 cursor-pointer"
+                    title="Enviar por e-mail"
+                  />
+                )}
+              </div>
             ))}
           </div>
           {indicadores.length === 0 && (
@@ -183,8 +292,45 @@ export default function RelatorioComissoes() {
           )}
         </div>
 
-        {/* Botão Gerar */}
-        <div className="flex justify-end">
+        {/* Seleção global para e-mail */}
+        {(vendedores.some(v => v.email) || indicadores.some(i => i.email)) && (
+          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+            <button
+              onClick={toggleSelectAllForEmail}
+              className="text-sm text-[#1a3150] hover:text-blue-900 flex items-center gap-2 font-medium"
+            >
+              <input 
+                type="checkbox" 
+                checked={selectedForEmail.length > 0 && selectedForEmail.length === ([...vendedores.filter(v => v.email), ...indicadores.filter(i => i.email)].length)}
+                onChange={toggleSelectAllForEmail}
+                className="w-4 h-4 accent-green-600 cursor-pointer"
+              />
+              Selecionar todos com e-mail para envio
+            </button>
+          </div>
+        )}
+
+        {/* Botões de Ação */}
+        <div className="flex justify-end gap-3">
+          {selectedForEmail.length > 0 && (
+            <button
+              onClick={enviarRelatoriosEmMassa}
+              disabled={sendingEmails}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {sendingEmails ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4" />
+                  Enviar para {selectedForEmail.length}
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={gerarRelatorio}
             disabled={generating || (selectedVendedores.length === 0 && selectedIndicadores.length === 0)}
