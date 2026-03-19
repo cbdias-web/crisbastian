@@ -6,6 +6,7 @@ import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar
 } from "lucide-react";
+import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const formatCurrency = (v) =>
@@ -71,6 +72,7 @@ export default function Dashboard() {
   const [metas, setMetas] = useState([]);
   const [comissoes, setComissoes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
@@ -83,11 +85,13 @@ export default function Dashboard() {
       base44.entities.Vendedor.list(),
       base44.entities.Meta.list(),
       base44.entities.Comissao.list(),
-    ]).then(([v, vend, m, com]) => {
+      base44.auth.me(),
+    ]).then(([v, vend, m, com, u]) => {
       setVendas(v);
       setVendedores(vend);
       setMetas(m);
       setComissoes(com);
+      setUser(u);
       setSelectedVendedores(vend.map(vv => vv.id));
       const prods = [...new Set(v.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
@@ -179,14 +183,55 @@ export default function Dashboard() {
     );
   }
 
+  const uploadAvatar = async (file) => {
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.auth.updateMe({ avatar_url: file_url });
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      toast.success('Avatar atualizado!');
+    } catch (error) {
+      toast.error('Erro ao atualizar avatar');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="space-y-5 max-w-7xl mx-auto">
-        <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Visão Geral</h2>
             <p className="text-gray-400 text-sm mt-0.5">Acompanhe o desempenho da sua operação</p>
           </div>
+          
+          {/* User Profile */}
+          {user && (
+            <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm">
+              <div className="text-right">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Bem-vindo</p>
+                <p className="text-sm font-semibold text-gray-900">{user.nome_tratamento || user.full_name || user.email}</p>
+              </div>
+              <div className="relative group">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden cursor-pointer">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  title="Clique para alterar avatar"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3">
 
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
