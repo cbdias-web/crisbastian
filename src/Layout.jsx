@@ -12,7 +12,6 @@ export default function Layout({ children, currentPageName }) {
     const saved = localStorage.getItem('darkMode');
     return saved === 'true';
   });
-  const [greeting, setGreeting] = useState('Olá');
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -22,12 +21,6 @@ export default function Layout({ children, currentPageName }) {
       setUser(u);
       setDisplayName(u?.nome_tratamento || u?.full_name || u?.email || '');
     }).catch(() => {});
-    
-    // Definir saudação baseada no horário
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Bom dia');
-    else if (hour < 18) setGreeting('Boa tarde');
-    else setGreeting('Boa noite');
   }, []);
 
   useEffect(() => {
@@ -91,52 +84,7 @@ export default function Layout({ children, currentPageName }) {
             </Button>
           </div>
           
-          {user && (
-            <div className="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/20">
-              <p className="text-[10px] text-blue-200/60 uppercase tracking-wider mb-1">{greeting}</p>
-              {editingName ? (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && saveDisplayName()}
-                    className="flex-1 px-2 py-1 text-sm bg-white/20 border border-white/30 rounded text-white placeholder-white/50 focus:outline-none focus:border-white/60"
-                    placeholder="Seu nome"
-                    autoFocus
-                  />
-                  <button
-                    onClick={saveDisplayName}
-                    disabled={saving}
-                    className="p-1 hover:bg-white/20 rounded transition disabled:opacity-50"
-                  >
-                    <Check className="w-3.5 h-3.5 text-emerald-300" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingName(false);
-                      setDisplayName(user?.nome_tratamento || user?.full_name || user?.email || '');
-                    }}
-                    className="p-1 hover:bg-white/20 rounded transition"
-                  >
-                    <X className="w-3.5 h-3.5 text-red-300" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between gap-2 group">
-                  <p className="text-sm font-semibold text-white truncate">
-                    {user?.nome_tratamento || user?.full_name || user?.email}
-                  </p>
-                  <button
-                    onClick={() => setEditingName(true)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-white/20 rounded transition"
-                  >
-                    <Edit2 className="w-3 h-3 text-blue-200" />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+
         </div>
         <div className="px-5 pb-2">
           <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em]">Menu</p>
