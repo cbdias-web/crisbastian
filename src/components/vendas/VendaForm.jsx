@@ -93,10 +93,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [indicadores, setIndicadores] = useState(() => {
     if (venda?.indicadores?.length > 0) return venda.indicadores;
     if (venda?.espelhamento_id) {
-      return [{ id: venda.espelhamento_id, nome: venda.espelhamento || '', percentual: venda.percentual_comissao_espelhamento || 10 }];
+      return [{ id: venda.espelhamento_id, nome: venda.espelhamento || '', percentual: venda.percentual_comissao_espelhamento || 10, tipo: 'indicador' }];
     }
     return [];
   });
+
+  const [novoIndicadorTipo, setNovoIndicadorTipo] = useState('');
 
   const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteExcedido = !isAdmin && totalPctIndicadores > 30;
@@ -107,7 +109,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   };
 
   const addIndicador = () => {
-    setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10 }]);
+    setNovoIndicadorTipo('');
+  };
+
+  const confirmarTipoIndicador = (tipo) => {
+    setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo }]);
+    setNovoIndicadorTipo('');
   };
 
   const removeIndicador = (idx) => {
@@ -286,19 +293,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     <div className="flex-1">
                       <Select value={ind.id} onValueChange={selectedId => updateIndicadorEsp(idx, selectedId)}>
                         <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="Selecione vendedor ou indicador" />
+                          <SelectValue placeholder={`Selecione ${ind.tipo === 'vendedor' ? 'vendedor' : 'indicador'}`} />
                         </SelectTrigger>
                         <SelectContent>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase">Vendedores</div>
-                          {indicadoresDisponiveis.filter(item => item.tipo === 'vendedor').map(v => (
-                            <SelectItem key={`v-${v.id}`} value={v.id}>
-                              {v.nome} <span className="text-xs text-gray-400">(Vendedor)</span>
-                            </SelectItem>
-                          ))}
-                          <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase border-t mt-1">Indicadores</div>
-                          {indicadoresDisponiveis.filter(item => item.tipo === 'indicador').map(e => (
-                            <SelectItem key={`e-${e.id}`} value={e.id}>
-                              {e.nome} <span className="text-xs text-gray-400">(Indicador)</span>
+                          {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.nome}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -316,6 +316,39 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+            
+            {/* Modal seleção de tipo */}
+            {novoIndicadorTipo === '' && indicadores.length < (indicadores.length + 1) && (
+              <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" style={{ display: novoIndicadorTipo === '' ? 'none' : 'flex' }}>
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Selecionar Tipo</h3>
+                  <p className="text-sm text-gray-600 mb-4">Escolha se deseja adicionar um vendedor ou indicador:</p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => confirmarTipoIndicador('vendedor')}
+                      className="flex-1 px-4 py-3 bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium text-sm"
+                    >
+                      Vendedor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => confirmarTipoIndicador('indicador')}
+                      className="flex-1 px-4 py-3 bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium text-sm"
+                    >
+                      Indicador
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNovoIndicadorTipo('')}
+                    className="w-full mt-3 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             )}
           </div>
