@@ -30,6 +30,8 @@ export default function Vendedores() {
   const [modalBonus, setModalBonus] = useState(null); // {vendedor_id, vendedor_nome, valor_atual}
   const [valorBonus, setValorBonus] = useState("");
   const [sendingEmail, setSendingEmail] = useState(null);
+  const [selectedForEmail, setSelectedForEmail] = useState([]);
+  const [sendingBulk, setSendingBulk] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -138,6 +140,60 @@ export default function Vendedores() {
       toast.error(error.response?.data?.error || 'Erro ao enviar e-mail');
     }
     setSendingEmail(null);
+  };
+
+  const enviarRelatoriosEmMassa = async () => {
+    const vendedoresSelecionados = comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
+    if (vendedoresSelecionados.length === 0) {
+      toast.error('Nenhum vendedor com e-mail selecionado');
+      return;
+    }
+    
+    if (!confirm(`Enviar relatório para ${vendedoresSelecionados.length} vendedor(es)?`)) return;
+    
+    setSendingBulk(true);
+    let sucessos = 0;
+    let erros = 0;
+    
+    for (const v of vendedoresSelecionados) {
+      try {
+        await base44.functions.invoke('enviarRelatorioPorEmail', {
+          tipo: 'vendedor',
+          vendedor_id: v.id,
+          vendedor_nome: v.nome,
+          vendedor_email: v.email,
+          dataInicio: dateFrom,
+          dataFim: dateTo
+        });
+        sucessos++;
+      } catch (error) {
+        erros++;
+      }
+    }
+    
+    setSendingBulk(false);
+    setSelectedForEmail([]);
+    
+    if (erros === 0) {
+      toast.success(`${sucessos} relatório(s) enviado(s) com sucesso!`);
+    } else {
+      toast.warning(`${sucessos} enviado(s), ${erros} erro(s)`);
+    }
+  };
+
+  const toggleSelectForEmail = (vendedorId) => {
+    setSelectedForEmail(prev => 
+      prev.includes(vendedorId) ? prev.filter(id => id !== vendedorId) : [...prev, vendedorId]
+    );
+  };
+
+  const toggleSelectAllForEmail = () => {
+    const vendedoresComEmail = comDados.filter(v => v.email);
+    if (selectedForEmail.length === vendedoresComEmail.length) {
+      setSelectedForEmail([]);
+    } else {
+      setSelectedForEmail(vendedoresComEmail.map(v => v.id));
+    }
   };
 
   const abrirModalBonus = async (vendedor) => {
@@ -273,6 +329,15 @@ export default function Vendedores() {
           </div>
           {isAdmin && (
             <div className="flex gap-2">
+              {selectedForEmail.length > 0 && (
+                <button 
+                  onClick={enviarRelatoriosEmMassa}
+                  disabled={sendingBulk}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-xl hover:bg-green-700 transition disabled:opacity-50">
+                  <Mail className="w-4 h-4" />
+                  {sendingBulk ? 'Enviando...' : `Enviar para ${selectedForEmail.length}`}
+                </button>
+              )}
               <button onClick={() => exportCSV(visibleVendedores)}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /> Exportar
@@ -316,8 +381,25 @@ export default function Vendedores() {
         ) : (
           <>
             {comDados.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {comDados.map(v => {
+              <>
+                {isAdmin && comDados.filter(v => v.email).length > 0 && (
+                  <div className="mb-3">
+                    <button
+                      onClick={toggleSelectAllForEmail}
+                      className="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2"
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={selectedForEmail.length === comDados.filter(v => v.email).length && selectedForEmail.length > 0}
+                        onChange={toggleSelectAllForEmail}
+                        className="w-4 h-4 accent-[#1a3150] cursor-pointer"
+                      />
+                      Selecionar todos para envio
+                    </button>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {comDados.map(v => {
               const vendasDoMes = vendas.filter(vd =>
                 (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
                 vd.data && vd.data >= dateFrom && vd.data <= dateTo
@@ -336,9 +418,17 @@ export default function Vendedores() {
               const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
               return (
-                <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
+                <div key={v.id} className={`bg-white rounded-2xl shadow-sm border p-5 hover:shadow-md transition ${selectedForEmail.includes(v.id) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
+                      {isAdmin && v.email && (
+                        <input
+                          type="checkbox"
+                          checked={selectedForEmail.includes(v.id)}
+                          onChange={() => toggleSelectForEmail(v.id)}
+                          className="w-4 h-4 accent-[#1a3150] cursor-pointer flex-shrink-0"
+                        />
+                      )}
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                         {v.nome?.charAt(0).toUpperCase()}
                       </div>
@@ -530,6 +620,8 @@ export default function Vendedores() {
               })}
             </div>
           </>
+        )}
+      </>
         )}
       </>
         )}

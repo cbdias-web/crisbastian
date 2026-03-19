@@ -373,15 +373,17 @@ Deno.serve(async (req) => {
             subject: `Relatório de Comissões - ${periodoTexto}`,
             body: `
                 <h2>Olá ${vendedor_nome},</h2>
-                <p>Segue em anexo o relatório de comissões do período <strong>${periodoTexto}</strong>.</p>
-                <p><strong>Resumo:</strong></p>
+                <p>Relatório para conferência e acompanhamento da comissão gerada no período especificado.</p>
+                <p>Caso haja alguma divergência ou necessidade de ajuste, falar com a gestão do produto.</p>
+                <p><strong>Resumo do Período (${periodoTexto}):</strong></p>
                 <ul>
                     <li>Total de vendas: ${totalVendas}</li>
                     <li>Valor total vendido: ${formatCurrency(valorTotalVendido)}</li>
                     <li>Comissão total: ${formatCurrency(totalComissao)}</li>
                     <li>Comissão pendente: ${formatCurrency(comissaoPendente)}</li>
                 </ul>
-                <p>Atenciosamente,<br/>Equipe Villela Exchange</p>
+                <p>Atenciosamente!</p>
+                <p><strong>VILLELA EXCHANGE</strong></p>
             `
         });
 
