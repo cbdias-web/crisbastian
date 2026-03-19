@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -29,6 +29,7 @@ export default function Vendedores() {
   const [geratingPDF, setGeratingPDF] = useState(null);
   const [modalBonus, setModalBonus] = useState(null); // {vendedor_id, vendedor_nome, valor_atual}
   const [valorBonus, setValorBonus] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -115,6 +116,30 @@ export default function Vendedores() {
     setGeratingPDF(null);
   };
 
+  const enviarRelatorioPorEmail = async (vendedor) => {
+    if (!vendedor.email) {
+      toast.error('Vendedor não possui e-mail cadastrado');
+      return;
+    }
+    if (!confirm(`Enviar relatório do período para ${vendedor.email}?`)) return;
+    
+    setSendingEmail(vendedor.id);
+    try {
+      await base44.functions.invoke('enviarRelatorioPorEmail', {
+        tipo: 'vendedor',
+        vendedor_id: vendedor.id,
+        vendedor_nome: vendedor.nome,
+        vendedor_email: vendedor.email,
+        dataInicio: dateFrom,
+        dataFim: dateTo
+      });
+      toast.success(`Relatório enviado para ${vendedor.email}!`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao enviar e-mail');
+    }
+    setSendingEmail(null);
+  };
+
   const abrirModalBonus = async (vendedor) => {
     // Buscar apenas bônus MANUAL existente do mês
     const bonusExistente = await base44.entities.Comissao.filter({
@@ -182,8 +207,8 @@ export default function Vendedores() {
   const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
   const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
 
-  // Filtrar vendedores: se não é admin, mostra apenas o próprio perfil
-  const visibleVendedores = vendedores.filter(v => {
+  // Filtrar e organizar vendedores
+  const vendedoresFiltrados = vendedores.filter(v => {
     // Filtro de permissão
     if (!isAdmin && user?.email && v.email !== user.email) return false;
     // Filtro de status
@@ -191,6 +216,51 @@ export default function Vendedores() {
     if (statusFilter === "ativo") return v.ativo !== false;
     return v.ativo === false;
   });
+
+  // Classificar vendedores
+  const vendedoresComDados = [];
+  const vendedoresSemDados = [];
+
+  vendedoresFiltrados.forEach(v => {
+    const vendasV = vendas.filter(vd =>
+      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+      vd.data && vd.data >= dateFrom && vd.data <= dateTo
+    );
+    const temVenda = vendasV.length > 0;
+    
+    // Verificar se tem comissões no período
+    const comissoesV = (async () => {
+      const todasComissoes = await base44.entities.Comissao.filter({ vendedor_id: v.id });
+      return todasComissoes.filter(c => 
+        c.data_venda && c.data_venda >= dateFrom && c.data_venda <= dateTo
+      );
+    });
+    
+    if (temVenda) {
+      vendedoresComDados.push({ ...v, _prioridade: 1 });
+    } else {
+      // Assumir que tem comissão se não tem venda mas está ativo
+      vendedoresComDados.push({ ...v, _prioridade: 2 });
+    }
+  });
+
+  // Verificar quais realmente não têm dados
+  const visibleVendedores = vendedoresFiltrados.map(v => {
+    const vendasV = vendas.filter(vd =>
+      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+      vd.data && vd.data >= dateFrom && vd.data <= dateTo
+    );
+    return { ...v, _temDados: vendasV.length > 0 };
+  }).sort((a, b) => {
+    // Primeiro: com dados
+    if (a._temDados && !b._temDados) return -1;
+    if (!a._temDados && b._temDados) return 1;
+    // Depois: alfabética
+    return a.nome.localeCompare(b.nome);
+  });
+
+  const comDados = visibleVendedores.filter(v => v._temDados);
+  const semDados = visibleVendedores.filter(v => !v._temDados);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -233,7 +303,7 @@ export default function Vendedores() {
           )}
         </div>
 
-        {/* Cards grid */}
+        {/* Cards grid - Com dados */}
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
@@ -244,8 +314,10 @@ export default function Vendedores() {
             <p className="text-sm">Nenhum vendedor encontrado</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {visibleVendedores.map(v => {
+          <>
+            {comDados.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {comDados.map(v => {
               const vendasDoMes = vendas.filter(vd =>
                 (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
                 vd.data && vd.data >= dateFrom && vd.data <= dateTo
@@ -336,6 +408,20 @@ export default function Vendedores() {
                           <FileText className="w-3.5 h-3.5 text-blue-500" />
                         )}
                       </button>
+                      {isAdmin && v.email && (
+                        <button
+                          onClick={() => enviarRelatorioPorEmail(v)}
+                          disabled={sendingEmail === v.id}
+                          className="p-1.5 hover:bg-green-50 rounded-lg transition disabled:opacity-50"
+                          title="Enviar relatório por e-mail"
+                        >
+                          {sendingEmail === v.id ? (
+                            <div className="w-3.5 h-3.5 border border-green-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-3.5 h-3.5 text-green-600" />
+                          )}
+                        </button>
+                      )}
                       {isAdmin && (
                         <>
                           <button
@@ -359,6 +445,93 @@ export default function Vendedores() {
               );
             })}
           </div>
+        )}
+
+        {/* Vendedores sem dados - Separado */}
+        {!isLoading && semDados.length > 0 && (
+          <>
+            <div className="pt-4">
+              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3">
+                Sem vendas ou comissões no período
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
+              {semDados.map(v => {
+                const vendasDoMes = vendas.filter(vd =>
+                  (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+                  vd.data && vd.data >= dateFrom && vd.data <= dateTo
+                );
+                const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+                const usuario = usuarios.find(u => u.email === v.email);
+                const temPermissao = usuario?.permissao_admin || false;
+
+                const metaIndividual = metas.find(m =>
+                  m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
+                );
+                const valorMeta = metaIndividual?.valor_meta || 0;
+
+                return (
+                  <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {v.nome?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
+                          <p className="text-xs text-gray-400">{v.email || "—"}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                        {v.ativo !== false ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="text-center p-2 bg-gray-50 rounded-xl">
+                        <p className="text-lg font-bold text-gray-400">0</p>
+                        <p className="text-[10px] text-gray-400">Vendas</p>
+                      </div>
+                      <div className="text-center p-2 bg-gray-50 rounded-xl">
+                        <p className="text-xs font-bold text-gray-400">R$ 0,00</p>
+                        <p className="text-[10px] text-gray-400">Volume/mês</p>
+                      </div>
+                      <div className="text-center p-2 bg-blue-50 rounded-xl">
+                        <p className="text-xs font-bold text-blue-300">{v.percentual_comissao ?? 0}%</p>
+                        <p className="text-[10px] text-blue-300">Comissão</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-400">
+                      <div className="flex items-center gap-2">
+                        {v.time && <span className="bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
+                        {isAdmin && v.email && usuario && (
+                          <div className="flex items-center gap-1">
+                            <input type="checkbox" checked={temPermissao}
+                              onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
+                              className="w-3.5 h-3.5 accent-[#1a3150] cursor-pointer" />
+                            <span className="text-[10px] text-gray-400">Admin</span>
+                          </div>
+                        )}
+                      </div>
+                      {isAdmin && (
+                        <div className="flex gap-1">
+                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                            <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                          </button>
+                          <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </>
         )}
 
         {/* Modal create/edit */}
