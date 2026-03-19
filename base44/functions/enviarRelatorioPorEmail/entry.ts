@@ -366,13 +366,9 @@ Deno.serve(async (req) => {
         }
 
         const pdfBytes = doc.output('arraybuffer');
-        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const pdfFile = new File([pdfBlob], `relatorio-${vendedor_nome.replace(/\s+/g, '-')}-${dataHoje.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+        const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
 
-        // Upload do PDF
-        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: pdfFile });
-
-        // Enviar e-mail com anexo
+        // Enviar e-mail com anexo em base64
         await base44.asServiceRole.integrations.Core.SendEmail({
             to: vendedor_email,
             subject: `Relatório de Comissões - ${periodoTexto}`,
@@ -391,7 +387,11 @@ Deno.serve(async (req) => {
                 <p>Atenciosamente!</p>
                 <p><strong>VILLELA EXCHANGE</strong></p>
             `,
-            attachments: [{ filename: `relatorio-${vendedor_nome.replace(/\s+/g, '-')}.pdf`, url: file_url }]
+            attachments: [{
+                filename: `relatorio-${vendedor_nome.replace(/\s+/g, '-')}.pdf`,
+                content: pdfBase64,
+                encoding: 'base64'
+            }]
         });
 
         return Response.json({ 
