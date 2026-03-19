@@ -156,6 +156,7 @@ export default function Dashboard() {
 
   // Ranking
   const ranking = vendedores
+    .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
     .map(v => {
       const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
       const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
