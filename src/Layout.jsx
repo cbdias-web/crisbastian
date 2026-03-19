@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -63,7 +63,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
-
+    { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes', allowUser: false },
     { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
