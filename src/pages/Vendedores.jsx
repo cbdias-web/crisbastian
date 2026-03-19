@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -33,6 +33,7 @@ export default function Vendedores() {
   const [selectedForEmail, setSelectedForEmail] = useState([]);
   const [sendingBulk, setSendingBulk] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [enviosRealizados, setEnviosRealizados] = useState([]);
 
   const queryClient = useQueryClient();
 
@@ -149,6 +150,10 @@ export default function Vendedores() {
       toast.error('Nenhum vendedor com e-mail cadastrado');
       return;
     }
+    // Carregar histórico de envios do localStorage
+    const historicoKey = `envios_relatorios_${mesFiltro}`;
+    const historico = JSON.parse(localStorage.getItem(historicoKey) || '[]');
+    setEnviosRealizados(historico);
     setShowEmailModal(true);
   };
 
@@ -158,6 +163,7 @@ export default function Vendedores() {
     setSendingBulk(true);
     let sucessos = 0;
     let erros = 0;
+    const novosEnvios = [];
     
     for (const v of vendedoresSelecionados) {
       try {
@@ -170,10 +176,22 @@ export default function Vendedores() {
           dataFim: dateTo
         });
         sucessos++;
+        novosEnvios.push({
+          vendedor_id: v.id,
+          vendedor_nome: v.nome,
+          vendedor_email: v.email,
+          data_envio: new Date().toISOString(),
+          periodo: `${dateFrom} a ${dateTo}`
+        });
       } catch (error) {
         erros++;
       }
     }
+    
+    // Salvar histórico no localStorage
+    const historicoKey = `envios_relatorios_${mesFiltro}`;
+    const historicoAtual = JSON.parse(localStorage.getItem(historicoKey) || '[]');
+    localStorage.setItem(historicoKey, JSON.stringify([...historicoAtual, ...novosEnvios]));
     
     setSendingBulk(false);
     setShowEmailModal(false);
@@ -757,9 +775,10 @@ export default function Vendedores() {
                         vd.data && vd.data >= dateFrom && vd.data <= dateTo
                       );
                       const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+                      const foiEnviado = enviosRealizados.find(e => e.vendedor_id === v.id);
                       
                       return (
-                        <div key={v.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <div key={v.id} className={`flex items-center gap-3 p-3 rounded-lg ${foiEnviado ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
                           <input
                             type="checkbox"
                             checked={selectedForEmail.includes(v.id)}
@@ -767,8 +786,21 @@ export default function Vendedores() {
                             className="w-4 h-4 accent-blue-600 cursor-pointer"
                           />
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{v.nome}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-medium text-gray-900">{v.nome}</p>
+                              {foiEnviado && (
+                                <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Enviado
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500">{v.email}</p>
+                            {foiEnviado && (
+                              <p className="text-[10px] text-green-600 mt-0.5">
+                                Enviado em {new Date(foiEnviado.data_envio).toLocaleDateString('pt-BR')} às {new Date(foiEnviado.data_envio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            )}
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-500">{vendasDoMes.length} vendas</p>
