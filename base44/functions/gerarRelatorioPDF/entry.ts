@@ -44,37 +44,31 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Vendedor/Indicador não encontrado' }, { status: 404 });
         }
 
-        // Buscar vendas do período
-        const todasVendas = await base44.asServiceRole.entities.Venda.list('-data', 1000);
-        const vendas = todasVendas.filter(v => {
-            const dataOk = (!dataInicio || v.data >= dataInicio) && (!dataFim || v.data <= dataFim);
-            if (tipo === 'vendedor') {
-                return dataOk && (v.vendedor_id === vendedor_id || v.assessor_comercial === vendedor_nome);
-            } else {
-                // Para indicador, buscar vendas onde ele está listado
-                const temIndicador = v.indicadores?.some(ind => ind.id === vendedor_id) || 
-                                    v.espelhamento_id === vendedor_id ||
-                                    v.espelhamento === vendedor_nome;
-                return dataOk && temIndicador;
-            }
-        });
-
-        // Buscar comissões (incluindo bônus)
-        let comissoes;
-        let bonusAgrupados = []; // Para agrupar bônus automático + manual por mês
-        
+        // Buscar comissões do período primeiro (mais eficiente)
+        let comissoesDoPeriodo;
         if (tipo === 'vendedor') {
             const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
-            
-            // Filtrar comissões normais
-            const comissoesNormais = todasComissoes.filter(c => {
-                if (c.venda_id && vendas.some(v => v.id === c.venda_id)) {
-                    return c.vendedor_id === vendedor_id;
-                }
-                return false;
+            comissoesDoPeriodo = todasComissoes.filter(c => {
+                const dataOk = (!dataInicio || c.data_venda >= dataInicio) && (!dataFim || c.data_venda <= dataFim);
+                return c.vendedor_id === vendedor_id && c.tipo !== 'bonus' && dataOk;
             });
-            
-            // Filtrar bônus do período
+        } else {
+            const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
+            comissoesDoPeriodo = todasComissoes.filter(c => {
+                const dataOk = (!dataInicio || c.data_venda >= dataInicio) && (!dataFim || c.data_venda <= dataFim);
+                return c.vendedor_id === vendedor_id && dataOk;
+            });
+        }
+        
+        // Buscar apenas vendas que têm comissões
+        const vendasIds = [...new Set(comissoesDoPeriodo.map(c => c.venda_id))].filter(Boolean);
+        const todasVendas = await base44.asServiceRole.entities.Venda.list('-data', 1000);
+        const vendas = todasVendas.filter(v => vendasIds.includes(v.id));
+
+        // Buscar bônus do período (somente para vendedor)
+        let bonusAgrupados = [];
+        if (tipo === 'vendedor') {
+            const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
             const bonusDoPeriodo = todasComissoes.filter(c => {
                 if (c.tipo === 'bonus' && c.vendedor_id === vendedor_id && c.mes_referencia) {
                     if (!dataInicio && !dataFim) return true;
@@ -97,19 +91,13 @@ Deno.serve(async (req) => {
                     };
                 }
                 bonusPorMes[b.mes_referencia].valor_total += parseFloat(b.valor_comissao) || 0;
-                // Se pelo menos um bônus está pendente, o status é pendente
                 if (!b.pago) bonusPorMes[b.mes_referencia].pago = false;
             });
             
             bonusAgrupados = Object.values(bonusPorMes);
-            comissoes = comissoesNormais;
-        } else {
-            const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
-            comissoes = todasComissoes.filter(c => 
-                c.vendedor_id === vendedor_id && 
-                vendas.some(v => v.id === c.venda_id)
-            );
         }
+        
+        const comissoes = comissoesDoPeriodo;
 
         // Calcular totais (incluindo bônus agrupados)
         const totalVendas = vendas.length;
