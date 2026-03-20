@@ -11,6 +11,19 @@ Deno.serve(async (req) => {
 
         const { vendedor_nome, cliente, valor, total_espelhamento, indicadores, data_venda } = await req.json();
 
+        // Criar notificação na plataforma
+        await base44.asServiceRole.entities.NotificacaoAutorizacao.create({
+            tipo: 'espelhamento_acima_30',
+            vendedor_nome,
+            cliente: cliente || '',
+            valor_venda: parseFloat(valor) || 0,
+            total_espelhamento: parseFloat(total_espelhamento) || 0,
+            indicadores: indicadores || [],
+            data_venda: data_venda || new Date().toISOString().split('T')[0],
+            status: 'pendente',
+            lida: false
+        });
+
         // Buscar todos os administradores
         const usuarios = await base44.asServiceRole.entities.User.list();
         const admins = usuarios.filter(u => u.role === 'admin' || u.permissao_admin === true);

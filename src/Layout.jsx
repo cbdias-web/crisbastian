@@ -52,6 +52,16 @@ export default function Layout({ children, currentPageName }) {
     setSaving(false);
   };
 
+  const { data: notificacoesPendentes = [] } = useQuery({
+    queryKey: ['notificacoes-pendentes'],
+    queryFn: async () => {
+      const all = await base44.entities.NotificacaoAutorizacao.list();
+      return all.filter(n => n.status === 'pendente');
+    },
+    enabled: isAdmin,
+    refetchInterval: 30000
+  });
+
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
@@ -63,6 +73,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
+    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: notificacoesPendentes.length },
   ].filter(item => isAdmin || item.allowUser);
 
   return (
@@ -97,7 +108,7 @@ export default function Layout({ children, currentPageName }) {
               <Link
                 key={item.page}
                 to={createPageUrl(item.page)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
                   isActive
                     ? 'bg-white/15 text-white font-semibold shadow-sm'
                     : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
@@ -105,6 +116,11 @@ export default function Layout({ children, currentPageName }) {
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm font-medium">{item.name}</span>
+                {item.badge > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             );
           })}

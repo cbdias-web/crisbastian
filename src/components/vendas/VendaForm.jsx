@@ -418,9 +418,9 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       </Select>
                     </div>
                     <div className="w-24">
-                      <Input type="number" step="0.01" max="0.40" value={ind.percentual}
+                      <Input type="number" step="0.1" min="0" max="50" value={ind.percentual}
                         onChange={e => updateIndicadorPct(idx, e.target.value)}
-                        className="h-9 text-sm text-center" placeholder="0.00" />
+                        className="h-9 text-sm text-center" placeholder="0" />
                     </div>
                     <span className="text-xs text-gray-400 flex-shrink-0">%</span>
                     <button type="button" onClick={() => removeIndicador(idx)}
