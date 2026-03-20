@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save, Trash2, Calendar } from "lucide-react";
+import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save, Trash2, Calendar, FileText, Send } from "lucide-react";
 import { format, parseISO, startOfMonth } from "date-fns";
 import { toast } from "sonner";
 
@@ -10,14 +10,21 @@ const formatCurrency = (v) =>
 
 const toDateStr = (d) => d.toISOString().split("T")[0];
 
-function MultiSelect({ options, selected, onChange }) {
+function MultiSelect({ options, selected, onChange, vendedores, indicadores }) {
   const [open, setOpen] = useState(false);
   const lbl = selected.length === 0 || selected.length === options.length ? "Todos" : `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
   const toggle = (v) => onChange(selected.includes(v) ? selected.filter(i => i !== v) : [...selected, v]);
   const toggleAll = () => onChange(selected.length === options.length ? [] : [...options]);
+  
+  const getNome = (id) => {
+    const v = vendedores?.find(vd => vd.id === id);
+    const i = indicadores?.find(ind => ind.id === id);
+    return v?.nome || i?.nome || id;
+  };
+  
   return (
     <div className="relative">
-      <button onClick={() => setOpen(o => !o)}
+      <button onClick={() => setOpen(o => !o)} type="button"
         className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 hover:bg-gray-50 transition min-w-[140px] justify-between">
         <span className="truncate">{lbl}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -26,18 +33,18 @@ function MultiSelect({ options, selected, onChange }) {
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 max-h-60 overflow-y-auto">
-            <button onClick={toggleAll} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50">
+            <button onClick={toggleAll} type="button" className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50">
               <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.length === options.length ? "bg-[#1a3150] border-[#1a3150]" : "border-gray-300"}`}>
                 {selected.length === options.length && <Check className="w-3 h-3 text-white" />}
               </div>
               Todos
             </button>
             {options.map(o => (
-              <button key={o} onClick={() => toggle(o)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600">
+              <button key={o} onClick={() => toggle(o)} type="button" className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600">
                 <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.includes(o) ? "bg-[#1a3150] border-[#1a3150]" : "border-gray-300"}`}>
                   {selected.includes(o) && <Check className="w-3 h-3 text-white" />}
                 </div>
-                <span className="truncate">{o}</span>
+                <span className="truncate">{vendedores || indicadores ? getNome(o) : o}</span>
               </button>
             ))}
           </div>
@@ -124,7 +131,7 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
         <div className="px-5 py-4 border-b border-gray-50 flex flex-wrap items-center gap-2 justify-between">
           <span className="text-sm font-semibold text-gray-700">{filtradas.length} registro{filtradas.length !== 1 ? "s" : ""}</span>
           <div className="flex flex-wrap gap-2 items-center">
-            <MultiSelect options={nomesUnicos} selected={filtroNomes} onChange={setFiltroNomes} />
+            <MultiSelect options={nomesUnicos} selected={filtroNomes} onChange={setFiltroNomes} vendedores={null} indicadores={null} />
             <select value={filtroPago} onChange={e => setFiltroPago(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none bg-white text-gray-700">
               <option value="todos">Todos</option>
@@ -361,6 +368,9 @@ export default function Comissoes() {
   const now = new Date();
   const [dataInicio, setDataInicio] = useState(toDateStr(startOfMonth(now)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
+  const [selectedVendedores, setSelectedVendedores] = useState([]);
+  const [selectedIndicadores, setSelectedIndicadores] = useState([]);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(u => { setUser(u); setUserLoaded(true); }).catch(() => setUserLoaded(true));
@@ -376,6 +386,16 @@ export default function Comissoes() {
   const { data: comissoesEspRaw = [], isLoading: loadingE } = useQuery({
     queryKey: ["comissoesEspelhamento"],
     queryFn: () => base44.entities.ComissaoEspelhamento.list("-data_venda"),
+  });
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ["vendedores"],
+    queryFn: () => base44.entities.Vendedor.list("nome"),
+  });
+
+  const { data: indicadores = [] } = useQuery({
+    queryKey: ["espelhamentos"],
+    queryFn: () => base44.entities.Espelhamento.list("nome"),
   });
 
   // Filtra por período
@@ -397,6 +417,30 @@ export default function Comissoes() {
     );
   }
 
+  const gerarRelatorio = async () => {
+    setGerandoPDF(true);
+    try {
+      const response = await base44.functions.invoke('gerarRelatorioComissoesPDF', {
+        vendedores_ids: selectedVendedores.length === vendedores.length ? [] : selectedVendedores,
+        indicadores_ids: selectedIndicadores.length === indicadores.length ? [] : selectedIndicadores,
+        dataInicio,
+        dataFim
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-comissoes-${dataInicio}-${dataFim}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGerandoPDF(false);
+  };
+
   const tabs = [
     { key: "vendedores", label: `Vendedores (${comissoes.length})` },
     { key: "espelhamento", label: `Indicadores (${comissoesEsp.length})` },
@@ -412,14 +456,58 @@ export default function Comissoes() {
           <p className="text-gray-400 text-sm mt-0.5">Gestão de comissões de vendedores e indicadores</p>
         </div>
 
-        {/* Filtro de período */}
-        <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <Calendar className="w-4 h-4 text-gray-400 ml-1" />
-          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
-          <span className="text-gray-400 text-sm">até</span>
-          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+        {/* Filtro de período e seleção de pessoas */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <Calendar className="w-4 h-4 text-gray-400 ml-1" />
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+            <span className="text-gray-400 text-sm">até</span>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+          </div>
+
+          {isAdmin && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">Gerar relatório para:</span>
+                <MultiSelect 
+                  options={vendedores.map(v => v.id)} 
+                  selected={selectedVendedores.length === 0 ? vendedores.map(v => v.id) : selectedVendedores}
+                  onChange={setSelectedVendedores}
+                />
+                <span className="text-xs text-gray-400">
+                  {selectedVendedores.length === 0 || selectedVendedores.length === vendedores.length ? 'Todos vendedores' : `${selectedVendedores.length} vendedor(es)`}
+                </span>
+                <div className="h-4 w-px bg-gray-200" />
+                <MultiSelect 
+                  options={indicadores.map(i => i.id)}
+                  selected={selectedIndicadores.length === 0 ? indicadores.map(i => i.id) : selectedIndicadores}
+                  onChange={setSelectedIndicadores}
+                />
+                <span className="text-xs text-gray-400">
+                  {selectedIndicadores.length === 0 || selectedIndicadores.length === indicadores.length ? 'Todos indicadores' : `${selectedIndicadores.length} indicador(es)`}
+                </span>
+                <button
+                  onClick={gerarRelatorio}
+                  disabled={gerandoPDF}
+                  className="ml-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-xl hover:opacity-90 transition text-sm font-medium disabled:opacity-50"
+                >
+                  {gerandoPDF ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Gerar Relatório PDF
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Abas */}
