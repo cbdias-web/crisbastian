@@ -125,6 +125,33 @@ export default function Espelhamentos() {
     setGeratingPDF(null);
   };
 
+  const gerarRelatorioGeral = async () => {
+    setGeratingPDF('geral');
+    try {
+      const indicadoresIds = comDados.map(e => e.id);
+      const indicadoresNomes = comDados.map(e => e.nome);
+      
+      const response = await base44.functions.invoke('gerarRelatorioComissoesPDF', {
+        indicadores_ids: indicadoresIds,
+        indicadores_nomes: indicadoresNomes,
+        dataInicio: dateFrom,
+        dataFim: dateTo
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-indicadores-${mesFiltro}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório geral gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGeratingPDF(null);
+  };
+
   const enviarRelatorioPorEmail = async (indicador) => {
     if (!indicador.email) {
       toast.error('Indicador não possui e-mail cadastrado');
