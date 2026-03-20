@@ -69,20 +69,35 @@ export default function Vendas() {
       }
 
       // Comissões dos indicadores (múltiplos)
-      // IMPORTANTE: Todos os indicadores vão para ComissaoEspelhamento, independente do tipo
       const indicadores = data.indicadores || [];
       for (const ind of indicadores) {
         if (ind.id && ind.percentual > 0) {
-          await base44.entities.ComissaoEspelhamento.create({
-            venda_id: venda.id,
-            vendedor_id: ind.id,
-            vendedor_nome: ind.nome,
-            valor_venda: data.valor,
-            percentual: ind.percentual,
-            valor_comissao: (data.valor * ind.percentual) / 100,
-            data_venda: data.data,
-            pago: false
-          });
+          if (ind.tipo === 'vendedor') {
+            // Vendedor usado como indicador: vai para tabela Comissao
+            await base44.entities.Comissao.create({
+              venda_id: venda.id,
+              vendedor_id: ind.id,
+              vendedor_nome: ind.nome,
+              valor_venda: data.valor,
+              percentual: ind.percentual,
+              valor_comissao: (data.valor * ind.percentual) / 100,
+              data_venda: data.data,
+              pago: false,
+              tipo: 'comissao'
+            });
+          } else {
+            // Indicador puro: vai para tabela ComissaoEspelhamento
+            await base44.entities.ComissaoEspelhamento.create({
+              venda_id: venda.id,
+              vendedor_id: ind.id,
+              vendedor_nome: ind.nome,
+              valor_venda: data.valor,
+              percentual: ind.percentual,
+              valor_comissao: (data.valor * ind.percentual) / 100,
+              data_venda: data.data,
+              pago: false
+            });
+          }
         }
       }
 
@@ -153,20 +168,44 @@ export default function Vendas() {
         await base44.entities.ComissaoEspelhamento.delete(c.id);
       }
       
-      // IMPORTANTE: Todos os indicadores vão para ComissaoEspelhamento
+      // Remove comissões extras de vendedores usados como indicadores
+      const todasComissoes = await base44.entities.Comissao.filter({ venda_id: id });
+      const comissaoVendedorPrincipal = todasComissoes.find(c => c.vendedor_id === data.vendedor_id && c.tipo !== 'bonus');
+      for (const c of todasComissoes) {
+        if (c.id !== comissaoVendedorPrincipal?.id && c.tipo !== 'bonus') {
+          await base44.entities.Comissao.delete(c.id);
+        }
+      }
+      
       const indicadores = data.indicadores || [];
       for (const ind of indicadores) {
         if (ind.id && ind.percentual > 0) {
-          await base44.entities.ComissaoEspelhamento.create({
-            venda_id: id,
-            vendedor_id: ind.id,
-            vendedor_nome: ind.nome,
-            valor_venda: data.valor,
-            percentual: ind.percentual,
-            valor_comissao: (data.valor * ind.percentual) / 100,
-            data_venda: data.data,
-            pago: false
-          });
+          if (ind.tipo === 'vendedor') {
+            // Vendedor usado como indicador: vai para tabela Comissao
+            await base44.entities.Comissao.create({
+              venda_id: id,
+              vendedor_id: ind.id,
+              vendedor_nome: ind.nome,
+              valor_venda: data.valor,
+              percentual: ind.percentual,
+              valor_comissao: (data.valor * ind.percentual) / 100,
+              data_venda: data.data,
+              pago: false,
+              tipo: 'comissao'
+            });
+          } else {
+            // Indicador puro: vai para tabela ComissaoEspelhamento
+            await base44.entities.ComissaoEspelhamento.create({
+              venda_id: id,
+              vendedor_id: ind.id,
+              vendedor_nome: ind.nome,
+              valor_venda: data.valor,
+              percentual: ind.percentual,
+              valor_comissao: (data.valor * ind.percentual) / 100,
+              data_venda: data.data,
+              pago: false
+            });
+          }
         }
       }
 
