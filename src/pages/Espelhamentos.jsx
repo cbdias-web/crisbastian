@@ -126,6 +126,11 @@ export default function Espelhamentos() {
   };
 
   const gerarRelatorioGeral = async () => {
+    if (comDados.length === 0) {
+      toast.error('Nenhum indicador com comissão no período');
+      return;
+    }
+    
     setGeratingPDF('geral');
     try {
       const indicadoresIds = comDados.map(e => e.id);
