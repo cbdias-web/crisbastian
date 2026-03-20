@@ -411,7 +411,9 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     <div className="flex-1">
                       <Select value={ind.id} onValueChange={selectedId => updateIndicadorEsp(idx, selectedId)}>
                         <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder={`Selecionar...`} />
+                          <SelectValue placeholder={ind.nome || `Selecionar...`}>
+                            {ind.nome || 'Selecionar...'}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
