@@ -93,12 +93,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   // Multi-indicador state — carrega indicadores da venda
   const [indicadores, setIndicadores] = useState(() => {
     if (venda?.indicadores?.length > 0) {
-      // Garante que os indicadores têm os campos corretos
+      // Garante que os indicadores têm os campos corretos, preservando o tipo original
       return venda.indicadores.map(ind => ({
         id: ind.id || '',
         nome: ind.nome || '',
         percentual: ind.percentual || 10,
-        tipo: ind.tipo || 'indicador'
+        tipo: ind.tipo || 'indicador'  // Preserva vendedor ou indicador
       }));
     }
     if (venda?.espelhamento_id) {
