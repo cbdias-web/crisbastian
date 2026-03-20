@@ -524,7 +524,6 @@ export default function Vendas() {
                     <TableHead>Produto</TableHead>
                     <TableHead>Cliente</TableHead>
                     <TableHead>Vendedor</TableHead>
-                    <TableHead>Indicadores</TableHead>
                     <TableHead>Time</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Forma Pgto</TableHead>
@@ -540,19 +539,6 @@ export default function Vendas() {
                       <TableCell className="font-medium">{venda.produto}</TableCell>
                       <TableCell>{venda.cliente || '-'}</TableCell>
                       <TableCell>{venda.assessor_comercial}</TableCell>
-                      <TableCell>
-                        {venda.indicadores?.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {venda.indicadores.map((ind, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">
-                                {ind.nome} ({ind.percentual}%)
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </TableCell>
                       <TableCell>
                         {venda.time && <Badge variant="secondary">{venda.time}</Badge>}
                       </TableCell>
@@ -601,7 +587,7 @@ export default function Vendas() {
                   ))}
                   {filteredVendas.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
                         Nenhuma venda encontrada
                       </TableCell>
                     </TableRow>
