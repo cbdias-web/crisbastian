@@ -91,8 +91,8 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
-      <aside className="w-64 shadow-xl flex flex-col" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
-        <div className="p-6 pb-4">
+      <aside className="w-64 shadow-xl flex flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
+        <div className="p-6 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-white tracking-wide">Villela Exchange</h1>
@@ -108,10 +108,10 @@ export default function Layout({ children, currentPageName }) {
             </Button>
           </div>
         </div>
-        <div className="px-5 pb-2">
+        <div className="px-5 pb-2 flex-shrink-0">
           <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em]">Menu</p>
         </div>
-        <nav className="px-3 pb-4 flex-1">
+        <nav className="px-3 pb-4 flex-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
@@ -137,19 +137,21 @@ export default function Layout({ children, currentPageName }) {
           })}
         </nav>
         
-        {/* Menu fixo na base */}
-        <div className="border-t border-white/10 p-3 space-y-1">
-          <Link
-            to={createPageUrl('Usuarios')}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-              currentPageName === 'Usuarios'
-                ? 'bg-white/15 text-white font-semibold'
-                : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-            }`}
-          >
-            <Users className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm font-medium">Usuários</span>
-          </Link>
+        {/* Menu fixo na base - sempre visível */}
+        <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
+          {isAdmin && (
+            <Link
+              to={createPageUrl('Usuarios')}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                currentPageName === 'Usuarios'
+                  ? 'bg-white/15 text-white font-semibold'
+                  : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Users className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium">Usuários</span>
+            </Link>
+          )}
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all"
@@ -159,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
           </button>
         </div>
       </aside>
-      <main className="flex-1">
+      <main className="flex-1 ml-64">
         {children}
       </main>
     </div>
