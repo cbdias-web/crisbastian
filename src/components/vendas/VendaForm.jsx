@@ -90,9 +90,17 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
   });
 
-  // Multi-indicador state — backward compat com campo antigo
+  // Multi-indicador state — carrega indicadores da venda
   const [indicadores, setIndicadores] = useState(() => {
-    if (venda?.indicadores?.length > 0) return venda.indicadores;
+    if (venda?.indicadores?.length > 0) {
+      // Garante que os indicadores têm os campos corretos
+      return venda.indicadores.map(ind => ({
+        id: ind.id || '',
+        nome: ind.nome || '',
+        percentual: ind.percentual || 10,
+        tipo: ind.tipo || 'indicador'
+      }));
+    }
     if (venda?.espelhamento_id) {
       return [{ id: venda.espelhamento_id, nome: venda.espelhamento || '', percentual: venda.percentual_comissao_espelhamento || 10, tipo: 'indicador' }];
     }
