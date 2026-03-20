@@ -153,9 +153,18 @@ export default function Dashboard() {
         .filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome)
         .reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
       const metaRecord = metas.find(m => m.vendedor_id === v.id && m.mes === mesAtual && m.tipo === "individual");
-      return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0 };
+      
+      // Verifica se tem comissões no mês atual
+      const temComissaoMes = comissoes.some(c => 
+        c.vendedor_id === v.id && 
+        c.data_venda && 
+        c.data_venda >= mesIni && 
+        c.data_venda <= mesFim
+      );
+      
+      return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
     })
-    .filter(r => r.volume > 0 || r.meta > 0)
+    .filter(r => r.volume > 0 || r.meta > 0 || r.temComissaoMes)
     .sort((a, b) => b.volume - a.volume);
 
   // Últimas vendas
