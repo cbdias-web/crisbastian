@@ -120,6 +120,33 @@ export default function Vendedores() {
     setGeratingPDF(null);
   };
 
+  const gerarRelatorioGeral = async () => {
+    setGeratingPDF('geral');
+    try {
+      const vendedoresIds = comDados.map(v => v.id);
+      const vendedoresNomes = comDados.map(v => v.nome);
+      
+      const response = await base44.functions.invoke('gerarRelatorioComissoesPDF', {
+        vendedores_ids: vendedoresIds,
+        vendedores_nomes: vendedoresNomes,
+        dataInicio: dateFrom,
+        dataFim: dateTo
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-vendedores-${mesFiltro}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório geral gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGeratingPDF(null);
+  };
+
   const enviarRelatorioPorEmail = async (vendedor) => {
     if (!vendedor.email) {
       toast.error('Vendedor não possui e-mail cadastrado');
@@ -371,6 +398,17 @@ export default function Vendedores() {
               <button onClick={() => exportCSV(visibleVendedores)}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /> Exportar
+              </button>
+              <button 
+                onClick={gerarRelatorioGeral}
+                disabled={geratingPDF === 'geral'}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50">
+                {geratingPDF === 'geral' ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Relatório Geral
               </button>
               <button 
                 onClick={abrirModalEnvio}

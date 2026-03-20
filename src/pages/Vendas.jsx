@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -27,6 +27,7 @@ export default function Vendas() {
   const [dataFim, setDataFim] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
   const [produtoFiltro, setProdutoFiltro] = useState('todos');
   const [vendedorFiltro, setVendedorFiltro] = useState('todos');
+  const [gerandoRelatorioPDF, setGerandoRelatorioPDF] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -321,6 +322,30 @@ export default function Vendas() {
     toast.success('Clientes exportados!');
   };
 
+  const gerarRelatorioVendasPDF = async () => {
+    setGerandoRelatorioPDF(true);
+    try {
+      const response = await base44.functions.invoke('gerarRelatorioVendasPDF', {
+        dataInicio,
+        dataFim,
+        vendedorFiltro: vendedorFiltro === 'todos' ? null : vendedorFiltro,
+        produtoFiltro: produtoFiltro === 'todos' ? null : produtoFiltro
+      });
+      
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-vendas-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Relatório gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGerandoRelatorioPDF(false);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -347,13 +372,27 @@ export default function Vendas() {
               </Link>
             )}
             {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={() => setShowImportar(true)}
-              >
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
-                Importar Histórico
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImportar(true)}
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Importar Histórico
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={gerarRelatorioVendasPDF}
+                  disabled={gerandoRelatorioPDF}
+                >
+                  {gerandoRelatorioPDF ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <FileText className="w-4 h-4 mr-2" />
+                  )}
+                  Relatório PDF
+                </Button>
+              </>
             )}
             <Button 
               onClick={() => {
