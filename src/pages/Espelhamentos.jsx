@@ -287,6 +287,17 @@ export default function Espelhamentos() {
                 <Download className="w-4 h-4" /> Exportar
               </button>
               <button 
+                onClick={gerarRelatorioGeral}
+                disabled={geratingPDF === 'geral'}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50">
+                {geratingPDF === 'geral' ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Relatório Geral
+              </button>
+              <button 
                 onClick={abrirModalEnvio}
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition shadow-sm">
                 <Send className="w-4 h-4" /> Enviar Relatórios
