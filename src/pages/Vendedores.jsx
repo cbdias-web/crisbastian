@@ -327,13 +327,25 @@ export default function Vendedores() {
     }
   });
 
-  // Verificar quais realmente não têm dados
+  // Buscar comissões para determinar status (síncrono)
+  const { data: comissoes = [] } = useQuery({
+    queryKey: ["comissoes"],
+    queryFn: () => base44.entities.Comissao.list(),
+  });
+
+  // Verificar quais realmente têm dados (vendas OU comissões)
   const visibleVendedores = vendedoresFiltrados.map(v => {
     const vendasV = vendas.filter(vd =>
       (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
       vd.data && vd.data >= dateFrom && vd.data <= dateTo
     );
-    return { ...v, _temDados: vendasV.length > 0 };
+    
+    const comissoesV = comissoes.filter(c =>
+      c.vendedor_id === v.id &&
+      c.data_venda && c.data_venda >= dateFrom && c.data_venda <= dateTo
+    );
+    
+    return { ...v, _temDados: vendasV.length > 0 || comissoesV.length > 0 };
   }).sort((a, b) => {
     // Primeiro: com dados
     if (a._temDados && !b._temDados) return -1;
