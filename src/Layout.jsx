@@ -63,6 +63,8 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 30000
   });
 
+  const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
+
   const menuItems = [
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
@@ -75,7 +77,12 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: notificacoesPendentes.length },
-  ].filter(item => isAdmin || item.allowUser);
+    { name: 'Usuários', icon: Users, page: 'Usuarios', allowUser: false },
+  ].filter(item => {
+    if (isAdmin) return true;
+    if (!item.allowUser) return false;
+    return menusUsuario.includes(item.page);
+  });
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
