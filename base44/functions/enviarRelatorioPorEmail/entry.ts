@@ -59,19 +59,10 @@ Deno.serve(async (req) => {
         const todasVendas = await base44.asServiceRole.entities.Venda.list('-data', 1000);
         const vendas = todasVendas.filter(v => vendasIds.includes(v.id));
 
-        // Buscar comissões
-        let comissoes;
+        // Buscar bônus do período (somente para vendedor)
         let bonusAgrupados = [];
-        
         if (tipo === 'vendedor') {
             const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
-            const comissoesNormais = todasComissoes.filter(c => {
-                if (c.venda_id && vendas.some(v => v.id === c.venda_id)) {
-                    return c.vendedor_id === vendedor_id;
-                }
-                return false;
-            });
-            
             const bonusDoPeriodo = todasComissoes.filter(c => {
                 if (c.tipo === 'bonus' && c.vendedor_id === vendedor_id && c.mes_referencia) {
                     if (!dataInicio && !dataFim) return true;
@@ -97,14 +88,9 @@ Deno.serve(async (req) => {
             });
             
             bonusAgrupados = Object.values(bonusPorMes);
-            comissoes = comissoesNormais;
-        } else {
-            const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
-            comissoes = todasComissoes.filter(c => 
-                c.vendedor_id === vendedor_id && 
-                vendas.some(v => v.id === c.venda_id)
-            );
         }
+        
+        const comissoes = comissoesDoPeriodo;
 
         const totalVendas = vendas.length;
         const valorTotalVendido = vendas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
