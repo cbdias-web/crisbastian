@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus } from "lucide-react";
+import { toast } from "sonner";
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -98,7 +99,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     return [];
   });
 
-  const [novoIndicadorTipo, setNovoIndicadorTipo] = useState('');
+  const [showNovoIndicadorModal, setShowNovoIndicadorModal] = useState(false);
+  const [showNovoVendedorEspModal, setShowNovoVendedorEspModal] = useState(false);
+  const [novoIndicadorForm, setNovoIndicadorForm] = useState({ nome: '', email: '', telefone: '', percentual_comissao: 10 });
+  const [novoVendedorForm, setNovoVendedorForm] = useState({ nome: '', email: '', time: '', percentual_comissao: 10 });
+  const [criandoIndicador, setCriandoIndicador] = useState(false);
+  const [indicadorEmEdicao, setIndicadorEmEdicao] = useState(null);
 
   const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteExcedido = !isAdmin && totalPctIndicadores > 30;
@@ -109,19 +115,82 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   };
 
   const addIndicador = () => {
-    setNovoIndicadorTipo('');
+    setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo: 'indicador' }]);
   };
 
-  const confirmarTipoIndicador = (tipo) => {
-    setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo }]);
-    setNovoIndicadorTipo('');
+  const handleCriarNovoIndicador = async () => {
+    if (!novoIndicadorForm.nome.trim()) return;
+    setCriandoIndicador(true);
+    const novo = await base44.entities.Espelhamento.create({
+      ...novoIndicadorForm,
+      ativo: true
+    });
+    
+    if (indicadorEmEdicao !== null) {
+      setIndicadores(prev => prev.map((ind, i) =>
+        i === indicadorEmEdicao ? { id: novo.id, nome: novo.nome, percentual: novo.percentual_comissao || 10, tipo: 'indicador' } : ind
+      ));
+    }
+    
+    setNovoIndicadorForm({ nome: '', email: '', telefone: '', percentual_comissao: 10 });
+    setShowNovoIndicadorModal(false);
+    setIndicadorEmEdicao(null);
+    setCriandoIndicador(false);
+    toast.success('Indicador cadastrado!');
+  };
+
+  const handleCriarNovoVendedorEsp = async () => {
+    if (!novoVendedorForm.nome.trim()) return;
+    setCriandoIndicador(true);
+    const novo = await base44.entities.Vendedor.create({
+      ...novoVendedorForm,
+      ativo: true
+    });
+    
+    if (indicadorEmEdicao !== null) {
+      setIndicadores(prev => prev.map((ind, i) =>
+        i === indicadorEmEdicao ? { id: novo.id, nome: novo.nome, percentual: novo.percentual_comissao || 10, tipo: 'vendedor' } : ind
+      ));
+    }
+    
+    setNovoVendedorForm({ nome: '', email: '', time: '', percentual_comissao: 10 });
+    setShowNovoVendedorEspModal(false);
+    setIndicadorEmEdicao(null);
+    setCriandoIndicador(false);
+    toast.success('Vendedor cadastrado!');
+  };
+
+  const abrirModalNovoIndicador = (idx) => {
+    setIndicadorEmEdicao(idx);
+    setNovoIndicadorForm({ nome: '', email: '', telefone: '', percentual_comissao: 10 });
+    setShowNovoIndicadorModal(true);
+  };
+
+  const abrirModalNovoVendedor = (idx) => {
+    setIndicadorEmEdicao(idx);
+    setNovoVendedorForm({ nome: '', email: '', time: '', percentual_comissao: 10 });
+    setShowNovoVendedorEspModal(true);
   };
 
   const removeIndicador = (idx) => {
     setIndicadores(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const updateIndicadorTipo = (idx, tipo) => {
+    setIndicadores(prev => prev.map((ind, i) =>
+      i === idx ? { id: '', nome: '', percentual: 10, tipo } : ind
+    ));
+  };
+
   const updateIndicadorEsp = (idx, selectedId) => {
+    if (selectedId === '__novo_indicador__') {
+      abrirModalNovoIndicador(idx);
+      return;
+    }
+    if (selectedId === '__novo_vendedor__') {
+      abrirModalNovoVendedor(idx);
+      return;
+    }
     const selected = indicadoresDisponiveis.find(item => item.id === selectedId);
     setIndicadores(prev => prev.map((ind, i) =>
       i === idx ? { id: selectedId, nome: selected?.nome || '', percentual: selected?.percentual_comissao || 10, tipo: selected?.tipo || 'indicador' } : ind
@@ -290,10 +359,21 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <div className="space-y-2">
                 {indicadores.map((ind, idx) => (
                   <div key={idx} className="flex items-center gap-2">
+                    <div className="w-32">
+                      <Select value={ind.tipo} onValueChange={tipo => updateIndicadorTipo(idx, tipo)}>
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue placeholder="Tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="indicador">Indicador</SelectItem>
+                          <SelectItem value="vendedor">Vendedor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex-1">
                       <Select value={ind.id} onValueChange={selectedId => updateIndicadorEsp(idx, selectedId)}>
                         <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder={`Selecione ${ind.tipo === 'vendedor' ? 'vendedor' : 'indicador'}`} />
+                          <SelectValue placeholder={`Selecionar...`} />
                         </SelectTrigger>
                         <SelectContent>
                           {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
@@ -301,13 +381,16 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                               {item.nome}
                             </SelectItem>
                           ))}
+                          <SelectItem value={ind.tipo === 'indicador' ? '__novo_indicador__' : '__novo_vendedor__'} className="text-blue-600 font-medium">
+                            + Cadastrar novo {ind.tipo}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="w-20">
-                      <Input type="number" step="0.1" value={ind.percentual}
+                    <div className="w-24">
+                      <Input type="number" step="0.01" max="0.40" value={ind.percentual}
                         onChange={e => updateIndicadorPct(idx, e.target.value)}
-                        className="h-9 text-sm text-center" />
+                        className="h-9 text-sm text-center" placeholder="0.00" />
                     </div>
                     <span className="text-xs text-gray-400 flex-shrink-0">%</span>
                     <button type="button" onClick={() => removeIndicador(idx)}
@@ -316,39 +399,6 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     </button>
                   </div>
                 ))}
-              </div>
-            )}
-            
-            {/* Modal seleção de tipo */}
-            {novoIndicadorTipo === '' && indicadores.length < (indicadores.length + 1) && (
-              <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" style={{ display: novoIndicadorTipo === '' ? 'none' : 'flex' }}>
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Selecionar Tipo</h3>
-                  <p className="text-sm text-gray-600 mb-4">Escolha se deseja adicionar um vendedor ou indicador:</p>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => confirmarTipoIndicador('vendedor')}
-                      className="flex-1 px-4 py-3 bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium text-sm"
-                    >
-                      Vendedor
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => confirmarTipoIndicador('indicador')}
-                      className="flex-1 px-4 py-3 bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium text-sm"
-                    >
-                      Indicador
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setNovoIndicadorTipo('')}
-                    className="w-full mt-3 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition"
-                  >
-                    Cancelar
-                  </button>
-                </div>
               </div>
             )}
           </div>
@@ -367,6 +417,104 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
           </Button>
         </CardFooter>
       </form>
+
+    {/* Modal novo indicador */}
+    {showNovoIndicadorModal && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Novo Indicador</h3>
+            <button type="button" onClick={() => setShowNovoIndicadorModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Nome *</label>
+              <input value={novoIndicadorForm.nome} onChange={e => setNovoIndicadorForm(p => ({ ...p, nome: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="Nome completo" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</label>
+              <input type="email" value={novoIndicadorForm.email} onChange={e => setNovoIndicadorForm(p => ({ ...p, email: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</label>
+              <input value={novoIndicadorForm.telefone} onChange={e => setNovoIndicadorForm(p => ({ ...p, telefone: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="(00) 00000-0000" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Comissão Padrão (%)</label>
+              <input type="number" step="0.1" value={novoIndicadorForm.percentual_comissao} onChange={e => setNovoIndicadorForm(p => ({ ...p, percentual_comissao: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setShowNovoIndicadorModal(false)}
+              className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="button" onClick={handleCriarNovoIndicador} disabled={criandoIndicador || !novoIndicadorForm.nome.trim()}
+              className="flex-1 px-4 py-2 text-sm bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium disabled:opacity-50">
+              {criandoIndicador ? 'Salvando...' : 'Salvar Indicador'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Modal novo vendedor (espelhamento) */}
+    {showNovoVendedorEspModal && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-gray-900">Novo Vendedor</h3>
+            <button type="button" onClick={() => setShowNovoVendedorEspModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Nome *</label>
+              <input value={novoVendedorForm.nome} onChange={e => setNovoVendedorForm(p => ({ ...p, nome: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="Nome completo" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</label>
+              <input type="email" value={novoVendedorForm.email} onChange={e => setNovoVendedorForm(p => ({ ...p, email: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Time</label>
+              <select value={novoVendedorForm.time} onChange={e => setNovoVendedorForm(p => ({ ...p, time: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+                <option value="">Selecione o time</option>
+                <option value="TIME 1">TIME 1</option>
+                <option value="TIME 2">TIME 2</option>
+                <option value="TIME 3">TIME 3</option>
+                <option value="CONSÓRCIO">CONSÓRCIO</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Comissão Padrão (%)</label>
+              <input type="number" step="0.1" value={novoVendedorForm.percentual_comissao} onChange={e => setNovoVendedorForm(p => ({ ...p, percentual_comissao: e.target.value }))}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={() => setShowNovoVendedorEspModal(false)}
+              className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="button" onClick={handleCriarNovoVendedorEsp} disabled={criandoIndicador || !novoVendedorForm.nome.trim()}
+              className="flex-1 px-4 py-2 text-sm bg-[#1a3150] text-white rounded-xl hover:bg-[#0f1e35] font-medium disabled:opacity-50">
+              {criandoIndicador ? 'Salvando...' : 'Salvar Vendedor'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Modal novo cliente */}
 
