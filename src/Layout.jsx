@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X, FileText, AlertTriangle } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X, FileText, AlertTriangle, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -77,12 +77,17 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: notificacoesPendentes.length },
-    { name: 'Usuários', icon: Users, page: 'Usuarios', allowUser: false },
   ].filter(item => {
     if (isAdmin) return true;
     if (!item.allowUser) return false;
     return menusUsuario.includes(item.page);
   });
+
+  const handleLogout = () => {
+    if (confirm('Deseja realmente sair?')) {
+      base44.auth.logout();
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
@@ -102,8 +107,6 @@ export default function Layout({ children, currentPageName }) {
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
-          
-
         </div>
         <div className="px-5 pb-2">
           <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em]">Menu</p>
@@ -133,6 +136,28 @@ export default function Layout({ children, currentPageName }) {
             );
           })}
         </nav>
+        
+        {/* Menu fixo na base */}
+        <div className="border-t border-white/10 p-3 space-y-1">
+          <Link
+            to={createPageUrl('Usuarios')}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+              currentPageName === 'Usuarios'
+                ? 'bg-white/15 text-white font-semibold'
+                : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm font-medium">Usuários</span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all"
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm font-medium">Sair</span>
+          </button>
+        </div>
       </aside>
       <main className="flex-1">
         {children}
