@@ -38,19 +38,26 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Vendedor/Indicador não encontrado' }, { status: 404 });
         }
 
-        // Buscar vendas do período
+        // Buscar comissões do período primeiro (mais eficiente)
+        let comissoesDoPeriodo;
+        if (tipo === 'vendedor') {
+            const todasComissoes = await base44.asServiceRole.entities.Comissao.list();
+            comissoesDoPeriodo = todasComissoes.filter(c => {
+                const dataOk = (!dataInicio || c.data_venda >= dataInicio) && (!dataFim || c.data_venda <= dataFim);
+                return c.vendedor_id === vendedor_id && c.tipo !== 'bonus' && dataOk;
+            });
+        } else {
+            const todasComissoes = await base44.asServiceRole.entities.ComissaoEspelhamento.list();
+            comissoesDoPeriodo = todasComissoes.filter(c => {
+                const dataOk = (!dataInicio || c.data_venda >= dataInicio) && (!dataFim || c.data_venda <= dataFim);
+                return c.vendedor_id === vendedor_id && dataOk;
+            });
+        }
+
+        // Buscar apenas vendas que têm comissões
+        const vendasIds = [...new Set(comissoesDoPeriodo.map(c => c.venda_id))].filter(Boolean);
         const todasVendas = await base44.asServiceRole.entities.Venda.list('-data', 1000);
-        const vendas = todasVendas.filter(v => {
-            const dataOk = (!dataInicio || v.data >= dataInicio) && (!dataFim || v.data <= dataFim);
-            if (tipo === 'vendedor') {
-                return dataOk && (v.vendedor_id === vendedor_id || v.assessor_comercial === vendedor_nome);
-            } else {
-                const temIndicador = v.indicadores?.some(ind => ind.id === vendedor_id) || 
-                                    v.espelhamento_id === vendedor_id ||
-                                    v.espelhamento === vendedor_nome;
-                return dataOk && temIndicador;
-            }
-        });
+        const vendas = todasVendas.filter(v => vendasIds.includes(v.id));
 
         // Buscar comissões
         let comissoes;
