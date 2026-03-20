@@ -398,6 +398,15 @@ export default function Comissoes() {
     queryFn: () => base44.entities.Espelhamento.list("nome"),
   });
 
+  useEffect(() => {
+    if (vendedores.length > 0 && selectedVendedores.length === 0) {
+      setSelectedVendedores(vendedores.map(v => v.id));
+    }
+    if (indicadores.length > 0 && selectedIndicadores.length === 0) {
+      setSelectedIndicadores(indicadores.map(i => i.id));
+    }
+  }, [vendedores.length, indicadores.length]);
+
   // Filtra por período
   const filterByPeriod = (lista) => lista.filter(c => {
     const d = c.data_venda || "";
@@ -416,15 +425,6 @@ export default function Comissoes() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (vendedores.length > 0 && selectedVendedores.length === 0) {
-      setSelectedVendedores(vendedores.map(v => v.id));
-    }
-    if (indicadores.length > 0 && selectedIndicadores.length === 0) {
-      setSelectedIndicadores(indicadores.map(i => i.id));
-    }
-  }, [vendedores.length, indicadores.length]);
 
   const gerarRelatorio = async () => {
     setGerandoPDF(true);
