@@ -121,6 +121,11 @@ export default function Vendedores() {
   };
 
   const gerarRelatorioGeral = async () => {
+    if (comDados.length === 0) {
+      toast.error('Nenhum vendedor com comissão no período');
+      return;
+    }
+    
     setGeratingPDF('geral');
     try {
       const vendedoresIds = comDados.map(v => v.id);
