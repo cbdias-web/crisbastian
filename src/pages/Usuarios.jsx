@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Edit2, Save, X, Shield, Eye, EyeOff } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, Eye, EyeOff, UserPlus, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -26,6 +26,9 @@ export default function Usuarios() {
   const [user, setUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [menusEditando, setMenusEditando] = useState([]);
+  const [showConviteModal, setShowConviteModal] = useState(false);
+  const [conviteForm, setConviteForm] = useState({ email: '', nome: '', role: 'user' });
+  const [enviandoConvite, setEnviandoConvite] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -96,6 +99,25 @@ export default function Usuarios() {
     });
   };
 
+  const enviarConvite = async () => {
+    if (!conviteForm.email || !conviteForm.nome) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setEnviandoConvite(true);
+    try {
+      await base44.users.inviteUser(conviteForm.email, conviteForm.role);
+      toast.success(`Convite enviado para ${conviteForm.email}!`);
+      setShowConviteModal(false);
+      setConviteForm({ email: '', nome: '', role: 'user' });
+      queryClient.invalidateQueries(['usuarios']);
+    } catch (error) {
+      toast.error(error.message || 'Erro ao enviar convite');
+    }
+    setEnviandoConvite(false);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -126,9 +148,18 @@ export default function Usuarios() {
             <h1 className="text-3xl font-bold text-gray-900">Gestão de Usuários</h1>
             <p className="text-gray-600 mt-1">Controle de acessos e permissões</p>
           </div>
-          <div className="bg-blue-50 rounded-xl px-4 py-2">
-            <p className="text-xs text-gray-500">Total de usuários</p>
-            <p className="text-2xl font-bold text-[#1a3150]">{usuarios.length}</p>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setShowConviteModal(true)}
+              className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Convidar Usuário
+            </Button>
+            <div className="bg-blue-50 rounded-xl px-4 py-2">
+              <p className="text-xs text-gray-500">Total de usuários</p>
+              <p className="text-2xl font-bold text-[#1a3150]">{usuarios.length}</p>
+            </div>
           </div>
         </div>
 
@@ -286,10 +317,117 @@ export default function Usuarios() {
             <p>• <strong>Menus padrão:</strong> Novos usuários têm acesso a Dashboard, Vendas e Vendedores (apenas seus próprios dados).</p>
             <p>• <strong>Administradores:</strong> Têm acesso completo a todos os menus e podem visualizar dados de todos os usuários.</p>
             <p>• <strong>Restrições:</strong> Usuários não-admin só visualizam seus próprios dados, mesmo que tenham acesso ao menu.</p>
-            <p>• <strong>Convite:</strong> Novos usuários devem ser convidados através do sistema de convites (não listado aqui).</p>
+            <p>• <strong>Convite:</strong> Um e-mail de convite será enviado com instruções para criar a senha de acesso.</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Convite */}
+      {showConviteModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-[#1a3150]" />
+                <h3 className="font-semibold text-gray-900">Convidar Novo Usuário</h3>
+              </div>
+              <button 
+                onClick={() => setShowConviteModal(false)} 
+                className="p-1.5 hover:bg-gray-100 rounded-lg transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
+                  Nome Completo *
+                </label>
+                <input
+                  type="text"
+                  value={conviteForm.nome}
+                  onChange={(e) => setConviteForm(p => ({ ...p, nome: e.target.value }))}
+                  placeholder="Digite o nome completo"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Nome para identificação no sistema
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
+                  E-mail *
+                </label>
+                <input
+                  type="email"
+                  value={conviteForm.email}
+                  onChange={(e) => setConviteForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="usuario@exemplo.com"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  O convite será enviado para este e-mail
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
+                  Tipo de Acesso
+                </label>
+                <select
+                  value={conviteForm.role}
+                  onChange={(e) => setConviteForm(p => ({ ...p, role: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white"
+                >
+                  <option value="user">Usuário Padrão</option>
+                  <option value="admin">Administrador</option>
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  {conviteForm.role === 'admin' 
+                    ? 'Acesso total ao sistema'
+                    : 'Acesso limitado aos menus configurados'}
+                </p>
+              </div>
+
+              <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                <p className="text-xs text-blue-700">
+                  <strong>Após o convite:</strong> O usuário receberá um e-mail com link para criar sua senha e acessar o sistema. 
+                  Você poderá configurar os menus de acesso após o primeiro login.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowConviteModal(false)}
+                disabled={enviandoConvite}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={enviarConvite}
+                disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
+                className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
+              >
+                {enviandoConvite ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Enviar Convite
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
