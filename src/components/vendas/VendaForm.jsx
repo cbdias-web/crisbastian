@@ -107,7 +107,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [indicadorEmEdicao, setIndicadorEmEdicao] = useState(null);
 
   const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
-  const limiteExcedido = !isAdmin && totalPctIndicadores > 30;
+  const limiteExcedido = totalPctIndicadores > 50;
+  const requerAutorizacao = !isAdmin && totalPctIndicadores > 30 && totalPctIndicadores <= 50;
 
   const handleVendedorChange = (vendedorId) => {
     const vendedor = vendedores.find(v => v.id === vendedorId);
@@ -203,9 +204,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     ));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (limiteExcedido) return;
+    
     const dataToSave = {
       ...formData,
       valor: parseFloat(formData.valor) || 0,
@@ -216,6 +218,23 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
     };
+    
+    // Notificar administrador se espelhamento > 30%
+    if (requerAutorizacao) {
+      try {
+        await base44.functions.invoke('notificarAutorizacaoEspelhamento', {
+          vendedor_nome: formData.assessor_comercial,
+          cliente: formData.cliente,
+          valor: formData.valor,
+          total_espelhamento: totalPctIndicadores,
+          indicadores: indicadores.map(i => ({ nome: i.nome, percentual: i.percentual })),
+          data_venda: formData.data
+        });
+      } catch (error) {
+        console.error('Erro ao notificar administrador:', error);
+      }
+    }
+    
     onSave(dataToSave);
   };
 
@@ -335,8 +354,9 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <div>
                 <h3 className="text-sm font-semibold text-gray-700">Indicadores (Espelhamento)</h3>
                 {indicadores.length > 0 && (
-                  <p className={`text-xs mt-0.5 ${limiteExcedido ? "text-red-600 font-semibold" : totalPctIndicadores > 25 ? "text-amber-600" : "text-gray-400"}`}>
-                    Total indicadores: {totalPctIndicadores.toFixed(1)}%{!isAdmin ? " (máx 30%)" : ""}
+                  <p className={`text-xs mt-0.5 ${limiteExcedido ? "text-red-600 font-semibold" : requerAutorizacao ? "text-amber-600 font-semibold" : totalPctIndicadores > 25 ? "text-amber-600" : "text-gray-400"}`}>
+                    Total indicadores: {totalPctIndicadores.toFixed(1)}% (máx 50%)
+                    {requerAutorizacao && " - Requer autorização do administrador"}
                   </p>
                 )}
               </div>
@@ -349,7 +369,17 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
             {limiteExcedido && (
               <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
                 <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-600">O total de comissões dos indicadores não pode ultrapassar 30%. Apenas administradores podem definir percentuais maiores.</p>
+                <p className="text-xs text-red-600">O total de comissões dos indicadores não pode ultrapassar 50%.</p>
+              </div>
+            )}
+            
+            {requerAutorizacao && (
+              <div className="flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">
+                  <strong>Atenção:</strong> Espelhamento acima de 30% requer autorização do administrador. 
+                  Uma notificação será enviada automaticamente para aprovação.
+                </p>
               </div>
             )}
 
