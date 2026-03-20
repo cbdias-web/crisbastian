@@ -194,7 +194,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     }
     const selected = indicadoresDisponiveis.find(item => item.id === selectedId);
     setIndicadores(prev => prev.map((ind, i) =>
-      i === idx ? { id: selectedId, nome: selected?.nome || '', percentual: selected?.percentual_comissao || 10, tipo: selected?.tipo || 'indicador' } : ind
+      i === idx ? { id: selectedId, nome: selected?.nome || '', percentual: ind.percentual || selected?.percentual_comissao || 10, tipo: selected?.tipo || 'indicador' } : ind
     ));
   };
 
