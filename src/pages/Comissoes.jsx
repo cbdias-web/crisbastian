@@ -405,7 +405,7 @@ export default function Comissoes() {
     if (indicadores.length > 0 && selectedIndicadores.length === 0) {
       setSelectedIndicadores(indicadores.map(i => i.id));
     }
-  }, [vendedores.length, indicadores.length]);
+  }, [vendedores.length, indicadores.length, selectedVendedores.length, selectedIndicadores.length]);
 
   // Filtra por período
   const filterByPeriod = (lista) => lista.filter(c => {
@@ -417,14 +417,6 @@ export default function Comissoes() {
   const comissoesEsp = filterByPeriod(comissoesEspRaw);
 
   const loading = loadingV || loadingE || !userLoaded;
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   const gerarRelatorio = async () => {
     setGerandoPDF(true);
