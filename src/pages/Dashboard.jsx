@@ -83,20 +83,25 @@ export default function Dashboard() {
   const [selectedProdutos, setSelectedProdutos] = useState([]);
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       base44.entities.Venda.list("-data", 500),
       base44.entities.Vendedor.list(),
       base44.entities.Meta.list(),
       base44.entities.Comissao.list(),
       base44.auth.me(),
     ]).then(([v, vend, m, com, u]) => {
-      setVendas(v);
-      setVendedores(vend);
-      setMetas(m);
-      setComissoes(com);
-      setUser(u);
-      setSelectedVendedores(vend.map(vv => vv.id));
-      const prods = [...new Set(v.map(vv => vv.produto).filter(Boolean))];
+      const vendas = v.status === 'fulfilled' ? v.value : [];
+      const vends = vend.status === 'fulfilled' ? vend.value : [];
+      const mts = m.status === 'fulfilled' ? m.value : [];
+      const coms = com.status === 'fulfilled' ? com.value : [];
+      const usr = u.status === 'fulfilled' ? u.value : null;
+      setVendas(vendas);
+      setVendedores(vends);
+      setMetas(mts);
+      setComissoes(coms);
+      setUser(usr);
+      setSelectedVendedores(vends.map(vv => vv.id));
+      const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
       setLoading(false);
     });
