@@ -412,16 +412,20 @@ export default function Vendas() {
         )}
 
         {showForm && (
-          <VendaForm
-            venda={editingVenda}
-            onSave={handleSave}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingVenda(null);
-            }}
-            isLoading={createMutation.isPending || updateMutation.isPending}
-            isAdmin={isAdmin}
-          />
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-6">
+              <VendaForm
+                venda={editingVenda}
+                onSave={handleSave}
+                onCancel={() => {
+                  setShowForm(false);
+                  setEditingVenda(null);
+                }}
+                isLoading={createMutation.isPending || updateMutation.isPending}
+                isAdmin={isAdmin}
+              />
+            </div>
+          </div>
         )}
 
         {/* Contadores */}
