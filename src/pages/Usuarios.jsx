@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Edit2, Save, X, Shield, Eye, EyeOff, UserPlus, Mail } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, WifiOff, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -37,13 +37,31 @@ export default function Usuarios() {
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
+  const getOnlineStatus = (ultimoAcesso) => {
+    if (!ultimoAcesso) return 'offline';
+    const diff = (Date.now() - new Date(ultimoAcesso).getTime()) / 1000 / 60; // minutos
+    if (diff <= 3) return 'online';
+    if (diff <= 10) return 'ausente';
+    return 'offline';
+  };
+
+  const getStatusLabel = (ultimoAcesso) => {
+    if (!ultimoAcesso) return 'Nunca acessou';
+    const diff = (Date.now() - new Date(ultimoAcesso).getTime()) / 1000 / 60;
+    if (diff <= 3) return 'Online agora';
+    if (diff <= 60) return `Há ${Math.round(diff)} min`;
+    if (diff <= 1440) return `Há ${Math.round(diff / 60)}h`;
+    return new Date(ultimoAcesso).toLocaleDateString('pt-BR');
+  };
+
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
     queryFn: async () => {
       const users = await base44.entities.User.list('full_name');
       return users;
     },
-    enabled: isAdmin
+    enabled: isAdmin,
+    refetchInterval: 30000 // atualiza a cada 30s para refletir quem está online
   });
 
   const updateUserMutation = useMutation({
@@ -143,25 +161,39 @@ export default function Usuarios() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestão de Usuários</h1>
-            <p className="text-gray-600 mt-1">Controle de acessos e permissões</p>
+        {/* Painel Online */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-2">
+          <div className="flex items-center gap-2 mb-3">
+            <Wifi className="w-4 h-4 text-emerald-500" />
+            <h3 className="text-sm font-semibold text-gray-700">Status Online</h3>
+            <span className="text-xs text-gray-400 ml-auto">Atualiza a cada 30s</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setShowConviteModal(true)}
-              className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Convidar Usuário
-            </Button>
-            <div className="bg-blue-50 rounded-xl px-4 py-2">
-              <p className="text-xs text-gray-500">Total de usuários</p>
-              <p className="text-2xl font-bold text-[#1a3150]">{usuarios.length}</p>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {usuarios.map(u => {
+              const status = getOnlineStatus(u.ultimo_acesso);
+              const label = getStatusLabel(u.ultimo_acesso);
+              return (
+                <div key={u.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium ${
+                  status === 'online' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
+                  status === 'ausente' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                  'bg-gray-50 border-gray-200 text-gray-500'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                    status === 'online' ? 'bg-emerald-500 animate-pulse' :
+                    status === 'ausente' ? 'bg-amber-400' : 'bg-gray-300'
+                  }`} />
+                  <span>{u.nome_tratamento || u.full_name || u.email}</span>
+                  <span className={`text-[10px] ${
+                    status === 'online' ? 'text-emerald-600' :
+                    status === 'ausente' ? 'text-amber-600' : 'text-gray-400'
+                  }`}>{label}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        <div className="flex justify-between items-center">
 
         <Card>
           <CardHeader>
