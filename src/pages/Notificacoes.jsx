@@ -189,7 +189,7 @@ export default function Notificacoes() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setSearch(''); setFiltroStatus('todos'); setFiltroDataInicio(''); setFiltroDataFim(''); }}
+              onClick={() => { setActiveTab(tab.id); setSearch(''); setSearchPendentes(''); setFiltroStatus('todos'); setFiltroDataInicio(''); setFiltroDataFim(''); }}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                 activeTab === tab.id ? 'bg-[#1a3150] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
               }`}
