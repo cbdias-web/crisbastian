@@ -1,0 +1,565 @@
+import { useState } from 'react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight } from 'lucide-react';
+
+const sections = [
+  {
+    id: 'introducao',
+    icon: BookOpen,
+    title: 'Introdução à Plataforma',
+    color: 'bg-blue-50 text-blue-600',
+    border: 'border-blue-200',
+    content: [
+      {
+        subtitle: 'O que é o Villela Exchange – Gestão Comercial?',
+        text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial.',
+      },
+      {
+        subtitle: 'Acesso e Login',
+        text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.',
+      },
+      {
+        subtitle: 'Perfil do Usuário',
+        text: 'Clique no seu nome no canto superior direito do Dashboard para acessar seu perfil. Você pode alterar seu nome de tratamento (como aparece no sistema) e atualizar sua foto de avatar.',
+      },
+    ],
+  },
+  {
+    id: 'dashboard',
+    icon: BarChart3,
+    title: 'Dashboard',
+    color: 'bg-indigo-50 text-indigo-600',
+    border: 'border-indigo-200',
+    content: [
+      {
+        subtitle: 'Visão Geral',
+        text: 'O Dashboard apresenta os principais indicadores de desempenho da operação em tempo real: total vendido no período, número de vendas, comissão gerada, ticket médio e vendedores ativos.',
+      },
+      {
+        subtitle: 'Filtros',
+        text: 'Use os filtros de data (início e fim), vendedor e produto para refinar os dados exibidos. Os KPIs e gráficos se atualizam automaticamente conforme os filtros aplicados.',
+      },
+      {
+        subtitle: 'Meta do Time',
+        text: 'Exibe o progresso da meta mensal da equipe. A barra de progresso muda de cor conforme o percentual atingido: vermelho (abaixo de 40%), amarelo (40–69%), azul (70–99%) e verde (100%+).',
+      },
+      {
+        subtitle: 'Gráfico Volume vs Meta',
+        text: 'Compara o volume de vendas individual de cada vendedor com sua meta do mês atual. Barras verdes indicam meta atingida.',
+      },
+      {
+        subtitle: 'Ranking de Vendedores',
+        text: 'Lista os vendedores ordenados pelo volume de vendas no período filtrado, com medalhas para o pódio.',
+      },
+      {
+        subtitle: 'Últimas Vendas',
+        text: 'Exibe as 8 vendas mais recentes do período filtrado com cliente, vendedor, data e valor.',
+      },
+    ],
+  },
+  {
+    id: 'vendas',
+    icon: ShoppingCart,
+    title: 'Gestão de Vendas',
+    color: 'bg-emerald-50 text-emerald-600',
+    border: 'border-emerald-200',
+    content: [
+      {
+        subtitle: 'Como registrar uma nova venda',
+        steps: [
+          'Acesse o menu "Vendas" na barra lateral.',
+          'Clique em "Nova Venda" no canto superior direito.',
+          'Selecione o Produto, Vendedor, Data e preencha os demais campos.',
+          'Informe o Cliente (nome e CPF/CNPJ). Se o cliente já estiver cadastrado, ele aparecerá na lista.',
+          'Defina o percentual de comissão do vendedor.',
+          'Adicione Indicadores (espelhamentos) se houver — clique em "+ Indicador" e informe o percentual.',
+          'Clique em "Salvar". As comissões são calculadas automaticamente.',
+        ],
+      },
+      {
+        subtitle: 'Editar uma venda',
+        text: 'Clique no ícone de lápis (✏️) na linha da venda desejada. O formulário abrirá em modal suspenso. Faça as alterações e clique em "Salvar". As comissões serão recalculadas automaticamente.',
+      },
+      {
+        subtitle: 'Excluir uma venda',
+        text: 'Clique no ícone de lixeira (🗑️) na linha da venda. Confirme a exclusão. Todas as comissões associadas à venda também serão removidas automaticamente.',
+      },
+      {
+        subtitle: 'Filtros de vendas',
+        text: 'Use os filtros de data, vendedor e produto para refinar a listagem. O total acumulado do período filtrado é exibido no contador superior.',
+      },
+      {
+        subtitle: 'Exportar dados',
+        text: 'Clique em "Vendas" ou "Clientes" para exportar os dados filtrados em formato CSV, compatível com Excel.',
+      },
+      {
+        subtitle: 'Relatório PDF de vendas',
+        text: 'Clique em "Relatório PDF" para gerar um documento com todas as vendas do período filtrado, incluindo totais e detalhamento por transação.',
+      },
+      {
+        subtitle: 'Importar histórico',
+        text: 'Use o botão "Importar Histórico" para carregar vendas em lote via planilha CSV ou Excel. Siga o modelo sugerido pelo sistema para garantir a importação correta.',
+      },
+      {
+        subtitle: 'Link Bitrix',
+        text: 'Se a venda possuir link do Bitrix, o ícone de link externo (🔗) aparecerá na linha. Clique para abrir o registro no CRM.',
+      },
+    ],
+  },
+  {
+    id: 'comissoes',
+    icon: DollarSign,
+    title: 'Comissões',
+    color: 'bg-amber-50 text-amber-600',
+    border: 'border-amber-200',
+    content: [
+      {
+        subtitle: 'Como as comissões são geradas',
+        text: 'As comissões são criadas automaticamente ao registrar uma venda. O valor é calculado aplicando o percentual de comissão definido sobre o valor da venda.',
+      },
+      {
+        subtitle: 'Tipos de comissão',
+        items: [
+          '**Comissão normal:** gerada automaticamente para o vendedor responsável pela venda.',
+          '**Comissão de indicador (espelhamento):** gerada para indicadores vinculados à venda, registrada na tabela de espelhamentos.',
+          '**Bônus:** valor adicional concedido manualmente pelo administrador ou automaticamente ao atingir 100% da meta individual.',
+        ],
+      },
+      {
+        subtitle: 'Marcar comissão como paga',
+        text: 'Na página de Comissões, utilize o controle de pagamento para marcar individualmente ou em lote as comissões como pagas. Comissões pagas ficam destacadas em verde.',
+      },
+      {
+        subtitle: 'Bônus por meta',
+        text: 'Quando um vendedor atinge 100% de sua meta individual, o sistema pode gerar um bônus automaticamente (se configurado). O administrador também pode conceder bônus manuais diretamente na página de Vendedores, clicando no ícone "$" do vendedor.',
+      },
+      {
+        subtitle: 'Excluir comissão',
+        text: 'Comissões podem ser excluídas individualmente na página de Comissões. Atenção: excluir uma venda remove automaticamente todas as comissões vinculadas.',
+      },
+    ],
+  },
+  {
+    id: 'metas',
+    icon: Target,
+    title: 'Metas',
+    color: 'bg-violet-50 text-violet-600',
+    border: 'border-violet-200',
+    content: [
+      {
+        subtitle: 'Tipos de meta',
+        items: [
+          '**Individual:** definida por vendedor e mês. Aparece no card do vendedor como barra de progresso.',
+          '**Time:** meta para um time específico.',
+          '**Equipe:** meta global da equipe inteira, exibida no Dashboard.',
+        ],
+      },
+      {
+        subtitle: 'Criar uma meta',
+        steps: [
+          'Acesse o menu "Metas".',
+          'Clique em "Nova Meta".',
+          'Selecione o tipo (Individual, Time ou Equipe).',
+          'Para meta individual, selecione o vendedor.',
+          'Defina o mês de referência (formato YYYY-MM), o valor da meta e o valor do bônus (opcional).',
+          'Clique em "Salvar".',
+        ],
+      },
+      {
+        subtitle: 'Acompanhamento',
+        text: 'O progresso das metas individuais é exibido nos cards de cada vendedor na página Vendedores, com barra de progresso colorida. A meta do time aparece no Dashboard principal.',
+      },
+      {
+        subtitle: 'Bônus por meta',
+        text: 'Ao cadastrar uma meta, você pode definir um valor de bônus que será concedido automaticamente quando o vendedor atingir 100% do objetivo.',
+      },
+    ],
+  },
+  {
+    id: 'vendedores',
+    icon: Users,
+    title: 'Vendedores',
+    color: 'bg-sky-50 text-sky-600',
+    border: 'border-sky-200',
+    content: [
+      {
+        subtitle: 'Cadastrar vendedor',
+        steps: [
+          'Acesse o menu "Vendedores".',
+          'Clique em "Novo Vendedor".',
+          'Preencha nome, e-mail, time e percentual de comissão padrão.',
+          'Defina o status (Ativo/Inativo) e clique em "Salvar".',
+        ],
+      },
+      {
+        subtitle: 'Cards de vendedores',
+        text: 'Cada vendedor exibe: número de vendas no mês, volume financeiro, percentual de comissão, barra de progresso da meta (quando configurada) e status.',
+      },
+      {
+        subtitle: 'Filtro por mês',
+        text: 'Use o seletor de mês no topo da página para visualizar os dados de qualquer mês passado ou atual.',
+      },
+      {
+        subtitle: 'Bônus manual',
+        text: 'Clique no ícone "$" no card do vendedor para conceder ou editar um bônus manual para o mês selecionado.',
+      },
+      {
+        subtitle: 'Relatório individual',
+        text: 'Clique no ícone de documento (📄) para gerar o relatório PDF do vendedor no período selecionado.',
+      },
+      {
+        subtitle: 'Envio de relatório por e-mail',
+        text: 'Clique no ícone de avião (✈️) para enviar o relatório por e-mail ao vendedor. Use "Enviar Relatórios" para envio em massa com seleção de destinatários.',
+      },
+      {
+        subtitle: 'Permissão Admin',
+        text: 'O checkbox "Admin" no card do vendedor concede permissão administrativa ao usuário correspondente (desde que tenha e-mail cadastrado e conta criada).',
+      },
+    ],
+  },
+  {
+    id: 'indicadores',
+    icon: Users,
+    title: 'Indicadores (Espelhamentos)',
+    color: 'bg-pink-50 text-pink-600',
+    border: 'border-pink-200',
+    content: [
+      {
+        subtitle: 'O que são indicadores?',
+        text: 'Indicadores (ou espelhamentos) são pessoas externas à equipe de vendas que indicam clientes e recebem uma comissão pelo negócio fechado. Eles são vinculados às vendas no momento do registro.',
+      },
+      {
+        subtitle: 'Cadastrar indicador',
+        steps: [
+          'Acesse o menu "Indicadores".',
+          'Clique em "Novo Indicador".',
+          'Preencha nome, e-mail, telefone e percentual de comissão padrão.',
+          'Clique em "Salvar".',
+        ],
+      },
+      {
+        subtitle: 'Vincular indicador a uma venda',
+        text: 'Ao registrar ou editar uma venda, clique em "+ Indicador" e selecione o indicador desejado, ajustando o percentual. Você pode adicionar múltiplos indicadores por venda.',
+      },
+      {
+        subtitle: 'Alerta de espelhamento acima de 30%',
+        text: 'Se o total de espelhamento de uma venda ultrapassar 30%, o sistema envia uma notificação automática aos administradores para autorização antes de finalizar o registro.',
+      },
+      {
+        subtitle: 'Relatórios de indicadores',
+        text: 'Assim como vendedores, indicadores possuem relatório PDF individual e envio por e-mail diretamente da página de Indicadores.',
+      },
+    ],
+  },
+  {
+    id: 'produtos',
+    icon: Package,
+    title: 'Produtos',
+    color: 'bg-orange-50 text-orange-600',
+    border: 'border-orange-200',
+    content: [
+      {
+        subtitle: 'Gerenciar produtos',
+        text: 'Acesse o menu "Produtos" para visualizar, criar, editar ou desativar os produtos comercializados pela equipe.',
+      },
+      {
+        subtitle: 'Cadastrar produto',
+        steps: [
+          'Clique em "Novo Produto".',
+          'Informe o nome, categoria e status (Ativo/Inativo).',
+          'Clique em "Salvar".',
+        ],
+      },
+      {
+        subtitle: 'Uso em vendas',
+        text: 'Os produtos cadastrados aparecem no seletor do formulário de nova venda. Apenas produtos ativos são listados. O filtro de produto também está disponível no Dashboard e na listagem de Vendas.',
+      },
+    ],
+  },
+  {
+    id: 'relatorios',
+    icon: FileText,
+    title: 'Relatórios',
+    color: 'bg-teal-50 text-teal-600',
+    border: 'border-teal-200',
+    content: [
+      {
+        subtitle: 'Relatório de Comissões (menu Relatório)',
+        text: 'Acesse pelo menu "Relatório" para gerar relatórios consolidados de comissões de vendedores e indicadores. Selecione o período, os destinatários e gere em PDF ou envie diretamente por e-mail.',
+      },
+      {
+        subtitle: 'Relatório individual do vendedor',
+        text: 'Disponível na página Vendedores, no card de cada vendedor (ícone 📄). Gera um PDF com todas as vendas, comissões e bônus do período selecionado.',
+      },
+      {
+        subtitle: 'Relatório de vendas',
+        text: 'Disponível na página Vendas (botão "Relatório PDF"). Gera um resumo de todas as transações do período filtrado.',
+      },
+      {
+        subtitle: 'Conteúdo do relatório de comissões',
+        items: [
+          'Resumo financeiro: total de comissões, valor pago, valor pendente.',
+          'Listagem detalhada de cada venda com data, cliente, produto, valor e comissão.',
+          'Bônus concedidos no período.',
+          'Layout profissional com identidade visual da Villela Exchange.',
+        ],
+      },
+      {
+        subtitle: 'Envio por e-mail',
+        text: 'Os relatórios podem ser enviados automaticamente por e-mail para vendedores e indicadores. Use "Enviar Relatórios" na página de Vendedores ou Indicadores para envio em massa com rastreamento de envios realizados.',
+      },
+    ],
+  },
+  {
+    id: 'importar',
+    icon: Upload,
+    title: 'Importação de Dados',
+    color: 'bg-cyan-50 text-cyan-600',
+    border: 'border-cyan-200',
+    content: [
+      {
+        subtitle: 'Como importar histórico de vendas',
+        steps: [
+          'Acesse o menu "Importar" ou use o botão "Importar Histórico" na página de Vendas.',
+          'Faça o upload de um arquivo CSV ou Excel (.xlsx).',
+          'O sistema irá mapear automaticamente as colunas reconhecidas.',
+          'Verifique o preview dos dados antes de confirmar.',
+          'Clique em "Importar" e acompanhe o progresso em tempo real.',
+        ],
+      },
+      {
+        subtitle: 'Colunas reconhecidas',
+        items: [
+          'Data (formatos: DD/MM/YYYY, YYYY-MM-DD)',
+          'Produto, Vendedor / Assessor Comercial',
+          'Cliente, CPF/CNPJ',
+          'Valor (aceita vírgula ou ponto como decimal)',
+          'Forma de Pagamento, Observação, Link Bitrix',
+        ],
+      },
+      {
+        subtitle: 'Deduplicação',
+        text: 'O sistema verifica automaticamente se a venda já foi registrada (mesmo cliente, data e valor) para evitar duplicatas.',
+      },
+    ],
+  },
+  {
+    id: 'notificacoes',
+    icon: AlertTriangle,
+    title: 'Notificações e Autorizações',
+    color: 'bg-red-50 text-red-600',
+    border: 'border-red-200',
+    content: [
+      {
+        subtitle: 'Alerta de espelhamento acima de 30%',
+        text: 'Quando o percentual total de indicadores em uma venda ultrapassa 30%, o sistema bloqueia o registro e envia uma notificação automática por e-mail para todos os administradores.',
+      },
+      {
+        subtitle: 'Página de Notificações',
+        text: 'Administradores têm acesso ao menu "Notificações" onde podem visualizar, aprovar ou rejeitar as solicitações pendentes. O ícone na barra lateral exibe um badge vermelho com o número de pendências.',
+      },
+      {
+        subtitle: 'Fluxo de autorização',
+        steps: [
+          'Vendedor tenta registrar venda com espelhamento > 30%.',
+          'Sistema envia notificação por e-mail aos administradores.',
+          'Administrador acessa "Notificações" e aprova ou rejeita.',
+          'Vendedor pode então registrar a venda normalmente.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'usuarios',
+    icon: Users,
+    title: 'Gestão de Usuários',
+    color: 'bg-slate-50 text-slate-600',
+    border: 'border-slate-200',
+    content: [
+      {
+        subtitle: 'Convidar novo usuário',
+        steps: [
+          'Acesse "Usuários" no menu inferior da barra lateral (apenas admins).',
+          'Clique em "Convidar Usuário".',
+          'Preencha nome, e-mail e tipo de acesso (Usuário Padrão ou Administrador).',
+          'Clique em "Enviar Convite". O usuário receberá um e-mail com link para criar a senha.',
+        ],
+      },
+      {
+        subtitle: 'Configurar acessos',
+        text: 'Após o primeiro acesso do usuário, o administrador pode configurar quais menus ele pode visualizar clicando em "Editar Acessos" no card do usuário.',
+      },
+      {
+        subtitle: 'Permissões',
+        items: [
+          '**Administrador:** acesso total a todos os menus e dados de todos os vendedores.',
+          '**Usuário padrão:** acesso somente aos menus liberados pelo admin, visualizando apenas seus próprios dados.',
+        ],
+      },
+    ],
+  },
+];
+
+function Section({ section, isOpen, onToggle }) {
+  const Icon = section.icon;
+  return (
+    <div className={`rounded-2xl border ${section.border} overflow-hidden`}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center gap-4 p-5 text-left hover:bg-gray-50/50 transition"
+      >
+        <div className={`p-2.5 rounded-xl ${section.color}`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <span className="flex-1 font-semibold text-gray-900 text-base">{section.title}</span>
+        {isOpen ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
+      </button>
+
+      {isOpen && (
+        <div className="px-6 pb-6 pt-2 space-y-5 bg-white">
+          {section.content.map((block, i) => (
+            <div key={i}>
+              <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                <ArrowRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                {block.subtitle}
+              </h4>
+              {block.text && (
+                <p className="text-sm text-gray-600 leading-relaxed ml-6">{block.text}</p>
+              )}
+              {block.steps && (
+                <ol className="ml-6 space-y-1.5">
+                  {block.steps.map((step, si) => (
+                    <li key={si} className="flex items-start gap-2 text-sm text-gray-600">
+                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#1a3150] text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                        {si + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {block.items && (
+                <ul className="ml-6 space-y-1.5">
+                  {block.items.map((item, ii) => (
+                    <li key={ii} className="flex items-start gap-2 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      <span dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Manual() {
+  const [openSections, setOpenSections] = useState(['introducao']);
+
+  const toggle = (id) => {
+    setOpenSections(prev =>
+      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+    );
+  };
+
+  const expandAll = () => setOpenSections(sections.map(s => s.id));
+  const collapseAll = () => setOpenSections([]);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-8 text-white shadow-lg">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-white/10 rounded-2xl">
+              <BookOpen className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Manual da Plataforma</h1>
+              <p className="text-blue-200/70 text-sm mt-1">Villela Exchange – Gestão Comercial</p>
+            </div>
+          </div>
+          <p className="text-blue-100/80 text-sm leading-relaxed max-w-2xl">
+            Guia completo para utilização de todas as funcionalidades do sistema. 
+            Clique em cada seção para expandir o conteúdo.
+          </p>
+          <div className="flex items-center gap-3 mt-5">
+            <div className="bg-white/10 rounded-xl px-4 py-2 text-center">
+              <p className="text-2xl font-bold">{sections.length}</p>
+              <p className="text-[10px] text-blue-200/60 uppercase tracking-wider">Seções</p>
+            </div>
+            <div className="bg-white/10 rounded-xl px-4 py-2 text-center">
+              <p className="text-2xl font-bold">{sections.reduce((a, s) => a + s.content.length, 0)}</p>
+              <p className="text-[10px] text-blue-200/60 uppercase tracking-wider">Tópicos</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick nav */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-400" />
+              Navegação Rápida
+            </h3>
+            <div className="flex gap-2">
+              <button onClick={expandAll} className="text-xs text-blue-600 hover:underline">Expandir tudo</button>
+              <span className="text-gray-300">·</span>
+              <button onClick={collapseAll} className="text-xs text-gray-400 hover:underline">Recolher tudo</button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sections.map(s => {
+              const Icon = s.icon;
+              const isOpen = openSections.includes(s.id);
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    toggle(s.id);
+                    setTimeout(() => {
+                      document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
+                    isOpen ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {s.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Info box */}
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-blue-700">
+            <strong>Dica:</strong> Usuários não-administradores visualizam apenas os menus liberados pelo admin e somente seus próprios dados de vendas e comissões.
+          </p>
+        </div>
+
+        {/* Sections */}
+        <div className="space-y-3">
+          {sections.map(section => (
+            <div key={section.id} id={`section-${section.id}`}>
+              <Section
+                section={section}
+                isOpen={openSections.includes(section.id)}
+                onToggle={() => toggle(section.id)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center py-6 text-xs text-gray-400">
+          Villela Exchange – Gestão Comercial · Manual da Plataforma
+        </div>
+      </div>
+    </div>
+  );
+}
