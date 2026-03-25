@@ -101,7 +101,75 @@ const sections = [
       },
       {
         subtitle: 'Link Bitrix',
-        text: 'Se a venda possuir link do Bitrix, o ícone de link externo (🔗) aparecerá na linha. Clique para abrir o registro no CRM.',
+        text: 'Se a venda possuir link do Bitrix, o ícone de link externo aparecerá na linha. Clique para abrir o registro no CRM.',
+      },
+      {
+        subtitle: 'Jornada completa de uma venda — do registro ao pagamento',
+        text: 'Entender o ciclo completo é fundamental para garantir que comissões, metas e relatórios estejam sempre corretos.',
+      },
+      {
+        subtitle: 'Etapa 1 – Pré-requisitos antes de registrar',
+        items: [
+          '**Produto cadastrado e ativo** em Produtos — sem produto ativo, ele não aparece no formulário.',
+          '**Vendedor cadastrado** em Vendedores com percentual de comissão definido.',
+          '**Indicadores cadastrados** em Indicadores, caso haja espelhamento na venda.',
+          '**Meta do mês configurada** em Metas para que o progresso seja exibido corretamente.',
+        ],
+      },
+      {
+        subtitle: 'Etapa 2 – Registro da venda passo a passo',
+        steps: [
+          'Acesse Vendas > clique em Nova Venda.',
+          'Selecione o Produto (apenas ativos aparecem na lista).',
+          'Informe a Data da venda.',
+          'Selecione o Vendedor responsável — o percentual de comissão padrão é carregado automaticamente.',
+          'Preencha Cliente (nome) e CPF/CNPJ. Clientes já cadastrados aparecem como sugestão.',
+          'Informe o Valor da venda e a Forma de Pagamento.',
+          'Adicione Indicadores se houver: clique em + Indicador, selecione e defina o percentual de cada um.',
+          'Se o total de espelhamento ultrapassar 30%, uma notificação é enviada aos admins para autorização.',
+          'Preencha campos opcionais: link Bitrix, observações, parcelamento.',
+          'Clique em Salvar.',
+        ],
+      },
+      {
+        subtitle: 'Etapa 3 – O que acontece automaticamente ao salvar',
+        items: [
+          '**Comissão do vendedor** é gerada: valor da venda × percentual definido na venda.',
+          '**Comissões dos indicadores** são geradas: cada indicador recebe proporcionalmente ao seu percentual.',
+          '**Cliente é vinculado ao vendedor** (carteira de clientes) — se não existia, é criado automaticamente.',
+          '**Dashboard é atualizado** com o novo volume, KPIs e ranking.',
+          '**Meta do mês é recalculada** — o progresso da barra do vendedor avança conforme o volume acumulado.',
+        ],
+      },
+      {
+        subtitle: 'Etapa 4 – Acompanhamento pós-venda',
+        items: [
+          'Acesse Comissões para visualizar os valores gerados e o status de pagamento.',
+          'Acesse Vendedores e selecione o mês para ver o progresso de meta e volume.',
+          'Monitore o Dashboard para acompanhar o desempenho geral da equipe.',
+          'Gere o relatório PDF individual do vendedor para conferência dos valores.',
+        ],
+      },
+      {
+        subtitle: 'Etapa 5 – Conferência e pagamento das comissões',
+        steps: [
+          'Acesse Comissões e filtre o período desejado.',
+          'Verifique os valores de comissão de cada vendedor.',
+          'Gere ou envie o relatório PDF por e-mail para o vendedor conferir.',
+          'Após efetuar o pagamento, marque as comissões como pagas no sistema.',
+          'Comissões pagas ficam destacadas em verde e saem do saldo pendente.',
+        ],
+      },
+      {
+        subtitle: 'Implicações e cuidados importantes',
+        items: [
+          '**Excluir uma venda remove todas as comissões vinculadas** (vendedor e indicadores). Use com cuidado.',
+          '**Editar o valor de uma venda recalcula as comissões automaticamente.** Confira os valores antes de salvar.',
+          '**O percentual definido na venda prevalece** sobre o percentual padrão cadastrado no vendedor.',
+          '**Indicadores acima de 30% requerem autorização** do administrador antes de concluir o registro.',
+          '**O produto impacta os filtros** do Dashboard e relatórios — mantenha o cadastro atualizado.',
+          '**Bônus automático é gerado** ao atingir 100% da meta, apenas se o valor de bônus estiver configurado na Meta.',
+        ],
       },
     ],
   },
