@@ -353,97 +353,45 @@ export default function Usuarios() {
                 <Mail className="w-5 h-5 text-[#1a3150]" />
                 <h3 className="font-semibold text-gray-900">Convidar Novo Usuário</h3>
               </div>
-              <button 
-                onClick={() => setShowConviteModal(false)} 
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition"
-              >
+              <button onClick={() => setShowConviteModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
-                  Nome Completo *
-                </label>
-                <input
-                  type="text"
-                  value={conviteForm.nome}
-                  onChange={(e) => setConviteForm(p => ({ ...p, nome: e.target.value }))}
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Nome Completo *</label>
+                <input type="text" value={conviteForm.nome} onChange={(e) => setConviteForm(p => ({ ...p, nome: e.target.value }))}
                   placeholder="Digite o nome completo"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Nome para identificação no sistema
-                </p>
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
-                  E-mail *
-                </label>
-                <input
-                  type="email"
-                  value={conviteForm.email}
-                  onChange={(e) => setConviteForm(p => ({ ...p, email: e.target.value }))}
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">E-mail *</label>
+                <input type="email" value={conviteForm.email} onChange={(e) => setConviteForm(p => ({ ...p, email: e.target.value }))}
                   placeholder="usuario@exemplo.com"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  O convite será enviado para este e-mail
-                </p>
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">
-                  Tipo de Acesso
-                </label>
-                <select
-                  value={conviteForm.role}
-                  onChange={(e) => setConviteForm(p => ({ ...p, role: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white"
-                >
+                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Tipo de Acesso</label>
+                <select value={conviteForm.role} onChange={(e) => setConviteForm(p => ({ ...p, role: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
                   <option value="user">Usuário Padrão</option>
                   <option value="admin">Administrador</option>
                 </select>
-                <p className="text-xs text-gray-400 mt-1">
-                  {conviteForm.role === 'admin' 
-                    ? 'Acesso total ao sistema'
-                    : 'Acesso limitado aos menus configurados'}
-                </p>
               </div>
-
               <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
                 <p className="text-xs text-blue-700">
-                  <strong>Após o convite:</strong> O usuário receberá um e-mail com link para criar sua senha e acessar o sistema. 
-                  Você poderá configurar os menus de acesso após o primeiro login.
+                  <strong>Após o convite:</strong> O usuário receberá um e-mail com link para criar sua senha e acessar o sistema.
                 </p>
               </div>
             </div>
-
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowConviteModal(false)}
-                disabled={enviandoConvite}
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={enviarConvite}
-                disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
-                className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
-              >
+              <Button variant="outline" onClick={() => setShowConviteModal(false)} disabled={enviandoConvite}>Cancelar</Button>
+              <Button onClick={enviarConvite} disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
+                className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90">
                 {enviandoConvite ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Enviando...
-                  </>
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Enviando...</>
                 ) : (
-                  <>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Enviar Convite
-                  </>
+                  <><Mail className="w-4 h-4 mr-2" />Enviar Convite</>
                 )}
               </Button>
             </div>
