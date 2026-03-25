@@ -15,6 +15,7 @@ export default function Notificacoes() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('pendentes');
   const [search, setSearch] = useState('');
+  const [searchPendentes, setSearchPendentes] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
