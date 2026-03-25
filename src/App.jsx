@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import RelatorioComissoes from './pages/RelatorioComissoes';
+import Manual from './pages/Manual';
 import Notificacoes from './pages/Notificacoes';
 import Usuarios from './pages/Usuarios';
 
@@ -74,6 +75,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Notificacoes">
             <Notificacoes />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Manual"
+        element={
+          <LayoutWrapper currentPageName="Manual">
+            <Manual />
           </LayoutWrapper>
         }
       />
