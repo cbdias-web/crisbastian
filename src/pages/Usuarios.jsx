@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, WifiOff, Clock } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -29,6 +28,8 @@ export default function Usuarios() {
   const [showConviteModal, setShowConviteModal] = useState(false);
   const [conviteForm, setConviteForm] = useState({ email: '', nome: '', role: 'user' });
   const [enviandoConvite, setEnviandoConvite] = useState(false);
+  const [conviteVendedorEmail, setConviteVendedorEmail] = useState('');
+  const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -39,7 +40,7 @@ export default function Usuarios() {
 
   const getOnlineStatus = (ultimoAcesso) => {
     if (!ultimoAcesso) return 'offline';
-    const diff = (Date.now() - new Date(ultimoAcesso).getTime()) / 1000 / 60; // minutos
+    const diff = (Date.now() - new Date(ultimoAcesso).getTime()) / 1000 / 60;
     if (diff <= 3) return 'online';
     if (diff <= 10) return 'ausente';
     return 'offline';
@@ -56,26 +57,38 @@ export default function Usuarios() {
 
   const { data: usuarios = [], isLoading } = useQuery({
     queryKey: ['usuarios'],
-    queryFn: async () => {
-      const users = await base44.entities.User.list('full_name');
-      return users;
-    },
+    queryFn: () => base44.entities.User.list('full_name'),
     enabled: isAdmin,
-    refetchInterval: 30000 // atualiza a cada 30s para refletir quem está online
+    refetchInterval: 30000
   });
 
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores-lista'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    enabled: isAdmin
+  });
+
+  // Vendedores sem acesso ao sistema (email não coincide com nenhum usuário)
+  const emailsUsuarios = new Set(usuarios.map(u => u.email?.toLowerCase()));
+  const vendedoresSemAcesso = vendedores.filter(v => v.email && !emailsUsuarios.has(v.email.toLowerCase()));
+
   const updateUserMutation = useMutation({
-    mutationFn: async ({ id, data }) => {
-      return await base44.entities.User.update(id, data);
-    },
+    mutationFn: async ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['usuarios']);
       setEditingUser(null);
       toast.success('Usuário atualizado!');
     },
-    onError: (error) => {
-      toast.error('Erro ao atualizar usuário');
-    }
+    onError: () => toast.error('Erro ao atualizar usuário')
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (id) => base44.entities.User.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['usuarios']);
+      toast.success('Usuário removido!');
+    },
+    onError: () => toast.error('Erro ao remover usuário')
   });
 
   const iniciarEdicao = (usuario) => {
@@ -89,20 +102,12 @@ export default function Usuarios() {
   };
 
   const salvarUsuario = (usuario) => {
-    updateUserMutation.mutate({
-      id: usuario.id,
-      data: {
-        menus_acesso: menusEditando,
-        role: usuario.role
-      }
-    });
+    updateUserMutation.mutate({ id: usuario.id, data: { menus_acesso: menusEditando, role: usuario.role } });
   };
 
   const toggleMenu = (menuId) => {
-    setMenusEditando(prev => 
-      prev.includes(menuId) 
-        ? prev.filter(m => m !== menuId)
-        : [...prev, menuId]
+    setMenusEditando(prev =>
+      prev.includes(menuId) ? prev.filter(m => m !== menuId) : [...prev, menuId]
     );
   };
 
@@ -122,7 +127,6 @@ export default function Usuarios() {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
-
     setEnviandoConvite(true);
     try {
       await base44.users.inviteUser(conviteForm.email, conviteForm.role);
@@ -136,16 +140,26 @@ export default function Usuarios() {
     setEnviandoConvite(false);
   };
 
+  const enviarConviteVendedor = async (vendedor) => {
+    setEnviandoConviteVendedor(vendedor.id);
+    try {
+      await base44.users.inviteUser(vendedor.email, 'user');
+      toast.success(`Convite enviado para ${vendedor.email}!`);
+      queryClient.invalidateQueries(['usuarios']);
+    } catch (error) {
+      toast.error(error.message || 'Erro ao enviar convite');
+    }
+    setEnviandoConviteVendedor(null);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <Shield className="w-12 h-12 text-red-400 mx-auto mb-3" />
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Acesso Restrito</h2>
-            <p className="text-sm text-gray-500">Apenas administradores podem acessar esta página.</p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <Shield className="w-12 h-12 text-red-400 mx-auto mb-3" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Acesso Restrito</h2>
+          <p className="text-sm text-gray-500">Apenas administradores podem acessar esta página.</p>
+        </div>
       </div>
     );
   }
@@ -158,14 +172,35 @@ export default function Usuarios() {
     );
   }
 
+  const onlineCount = usuarios.filter(u => getOnlineStatus(u.ultimo_acesso) === 'online').length;
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Painel Online */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-2">
+      <div className="max-w-7xl mx-auto space-y-5">
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuário{usuarios.length !== 1 ? 's' : ''} cadastrado{usuarios.length !== 1 ? 's' : ''}</p>
+          </div>
+          <Button
+            onClick={() => setShowConviteModal(true)}
+            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white px-5"
+          >
+            <UserPlus className="w-4 h-4 mr-2" />
+            + Convidar Usuário
+          </Button>
+        </div>
+
+        {/* Status Online */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center gap-2 mb-3">
             <Wifi className="w-4 h-4 text-emerald-500" />
             <h3 className="text-sm font-semibold text-gray-700">Status Online</h3>
+            {onlineCount > 0 && (
+              <span className="text-xs bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full">{onlineCount} online</span>
+            )}
             <span className="text-xs text-gray-400 ml-auto">Atualiza a cada 30s</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -173,19 +208,14 @@ export default function Usuarios() {
               const status = getOnlineStatus(u.ultimo_acesso);
               const label = getStatusLabel(u.ultimo_acesso);
               return (
-                <div key={u.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium ${
-                  status === 'online' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' :
-                  status === 'ausente' ? 'bg-amber-50 border-amber-200 text-amber-800' :
-                  'bg-gray-50 border-gray-200 text-gray-500'
-                }`}>
+                <div key={u.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs bg-white border-gray-200 text-gray-600">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    status === 'online' ? 'bg-emerald-500 animate-pulse' :
+                    status === 'online' ? 'bg-emerald-500' :
                     status === 'ausente' ? 'bg-amber-400' : 'bg-gray-300'
                   }`} />
-                  <span>{u.nome_tratamento || u.full_name || u.email}</span>
+                  <span className="font-medium">{u.nome_tratamento || u.full_name || u.email}</span>
                   <span className={`text-[10px] ${
-                    status === 'online' ? 'text-emerald-600' :
-                    status === 'ausente' ? 'text-amber-600' : 'text-gray-400'
+                    status === 'online' ? 'text-emerald-600 font-semibold' : 'text-gray-400'
                   }`}>{label}</span>
                 </div>
               );
@@ -193,155 +223,152 @@ export default function Usuarios() {
           </div>
         </div>
 
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestão de Usuários</h1>
-            <p className="text-gray-600 mt-1">Controle de acessos e permissões</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setShowConviteModal(true)}
-              className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Convidar Usuário
-            </Button>
-            <div className="bg-blue-50 rounded-xl px-4 py-2">
-              <p className="text-xs text-gray-500">Total de usuários</p>
-              <p className="text-2xl font-bold text-[#1a3150]">{usuarios.length}</p>
+        {/* Vendedores sem acesso */}
+        {vendedoresSemAcesso.length > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <Mail className="w-4 h-4 text-amber-600" />
+              <h3 className="text-sm font-semibold text-amber-800">Vendedores Ativos Sem Acesso ao Sistema</h3>
+            </div>
+            <p className="text-xs text-amber-600 mb-4">Os vendedores abaixo estão cadastrados mas ainda não receberam convite de acesso.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {vendedoresSemAcesso.map(v => (
+                <div key={v.id} className="flex items-center justify-between bg-white rounded-xl p-3 border border-amber-100">
+                  <div className="min-w-0 flex-1 pr-3">
+                    <p className="text-sm font-semibold text-gray-900 truncate uppercase">{v.nome}</p>
+                    <p className="text-xs text-gray-500 truncate">{v.email}</p>
+                  </div>
+                  <button
+                    onClick={() => enviarConviteVendedor(v)}
+                    disabled={enviandoConviteVendedor === v.id}
+                    className="flex-shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
+                  >
+                    {enviandoConviteVendedor === v.id ? '...' : 'Enviar Convite'}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Usuários do Sistema
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+        {/* Tabela de usuários */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">E-mail</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome de Tratamento</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Papel</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Permissões</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
               {usuarios.map((usuario) => {
                 const isEditing = editingUser === usuario.id;
                 const menusUsuario = usuario.menus_acesso || menusDefault;
                 const isAdminUser = usuario.role === 'admin' || usuario.permissao_admin === true;
+                const initials = (usuario.full_name || usuario.email || 'U').charAt(0).toUpperCase();
 
                 return (
-                  <div key={usuario.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                          {usuario.full_name?.charAt(0).toUpperCase() || 'U'}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-semibold text-gray-900">{usuario.full_name}</p>
-                            {isAdminUser && (
-                              <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium flex items-center gap-1">
-                                <Shield className="w-3 h-3" />
-                                Admin
-                              </span>
-                            )}
+                  <React.Fragment key={usuario.id}>
+                    <tr className="hover:bg-gray-50/50 transition">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                            {initials}
                           </div>
-                          <p className="text-sm text-gray-500">{usuario.email}</p>
+                          <span className="text-sm text-gray-800 font-medium">{usuario.full_name || usuario.email}</span>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={isAdminUser}
-                            onChange={() => toggleAdmin(usuario)}
-                            className="w-4 h-4 accent-amber-600"
-                          />
-                          <span>Administrador</span>
-                        </label>
-                        {!isEditing ? (
-                          <Button variant="ghost" size="sm" onClick={() => iniciarEdicao(usuario)}>
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Editar Acessos
-                          </Button>
-                        ) : (
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm" onClick={cancelarEdicao}>
-                              <X className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" onClick={() => salvarUsuario(usuario)} className="bg-green-600 hover:bg-green-700">
-                              <Save className="w-4 h-4 mr-2" />
-                              Salvar
-                            </Button>
+                      </td>
+                      <td className="px-5 py-3.5 text-sm text-gray-500">{usuario.email}</td>
+                      <td className="px-5 py-3.5 text-sm text-gray-700">{usuario.nome_tratamento || usuario.full_name || '—'}</td>
+                      <td className="px-5 py-3.5">
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                          isAdminUser ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'
+                        }`}>
+                          {isAdminUser ? 'Admin' : 'Usuário'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                          <span className="text-gray-400">◎</span>
+                          {isAdminUser ? 'Acesso total' : `${menusUsuario.length} menus`}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Ativo</span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => isEditing ? cancelarEdicao() : iniciarEdicao(usuario)}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400 hover:text-blue-600"
+                            title="Editar acessos"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleAdmin(usuario)}
+                            className={`p-1.5 hover:bg-gray-100 rounded-lg transition ${isAdminUser ? 'text-amber-500' : 'text-gray-400 hover:text-amber-500'}`}
+                            title={isAdminUser ? 'Remover admin' : 'Tornar admin'}
+                          >
+                            <Shield className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm(`Remover ${usuario.full_name || usuario.email}?`)) deleteUserMutation.mutate(usuario.id); }}
+                            className="p-1.5 hover:bg-red-50 rounded-lg transition text-gray-300 hover:text-red-500"
+                            title="Remover usuário"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {isEditing && (
+                      <tr>
+                        <td colSpan={7} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Menus de Acesso</p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                              {menusDisponiveis.map((menu) => (
+                                <label key={menu.id} className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition text-xs ${
+                                  menusEditando.includes(menu.id) ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                                }`}>
+                                  <input type="checkbox" checked={menusEditando.includes(menu.id)}
+                                    onChange={() => toggleMenu(menu.id)} className="w-3.5 h-3.5 accent-blue-600" />
+                                  {menu.nome}
+                                </label>
+                              ))}
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              <Button size="sm" onClick={() => salvarUsuario(usuario)} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                                <Save className="w-3.5 h-3.5 mr-1.5" /> Salvar
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={cancelarEdicao}>
+                                <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
+                              </Button>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {isEditing ? (
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Menus de Acesso</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                          {menusDisponiveis.map((menu) => (
-                            <label key={menu.id} className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition ${
-                              menusEditando.includes(menu.id) ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:border-gray-300'
-                            }`}>
-                              <input type="checkbox" checked={menusEditando.includes(menu.id)}
-                                onChange={() => toggleMenu(menu.id)} className="mt-0.5 w-4 h-4 accent-blue-600" />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">{menu.nome}</p>
-                                <p className="text-xs text-gray-400">{menu.descricao}</p>
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-blue-700">
-                            <strong>Nota:</strong> Usuários não-admin só podem visualizar seus próprios dados nas páginas Dashboard, Vendas e Vendedores.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Menus com Acesso ({menusUsuario.length})</p>
-                        <div className="flex flex-wrap gap-2">
-                          {menusUsuario.map((menuId) => {
-                            const menu = menusDisponiveis.find(m => m.id === menuId);
-                            return menu ? (
-                              <span key={menuId} className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium">
-                                {menu.nome}
-                              </span>
-                            ) : null;
-                          })}
-                          {menusUsuario.length === 0 && (
-                            <span className="text-xs text-gray-400 italic">Nenhum menu configurado</span>
-                          )}
-                        </div>
-                      </div>
+                        </td>
+                      </tr>
                     )}
-                  </div>
+                  </React.Fragment>
                 );
               })}
-
               {usuarios.length === 0 && (
-                <div className="text-center py-12 text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>Nenhum usuário encontrado</p>
-                </div>
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-gray-400">
+                    <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
+                    <p className="text-sm">Nenhum usuário encontrado</p>
+                  </td>
+                </tr>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900">ℹ️ Informações Importantes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-blue-800">
-            <p>• <strong>Menus padrão:</strong> Novos usuários têm acesso a Dashboard, Vendas e Vendedores (apenas seus próprios dados).</p>
-            <p>• <strong>Administradores:</strong> Têm acesso completo a todos os menus e podem visualizar dados de todos os usuários.</p>
-            <p>• <strong>Restrições:</strong> Usuários não-admin só visualizam seus próprios dados, mesmo que tenham acesso ao menu.</p>
-            <p>• <strong>Convite:</strong> Um e-mail de convite será enviado com instruções para criar a senha de acesso.</p>
-          </CardContent>
-        </Card>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal de Convite */}
@@ -387,7 +414,7 @@ export default function Usuarios() {
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowConviteModal(false)} disabled={enviandoConvite}>Cancelar</Button>
               <Button onClick={enviarConvite} disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
-                className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90">
+                className="bg-[#0f1e35] hover:bg-[#1a3150]">
                 {enviandoConvite ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Enviando...</>
                 ) : (
