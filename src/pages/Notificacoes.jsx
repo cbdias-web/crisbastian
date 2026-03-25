@@ -85,6 +85,14 @@ export default function Notificacoes() {
 
   // Separação
   const pendentes = notificacoes.filter(n => n.status === 'pendente');
+  const pendentesFiltrados = pendentes.filter(n => {
+    const term = searchPendentes.toLowerCase();
+    return !term || (
+      n.vendedor_nome?.toLowerCase().includes(term) ||
+      n.cliente?.toLowerCase().includes(term) ||
+      String(n.total_espelhamento).includes(term)
+    );
+  });
   const processadas = notificacoes.filter(n => n.status !== 'pendente');
   const aceitesPendentes = aceites.filter(a => !a.leitura_gestao_vendas);
   const aceitesCompletos = aceites.filter(a => a.leitura_gestao_vendas);
