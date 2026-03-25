@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import OnboardingModal from '@/components/OnboardingModal';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, Edit2, Check, X, FileText, AlertTriangle, LogOut, BookOpen } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -16,11 +17,22 @@ export default function Layout({ children, currentPageName }) {
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [aceite, setAceite] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => {
+    base44.auth.me().then(async u => {
       setUser(u);
       setDisplayName(u?.nome_tratamento || u?.full_name || u?.email || '');
+      // Verificar aceite do usuário
+      try {
+        const aceites = await base44.entities.AceiteUsuario.filter({ user_id: u.id });
+        const a = aceites[0] || null;
+        setAceite(a);
+        if (!a || !a.termo_aceito || !a.leitura_gestao_vendas) {
+          setShowOnboarding(true);
+        }
+      } catch (e) {}
     }).catch(() => {});
   }, []);
 
@@ -63,6 +75,18 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 30000
   });
 
+  const { data: aceitesPendentes = [] } = useQuery({
+    queryKey: ['aceites-pendentes'],
+    queryFn: async () => {
+      const all = await base44.entities.AceiteUsuario.list();
+      return all.filter(a => !a.leitura_gestao_vendas);
+    },
+    enabled: isAdmin,
+    refetchInterval: 60000
+  });
+
+  const totalPendentes = notificacoesPendentes.length + aceitesPendentes.length;
+
   const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
 
   const menuItems = [
@@ -76,7 +100,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
     { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
-    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: notificacoesPendentes.length },
+    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true },
   ].filter(item => {
     if (isAdmin) return true;
@@ -92,6 +116,13 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
+      {showOnboarding && user && (
+        <OnboardingModal
+          user={user}
+          aceite={aceite}
+          onComplete={() => setShowOnboarding(false)}
+        />
+      )}
       <aside className="w-64 shadow-xl flex flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
         <div className="p-6 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
