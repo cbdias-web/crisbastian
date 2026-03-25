@@ -25,6 +25,7 @@ export default function Usuarios() {
   const [user, setUser] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [menusEditando, setMenusEditando] = useState([]);
+  const [nomeEditando, setNomeEditando] = useState('');
   const [showConviteModal, setShowConviteModal] = useState(false);
   const [conviteForm, setConviteForm] = useState({ email: '', nome: '', role: 'user' });
   const [enviandoConvite, setEnviandoConvite] = useState(false);
@@ -94,6 +95,7 @@ export default function Usuarios() {
   const iniciarEdicao = (usuario) => {
     setEditingUser(usuario.id);
     setMenusEditando(usuario.menus_acesso || menusDefault);
+    setNomeEditando(usuario.nome_tratamento || usuario.full_name || '');
   };
 
   const cancelarEdicao = () => {
@@ -102,7 +104,7 @@ export default function Usuarios() {
   };
 
   const salvarUsuario = (usuario) => {
-    updateUserMutation.mutate({ id: usuario.id, data: { menus_acesso: menusEditando, role: usuario.role } });
+    updateUserMutation.mutate({ id: usuario.id, data: { menus_acesso: menusEditando, role: usuario.role, nome_tratamento: nomeEditando.trim() } });
   };
 
   const toggleMenu = (menuId) => {
@@ -331,6 +333,16 @@ export default function Usuarios() {
                       <tr>
                         <td colSpan={7} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
                           <div className="space-y-3">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Nome de Tratamento</p>
+                              <input
+                                type="text"
+                                value={nomeEditando}
+                                onChange={e => setNomeEditando(e.target.value)}
+                                placeholder="Nome de tratamento"
+                                className="w-64 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                              />
+                            </div>
                             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Menus de Acesso</p>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
                               {menusDisponiveis.map((menu) => (
