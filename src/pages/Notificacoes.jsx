@@ -263,7 +263,26 @@ export default function Notificacoes() {
         {/* TAB: PENDENTES */}
         {activeTab === 'pendentes' && (
           <div className="space-y-3">
-            {pendentes.length === 0 ? (
+            {pendentes.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl">
+                  <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    value={searchPendentes}
+                    onChange={e => setSearchPendentes(e.target.value)}
+                    placeholder="Buscar por vendedor, cliente..."
+                    className="flex-1 text-sm outline-none bg-transparent"
+                  />
+                  {searchPendentes && (
+                    <button onClick={() => setSearchPendentes('')} className="text-gray-400 hover:text-gray-600">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+            {pendentesFiltrados.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
                 <CheckCircle2 className="w-12 h-12 text-emerald-300 mx-auto mb-3" />
                 <p className="text-gray-500 font-medium">Nenhuma autorização pendente</p>
