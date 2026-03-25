@@ -33,7 +33,21 @@ export default function Layout({ children, currentPageName }) {
           setShowOnboarding(true);
         }
       } catch (e) {}
+      // Registrar presença online
+      try {
+        await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() });
+      } catch (e) {}
     }).catch(() => {});
+  }, []);
+
+  // Heartbeat: atualiza ultimo_acesso a cada 2 minutos enquanto o usuário está na página
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() });
+      } catch (e) {}
+    }, 2 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
