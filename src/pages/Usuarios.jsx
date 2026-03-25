@@ -194,6 +194,24 @@ export default function Usuarios() {
         </div>
 
         <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Gestão de Usuários</h1>
+            <p className="text-gray-600 mt-1">Controle de acessos e permissões</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => setShowConviteModal(true)}
+              className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] hover:opacity-90"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Convidar Usuário
+            </Button>
+            <div className="bg-blue-50 rounded-xl px-4 py-2">
+              <p className="text-xs text-gray-500">Total de usuários</p>
+              <p className="text-2xl font-bold text-[#1a3150]">{usuarios.length}</p>
+            </div>
+          </div>
+        </div>
 
         <Card>
           <CardHeader>
@@ -240,28 +258,16 @@ export default function Usuarios() {
                           <span>Administrador</span>
                         </label>
                         {!isEditing ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => iniciarEdicao(usuario)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => iniciarEdicao(usuario)}>
                             <Edit2 className="w-4 h-4 mr-2" />
                             Editar Acessos
                           </Button>
                         ) : (
                           <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={cancelarEdicao}
-                            >
+                            <Button variant="ghost" size="sm" onClick={cancelarEdicao}>
                               <X className="w-4 h-4" />
                             </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => salvarUsuario(usuario)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
+                            <Button size="sm" onClick={() => salvarUsuario(usuario)} className="bg-green-600 hover:bg-green-700">
                               <Save className="w-4 h-4 mr-2" />
                               Salvar
                             </Button>
@@ -272,25 +278,14 @@ export default function Usuarios() {
 
                     {isEditing ? (
                       <div>
-                        <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                          Menus de Acesso
-                        </p>
+                        <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Menus de Acesso</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                           {menusDisponiveis.map((menu) => (
-                            <label
-                              key={menu.id}
-                              className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition ${
-                                menusEditando.includes(menu.id)
-                                  ? 'bg-blue-50 border-blue-300'
-                                  : 'bg-white border-gray-200 hover:border-gray-300'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={menusEditando.includes(menu.id)}
-                                onChange={() => toggleMenu(menu.id)}
-                                className="mt-0.5 w-4 h-4 accent-blue-600"
-                              />
+                            <label key={menu.id} className={`flex items-start gap-2 p-3 rounded-lg border cursor-pointer transition ${
+                              menusEditando.includes(menu.id) ? 'bg-blue-50 border-blue-300' : 'bg-white border-gray-200 hover:border-gray-300'
+                            }`}>
+                              <input type="checkbox" checked={menusEditando.includes(menu.id)}
+                                onChange={() => toggleMenu(menu.id)} className="mt-0.5 w-4 h-4 accent-blue-600" />
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-900">{menu.nome}</p>
                                 <p className="text-xs text-gray-400">{menu.descricao}</p>
@@ -306,17 +301,12 @@ export default function Usuarios() {
                       </div>
                     ) : (
                       <div>
-                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
-                          Menus com Acesso ({menusUsuario.length})
-                        </p>
+                        <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">Menus com Acesso ({menusUsuario.length})</p>
                         <div className="flex flex-wrap gap-2">
                           {menusUsuario.map((menuId) => {
                             const menu = menusDisponiveis.find(m => m.id === menuId);
                             return menu ? (
-                              <span
-                                key={menuId}
-                                className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium"
-                              >
+                              <span key={menuId} className="text-xs px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium">
                                 {menu.nome}
                               </span>
                             ) : null;
