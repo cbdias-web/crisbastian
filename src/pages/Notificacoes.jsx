@@ -285,10 +285,10 @@ export default function Notificacoes() {
             {pendentesFiltrados.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
                 <CheckCircle2 className="w-12 h-12 text-emerald-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-medium">Nenhuma autorização pendente</p>
-                <p className="text-gray-400 text-sm mt-1">Todas as solicitações foram tratadas.</p>
+                <p className="text-gray-500 font-medium">{pendentes.length === 0 ? 'Nenhuma autorização pendente' : 'Nenhum resultado encontrado'}</p>
+                <p className="text-gray-400 text-sm mt-1">{pendentes.length === 0 ? 'Todas as solicitações foram tratadas.' : 'Tente outro termo de busca.'}</p>
               </div>
-            ) : pendentes.map(notif => (
+            ) : pendentesFiltrados.map(notif => (
               <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
                 <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-5 py-3 border-b border-amber-200 flex items-center justify-between">
                   <div className="flex items-center gap-2">
