@@ -315,6 +315,46 @@ export default function MeusClientes() {
     setSalvandoCliente(false);
   };
 
+  const criarNovoLead = async () => {
+    if (!novoLeadForm.nome?.trim()) {
+      toast.error('Nome é obrigatório');
+      return;
+    }
+    setCriandoLead(true);
+    try {
+      const novoLead = await base44.entities.Cliente.create({
+        nome: novoLeadForm.nome.trim(),
+        cpf_cnpj: novoLeadForm.cpf_cnpj?.trim() || '',
+        telefone: novoLeadForm.telefone?.trim() || '',
+        email: novoLeadForm.email?.trim() || '',
+        vendedor_id: vendedor?.id || '',
+        vendedor_nome: vendedor?.nome || '',
+        origem: 'nativo'
+      });
+      toast.success('Lead criado com sucesso!');
+      setShowNovoLeadModal(false);
+      setNovoLeadForm({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
+      queryClient.invalidateQueries(['clientes-crm']);
+      // Expandir o novo cliente e abrir formulário de nova interação
+      setTimeout(() => {
+        setExpandedCliente(novoLead.id);
+        setCadastroClienteForm({
+          nome: novoLead.nome,
+          cpf_cnpj: novoLead.cpf_cnpj || '',
+          telefone: novoLead.telefone || '',
+          email: novoLead.email || '',
+          cidade: novoLead.cidade || '',
+          estado: novoLead.estado || ''
+        });
+        setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
+        setShowForm(novoLead.id);
+      }, 300);
+    } catch (e) {
+      toast.error('Erro ao criar lead');
+    }
+    setCriandoLead(false);
+  };
+
   const handleSave = async (cliente) => {
     if (!form.descricao.trim()) { toast.error('Descreva a interação'); return; }
     if (!cadastroClienteForm.nome?.trim() || !cadastroClienteForm.cpf_cnpj?.trim() || !cadastroClienteForm.telefone?.trim() || !cadastroClienteForm.email?.trim()) {
@@ -539,6 +579,26 @@ export default function MeusClientes() {
             </button>
             <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition">Cancelar</button>
           </div>
+        )}
+
+        {/* Botão Novo Lead */}
+        {(isAdmin || vendedor) && (
+          <Button
+            onClick={() => setShowNovoLeadModal(true)}
+            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2 w-full md:w-auto"
+          >
+            <Plus className="w-4 h-4" /> Novo Lead/Prospect
+          </Button>
+        )}
+
+        {/* Botão Novo Lead */}
+        {(isAdmin || vendedor) && (
+          <Button
+            onClick={() => setShowNovoLeadModal(true)}
+            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2 w-full md:w-auto"
+          >
+            <Plus className="w-4 h-4" /> Novo Lead/Prospect
+          </Button>
         )}
 
         {/* Filtro Clientes / Leads + Busca */}
@@ -917,6 +977,53 @@ export default function MeusClientes() {
               <button onClick={salvarEdicaoInteracao} disabled={salvandoInteracao} className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-lg hover:bg-[#1a3150]">
                 {salvandoInteracao ? 'Salvando...' : 'Salvar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Novo Lead */}
+      {showNovoLeadModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Novo Lead/Prospect</h3>
+              <button onClick={() => setShowNovoLeadModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Nome Completo *</label>
+                <input type="text" value={novoLeadForm.nome} onChange={e => setNovoLeadForm(p => ({ ...p, nome: e.target.value }))}
+                  placeholder="Nome do lead"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">CPF / CNPJ</label>
+                <input type="text" value={novoLeadForm.cpf_cnpj} onChange={e => setNovoLeadForm(p => ({ ...p, cpf_cnpj: e.target.value }))}
+                  placeholder="000.000.000-00"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Telefone</label>
+                <input type="text" value={novoLeadForm.telefone} onChange={e => setNovoLeadForm(p => ({ ...p, telefone: e.target.value }))}
+                  placeholder="(11) 99999-9999"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">E-mail</label>
+                <input type="email" value={novoLeadForm.email} onChange={e => setNovoLeadForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="email@exemplo.com"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowNovoLeadModal(false)}>Cancelar</Button>
+              <Button onClick={criarNovoLead} disabled={criandoLead || !novoLeadForm.nome} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                {criandoLead ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                Criar e Registrar Interação
+              </Button>
             </div>
           </div>
         </div>
