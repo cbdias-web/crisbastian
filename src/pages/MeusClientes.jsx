@@ -32,7 +32,11 @@ export default function MeusClientes() {
   const [showForm, setShowForm] = useState(null); // cliente_id
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filtroOrigem, setFiltroOrigem] = useState('todos'); // 'todos' | 'clientes' | 'leads'
+  const [filtroOrigem, setFiltroOrigem] = useState('todos');
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showTrocarGerenteModal, setShowTrocarGerenteModal] = useState(false);
+  const [novoGerenteId, setNovoGerenteId] = useState('');
+  const [salvandoBulk, setSalvandoBulk] = useState(false); // 'todos' | 'clientes' | 'leads'
   // admin: array de IDs selecionados; vazio = todos (carteira geral)
   const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -115,6 +119,64 @@ export default function MeusClientes() {
       toast.success('Lead convertido em cliente cativo!');
     }
   });
+
+  const toggleSelect = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === clientesFiltrados.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(clientesFiltrados.map(c => c.id)));
+    }
+  };
+
+  const handleTrocarGerente = async () => {
+    if (!novoGerenteId) return;
+    const gerenteNovo = todosVendedores.find(v => v.id === novoGerenteId);
+    if (!gerenteNovo) return;
+    setSalvandoBulk(true);
+    try {
+      const selecionados = clientesFiltrados.filter(c => selectedIds.has(c.id));
+      for (const c of selecionados) {
+        await base44.entities.Cliente.update(c.id, { vendedor_id: gerenteNovo.id, vendedor_nome: gerenteNovo.nome });
+        if (c.lead_id) {
+          await base44.entities.Lead.update(c.lead_id, { vendedor_id: gerenteNovo.id, vendedor_nome: gerenteNovo.nome });
+        }
+      }
+      queryClient.invalidateQueries(['clientes-crm']);
+      toast.success(`${selecionados.length} registro(s) transferido(s) para ${gerenteNovo.nome}!`);
+      setSelectedIds(new Set());
+      setShowTrocarGerenteModal(false);
+      setNovoGerenteId('');
+    } catch (e) { toast.error('Erro ao trocar gerente'); }
+    setSalvandoBulk(false);
+  };
+
+  const handleDevolverLeads = async () => {
+    const selecionados = clientesFiltrados.filter(c => selectedIds.has(c.id) && c.origem === 'lead');
+    if (selecionados.length === 0) { toast.error('Selecione ao menos um lead para devolver'); return; }
+    if (!confirm(`Devolver ${selecionados.length} lead(s) para "Não Distribuídos"? Eles serão removidos da carteira atual.`)) return;
+    setSalvandoBulk(true);
+    try {
+      for (const c of selecionados) {
+        await base44.entities.Cliente.update(c.id, { vendedor_id: '', vendedor_nome: '' });
+        if (c.lead_id) {
+          await base44.entities.Lead.update(c.lead_id, { status: 'pendente', vendedor_id: '', vendedor_nome: '' });
+        }
+      }
+      queryClient.invalidateQueries(['clientes-crm']);
+      toast.success(`${selecionados.length} lead(s) devolvido(s) com sucesso!`);
+      setSelectedIds(new Set());
+    } catch (e) { toast.error('Erro ao devolver leads'); }
+    setSalvandoBulk(false);
+  };
 
   const handleSave = (cliente) => {
     if (!form.descricao.trim()) { toast.error('Descreva a interação'); return; }
@@ -239,6 +301,24 @@ export default function MeusClientes() {
         {/* Agenda de contatos (leads) */}
         {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
 
+        {/* Barra de ações em lote */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 bg-[#0f1e35] text-white px-4 py-3 rounded-2xl shadow-lg flex-wrap">
+            <span className="text-sm font-semibold mr-auto">{selectedIds.size} selecionado(s)</span>
+            {isAdmin && (
+              <button onClick={() => setShowTrocarGerenteModal(true)} disabled={salvandoBulk}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-xs font-medium transition">
+                <Users className="w-3.5 h-3.5" /> Trocar Gerente
+              </button>
+            )}
+            <button onClick={handleDevolverLeads} disabled={salvandoBulk}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/80 hover:bg-amber-500 rounded-lg text-xs font-medium transition">
+              Devolver Leads Não Convertidos
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition">Cancelar</button>
+          </div>
+        )}
+
         {/* Filtro Clientes / Leads + Busca */}
         {(isAdmin || vendedor) && (
           <div className="flex flex-col gap-2">
@@ -271,6 +351,16 @@ export default function MeusClientes() {
 
         {/* Lista de clientes */}
         <div className="space-y-2">
+          {clientesFiltrados.length > 0 && (
+            <div className="flex items-center gap-2 px-1">
+              <input type="checkbox"
+                checked={selectedIds.size === clientesFiltrados.length && clientesFiltrados.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 accent-[#1a3150] cursor-pointer"
+              />
+              <span className="text-xs text-gray-400">Selecionar todos ({clientesFiltrados.length})</span>
+            </div>
+          )}
           {clientesFiltrados.length === 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
               <Users className="w-10 h-10 text-gray-200 mx-auto mb-2" />
@@ -285,24 +375,28 @@ export default function MeusClientes() {
             const isFormOpen = showForm === cliente.id;
 
             return (
-              <div key={cliente.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={cliente.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${selectedIds.has(cliente.id) ? 'border-[#1a3150]/40 ring-1 ring-[#1a3150]/20' : 'border-gray-100'}`}>
                 {/* Card header */}
                 <div
                   className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition"
                   onClick={() => setExpandedCliente(isExpanded ? null : cliente.id)}
                 >
+                  <input type="checkbox" checked={selectedIds.has(cliente.id)}
+                    onChange={e => toggleSelect(cliente.id, e)} onClick={e => e.stopPropagation()}
+                    className="w-4 h-4 accent-[#1a3150] cursor-pointer flex-shrink-0" />
                   <div className="w-9 h-9 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                     {(cliente.nome || '?').charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{cliente.nome}</p>
                     <p className="text-xs text-gray-400 truncate">{cliente.cpf_cnpj || cliente.email || cliente.telefone || '—'}</p>
+                    {cliente.origem === 'lead' && cliente.created_date && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">Importado em {format(new Date(cliente.created_date), 'dd/MM/yyyy')}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {cliente.origem === 'lead' && (
-                      <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
-                        🎯 Lead
-                      </span>
+                      <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">🎯 Lead</span>
                     )}
                     {cliente.origem === 'lead_convertido' && (
                       <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -311,8 +405,7 @@ export default function MeusClientes() {
                     )}
                     {proximoContato && (
                       <span className="text-[10px] bg-blue-50 text-blue-600 font-medium px-2 py-1 rounded-full flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {format(parseISO(proximoContato), 'dd/MM')}
+                        <Clock className="w-3 h-3" />{format(parseISO(proximoContato), 'dd/MM')}
                       </span>
                     )}
                     <span className="text-xs text-gray-400">{interacoesCliente.length} interação{interacoesCliente.length !== 1 ? 'ões' : ''}</span>
@@ -431,6 +524,33 @@ export default function MeusClientes() {
           })}
         </div>
       </div>
+
+      {/* Modal Trocar Gerente */}
+      {showTrocarGerenteModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Trocar Gerente Responsável</h3>
+              <button onClick={() => setShowTrocarGerenteModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600">{selectedIds.size} registro(s) selecionado(s) serão transferidos para:</p>
+              <select value={novoGerenteId} onChange={e => setNovoGerenteId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
+                <option value="">Selecione o novo gerente...</option>
+                {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+              </select>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowTrocarGerenteModal(false)}>Cancelar</Button>
+              <Button onClick={handleTrocarGerente} disabled={!novoGerenteId || salvandoBulk} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                {salvandoBulk ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : null}
+                Confirmar Transferência
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
