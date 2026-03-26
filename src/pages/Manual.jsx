@@ -524,6 +524,23 @@ const sections = [
         text: 'Menu para visualizar, gerenciar e interagir com sua carteira de clientes e leads. Permite registro de interações diárias, acompanhamento de próximos contatos e conversão de leads em clientes cativos.',
       },
       {
+        subtitle: 'Criar novo lead/prospect manualmente',
+        text: 'Você pode agora incluir novos leads/prospects diretamente no sistema sem necessidade de importação. Clique no botão "Novo Lead/Prospect" (localizado na mesma linha do filtro de vendedores, no canto direito). Um modal será aberto para preenchimento dos dados básicos: nome completo, CPF/CNPJ, telefone e e-mail.',
+      },
+      {
+        subtitle: 'Fluxo de criação de novo lead',
+        steps: [
+          'Clique em "Novo Lead/Prospect" na barra superior.',
+          'Preencha o nome completo do lead (obrigatório).',
+          'Opcionalmente, adicione CPF/CNPJ, telefone e e-mail.',
+          'Clique em "Criar e Registrar Interação".',
+          'O lead é criado automaticamente vinculado a você como gerente (origem: nativo).',
+          'O sistema abre imediatamente a jornada de "Nova Interação" para registro do primeiro contato.',
+          'Preencha os detalhes da interação (tipo, resultado, data, descrição, etc.) e salve.',
+          'O lead fica armazenado em sua carteira para futuras interações.',
+        ],
+      },
+      {
         subtitle: 'Visão geral da carteira',
         text: 'Exibe lista de todos os clientes e leads atribuídos a você (ou que você gerencia), com contador total, filtro por tipo (Clientes, Leads) e busca por nome/CPF.',
       },
