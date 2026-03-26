@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import AgendaDiariaWidget from "@/components/leads/AgendaDiariaWidget";
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload
@@ -76,11 +77,49 @@ export default function Dashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileForm, setProfileForm] = useState({ full_name: "", email: "", nome_tratamento: "" });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [vendedor, setVendedor] = useState(null);
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [selectedProdutos, setSelectedProdutos] = useState([]);
+
+  // Sincronizar agenda ao entrar na página
+  const sincronizarAgenda = async (vendedorId) => {
+    try {
+      if (!vendedorId) return;
+      
+      const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendedorId }, '-data_interacao');
+      const hoje = new Date().toISOString().split('T')[0];
+      
+      const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendedorId });
+      const agendaMap = new Set(agendas.map(a => `${a.lead_id}-${a.data_agendada}`));
+      
+      for (const inter of interacoes) {
+        if (inter.proximo_contato && inter.proximo_contato >= hoje) {
+          const key = `${inter.cliente_id}-${inter.proximo_contato}`;
+          if (!agendaMap.has(key)) {
+            await base44.entities.AgendaContato.create({
+              lead_id: inter.cliente_id,
+              lead_nome: inter.cliente_nome,
+              lead_cpf_cnpj: inter.cliente_nome || '',
+              lead_telefone: '',
+              cliente_id: '',
+              vendedor_id: vendedorId,
+              vendedor_nome: inter.vendedor_nome,
+              data_agendada: inter.proximo_contato,
+              posicao_dia: 0,
+              lote_id: '',
+              status: 'pendente',
+              resultado: ''
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao sincronizar agenda:', e);
+    }
+  };
 
   useEffect(() => {
     Promise.allSettled([
@@ -89,7 +128,7 @@ export default function Dashboard() {
       base44.entities.Meta.list(),
       base44.entities.Comissao.list(),
       base44.auth.me(),
-    ]).then(([v, vend, m, com, u]) => {
+    ]).then(async ([v, vend, m, com, u]) => {
       const vendas = v.status === 'fulfilled' ? v.value : [];
       const vends = vend.status === 'fulfilled' ? vend.value : [];
       const mts = m.status === 'fulfilled' ? m.value : [];
@@ -103,6 +142,16 @@ export default function Dashboard() {
       setSelectedVendedores(vends.map(vv => vv.id));
       const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
+      
+      // Sincronizar agenda se o usuário tiver vendedor vinculado
+      if (usr) {
+        const vendedoresDoUser = vends.filter(v => v.email === usr.email);
+        if (vendedoresDoUser.length > 0) {
+          setVendedor(vendedoresDoUser[0]);
+          setTimeout(() => sincronizarAgenda(vendedoresDoUser[0].id), 500);
+        }
+      }
+      
       setLoading(false);
     });
   }, []);
@@ -270,7 +319,10 @@ export default function Dashboard() {
 
         <div className="flex flex-col gap-3">
 
-          {/* Filtros */}
+          {/* Agenda do Dia - Início da Atividade */}
+        {vendedor && <AgendaDiariaWidget vendedorId={vendedor.id} />}
+
+        {/* Filtros */}
           <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <Calendar className="w-4 h-4 text-gray-400 ml-1" />
             <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
