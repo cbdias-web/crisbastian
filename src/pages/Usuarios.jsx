@@ -32,7 +32,6 @@ export default function Usuarios() {
   const [conviteVendedorEmail, setConviteVendedorEmail] = useState('');
   const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
   const [migrandoClientes, setMigrandoClientes] = useState(false);
-  const [recuperandoOrfaos, setRecuperandoOrfaos] = useState(false);
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
@@ -173,19 +172,6 @@ export default function Usuarios() {
     setMigrandoClientes(false);
   };
 
-  const recuperarClientesOrfaos = async () => {
-    if (!confirm('Buscar e recuperar clientes órfãos (com interações mas sem vínculo em Meus Clientes)?')) return;
-    setRecuperandoOrfaos(true);
-    try {
-      const res = await base44.functions.invoke('recuperarClientesOrfaos', {});
-      toast.success(res.data.message);
-      queryClient.invalidateQueries(['usuarios']);
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'Erro ao recuperar clientes órfãos');
-    }
-    setRecuperandoOrfaos(false);
-  };
-
   const executarMigriacaoPersonalizada = async () => {
     if (!migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id) {
       toast.error('Selecione vendedor de origem e destino');
@@ -311,30 +297,8 @@ export default function Usuarios() {
                 {migrandoClientes ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <ArrowRight className="w-3.5 h-3.5 mr-1.5" />}
                 Automático
               </Button>
-              </div>
-              </div>
-              </div>
-
-              {/* Recuperação de Clientes Órfãos */}
-              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-              <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="font-semibold text-blue-900">Recuperar Clientes Órfãos</p>
-                <p className="text-xs text-blue-700 mt-0.5">Restaurar clientes com interações mas desvinculados de Meus Clientes</p>
-              </div>
-              </div>
-              <Button
-              onClick={recuperarClientesOrfaos}
-              disabled={recuperandoOrfaos}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs"
-              >
-              {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
-              Recuperar
-              </Button>
-              </div>
-              </div>
+            </div>
+          </div>
         </div>
 
         {/* Vendedores sem acesso */}
@@ -506,169 +470,117 @@ export default function Usuarios() {
             </tbody>
           </table>
         </div>
-        </div>
 
-        {/* Seção Migração e Recuperação */}
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <ArrowRight className="w-5 h-5 text-amber-600" />
-              <div>
-                <p className="font-semibold text-amber-900">Migração de Clientes</p>
-                <p className="text-xs text-amber-700 mt-0.5">Transferir carteira de clientes entre vendedores</p>
+        {/* Modal de Migração Personalizada */}
+        {showMigrarcaoModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="w-5 h-5 text-amber-600" />
+                  <h3 className="font-semibold text-gray-900">Migração Personalizada</h3>
+                </div>
+                <button onClick={() => setShowMigrarcaoModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={executarMigracao}
-                disabled={migrandoClientes}
-                className="bg-amber-600 hover:bg-amber-700 text-white h-9 text-xs"
-              >
-                {migrandoClientes ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <ArrowRight className="w-3.5 h-3.5 mr-1.5" />}
-                Automático
-              </Button>
-              <Button
-                onClick={() => setShowMigrarcaoModal(true)}
-                variant="outline"
-                className="border-amber-200 text-amber-700 hover:bg-amber-50 h-9 text-xs"
-              >
-                <Users className="w-3.5 h-3.5 mr-1.5" />
-                Personalizado
-              </Button>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Origem (Inativo) *</label>
+                  <select value={migracaoForm.vendedor_origem_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_origem_id: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
+                    <option value="">Selecione um vendedor...</option>
+                    {vendedores.map(v => (
+                      <option key={v.id} value={v.id}>{v.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Destino (Ativo) *</label>
+                  <select value={migracaoForm.vendedor_destino_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_destino_id: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
+                    <option value="">Selecione um vendedor...</option>
+                    {vendedores.map(v => (
+                      <option key={v.id} value={v.id}>{v.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    <strong>Atenção:</strong> Todos os clientes do vendedor de origem serão transferidos para o vendedor de destino.
+                  </p>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowMigrarcaoModal(false)} disabled={migrandoClientes}>Cancelar</Button>
+                <Button onClick={executarMigriacaoPersonalizada} disabled={migrandoClientes || !migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id}
+                  className="bg-amber-600 hover:bg-amber-700">
+                  {migrandoClientes ? (
+                    <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Migrando...</>
+                  ) : (
+                    <><ArrowRight className="w-4 h-4 mr-2" />Executar Migração</>
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Recuperação de Clientes Órfãos */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="font-semibold text-blue-900">Recuperar Clientes Órfãos</p>
-                <p className="text-xs text-blue-700 mt-0.5">Restaurar clientes com interações mas desvinculados de Meus Clientes</p>
+        {/* Modal de Convite */}
+        {showConviteModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-[#1a3150]" />
+                  <h3 className="font-semibold text-gray-900">Convidar Novo Usuário</h3>
+                </div>
+                <button onClick={() => setShowConviteModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-            <Button
-              onClick={recuperarClientesOrfaos}
-              disabled={recuperandoOrfaos}
-              className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs"
-            >
-              {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
-              Recuperar
-              </Button>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Nome Completo *</label>
+                  <input type="text" value={conviteForm.nome} onChange={(e) => setConviteForm(p => ({ ...p, nome: e.target.value }))}
+                    placeholder="Digite o nome completo"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">E-mail *</label>
+                  <input type="email" value={conviteForm.email} onChange={(e) => setConviteForm(p => ({ ...p, email: e.target.value }))}
+                    placeholder="usuario@exemplo.com"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Tipo de Acesso</label>
+                  <select value={conviteForm.role} onChange={(e) => setConviteForm(p => ({ ...p, role: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+                    <option value="user">Usuário Padrão</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <strong>Após o convite:</strong> O usuário receberá um e-mail com link para criar sua senha e acessar o sistema.
+                  </p>
+                </div>
               </div>
+              <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowConviteModal(false)} disabled={enviandoConvite}>Cancelar</Button>
+                <Button onClick={enviarConvite} disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
+                  className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                  {enviandoConvite ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Enviando...</>
+                  ) : (
+                    <><Mail className="w-4 h-4 mr-2" />Enviar Convite</>
+                  )}
+                </Button>
               </div>
-
-              {/* Modal de Migração Personalizada */}
-              {showMigrarcaoModal && (
-              <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ArrowRight className="w-5 h-5 text-amber-600" />
-                <h3 className="font-semibold text-gray-900">Migração Personalizada</h3>
-              </div>
-              <button onClick={() => setShowMigrarcaoModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Origem (Inativo) *</label>
-                <select value={migracaoForm.vendedor_origem_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_origem_id: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
-                  <option value="">Selecione um vendedor...</option>
-                  {vendedores.map(v => (
-                    <option key={v.id} value={v.id}>{v.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Destino (Ativo) *</label>
-                <select value={migracaoForm.vendedor_destino_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_destino_id: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
-                  <option value="">Selecione um vendedor...</option>
-                  {vendedores.map(v => (
-                    <option key={v.id} value={v.id}>{v.nome}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
-                <p className="text-xs text-amber-700">
-                  <strong>Atenção:</strong> Todos os clientes do vendedor de origem serão transferidos para o vendedor de destino.
-                </p>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowMigrarcaoModal(false)} disabled={migrandoClientes}>Cancelar</Button>
-              <Button onClick={executarMigriacaoPersonalizada} disabled={migrandoClientes || !migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id}
-                className="bg-amber-600 hover:bg-amber-700">
-                {migrandoClientes ? (
-                  <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Migrando...</>
-                ) : (
-                  <><ArrowRight className="w-4 h-4 mr-2" />Executar Migração</>
-                )}
-              </Button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Modal de Convite */}
-      {showConviteModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-[#1a3150]" />
-                <h3 className="font-semibold text-gray-900">Convidar Novo Usuário</h3>
-              </div>
-              <button onClick={() => setShowConviteModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Nome Completo *</label>
-                <input type="text" value={conviteForm.nome} onChange={(e) => setConviteForm(p => ({ ...p, nome: e.target.value }))}
-                  placeholder="Digite o nome completo"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">E-mail *</label>
-                <input type="email" value={conviteForm.email} onChange={(e) => setConviteForm(p => ({ ...p, email: e.target.value }))}
-                  placeholder="usuario@exemplo.com"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block uppercase tracking-wider">Tipo de Acesso</label>
-                <select value={conviteForm.role} onChange={(e) => setConviteForm(p => ({ ...p, role: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
-                  <option value="user">Usuário Padrão</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-              <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
-                <p className="text-xs text-blue-700">
-                  <strong>Após o convite:</strong> O usuário receberá um e-mail com link para criar sua senha e acessar o sistema.
-                </p>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowConviteModal(false)} disabled={enviandoConvite}>Cancelar</Button>
-              <Button onClick={enviarConvite} disabled={enviandoConvite || !conviteForm.email || !conviteForm.nome}
-                className="bg-[#0f1e35] hover:bg-[#1a3150]">
-                {enviandoConvite ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Enviando...</>
-                ) : (
-                  <><Mail className="w-4 h-4 mr-2" />Enviar Convite</>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
