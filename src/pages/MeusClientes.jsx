@@ -292,16 +292,6 @@ export default function MeusClientes() {
     return proximas[0]?.proximo_contato || null;
   };
 
-  if (!isAdmin) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-      <div className="text-center">
-        <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Acesso Temporariamente Bloqueado</h2>
-        <p className="text-sm text-gray-500">Esta seção está indisponível para gerentes neste momento. Aguarde instruções da administração.</p>
-      </div>
-    </div>
-  );
-
   if (!user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
