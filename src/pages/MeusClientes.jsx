@@ -32,6 +32,7 @@ export default function MeusClientes() {
   const [showForm, setShowForm] = useState(null); // cliente_id
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [vendedorSelecionado, setVendedorSelecionado] = useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -50,14 +51,16 @@ export default function MeusClientes() {
     enabled: isAdmin
   });
 
+  // Para admin: usa vendedorSelecionado; para usuário normal: usa vendedor vinculado ao email
+  const vendedorEfetivo = isAdmin ? vendedorSelecionado : vendedor;
+
   const { data: clientes = [] } = useQuery({
-    queryKey: ['clientes-crm', vendedor?.id, isAdmin],
+    queryKey: ['clientes-crm', vendedorEfetivo?.id, isAdmin],
     queryFn: () => {
-      if (isAdmin && !vendedor) return base44.entities.Cliente.list('nome');
-      if (vendedor) return base44.entities.Cliente.filter({ vendedor_id: vendedor.id }, 'nome');
-      return [];
+      if (!vendedorEfetivo) return [];
+      return base44.entities.Cliente.filter({ vendedor_id: vendedorEfetivo.id }, 'nome');
     },
-    enabled: !!user
+    enabled: !!user && !!vendedorEfetivo
   });
 
   const { data: interacoes = [] } = useQuery({
@@ -113,6 +116,7 @@ export default function MeusClientes() {
   );
 
   const getInteracoesCliente = (clienteId) => interacoes.filter(i => i.cliente_id === clienteId);
+  const vendedorParaAgenda = vendedorEfetivo;
   const getProximoContato = (clienteId) => {
     const proximas = interacoes
       .filter(i => i.cliente_id === clienteId && i.proximo_contato >= today())
@@ -134,26 +138,54 @@ export default function MeusClientes() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Meus Clientes</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {vendedor ? `Carteira de ${vendedor.nome}` : isAdmin ? 'Visão administrativa' : 'Nenhum vendedor vinculado ao seu e-mail'}
+              {vendedorEfetivo ? `Carteira de ${vendedorEfetivo.nome}` : isAdmin ? 'Selecione um vendedor' : 'Nenhum vendedor vinculado ao seu e-mail'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
-            <p className="text-xs text-gray-400">clientes</p>
+            {vendedorEfetivo && (
+              <>
+                <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
+                <p className="text-xs text-gray-400">clientes</p>
+              </>
+            )}
           </div>
         </div>
 
+        {/* Seletor de vendedor para admin */}
+        {isAdmin && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecionar Vendedor</p>
+            <div className="flex flex-wrap gap-2">
+              {todosVendedores.map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => { setVendedorSelecionado(v); setSearchTerm(''); setExpandedCliente(null); }}
+                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition border ${
+                    vendedorSelecionado?.id === v.id
+                      ? 'bg-[#0f1e35] text-white border-[#0f1e35]'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#1a3150] hover:text-[#1a3150]'
+                  }`}
+                >
+                  {v.nome}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Agenda de contatos (leads) */}
-        {vendedor && <AgendaDiariaWidget vendedorId={vendedor.id} />}
+        {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
 
         {/* Search */}
-        <input
-          type="text"
-          placeholder="Buscar cliente..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white"
-        />
+        {vendedorEfetivo && (
+          <input
+            type="text"
+            placeholder="Buscar cliente..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white"
+          />
+        )}
 
         {/* Lista de clientes */}
         <div className="space-y-2">
