@@ -203,100 +203,101 @@ export default function RelatorioInteracoes() {
       <div className="max-w-7xl mx-auto space-y-5">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Relatório de Interações</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {isAdmin ? 'Visão geral de todos os vendedores' : `Carteira de ${vendedor?.nome || user?.full_name}`}
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Relatório de Interações</h1>
+            <p className="text-sm text-gray-500 mt-1">Acompanhe o desempenho de suas interações com clientes</p>
           </div>
-          <Button
-            onClick={gerarPDF}
-            disabled={gerandoPDF || interacoesFiltradas.length === 0}
-            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white"
-          >
-            {gerandoPDF ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-            ) : (
-              <FileText className="w-4 h-4 mr-2" />
-            )}
-            Exportar PDF
-          </Button>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Total no período</p>
+              <p className="text-2xl font-bold text-[#0f1e35]">{interacoesFiltradas.length}</p>
+            </div>
+            <Button
+              onClick={gerarPDF}
+              disabled={gerandoPDF || interacoesFiltradas.length === 0}
+              className="bg-[#0f1e35] hover:bg-[#1a3150] text-white"
+            >
+              {gerandoPDF ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Exportar PDF
+            </Button>
+          </div>
+        </div>
+
+        {/* Filtros em linha horizontal */}
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Data início</label>
+            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Data fim</label>
+            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+          </div>
+          {isAdmin && (
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Vendedor</label>
+              <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                <option value="todos">Todos Vendedores</option>
+                {vendedores.map(v => <option key={v.id}>{v.nome}</option>)}
+              </select>
+            </div>
+          )}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Resultado</label>
+            <select value={filtroResultado} onChange={e => setFiltroResultado(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+              <option value="todos">Todos Resultados</option>
+              {['Positivo','Neutro','Negativo','Sem resposta'].map(r => <option key={r}>{r}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+            <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+              <option value="todos">Todos Tipos</option>
+              {tipos.map(t => <option key={t}>{t}</option>)}
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="text-xs text-gray-500 mb-1 block">Busca</label>
+            <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3">
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
+                placeholder="Cliente, vendedor, descrição..."
+                className="flex-1 py-2 text-sm outline-none bg-transparent" />
+              {busca && <button onClick={() => setBusca('')}><X className="w-3.5 h-3.5 text-gray-400" /></button>}
+            </div>
+          </div>
         </div>
 
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total de Interações', value: interacoesFiltradas.length, color: 'bg-[#0f1e35] text-white' },
-            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, color: 'bg-emerald-50 text-emerald-700' },
-            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, color: 'bg-red-50 text-red-600' },
-            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, color: 'bg-gray-100 text-gray-600' },
+            { label: 'Total', value: interacoesFiltradas.length, icon: '📊', color: 'bg-[#0f1e35] text-white' },
+            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, icon: '✅', color: 'bg-emerald-50 text-emerald-700' },
+            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, icon: '❌', color: 'bg-red-50 text-red-600' },
+            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, icon: '❓', color: 'bg-gray-100 text-gray-600' },
           ].map(kpi => (
             <div key={kpi.label} className={`rounded-2xl p-4 shadow-sm ${kpi.color}`}>
-              <p className="text-2xl font-bold">{kpi.value}</p>
-              <p className="text-xs font-medium opacity-70 mt-0.5">{kpi.label}</p>
+              <p className="text-sm opacity-70 mb-1">{kpi.label}</p>
+              <div className="flex items-end justify-between">
+                <p className="text-3xl font-bold">{kpi.value}</p>
+                <span className="text-2xl">{kpi.icon}</span>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Filtros */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Filter className="w-4 h-4 text-gray-400" />
-            <h3 className="text-sm font-semibold text-gray-700">Filtros</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Data início</label>
-              <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Data fim</label>
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-            </div>
-            {isAdmin && (
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Vendedor</label>
-                <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
-                  <option value="todos">Todos</option>
-                  {vendedores.map(v => <option key={v.id}>{v.nome}</option>)}
-                </select>
-              </div>
-            )}
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Resultado</label>
-              <select value={filtroResultado} onChange={e => setFiltroResultado(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
-                <option value="todos">Todos</option>
-                {['Positivo','Neutro','Negativo','Sem resposta'].map(r => <option key={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
-              <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
-                <option value="todos">Todos</option>
-                {tipos.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="md:col-span-2">
-              <label className="text-xs text-gray-500 mb-1 block">Busca livre</label>
-              <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3">
-                <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
-                  placeholder="Cliente, vendedor, descrição..."
-                  className="flex-1 py-2 text-sm outline-none bg-transparent" />
-                {busca && <button onClick={() => setBusca('')}><X className="w-3.5 h-3.5 text-gray-400" /></button>}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Gráficos em grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" style={{ marginTop: '2rem' }}>
           {/* Gráfico de produtividade por vendedor (admin) */}
           {isAdmin && Object.keys(resumoPorVendedor).length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
