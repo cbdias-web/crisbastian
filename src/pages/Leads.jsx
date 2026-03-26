@@ -335,10 +335,36 @@ export default function Leads() {
                     </div>
                     <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
                       <span>{stats.total} leads</span>
+                      {stats.distribuidos > 0 && <span className="text-blue-600 font-medium">{stats.distribuidos} distribuídos</span>}
                       {stats.convertidos > 0 && <span className="text-emerald-600 font-medium">{stats.convertidos} convertidos</span>}
-                      {stats.naoConvertidos > 0 && <span className="text-amber-600 font-medium">{stats.naoConvertidos} não convertidos</span>}
+                      {stats.naoConvertidos > 0 && <span className="text-amber-600 font-medium">{stats.naoConvertidos} em tratamento</span>}
                       <span>Importado em {lote.created_date ? format(new Date(lote.created_date), 'dd/MM/yyyy') : '—'}</span>
                     </div>
+                    {/* Barra de progresso de conversão */}
+                    {stats.total > 0 && (
+                      <div className="mt-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden flex">
+                            <div
+                              className="bg-emerald-500 h-2 transition-all"
+                              style={{ width: `${Math.round((stats.convertidos / stats.total) * 100)}%` }}
+                            />
+                            <div
+                              className="bg-blue-400 h-2 transition-all"
+                              style={{ width: `${Math.round((stats.naoConvertidos / stats.total) * 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                            {Math.round((stats.convertidos / stats.total) * 100)}% convertidos
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px]">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />Convertidos ({stats.convertidos})</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />Em tratamento ({stats.naoConvertidos})</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" />Pendentes ({stats.pendentes})</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {lote.status === 'pendente' && (
