@@ -44,10 +44,12 @@ export default function MeusClientes() {
   const [editandoInteracao, setEditandoInteracao] = useState(null);
   const [editInteracaoForm, setEditInteracaoForm] = useState({});
   const [salvandoInteracao, setSalvandoInteracao] = useState(false);
-  const [salvandoBulk, setSalvandoBulk] = useState(false); // 'todos' | 'clientes' | 'leads'
-  // admin: array de IDs selecionados; vazio = todos (carteira geral)
+  const [salvandoBulk, setSalvandoBulk] = useState(false);
   const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
   const [dropdownAberto, setDropdownAberto] = useState(false);
+  const [showNovoLeadModal, setShowNovoLeadModal] = useState(false);
+  const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
+  const [criandoLead, setCriandoLead] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -579,16 +581,6 @@ export default function MeusClientes() {
             </button>
             <button onClick={() => setSelectedIds(new Set())} className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs transition">Cancelar</button>
           </div>
-        )}
-
-        {/* Botão Novo Lead */}
-        {(isAdmin || vendedor) && (
-          <Button
-            onClick={() => setShowNovoLeadModal(true)}
-            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2 w-full md:w-auto"
-          >
-            <Plus className="w-4 h-4" /> Novo Lead/Prospect
-          </Button>
         )}
 
         {/* Botão Novo Lead */}
