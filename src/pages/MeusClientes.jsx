@@ -55,12 +55,60 @@ export default function MeusClientes() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const queryClient = useQueryClient();
+  const hoje = new Date().toISOString().split('T')[0];
+
+  // Sincronizar agenda ao entrar na página
+  const sincronizarAgenda = async () => {
+    try {
+      const vendId = vendedor?.id;
+      if (!vendId) return;
+      
+      // Buscar todas as interações do vendedor com próximo_contato definido
+      const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendId }, '-data_interacao');
+      const hoje = new Date().toISOString().split('T')[0];
+      
+      // Agendar novos contatos a partir do próximo_contato das interações
+      const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendId });
+      const agendaMap = new Set(agendas.map(a => `${a.lead_id}-${a.data_agendada}`));
+      
+      for (const inter of interacoes) {
+        if (inter.proximo_contato && inter.proximo_contato >= hoje) {
+          const key = `${inter.cliente_id}-${inter.proximo_contato}`;
+          if (!agendaMap.has(key)) {
+            // Criar agenda se não existir
+            await base44.entities.AgendaContato.create({
+              lead_id: inter.cliente_id,
+              lead_nome: inter.cliente_nome,
+              lead_cpf_cnpj: inter.cliente_nome || '',
+              lead_telefone: '',
+              cliente_id: '',
+              vendedor_id: vendId,
+              vendedor_nome: inter.vendedor_nome,
+              data_agendada: inter.proximo_contato,
+              posicao_dia: 0,
+              lote_id: '',
+              status: 'pendente',
+              resultado: ''
+            });
+          }
+        }
+      }
+      
+      queryClient.invalidateQueries(['agenda-contatos']);
+    } catch (e) {
+      console.error('Erro ao sincronizar agenda:', e);
+    }
+  };
 
   React.useEffect(() => {
     base44.auth.me().then(async u => {
       setUser(u);
       const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
-      if (vendedores.length > 0) setVendedor(vendedores[0]);
+      if (vendedores.length > 0) {
+        setVendedor(vendedores[0]);
+        // Sincronizar agenda quando entra na página
+        setTimeout(() => sincronizarAgenda(), 500);
+      }
     }).catch(() => {});
   }, []);
 
