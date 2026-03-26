@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2 } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -31,6 +31,7 @@ export default function Usuarios() {
   const [enviandoConvite, setEnviandoConvite] = useState(false);
   const [conviteVendedorEmail, setConviteVendedorEmail] = useState('');
   const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
+  const [migrandoClientes, setMigrandoClientes] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -157,6 +158,18 @@ export default function Usuarios() {
     setEnviandoConviteVendedor(null);
   };
 
+  const executarMigracao = async () => {
+    if (!confirm('Executar migração de clientes de vendedores inativos? Fernando Huffel → Samuel Fraga; Christiano → Bruna')) return;
+    setMigrandoClientes(true);
+    try {
+      const res = await base44.functions.invoke('migrarClientesVendedoresInativos', {});
+      toast.success(res.data.message);
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Erro ao migrar clientes');
+    }
+    setMigrandoClientes(false);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -225,6 +238,27 @@ export default function Usuarios() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        {/* Migração de Clientes */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ArrowRight className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="font-semibold text-amber-900">Migração de Clientes</p>
+                <p className="text-xs text-amber-700 mt-0.5">Transferir clientes de vendedores inativos para novos responsáveis</p>
+              </div>
+            </div>
+            <Button
+              onClick={executarMigracao}
+              disabled={migrandoClientes}
+              className="bg-amber-600 hover:bg-amber-700 text-white h-9"
+            >
+              {migrandoClientes ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
+              Executar Migração
+            </Button>
           </div>
         </div>
 
