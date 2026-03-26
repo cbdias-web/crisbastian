@@ -297,6 +297,22 @@ export default function MeusClientes() {
     return proximas[0]?.proximo_contato || null;
   };
 
+  const totalLeads = clientesFiltradosPorVendedor.filter(c => c.origem === 'lead').length;
+  const totalClientes = clientesFiltradosPorVendedor.filter(c => c.origem !== 'lead').length;
+
+  const clientesFiltrados = clientesFiltradosPorVendedor.filter(c => {
+    const matchSearch = !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm);
+    const matchOrigem =
+      filtroOrigem === 'todos' ||
+      (filtroOrigem === 'clientes' && (c.origem === 'nativo' || c.origem === 'lead_convertido' || !c.origem)) ||
+      (filtroOrigem === 'leads' && c.origem === 'lead');
+    return matchSearch && matchOrigem;
+  });
+
+  const vendedorParaAgenda = isAdmin
+    ? (vendedoresSelecionados.length === 1 ? todosVendedores.find(v => v.id === vendedoresSelecionados[0]) : null)
+    : vendedor;
+
   if (!user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
