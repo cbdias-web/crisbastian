@@ -27,6 +27,7 @@ export default function Leads() {
   const [importando, setImportando] = useState(false);
   const [distribuindo, setDistribuindo] = useState(null);
   const [redistribuindo, setRedistribuindo] = useState(null);
+  const [progresso, setProgresso] = useState(null); // { atual, total, loteId }
   const [excluindo, setExcluindo] = useState(null);
   const [nomeLote, setNomeLote] = useState('');
   const [preview, setPreview] = useState(null);
@@ -108,19 +109,97 @@ export default function Leads() {
     else setRedistribuindo(lote.id);
 
     try {
-      const response = await base44.functions.invoke('distribuirLeads', {
-        loteId: lote.id,
-        loteNome: lote.nome,
-        vendedoresIds: vendedoresSelecionados.map(v => v.id),
-        modo
+      // Pegar leads do lote diretamente da query (já em memória)
+      let leadsParaDistribuir;
+      if (modo === 'distribuir') {
+        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'pendente');
+      } else {
+        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'distribuido' && !l.convertido);
+      }
+
+      if (leadsParaDistribuir.length === 0) {
+        toast.info('Nenhum lead disponível para distribuição');
+        setDistribuindo(null); setRedistribuindo(null);
+        return;
+      }
+
+      // Embaralhar e atribuir vendedor
+      const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
+      const assignments = embaralhados.map((lead, i) => ({
+        leadId: lead.id,
+        leadNome: lead.nome,
+        leadCpfCnpj: lead.cpf_cnpj || '',
+        leadTelefone: lead.telefone || '',
+        leadClienteId: lead.cliente_id || '',
+        vendedorId: vendedoresSelecionados[i % vendedoresSelecionados.length].id,
+        vendedorNome: vendedoresSelecionados[i % vendedoresSelecionados.length].nome,
+      }));
+
+      // Dividir em lotes de 300 e chamar função sequencialmente
+      const LOTE_SIZE = 300;
+      const batches = [];
+      for (let i = 0; i < assignments.length; i += LOTE_SIZE) {
+        batches.push(assignments.slice(i, i + LOTE_SIZE));
+      }
+
+      setProgresso({ atual: 0, total: assignments.length, loteId: lote.id });
+
+      let processados = 0;
+      for (const batch of batches) {
+        await base44.functions.invoke('distribuirLeads', {
+          mode: 'batch',
+          modo,
+          loteNome: lote.nome,
+          assignments: batch,
+        });
+        processados += batch.length;
+        setProgresso({ atual: processados, total: assignments.length, loteId: lote.id });
+      }
+
+      // Gerar agenda e finalizar lote
+      const LEADS_POR_DIA = 5;
+      const hoje = new Date();
+      const leadsPorVendedor = {};
+      assignments.forEach(a => {
+        if (!leadsPorVendedor[a.vendedorId]) leadsPorVendedor[a.vendedorId] = { vendedorId: a.vendedorId, vendedorNome: a.vendedorNome, items: [] };
+        leadsPorVendedor[a.vendedorId].items.push(a);
       });
-      toast.success(response.data?.message || 'Distribuição concluída!');
+      const agendaRecords = [];
+      for (const { vendedorId, vendedorNome, items } of Object.values(leadsPorVendedor)) {
+        items.forEach((a, i) => {
+          const d = new Date(hoje);
+          d.setDate(d.getDate() + Math.floor(i / LEADS_POR_DIA));
+          agendaRecords.push({
+            lead_id: a.leadId,
+            lead_nome: a.leadNome,
+            lead_cpf_cnpj: a.leadCpfCnpj || '',
+            lead_telefone: a.leadTelefone || '',
+            cliente_id: '',
+            vendedor_id: vendedorId,
+            vendedor_nome: vendedorNome,
+            data_agendada: d.toISOString().split('T')[0],
+            posicao_dia: (i % LEADS_POR_DIA) + 1,
+            lote_id: lote.id,
+            status: 'pendente'
+          });
+        });
+      }
+
+      await base44.functions.invoke('distribuirLeads', {
+        mode: 'finalizar',
+        modo,
+        loteId: lote.id,
+        agendaRecords,
+      });
+
+      toast.success(`${assignments.length} leads distribuídos com sucesso!`);
       queryClient.invalidateQueries(['lotes-leads']);
       queryClient.invalidateQueries(['leads-todos']);
     } catch (e) {
       toast.error('Erro na distribuição: ' + (e.response?.data?.error || e.message));
     }
     setDistribuindo(null); setRedistribuindo(null);
+    setProgresso(null);
   };
 
   const excluirLote = async (lote) => {
@@ -200,6 +279,23 @@ export default function Leads() {
             ))}
           </div>
         </div>
+
+        {/* Barra de progresso */}
+        {progresso && (
+          <div className="bg-white rounded-2xl border border-[#1a3150]/20 shadow-sm p-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-semibold text-[#1a3150]">Distribuindo leads...</p>
+              <p className="text-sm font-bold text-[#1a3150]">{progresso.atual} / {progresso.total}</p>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-3">
+              <div
+                className="bg-[#1a3150] h-3 rounded-full transition-all duration-300"
+                style={{ width: `${Math.round((progresso.atual / progresso.total) * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">{Math.round((progresso.atual / progresso.total) * 100)}% concluído — aguarde, não feche a página</p>
+          </div>
+        )}
 
         {/* Lista de lotes */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
