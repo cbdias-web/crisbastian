@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2 } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -36,6 +36,9 @@ export default function MeusClientes() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showTrocarGerenteModal, setShowTrocarGerenteModal] = useState(false);
   const [novoGerenteId, setNovoGerenteId] = useState('');
+  const [editandoCliente, setEditandoCliente] = useState(null);
+  const [editClienteForm, setEditClienteForm] = useState({});
+  const [salvandoCliente, setSalvandoCliente] = useState(false);
   const [salvandoBulk, setSalvandoBulk] = useState(false); // 'todos' | 'clientes' | 'leads'
   // admin: array de IDs selecionados; vazio = todos (carteira geral)
   const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
@@ -201,6 +204,30 @@ export default function MeusClientes() {
       setSelectedIds(new Set());
     } catch (e) { toast.error('Erro ao excluir registros'); }
     setSalvandoBulk(false);
+  };
+
+  const abrirEdicaoCliente = (cliente, e) => {
+    e.stopPropagation();
+    setEditandoCliente(cliente);
+    setEditClienteForm({
+      nome: cliente.nome || '',
+      cpf_cnpj: cliente.cpf_cnpj || '',
+      telefone: cliente.telefone || '',
+      email: cliente.email || '',
+      cidade: cliente.cidade || '',
+      estado: cliente.estado || '',
+      observacao: cliente.observacao || '',
+    });
+  };
+
+  const salvarEdicaoCliente = async () => {
+    if (!editClienteForm.nome?.trim()) { toast.error('Nome é obrigatório'); return; }
+    setSalvandoCliente(true);
+    await base44.entities.Cliente.update(editandoCliente.id, editClienteForm);
+    queryClient.invalidateQueries(['clientes-crm']);
+    toast.success('Cadastro atualizado!');
+    setEditandoCliente(null);
+    setSalvandoCliente(false);
   };
 
   const handleSave = (cliente) => {
@@ -426,6 +453,13 @@ export default function MeusClientes() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
+                    <button
+                      onClick={(e) => abrirEdicaoCliente(cliente, e)}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#1a3150] transition"
+                      title="Editar cadastro"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
                     {cliente.origem === 'lead' && (
                       <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">🎯 Lead</span>
                     )}
@@ -561,6 +595,52 @@ export default function MeusClientes() {
           })}
         </div>
       </div>
+
+      {/* Modal Edição de Cliente */}
+      {editandoCliente && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-900">Editar Cadastro</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{editandoCliente.origem === 'lead' ? '🎯 Lead' : '✅ Cliente'}</p>
+              </div>
+              <button onClick={() => setEditandoCliente(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-6 space-y-3">
+              {[{ key: 'nome', label: 'Nome *', placeholder: 'Nome completo' }, { key: 'cpf_cnpj', label: 'CPF / CNPJ', placeholder: '000.000.000-00' }, { key: 'telefone', label: 'Telefone', placeholder: '(11) 99999-9999' }, { key: 'email', label: 'E-mail', placeholder: 'email@exemplo.com' }, { key: 'cidade', label: 'Cidade', placeholder: 'São Paulo' }, { key: 'estado', label: 'Estado (UF)', placeholder: 'SP' }].map(f => (
+                <div key={f.key}>
+                  <label className="text-xs text-gray-500 mb-1 block">{f.label}</label>
+                  <input
+                    type="text"
+                    value={editClienteForm[f.key] || ''}
+                    onChange={e => setEditClienteForm(p => ({ ...p, [f.key]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Observação</label>
+                <textarea
+                  value={editClienteForm.observacao || ''}
+                  onChange={e => setEditClienteForm(p => ({ ...p, observacao: e.target.value }))}
+                  rows={2}
+                  placeholder="Observações..."
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] resize-none"
+                />
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditandoCliente(null)}>Cancelar</Button>
+              <Button onClick={salvarEdicaoCliente} disabled={salvandoCliente} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                {salvandoCliente ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Trocar Gerente */}
       {showTrocarGerenteModal && (

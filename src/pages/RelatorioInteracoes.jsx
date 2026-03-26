@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users } from 'lucide-react';
+import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -29,6 +29,13 @@ export default function RelatorioInteracoes() {
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
   const [gerandoPDF, setGerandoPDF] = useState(false);
+  const [perfilCliente, setPerfilCliente] = useState(null);
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes-relatorio-perfil'],
+    queryFn: () => base44.entities.Cliente.list('nome', 10000),
+    enabled: !!user
+  });
 
   React.useEffect(() => {
     base44.auth.me().then(async u => {
@@ -78,6 +85,12 @@ export default function RelatorioInteracoes() {
   // Tipos únicos
   const tipos = [...new Set(interacoes.map(i => i.tipo).filter(Boolean))];
 
+  const abrirPerfil = (interacao, e) => {
+    e.stopPropagation();
+    const c = clientes.find(c => c.id === interacao.cliente_id);
+    setPerfilCliente(c || { nome: interacao.cliente_nome, id: interacao.cliente_id });
+  };
+
   const gerarPDF = async () => {
     setGerandoPDF(true);
     try {
@@ -111,6 +124,7 @@ export default function RelatorioInteracoes() {
   );
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-5">
 
@@ -254,6 +268,7 @@ export default function RelatorioInteracoes() {
                     <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Resultado</th>
                     <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Descrição</th>
                     <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Próx. Contato</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Perfil</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -277,6 +292,11 @@ export default function RelatorioInteracoes() {
                         <td className="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
                           {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM/yyyy') : '—'}
                         </td>
+                        <td className="px-5 py-3">
+                          <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -287,5 +307,49 @@ export default function RelatorioInteracoes() {
         </div>
       </div>
     </div>
+    </div>
+
+    {/* Modal perfil cliente */}
+    {perfilCliente && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Perfil do Cliente</h3>
+            <button onClick={() => setPerfilCliente(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="p-6 space-y-3">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-lg">
+                {(perfilCliente.nome || '?').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">{perfilCliente.nome}</p>
+                {perfilCliente.origem === 'lead' && <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">🎯 Lead</span>}
+                {perfilCliente.origem === 'lead_convertido' && <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full">✅ Convertido</span>}
+              </div>
+            </div>
+            {[
+              { icon: FileText, label: 'CPF / CNPJ', value: perfilCliente.cpf_cnpj },
+              { icon: Phone, label: 'Telefone', value: perfilCliente.telefone },
+              { icon: Mail, label: 'E-mail', value: perfilCliente.email },
+              { icon: MapPin, label: 'Cidade / UF', value: [perfilCliente.cidade, perfilCliente.estado].filter(Boolean).join(' / ') },
+              { icon: Users, label: 'Gerente', value: perfilCliente.vendedor_nome },
+            ].map(({ icon: Icon, label, value }) => value ? (
+              <div key={label} className="flex items-center gap-3">
+                <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] text-gray-400">{label}</p>
+                  <p className="text-sm text-gray-800">{value}</p>
+                </div>
+              </div>
+            ) : null)}
+            {!perfilCliente.cpf_cnpj && !perfilCliente.telefone && !perfilCliente.email && (
+              <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3">Cadastro incompleto — sem CPF/CNPJ, telefone ou e-mail.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
