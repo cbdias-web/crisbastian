@@ -3,7 +3,7 @@ import OnboardingModal from '@/components/OnboardingModal';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -113,6 +113,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true },
+    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (!item.allowUser) return false;
