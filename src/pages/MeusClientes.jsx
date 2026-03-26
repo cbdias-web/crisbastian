@@ -738,9 +738,9 @@ export default function MeusClientes() {
                         </div>
                         <div>
                           <label className="text-xs text-gray-500 mb-2 block">Produtos abordados</label>
-                          <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                             {produtos.map(p => (
-                              <label key={p.id} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                              <label key={p.id} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-gray-50 cursor-pointer border border-gray-100">
                                 <input
                                   type="checkbox"
                                   checked={form.produtos.includes(p.id)}
@@ -751,9 +751,9 @@ export default function MeusClientes() {
                                       setForm(prev => ({ ...prev, produtos: prev.produtos.filter(id => id !== p.id) }));
                                     }
                                   }}
-                                  className="w-3.5 h-3.5 accent-[#1a3150]"
+                                  className="w-3.5 h-3.5 accent-[#1a3150] flex-shrink-0"
                                 />
-                                <span className="text-gray-700">{p.nome}</span>
+                                <span className="text-gray-700 truncate">{p.nome}</span>
                               </label>
                             ))}
                           </div>
