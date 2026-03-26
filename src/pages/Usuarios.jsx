@@ -32,6 +32,7 @@ export default function Usuarios() {
   const [conviteVendedorEmail, setConviteVendedorEmail] = useState('');
   const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
   const [migrandoClientes, setMigrandoClientes] = useState(false);
+  const [recuperandoOrfaos, setRecuperandoOrfaos] = useState(false);
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
@@ -172,6 +173,19 @@ export default function Usuarios() {
     setMigrandoClientes(false);
   };
 
+  const recuperarClientesOrfaos = async () => {
+    if (!confirm('Buscar e recuperar clientes órfãos (com interações mas sem vínculo em Meus Clientes)?')) return;
+    setRecuperandoOrfaos(true);
+    try {
+      const res = await base44.functions.invoke('recuperarClientesOrfaos', {});
+      toast.success(res.data.message);
+      queryClient.invalidateQueries(['usuarios']);
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Erro ao recuperar clientes órfãos');
+    }
+    setRecuperandoOrfaos(false);
+  };
+
   const executarMigriacaoPersonalizada = async () => {
     if (!migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id) {
       toast.error('Selecione vendedor de origem e destino');
@@ -296,6 +310,28 @@ export default function Usuarios() {
               >
                 {migrandoClientes ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <ArrowRight className="w-3.5 h-3.5 mr-1.5" />}
                 Automático
+              </Button>
+              </div>
+              </div>
+              </div>
+
+              {/* Recuperação de Clientes Órfãos */}
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="font-semibold text-blue-900">Recuperar Clientes Órfãos</p>
+                <p className="text-xs text-blue-700 mt-0.5">Restaurar clientes com interações mas desvinculados de Meus Clientes</p>
+              </div>
+              </div>
+              <Button
+              onClick={recuperarClientesOrfaos}
+              disabled={recuperandoOrfaos}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs"
+              >
+              {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
+              Recuperar
               </Button>
             </div>
           </div>
@@ -469,10 +505,13 @@ export default function Usuarios() {
               )}
             </tbody>
           </table>
+        </Button>
         </div>
-      </div>
+        </div>
+        </div>
+        </div>
 
-      {/* Modal de Migração Personalizada */}
+        {/* Modal de Migração Personalizada */}
       {showMigrarcaoModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
