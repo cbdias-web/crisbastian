@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
- import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save } from 'lucide-react';
+ import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2 } from 'lucide-react';
  import { format, parseISO } from 'date-fns';
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
  import { toast } from 'sonner';
+import { useMutation } from '@tanstack/react-query';
 
 const today = () => new Date().toISOString().split('T')[0];
 const firstOfMonth = () => {
@@ -34,6 +35,7 @@ export default function RelatorioInteracoes() {
   const [showSalvarClienteModal, setShowSalvarClienteModal] = useState(null);
   const [gerenteSelecionado, setGerenteSelecionado] = useState('');
   const [salvandoCliente, setSalvandoCliente] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-relatorio-perfil'],
@@ -62,6 +64,23 @@ export default function RelatorioInteracoes() {
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
     enabled: isAdmin
   });
+
+  const deleteInteracaoMutation = useMutation({
+    mutationFn: (id) => base44.entities.InteracaoCliente.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['interacoes-relatorio']);
+      toast.success('Interação removida!');
+    },
+    onError: () => {
+      toast.error('Erro ao remover interação');
+    }
+  });
+
+  const handleDeleteInteracao = (id) => {
+    if (confirm('Tem certeza que deseja remover esta interação?')) {
+      deleteInteracaoMutation.mutate(id);
+    }
+  };
 
   const handleSalvarCliente = async () => {
     if (!perfilCliente || !gerenteSelecionado) {
@@ -437,9 +456,12 @@ export default function RelatorioInteracoes() {
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                           {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—'}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center flex items-center justify-center gap-1">
                           <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
                             <Eye className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition" title="Deletar interação">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
