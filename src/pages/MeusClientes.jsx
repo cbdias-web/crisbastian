@@ -32,6 +32,7 @@ export default function MeusClientes() {
   const [showForm, setShowForm] = useState(null); // cliente_id
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtroOrigem, setFiltroOrigem] = useState('todos'); // 'todos' | 'clientes' | 'leads'
   // admin: array de IDs selecionados; vazio = todos (carteira geral)
   const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
   const [dropdownAberto, setDropdownAberto] = useState(false);
@@ -126,9 +127,17 @@ export default function MeusClientes() {
     });
   };
 
-  const clientesFiltrados = clientesFiltradosPorVendedor.filter(c =>
-    !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm)
-  );
+  const clientesFiltrados = clientesFiltradosPorVendedor.filter(c => {
+    const matchSearch = !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm);
+    const matchOrigem =
+      filtroOrigem === 'todos' ||
+      (filtroOrigem === 'clientes' && (c.origem === 'nativo' || c.origem === 'lead_convertido' || !c.origem)) ||
+      (filtroOrigem === 'leads' && c.origem === 'lead');
+    return matchSearch && matchOrigem;
+  });
+
+  const totalLeads = clientesFiltradosPorVendedor.filter(c => c.origem === 'lead').length;
+  const totalClientes = clientesFiltradosPorVendedor.filter(c => c.origem !== 'lead').length;
 
   const getInteracoesCliente = (clienteId) => interacoes.filter(i => i.cliente_id === clienteId);
   // Agenda só aparece quando exatamente 1 vendedor está selecionado
@@ -230,15 +239,34 @@ export default function MeusClientes() {
         {/* Agenda de contatos (leads) */}
         {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
 
-        {/* Search */}
+        {/* Filtro Clientes / Leads + Busca */}
         {(isAdmin || vendedor) && (
-          <input
-            type="text"
-            placeholder="Buscar cliente..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white"
-          />
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+              {[
+                { key: 'todos', label: `Todos (${clientesFiltradosPorVendedor.length})` },
+                { key: 'clientes', label: `✅ Clientes (${totalClientes})` },
+                { key: 'leads', label: `🎯 Leads (${totalLeads})` },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setFiltroOrigem(opt.key)}
+                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    filtroOrigem === opt.key ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Buscar cliente..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white"
+            />
+          </div>
         )}
 
         {/* Lista de clientes */}
