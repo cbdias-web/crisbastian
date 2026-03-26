@@ -113,10 +113,11 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true },
-    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true },
-    { name: 'Rel. Interacoes', icon: FileText, page: 'RelatorioInteracoes', allowUser: true },
+    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
+    { name: 'Rel. Interacoes', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
+    if (item.alwaysVisible) return true;
     if (!item.allowUser) return false;
     return menusUsuario.includes(item.page);
   });
