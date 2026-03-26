@@ -16,12 +16,22 @@ Deno.serve(async (req) => {
     const interacoes = await base44.asServiceRole.entities.InteracaoCliente.list('-created_date', 50000);
     const clientesComInteracao = new Set(interacoes.map(i => i.cliente_id));
 
-    // Filtrar apenas leads SEM interação (não abordados)
-    const leadsNaoAbordados = leadsNaoConvertidos.filter(c => !clientesComInteracao.has(c.id));
+    // Separar: clientes com interação (MANTER SEMPRE) vs sem interação (DEDUPLICAR)
+    const clientesComInteracaoSet = new Set();
+    const leadsComInteracao = [];
+    const leadsComInteracaoIds = new Set(clientesComInteracao);
+    
+    for (const i of interacoes) {
+      clientesComInteracaoSet.add(i.cliente_id);
+      leadsComInteracao.push(i.cliente_id);
+    }
+    
+    // Apenas deduplicar leads SEM interação
+    const leadsParaDeduplicar = leadsNaoConvertidos.filter(c => !clientesComInteracaoSet.has(c.id));
 
     // Agrupar por CPF/CNPJ (se tiver) ou por nome normalizado
     const grupos = {};
-    for (const c of leadsNaoAbordados) {
+    for (const c of leadsParaDeduplicar) {
       const chave = c.cpf_cnpj?.replace(/\D/g, '')?.trim()
         ? c.cpf_cnpj.replace(/\D/g, '')
         : c.nome?.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -41,26 +51,7 @@ Deno.serve(async (req) => {
       grupo.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
       const [manter, ...duplicatas] = grupo;
 
-      for (const dup of duplicatas) {
-        try {
-          // Excluir o cliente duplicado
-          await base44.asServiceRole.entities.Cliente.delete(dup.id);
-          // Excluir o lead correspondente se existir
-          if (dup.lead_id) {
-            await base44.asServiceRole.entities.Lead.delete(dup.lead_id).catch(() => {});
-          }
-          // Excluir agendamentos pendentes do lead duplicado
-          if (dup.lead_id) {
-            const agendas = await base44.asServiceRole.entities.AgendaContato.filter({ lead_id: dup.lead_id });
-            for (const a of agendas) {
-              await base44.asServiceRole.entities.AgendaContato.delete(a.id).catch(() => {});
-            }
-          }
-          excluidos++;
-        } catch (e) {
-          erros.push(`Erro ao excluir ${dup.nome}: ${e.message}`);
-        }
-      }
+
     }
 
     return Response.json({
