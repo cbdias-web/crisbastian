@@ -666,6 +666,9 @@ export default function MeusClientes() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{cliente.nome}</p>
                     <p className="text-xs text-gray-400 truncate">{cliente.cpf_cnpj || cliente.email || cliente.telefone || '—'}</p>
+                    {cliente.vendedor_nome && (
+                      <p className="text-[10px] text-blue-600 font-medium mt-0.5">Gerente: {cliente.vendedor_nome}</p>
+                    )}
                     {cliente.origem === 'lead' && cliente.created_date && (
                       <p className="text-[10px] text-gray-400 mt-0.5">Importado em {format(new Date(cliente.created_date), 'dd/MM/yyyy')}</p>
                     )}
