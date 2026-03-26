@@ -16,6 +16,7 @@ export default function Layout({ children, currentPageName }) {
   });
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [aceite, setAceite] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -190,8 +191,14 @@ export default function Layout({ children, currentPageName }) {
 
           {adminMenuItems.length > 0 && (
             <>
-              <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-1 pt-3 pb-1">Administrativo</p>
-              {adminMenuItems.map((item) => {
+              <button
+                onClick={() => setAdminMenuOpen(prev => !prev)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-2 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white"
+              >
+                <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
+                <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              {adminMenuOpen && adminMenuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.page;
                 return (
