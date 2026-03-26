@@ -454,7 +454,13 @@ export default function MeusClientes() {
                           <Plus className="w-3.5 h-3.5 mr-1.5" /> Nova Interação
                         </Button>
                         {cliente.origem === 'lead' && (
-                          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterLeadMutation.mutate(cliente); }} disabled={converterLeadMutation.isPending} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                          <Button size="sm" variant="outline" onClick={() => {
+                            if (!cliente.cpf_cnpj?.trim() || !cliente.telefone?.trim() || !cliente.nome?.trim()) {
+                              toast.error('Cadastro incompleto. Preencha nome, CPF/CNPJ e telefone antes de converter.');
+                              return;
+                            }
+                            if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterLeadMutation.mutate(cliente);
+                          }} disabled={converterLeadMutation.isPending} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                             <Star className="w-3.5 h-3.5 mr-1.5" /> Converter em Cliente
                           </Button>
                         )}

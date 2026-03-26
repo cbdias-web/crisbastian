@@ -123,23 +123,6 @@ export default function Leads() {
         return;
       }
 
-      // Filtrar apenas leads com cadastro completo (nome + cpf_cnpj + telefone)
-      const incompletos = leadsParaDistribuir.filter(l => !l.nome?.trim() || !l.cpf_cnpj?.trim() || !l.telefone?.trim());
-      const completos = leadsParaDistribuir.filter(l => l.nome?.trim() && l.cpf_cnpj?.trim() && l.telefone?.trim());
-
-      if (completos.length === 0) {
-        toast.error(`Nenhum lead possui cadastro completo (nome + CPF/CNPJ + telefone). Corrija os dados antes de distribuir.`);
-        setDistribuindo(null); setRedistribuindo(null);
-        return;
-      }
-
-      if (incompletos.length > 0) {
-        const ok = confirm(`${incompletos.length} lead(s) com cadastro incompleto (sem CPF/CNPJ ou telefone) serão ignorados.\n\nApenas ${completos.length} lead(s) completos serão distribuídos. Deseja continuar?`);
-        if (!ok) { setDistribuindo(null); setRedistribuindo(null); return; }
-      }
-
-      leadsParaDistribuir = completos;
-
       // Embaralhar e atribuir vendedor
       const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
       const assignments = embaralhados.map((lead, i) => ({
