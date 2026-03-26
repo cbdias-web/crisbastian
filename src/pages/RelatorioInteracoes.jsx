@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { Button } from '@/components/ui/button';
-import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin } from 'lucide-react';
+ import { base44 } from '@/api/base44Client';
+ import { Button } from '@/components/ui/button';
+ import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -30,6 +30,9 @@ export default function RelatorioInteracoes() {
   const [busca, setBusca] = useState('');
   const [gerandoPDF, setGerandoPDF] = useState(false);
   const [perfilCliente, setPerfilCliente] = useState(null);
+  const [showSalvarClienteModal, setShowSalvarClienteModal] = useState(null);
+  const [gerenteSelecionado, setGerenteSelecionado] = useState('');
+  const [salvandoCliente, setSalvandoCliente] = useState(false);
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-relatorio-perfil'],
@@ -58,6 +61,36 @@ export default function RelatorioInteracoes() {
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
     enabled: isAdmin
   });
+
+  const handleSalvarCliente = async () => {
+    if (!perfilCliente || !gerenteSelecionado) {
+      toast.error('Selecione um gerente');
+      return;
+    }
+    setSalvandoCliente(true);
+    try {
+      const vendedorSelecionado = vendedores.find(v => v.id === gerenteSelecionado);
+      // Criar cliente em "Meus Clientes" com o gerente selecionado
+      await base44.entities.Cliente.create({
+        nome: perfilCliente.nome,
+        cpf_cnpj: perfilCliente.cpf_cnpj || '',
+        telefone: perfilCliente.telefone || '',
+        email: perfilCliente.email || '',
+        cidade: perfilCliente.cidade || '',
+        estado: perfilCliente.estado || '',
+        vendedor_id: gerenteSelecionado,
+        vendedor_nome: vendedorSelecionado?.nome || '',
+        observacao: `Salvo do Relatório de Interações`
+      });
+      toast.success('Cliente salvo em Meus Clientes!');
+      setShowSalvarClienteModal(null);
+      setGerenteSelecionado('');
+      setPerfilCliente(null);
+    } catch (e) {
+      toast.error('Erro ao salvar cliente');
+    }
+    setSalvandoCliente(false);
+  };
 
   const interacoesFiltradas = interacoes.filter(i => {
     if (!isAdmin && vendedor && i.vendedor_id !== vendedor.id) return false;
@@ -345,6 +378,57 @@ export default function RelatorioInteracoes() {
             {!perfilCliente.cpf_cnpj && !perfilCliente.telefone && !perfilCliente.email && (
               <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3">Cadastro incompleto — sem CPF/CNPJ, telefone ou e-mail.</p>
             )}
+          </div>
+          <div className="pt-3 border-t border-gray-100 flex justify-end">
+            <Button 
+              size="sm" 
+              onClick={() => {
+                setShowSalvarClienteModal(perfilCliente);
+                setGerenteSelecionado(vendedor?.id || '');
+              }}
+              className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2"
+            >
+              <Save className="w-3.5 h-3.5" />
+              Salvar em Meus Clientes
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Modal salvar cliente em Meus Clientes */}
+    {showSalvarClienteModal && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Selecionar Gerente</h3>
+            <button onClick={() => { setShowSalvarClienteModal(null); setGerenteSelecionado(''); }} className="p-1.5 hover:bg-gray-100 rounded-lg">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <p className="text-sm text-gray-600">
+              Qual gerente será responsável por este cliente?
+            </p>
+            <select 
+              value={gerenteSelecionado} 
+              onChange={e => setGerenteSelecionado(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+            >
+              <option value="">Selecione um gerente...</option>
+              {vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+            </select>
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setShowSalvarClienteModal(null); setGerenteSelecionado(''); }}>Cancelar</Button>
+            <Button 
+              onClick={handleSalvarCliente} 
+              disabled={!gerenteSelecionado || salvandoCliente}
+              className="bg-[#0f1e35] hover:bg-[#1a3150]"
+            >
+              {salvandoCliente ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Salvar
+            </Button>
           </div>
         </div>
       </div>
