@@ -505,14 +505,63 @@ export default function Usuarios() {
               )}
             </tbody>
           </table>
-        </Button>
-        </div>
-        </div>
         </div>
         </div>
 
-        {/* Modal de Migração Personalizada */}
-      {showMigrarcaoModal && (
+        {/* Seção Migração e Recuperação */}
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <ArrowRight className="w-5 h-5 text-amber-600" />
+              <div>
+                <p className="font-semibold text-amber-900">Migração de Clientes</p>
+                <p className="text-xs text-amber-700 mt-0.5">Transferir carteira de clientes entre vendedores</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={executarMigracao}
+                disabled={migrandoClientes}
+                className="bg-amber-600 hover:bg-amber-700 text-white h-9 text-xs"
+              >
+                {migrandoClientes ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <ArrowRight className="w-3.5 h-3.5 mr-1.5" />}
+                Automático
+              </Button>
+              <Button
+                onClick={() => setShowMigrarcaoModal(true)}
+                variant="outline"
+                className="border-amber-200 text-amber-700 hover:bg-amber-50 h-9 text-xs"
+              >
+                <Users className="w-3.5 h-3.5 mr-1.5" />
+                Personalizado
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Recuperação de Clientes Órfãos */}
+        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="font-semibold text-blue-900">Recuperar Clientes Órfãos</p>
+                <p className="text-xs text-blue-700 mt-0.5">Restaurar clientes com interações mas desvinculados de Meus Clientes</p>
+              </div>
+            </div>
+            <Button
+              onClick={recuperarClientesOrfaos}
+              disabled={recuperandoOrfaos}
+              className="bg-blue-600 hover:bg-blue-700 text-white h-9 text-xs"
+            >
+              {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
+              Recuperar
+            </Button>
+          </div>
+          </div>
+
+          {/* Modal de Migração Personalizada */}
+          {showMigrarcaoModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
