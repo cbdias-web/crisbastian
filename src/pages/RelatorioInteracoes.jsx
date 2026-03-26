@@ -276,11 +276,11 @@ export default function RelatorioInteracoes() {
                     const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
                     const ResIcon = res.icon;
                     return (
-                      <tr key={i.id} className="hover:bg-gray-50/50 transition">
+                      <tr key={i.id} className="hover:bg-gray-50/50 transition cursor-pointer" onClick={(e) => abrirPerfil(i, e)}>
                         <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
                           {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
                         </td>
-                        <td className="px-5 py-3 text-sm font-medium text-gray-800">{i.cliente_nome}</td>
+                        <td className="px-5 py-3 text-sm font-medium text-gray-800 underline text-blue-600">{i.cliente_nome}</td>
                         {isAdmin && <td className="px-5 py-3 text-sm text-gray-600">{i.vendedor_nome}</td>}
                         <td className="px-5 py-3 text-sm text-gray-600">{i.tipo}</td>
                         <td className="px-5 py-3">

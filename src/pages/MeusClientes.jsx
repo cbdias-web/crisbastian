@@ -39,6 +39,7 @@ export default function MeusClientes() {
   const [deduplicando, setDeduplicando] = useState(false);
   const [editandoCliente, setEditandoCliente] = useState(null);
   const [editClienteForm, setEditClienteForm] = useState({});
+  const [cadastroClienteForm, setCadastroClienteForm] = useState({});
   const [salvandoCliente, setSalvandoCliente] = useState(false);
   const [salvandoBulk, setSalvandoBulk] = useState(false); // 'todos' | 'clientes' | 'leads'
   // admin: array de IDs selecionados; vazio = todos (carteira geral)
@@ -247,6 +248,10 @@ export default function MeusClientes() {
 
   const handleSave = (cliente) => {
     if (!form.descricao.trim()) { toast.error('Descreva a interação'); return; }
+    if (!cadastroClienteForm.nome?.trim() || !cadastroClienteForm.cpf_cnpj?.trim() || !cadastroClienteForm.telefone?.trim() || !cadastroClienteForm.email?.trim()) {
+      toast.error('Preencha todos os campos obrigatórios do cadastro: Nome, CPF/CNPJ, Telefone e E-mail');
+      return;
+    }
     createMutation.mutate({
       ...form,
       cliente_id: cliente.id,
@@ -254,6 +259,13 @@ export default function MeusClientes() {
       vendedor_id: vendedor?.id || '',
       vendedor_nome: vendedor?.nome || user?.full_name || '',
     });
+    // Atualizar cadastro do cliente
+    base44.entities.Cliente.update(cliente.id, {
+      nome: cadastroClienteForm.nome.trim(),
+      cpf_cnpj: cadastroClienteForm.cpf_cnpj.trim(),
+      telefone: cadastroClienteForm.telefone.trim(),
+      email: cadastroClienteForm.email.trim()
+    }).catch(() => {});
   };
 
   const clientesFiltrados = clientesFiltradosPorVendedor.filter(c => {
@@ -539,7 +551,36 @@ export default function MeusClientes() {
 
                     {/* Formulário */}
                     {isFormOpen && (
-                      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
+                      <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-4">
+                        <div>
+                          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">Complementar Cadastro *</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">Nome</label>
+                              <input type="text" value={cadastroClienteForm.nome || ''} onChange={e => setCadastroClienteForm(p => ({ ...p, nome: e.target.value }))}
+                                placeholder="Nome completo"
+                                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">CPF / CNPJ</label>
+                              <input type="text" value={cadastroClienteForm.cpf_cnpj || ''} onChange={e => setCadastroClienteForm(p => ({ ...p, cpf_cnpj: e.target.value }))}
+                                placeholder="000.000.000-00"
+                                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">Telefone</label>
+                              <input type="text" value={cadastroClienteForm.telefone || ''} onChange={e => setCadastroClienteForm(p => ({ ...p, telefone: e.target.value }))}
+                                placeholder="(11) 99999-9999"
+                                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">E-mail</label>
+                              <input type="email" value={cadastroClienteForm.email || ''} onChange={e => setCadastroClienteForm(p => ({ ...p, email: e.target.value }))}
+                                placeholder="email@exemplo.com"
+                                className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                            </div>
+                          </div>
+                        </div>
                         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Registrar Interação</p>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -577,7 +618,7 @@ export default function MeusClientes() {
                           <Button size="sm" onClick={() => handleSave(cliente)} disabled={createMutation.isPending} className="bg-[#0f1e35] hover:bg-[#1a3150]">
                             <Save className="w-3.5 h-3.5 mr-1.5" /> Salvar
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => setShowForm(null)}>
+                          <Button size="sm" variant="outline" onClick={() => { setShowForm(null); setCadastroClienteForm({}); }}>
                             <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
                           </Button>
                         </div>
