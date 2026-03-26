@@ -52,7 +52,7 @@ export default function Leads() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads-todos'],
-    queryFn: () => base44.entities.Lead.list(),
+    queryFn: () => base44.entities.Lead.list('nome', 10000),
     enabled: isAdmin
   });
 
