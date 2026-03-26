@@ -25,6 +25,13 @@ Deno.serve(async (req) => {
     // MODE: processar lote de assignments [{leadId, leadNome, leadCpfCnpj, leadTelefone, leadClienteId, vendedorId, vendedorNome}]
     if (mode === 'batch') {
       const resultados = await runParallel(assignments, async (a) => {
+        // Validar que o lead ainda está pendente (evitar duplicação)
+        const lead = await base44.asServiceRole.entities.Lead.filter({ id: a.leadId, status: 'pendente' });
+        if (lead.length === 0) {
+          // Lead já foi distribuído, pular
+          return null;
+        }
+        
         // Se redistribuindo, excluir cliente anterior
         if (modo === 'redistribuir' && a.leadClienteId) {
           await base44.asServiceRole.entities.Cliente.delete(a.leadClienteId).catch(() => {});
@@ -46,6 +53,9 @@ Deno.serve(async (req) => {
           cliente_id: cliente.id
         });
         return { ...a, clienteId: cliente.id };
+      });
+      const processados = resultados.filter(r => r !== null);
+      return Response.json({ success: true, processed: processados.length, skipped: resultados.length - processados.length
       });
       return Response.json({ success: true, processed: resultados.length });
     }
