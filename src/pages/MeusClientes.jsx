@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -178,6 +178,31 @@ export default function MeusClientes() {
     setSalvandoBulk(false);
   };
 
+  const handleExcluirSelecionados = async () => {
+    const selecionados = clientesFiltrados.filter(c => selectedIds.has(c.id));
+    if (selecionados.length === 0) return;
+    if (!confirm(`Excluir permanentemente ${selecionados.length} registro(s) selecionado(s)? Esta ação não pode ser desfeita.`)) return;
+    setSalvandoBulk(true);
+    try {
+      for (const c of selecionados) {
+        // Excluir interações do cliente
+        const ints = interacoes.filter(i => i.cliente_id === c.id);
+        for (const i of ints) await base44.entities.InteracaoCliente.delete(i.id);
+        // Excluir cliente
+        await base44.entities.Cliente.delete(c.id);
+        // Se era lead, remover referência
+        if (c.lead_id) {
+          await base44.entities.Lead.update(c.lead_id, { cliente_id: '', status: 'pendente', vendedor_id: '', vendedor_nome: '' });
+        }
+      }
+      queryClient.invalidateQueries(['clientes-crm']);
+      queryClient.invalidateQueries(['interacoes-crm']);
+      toast.success(`${selecionados.length} registro(s) excluído(s)!`);
+      setSelectedIds(new Set());
+    } catch (e) { toast.error('Erro ao excluir registros'); }
+    setSalvandoBulk(false);
+  };
+
   const handleSave = (cliente) => {
     if (!form.descricao.trim()) { toast.error('Descreva a interação'); return; }
     createMutation.mutate({
@@ -306,10 +331,16 @@ export default function MeusClientes() {
           <div className="flex items-center gap-2 bg-[#0f1e35] text-white px-4 py-3 rounded-2xl shadow-lg flex-wrap">
             <span className="text-sm font-semibold mr-auto">{selectedIds.size} selecionado(s)</span>
             {isAdmin && (
-              <button onClick={() => setShowTrocarGerenteModal(true)} disabled={salvandoBulk}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-xs font-medium transition">
-                <Users className="w-3.5 h-3.5" /> Trocar Gerente
-              </button>
+              <>
+                <button onClick={() => setShowTrocarGerenteModal(true)} disabled={salvandoBulk}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-xs font-medium transition">
+                  <Users className="w-3.5 h-3.5" /> Trocar Gerente
+                </button>
+                <button onClick={handleExcluirSelecionados} disabled={salvandoBulk}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/80 hover:bg-red-500 rounded-lg text-xs font-medium transition">
+                  <Trash2 className="w-3.5 h-3.5" /> Excluir
+                </button>
+              </>
             )}
             <button onClick={handleDevolverLeads} disabled={salvandoBulk}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/80 hover:bg-amber-500 rounded-lg text-xs font-medium transition">
