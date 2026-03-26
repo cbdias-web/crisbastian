@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
- import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2 } from 'lucide-react';
+ import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2 } from 'lucide-react';
  import { format, parseISO } from 'date-fns';
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
  import { toast } from 'sonner';
@@ -35,6 +35,9 @@ export default function RelatorioInteracoes() {
   const [showSalvarClienteModal, setShowSalvarClienteModal] = useState(null);
   const [gerenteSelecionado, setGerenteSelecionado] = useState('');
   const [salvandoCliente, setSalvandoCliente] = useState(false);
+  const [editandoInteracao, setEditandoInteracao] = useState(null);
+  const [editInteracaoForm, setEditInteracaoForm] = useState({});
+  const [salvandoInteracao, setSalvandoInteracao] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: clientes = [] } = useQuery({
@@ -76,10 +79,51 @@ export default function RelatorioInteracoes() {
     }
   });
 
+  const updateInteracaoMutation = useMutation({
+    mutationFn: (data) => base44.entities.InteracaoCliente.update(data.id, data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['interacoes-relatorio']);
+      setEditandoInteracao(null);
+      toast.success('Interação atualizada!');
+    },
+    onError: () => {
+      toast.error('Erro ao atualizar interação');
+    }
+  });
+
   const handleDeleteInteracao = (id) => {
     if (confirm('Tem certeza que deseja remover esta interação?')) {
       deleteInteracaoMutation.mutate(id);
     }
+  };
+
+  const handleEditarInteracao = (interacao, e) => {
+    e.stopPropagation();
+    if (!isAdmin && interacao.vendedor_id !== vendedor?.id) {
+      toast.error('Você pode editar apenas suas próprias interações');
+      return;
+    }
+    setEditandoInteracao(interacao);
+    setEditInteracaoForm({
+      tipo: interacao.tipo,
+      descricao: interacao.descricao,
+      data_interacao: interacao.data_interacao,
+      proximo_contato: interacao.proximo_contato || '',
+      resultado: interacao.resultado
+    });
+  };
+
+  const salvarEdicaoInteracao = () => {
+    if (!editInteracaoForm.descricao?.trim()) {
+      toast.error('Descrição é obrigatória');
+      return;
+    }
+    setSalvandoInteracao(true);
+    updateInteracaoMutation.mutate({
+      id: editandoInteracao.id,
+      updates: editInteracaoForm
+    });
+    setSalvandoInteracao(false);
   };
 
   const handleSalvarCliente = async () => {
@@ -409,6 +453,9 @@ export default function RelatorioInteracoes() {
                           <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
                             <Eye className="w-4 h-4" />
                           </button>
+                          <button onClick={(e) => handleEditarInteracao(i, e)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition" title="Editar interação">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
                           <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition" title="Deletar interação">
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -423,6 +470,56 @@ export default function RelatorioInteracoes() {
         </div>
       </div>
     </div>
+
+    {/* Modal Editar Interação */}
+    {editandoInteracao && (
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="font-semibold text-gray-900">Editar Interação</h3>
+            <button onClick={() => setEditandoInteracao(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+          </div>
+          <div className="p-6 space-y-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+              <select value={editInteracaoForm.tipo} onChange={e => setEditInteracaoForm(p => ({ ...p, tipo: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                {['Ligação','WhatsApp','E-mail','Reunião','Visita','Outro'].map(t => <option key={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Resultado</label>
+              <select value={editInteracaoForm.resultado} onChange={e => setEditInteracaoForm(p => ({ ...p, resultado: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                {['Positivo','Neutro','Negativo','Sem resposta'].map(r => <option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Data</label>
+              <input type="date" value={editInteracaoForm.data_interacao} onChange={e => setEditInteracaoForm(p => ({ ...p, data_interacao: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Próximo contato</label>
+              <input type="date" value={editInteracaoForm.proximo_contato} onChange={e => setEditInteracaoForm(p => ({ ...p, proximo_contato: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Descrição *</label>
+              <textarea value={editInteracaoForm.descricao} onChange={e => setEditInteracaoForm(p => ({ ...p, descricao: e.target.value }))}
+                rows={3} placeholder="Descrição da interação..."
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] resize-none" />
+            </div>
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+            <button onClick={() => setEditandoInteracao(null)} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">Cancelar</button>
+            <button onClick={salvarEdicaoInteracao} disabled={salvandoInteracao} className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-lg hover:bg-[#1a3150]">
+              {salvandoInteracao ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Modal perfil cliente */}
     {perfilCliente && (
