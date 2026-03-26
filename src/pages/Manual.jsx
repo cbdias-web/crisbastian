@@ -499,6 +499,10 @@ const sections = [
         text: 'Clique no nome do cliente ou no ícone de olho (👁️) para abrir o perfil completo com todos os dados cadastrais, histórico de interações e próximos contatos agendados.',
       },
       {
+        subtitle: 'Editar interação no relatório',
+        text: 'Na tabela de detalhamento, clique no ícone de lápis (✏️) para editar tipo, resultado, data, descrição e próximo contato. Permissões: gerentes editam apenas suas interações; administradores editam qualquer uma.',
+      },
+      {
         subtitle: 'Salvar cliente em "Meus Clientes"',
         text: 'No modal do perfil, clique em "Salvar em Meus Clientes" para transferir o cliente/lead para a carteira de um gerente específico (administrador seleciona qual gerente receberá).',
       },
@@ -532,7 +536,11 @@ const sections = [
       },
       {
         subtitle: 'Registrar nova interação',
-        text: 'Clique em "Nova Interação" no cliente expandido. Preencha todos os campos obrigatórios: Nome completo, CPF/CNPJ, Telefone, E-mail, Tipo de contato, Descrição e Resultado. Opcionalmente, marque a data do próximo contato.',
+        text: 'Clique em "Nova Interação" no cliente expandido. Preencha todos os campos obrigatórios: Nome completo, CPF/CNPJ, Telefone, E-mail, Tipo de contato, Descrição e Resultado. Opcionalmente, marque a data do próximo contato e selecione os produtos abordados na conversa (seleção múltipla em colunas).',
+      },
+      {
+        subtitle: 'Editar interação registrada',
+        text: 'No histórico de interações do cliente, clique no ícone de lápis (✏️) para editar tipo, resultado, data, descrição e próximo contato. Gerentes só podem editar suas próprias interações; administradores podem editar qualquer uma.',
       },
       {
         subtitle: 'Tipos de interação',
