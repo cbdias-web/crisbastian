@@ -231,7 +231,7 @@ export default function MeusClientes() {
         {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
 
         {/* Search */}
-        {vendedorEfetivo && (
+        {(isAdmin || vendedor) && (
           <input
             type="text"
             placeholder="Buscar cliente..."
