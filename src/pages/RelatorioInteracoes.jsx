@@ -3,8 +3,9 @@ import { useQuery } from '@tanstack/react-query';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
  import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { toast } from 'sonner';
+ import { format, parseISO } from 'date-fns';
+ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+ import { toast } from 'sonner';
 
 const today = () => new Date().toISOString().split('T')[0];
 const firstOfMonth = () => {
@@ -254,8 +255,40 @@ export default function RelatorioInteracoes() {
           </div>
         </div>
 
-        {/* Resumo por vendedor (admin) */}
+        {/* Gráfico de produtividade */}
         {isAdmin && Object.keys(resumoPorVendedor).length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-400" />
+              <h3 className="text-sm font-semibold text-gray-700">Produtividade por Vendedor</h3>
+            </div>
+            <div className="p-5">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={Object.entries(resumoPorVendedor).map(([nome, dados]) => ({
+                  vendedor: nome,
+                  total: dados.total,
+                  positivo: dados.positivo,
+                  negativo: dados.negativo
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="vendedor" fontSize={12} />
+                  <YAxis fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                    cursor={{ fill: '#0f1e3505' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="total" fill="#0f1e35" name="Total" />
+                  <Bar dataKey="positivo" fill="#10b981" name="Positivos" />
+                  <Bar dataKey="negativo" fill="#ef4444" name="Negativos" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Resumo por vendedor (admin) */}
+         {isAdmin && Object.keys(resumoPorVendedor).length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
               <Users className="w-4 h-4 text-gray-400" />
@@ -291,17 +324,17 @@ export default function RelatorioInteracoes() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
                   <tr className="border-b border-gray-100">
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Data</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Cliente</th>
-                    {isAdmin && <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Vendedor</th>}
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Tipo</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Resultado</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Descrição</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Próx. Contato</th>
-                    <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Perfil</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Data</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Cliente</th>
+                    {isAdmin && <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Vendedor</th>}
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Tipo</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Resultado</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Descrição</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Próx. Contato</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -309,23 +342,23 @@ export default function RelatorioInteracoes() {
                     const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
                     const ResIcon = res.icon;
                     return (
-                      <tr key={i.id} className="hover:bg-gray-50/50 transition cursor-pointer" onClick={(e) => abrirPerfil(i, e)}>
-                        <td className="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
-                          {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
+                      <tr key={i.id} className="hover:bg-gray-50/50 transition border-b border-gray-50">
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                          {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM') : '—'}
                         </td>
-                        <td className="px-5 py-3 text-sm font-medium text-gray-800 underline text-blue-600">{i.cliente_nome}</td>
-                        {isAdmin && <td className="px-5 py-3 text-sm text-gray-600">{i.vendedor_nome}</td>}
-                        <td className="px-5 py-3 text-sm text-gray-600">{i.tipo}</td>
-                        <td className="px-5 py-3">
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 w-fit ${res.color}`}>
-                            <ResIcon className="w-3 h-3" />{i.resultado}
+                        <td className="px-4 py-3 text-xs font-medium text-gray-800 truncate max-w-xs">{i.cliente_nome}</td>
+                        {isAdmin && <td className="px-4 py-3 text-xs text-gray-600 truncate whitespace-nowrap">{i.vendedor_nome}</td>}
+                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{i.tipo}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 w-fit ${res.color}`}>
+                            <ResIcon className="w-2.5 h-2.5" />{i.resultado}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-sm text-gray-600 max-w-xs truncate">{i.descricao}</td>
-                        <td className="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
-                          {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM/yyyy') : '—'}
+                        <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                          {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—'}
                         </td>
-                        <td className="px-5 py-3">
+                        <td className="px-4 py-3 text-center">
                           <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
                             <Eye className="w-4 h-4" />
                           </button>
