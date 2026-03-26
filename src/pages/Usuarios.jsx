@@ -557,11 +557,12 @@ export default function Usuarios() {
               {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
               Recuperar
             </Button>
-          </div>
-          </div>
+            </div>
+            </div>
+            </div>
 
-          {/* Modal de Migração Personalizada */}
-          {showMigrarcaoModal && (
+            {/* Modal de Migração Personalizada */}
+            {showMigrarcaoModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
