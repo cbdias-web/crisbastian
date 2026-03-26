@@ -27,6 +27,7 @@ export default function Leads() {
   const [importando, setImportando] = useState(false);
   const [distribuindo, setDistribuindo] = useState(null);
   const [redistribuindo, setRedistribuindo] = useState(null);
+  const [deduplicando, setDeduplicando] = useState(false);
   const [progresso, setProgresso] = useState(null); // { atual, total, loteId }
   const [excluindo, setExcluindo] = useState(null);
   const [nomeLote, setNomeLote] = useState('');
@@ -202,6 +203,21 @@ export default function Leads() {
     setProgresso(null);
   };
 
+  const executarDeduplicacao = async () => {
+    if (!confirm('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?')) return;
+    setDeduplicando(true);
+    try {
+      const res = await base44.functions.invoke('deduplicarLeads', {});
+      const { excluidos, grupos_com_duplicatas } = res.data;
+      toast.success(`${excluidos} lead(s) duplicado(s) removido(s) de ${grupos_com_duplicatas} grupo(s)!`);
+      queryClient.invalidateQueries(['leads-todos']);
+      queryClient.invalidateQueries(['clientes-crm']);
+    } catch (e) {
+      toast.error('Erro ao deduplicar: ' + (e.response?.data?.error || e.message));
+    }
+    setDeduplicando(false);
+  };
+
   const excluirLote = async (lote) => {
     if (!confirm(`Excluir o lote "${lote.nome}"? Os clientes já convertidos em carteira serão mantidos.`)) return;
     setExcluindo(lote.id);
@@ -246,9 +262,15 @@ export default function Leads() {
             <h1 className="text-2xl font-bold text-gray-900">Prospecção — Novos Leads</h1>
             <p className="text-sm text-gray-500 mt-0.5">Importe listas e distribua entre gerentes/vendedores selecionados</p>
           </div>
+          <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={executarDeduplicacao} disabled={deduplicando} className="border-amber-200 text-amber-700 hover:bg-amber-50">
+            {deduplicando ? <div className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mr-2" /> : <Shuffle className="w-4 h-4 mr-2" />}
+            Remover Duplicados
+          </Button>
           <Button onClick={() => setShowImport(true)} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
             <Upload className="w-4 h-4 mr-2" /> Importar Lista
           </Button>
+          </div>
         </div>
 
         {/* KPIs */}

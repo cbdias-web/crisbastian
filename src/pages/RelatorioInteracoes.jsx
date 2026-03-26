@@ -307,7 +307,6 @@ export default function RelatorioInteracoes() {
         </div>
       </div>
     </div>
-    </div>
 
     {/* Modal perfil cliente */}
     {perfilCliente && (
