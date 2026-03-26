@@ -333,8 +333,8 @@ export default function Usuarios() {
               {recuperandoOrfaos ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Users className="w-3.5 h-3.5 mr-1.5" />}
               Recuperar
               </Button>
-            </div>
-          </div>
+              </div>
+              </div>
         </div>
 
         {/* Vendedores sem acesso */}
