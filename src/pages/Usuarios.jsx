@@ -32,6 +32,8 @@ export default function Usuarios() {
   const [conviteVendedorEmail, setConviteVendedorEmail] = useState('');
   const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
   const [migrandoClientes, setMigrandoClientes] = useState(false);
+  const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
+  const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -170,6 +172,33 @@ export default function Usuarios() {
     setMigrandoClientes(false);
   };
 
+  const executarMigriacaoPersonalizada = async () => {
+    if (!migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id) {
+      toast.error('Selecione vendedor de origem e destino');
+      return;
+    }
+    if (migracaoForm.vendedor_origem_id === migracaoForm.vendedor_destino_id) {
+      toast.error('Vendedores devem ser diferentes');
+      return;
+    }
+    if (!confirm('Transferir todos os clientes do vendedor selecionado?')) return;
+    
+    setMigrandoClientes(true);
+    try {
+      const res = await base44.functions.invoke('migrarClientesVendedor', {
+        vendedor_origem_id: migracaoForm.vendedor_origem_id,
+        vendedor_destino_id: migracaoForm.vendedor_destino_id
+      });
+      toast.success(res.data.message);
+      setShowMigrarcaoModal(false);
+      setMigracaoForm({ vendedor_origem_id: '', vendedor_destino_id: '' });
+      queryClient.invalidateQueries(['usuarios']);
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Erro ao migrar clientes');
+    }
+    setMigrandoClientes(false);
+  };
+
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -243,22 +272,32 @@ export default function Usuarios() {
 
         {/* Migração de Clientes */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <ArrowRight className="w-5 h-5 text-amber-600" />
               <div>
                 <p className="font-semibold text-amber-900">Migração de Clientes</p>
-                <p className="text-xs text-amber-700 mt-0.5">Transferir clientes de vendedores inativos para novos responsáveis</p>
+                <p className="text-xs text-amber-700 mt-0.5">Transferir clientes entre vendedores</p>
               </div>
             </div>
-            <Button
-              onClick={executarMigracao}
-              disabled={migrandoClientes}
-              className="bg-amber-600 hover:bg-amber-700 text-white h-9"
-            >
-              {migrandoClientes ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-              Executar Migração
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowMigrarcaoModal(true)}
+                variant="outline"
+                className="border-amber-300 text-amber-700 hover:bg-amber-100 h-9 text-xs"
+              >
+                <ArrowRight className="w-3.5 h-3.5 mr-1.5" />
+                Personalizado
+              </Button>
+              <Button
+                onClick={executarMigracao}
+                disabled={migrandoClientes}
+                className="bg-amber-600 hover:bg-amber-700 text-white h-9 text-xs"
+              >
+                {migrandoClientes ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <ArrowRight className="w-3.5 h-3.5 mr-1.5" />}
+                Automático
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -432,6 +471,61 @@ export default function Usuarios() {
           </table>
         </div>
       </div>
+
+      {/* Modal de Migração Personalizada */}
+      {showMigrarcaoModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 text-amber-600" />
+                <h3 className="font-semibold text-gray-900">Migração Personalizada</h3>
+              </div>
+              <button onClick={() => setShowMigrarcaoModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Origem (Inativo) *</label>
+                <select value={migracaoForm.vendedor_origem_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_origem_id: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
+                  <option value="">Selecione um vendedor...</option>
+                  {vendedores.map(v => (
+                    <option key={v.id} value={v.id}>{v.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-2 block uppercase tracking-wider">Vendedor de Destino (Ativo) *</label>
+                <select value={migracaoForm.vendedor_destino_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_destino_id: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
+                  <option value="">Selecione um vendedor...</option>
+                  {vendedores.map(v => (
+                    <option key={v.id} value={v.id}>{v.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                <p className="text-xs text-amber-700">
+                  <strong>Atenção:</strong> Todos os clientes do vendedor de origem serão transferidos para o vendedor de destino.
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowMigrarcaoModal(false)} disabled={migrandoClientes}>Cancelar</Button>
+              <Button onClick={executarMigriacaoPersonalizada} disabled={migrandoClientes || !migracaoForm.vendedor_origem_id || !migracaoForm.vendedor_destino_id}
+                className="bg-amber-600 hover:bg-amber-700">
+                {migrandoClientes ? (
+                  <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Migrando...</>
+                ) : (
+                  <><ArrowRight className="w-4 h-4 mr-2" />Executar Migração</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Convite */}
       {showConviteModal && (
