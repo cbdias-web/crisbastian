@@ -190,9 +190,9 @@ export default function MeusClientes() {
         for (const i of ints) await base44.entities.InteracaoCliente.delete(i.id);
         // Excluir cliente
         await base44.entities.Cliente.delete(c.id);
-        // Se era lead, remover referência
+        // Se era lead, excluir o Lead também
         if (c.lead_id) {
-          await base44.entities.Lead.update(c.lead_id, { cliente_id: '', status: 'pendente', vendedor_id: '', vendedor_nome: '' });
+          await base44.entities.Lead.delete(c.lead_id);
         }
       }
       queryClient.invalidateQueries(['clientes-crm']);
