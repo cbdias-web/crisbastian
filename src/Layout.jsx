@@ -124,6 +124,7 @@ export default function Layout({ children, currentPageName }) {
 
   const adminMenuItems = [
     { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes' },
+    { name: 'Prospecção', icon: Users, page: 'Leads' },
     { name: 'Metas', icon: Target, page: 'Metas' },
     { name: 'Produtos', icon: Package, page: 'Produtos' },
     { name: 'Importar', icon: Upload, page: 'Importar' },
