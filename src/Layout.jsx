@@ -112,7 +112,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
-    { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true },
+    { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
     { name: 'Rel. Interacoes', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   ].filter(item => {
