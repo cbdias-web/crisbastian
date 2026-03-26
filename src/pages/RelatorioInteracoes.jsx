@@ -321,48 +321,20 @@ export default function RelatorioInteracoes() {
                       cursor={{ fill: '#0f1e3505' }}
                     />
                     <Legend />
-                    <Bar dataKey="total" fill="#0f1e35" name="Total" />
-                    <Bar dataKey="positivo" fill="#10b981" name="Positivos" />
-                    <Bar dataKey="negativo" fill="#ef4444" name="Negativos" />
+                    <Bar dataKey="total" fill="#2d3748" name="Total" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="positivo" fill="#86efac" name="Positivos" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="negativo" fill="#fca5a5" name="Negativos" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {/* Gráfico por resultado */}
-          {dadosPorResultado.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700">Distribuição por Resultado</h3>
-              </div>
-              <div className="p-5 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={dadosPorResultado}
-                      dataKey="quantidade"
-                      nameKey="resultado"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label
-                    >
-                      {dadosPorResultado.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
+
 
           {/* Gráfico por tipo */}
           {dadosPorTipo.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-700">Interações por Tipo</h3>
@@ -377,32 +349,8 @@ export default function RelatorioInteracoes() {
                       contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                       cursor={{ fill: '#0f1e3505' }}
                     />
-                    <Bar dataKey="quantidade" fill="#0f1e35" name="Quantidade" />
+                    <Bar dataKey="quantidade" fill="#a0afc7" name="Quantidade" radius={[0, 8, 8, 0]} />
                   </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {/* Gráfico de timeline */}
-          {dadosTempo.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden lg:col-span-2">
-              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700">Interações ao Longo do Tempo</h3>
-              </div>
-              <div className="p-5">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={dadosTempo} margin={{ bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="periodo" fontSize={12} angle={-45} textAnchor="end" height={70} />
-                    <YAxis fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-                      cursor={{ fill: '#0f1e3505' }}
-                    />
-                    <Line type="monotone" dataKey="total" stroke="#0f1e35" strokeWidth={2} dot={{ fill: '#0f1e35', r: 4 }} name="Total de Interações" />
-                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
