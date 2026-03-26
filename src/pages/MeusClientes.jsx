@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -141,6 +142,9 @@ export default function MeusClientes() {
             <p className="text-xs text-gray-400">clientes</p>
           </div>
         </div>
+
+        {/* Agenda de contatos (leads) */}
+        {vendedor && <AgendaDiariaWidget vendedorId={vendedor.id} />}
 
         {/* Search */}
         <input

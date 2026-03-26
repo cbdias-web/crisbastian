@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { addDays, format as fmtDate } from 'date-fns';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Upload, Users, Shuffle, Trash2, CheckCircle2, Clock, FileText, AlertTriangle, X, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
@@ -164,7 +165,56 @@ export default function Leads() {
         });
       }
 
-      toast.success(`${embaralhados.length} leads distribuídos entre ${vendedoresSelecionados.length} gerente(s)!`);
+      // Gerar agenda automática: 5 leads por dia por gerente
+      const LEADS_POR_DIA = 5;
+      const hoje = new Date();
+      // Agrupar leads por vendedor
+      const leadsPorVendedor = {};
+      for (let i = 0; i < embaralhados.length; i++) {
+        const vendedor = vendedoresSelecionados[i % vendedoresSelecionados.length];
+        if (!leadsPorVendedor[vendedor.id]) leadsPorVendedor[vendedor.id] = { vendedor, leads: [] };
+        leadsPorVendedor[vendedor.id].leads.push(embaralhados[i]);
+      }
+
+      // Para redistribuição, limpar agenda antiga dos leads redistribuídos
+      if (modo === 'redistribuir') {
+        const idsLeads = embaralhados.map(l => l.id);
+        const agendaAntiga = await base44.entities.AgendaContato.list();
+        const paraExcluir = agendaAntiga.filter(a => idsLeads.includes(a.lead_id) && a.status === 'pendente');
+        for (const a of paraExcluir) { try { await base44.entities.AgendaContato.delete(a.id); } catch (_) {} }
+      }
+
+      // Criar agenda por vendedor
+      const agendaRecords = [];
+      for (const { vendedor, leads: leadsVend } of Object.values(leadsPorVendedor)) {
+        for (let i = 0; i < leadsVend.length; i++) {
+          const diaOffset = Math.floor(i / LEADS_POR_DIA);
+          const posicaoDia = (i % LEADS_POR_DIA) + 1;
+          const dataAgendada = fmtDate(addDays(hoje, diaOffset), 'yyyy-MM-dd');
+          const lead = leadsVend[i];
+          agendaRecords.push({
+            lead_id: lead.id,
+            lead_nome: lead.nome,
+            lead_cpf_cnpj: lead.cpf_cnpj || '',
+            lead_telefone: lead.telefone || '',
+            cliente_id: lead.cliente_id || '',
+            vendedor_id: vendedor.id,
+            vendedor_nome: vendedor.nome,
+            data_agendada: dataAgendada,
+            posicao_dia: posicaoDia,
+            lote_id: lote.id,
+            status: 'pendente'
+          });
+        }
+      }
+
+      // Salvar agenda em chunks
+      const chunkSize = 50;
+      for (let i = 0; i < agendaRecords.length; i += chunkSize) {
+        await base44.entities.AgendaContato.bulkCreate(agendaRecords.slice(i, i + chunkSize));
+      }
+
+      toast.success(`${embaralhados.length} leads distribuídos entre ${vendedoresSelecionados.length} gerente(s)! Agenda gerada.`);
       queryClient.invalidateQueries(['lotes-leads']);
       queryClient.invalidateQueries(['leads-todos']);
     } catch (e) {
