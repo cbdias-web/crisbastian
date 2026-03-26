@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2 } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -279,6 +279,16 @@ export default function MeusClientes() {
       .sort((a, b) => a.proximo_contato.localeCompare(b.proximo_contato));
     return proximas[0]?.proximo_contato || null;
   };
+
+  if (!isAdmin) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="text-center">
+        <AlertTriangle className="w-12 h-12 text-amber-400 mx-auto mb-3" />
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Acesso Temporariamente Bloqueado</h2>
+        <p className="text-sm text-gray-500">Esta seção está indisponível para gerentes neste momento. Aguarde instruções da administração.</p>
+      </div>
+    </div>
+  );
 
   if (!user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
