@@ -250,6 +250,19 @@ export default function Usuarios() {
                   >
                     {enviandoConviteVendedor === v.id ? '...' : 'Enviar Convite'}
                   </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`Remover ${v.nome} da lista de pendentes?`)) {
+                        base44.entities.Vendedor.update(v.id, { email: '' });
+                        queryClient.invalidateQueries(['vendedores-lista']);
+                        toast.success('Vendedor removido da lista!');
+                      }
+                    }}
+                    className="flex-shrink-0 p-1.5 hover:bg-red-50 text-gray-300 hover:text-red-500 rounded-lg transition"
+                    title="Remover da lista"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               ))}
             </div>
