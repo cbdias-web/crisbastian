@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -80,6 +80,19 @@ export default function MeusClientes() {
     onSuccess: () => {
       queryClient.invalidateQueries(['interacoes-crm']);
       toast.success('Interação removida!');
+    }
+  });
+
+  const converterLeadMutation = useMutation({
+    mutationFn: async (cliente) => {
+      await base44.entities.Cliente.update(cliente.id, { origem: 'lead_convertido' });
+      if (cliente.lead_id) {
+        await base44.entities.Lead.update(cliente.lead_id, { convertido: true, convertido_em: new Date().toISOString() });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['clientes-crm']);
+      toast.success('Lead convertido em cliente cativo!');
     }
   });
 
@@ -168,6 +181,16 @@ export default function MeusClientes() {
                     <p className="text-xs text-gray-400 truncate">{cliente.cpf_cnpj || cliente.email || cliente.telefone || '—'}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
+                    {cliente.origem === 'lead' && (
+                      <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">
+                        🎯 Lead
+                      </span>
+                    )}
+                    {cliente.origem === 'lead_convertido' && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star className="w-2.5 h-2.5" /> Convertido
+                      </span>
+                    )}
                     {proximoContato && (
                       <span className="text-[10px] bg-blue-50 text-blue-600 font-medium px-2 py-1 rounded-full flex items-center gap-1">
                         <Clock className="w-3 h-3" />
@@ -184,13 +207,16 @@ export default function MeusClientes() {
                   <div className="border-t border-gray-100 px-5 py-4 space-y-3">
                     {/* Botão nova interação */}
                     {!isFormOpen && (
-                      <Button
-                        size="sm"
-                        onClick={() => setShowForm(cliente.id)}
-                        className="bg-[#0f1e35] hover:bg-[#1a3150] text-white"
-                      >
-                        <Plus className="w-3.5 h-3.5 mr-1.5" /> Nova Interação
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={() => setShowForm(cliente.id)} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
+                          <Plus className="w-3.5 h-3.5 mr-1.5" /> Nova Interação
+                        </Button>
+                        {cliente.origem === 'lead' && (
+                          <Button size="sm" variant="outline" onClick={() => { if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterLeadMutation.mutate(cliente); }} disabled={converterLeadMutation.isPending} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                            <Star className="w-3.5 h-3.5 mr-1.5" /> Converter em Cliente
+                          </Button>
+                        )}
+                      </div>
                     )}
 
                     {/* Formulário */}
