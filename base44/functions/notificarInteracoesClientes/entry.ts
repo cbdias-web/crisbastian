@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
             </p>
 
             <div style="text-align: center; margin: 24px 0;">
-              <a href="${Deno.env.get('APP_URL') || '#'}/MeusClientes"
+              <a href="#"
                 style="background: #0f1e35; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-block;">
                 Acessar Meus Clientes
               </a>
