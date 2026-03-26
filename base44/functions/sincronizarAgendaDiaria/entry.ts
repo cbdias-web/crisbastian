@@ -21,9 +21,24 @@ Deno.serve(async (req) => {
 
     let novasAgendas = 0;
 
+    // Mapear última interação por cliente para verificar resultado
+    const ultimaInteracaoPorCliente = new Map();
+    for (const inter of interacoes) {
+      if (!ultimaInteracaoPorCliente.has(inter.cliente_id) || 
+          new Date(inter.data_interacao) > new Date(ultimaInteracaoPorCliente.get(inter.cliente_id).data_interacao)) {
+        ultimaInteracaoPorCliente.set(inter.cliente_id, inter);
+      }
+    }
+
     // Para cada interação com próximo_contato definido
     for (const inter of interacoes) {
       if (inter.proximo_contato && inter.proximo_contato >= hojeStr) {
+        // Pular leads com resultado negativo na última interação
+        const ultimaInteracao = ultimaInteracaoPorCliente.get(inter.cliente_id);
+        if (ultimaInteracao && ultimaInteracao.resultado === 'Negativo') {
+          continue;
+        }
+
         const key = `${inter.cliente_id}-${inter.proximo_contato}`;
 
         // Se não existe agenda para este cliente nesta data, criar
