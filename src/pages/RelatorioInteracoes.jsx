@@ -424,6 +424,7 @@ export default function RelatorioInteracoes() {
                     <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Tipo</th>
                     <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Resultado</th>
                     <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Descrição</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Produtos</th>
                     <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Próx. Contato</th>
                     <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Ações</th>
                   </tr>
@@ -446,6 +447,17 @@ export default function RelatorioInteracoes() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 max-w-sm">
+                          {i.produtos_negociados ? (
+                            <div className="flex flex-wrap gap-1">
+                              {i.produtos_negociados.split(',').map((p, idx) => (
+                                <span key={idx} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap">
+                                  {p.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          ) : '—'}
+                        </td>
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
                           {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—'}
                         </td>
