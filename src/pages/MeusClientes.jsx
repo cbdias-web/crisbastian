@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -32,7 +32,18 @@ export default function MeusClientes() {
   const [showForm, setShowForm] = useState(null); // cliente_id
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [vendedorSelecionado, setVendedorSelecionado] = useState(null);
+  // admin: array de IDs selecionados; vazio = todos (carteira geral)
+  const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setDropdownAberto(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -51,17 +62,21 @@ export default function MeusClientes() {
     enabled: isAdmin
   });
 
-  // Para admin: usa vendedorSelecionado; para usuário normal: usa vendedor vinculado ao email
-  const vendedorEfetivo = isAdmin ? vendedorSelecionado : vendedor;
-
+  // Para admin: busca todos e filtra client-side; para usuário normal: filtra pelo vendedor
   const { data: clientes = [] } = useQuery({
-    queryKey: ['clientes-crm', vendedorEfetivo?.id, isAdmin],
+    queryKey: ['clientes-crm', isAdmin ? 'admin' : vendedor?.id],
     queryFn: () => {
-      if (!vendedorEfetivo) return [];
-      return base44.entities.Cliente.filter({ vendedor_id: vendedorEfetivo.id }, 'nome');
+      if (isAdmin) return base44.entities.Cliente.list('nome');
+      if (vendedor) return base44.entities.Cliente.filter({ vendedor_id: vendedor.id }, 'nome');
+      return [];
     },
-    enabled: !!user && !!vendedorEfetivo
+    enabled: !!user && (isAdmin || !!vendedor)
   });
+
+  // Vendedores selecionados no dropdown (vazio = todos)
+  const clientesFiltradosPorVendedor = isAdmin && vendedoresSelecionados.length > 0
+    ? clientes.filter(c => vendedoresSelecionados.includes(c.vendedor_id))
+    : clientes;
 
   const { data: interacoes = [] } = useQuery({
     queryKey: ['interacoes-crm'],
@@ -111,12 +126,15 @@ export default function MeusClientes() {
     });
   };
 
-  const clientesFiltrados = clientes.filter(c =>
+  const clientesFiltrados = clientesFiltradosPorVendedor.filter(c =>
     !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm)
   );
 
   const getInteracoesCliente = (clienteId) => interacoes.filter(i => i.cliente_id === clienteId);
-  const vendedorParaAgenda = vendedorEfetivo;
+  // Agenda só aparece quando exatamente 1 vendedor está selecionado
+  const vendedorParaAgenda = isAdmin
+    ? (vendedoresSelecionados.length === 1 ? todosVendedores.find(v => v.id === vendedoresSelecionados[0]) : null)
+    : vendedor;
   const getProximoContato = (clienteId) => {
     const proximas = interacoes
       .filter(i => i.cliente_id === clienteId && i.proximo_contato >= today())
@@ -138,38 +156,74 @@ export default function MeusClientes() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Meus Clientes</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {vendedorEfetivo ? `Carteira de ${vendedorEfetivo.nome}` : isAdmin ? 'Selecione um vendedor' : 'Nenhum vendedor vinculado ao seu e-mail'}
+              {isAdmin
+                ? vendedoresSelecionados.length === 0
+                  ? 'Carteira Geral — todos os vendedores'
+                  : vendedoresSelecionados.length === 1
+                    ? `Carteira de ${todosVendedores.find(v => v.id === vendedoresSelecionados[0])?.nome || ''}`
+                    : `${vendedoresSelecionados.length} vendedores selecionados`
+                : vendedor ? `Carteira de ${vendedor.nome}` : 'Nenhum vendedor vinculado ao seu e-mail'
+              }
             </p>
           </div>
           <div className="text-right">
-            {vendedorEfetivo && (
-              <>
-                <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
-                <p className="text-xs text-gray-400">clientes</p>
-              </>
-            )}
+            <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
+            <p className="text-xs text-gray-400">clientes</p>
           </div>
         </div>
 
-        {/* Seletor de vendedor para admin */}
+        {/* Seletor de vendedores para admin — dropdown multi-select */}
         {isAdmin && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Selecionar Vendedor</p>
-            <div className="flex flex-wrap gap-2">
-              {todosVendedores.map(v => (
-                <button
-                  key={v.id}
-                  onClick={() => { setVendedorSelecionado(v); setSearchTerm(''); setExpandedCliente(null); }}
-                  className={`px-3 py-1.5 rounded-xl text-sm font-medium transition border ${
-                    vendedorSelecionado?.id === v.id
-                      ? 'bg-[#0f1e35] text-white border-[#0f1e35]'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#1a3150] hover:text-[#1a3150]'
-                  }`}
-                >
-                  {v.nome}
-                </button>
-              ))}
-            </div>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownAberto(p => !p)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#1a3150] transition shadow-sm w-full md:w-auto"
+            >
+              <Filter className="w-4 h-4 text-gray-400" />
+              {vendedoresSelecionados.length === 0
+                ? 'Todos os vendedores (Carteira Geral)'
+                : `${vendedoresSelecionados.length} vendedor${vendedoresSelecionados.length > 1 ? 'es' : ''} selecionado${vendedoresSelecionados.length > 1 ? 's' : ''}`
+              }
+              <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${dropdownAberto ? 'rotate-180' : ''}`} />
+            </button>
+
+            {dropdownAberto && (
+              <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-2xl shadow-lg p-3 min-w-64">
+                <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtrar por vendedor</span>
+                  {vendedoresSelecionados.length > 0 && (
+                    <button onClick={() => { setVendedoresSelecionados([]); setSearchTerm(''); setExpandedCliente(null); }} className="text-xs text-blue-600 hover:underline">Limpar</button>
+                  )}
+                </div>
+                <label className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={vendedoresSelecionados.length === 0}
+                    onChange={() => { setVendedoresSelecionados([]); setExpandedCliente(null); }}
+                    className="w-4 h-4 accent-[#1a3150]"
+                  />
+                  <span className="font-medium text-gray-700">Todos (Carteira Geral)</span>
+                </label>
+                <div className="my-1 border-t border-gray-100" />
+                {todosVendedores.map(v => (
+                  <label key={v.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={vendedoresSelecionados.includes(v.id)}
+                      onChange={() => {
+                        setVendedoresSelecionados(prev =>
+                          prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id]
+                        );
+                        setExpandedCliente(null);
+                        setSearchTerm('');
+                      }}
+                      className="w-4 h-4 accent-[#1a3150]"
+                    />
+                    <span className="text-gray-700">{v.nome}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
