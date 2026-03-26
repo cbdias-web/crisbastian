@@ -98,41 +98,41 @@ Deno.serve(async (req) => {
     });
     doc.setTextColor(0, 0, 0);
 
-    // === RESUMO POR VENDEDOR (admin) ===
+    // === GRÁFICO POR VENDEDOR (admin) ===
     y = 58;
     if (isAdmin) {
       const resumo = {};
       todas.forEach(i => {
         const k = norm(i.vendedor_nome || 'Sem vendedor');
-        if (!resumo[k]) resumo[k] = { total: 0, pos: 0, neg: 0 };
+        if (!resumo[k]) resumo[k] = { total: 0 };
         resumo[k].total++;
-        if (i.resultado === 'Positivo') resumo[k].pos++;
-        if (i.resultado === 'Negativo') resumo[k].neg++;
       });
 
-      if (Object.keys(resumo).length > 0) {
+      const vendedores = Object.entries(resumo).sort((a, b) => b[1].total - a[1].total).slice(0, 8);
+      if (vendedores.length > 0) {
         doc.setFillColor(240, 244, 248);
         doc.rect(10, y, W - 20, 7, 'F');
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 80, 120);
-        doc.text('RESUMO POR VENDEDOR', 12, y + 5);
-        y += 9;
+        doc.text('PRODUTIVIDADE POR VENDEDOR', 12, y + 5);
+        y += 12;
 
-        Object.entries(resumo).forEach(([nome, dados]) => {
-          if (y > H - 15) { y = addPage(); }
-          doc.setFontSize(8);
+        const maxVal = Math.max(...vendedores.map(v => v[1].total));
+        const barH = 4;
+        const chartW = W - 60;
+
+        vendedores.forEach(([nome, dados], idx) => {
+          if (y + barH > H - 20) { y = addPage() + 10; }
+          const barLen = (dados.total / maxVal) * chartW;
+          doc.setFontSize(7);
           doc.setFont('helvetica', 'normal');
           doc.setTextColor(0);
-          doc.text(nome, 12, y + 4);
-          doc.setFont('helvetica', 'bold');
-          doc.text(`${dados.total} interacoes`, 90, y + 4);
-          doc.setTextColor(6, 95, 70);
-          doc.text(`${dados.pos} positivas`, 140, y + 4);
-          doc.setTextColor(153, 27, 27);
-          doc.text(`${dados.neg} negativas`, 190, y + 4);
+          doc.text(nome.substring(0, 20), 12, y + 3);
+          doc.setFillColor(15, 30, 53);
+          doc.rect(45, y, barLen, barH, 'F');
           doc.setTextColor(0);
-          doc.setFont('helvetica', 'normal');
+          doc.text(`${dados.total}`, 45 + barLen + 2, y + 3);
           y += 6;
         });
         y += 4;
@@ -149,15 +149,29 @@ Deno.serve(async (req) => {
     doc.setTextColor(60, 80, 120);
 
     const cols = isAdmin
-      ? [12, 35, 95, 135, 160, 195, 250]
-      : [12, 35, 110, 150, 175, 220];
+      ? [12, 28, 65, 100, 135, 165, 200]
+      : [12, 28, 80, 115, 145, 180];
+    const colWidths = isAdmin
+      ? [16, 37, 35, 35, 30, 35, W - 215]
+      : [16, 52, 35, 30, 35, W - 163];
     const headers = isAdmin
-      ? ['Data', 'Cliente', 'Vendedor', 'Tipo', 'Resultado', 'Proximo Contato', 'Descricao']
-      : ['Data', 'Cliente', 'Tipo', 'Resultado', 'Proximo Contato', 'Descricao'];
+      ? ['Data', 'Cliente', 'Vendedor', 'Tipo', 'Resultado', 'Próx. Contato', 'Descrição']
+      : ['Data', 'Cliente', 'Tipo', 'Resultado', 'Próx. Contato', 'Descrição'];
 
-    headers.forEach((h, i) => doc.text(h, cols[i], y + 5));
+    headers.forEach((h, i) => {
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      const truncH = h.length > 12 ? h.substring(0, 10) + '.' : h;
+      doc.text(truncH, cols[i], y + 5);
+    });
     y += 9;
     doc.setTextColor(0);
+
+    const truncText = (txt, maxLen) => {
+      if (!txt) return '-';
+      if (txt.length <= maxLen) return txt;
+      return txt.substring(0, maxLen - 1) + '.';
+    };
 
     todas.forEach((i, idx) => {
       if (y > H - 10) { y = addPage(); }
@@ -167,29 +181,37 @@ Deno.serve(async (req) => {
         doc.rect(10, y - 1, W - 20, 7, 'F');
       }
 
-      doc.setFontSize(7.5);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0);
 
       const row = isAdmin
         ? [
-            formatDate(i.data_interacao),
-            norm(i.cliente_nome),
-            norm(i.vendedor_nome),
-            norm(i.tipo),
-            norm(i.resultado),
-            formatDate(i.proximo_contato),
-            norm(i.descricao?.substring(0, 50) + (i.descricao?.length > 50 ? '...' : '')),
+            truncText(formatDate(i.data_interacao), 10),
+            truncText(norm(i.cliente_nome), 25),
+            truncText(norm(i.vendedor_nome), 20),
+            truncText(norm(i.tipo), 15),
+            truncText(norm(i.resultado), 12),
+            truncText(formatDate(i.proximo_contato), 10),
+            truncText(norm(i.descricao), 50),
           ]
         : [
-            formatDate(i.data_interacao),
-            norm(i.cliente_nome),
-            norm(i.tipo),
-            norm(i.resultado),
-            formatDate(i.proximo_contato),
-            norm(i.descricao?.substring(0, 70) + (i.descricao?.length > 70 ? '...' : '')),
+            truncText(formatDate(i.data_interacao), 10),
+            truncText(norm(i.cliente_nome), 30),
+            truncText(norm(i.tipo), 15),
+            truncText(norm(i.resultado), 12),
+            truncText(formatDate(i.proximo_contato), 10),
+            truncText(norm(i.descricao), 50),
           ];
 
-      row.forEach((val, ci) => doc.text(String(val || '-'), cols[ci], y + 4));
+      row.forEach((val, ci) => {
+        const maxW = colWidths[ci];
+        let text = String(val || '-');
+        if (doc.getStringUnitWidth(text) * doc.internal.getFontSize() / doc.internal.scaleFactor > maxW) {
+          text = truncText(text, Math.floor(maxW / 1.5));
+        }
+        doc.text(text, cols[ci], y + 4);
+      });
       y += 7;
     });
 
