@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
  import { format, parseISO } from 'date-fns';
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
  import { toast } from 'sonner';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const today = () => new Date().toISOString().split('T')[0];
 const firstOfMonth = () => {
