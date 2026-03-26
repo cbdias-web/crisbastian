@@ -107,18 +107,24 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
     { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
-    { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes', allowUser: false },
-    { name: 'Metas', icon: Target, page: 'Metas', allowUser: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
-    { name: 'Produtos', icon: Package, page: 'Produtos', allowUser: false },
-    { name: 'Importar', icon: Upload, page: 'Importar', allowUser: false },
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (!item.allowUser) return false;
+    return menusUsuario.includes(item.page);
+  });
+
+  const adminMenuItems = [
+    { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes' },
+    { name: 'Metas', icon: Target, page: 'Metas' },
+    { name: 'Produtos', icon: Package, page: 'Produtos' },
+    { name: 'Importar', icon: Upload, page: 'Importar' },
+  ].filter(item => {
+    if (isAdmin) return true;
     return menusUsuario.includes(item.page);
   });
 
@@ -181,6 +187,30 @@ export default function Layout({ children, currentPageName }) {
               </Link>
             );
           })}
+
+          {adminMenuItems.length > 0 && (
+            <>
+              <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-1 pt-3 pb-1">Administrativo</p>
+              {adminMenuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPageName === item.page;
+                return (
+                  <Link
+                    key={item.page}
+                    to={createPageUrl(item.page)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
+                      isActive
+                        ? 'bg-white/15 text-white font-semibold shadow-sm'
+                        : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
         
         {/* Menu fixo na base - sempre visível */}
