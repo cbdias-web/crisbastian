@@ -290,6 +290,10 @@ export default function MeusClientes() {
     setShowForm(cliente.id);
   };
 
+  const getInteracoesCliente = (clienteId) => {
+    return interacoes.filter(i => i.cliente_id === clienteId).sort((a, b) => b.data_interacao.localeCompare(a.data_interacao));
+  };
+
   const getProximoContato = (clienteId) => {
     const proximas = interacoes
       .filter(i => i.cliente_id === clienteId && i.proximo_contato >= today())
