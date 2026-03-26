@@ -67,8 +67,8 @@ export default function MeusClientes() {
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-crm', isAdmin ? 'admin' : vendedor?.id],
     queryFn: () => {
-      if (isAdmin) return base44.entities.Cliente.list('nome');
-      if (vendedor) return base44.entities.Cliente.filter({ vendedor_id: vendedor.id }, 'nome');
+      if (isAdmin) return base44.entities.Cliente.list('nome', 10000);
+      if (vendedor) return base44.entities.Cliente.filter({ vendedor_id: vendedor.id }, 'nome', 10000);
       return [];
     },
     enabled: !!user && (isAdmin || !!vendedor)
