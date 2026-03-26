@@ -501,60 +501,70 @@ export default function MeusClientes() {
           </div>
         </div>
 
-        {/* Seletor de vendedores para admin — dropdown multi-select */}
-        {isAdmin && (
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownAberto(p => !p)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#1a3150] transition shadow-sm w-full md:w-auto"
-            >
-              <Filter className="w-4 h-4 text-gray-400" />
-              {vendedoresSelecionados.length === 0
-                ? 'Todos os vendedores (Carteira Geral)'
-                : `${vendedoresSelecionados.length} vendedor${vendedoresSelecionados.length > 1 ? 'es' : ''} selecionado${vendedoresSelecionados.length > 1 ? 's' : ''}`
-              }
-              <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${dropdownAberto ? 'rotate-180' : ''}`} />
-            </button>
+        {/* Seletor de vendedores + Botão Novo Lead */}
+        <div className="flex items-end gap-3">
+          {isAdmin && (
+            <div className="relative flex-1" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownAberto(p => !p)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:border-[#1a3150] transition shadow-sm w-full"
+              >
+                <Filter className="w-4 h-4 text-gray-400" />
+                {vendedoresSelecionados.length === 0
+                  ? 'Todos os vendedores (Carteira Geral)'
+                  : `${vendedoresSelecionados.length} vendedor${vendedoresSelecionados.length > 1 ? 'es' : ''} selecionado${vendedoresSelecionados.length > 1 ? 's' : ''}`
+                }
+                <ChevronDown className={`w-4 h-4 text-gray-400 ml-auto transition-transform ${dropdownAberto ? 'rotate-180' : ''}`} />
+              </button>
 
-            {dropdownAberto && (
-              <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-2xl shadow-lg p-3 min-w-64">
-                <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtrar por vendedor</span>
-                  {vendedoresSelecionados.length > 0 && (
-                    <button onClick={() => { setVendedoresSelecionados([]); setSearchTerm(''); setExpandedCliente(null); }} className="text-xs text-blue-600 hover:underline">Limpar</button>
-                  )}
-                </div>
-                <label className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
-                  <input
-                    type="checkbox"
-                    checked={vendedoresSelecionados.length === 0}
-                    onChange={() => { setVendedoresSelecionados([]); setExpandedCliente(null); }}
-                    className="w-4 h-4 accent-[#1a3150]"
-                  />
-                  <span className="font-medium text-gray-700">Todos (Carteira Geral)</span>
-                </label>
-                <div className="my-1 border-t border-gray-100" />
-                {todosVendedores.map(v => (
-                  <label key={v.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+              {dropdownAberto && (
+                <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-2xl shadow-lg p-3 min-w-64">
+                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtrar por vendedor</span>
+                    {vendedoresSelecionados.length > 0 && (
+                      <button onClick={() => { setVendedoresSelecionados([]); setSearchTerm(''); setExpandedCliente(null); }} className="text-xs text-blue-600 hover:underline">Limpar</button>
+                    )}
+                  </div>
+                  <label className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
                     <input
                       type="checkbox"
-                      checked={vendedoresSelecionados.includes(v.id)}
-                      onChange={() => {
-                        setVendedoresSelecionados(prev =>
-                          prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id]
-                        );
-                        setExpandedCliente(null);
-                        setSearchTerm('');
-                      }}
+                      checked={vendedoresSelecionados.length === 0}
+                      onChange={() => { setVendedoresSelecionados([]); setExpandedCliente(null); }}
                       className="w-4 h-4 accent-[#1a3150]"
                     />
-                    <span className="text-gray-700">{v.nome}</span>
+                    <span className="font-medium text-gray-700">Todos (Carteira Geral)</span>
                   </label>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                  <div className="my-1 border-t border-gray-100" />
+                  {todosVendedores.map(v => (
+                    <label key={v.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                      <input
+                        type="checkbox"
+                        checked={vendedoresSelecionados.includes(v.id)}
+                        onChange={() => {
+                          setVendedoresSelecionados(prev =>
+                            prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id]
+                          );
+                          setExpandedCliente(null);
+                          setSearchTerm('');
+                        }}
+                        className="w-4 h-4 accent-[#1a3150]"
+                      />
+                      <span className="text-gray-700">{v.nome}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {(isAdmin || vendedor) && (
+            <Button
+              onClick={() => setShowNovoLeadModal(true)}
+              className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2"
+            >
+              <Plus className="w-4 h-4" /> Novo Lead/Prospect
+            </Button>
+          )}
+        </div>
 
         {/* Agenda de contatos (leads) */}
         {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
@@ -583,15 +593,7 @@ export default function MeusClientes() {
           </div>
         )}
 
-        {/* Botão Novo Lead */}
-        {(isAdmin || vendedor) && (
-          <Button
-            onClick={() => setShowNovoLeadModal(true)}
-            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white gap-2 w-full md:w-auto"
-          >
-            <Plus className="w-4 h-4" /> Novo Lead/Prospect
-          </Button>
-        )}
+
 
         {/* Filtro Clientes / Leads + Busca */}
         {(isAdmin || vendedor) && (
