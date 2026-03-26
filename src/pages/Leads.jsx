@@ -104,121 +104,21 @@ export default function Leads() {
     if (vendedoresSelecionados.length === 0) { toast.error('Selecione pelo menos um gerente/vendedor'); return; }
 
     setShowVendedoresModal(null);
-
-    if (modo === 'distribuir') {
-      setDistribuindo(lote.id);
-    } else {
-      setRedistribuindo(lote.id);
-    }
+    if (modo === 'distribuir') setDistribuindo(lote.id);
+    else setRedistribuindo(lote.id);
 
     try {
-      let leadsParaDistribuir;
-      if (modo === 'distribuir') {
-        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'pendente');
-      } else {
-        // redistribuir: apenas os não convertidos que já foram distribuídos
-        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'distribuido' && !l.convertido);
-      }
-
-      if (leadsParaDistribuir.length === 0) {
-        toast.info('Nenhum lead disponível para distribuição');
-        setDistribuindo(null); setRedistribuindo(null);
-        return;
-      }
-
-      const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
-
-      for (let i = 0; i < embaralhados.length; i++) {
-        const vendedor = vendedoresSelecionados[i % vendedoresSelecionados.length];
-        const lead = embaralhados[i];
-
-        // Se redistribuindo, remover da carteira anterior (excluir o cliente gerado, não convertido)
-        if (modo === 'redistribuir' && lead.cliente_id && !lead.convertido) {
-          try { await base44.entities.Cliente.delete(lead.cliente_id); } catch (_) {}
-        }
-
-        // Criar cliente na carteira com origem 'lead'
-        const cliente = await base44.entities.Cliente.create({
-          nome: lead.nome,
-          cpf_cnpj: lead.cpf_cnpj,
-          telefone: lead.telefone,
-          vendedor_id: vendedor.id,
-          vendedor_nome: vendedor.nome,
-          origem: 'lead',
-          lead_id: lead.id,
-          observacao: `Lead importado — lote: ${lote.nome}`
-        });
-
-        await base44.entities.Lead.update(lead.id, {
-          status: 'distribuido',
-          vendedor_id: vendedor.id,
-          vendedor_nome: vendedor.nome,
-          cliente_id: cliente.id
-        });
-      }
-
-      if (modo === 'distribuir') {
-        await base44.entities.LoteLead.update(lote.id, {
-          status: 'distribuido',
-          distribuido_em: new Date().toISOString(),
-          distribuido_por: user?.email
-        });
-      }
-
-      // Gerar agenda automática: 5 leads por dia por gerente
-      const LEADS_POR_DIA = 5;
-      const hoje = new Date();
-      // Agrupar leads por vendedor
-      const leadsPorVendedor = {};
-      for (let i = 0; i < embaralhados.length; i++) {
-        const vendedor = vendedoresSelecionados[i % vendedoresSelecionados.length];
-        if (!leadsPorVendedor[vendedor.id]) leadsPorVendedor[vendedor.id] = { vendedor, leads: [] };
-        leadsPorVendedor[vendedor.id].leads.push(embaralhados[i]);
-      }
-
-      // Para redistribuição, limpar agenda antiga dos leads redistribuídos
-      if (modo === 'redistribuir') {
-        const idsLeads = embaralhados.map(l => l.id);
-        const agendaAntiga = await base44.entities.AgendaContato.list();
-        const paraExcluir = agendaAntiga.filter(a => idsLeads.includes(a.lead_id) && a.status === 'pendente');
-        for (const a of paraExcluir) { try { await base44.entities.AgendaContato.delete(a.id); } catch (_) {} }
-      }
-
-      // Criar agenda por vendedor
-      const agendaRecords = [];
-      for (const { vendedor, leads: leadsVend } of Object.values(leadsPorVendedor)) {
-        for (let i = 0; i < leadsVend.length; i++) {
-          const diaOffset = Math.floor(i / LEADS_POR_DIA);
-          const posicaoDia = (i % LEADS_POR_DIA) + 1;
-          const dataAgendada = fmtDate(addDays(hoje, diaOffset), 'yyyy-MM-dd');
-          const lead = leadsVend[i];
-          agendaRecords.push({
-            lead_id: lead.id,
-            lead_nome: lead.nome,
-            lead_cpf_cnpj: lead.cpf_cnpj || '',
-            lead_telefone: lead.telefone || '',
-            cliente_id: lead.cliente_id || '',
-            vendedor_id: vendedor.id,
-            vendedor_nome: vendedor.nome,
-            data_agendada: dataAgendada,
-            posicao_dia: posicaoDia,
-            lote_id: lote.id,
-            status: 'pendente'
-          });
-        }
-      }
-
-      // Salvar agenda em chunks
-      const chunkSize = 50;
-      for (let i = 0; i < agendaRecords.length; i += chunkSize) {
-        await base44.entities.AgendaContato.bulkCreate(agendaRecords.slice(i, i + chunkSize));
-      }
-
-      toast.success(`${embaralhados.length} leads distribuídos entre ${vendedoresSelecionados.length} gerente(s)! Agenda gerada.`);
+      const response = await base44.functions.invoke('distribuirLeads', {
+        loteId: lote.id,
+        loteNome: lote.nome,
+        vendedoresIds: vendedoresSelecionados.map(v => v.id),
+        modo
+      });
+      toast.success(response.data?.message || 'Distribuição concluída!');
       queryClient.invalidateQueries(['lotes-leads']);
       queryClient.invalidateQueries(['leads-todos']);
     } catch (e) {
-      toast.error('Erro na distribuição: ' + e.message);
+      toast.error('Erro na distribuição: ' + (e.response?.data?.error || e.message));
     }
     setDistribuindo(null); setRedistribuindo(null);
   };
