@@ -27,6 +27,7 @@ export default function Vendas() {
   const [dataFim, setDataFim] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
   const [produtoFiltro, setProdutoFiltro] = useState('todos');
   const [vendedorFiltro, setVendedorFiltro] = useState('todos');
+  const [searchVendedor, setSearchVendedor] = useState('');
   const [gerandoRelatorioPDF, setGerandoRelatorioPDF] = useState(false);
   const queryClient = useQueryClient();
 
@@ -486,17 +487,37 @@ export default function Vendas() {
               </div>
               <div>
                 <Label>Vendedor</Label>
-                <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os Vendedores</SelectItem>
-                    {vendedores.map((v) => (
-                      <SelectItem key={v.id} value={v.nome}>{v.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                 <div className="space-y-2">
+                   <input
+                     type="text"
+                     placeholder="Buscar vendedor..."
+                     value={searchVendedor}
+                     onChange={(e) => setSearchVendedor(e.target.value.toLowerCase())}
+                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   />
+                   <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
+                     <SelectTrigger>
+                       <SelectValue />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="todos">Todos os Vendedores</SelectItem>
+                       {(() => {
+                         // Vendedores ativos com vendas no período filtrado
+                         const vendasPeriodo = vendas.filter(v => 
+                           (!dataInicio || v.data >= dataInicio) && 
+                           (!dataFim || v.data <= dataFim)
+                         );
+                         const vendedoresComVendas = new Set(vendasPeriodo.map(v => v.assessor_comercial));
+                         return vendedores
+                           .filter(v => v.ativo && vendedoresComVendas.has(v.nome))
+                           .filter(v => v.nome.toLowerCase().includes(searchVendedor))
+                           .map((v) => (
+                             <SelectItem key={v.id} value={v.nome}>{v.nome}</SelectItem>
+                           ));
+                       })()}
+                     </SelectContent>
+                   </Select>
+                 </div>
               </div>
               <div>
                 <Label>Produto</Label>
