@@ -30,7 +30,7 @@ export default function MeusClientes() {
   const [vendedor, setVendedor] = useState(null);
   const [expandedCliente, setExpandedCliente] = useState(null);
   const [showForm, setShowForm] = useState(null); // cliente_id
-  const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
+  const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroOrigem, setFiltroOrigem] = useState('todos');
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -145,12 +145,18 @@ export default function MeusClientes() {
     enabled: !!user
   });
 
+  const { data: produtos = [] } = useQuery({
+    queryKey: ['produtos-crm'],
+    queryFn: () => base44.entities.Produto.filter({ ativo: true }, 'nome'),
+    enabled: !!user
+  });
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.InteracaoCliente.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['interacoes-crm']);
       setShowForm(null);
-      setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
+      setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
       toast.success('Interação registrada!');
     }
   });
@@ -337,6 +343,7 @@ export default function MeusClientes() {
       cliente_nome: cadastroClienteForm.nome.trim(),
       vendedor_id: vendedor?.id || '',
       vendedor_nome: vendedor?.nome || user?.full_name || '',
+      produtos_negociados: form.produtos.length > 0 ? form.produtos.join(', ') : ''
     });
   };
 
@@ -350,6 +357,7 @@ export default function MeusClientes() {
       cidade: cliente.cidade || '',
       estado: cliente.estado || '',
     });
+    setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
     setShowForm(cliente.id);
   };
 
@@ -729,12 +737,34 @@ export default function MeusClientes() {
                           </div>
                         </div>
                         <div>
+                          <label className="text-xs text-gray-500 mb-2 block">Produtos abordados</label>
+                          <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                            {produtos.map(p => (
+                              <label key={p.id} className="flex items-center gap-2 text-xs p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={form.produtos.includes(p.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setForm(prev => ({ ...prev, produtos: [...prev.produtos, p.id] }));
+                                    } else {
+                                      setForm(prev => ({ ...prev, produtos: prev.produtos.filter(id => id !== p.id) }));
+                                    }
+                                  }}
+                                  className="w-3.5 h-3.5 accent-[#1a3150]"
+                                />
+                                <span className="text-gray-700">{p.nome}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
                           <label className="text-xs text-gray-500 mb-1 block">Descrição *</label>
                           <textarea value={form.descricao} onChange={e => setForm(p => ({ ...p, descricao: e.target.value }))}
                             rows={3} placeholder="Descreva o que foi tratado..."
                             className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] resize-none" />
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 pt-2">
                           <Button size="sm" onClick={() => handleSave(cliente)} disabled={createMutation.isPending} className="bg-[#0f1e35] hover:bg-[#1a3150]">
                             <Save className="w-3.5 h-3.5 mr-1.5" /> Salvar
                           </Button>
