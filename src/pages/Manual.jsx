@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp } from 'lucide-react';
 
 const sections = [
   {
@@ -461,6 +461,169 @@ const sections = [
         items: [
           '**Administrador:** acesso total a todos os menus e dados de todos os vendedores.',
           '**Usuário padrão:** acesso somente aos menus liberados pelo admin, visualizando apenas seus próprios dados.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'relatorio-interacoes',
+    icon: FileText,
+    title: 'Relatório de Interações',
+    color: 'bg-cyan-50 text-cyan-600',
+    border: 'border-cyan-200',
+    content: [
+      {
+        subtitle: 'Visão geral',
+        text: 'O Relatório de Interações centraliza todos os contatos realizados com clientes e leads, permitindo acompanhamento detalhado de cada interação, resultado e próximos passos.',
+      },
+      {
+        subtitle: 'Acessar o relatório',
+        text: 'Clique no menu "Rel. Interações" na barra lateral. Administradores veem todas as interações; usuários padrão veem apenas suas interações.',
+      },
+      {
+        subtitle: 'Filtros disponíveis',
+        items: [
+          '**Data início/fim:** filtre interações por período.',
+          '**Vendedor (admin):** veja as interações de um vendedor específico ou de todos.',
+          '**Resultado:** filtre por Positivo, Neutro, Negativo ou Sem resposta.',
+          '**Tipo:** filtre por tipo de contato (Ligação, WhatsApp, E-mail, Reunião, Visita, Outro).',
+          '**Busca livre:** procure por cliente, vendedor ou descrição da interação.',
+        ],
+      },
+      {
+        subtitle: 'Gráfico de produtividade',
+        text: 'Para administradores: um gráfico de barras mostra o total de interações por vendedor, com destaque para interações positivas e negativas, facilitando análise de desempenho.',
+      },
+      {
+        subtitle: 'Visualizar perfil do cliente',
+        text: 'Clique no nome do cliente ou no ícone de olho (👁️) para abrir o perfil completo com todos os dados cadastrais, histórico de interações e próximos contatos agendados.',
+      },
+      {
+        subtitle: 'Salvar cliente em "Meus Clientes"',
+        text: 'No modal do perfil, clique em "Salvar em Meus Clientes" para transferir o cliente/lead para a carteira de um gerente específico (administrador seleciona qual gerente receberá).',
+      },
+      {
+        subtitle: 'Exportar relatório',
+        text: 'Clique em "Exportar PDF" para gerar um documento com todas as interações do período filtrado, incluindo gráficos, resumo por vendedor e listagem detalhada.',
+      },
+    ],
+  },
+  {
+    id: 'meus-clientes',
+    icon: Briefcase,
+    title: 'Meus Clientes',
+    color: 'bg-green-50 text-green-600',
+    border: 'border-green-200',
+    content: [
+      {
+        subtitle: 'O que é "Meus Clientes"?',
+        text: 'Menu para visualizar, gerenciar e interagir com sua carteira de clientes e leads. Permite registro de interações diárias, acompanhamento de próximos contatos e conversão de leads em clientes cativos.',
+      },
+      {
+        subtitle: 'Visão geral da carteira',
+        text: 'Exibe lista de todos os clientes e leads atribuídos a você (ou que você gerencia), com contador total, filtro por tipo (Clientes, Leads) e busca por nome/CPF.',
+      },
+      {
+        subtitle: 'Expandir cliente para ver detalhes',
+        steps: [
+          'Clique em qualquer cliente/lead para expandir e ver: dados cadastrais, histórico completo de interações e próximos contatos agendados.',
+          'Você também pode editar o cadastro do cliente clicando no ícone de lápis (✏️).',
+        ],
+      },
+      {
+        subtitle: 'Registrar nova interação',
+        text: 'Clique em "Nova Interação" no cliente expandido. Preencha todos os campos obrigatórios: Nome completo, CPF/CNPJ, Telefone, E-mail, Tipo de contato, Descrição e Resultado. Opcionalmente, marque a data do próximo contato.',
+      },
+      {
+        subtitle: 'Tipos de interação',
+        items: [
+          'Ligação, WhatsApp, E-mail, Reunião, Visita, Outro — escolha o tipo mais apropriado.',
+        ],
+      },
+      {
+        subtitle: 'Resultado da interação',
+        items: [
+          '**Positivo:** cliente mostrou interesse.',
+          '**Neutro:** conversação normal, sem compromisso aparente.',
+          '**Negativo:** cliente recusou ou desinteressado.',
+          '**Sem resposta:** cliente não atendeu ou não respondeu.',
+        ],
+      },
+      {
+        subtitle: 'Converter lead em cliente cativo',
+        text: 'Quando um lead (origem "Lead") possui histórico de interações e cadastro completo (Nome, CPF/CNPJ, Telefone), clique em "Converter em Cliente" para transformá-lo em cliente permanente na carteira.',
+      },
+      {
+        subtitle: 'Agenda diária de contatos',
+        text: 'Na sua carteira de clientes, uma seção "Agenda de Contatos — Leads" mostra os leads agendados para contato diário, ordenados por data. Marque como "Realizado", "Não atendeu" ou "Reagendar" conforme o resultado de cada contato.',
+      },
+      {
+        subtitle: 'Editar cadastro do cliente',
+        steps: [
+          'Clique no ícone de lápis (✏️) ao expandir o cliente.',
+          'Atualize: Nome, CPF/CNPJ, Telefone, E-mail, Cidade, Estado e Observações.',
+          'Clique em "Salvar". As informações serão atualizadas instantaneamente.',
+        ],
+      },
+      {
+        subtitle: 'Devolver leads não convertidos',
+        text: 'Para usuários com múltiplos leads: selecione os leads (checkbox) que deseja devolver para "Não Distribuídos", facilitando redistribuição posterior pelo administrador.',
+      },
+      {
+        subtitle: 'Seleção em lote (admin)',
+        text: 'Se você for administrador, pode selecionar múltiplos clientes para: trocar de gerente responsável, devolver leads não convertidos ou excluir registros em lote.',
+      },
+    ],
+  },
+  {
+    id: 'prospecccao',
+    icon: TrendingUp,
+    title: 'Prospecção — Novos Leads',
+    color: 'bg-purple-50 text-purple-600',
+    border: 'border-purple-200',
+    content: [
+      {
+        subtitle: 'O que é o menu Prospecção?',
+        text: 'Menu administrativo para importar listas de novos leads em lote, distribuir entre gerentes/vendedores e acompanhar o progresso de conversão de leads em clientes.',
+      },
+      {
+        subtitle: 'Importar lista de leads',
+        steps: [
+          'Clique em "Importar Lista" no menu Prospecção.',
+          'Faça upload de um arquivo CSV ou Excel com colunas: Nome, CPF/CNPJ, Telefone.',
+          'Nomeie o lote (ex: "Lista SP - Março 2026").',
+          'Verifique o preview dos leads a serem importados.',
+          'Clique em "Importar". Os leads serão salvos como "Pendentes de Distribuição".',
+        ],
+      },
+      {
+        subtitle: 'Distribuir leads entre gerentes',
+        steps: [
+          'Selecione um lote de status "Pendente" e clique em "Distribuir".',
+          'Escolha os gerentes/vendedores que receberão os leads (seleção múltipla).',
+          'O sistema embaralha e distribui automaticamente entre os selecionados.',
+          'Cada lead é transferido para "Meus Clientes" do gerente respectivo.',
+          'Uma agenda de contatos é gerada automaticamente (até 5 contatos por dia).',
+        ],
+      },
+      {
+        subtitle: 'Acompanhar conversão',
+        text: 'Para cada lote, veja em tempo real: total de leads, pendentes, distribuídos, convertidos e em tratamento. Uma barra de progresso mostra o percentual de conversão.',
+      },
+      {
+        subtitle: 'Redistribuir leads não convertidos',
+        text: 'Se alguns leads de um lote não foram convertidos após certo período, use "Redistribuir" para remover da carteira anterior e realocar para outros gerentes.',
+      },
+      {
+        subtitle: 'Remover duplicados',
+        text: 'Clique em "Remover Duplicados" para eliminar automaticamente leads duplicados (mesmo CPF/CNPJ ou nome) que nunca foram contactados. Leads com histórico de interação são preservados.',
+      },
+      {
+        subtitle: 'Métricas e KPIs',
+        items: [
+          '**Total de lotes:** quantidade de listas importadas.',
+          '**Aguardando distribuição:** leads ainda não distribuídos.',
+          '**Leads convertidos:** leads transformados em clientes cativos.',
         ],
       },
     ],
