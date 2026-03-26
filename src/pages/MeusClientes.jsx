@@ -36,6 +36,7 @@ export default function MeusClientes() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showTrocarGerenteModal, setShowTrocarGerenteModal] = useState(false);
   const [novoGerenteId, setNovoGerenteId] = useState('');
+  const [deduplicando, setDeduplicando] = useState(false);
   const [editandoCliente, setEditandoCliente] = useState(null);
   const [editClienteForm, setEditClienteForm] = useState({});
   const [salvandoCliente, setSalvandoCliente] = useState(false);
@@ -220,6 +221,20 @@ export default function MeusClientes() {
     });
   };
 
+  const executarDeduplicacao = async () => {
+    if (!confirm('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?')) return;
+    setDeduplicando(true);
+    try {
+      const res = await base44.functions.invoke('deduplicarLeads', {});
+      const { excluidos, grupos_com_duplicatas } = res.data;
+      toast.success(`${excluidos} lead(s) duplicado(s) removido(s) de ${grupos_com_duplicatas} grupo(s)!`);
+      queryClient.invalidateQueries(['clientes-crm']);
+    } catch (e) {
+      toast.error('Erro ao deduplicar: ' + (e.response?.data?.error || e.message));
+    }
+    setDeduplicando(false);
+  };
+
   const salvarEdicaoCliente = async () => {
     if (!editClienteForm.nome?.trim()) { toast.error('Nome é obrigatório'); return; }
     setSalvandoCliente(true);
@@ -289,9 +304,20 @@ export default function MeusClientes() {
               }
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
-            <p className="text-xs text-gray-400">clientes</p>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Button variant="outline" onClick={executarDeduplicacao} disabled={deduplicando}
+                className="border-amber-200 text-amber-700 hover:bg-amber-50 text-xs h-8 px-3">
+                {deduplicando
+                  ? <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mr-1.5" />
+                  : <Users className="w-3.5 h-3.5 mr-1.5" />}
+                Remover Duplicados
+              </Button>
+            )}
+            <div className="text-right">
+              <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
+              <p className="text-xs text-gray-400">clientes</p>
+            </div>
           </div>
         </div>
 
