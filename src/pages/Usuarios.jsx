@@ -256,43 +256,6 @@ export default function Usuarios() {
           </div>
         )}
 
-        {/* Convites Pendentes */}
-        {convitesPendentes.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-blue-500" />
-              <h3 className="text-sm font-semibold text-gray-700">Convites Pendentes</h3>
-              <span className="text-xs bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full ml-1">{convitesPendentes.length}</span>
-              <span className="text-xs text-gray-400 ml-auto">Usuários que ainda não acessaram o sistema</span>
-            </div>
-            <div className="divide-y divide-gray-50">
-              {convitesPendentes.map(u => (
-                <div key={u.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-sm flex-shrink-0">
-                      {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{u.full_name || u.email}</p>
-                      <p className="text-xs text-gray-400">{u.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-medium">Aguardando aceite</span>
-                    <button
-                      onClick={() => { if (confirm(`Cancelar convite de ${u.full_name || u.email}? O usuário será removido do sistema.`)) deleteUserMutation.mutate(u.id); }}
-                      className="p-1.5 hover:bg-red-50 rounded-lg transition text-gray-300 hover:text-red-500"
-                      title="Cancelar convite"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Tabela de usuários */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full">
