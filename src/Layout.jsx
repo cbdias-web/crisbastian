@@ -326,7 +326,7 @@ export default function Layout({ children, currentPageName }) {
       </aside>
       )}
 
-      {/* ===== MAIN CONTENT ===== */
+      {/* ===== MAIN CONTENT ===== */}
       <main className={`flex-1 ${!isMobile ? 'ml-64' : 'pt-14'}`}>
         {children}
       </main>

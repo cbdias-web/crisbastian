@@ -1,0 +1,28 @@
+{
+  "name": "Villela Exchange",
+  "short_name": "Villela",
+  "description": "Gestão Comercial - Villela Exchange",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1e35",
+  "theme_color": "#0f1e35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://base44.com/logo_v2.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://base44.com/logo_v2.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "https://base44.com/logo_v2.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
