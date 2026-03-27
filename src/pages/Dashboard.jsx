@@ -5,7 +5,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
   TrendingUp, Users, FileText, DollarSign,
-  ArrowUpRight, ChevronDown, Check, Calendar, X, Upload
+  ArrowUpRight, ChevronDown, Check, Calendar, X, Upload,
+  Briefcase, BarChart2, Target, BookOpen, MessageSquare
 } from "lucide-react";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -563,6 +564,29 @@ export default function Dashboard() {
                 })}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Navegação Rápida */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <h3 className="font-semibold text-gray-900 text-sm mb-4">Acesso Rápido</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {[
+              { label: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', color: 'bg-blue-50 text-[#1a3150]', desc: 'Carteira e agenda' },
+              { label: 'Vendas', icon: FileText, page: 'Vendas', color: 'bg-green-50 text-green-700', desc: 'Registrar vendas' },
+              { label: 'Comissões', icon: DollarSign, page: 'Comissoes', color: 'bg-amber-50 text-amber-700', desc: 'Meus ganhos' },
+              { label: 'Rel. Interações', icon: MessageSquare, page: 'RelatorioInteracoes', color: 'bg-purple-50 text-purple-700', desc: 'Histórico de contatos' },
+              { label: 'Manual', icon: BookOpen, page: 'Manual', color: 'bg-gray-50 text-gray-700', desc: 'Como usar o sistema' },
+            ].map(item => (
+              <Link key={item.page} to={createPageUrl(item.page)}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-[#1a3150]/30 hover:shadow-md transition cursor-pointer group">
+                <div className={`p-3 rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-semibold text-gray-800 text-center">{item.label}</p>
+                <p className="text-[10px] text-gray-400 text-center leading-tight">{item.desc}</p>
+              </Link>
+            ))}
           </div>
         </div>
 
