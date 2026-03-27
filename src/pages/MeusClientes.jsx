@@ -567,7 +567,24 @@ export default function MeusClientes() {
         </div>
 
         {/* Agenda de contatos (leads) */}
-        {vendedorParaAgenda && <AgendaDiariaWidget vendedorId={vendedorParaAgenda.id} />}
+        {vendedorParaAgenda && (
+          <AgendaDiariaWidget
+            vendedorId={vendedorParaAgenda.id}
+            onClienteClick={(leadId) => {
+              // Encontrar cliente pelo lead_id ou pelo id diretamente
+              const cliente = clientes.find(c => c.id === leadId || c.lead_id === leadId);
+              if (cliente) {
+                setExpandedCliente(cliente.id);
+                setFiltroOrigem('todos');
+                setSearchTerm('');
+                // Scroll até o cliente
+                setTimeout(() => {
+                  document.getElementById(`cliente-${cliente.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+              }
+            }}
+          />
+        )}
 
         {/* Barra de ações em lote */}
         {selectedIds.size > 0 && (
@@ -651,7 +668,7 @@ export default function MeusClientes() {
             const isFormOpen = showForm === cliente.id;
 
             return (
-              <div key={cliente.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${selectedIds.has(cliente.id) ? 'border-[#1a3150]/40 ring-1 ring-[#1a3150]/20' : 'border-gray-100'}`}>
+              <div key={cliente.id} id={`cliente-${cliente.id}`} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${selectedIds.has(cliente.id) ? 'border-[#1a3150]/40 ring-1 ring-[#1a3150]/20' : 'border-gray-100'}`}>
                 {/* Card header */}
                 <div
                   className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition"

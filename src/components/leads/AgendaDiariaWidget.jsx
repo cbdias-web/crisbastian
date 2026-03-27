@@ -24,7 +24,7 @@ function getLabelData(dateStr) {
   } catch { return dateStr; }
 }
 
-export default function AgendaDiariaWidget({ vendedorId }) {
+export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
   const [expanded, setExpanded] = useState(true);
   const [showAllDates, setShowAllDates] = useState(false);
   const [updating, setUpdating] = useState(null);
@@ -154,7 +154,10 @@ export default function AgendaDiariaWidget({ vendedorId }) {
                           </span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-medium text-gray-900 truncate">{item.lead_nome}</p>
+                              <p
+                                className={`text-sm font-medium truncate ${onClienteClick ? 'text-blue-700 underline cursor-pointer hover:text-blue-900' : 'text-gray-900'}`}
+                                onClick={() => onClienteClick && onClienteClick(item.lead_id)}
+                              >{item.lead_nome}</p>
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 ${sc.color}`}>
                                 <StatusIcon className="w-2.5 h-2.5" />{sc.label}
                               </span>
