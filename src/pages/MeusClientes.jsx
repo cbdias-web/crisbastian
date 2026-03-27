@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
+import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -49,6 +50,7 @@ export default function MeusClientes() {
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const [showNovoLeadModal, setShowNovoLeadModal] = useState(false);
   const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
+  const [clienteModalId, setClienteModalId] = useState(null);
   const [criandoLead, setCriandoLead] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -571,17 +573,8 @@ export default function MeusClientes() {
           <AgendaDiariaWidget
             vendedorId={vendedorParaAgenda.id}
             onClienteClick={(leadId) => {
-              // Encontrar cliente pelo lead_id ou pelo id diretamente
-              const cliente = clientes.find(c => c.id === leadId || c.lead_id === leadId);
-              if (cliente) {
-                setExpandedCliente(cliente.id);
-                setFiltroOrigem('todos');
-                setSearchTerm('');
-                // Scroll até o cliente
-                setTimeout(() => {
-                  document.getElementById(`cliente-${cliente.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 200);
-              }
+              // Abrir modal diretamente com o id do lead
+              setClienteModalId(leadId);
             }}
           />
         )}
@@ -1041,6 +1034,16 @@ export default function MeusClientes() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal Cliente (Agenda) */}
+      {clienteModalId && (
+        <ClienteInteracaoModal
+          clienteId={clienteModalId}
+          vendedor={vendedor}
+          user={user}
+          onClose={() => setClienteModalId(null)}
+        />
       )}
 
       {/* Modal Trocar Gerente */}
