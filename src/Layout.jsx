@@ -3,7 +3,8 @@ import OnboardingModal from '@/components/OnboardingModal';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X } from 'lucide-react';
+import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -141,6 +142,21 @@ export default function Layout({ children, currentPageName }) {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [impersonating, setImpersonating] = useState(() => getImpersonatedVendedor());
+  const [vendedoresList, setVendedoresList] = useState([]);
+  const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
+
+  useEffect(() => {
+    const handleChange = () => setImpersonating(getImpersonatedVendedor());
+    window.addEventListener('impersonation-change', handleChange);
+    return () => window.removeEventListener('impersonation-change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) {
+      base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedoresList).catch(() => {});
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -310,24 +326,67 @@ export default function Layout({ children, currentPageName }) {
         </nav>
         <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
           {isAdmin && (
-            <Link to={createPageUrl('Usuarios')}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-              }`}>
-              <Users className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm font-medium">Usuários</span>
-            </Link>
+            <>
+              <Link to={createPageUrl('Usuarios')}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                  currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                }`}>
+                <Users className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm font-medium">Usuários</span>
+              </Link>
+              <div className="relative">
+                <button onClick={() => setShowImpersonateMenu(p => !p)}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                    impersonating ? 'bg-amber-500/30 text-amber-200' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                  }`}>
+                  <Eye className="w-4 h-4 flex-shrink-0" />
+                  <span className="text-sm font-medium">{impersonating ? `Espelhando: ${impersonating.nome.split(' ')[0]}` : 'Espelhar Vendedor'}</span>
+                </button>
+                {showImpersonateMenu && (
+                  <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-50 max-h-64 overflow-y-auto">
+                    {impersonating && (
+                      <button onClick={() => { clearImpersonation(); setShowImpersonateMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 font-semibold">
+                        <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
+                      </button>
+                    )}
+                    <div className="my-1 border-t border-gray-100" />
+                    {vendedoresList.map(v => (
+                      <button key={v.id} onClick={() => { setImpersonatedVendedor(v); setShowImpersonateMenu(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition ${
+                          impersonating?.id === v.id ? 'font-semibold text-[#1a3150] bg-blue-50' : 'text-gray-700'
+                        }`}>
+                        {v.nome}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm font-medium">Sair</span>
           </button>
         </div>
-      </aside>
+        </aside>
+        )}
+
+      {/* ===== IMPERSONATION BANNER ===== */}
+      {impersonating && (
+        <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between px-4 py-2 text-white text-sm font-semibold" style={{ background: '#b45309' }}>
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+            <span>Você está vendo como: <strong>{impersonating.nome}</strong></span>
+          </div>
+          <button onClick={() => { clearImpersonation(); }} className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs transition">
+            <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
+          </button>
+        </div>
       )}
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className={`flex-1 ${!isMobile ? 'ml-64' : 'pt-14'}`}>
+      <main className={`flex-1 ${!isMobile ? 'ml-64' : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
         {children}
       </main>
     </div>

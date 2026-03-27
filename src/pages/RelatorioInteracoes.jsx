@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { getImpersonatedVendedor } from '@/lib/impersonation';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
  import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2 } from 'lucide-react';
@@ -46,12 +47,23 @@ export default function RelatorioInteracoes() {
     enabled: !!user
   });
 
-  React.useEffect(() => {
-    base44.auth.me().then(async u => {
+  useEffect(() => {
+    const load = async () => {
+      const u = await base44.auth.me().catch(() => null);
+      if (!u) return;
       setUser(u);
-      const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
-      if (vendedores.length > 0) setVendedor(vendedores[0]);
-    }).catch(() => {});
+      const isAdm = u.role === 'admin' || u.permissao_admin === true;
+      const impersonado = isAdm ? getImpersonatedVendedor() : null;
+      if (impersonado) {
+        setVendedor(impersonado);
+      } else {
+        const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        if (vendedores.length > 0) setVendedor(vendedores[0]);
+      }
+    };
+    load();
+    window.addEventListener('impersonation-change', load);
+    return () => window.removeEventListener('impersonation-change', load);
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;

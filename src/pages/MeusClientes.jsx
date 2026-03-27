@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
@@ -110,13 +111,35 @@ export default function MeusClientes() {
   React.useEffect(() => {
     base44.auth.me().then(async u => {
       setUser(u);
-      const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
-      if (vendedores.length > 0) {
-        setVendedor(vendedores[0]);
-        // Sincronizar agenda quando entra na página
+      const isAdm = u.role === 'admin' || u.permissao_admin === true;
+      // Verificar impersonação (admin espelhando vendedor)
+      const impersonado = isAdm ? getImpersonatedVendedor() : null;
+      if (impersonado) {
+        setVendedor(impersonado);
         setTimeout(() => sincronizarAgenda(), 500);
+      } else {
+        const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        if (vendedores.length > 0) {
+          setVendedor(vendedores[0]);
+          setTimeout(() => sincronizarAgenda(), 500);
+        }
       }
     }).catch(() => {});
+
+    const handleChange = async () => {
+      const u = await base44.auth.me().catch(() => null);
+      if (!u) return;
+      const isAdm = u.role === 'admin' || u.permissao_admin === true;
+      const impersonado = isAdm ? getImpersonatedVendedor() : null;
+      if (impersonado) {
+        setVendedor(impersonado);
+      } else {
+        const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        setVendedor(vendedores[0] || null);
+      }
+    };
+    window.addEventListener('impersonation-change', handleChange);
+    return () => window.removeEventListener('impersonation-change', handleChange);
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
