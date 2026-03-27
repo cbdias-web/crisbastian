@@ -3,7 +3,7 @@ import OnboardingModal from '@/components/OnboardingModal';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -139,6 +139,16 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const allMenuItems = [
+    ...menuItems,
+    ...(adminMenuItems.length > 0 ? adminMenuItems : []),
+    ...(isAdmin ? [{ name: 'Usuários', icon: Users, page: 'Usuarios' }] : []),
+  ];
+
+  const pageTitle = allMenuItems.find(m => m.page === currentPageName)?.name || currentPageName || 'Menu';
+
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
       {showOnboarding && user && (
@@ -148,19 +158,99 @@ export default function Layout({ children, currentPageName }) {
           onComplete={() => setShowOnboarding(false)}
         />
       )}
-      <aside className="w-64 shadow-xl flex flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
+
+      {/* ===== MOBILE TOP BAR ===== */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
+        <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1.5">
+          <Menu className="w-6 h-6" />
+        </button>
+        <span className="text-white font-semibold text-base">{pageTitle}</span>
+        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+          {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+        </div>
+      </div>
+
+      {/* ===== MOBILE DRAWER OVERLAY ===== */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative w-72 h-full flex flex-col shadow-2xl" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
+            <div className="p-5 flex items-center justify-between border-b border-white/10">
+              <div>
+                <h1 className="text-lg font-bold text-white">Villela Exchange</h1>
+                <p className="text-[10px] text-blue-300/60 uppercase tracking-widest">Gestão Comercial</p>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)} className="text-white/60 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto px-3 py-4">
+              <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mb-2">Menu</p>
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPageName === item.page;
+                return (
+                  <Link key={item.page} to={createPageUrl(item.page)}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
+                      isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                    }`}>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                    {item.badge > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
+                    )}
+                  </Link>
+                );
+              })}
+              {adminMenuItems.length > 0 && (
+                <>
+                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-4 mb-2">Administrativo</p>
+                  {adminMenuItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = currentPageName === item.page;
+                    return (
+                      <Link key={item.page} to={createPageUrl(item.page)}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
+                          isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                        }`}>
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-sm font-medium">{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </>
+              )}
+            </nav>
+            <div className="border-t border-white/10 p-3 space-y-1">
+              {isAdmin && (
+                <Link to={createPageUrl('Usuarios')} onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+                    currentPageName === 'Usuarios' ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                  }`}>
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm font-medium">Usuários</span>
+                </Link>
+              )}
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Sair</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ===== DESKTOP SIDEBAR ===== */}
+      <aside className="hidden md:flex w-64 shadow-xl flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
         <div className="p-6 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-xl font-bold text-white tracking-wide">Villela Exchange</h1>
               <p className="text-[11px] text-blue-300/60 mt-0.5 uppercase tracking-widest">Gestão Comercial</p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setDarkMode(!darkMode)}
-              className="text-blue-200/70 hover:text-white hover:bg-white/10"
-            >
+            <Button variant="ghost" size="icon" onClick={() => setDarkMode(!darkMode)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
               {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
@@ -173,32 +263,22 @@ export default function Layout({ children, currentPageName }) {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
-              <Link
-                key={item.page}
-                to={createPageUrl(item.page)}
+              <Link key={item.page} to={createPageUrl(item.page)}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
-                  isActive
-                    ? 'bg-white/15 text-white font-semibold shadow-sm'
-                    : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}
-              >
+                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm font-medium">{item.name}</span>
                 {item.badge > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                    {item.badge}
-                  </span>
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
                 )}
               </Link>
             );
           })}
-
           {adminMenuItems.length > 0 && (
             <>
-              <button
-                onClick={() => setAdminMenuOpen(prev => !prev)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-2 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white"
-              >
+              <button onClick={() => setAdminMenuOpen(prev => !prev)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-2 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
                 <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
                 <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
@@ -206,15 +286,10 @@ export default function Layout({ children, currentPageName }) {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.page;
                 return (
-                  <Link
-                    key={item.page}
-                    to={createPageUrl(item.page)}
+                  <Link key={item.page} to={createPageUrl(item.page)}
                     className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
-                      isActive
-                        ? 'bg-white/15 text-white font-semibold shadow-sm'
-                        : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
+                      isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                    }`}>
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
                   </Link>
@@ -223,32 +298,25 @@ export default function Layout({ children, currentPageName }) {
             </>
           )}
         </nav>
-        
-        {/* Menu fixo na base - sempre visível */}
         <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
           {isAdmin && (
-            <Link
-              to={createPageUrl('Usuarios')}
+            <Link to={createPageUrl('Usuarios')}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                currentPageName === 'Usuarios'
-                  ? 'bg-white/15 text-white font-semibold'
-                  : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-              }`}
-            >
+                currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+              }`}>
               <Users className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm font-medium">Usuários</span>
             </Link>
           )}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all"
-          >
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
             <LogOut className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm font-medium">Sair</span>
           </button>
         </div>
       </aside>
-      <main className="flex-1 ml-64">
+
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="flex-1 md:ml-64 pt-14 md:pt-0">
         {children}
       </main>
     </div>
