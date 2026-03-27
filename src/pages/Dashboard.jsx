@@ -200,6 +200,18 @@ export default function Dashboard() {
   const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round((producaoTimeMes / metaTimeMes) * 100), 100) : null;
   const metaTimeAtingida = metaTimeMes > 0 && producaoTimeMes >= metaTimeMes;
 
+  // Meta individual do usuário logado com bônus
+  const metaIndividual = vendedor
+    ? metas.find(m => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0)
+    : null;
+  const producaoIndividualMes = vendedor
+    ? vendas
+        .filter(v => v.data && v.data >= mesIni && v.data <= mesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome))
+        .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0)
+    : 0;
+  const faltaParaBonus = metaIndividual ? Math.max(0, metaIndividual.valor_meta - producaoIndividualMes) : 0;
+  const bonusAtingido = metaIndividual && producaoIndividualMes >= metaIndividual.valor_meta;
+
   // Gráfico ranking
   const rankingData = vendedores
     .map(v => {
@@ -298,22 +310,36 @@ export default function Dashboard() {
           
           {/* User Profile */}
           {user && (
-            <button
-              onClick={openProfileModal}
-              className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer"
-            >
-              <div className="text-right">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider">Bem-vindo</p>
-                <p className="text-sm font-semibold text-gray-900">{user.nome_tratamento || user.full_name || user.email}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
-                )}
-              </div>
-            </button>
+            <div className="flex flex-col items-end gap-1.5">
+              <button
+                onClick={openProfileModal}
+                className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer"
+              >
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Bem-vindo</p>
+                  <p className="text-sm font-semibold text-gray-900">{user.nome_tratamento || user.full_name || user.email}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+              </button>
+              {bonusAtingido && (
+                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
+                  <span>🎉</span>
+                  <span>Parabéns! Você bateu a meta e garantiu o bônus de <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong>!</span>
+                </div>
+              )}
+              {!bonusAtingido && metaIndividual && faltaParaBonus > 0 && (
+                <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
+                  <span>🎯</span>
+                  <span>Mais um pouquinho! Faltam <strong>{formatCurrency(faltaParaBonus)}</strong> para você levar <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong> de bônus!</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
