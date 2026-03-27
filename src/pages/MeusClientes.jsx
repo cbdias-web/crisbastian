@@ -157,11 +157,19 @@ export default function MeusClientes() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.InteracaoCliente.create(data),
-    onSuccess: () => {
+    onSuccess: async (_, variables) => {
+      // Se resultado negativo, remover agendamentos futuros pendentes do lead
+      if (variables.resultado === 'Negativo' && variables.cliente_id) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const agendas = await base44.entities.AgendaContato.filter({ lead_id: variables.cliente_id });
+        const futuras = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
+        for (const a of futuras) await base44.entities.AgendaContato.delete(a.id);
+        queryClient.invalidateQueries(['agenda-contatos']);
+      }
       queryClient.invalidateQueries(['interacoes-crm']);
       setShowForm(null);
       setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
-      toast.success('Interação registrada!');
+      toast.success('Interação registrada!' + (variables.resultado === 'Negativo' ? ' Agenda futura removida.' : ''));
     }
   });
 
@@ -799,8 +807,8 @@ export default function MeusClientes() {
                           </div>
                           <div>
                             <label className="text-xs text-gray-500 mb-1 block">Próximo contato</label>
-                            <input type="date" value={form.proximo_contato} onChange={e => setForm(p => ({ ...p, proximo_contato: e.target.value }))}
-                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                            <input type="date" value={form.proximo_contato} disabled={form.resultado === 'Negativo'} onChange={e => setForm(p => ({ ...p, proximo_contato: e.target.value }))}
+                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] disabled:opacity-40 disabled:cursor-not-allowed" />
                           </div>
                         </div>
                         <div>

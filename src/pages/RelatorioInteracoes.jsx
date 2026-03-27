@@ -447,7 +447,7 @@ export default function RelatorioInteracoes() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
                         <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                          {i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—'}
+                          {i.resultado === 'Negativo' ? <span className="text-gray-300 text-[10px]">—</span> : (i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—')}
                         </td>
                         <td className="px-4 py-3 text-center flex items-center justify-center gap-1">
                           <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
@@ -501,8 +501,8 @@ export default function RelatorioInteracoes() {
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Próximo contato</label>
-              <input type="date" value={editInteracaoForm.proximo_contato} onChange={e => setEditInteracaoForm(p => ({ ...p, proximo_contato: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+              <input type="date" value={editInteracaoForm.proximo_contato} disabled={editInteracaoForm.resultado === 'Negativo'} onChange={e => setEditInteracaoForm(p => ({ ...p, proximo_contato: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] disabled:opacity-40 disabled:cursor-not-allowed" />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Descrição *</label>
