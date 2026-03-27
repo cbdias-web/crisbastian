@@ -140,6 +140,13 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const allMenuItems = [
     ...menuItems,
@@ -160,19 +167,21 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
-        <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1.5">
-          <Menu className="w-6 h-6" />
-        </button>
-        <span className="text-white font-semibold text-base">{pageTitle}</span>
-        <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-          {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
+          <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1.5">
+            <Menu className="w-6 h-6" />
+          </button>
+          <span className="text-white font-semibold text-base">{pageTitle}</span>
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+            {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ===== MOBILE DRAWER OVERLAY ===== */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex">
+      {isMobile && mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <aside className="relative w-72 h-full flex flex-col shadow-2xl" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
             <div className="p-5 flex items-center justify-between border-b border-white/10">
@@ -243,7 +252,8 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {/* ===== DESKTOP SIDEBAR ===== */}
-      <aside className="hidden md:flex w-64 shadow-xl flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
+      {!isMobile && (
+      <aside className="flex w-64 shadow-xl flex-col fixed left-0 top-0 h-screen" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
         <div className="p-6 pb-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -314,9 +324,10 @@ export default function Layout({ children, currentPageName }) {
           </button>
         </div>
       </aside>
+      )}
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className="flex-1 md:ml-64 pt-14 md:pt-0">
+      {/* ===== MAIN CONTENT ===== */
+      <main className={`flex-1 ${!isMobile ? 'ml-64' : 'pt-14'}`}>
         {children}
       </main>
     </div>
