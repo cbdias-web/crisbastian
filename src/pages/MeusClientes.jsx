@@ -142,7 +142,7 @@ export default function MeusClientes() {
     return () => window.removeEventListener('impersonation-change', handleChange);
   }, []);
 
-  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+  const isAdmin = (user?.role === 'admin' || user?.permissao_admin === true) && !getImpersonatedVendedor();
 
   const { data: todosVendedores = [] } = useQuery({
     queryKey: ['vendedores-crm'],
