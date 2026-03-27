@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getImpersonatedVendedor } from "@/lib/impersonation";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import AgendaDiariaWidget from "@/components/leads/AgendaDiariaWidget";
@@ -143,18 +144,38 @@ export default function Dashboard() {
       const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
       
-      // Sincronizar agenda se o usuário tiver vendedor vinculado
+      // Sincronizar agenda se o usuário tiver vendedor vinculado (ou impersonado)
       if (usr) {
-        const vendedoresDoUser = vends.filter(v => v.email === usr.email);
-        if (vendedoresDoUser.length > 0) {
-          setVendedor(vendedoresDoUser[0]);
-          setTimeout(() => sincronizarAgenda(vendedoresDoUser[0].id), 500);
+        const isAdm = usr.role === 'admin' || usr.permissao_admin === true;
+        const impersonado = isAdm ? getImpersonatedVendedor() : null;
+        const vendedorAtivo = impersonado || vends.find(v => v.email === usr.email) || null;
+        if (vendedorAtivo) {
+          setVendedor(vendedorAtivo);
+          setTimeout(() => sincronizarAgenda(vendedorAtivo.id), 500);
         }
       }
       
       setLoading(false);
     });
   }, []);
+
+  // Reagir a mudanças de impersonação
+  useEffect(() => {
+    const handleChange = () => {
+      const impersonado = getImpersonatedVendedor();
+      if (impersonado) {
+        setVendedor(impersonado);
+      } else {
+        // Voltar para o vendedor do usuário logado
+        if (user) {
+          const v = vendedores.find(vv => vv.email === user.email) || null;
+          setVendedor(v);
+        }
+      }
+    };
+    window.addEventListener('impersonation-change', handleChange);
+    return () => window.removeEventListener('impersonation-change', handleChange);
+  }, [user, vendedores]);
 
   const produtoOptions = [...new Set(vendas.map(v => v.produto).filter(Boolean))].map(p => ({ value: p, label: p }));
   const vendedorOptions = vendedores.map(v => ({ value: v.id, label: v.nome }));
