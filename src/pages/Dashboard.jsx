@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import AgendaDiariaWidget from "@/components/leads/AgendaDiariaWidget";
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload
@@ -80,6 +79,10 @@ export default function Dashboard() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [vendedor, setVendedor] = useState(null);
 
+  const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
+  const [agendaPendentes, setAgendaPendentes] = useState(0);
+  const navigate = useNavigate();
+
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
   const [dataFim, setDataFim] = useState(toDateStr(now));
   const [selectedVendedores, setSelectedVendedores] = useState([]);
@@ -152,6 +155,13 @@ export default function Dashboard() {
         if (vendedorAtivo) {
           setVendedor(vendedorAtivo);
           setTimeout(() => sincronizarAgenda(vendedorAtivo.id), 500);
+          // Verificar agenda pendente de hoje
+          const hoje = new Date().toISOString().split('T')[0];
+          base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id })
+            .then(agenda => {
+              const pendentes = agenda.filter(a => a.data_agendada === hoje && a.status === 'pendente').length;
+              if (pendentes > 0) setAgendaPendentes(pendentes);
+            }).catch(() => {});
         }
       }
       
@@ -366,10 +376,7 @@ export default function Dashboard() {
 
         <div className="flex flex-col gap-3">
 
-          {/* Agenda do Dia - Início da Atividade */}
-        {vendedor && <AgendaDiariaWidget vendedorId={vendedor.id} />}
-
-        {/* Filtros */}
+          {/* Filtros */}
           <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <Calendar className="w-4 h-4 text-gray-400 ml-1" />
             <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
@@ -558,6 +565,38 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+
+        {/* Popup Agenda do Dia */}
+        {!agendaPopupDismissed && agendaPendentes > 0 && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+              <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] px-6 py-5 text-center">
+                <span className="text-4xl">📅</span>
+                <h3 className="text-lg font-bold text-white mt-2">Agenda do Dia</h3>
+              </div>
+              <div className="p-6 text-center space-y-3">
+                <p className="text-gray-700 font-medium">
+                  Você tem <strong className="text-amber-600">{agendaPendentes} contato{agendaPendentes > 1 ? 's' : ''} pendente{agendaPendentes > 1 ? 's' : ''}</strong> para hoje!
+                </p>
+                <p className="text-sm text-gray-500">Acesse <strong>Meus Clientes</strong> para ver e registrar seus contatos do dia.</p>
+              </div>
+              <div className="px-6 pb-6 flex gap-2">
+                <button
+                  onClick={() => setAgendaPopupDismissed(true)}
+                  className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition"
+                >
+                  Agora não
+                </button>
+                <button
+                  onClick={() => { setAgendaPopupDismissed(true); navigate('/MeusClientes'); }}
+                  className="flex-1 px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] font-semibold transition"
+                >
+                  Ver Agenda
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Modal de Perfil */}
         {showProfileModal && (
