@@ -1,0 +1,23 @@
+{
+  "name": "Comunicado",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo do comunicado"
+    },
+    "mensagem": {
+      "type": "string",
+      "description": "Conte\u00fado do comunicado"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Comunicado ativo (ser\u00e1 exibido para usu\u00e1rios que ainda n\u00e3o viram)"
+    }
+  },
+  "required": [
+    "titulo",
+    "mensagem"
+  ]
+}

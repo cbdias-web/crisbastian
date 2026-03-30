@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import OnboardingModal from '@/components/OnboardingModal';
+import ComunicadoModal from '@/components/ComunicadoModal';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ export default function Layout({ children, currentPageName }) {
   const [saving, setSaving] = useState(false);
   const [aceite, setAceite] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [comunicadoPendente, setComunicadoPendente] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then(async u => {
@@ -33,6 +35,16 @@ export default function Layout({ children, currentPageName }) {
         setAceite(a);
         if (!a || !a.termo_aceito || !a.leitura_gestao_vendas) {
           setShowOnboarding(true);
+        }
+      } catch (e) {}
+      // Verificar comunicados pendentes
+      try {
+        const comunicados = await base44.entities.Comunicado.filter({ ativo: true });
+        if (comunicados.length > 0) {
+          const leituras = await base44.entities.ComunicadoLeitura.filter({ user_id: u.id });
+          const lidosIds = new Set(leituras.map(l => l.comunicado_id));
+          const pendente = comunicados.find(c => !lidosIds.has(c.id));
+          if (pendente) setComunicadoPendente(pendente);
         }
       } catch (e) {}
       // Registrar presença online
@@ -124,6 +136,7 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const adminMenuItems = [
+    { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
     { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes' },
     { name: 'Prospecção', icon: Users, page: 'Leads' },
     { name: 'Metas', icon: Target, page: 'Metas' },
@@ -179,6 +192,13 @@ export default function Layout({ children, currentPageName }) {
           user={user}
           aceite={aceite}
           onComplete={() => setShowOnboarding(false)}
+        />
+      )}
+      {!showOnboarding && comunicadoPendente && user && (
+        <ComunicadoModal
+          comunicado={comunicadoPendente}
+          user={user}
+          onClose={() => setComunicadoPendente(null)}
         />
       )}
 

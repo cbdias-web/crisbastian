@@ -1,0 +1,28 @@
+{
+  "name": "ComunicadoLeitura",
+  "type": "object",
+  "properties": {
+    "comunicado_id": {
+      "type": "string",
+      "description": "ID do comunicado lido"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio que leu"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-mail do usu\u00e1rio que leu"
+    },
+    "lido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da leitura"
+    }
+  },
+  "required": [
+    "comunicado_id",
+    "user_id",
+    "user_email"
+  ]
+}

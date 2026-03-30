@@ -14,6 +14,7 @@ import Usuarios from './pages/Usuarios';
 import MeusClientes from './pages/MeusClientes';
 import RelatorioInteracoes from './pages/RelatorioInteracoes';
 import Leads from './pages/Leads';
+import Comunicados from './pages/Comunicados';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -118,6 +119,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Leads">
             <Leads />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Comunicados"
+        element={
+          <LayoutWrapper currentPageName="Comunicados">
+            <Comunicados />
           </LayoutWrapper>
         }
       />
