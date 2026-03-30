@@ -80,6 +80,7 @@ export default function Dashboard() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [vendedor, setVendedor] = useState(null);
 
+  const [impersonadoUser, setImpersonadoUser] = useState(null);
   const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
   const [agendaPendentes, setAgendaPendentes] = useState(0);
   const navigate = useNavigate();
@@ -125,6 +126,14 @@ export default function Dashboard() {
       console.error('Erro ao sincronizar agenda:', e);
     }
   };
+
+  // Buscar usuário do vendedor espelhado para obter avatar
+  useEffect(() => {
+    if (!impersonado?.email) { setImpersonadoUser(null); return; }
+    base44.entities.User.filter({ email: impersonado.email })
+      .then(users => setImpersonadoUser(users[0] || null))
+      .catch(() => setImpersonadoUser(null));
+  }, [impersonado?.email]);
 
   useEffect(() => {
     Promise.allSettled([
@@ -287,6 +296,7 @@ export default function Dashboard() {
 
   const impersonado = getImpersonatedVendedor();
   const displayName = impersonado ? impersonado.nome : (user?.nome_tratamento || user?.full_name || user?.email || '?');
+  const avatarUrl = impersonado ? impersonadoUser?.avatar_url : user?.avatar_url;
 
   if (loading) {
     return (
@@ -355,8 +365,8 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                  {!impersonado && user?.avatar_url ? (
-                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <span>{displayName.charAt(0).toUpperCase()}</span>
                   )}
