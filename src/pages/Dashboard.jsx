@@ -129,11 +129,12 @@ export default function Dashboard() {
 
   // Buscar usuário do vendedor espelhado para obter avatar
   useEffect(() => {
-    if (!impersonado?.email) { setImpersonadoUser(null); return; }
-    base44.entities.User.filter({ email: impersonado.email })
+    const imp = getImpersonatedVendedor();
+    if (!imp?.email) { setImpersonadoUser(null); return; }
+    base44.entities.User.filter({ email: imp.email })
       .then(users => setImpersonadoUser(users[0] || null))
       .catch(() => setImpersonadoUser(null));
-  }, [impersonado?.email]);
+  }, [vendedor?.id]);
 
   useEffect(() => {
     Promise.allSettled([
