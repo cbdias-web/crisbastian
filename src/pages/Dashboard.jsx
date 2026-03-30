@@ -285,6 +285,9 @@ export default function Dashboard() {
     { label: "Vendedores Ativos", value: vendedoresAtivos, icon: Users, light: "bg-violet-50", text: "text-violet-700" },
   ];
 
+  const impersonado = getImpersonatedVendedor();
+  const displayName = impersonado ? impersonado.nome : (user?.nome_tratamento || user?.full_name || user?.email || '?');
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -348,14 +351,14 @@ export default function Dashboard() {
                 className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer"
               >
                 <div className="text-right">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">Bem-vindo</p>
-                  <p className="text-sm font-semibold text-gray-900">{user.nome_tratamento || user.full_name || user.email}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">{impersonado ? 'Espelhando' : 'Bem-vindo'}</p>
+                  <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                  {user.avatar_url ? (
+                  {!impersonado && user?.avatar_url ? (
                     <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <span>{(user.nome_tratamento || user.full_name || user.email || '?').charAt(0).toUpperCase()}</span>
+                    <span>{displayName.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
               </button>
