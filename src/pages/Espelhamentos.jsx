@@ -127,19 +127,24 @@ export default function Espelhamentos() {
   };
 
   const gerarRelatorioGeral = async () => {
-    if (comDados.length === 0) {
-      toast.error('Nenhum indicador com comissão no período');
+    const base = selectedForRelatorio.length > 0
+      ? comDados.filter(e => selectedForRelatorio.includes(e.id))
+      : comDados;
+    if (base.length === 0) {
+      toast.error('Nenhum indicador selecionado ou com comissão no período');
       return;
     }
     
     setGeratingPDF('geral');
     try {
-      const indicadoresIds = comDados.map(e => e.id);
-      const indicadoresNomes = comDados.map(e => e.nome);
+      const indicadoresIds = base.map(e => e.id);
+      const indicadoresNomes = base.map(e => e.nome);
       
       const response = await base44.functions.invoke('gerarRelatorioComissoesPDF', {
         indicadores_ids: indicadoresIds,
         indicadores_nomes: indicadoresNomes,
+        vendedores_ids: [],
+        somente_indicadores: true,
         dataInicio: dateFrom,
         dataFim: dateTo
       });
@@ -151,7 +156,7 @@ export default function Espelhamentos() {
       a.download = `relatorio-indicadores-${mesFiltro}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Relatório geral gerado!');
+      toast.success('Relatório gerado!');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
     }
@@ -305,15 +310,15 @@ export default function Espelhamentos() {
                 <Download className="w-4 h-4" /> Exportar
               </button>
               <button 
-                onClick={gerarRelatorioGeral}
-                disabled={geratingPDF === 'geral'}
-                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50">
-                {geratingPDF === 'geral' ? (
-                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4" />
-                )}
-                Relatório Geral
+              onClick={gerarRelatorioGeral}
+              disabled={geratingPDF === 'geral'}
+              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50">
+              {geratingPDF === 'geral' ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              {selectedForRelatorio.length > 0 ? `Relatório (${selectedForRelatorio.length} selecionados)` : 'Relatório Geral'}
               </button>
               <button 
                 onClick={abrirModalEnvio}
