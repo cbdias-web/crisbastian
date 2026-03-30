@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 export default function Comunicados() {
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ titulo: '', mensagem: '', ativo: true });
   const [viewingLeituras, setViewingLeituras] = useState(null);
   const queryClient = useQueryClient();
@@ -18,6 +19,17 @@ export default function Comunicados() {
   const { data: leituras = [] } = useQuery({
     queryKey: ['comunicado-leituras'],
     queryFn: () => base44.entities.ComunicadoLeitura.list(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Comunicado.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['comunicados']);
+      toast.success('Comunicado atualizado!');
+      setForm({ titulo: '', mensagem: '', ativo: true });
+      setEditingId(null);
+      setShowForm(false);
+    }
   });
 
   const createMutation = useMutation({
@@ -48,13 +60,23 @@ export default function Comunicados() {
     }
   });
 
+  const handleEdit = (c) => {
+    setEditingId(c.id);
+    setForm({ titulo: c.titulo, mensagem: c.mensagem, ativo: c.ativo });
+    setShowForm(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.titulo.trim() || !form.mensagem.trim()) {
       toast.error('Preencha título e mensagem');
       return;
     }
-    createMutation.mutate(form);
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, data: form });
+    } else {
+      createMutation.mutate(form);
+    }
   };
 
   return (
@@ -67,7 +89,7 @@ export default function Comunicados() {
             <p className="text-sm text-gray-400 mt-0.5">Mensagens exibidas aos usuários ao acessar a plataforma</p>
           </div>
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ titulo: '', mensagem: '', ativo: true }); }}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-xl transition shadow-sm hover:opacity-90"
             style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}
           >
@@ -78,7 +100,7 @@ export default function Comunicados() {
         {/* Formulário */}
         {showForm && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-900 mb-4">Novo Comunicado</h3>
+            <h3 className="font-semibold text-gray-900 mb-4">{editingId ? 'Editar Comunicado' : 'Novo Comunicado'}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-gray-500 mb-1 block">Título *</label>
@@ -105,8 +127,8 @@ export default function Comunicados() {
                 <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
                   Cancelar
                 </button>
-                <button type="submit" disabled={createMutation.isPending} className="px-5 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
-                  {createMutation.isPending ? 'Publicando...' : 'Publicar'}
+                <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="px-5 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 hover:opacity-90" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
+                  {editingId ? (updateMutation.isPending ? 'Salvando...' : 'Salvar') : (createMutation.isPending ? 'Publicando...' : 'Publicar')}
                 </button>
               </div>
             </form>
@@ -165,6 +187,13 @@ export default function Comunicados() {
                       )}
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(c)}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg transition"
+                        title="Editar comunicado"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
                       <button
                         onClick={() => toggleMutation.mutate({ id: c.id, ativo: !c.ativo })}
                         className="p-1.5 hover:bg-gray-100 rounded-lg transition"
