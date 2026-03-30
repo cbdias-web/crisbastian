@@ -276,6 +276,12 @@ export default function Vendas() {
     }
   };
 
+  const handleDuplicate = async (venda) => {
+    if (!confirm(`Duplicar a venda de "${venda.cliente || venda.produto}"?`)) return;
+    const { id, created_date, updated_date, created_by, ...dados } = venda;
+    createMutation.mutate({ ...dados, data: new Date().toISOString().split('T')[0] });
+  };
+
   const filteredVendas = vendas.filter(venda => {
     const term = searchTerm.toLowerCase();
     const matchSearch = (
@@ -659,6 +665,14 @@ export default function Vendas() {
                           )}
                           {isAdmin && (
                             <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDuplicate(venda)}
+                                title="Duplicar venda"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
