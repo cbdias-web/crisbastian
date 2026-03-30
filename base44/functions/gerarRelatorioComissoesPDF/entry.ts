@@ -18,9 +18,9 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Acesso negado: apenas administradores' }, { status: 403 });
         }
 
-        const { vendedores_ids = [], indicadores_ids = [], dataInicio, dataFim } = await req.json();
+        const { vendedores_ids = [], indicadores_ids = [], dataInicio, dataFim, somente_indicadores = false } = await req.json();
 
-        if (vendedores_ids.length === 0 && indicadores_ids.length === 0) {
+        if (!somente_indicadores && vendedores_ids.length === 0 && indicadores_ids.length === 0) {
             return Response.json({ error: 'Selecione pelo menos um vendedor ou indicador' }, { status: 400 });
         }
 
@@ -167,7 +167,7 @@ Deno.serve(async (req) => {
         y += 40;
 
         // Seção Vendedores
-        if (comissoesVendedores.length > 0) {
+        if (!somente_indicadores && comissoesVendedores.length > 0) {
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
             doc.setTextColor(0, 0, 0);
