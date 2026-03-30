@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus } from "lucide-react";
+import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus, ChevronDown, Check } from "lucide-react";
 import { toast } from "sonner";
 
 const formasPagamento = [
@@ -47,9 +47,32 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [novoCliente, setNovoCliente] = useState({ nome: '', cpf_cnpj: '', email: '', telefone: '', cidade: '', estado: '', observacao: '' });
   const [criandoCliente, setCriandoCliente] = useState(false);
   const clienteRef = useRef(null);
+  const produtoRef = useRef(null);
+  const vendedorRef = useRef(null);
+  const [produtoOpen, setProdutoOpen] = useState(false);
+  const [vendedorOpen, setVendedorOpen] = useState(false);
+
+  // Multi-select produtos
+  const [selectedProdutos, setSelectedProdutos] = useState(() => {
+    if (!venda?.produto) return [];
+    return venda.produto.split(',').map(p => p.trim()).filter(Boolean);
+  });
+
+  // Multi-select vendedores
+  const [selectedVendedores, setSelectedVendedores] = useState(() => {
+    if (!venda?.vendedor_id) return [];
+    // suporte a múltiplos vendedores salvos como array ou único
+    if (venda.vendedores_ids?.length > 0) return venda.vendedores_ids;
+    if (venda.vendedor_id) return [{ id: venda.vendedor_id, nome: venda.assessor_comercial || '', percentual_comissao: venda.percentual_comissao || 10 }];
+    return [];
+  });
 
   useEffect(() => {
-    const handler = (e) => { if (clienteRef.current && !clienteRef.current.contains(e.target)) setClienteDropdown(false); };
+    const handler = (e) => {
+      if (clienteRef.current && !clienteRef.current.contains(e.target)) setClienteDropdown(false);
+      if (produtoRef.current && !produtoRef.current.contains(e.target)) setProdutoOpen(false);
+      if (vendedorRef.current && !vendedorRef.current.contains(e.target)) setVendedorOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
@@ -117,6 +140,20 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteExcedido = totalPctIndicadores > 50;
   const requerAutorizacao = !isAdmin && totalPctIndicadores > 30 && totalPctIndicadores <= 50;
+
+  const toggleProduto = (nomeProduto) => {
+    setSelectedProdutos(prev =>
+      prev.includes(nomeProduto) ? prev.filter(p => p !== nomeProduto) : [...prev, nomeProduto]
+    );
+  };
+
+  const toggleVendedor = (vendedor) => {
+    setSelectedVendedores(prev => {
+      const exists = prev.find(v => v.id === vendedor.id);
+      if (exists) return prev.filter(v => v.id !== vendedor.id);
+      return [...prev, { id: vendedor.id, nome: vendedor.nome, percentual_comissao: vendedor.percentual_comissao || 10 }];
+    });
+  };
 
   const handleVendedorChange = (vendedorId) => {
     const vendedor = vendedores.find(v => v.id === vendedorId);
@@ -215,23 +252,28 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (limiteExcedido) return;
-    
+    if (selectedProdutos.length === 0) { toast.error('Selecione ao menos um produto'); return; }
+    if (selectedVendedores.length === 0) { toast.error('Selecione ao menos um vendedor'); return; }
+
+    const primaryVendedor = selectedVendedores[0];
     const dataToSave = {
       ...formData,
+      produto: selectedProdutos.join(', '),
+      assessor_comercial: selectedVendedores.map(v => v.nome).join(', '),
+      vendedor_id: primaryVendedor.id,
+      percentual_comissao: parseFloat(formData.percentual_comissao) || primaryVendedor.percentual_comissao || 10,
+      vendedores_ids: selectedVendedores,
       valor: parseFloat(formData.valor) || 0,
-      percentual_comissao: parseFloat(formData.percentual_comissao) || 0,
       indicadores,
-      // backward compat
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
     };
-    
-    // Notificar administrador se espelhamento > 30%
+
     if (requerAutorizacao) {
       try {
         await base44.functions.invoke('notificarAutorizacaoEspelhamento', {
-          vendedor_nome: formData.assessor_comercial,
+          vendedor_nome: dataToSave.assessor_comercial,
           cliente: formData.cliente,
           valor: formData.valor,
           total_espelhamento: totalPctIndicadores,
@@ -242,7 +284,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
         console.error('Erro ao notificar administrador:', error);
       }
     }
-    
+
     onSave(dataToSave);
   };
 
@@ -254,23 +296,55 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Produto *</Label>
-              <Select value={formData.produto} onValueChange={v => setFormData({ ...formData, produto: v })} required>
-                <SelectTrigger><SelectValue placeholder="Selecione o produto" /></SelectTrigger>
-                <SelectContent>
-                  {produtos.map(p => <SelectItem key={p.id} value={p.nome}>{p.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div ref={produtoRef}>
+              <Label>Produto * {selectedProdutos.length > 0 && <span className="text-xs font-normal text-gray-400">({selectedProdutos.length} selecionado{selectedProdutos.length > 1 ? 's' : ''})</span>}</Label>
+              <div className="relative">
+                <button type="button" onClick={() => setProdutoOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 py-2 border border-input rounded-md text-sm bg-background hover:bg-gray-50 transition text-left">
+                  <span className={selectedProdutos.length === 0 ? 'text-gray-400' : 'text-gray-900'}>
+                    {selectedProdutos.length === 0 ? 'Selecione o(s) produto(s)' : selectedProdutos.join(', ')}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${produtoOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {produtoOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                    {produtos.map(p => (
+                      <button key={p.id} type="button" onClick={() => toggleProduto(p.nome)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedProdutos.includes(p.nome) ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                          {selectedProdutos.includes(p.nome) && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className="text-gray-800">{p.nome}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <Label>Vendedor *</Label>
-              <Select value={formData.vendedor_id} onValueChange={handleVendedorChange} required>
-                <SelectTrigger><SelectValue placeholder="Selecione o vendedor" /></SelectTrigger>
-                <SelectContent>
-                  {vendedores.map(v => <SelectItem key={v.id} value={v.id}>{v.nome}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            <div ref={vendedorRef}>
+              <Label>Vendedor * {selectedVendedores.length > 0 && <span className="text-xs font-normal text-gray-400">({selectedVendedores.length} selecionado{selectedVendedores.length > 1 ? 's' : ''})</span>}</Label>
+              <div className="relative">
+                <button type="button" onClick={() => setVendedorOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 py-2 border border-input rounded-md text-sm bg-background hover:bg-gray-50 transition text-left">
+                  <span className={selectedVendedores.length === 0 ? 'text-gray-400' : 'text-gray-900'}>
+                    {selectedVendedores.length === 0 ? 'Selecione o(s) vendedor(es)' : selectedVendedores.map(v => v.nome).join(', ')}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${vendedorOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {vendedorOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                    {vendedores.map(v => (
+                      <button key={v.id} type="button" onClick={() => toggleVendedor(v)}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedVendedores.find(sv => sv.id === v.id) ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                          {selectedVendedores.find(sv => sv.id === v.id) && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className="text-gray-800">{v.nome}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <Label>Comissão Vendedor (%)</Label>
