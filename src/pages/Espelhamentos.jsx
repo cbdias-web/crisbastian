@@ -22,6 +22,7 @@ export default function Espelhamentos() {
   const [sendingBulk, setSendingBulk] = useState(false);
   const [enviosRealizados, setEnviosRealizados] = useState([]);
   const [user, setUser] = useState(null);
+  const [selectedForRelatorio, setSelectedForRelatorio] = useState([]);
 
   const queryClient = useQueryClient();
 
@@ -179,6 +180,18 @@ export default function Espelhamentos() {
       toast.error(error.response?.data?.error || 'Erro ao enviar e-mail');
     }
     setSendingEmail(null);
+  };
+
+  const toggleSelectForRelatorio = (id) => {
+    setSelectedForRelatorio(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleAllForRelatorio = () => {
+    setSelectedForRelatorio(prev =>
+      prev.length === comDados.length ? [] : comDados.map(i => i.id)
+    );
   };
 
   const toggleSelectForEmail = (id) => {
