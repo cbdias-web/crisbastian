@@ -384,86 +384,92 @@ export default function Espelhamentos() {
         ) : (
           <>
             {comDados.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {comDados.map(i => {
-                  const vendasDoMes = vendas.filter(v =>
-                    (v.indicadores?.some(ind => ind.id === i.id) || v.espelhamento_id === i.id || v.espelhamento === i.nome) &&
-                    v.data && v.data >= dateFrom && v.data <= dateTo
-                  );
-                  const volume = vendasDoMes.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
-
-                  return (
-                    <div key={i.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                            {i.nome?.charAt(0).toUpperCase()}
+              <>
+                <div className="flex items-center gap-3 px-1">
+                  <input type="checkbox"
+                    checked={selectedForRelatorio.length === comDados.length && comDados.length > 0}
+                    onChange={toggleAllForRelatorio}
+                    className="w-4 h-4 accent-[#1a3150] cursor-pointer"
+                  />
+                  <span className="text-xs text-gray-500">
+                    {selectedForRelatorio.length === 0
+                      ? `Selecionar todos para relatório (${comDados.length})`
+                      : `${selectedForRelatorio.length} selecionado(s) para relatório`}
+                  </span>
+                  {selectedForRelatorio.length > 0 && (
+                    <button onClick={() => setSelectedForRelatorio([])} className="text-xs text-red-400 hover:text-red-600 ml-auto">Limpar seleção</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {comDados.map(i => {
+                    const vendasDoMes = vendas.filter(v =>
+                      (v.indicadores?.some(ind => ind.id === i.id) || v.espelhamento_id === i.id || v.espelhamento === i.nome) &&
+                      v.data && v.data >= dateFrom && v.data <= dateTo
+                    );
+                    return (
+                      <div key={i.id} className={`bg-white rounded-2xl shadow-sm border p-5 hover:shadow-md transition ${selectedForRelatorio.includes(i.id) ? 'border-[#1a3150]/40 ring-1 ring-[#1a3150]/20' : 'border-gray-100'}`}>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <input type="checkbox"
+                              checked={selectedForRelatorio.includes(i.id)}
+                              onChange={() => toggleSelectForRelatorio(i.id)}
+                              className="w-4 h-4 accent-[#1a3150] cursor-pointer flex-shrink-0"
+                            />
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {i.nome?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{i.nome}</p>
+                              <p className="text-xs text-gray-400">{i.email || "—"}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">{i.nome}</p>
-                            <p className="text-xs text-gray-400">{i.email || "—"}</p>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${i.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                            {i.ativo !== false ? "Ativo" : "Inativo"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                          <div className="text-center p-2 bg-gray-50 rounded-xl">
+                            <p className="text-lg font-bold text-gray-900">{vendasDoMes.length}</p>
+                            <p className="text-[10px] text-gray-400">Vendas</p>
+                          </div>
+                          <div className="text-center p-2 bg-blue-50 rounded-xl">
+                            <p className="text-xs font-bold text-blue-700">{i.percentual_comissao ?? 0}%</p>
+                            <p className="text-[10px] text-blue-400">Comissão</p>
                           </div>
                         </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${i.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                          {i.ativo !== false ? "Ativo" : "Inativo"}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 mb-4">
-                        <div className="text-center p-2 bg-gray-50 rounded-xl">
-                          <p className="text-lg font-bold text-gray-900">{vendasDoMes.length}</p>
-                          <p className="text-[10px] text-gray-400">Vendas</p>
-                        </div>
-                        <div className="text-center p-2 bg-blue-50 rounded-xl">
-                          <p className="text-xs font-bold text-blue-700">{i.percentual_comissao ?? 0}%</p>
-                          <p className="text-[10px] text-blue-400">Comissão</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end text-xs text-gray-400">
-                        <div className="flex gap-1">
-                          <button 
-                            onClick={() => gerarRelatorio(i)} 
-                            disabled={geratingPDF === i.id}
-                            className="p-1.5 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
-                            title="Gerar relatório PDF"
-                          >
-                            {geratingPDF === i.id ? (
-                              <div className="w-3.5 h-3.5 border border-blue-400 border-t-transparent rounded-full animate-spin" />
-                            ) : (
-                              <FileText className="w-3.5 h-3.5 text-blue-500" />
-                            )}
-                          </button>
-                          {isAdmin && i.email && (
-                            <button
-                              onClick={() => enviarRelatorioPorEmail(i)}
-                              disabled={sendingEmail === i.id}
-                              className="p-1.5 hover:bg-green-50 rounded-lg transition disabled:opacity-50"
-                              title="Enviar relatório por e-mail"
-                            >
-                              {sendingEmail === i.id ? (
-                                <div className="w-3.5 h-3.5 border border-green-400 border-t-transparent rounded-full animate-spin" />
-                              ) : (
-                                <Send className="w-3.5 h-3.5 text-green-600" />
-                              )}
+                        <div className="flex items-center justify-end text-xs text-gray-400">
+                          <div className="flex gap-1">
+                            <button onClick={() => gerarRelatorio(i)} disabled={geratingPDF === i.id}
+                              className="p-1.5 hover:bg-blue-50 rounded-lg transition disabled:opacity-50" title="Gerar relatório PDF">
+                              {geratingPDF === i.id
+                                ? <div className="w-3.5 h-3.5 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                : <FileText className="w-3.5 h-3.5 text-blue-500" />}
                             </button>
-                          )}
-                          {isAdmin && (
-                            <>
-                              <button onClick={() => handleEdit(i)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                                <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                            {isAdmin && i.email && (
+                              <button onClick={() => enviarRelatorioPorEmail(i)} disabled={sendingEmail === i.id}
+                                className="p-1.5 hover:bg-green-50 rounded-lg transition disabled:opacity-50" title="Enviar relatório por e-mail">
+                                {sendingEmail === i.id
+                                  ? <div className="w-3.5 h-3.5 border border-green-400 border-t-transparent rounded-full animate-spin" />
+                                  : <Send className="w-3.5 h-3.5 text-green-600" />}
                               </button>
-                              <button onClick={() => handleDelete(i.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                              </button>
-                            </>
-                          )}
+                            )}
+                            {isAdmin && (
+                              <>
+                                <button onClick={() => handleEdit(i)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                                  <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                                </button>
+                                <button onClick={() => handleDelete(i.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </>
             )}
 
             {!isLoading && semDados.length > 0 && (

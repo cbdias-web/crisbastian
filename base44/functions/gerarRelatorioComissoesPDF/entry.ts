@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
         const indicadores = await base44.asServiceRole.entities.Espelhamento.list();
 
         // Filtrar comissões por período e IDs selecionados
-        const comissoesVendedores = todasComissoes.filter(c => {
+        const comissoesVendedores = somente_indicadores ? [] : todasComissoes.filter(c => {
             const dentroDataInicio = !dataInicio || c.data_venda >= dataInicio;
             const dentroDataFim = !dataFim || c.data_venda <= dataFim;
             const vendedorSelecionado = vendedores_ids.length === 0 || vendedores_ids.includes(c.vendedor_id);
@@ -107,12 +107,14 @@ Deno.serve(async (req) => {
 
         y += 6;
         doc.setTextColor(100, 100, 100);
-        doc.text('Vendedores:', 14, y);
-        doc.setTextColor(0, 0, 0);
-        const vendedoresTexto = vendedores_ids.length === 0 ? 'Todos' : vendedores_ids.length + ' selecionados';
-        doc.text(vendedoresTexto, 50, y);
-
-        y += 6;
+        if (!somente_indicadores) {
+            doc.text('Vendedores:', 14, y);
+            doc.setTextColor(0, 0, 0);
+            const vendedoresTexto = vendedores_ids.length === 0 ? 'Todos' : vendedores_ids.length + ' selecionados';
+            doc.text(vendedoresTexto, 50, y);
+            y += 6;
+            doc.setTextColor(100, 100, 100);
+        }
         doc.setTextColor(100, 100, 100);
         doc.text('Indicadores:', 14, y);
         doc.setTextColor(0, 0, 0);
@@ -120,6 +122,7 @@ Deno.serve(async (req) => {
         doc.text(indicadoresTexto, 50, y);
 
         y += 14;
+        doc.setTextColor(0, 0, 0);
 
         // Cards resumo
         doc.setFillColor(245, 247, 250);
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
         doc.setFontSize(7);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100, 100, 100);
-        doc.text('vendedores + indicadores', cardX, y + 20);
+        doc.text(somente_indicadores ? 'indicadores' : 'vendedores + indicadores', cardX, y + 20);
         
         cardX += cardWidth;
         doc.setFontSize(8);
