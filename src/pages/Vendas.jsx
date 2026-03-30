@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ImportarVendasModal from '../components/vendas/ImportarVendasModal';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -25,8 +25,21 @@ export default function Vendas() {
   const now = new Date();
   const [dataInicio, setDataInicio] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`);
   const [dataFim, setDataFim] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`);
-  const [produtoFiltro, setProdutoFiltro] = useState('todos');
-  const [vendedorFiltro, setVendedorFiltro] = useState('todos');
+  const [produtosFiltro, setProdutosFiltro] = useState([]);
+  const [vendedoresFiltro, setVendedoresFiltro] = useState([]);
+  const [vendedorDropOpen, setVendedorDropOpen] = useState(false);
+  const [produtoDropOpen, setProdutoDropOpen] = useState(false);
+  const vendedorDropRef = useRef(null);
+  const produtoDropRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (vendedorDropRef.current && !vendedorDropRef.current.contains(e.target)) setVendedorDropOpen(false);
+      if (produtoDropRef.current && !produtoDropRef.current.contains(e.target)) setProdutoDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const [gerandoRelatorioPDF, setGerandoRelatorioPDF] = useState(false);
   const queryClient = useQueryClient();
@@ -273,8 +286,8 @@ export default function Vendas() {
     );
 
     const matchData = (!dataInicio || venda.data >= dataInicio) && (!dataFim || venda.data <= dataFim);
-    const matchProduto = produtoFiltro === 'todos' || venda.produto === produtoFiltro;
-    const matchVendedor = vendedorFiltro === 'todos' || venda.assessor_comercial === vendedorFiltro;
+    const matchProduto = produtosFiltro.length === 0 || produtosFiltro.some(p => venda.produto?.includes(p));
+    const matchVendedor = vendedoresFiltro.length === 0 || vendedoresFiltro.some(nome => venda.assessor_comercial?.includes(nome));
 
     return matchSearch && matchData && matchProduto && matchVendedor;
   });
@@ -329,8 +342,8 @@ export default function Vendas() {
       const response = await base44.functions.invoke('gerarRelatorioVendasPDF', {
         dataInicio,
         dataFim,
-        vendedorFiltro: vendedorFiltro === 'todos' ? null : vendedorFiltro,
-        produtoFiltro: produtoFiltro === 'todos' ? null : produtoFiltro
+        vendedorFiltro: vendedoresFiltro.length > 0 ? vendedoresFiltro[0] : null,
+        produtoFiltro: produtosFiltro.length > 0 ? produtosFiltro[0] : null
       });
       
       const blob = new Blob([response.data], { type: 'application/pdf' });
@@ -485,51 +498,79 @@ export default function Vendas() {
                   onChange={(e) => setDataFim(e.target.value)}
                 />
               </div>
-              <div>
+              <div ref={vendedorDropRef}>
                 <Label>Vendedor</Label>
-                <Select value={vendedorFiltro} onValueChange={setVendedorFiltro}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os Vendedores</SelectItem>
-                    {(() => {
-                      const vendasPeriodo = vendas.filter(v =>
-                        (!dataInicio || v.data >= dataInicio) &&
-                        (!dataFim || v.data <= dataFim)
-                      );
-                      const vendedoresComVendas = new Set(vendasPeriodo.map(v => v.assessor_comercial));
-                      return vendedores
-                        .filter(v => v.ativo && vendedoresComVendas.has(v.nome))
-                        .map((v) => (
-                          <SelectItem key={v.id} value={v.nome}>{v.nome}</SelectItem>
-                        ));
-                    })()}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <button type="button" onClick={() => setVendedorDropOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-2 border border-input rounded-md text-sm bg-background hover:bg-gray-50 transition text-left h-9">
+                    <span className={vendedoresFiltro.length === 0 ? 'text-gray-500' : 'text-gray-900 truncate'}>
+                      {vendedoresFiltro.length === 0 ? 'Todos Vendedores' : vendedoresFiltro.length === 1 ? vendedoresFiltro[0] : `${vendedoresFiltro.length} selecionados`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 ml-1 transition-transform ${vendedorDropOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {vendedorDropOpen && (
+                    <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                      <button type="button" onClick={() => setVendedoresFiltro([])}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${vendedoresFiltro.length === 0 ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                          {vendedoresFiltro.length === 0 && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className="text-gray-800 font-medium">Todos</span>
+                      </button>
+                      {vendedores.filter(v => v.ativo).map(v => (
+                        <button key={v.id} type="button" onClick={() => setVendedoresFiltro(prev => prev.includes(v.nome) ? prev.filter(n => n !== v.nome) : [...prev, v.nome])}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                          <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${vendedoresFiltro.includes(v.nome) ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                            {vendedoresFiltro.includes(v.nome) && <Check className="w-3 h-3 text-white" />}
+                          </span>
+                          <span className="text-gray-800 uppercase">{v.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
+              <div ref={produtoDropRef}>
                 <Label>Produto</Label>
-                <Select value={produtoFiltro} onValueChange={setProdutoFiltro}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os Produtos</SelectItem>
-                    {produtos.map((p) => (
-                      <SelectItem key={p.id} value={p.nome}>{p.nome}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <button type="button" onClick={() => setProdutoDropOpen(o => !o)}
+                    className="w-full flex items-center justify-between px-3 py-2 border border-input rounded-md text-sm bg-background hover:bg-gray-50 transition text-left h-9">
+                    <span className={produtosFiltro.length === 0 ? 'text-gray-500' : 'text-gray-900 truncate'}>
+                      {produtosFiltro.length === 0 ? 'Todos os Produtos' : produtosFiltro.length === 1 ? produtosFiltro[0] : `${produtosFiltro.length} selecionados`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 ml-1 transition-transform ${produtoDropOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {produtoDropOpen && (
+                    <div className="absolute z-40 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+                      <button type="button" onClick={() => setProdutosFiltro([])}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                        <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${produtosFiltro.length === 0 ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                          {produtosFiltro.length === 0 && <Check className="w-3 h-3 text-white" />}
+                        </span>
+                        <span className="text-gray-800 font-medium">Todos</span>
+                      </button>
+                      {produtos.map(p => (
+                        <button key={p.id} type="button" onClick={() => setProdutosFiltro(prev => prev.includes(p.nome) ? prev.filter(n => n !== p.nome) : [...prev, p.nome])}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                          <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${produtosFiltro.includes(p.nome) ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                            {produtosFiltro.includes(p.nome) && <Check className="w-3 h-3 text-white" />}
+                          </span>
+                          <span className="text-gray-800">{p.nome}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex items-end">
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    setDataInicio('');
-                    setDataFim('');
-                    setProdutoFiltro('todos');
-                    setVendedorFiltro('todos');
+                    const n = new Date();
+                    setDataInicio(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`);
+                    setDataFim(`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`);
+                    setProdutosFiltro([]);
+                    setVendedoresFiltro([]);
                   }}
                 >
                   Limpar Filtros
