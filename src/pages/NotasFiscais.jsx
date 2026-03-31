@@ -23,6 +23,7 @@ const EMPTY_FORM = {
   data_emissao: new Date().toISOString().split('T')[0],
   id_cobranca: '', observacao: '',
   mapa_producao_url: '', mapa_producao_nome: '',
+  nf_url: '', nf_nome: '',
   emitida: false, enviada: false, paga: false,
 };
 
@@ -31,6 +32,7 @@ export default function NotasFiscais() {
   const [editingNF, setEditingNF] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadingNF, setUploadingNF] = useState(false);
   const [search, setSearch] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
@@ -105,6 +107,23 @@ export default function NotasFiscais() {
     setFormData(f => ({ ...f, mapa_producao_url: file_url, mapa_producao_nome: file.name }));
     setUploadingFile(false);
     toast.success('Arquivo anexado!');
+  };
+
+  const handleUploadNF = async (file) => {
+    if (!file) return;
+    setUploadingNF(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setFormData(f => ({ ...f, nf_url: file_url, nf_nome: file.name }));
+    setUploadingNF(false);
+    toast.success('NF anexada!');
+  };
+
+  const handleUploadNFDireto = async (nf, file) => {
+    if (!file) return;
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.entities.NotaFiscal.update(nf.id, { nf_url: file_url, nf_nome: file.name });
+    queryClient.invalidateQueries(['notas-fiscais']);
+    toast.success('NF anexada!');
   };
 
   const handleSubmit = (e) => {
@@ -291,6 +310,7 @@ export default function NotasFiscais() {
                     <th className="px-4 py-3 text-left">ID Cobrança</th>
                     <th className="px-4 py-3 text-right">Valor Líquido</th>
                     <th className="px-4 py-3 text-left">Mapa</th>
+                    <th className="px-4 py-3 text-left">NF Gerada</th>
                     <th className="px-4 py-3 text-center">Status</th>
                     <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
@@ -313,12 +333,28 @@ export default function NotasFiscais() {
                       </td>
                       <td className="px-4 py-3">
                         {nf.mapa_producao_url ? (
-                          <a href={nf.mapa_producao_url} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs" title={nf.mapa_producao_nome}>
-                            <Paperclip className="w-3.5 h-3.5" />
-                            <span className="truncate max-w-[80px]">{nf.mapa_producao_nome || 'Arquivo'}</span>
-                          </a>
+                         <a href={nf.mapa_producao_url} target="_blank" rel="noopener noreferrer"
+                           className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs" title={nf.mapa_producao_nome}>
+                           <Paperclip className="w-3.5 h-3.5" />
+                           <span className="truncate max-w-[80px]">{nf.mapa_producao_nome || 'Arquivo'}</span>
+                         </a>
                         ) : <span className="text-gray-300 text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {nf.nf_url ? (
+                          <a href={nf.nf_url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-emerald-600 hover:text-emerald-800 text-xs" title={nf.nf_nome}>
+                            <FileText className="w-3.5 h-3.5" />
+                            <span className="truncate max-w-[80px]">{nf.nf_nome || 'NF'}</span>
+                          </a>
+                        ) : (
+                          <label className="flex items-center gap-1 text-gray-400 hover:text-blue-500 text-xs cursor-pointer" title="Anexar NF gerada">
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Anexar NF</span>
+                            <input type="file" accept=".pdf" className="hidden"
+                              onChange={e => e.target.files[0] && handleUploadNFDireto(nf, e.target.files[0])} />
+                          </label>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1.5">
@@ -358,7 +394,7 @@ export default function NotasFiscais() {
                     <td className="px-4 py-3 text-right font-bold text-[#1a3150]">
                       {formatCurrency(totalFiltrado)}
                     </td>
-                    <td colSpan={3}></td>
+                    <td colSpan={4}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -437,6 +473,23 @@ export default function NotasFiscais() {
                     </label>
                     {formData.mapa_producao_url && (
                       <a href={formData.mapa_producao_url} target="_blank" rel="noopener noreferrer"
+                        className="px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                        Visualizar
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Nota Fiscal Gerada (PDF)</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-blue-300 bg-blue-50/30 rounded-lg cursor-pointer hover:bg-blue-50 text-sm text-gray-500 flex-1">
+                      <FileText className="w-4 h-4 text-blue-500" />
+                      {uploadingNF ? 'Enviando...' : formData.nf_nome || 'Anexar NF gerada (PDF)...'}
+                      <input type="file" accept=".pdf" className="hidden"
+                        onChange={e => e.target.files[0] && handleUploadNF(e.target.files[0])} disabled={uploadingNF} />
+                    </label>
+                    {formData.nf_url && (
+                      <a href={formData.nf_url} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
                         Visualizar
                       </a>
