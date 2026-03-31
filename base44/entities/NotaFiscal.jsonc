@@ -57,6 +57,10 @@
       "type": "boolean",
       "default": false,
       "description": "NF foi paga"
+    },
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda gerada automaticamente ao marcar como paga"
     }
   },
   "required": [

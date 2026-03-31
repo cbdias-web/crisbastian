@@ -87,10 +87,36 @@ export default function NotasFiscais() {
     onSuccess: () => { queryClient.invalidateQueries(['notas-fiscais']); toast.success('NF excluída!'); },
   });
 
-  const toggleFlagMutation = useMutation({
-    mutationFn: ({ id, flag, value }) => base44.entities.NotaFiscal.update(id, { [flag]: value }),
-    onSuccess: () => queryClient.invalidateQueries(['notas-fiscais']),
-  });
+  const toggleFlag = async (nf, flag, value) => {
+    // Ao marcar como paga: criar venda. Ao desmarcar: remover venda vinculada.
+    if (flag === 'paga') {
+      if (value === true) {
+        // Criar venda na entidade Venda
+        const venda = await base44.entities.Venda.create({
+          produto: nf.produto || 'Nota Fiscal',
+          assessor_comercial: 'NOTA FISCAL',
+          cliente: nf.cliente_parceiro,
+          valor: nf.valor_liquido,
+          data: nf.data_emissao || new Date().toISOString().split('T')[0],
+          observacao: `Lançamento automático via NF. ID Cobrança: ${nf.id_cobranca || '-'}`,
+          forma_pagamento: 'TRANSFERÊNCIA',
+        });
+        await base44.entities.NotaFiscal.update(nf.id, { paga: true, venda_id: venda.id });
+        toast.success('NF marcada como paga e venda registrada!');
+      } else {
+        // Remover venda vinculada
+        if (nf.venda_id) {
+          await base44.entities.Venda.delete(nf.venda_id).catch(() => {});
+        }
+        await base44.entities.NotaFiscal.update(nf.id, { paga: false, venda_id: '' });
+        toast.success('NF desmarcada. Venda removida.');
+      }
+    } else {
+      await base44.entities.NotaFiscal.update(nf.id, { [flag]: value });
+    }
+    queryClient.invalidateQueries(['notas-fiscais']);
+    queryClient.invalidateQueries(['vendas']);
+  };
 
   const fecharForm = () => { setShowForm(false); setEditingNF(null); setFormData(EMPTY_FORM); };
 
@@ -363,7 +389,7 @@ export default function NotasFiscais() {
                             const ativo = nf[flag.key];
                             return (
                               <button key={flag.key} title={flag.label}
-                                onClick={() => toggleFlagMutation.mutate({ id: nf.id, flag: flag.key, value: !ativo })}
+                                onClick={() => toggleFlag(nf, flag.key, !ativo)}
                                 className={`p-1.5 rounded-lg transition ${ativo ? `${flag.activeBg} text-white` : `${flag.bg} ${flag.color} hover:opacity-80`}`}>
                                 <Icon className="w-3.5 h-3.5" />
                               </button>
