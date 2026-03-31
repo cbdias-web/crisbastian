@@ -78,13 +78,32 @@ export default function NotasFiscais() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.NotaFiscal.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries(['notas-fiscais']); toast.success('NF atualizada!'); fecharForm(); },
+    mutationFn: async ({ id, data, nfAtual }) => {
+      await base44.entities.NotaFiscal.update(id, data);
+      // Se a NF está paga e tem venda vinculada, atualiza a venda
+      const vendaId = nfAtual?.venda_id || data.venda_id;
+      if (data.paga && vendaId) {
+        await base44.entities.Venda.update(vendaId, {
+          produto: data.produto || 'Nota Fiscal',
+          cliente: data.cliente_parceiro,
+          valor: parseFloat(data.valor_liquido) || 0,
+          data: data.data_emissao,
+          observacao: `Lançamento automático via NF. ID Cobrança: ${data.id_cobranca || '-'}`,
+        });
+      }
+    },
+    onSuccess: () => { queryClient.invalidateQueries(['notas-fiscais']); queryClient.invalidateQueries(['vendas']); toast.success('NF atualizada!'); fecharForm(); },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.NotaFiscal.delete(id),
-    onSuccess: () => { queryClient.invalidateQueries(['notas-fiscais']); toast.success('NF excluída!'); },
+    mutationFn: async (nf) => {
+      // Se tinha venda vinculada, remove também
+      if (nf.venda_id) {
+        await base44.entities.Venda.delete(nf.venda_id).catch(() => {});
+      }
+      return base44.entities.NotaFiscal.delete(nf.id);
+    },
+    onSuccess: () => { queryClient.invalidateQueries(['notas-fiscais']); queryClient.invalidateQueries(['vendas']); toast.success('NF excluída!'); },
   });
 
   const toggleFlag = async (nf, flag, value) => {
@@ -155,7 +174,7 @@ export default function NotasFiscais() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = { ...formData, valor_liquido: parseFloat(formData.valor_liquido) || 0 };
-    if (editingNF) { updateMutation.mutate({ id: editingNF.id, data }); }
+    if (editingNF) { updateMutation.mutate({ id: editingNF.id, data, nfAtual: editingNF }); }
     else { createMutation.mutate(data); }
   };
 
@@ -403,7 +422,7 @@ export default function NotasFiscais() {
                             className="p-1.5 hover:bg-gray-100 rounded-lg transition" title="Editar">
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />
                           </button>
-                          <button onClick={() => { if (confirm('Excluir esta NF?')) deleteMutation.mutate(nf.id); }}
+                          <button onClick={() => { if (confirm('Excluir esta NF?')) deleteMutation.mutate(nf); }}
                             className="p-1.5 hover:bg-red-50 rounded-lg transition" title="Excluir">
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                           </button>
