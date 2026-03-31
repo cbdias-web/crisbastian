@@ -16,6 +16,8 @@ import RelatorioInteracoes from './pages/RelatorioInteracoes';
 import Leads from './pages/Leads';
 import Comunicados from './pages/Comunicados';
 import NotasFiscais from './pages/NotasFiscais';
+import Treinamento from './pages/Treinamento';
+import TreinamentoAdmin from './pages/TreinamentoAdmin';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -136,6 +138,22 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="NotasFiscais">
             <NotasFiscais />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Treinamento"
+        element={
+          <LayoutWrapper currentPageName="Treinamento">
+            <Treinamento />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/TreinamentoAdmin"
+        element={
+          <LayoutWrapper currentPageName="TreinamentoAdmin">
+            <TreinamentoAdmin />
           </LayoutWrapper>
         }
       />

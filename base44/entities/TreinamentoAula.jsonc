@@ -1,0 +1,55 @@
+{
+  "name": "TreinamentoAula",
+  "type": "object",
+  "properties": {
+    "modulo_id": {
+      "type": "string",
+      "description": "ID do m\u00f3dulo ao qual pertence"
+    },
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo da aula"
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o / resumo da aula"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "video",
+        "pdf",
+        "texto",
+        "link"
+      ],
+      "default": "video",
+      "description": "Tipo de conte\u00fado"
+    },
+    "url_conteudo": {
+      "type": "string",
+      "description": "URL do v\u00eddeo, PDF ou link externo"
+    },
+    "texto_conteudo": {
+      "type": "string",
+      "description": "Conte\u00fado em texto (para tipo texto)"
+    },
+    "ordem": {
+      "type": "number",
+      "description": "Ordem dentro do m\u00f3dulo",
+      "default": 0
+    },
+    "duracao_min": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o estimada em minutos"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "modulo_id",
+    "titulo",
+    "tipo"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "TreinamentoProgresso",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio"
+    },
+    "aula_id": {
+      "type": "string",
+      "description": "ID da aula conclu\u00edda"
+    },
+    "modulo_id": {
+      "type": "string",
+      "description": "ID do m\u00f3dulo da aula"
+    },
+    "concluido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora de conclus\u00e3o"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email",
+    "aula_id",
+    "modulo_id"
+  ]
+}
