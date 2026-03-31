@@ -23,6 +23,7 @@ export default function TreinamentoAdmin() {
   const [formModulo, setFormModulo] = useState(EMPTY_MODULO);
   const [formAula, setFormAula] = useState(EMPTY_AULA);
   const [uploadingCapa, setUploadingCapa] = useState(false);
+  const [uploadingPDF, setUploadingPDF] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -93,6 +94,14 @@ export default function TreinamentoAdmin() {
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
     setFormModulo(f => ({ ...f, capa_url: file_url }));
     setUploadingCapa(false);
+  };
+
+  const handleUploadPDF = async (file) => {
+    setUploadingPDF(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setFormAula(f => ({ ...f, url_conteudo: file_url, _pdf_nome: file.name }));
+    setUploadingPDF(false);
+    toast.success('PDF anexado!');
   };
 
   if (!isAdmin && user) {
@@ -352,14 +361,37 @@ export default function TreinamentoAdmin() {
                   ))}
                 </div>
               </div>
-              {(formAula.tipo === 'video' || formAula.tipo === 'pdf' || formAula.tipo === 'link') && (
+              {(formAula.tipo === 'video' || formAula.tipo === 'link') && (
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    {formAula.tipo === 'video' ? 'URL do Vídeo (YouTube, Vimeo ou direto)' : formAula.tipo === 'pdf' ? 'URL do PDF' : 'URL do Link'}
+                    {formAula.tipo === 'video' ? 'URL do Vídeo (YouTube, Vimeo ou direto)' : 'URL do Link'}
                   </label>
                   <input value={formAula.url_conteudo} onChange={e => setFormAula(f => ({ ...f, url_conteudo: e.target.value }))}
                     placeholder="https://..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                </div>
+              )}
+              {formAula.tipo === 'pdf' && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Arquivo PDF</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-blue-300 bg-blue-50/30 rounded-lg cursor-pointer hover:bg-blue-50 text-sm text-gray-500">
+                      <FileText className="w-4 h-4 text-blue-500" />
+                      {uploadingPDF ? 'Enviando...' : formAula._pdf_nome || (formAula.url_conteudo ? 'Trocar PDF' : 'Clique para anexar PDF')}
+                      <input type="file" accept=".pdf" className="hidden"
+                        onChange={e => e.target.files[0] && handleUploadPDF(e.target.files[0])} disabled={uploadingPDF} />
+                    </label>
+                    {formAula.url_conteudo && (
+                      <a href={formAula.url_conteudo} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> Visualizar PDF atual
+                      </a>
+                    )}
+                    <p className="text-[10px] text-gray-400">Ou cole uma URL diretamente:</p>
+                    <input value={formAula.url_conteudo} onChange={e => setFormAula(f => ({ ...f, url_conteudo: e.target.value, _pdf_nome: '' }))}
+                      placeholder="https://... (opcional se já fez upload)"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                  </div>
                 </div>
               )}
               {formAula.tipo === 'texto' && (
