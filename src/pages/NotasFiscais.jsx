@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { format, parseISO } from 'date-fns';
@@ -13,7 +13,7 @@ const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
 const STATUS_FLAGS = [
-  { key: 'emitida', label: 'Emitida', icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', activeBg: 'bg-blue-500' },
+  { key: 'emitida', label: 'Solicitada', icon: FileText, color: 'text-blue-500', bg: 'bg-blue-50', activeBg: 'bg-blue-500' },
   { key: 'enviada', label: 'Enviada', icon: Send, color: 'text-green-500', bg: 'bg-green-50', activeBg: 'bg-green-500' },
   { key: 'paga', label: 'Paga', icon: DollarSign, color: 'text-amber-500', bg: 'bg-amber-50', activeBg: 'bg-amber-500' },
 ];
@@ -48,6 +48,27 @@ export default function NotasFiscais() {
     queryKey: ['produtos'],
     queryFn: () => base44.entities.Produto.filter({ ativo: true }, 'nome'),
   });
+
+  const { data: clientes = [] } = useQuery({
+    queryKey: ['clientes'],
+    queryFn: () => base44.entities.Cliente.list('nome'),
+  });
+
+  const [clienteSearch, setClienteSearch] = useState('');
+  const [clienteDropOpen, setClienteDropOpen] = useState(false);
+  const clienteDropRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (clienteDropRef.current && !clienteDropRef.current.contains(e.target)) setClienteDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const clientesFiltrados = clientes.filter(c =>
+    c.nome?.toLowerCase().includes(clienteSearch.toLowerCase())
+  ).slice(0, 10);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.NotaFiscal.create(data),
@@ -165,7 +186,7 @@ export default function NotasFiscais() {
     <p class="sub">Período: ${periodoLabel} | Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
     <button onclick="window.print()" style="padding:6px 16px;background:#0f1e35;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:12px;">Imprimir / Salvar PDF</button>
     <table>
-      <thead><tr><th>Data Emissão</th><th>Cliente / Parceiro</th><th>Produto</th><th>ID Cobrança</th><th style="text-align:right">Valor Líquido</th><th>Emitida</th><th>Enviada</th><th>Paga</th></tr></thead>
+      <thead><tr><th>Data Emissão</th><th>Cliente / Parceiro</th><th>Produto</th><th>ID Cobrança</th><th style="text-align:right">Valor Líquido</th><th>Solicitada</th><th>Enviada</th><th>Paga</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <p class="total">Total: ${formatCurrency(total)}</p>
@@ -358,9 +379,30 @@ export default function NotasFiscais() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
+                <div className="md:col-span-2" ref={clienteDropRef}>
                   <Label>Cliente / Parceiro *</Label>
-                  <Input value={formData.cliente_parceiro} onChange={e => setFormData(f => ({ ...f, cliente_parceiro: e.target.value }))} required />
+                  <div className="relative">
+                    <input
+                      value={formData.cliente_parceiro}
+                      onChange={e => { setFormData(f => ({ ...f, cliente_parceiro: e.target.value })); setClienteSearch(e.target.value); setClienteDropOpen(true); }}
+                      onFocus={() => { setClienteSearch(formData.cliente_parceiro); setClienteDropOpen(true); }}
+                      required
+                      placeholder="Buscar ou digitar cliente/parceiro..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]"
+                    />
+                    {clienteDropOpen && clientesFiltrados.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {clientesFiltrados.map(c => (
+                          <button key={c.id} type="button"
+                            onMouseDown={() => { setFormData(f => ({ ...f, cliente_parceiro: c.nome })); setClienteDropOpen(false); }}
+                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition">
+                            <span className="font-medium text-gray-900">{c.nome}</span>
+                            {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label>Produto</Label>
