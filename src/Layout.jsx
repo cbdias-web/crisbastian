@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -137,6 +137,7 @@ export default function Layout({ children, currentPageName }) {
 
   const adminMenuItems = [
     { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
+    { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
     { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes' },
     { name: 'Prospecção', icon: Users, page: 'Leads' },
     { name: 'Metas', icon: Target, page: 'Metas' },

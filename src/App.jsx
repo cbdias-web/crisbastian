@@ -15,6 +15,7 @@ import MeusClientes from './pages/MeusClientes';
 import RelatorioInteracoes from './pages/RelatorioInteracoes';
 import Leads from './pages/Leads';
 import Comunicados from './pages/Comunicados';
+import NotasFiscais from './pages/NotasFiscais';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -127,6 +128,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Comunicados">
             <Comunicados />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/NotasFiscais"
+        element={
+          <LayoutWrapper currentPageName="NotasFiscais">
+            <NotasFiscais />
           </LayoutWrapper>
         }
       />

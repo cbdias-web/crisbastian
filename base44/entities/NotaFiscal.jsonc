@@ -1,0 +1,60 @@
+{
+  "name": "NotaFiscal",
+  "type": "object",
+  "properties": {
+    "cliente_parceiro": {
+      "type": "string",
+      "description": "Nome do cliente ou parceiro"
+    },
+    "valor_liquido": {
+      "type": "number",
+      "description": "Valor l\u00edquido da NF"
+    },
+    "produto": {
+      "type": "string",
+      "description": "Produto a que se refere a NF"
+    },
+    "data_emissao": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de emiss\u00e3o da NF"
+    },
+    "id_cobranca": {
+      "type": "string",
+      "description": "ID da cobran\u00e7a"
+    },
+    "mapa_producao_url": {
+      "type": "string",
+      "description": "URL do arquivo do mapa de produ\u00e7\u00e3o (PDF/planilha)"
+    },
+    "mapa_producao_nome": {
+      "type": "string",
+      "description": "Nome original do arquivo do mapa de produ\u00e7\u00e3o"
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es adicionais"
+    },
+    "emitida": {
+      "type": "boolean",
+      "default": false,
+      "description": "NF foi emitida"
+    },
+    "enviada": {
+      "type": "boolean",
+      "default": false,
+      "description": "NF foi enviada"
+    },
+    "paga": {
+      "type": "boolean",
+      "default": false,
+      "description": "NF foi paga"
+    }
+  },
+  "required": [
+    "cliente_parceiro",
+    "valor_liquido",
+    "produto",
+    "data_emissao"
+  ]
+}

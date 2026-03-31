@@ -17,7 +17,7 @@ const exportCSV = (vendedores) => {
 };
 
 export default function Vendedores() {
-  const [modal, setModal] = useState(null); // null | "create" | vendedor object
+  const [modal, setModal] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -27,7 +27,7 @@ export default function Vendedores() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
-  const [modalBonus, setModalBonus] = useState(null); // {vendedor_id, vendedor_nome, valor_atual}
+  const [modalBonus, setModalBonus] = useState(null);
   const [valorBonus, setValorBonus] = useState("");
   const [sendingEmail, setSendingEmail] = useState(null);
   const [selectedForEmail, setSelectedForEmail] = useState([]);
@@ -105,7 +105,6 @@ export default function Vendedores() {
         dataInicio: dateFrom,
         dataFim: dateTo
       });
-      
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -125,19 +124,16 @@ export default function Vendedores() {
       toast.error('Nenhum vendedor com comissão no período');
       return;
     }
-    
     setGeratingPDF('geral');
     try {
       const vendedoresIds = comDados.map(v => v.id);
       const vendedoresNomes = comDados.map(v => v.nome);
-      
       const response = await base44.functions.invoke('gerarRelatorioComissoesPDF', {
         vendedores_ids: vendedoresIds,
         vendedores_nomes: vendedoresNomes,
         dataInicio: dateFrom,
         dataFim: dateTo
       });
-      
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -158,7 +154,6 @@ export default function Vendedores() {
       return;
     }
     if (!confirm(`Enviar relatório do período para ${vendedor.email}?`)) return;
-    
     setSendingEmail(vendedor.id);
     try {
       await base44.functions.invoke('enviarRelatorioPorEmail', {
@@ -182,7 +177,6 @@ export default function Vendedores() {
       toast.error('Nenhum vendedor com e-mail cadastrado');
       return;
     }
-    // Carregar histórico de envios do localStorage
     const historicoKey = `envios_relatorios_${mesFiltro}`;
     const historico = JSON.parse(localStorage.getItem(historicoKey) || '[]');
     setEnviosRealizados(historico);
@@ -191,12 +185,10 @@ export default function Vendedores() {
 
   const enviarRelatoriosEmMassa = async () => {
     const vendedoresSelecionados = comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
-    
     setSendingBulk(true);
     let sucessos = 0;
     let erros = 0;
     const novosEnvios = [];
-    
     for (const v of vendedoresSelecionados) {
       try {
         await base44.functions.invoke('enviarRelatorioPorEmail', {
@@ -219,16 +211,12 @@ export default function Vendedores() {
         erros++;
       }
     }
-    
-    // Salvar histórico no localStorage
     const historicoKey = `envios_relatorios_${mesFiltro}`;
     const historicoAtual = JSON.parse(localStorage.getItem(historicoKey) || '[]');
     localStorage.setItem(historicoKey, JSON.stringify([...historicoAtual, ...novosEnvios]));
-    
     setSendingBulk(false);
     setShowEmailModal(false);
     setSelectedForEmail([]);
-    
     if (erros === 0) {
       toast.success(`${sucessos} relatório(s) enviado(s) com sucesso!`);
     } else {
@@ -236,38 +224,23 @@ export default function Vendedores() {
     }
   };
 
-  const getSelecionadosParaEmail = () => {
-    return comDados.filter(v => selectedForEmail.includes(v.id) && v.email);
-  };
-
   const toggleSelectForEmail = (vendedorId) => {
-    setSelectedForEmail(prev => 
+    setSelectedForEmail(prev =>
       prev.includes(vendedorId) ? prev.filter(id => id !== vendedorId) : [...prev, vendedorId]
     );
   };
 
-  const toggleSelectAllForEmail = () => {
-    const vendedoresComEmail = comDados.filter(v => v.email);
-    if (selectedForEmail.length === vendedoresComEmail.length) {
-      setSelectedForEmail([]);
-    } else {
-      setSelectedForEmail(vendedoresComEmail.map(v => v.id));
-    }
-  };
-
   const abrirModalBonus = async (vendedor) => {
-    // Buscar apenas bônus MANUAL existente do mês
     const bonusExistente = await base44.entities.Comissao.filter({
       vendedor_id: vendedor.id,
       mes_referencia: mesFiltro,
       tipo: 'bonus',
       venda_id: `BONUS_MANUAL_${mesFiltro}_${vendedor.id}`
     });
-    
     const valorAtual = bonusExistente.length > 0 ? bonusExistente[0].valor_comissao : 0;
     setValorBonus(valorAtual.toString());
-    setModalBonus({ 
-      vendedor_id: vendedor.id, 
+    setModalBonus({
+      vendedor_id: vendedor.id,
       vendedor_nome: vendedor.nome,
       bonus_existente_id: bonusExistente.length > 0 ? bonusExistente[0].id : null
     });
@@ -278,22 +251,15 @@ export default function Vendedores() {
       toast.error('Valor inválido');
       return;
     }
-
     try {
       const valor = parseFloat(valorBonus);
-      
       if (valor === 0 && modalBonus.bonus_existente_id) {
-        // Remover bônus se valor for zero
         await base44.entities.Comissao.delete(modalBonus.bonus_existente_id);
         toast.success('Bônus removido!');
       } else if (modalBonus.bonus_existente_id) {
-        // Atualizar bônus existente
-        await base44.entities.Comissao.update(modalBonus.bonus_existente_id, {
-          valor_comissao: valor
-        });
+        await base44.entities.Comissao.update(modalBonus.bonus_existente_id, { valor_comissao: valor });
         toast.success('Bônus atualizado!');
       } else if (valor > 0) {
-        // Criar novo bônus manual
         await base44.entities.Comissao.create({
           venda_id: `BONUS_MANUAL_${mesFiltro}_${modalBonus.vendedor_id}`,
           vendedor_id: modalBonus.vendedor_id,
@@ -308,7 +274,6 @@ export default function Vendedores() {
         });
         toast.success('Bônus concedido!');
       }
-      
       setModalBonus(null);
       queryClient.invalidateQueries(['vendedores', 'vendas', 'metas']);
     } catch (error) {
@@ -316,73 +281,36 @@ export default function Vendedores() {
     }
   };
 
-  // Month range for volume calc
   const [anoFiltro, mesFiltroNum] = mesFiltro.split("-");
   const dateFrom = `${mesFiltro}-01`;
   const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
   const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
 
-  // Filtrar e organizar vendedores
   const vendedoresFiltrados = vendedores.filter(v => {
-    // Filtro de permissão
     if (!isAdmin && user?.email && v.email !== user.email) return false;
-    // Filtro de status
     if (statusFilter === "todos") return true;
     if (statusFilter === "ativo") return v.ativo !== false;
     return v.ativo === false;
   });
 
-  // Classificar vendedores
-  const vendedoresComDados = [];
-  const vendedoresSemDados = [];
-
-  vendedoresFiltrados.forEach(v => {
-    const vendasV = vendas.filter(vd =>
-      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
-      vd.data && vd.data >= dateFrom && vd.data <= dateTo
-    );
-    const temVenda = vendasV.length > 0;
-    
-    // Verificar se tem comissões no período
-    const comissoesV = (async () => {
-      const todasComissoes = await base44.entities.Comissao.filter({ vendedor_id: v.id });
-      return todasComissoes.filter(c => 
-        c.data_venda && c.data_venda >= dateFrom && c.data_venda <= dateTo
-      );
-    });
-    
-    if (temVenda) {
-      vendedoresComDados.push({ ...v, _prioridade: 1 });
-    } else {
-      // Assumir que tem comissão se não tem venda mas está ativo
-      vendedoresComDados.push({ ...v, _prioridade: 2 });
-    }
-  });
-
-  // Buscar comissões para determinar status (síncrono)
   const { data: comissoes = [] } = useQuery({
     queryKey: ["comissoes"],
     queryFn: () => base44.entities.Comissao.list(),
   });
 
-  // Verificar quais realmente têm dados (vendas OU comissões)
   const visibleVendedores = vendedoresFiltrados.map(v => {
     const vendasV = vendas.filter(vd =>
       (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
       vd.data && vd.data >= dateFrom && vd.data <= dateTo
     );
-    
     const comissoesV = comissoes.filter(c =>
       c.vendedor_id === v.id &&
       c.data_venda && c.data_venda >= dateFrom && c.data_venda <= dateTo
     );
-    
     return { ...v, _temDados: vendasV.length > 0 || comissoesV.length > 0 };
   }).sort((a, b) => {
-    // Primeiro: com dados
     if (a._temDados && !b._temDados) return -1;
     if (!a._temDados && b._temDados) return 1;
-    // Depois: alfabética
     return a.nome.localeCompare(b.nome);
   });
 
@@ -404,7 +332,7 @@ export default function Vendedores() {
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /> Exportar
               </button>
-              <button 
+              <button
                 onClick={gerarRelatorioGeral}
                 disabled={geratingPDF === 'geral'}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition disabled:opacity-50">
@@ -415,7 +343,7 @@ export default function Vendedores() {
                 )}
                 Relatório Geral
               </button>
-              <button 
+              <button
                 onClick={abrirModalEnvio}
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition shadow-sm">
                 <Send className="w-4 h-4" /> Enviar Relatórios
@@ -446,7 +374,7 @@ export default function Vendedores() {
           )}
         </div>
 
-        {/* Cards grid - Com dados */}
+        {/* Cards grid */}
         {isLoading ? (
           <div className="flex justify-center py-16">
             <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
@@ -462,222 +390,206 @@ export default function Vendedores() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {comDados.map(v => {
-              const vendasDoMes = vendas.filter(vd =>
-                (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
-                vd.data && vd.data >= dateFrom && vd.data <= dateTo
-              );
-              const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-              const usuario = usuarios.find(u => u.email === v.email);
-              const temPermissao = usuario?.permissao_admin || false;
+                    const vendasDoMes = vendas.filter(vd =>
+                      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+                      vd.data && vd.data >= dateFrom && vd.data <= dateTo
+                    );
+                    const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+                    const usuario = usuarios.find(u => u.email === v.email);
+                    const temPermissao = usuario?.permissao_admin || false;
+                    const metaIndividual = metas.find(m =>
+                      m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
+                    );
+                    const valorMeta = metaIndividual?.valor_meta || 0;
+                    const progresso = valorMeta > 0 ? (volume / valorMeta) * 100 : 0;
+                    const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
-              // Meta individual do mês
-              const metaIndividual = metas.find(m =>
-                m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
-              );
-              const valorMeta = metaIndividual?.valor_meta || 0;
-              const progresso = valorMeta > 0 ? (volume / valorMeta) * 100 : 0;
-              const atingiu = valorMeta > 0 && volume >= valorMeta;
-              const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
-
-              return (
-                <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                        {v.nome?.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
-                        <p className="text-xs text-gray-400">{v.email || "—"}</p>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                      {v.ativo !== false ? "Ativo" : "Inativo"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="text-center p-2 bg-gray-50 rounded-xl">
-                      <p className="text-lg font-bold text-gray-900">{vendasDoMes.length}</p>
-                      <p className="text-[10px] text-gray-400">Vendas</p>
-                    </div>
-                    <div className="text-center p-2 bg-gray-50 rounded-xl">
-                      <p className="text-xs font-bold text-gray-900">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(volume)}</p>
-                      <p className="text-[10px] text-gray-400">Volume/mês</p>
-                    </div>
-                    <div className="text-center p-2 bg-blue-50 rounded-xl">
-                      <p className="text-xs font-bold text-blue-700">{v.percentual_comissao ?? 0}%</p>
-                      <p className="text-[10px] text-blue-400">Comissão</p>
-                    </div>
-                  </div>
-
-                  {/* Barra de progresso da meta */}
-                  {valorMeta > 0 && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-[10px] text-gray-400 mb-1">
-                        <span>Meta: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorMeta)}</span>
-                        <span className={`font-semibold ${progresso > 100 ? "text-yellow-600" : progresso >= 100 ? "text-emerald-600" : progresso >= 70 ? "text-blue-600" : "text-gray-500"}`}>
-                          {progresso > 100 ? `🏆 ${progresso.toFixed(0)}%` : `${progresso.toFixed(0)}%`}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-2">
-                        <div className={`${cor} h-2 rounded-full transition-all duration-500`} style={{ width: `${Math.min(progresso, 100)}%` }} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-xs text-gray-400">
-                    <div className="flex items-center gap-2">
-                      {v.time && <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
-                      {/* Admin permission toggle */}
-                      {isAdmin && v.email && usuario && (
-                        <div className="flex items-center gap-1">
-                          <input type="checkbox" checked={temPermissao}
-                            onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
-                            className="w-3.5 h-3.5 accent-[#1a3150] cursor-pointer" />
-                          <span className="text-[10px] text-gray-400">Admin</span>
+                    return (
+                      <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {v.nome?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
+                              <p className="text-xs text-gray-400">{v.email || "—"}</p>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                            {v.ativo !== false ? "Ativo" : "Inativo"}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => gerarRelatorio(v)} 
-                        disabled={geratingPDF === v.id}
-                        className="p-1.5 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
-                        title="Gerar relatório PDF"
-                      >
-                        {geratingPDF === v.id ? (
-                          <div className="w-3.5 h-3.5 border border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <FileText className="w-3.5 h-3.5 text-blue-500" />
-                        )}
-                      </button>
-                      {isAdmin && v.email && (
-                        <button
-                          onClick={() => enviarRelatorioPorEmail(v)}
-                          disabled={sendingEmail === v.id}
-                          className="p-1.5 hover:bg-green-50 rounded-lg transition disabled:opacity-50"
-                          title="Enviar relatório por e-mail"
-                        >
-                          {sendingEmail === v.id ? (
-                            <div className="w-3.5 h-3.5 border border-green-400 border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Send className="w-3.5 h-3.5 text-green-600" />
-                          )}
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={() => abrirModalBonus(v)}
-                            className="p-1.5 hover:bg-amber-50 rounded-lg transition"
-                            title="Gerenciar bônus"
-                          >
-                            <DollarSign className="w-3.5 h-3.5 text-amber-500" />
-                          </button>
-                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                            <Edit2 className="w-3.5 h-3.5 text-gray-400" />
-                          </button>
-                          <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
-        {/* Vendedores sem dados - Separado */}
-        {!isLoading && semDados.length > 0 && (
-          <>
-            <div className="pt-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3">
-                Sem vendas ou comissões no período
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
-              {semDados.map(v => {
-                const vendasDoMes = vendas.filter(vd =>
-                  (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
-                  vd.data && vd.data >= dateFrom && vd.data <= dateTo
-                );
-                const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-                const usuario = usuarios.find(u => u.email === v.email);
-                const temPermissao = usuario?.permissao_admin || false;
-
-                const metaIndividual = metas.find(m =>
-                  m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
-                );
-                const valorMeta = metaIndividual?.valor_meta || 0;
-
-                return (
-                  <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                          {v.nome?.charAt(0).toUpperCase()}
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          <div className="text-center p-2 bg-gray-50 rounded-xl">
+                            <p className="text-lg font-bold text-gray-900">{vendasDoMes.length}</p>
+                            <p className="text-[10px] text-gray-400">Vendas</p>
+                          </div>
+                          <div className="text-center p-2 bg-gray-50 rounded-xl">
+                            <p className="text-xs font-bold text-gray-900">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(volume)}</p>
+                            <p className="text-[10px] text-gray-400">Volume/mês</p>
+                          </div>
+                          <div className="text-center p-2 bg-blue-50 rounded-xl">
+                            <p className="text-xs font-bold text-blue-700">{v.percentual_comissao ?? 0}%</p>
+                            <p className="text-[10px] text-blue-400">Comissão</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
-                          <p className="text-xs text-gray-400">{v.email || "—"}</p>
-                        </div>
-                      </div>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                        {v.ativo !== false ? "Ativo" : "Inativo"}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                      <div className="text-center p-2 bg-gray-50 rounded-xl">
-                        <p className="text-lg font-bold text-gray-400">0</p>
-                        <p className="text-[10px] text-gray-400">Vendas</p>
-                      </div>
-                      <div className="text-center p-2 bg-gray-50 rounded-xl">
-                        <p className="text-xs font-bold text-gray-400">R$ 0,00</p>
-                        <p className="text-[10px] text-gray-400">Volume/mês</p>
-                      </div>
-                      <div className="text-center p-2 bg-blue-50 rounded-xl">
-                        <p className="text-xs font-bold text-blue-300">{v.percentual_comissao ?? 0}%</p>
-                        <p className="text-[10px] text-blue-300">Comissão</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-400">
-                      <div className="flex items-center gap-2">
-                        {v.time && <span className="bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
-                        {isAdmin && v.email && usuario && (
-                          <div className="flex items-center gap-1">
-                            <input type="checkbox" checked={temPermissao}
-                              onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
-                              className="w-3.5 h-3.5 accent-[#1a3150] cursor-pointer" />
-                            <span className="text-[10px] text-gray-400">Admin</span>
+                        {valorMeta > 0 && (
+                          <div className="mb-3">
+                            <div className="flex justify-between text-[10px] text-gray-400 mb-1">
+                              <span>Meta: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorMeta)}</span>
+                              <span className={`font-semibold ${progresso > 100 ? "text-yellow-600" : progresso >= 100 ? "text-emerald-600" : progresso >= 70 ? "text-blue-600" : "text-gray-500"}`}>
+                                {progresso > 100 ? `🏆 ${progresso.toFixed(0)}%` : `${progresso.toFixed(0)}%`}
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-2">
+                              <div className={`${cor} h-2 rounded-full transition-all duration-500`} style={{ width: `${Math.min(progresso, 100)}%` }} />
+                            </div>
                           </div>
                         )}
-                      </div>
-                      {isAdmin && (
-                        <div className="flex gap-1">
-                          <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                            <Edit2 className="w-3.5 h-3.5 text-gray-400" />
-                          </button>
-                          <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          </button>
+
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <div className="flex items-center gap-2">
+                            {v.time && <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
+                            {isAdmin && v.email && usuario && (
+                              <div className="flex items-center gap-1">
+                                <input type="checkbox" checked={temPermissao}
+                                  onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
+                                  className="w-3.5 h-3.5 accent-[#1a3150] cursor-pointer" />
+                                <span className="text-[10px] text-gray-400">Admin</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => gerarRelatorio(v)}
+                              disabled={geratingPDF === v.id}
+                              className="p-1.5 hover:bg-blue-50 rounded-lg transition disabled:opacity-50"
+                              title="Gerar relatório PDF"
+                            >
+                              {geratingPDF === v.id ? (
+                                <div className="w-3.5 h-3.5 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                              )}
+                            </button>
+                            {isAdmin && v.email && (
+                              <button
+                                onClick={() => enviarRelatorioPorEmail(v)}
+                                disabled={sendingEmail === v.id}
+                                className="p-1.5 hover:bg-green-50 rounded-lg transition disabled:opacity-50"
+                                title="Enviar relatório por e-mail"
+                              >
+                                {sendingEmail === v.id ? (
+                                  <div className="w-3.5 h-3.5 border border-green-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Send className="w-3.5 h-3.5 text-green-600" />
+                                )}
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <>
+                                <button
+                                  onClick={() => abrirModalBonus(v)}
+                                  className="p-1.5 hover:bg-amber-50 rounded-lg transition"
+                                  title="Gerenciar bônus"
+                                >
+                                  <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                                </button>
+                                <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                                  <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                                </button>
+                                <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Vendedores sem dados */}
+            {semDados.length > 0 && (
+              <>
+                <div className="pt-4">
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3">
+                    Sem vendas ou comissões no período
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
+                  {semDados.map(v => {
+                    const usuario = usuarios.find(u => u.email === v.email);
+                    const temPermissao = usuario?.permissao_admin || false;
+                    const metaIndividual = metas.find(m =>
+                      m.mes === mesFiltro && m.tipo === "individual" && m.vendedor_id === v.id
+                    );
+                    return (
+                      <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {v.nome?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
+                              <p className="text-xs text-gray-400">{v.email || "—"}</p>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                            {v.ativo !== false ? "Ativo" : "Inativo"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          <div className="text-center p-2 bg-gray-50 rounded-xl">
+                            <p className="text-lg font-bold text-gray-400">0</p>
+                            <p className="text-[10px] text-gray-400">Vendas</p>
+                          </div>
+                          <div className="text-center p-2 bg-gray-50 rounded-xl">
+                            <p className="text-xs font-bold text-gray-400">R$ 0,00</p>
+                            <p className="text-[10px] text-gray-400">Volume/mês</p>
+                          </div>
+                          <div className="text-center p-2 bg-blue-50 rounded-xl">
+                            <p className="text-xs font-bold text-blue-300">{v.percentual_comissao ?? 0}%</p>
+                            <p className="text-[10px] text-blue-300">Comissão</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                          <div className="flex items-center gap-2">
+                            {v.time && <span className="bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full text-[10px] font-medium">{v.time}</span>}
+                            {isAdmin && v.email && usuario && (
+                              <div className="flex items-center gap-1">
+                                <input type="checkbox" checked={temPermissao}
+                                  onChange={e => updateUserMutation.mutate({ id: usuario.id, permissao_admin: e.target.checked })}
+                                  className="w-3.5 h-3.5 accent-[#1a3150] cursor-pointer" />
+                                <span className="text-[10px] text-gray-400">Admin</span>
+                              </div>
+                            )}
+                          </div>
+                          {isAdmin && (
+                            <div className="flex gap-1">
+                              <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                                <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                              </button>
+                              <button onClick={() => setDeleteConfirm(v)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </>
-        )}
-      </>
-        )}
-      </>
         )}
 
         {/* Modal create/edit */}
@@ -744,11 +656,8 @@ export default function Vendedores() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              
               <div className="mb-4">
-                <label className="text-xs font-medium text-gray-500 mb-1 block">
-                  Valor do Bônus (R$)
-                </label>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">Valor do Bônus (R$)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -762,25 +671,12 @@ export default function Vendedores() {
                   Mês de referência: {new Date(mesFiltro + '-15').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                 </p>
                 {parseFloat(valorBonus) === 0 && modalBonus.bonus_existente_id && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    ⚠️ Valor zero irá remover o bônus existente
-                  </p>
+                  <p className="text-xs text-amber-600 mt-1">⚠️ Valor zero irá remover o bônus existente</p>
                 )}
               </div>
-
               <div className="flex gap-2 justify-end">
-                <button 
-                  onClick={() => setModalBonus(null)} 
-                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                >
-                  Cancelar
-                </button>
-                <button 
-                  onClick={salvarBonus}
-                  className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition font-medium"
-                >
-                  Salvar
-                </button>
+                <button onClick={() => setModalBonus(null)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+                <button onClick={salvarBonus} className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition font-medium">Salvar</button>
               </div>
             </div>
           </div>
@@ -799,30 +695,18 @@ export default function Vendedores() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              
               <div className="p-6 overflow-y-auto max-h-[calc(80vh-200px)]">
-                {/* Período */}
                 <div className="bg-blue-50 rounded-xl p-4 mb-5">
                   <p className="text-xs text-gray-500 mb-1">Período do Relatório:</p>
                   <p className="text-sm font-semibold text-gray-900">
                     {new Date(dateFrom).toLocaleDateString('pt-BR')} até {new Date(dateTo).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
-
-                {/* Lista de Vendedores */}
                 <div className="mb-5">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-gray-700">
-                      Vendedores (com e-mail cadastrado)
-                    </p>
-                    <button
-                      onClick={() => setSelectedForEmail([])}
-                      className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Desmarcar Todos
-                    </button>
+                    <p className="text-sm font-medium text-gray-700">Vendedores (com e-mail cadastrado)</p>
+                    <button onClick={() => setSelectedForEmail([])} className="text-xs text-blue-600 hover:text-blue-700 font-medium">Desmarcar Todos</button>
                   </div>
-                  
                   <div className="space-y-2">
                     {comDados.filter(v => v.email).map(v => {
                       const vendasDoMes = vendas.filter(vd =>
@@ -831,22 +715,15 @@ export default function Vendedores() {
                       );
                       const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
                       const foiEnviado = enviosRealizados.find(e => e.vendedor_id === v.id);
-                      
                       return (
                         <div key={v.id} className={`flex items-center gap-3 p-3 rounded-lg ${foiEnviado ? 'bg-green-50 border border-green-200' : 'bg-gray-50'}`}>
-                          <input
-                            type="checkbox"
-                            checked={selectedForEmail.includes(v.id)}
-                            onChange={() => toggleSelectForEmail(v.id)}
-                            className="w-4 h-4 accent-blue-600 cursor-pointer"
-                          />
+                          <input type="checkbox" checked={selectedForEmail.includes(v.id)} onChange={() => toggleSelectForEmail(v.id)} className="w-4 h-4 accent-blue-600 cursor-pointer" />
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-medium text-gray-900">{v.nome}</p>
                               {foiEnviado && (
                                 <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                                  <CheckCircle2 className="w-3 h-3" />
-                                  Enviado
+                                  <CheckCircle2 className="w-3 h-3" /> Enviado
                                 </span>
                               )}
                             </div>
@@ -859,17 +736,13 @@ export default function Vendedores() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-500">{vendasDoMes.length} vendas</p>
-                            <p className="text-xs font-semibold text-gray-700">
-                              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(volume)} pendente
-                            </p>
+                            <p className="text-xs font-semibold text-gray-700">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(volume)} pendente</p>
                           </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-
-                {/* Mensagem do E-mail */}
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-xs font-medium text-gray-500 mb-2">Mensagem do E-mail:</p>
                   <p className="text-xs text-gray-600 italic leading-relaxed">
@@ -880,18 +753,10 @@ export default function Vendedores() {
                   </p>
                 </div>
               </div>
-
               <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
-                <p className="text-sm text-gray-600">
-                  {selectedForEmail.length} vendedor(es) selecionado(s)
-                </p>
+                <p className="text-sm text-gray-600">{selectedForEmail.length} vendedor(es) selecionado(s)</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowEmailModal(false)}
-                    className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                  >
-                    Cancelar
-                  </button>
+                  <button onClick={() => setShowEmailModal(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">Cancelar</button>
                   <button
                     onClick={enviarRelatoriosEmMassa}
                     disabled={sendingBulk || selectedForEmail.length === 0}
