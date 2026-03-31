@@ -24,6 +24,7 @@ export default function TreinamentoAdmin() {
   const [formAula, setFormAula] = useState(EMPTY_AULA);
   const [uploadingCapa, setUploadingCapa] = useState(false);
   const [uploadingPDF, setUploadingPDF] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -102,6 +103,14 @@ export default function TreinamentoAdmin() {
     setFormAula(f => ({ ...f, url_conteudo: file_url, _pdf_nome: file.name }));
     setUploadingPDF(false);
     toast.success('PDF anexado!');
+  };
+
+  const handleUploadVideo = async (file) => {
+    setUploadingVideo(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setFormAula(f => ({ ...f, url_conteudo: file_url, _video_nome: file.name }));
+    setUploadingVideo(false);
+    toast.success('Vídeo anexado!');
   };
 
   if (!isAdmin && user) {
@@ -361,14 +370,35 @@ export default function TreinamentoAdmin() {
                   ))}
                 </div>
               </div>
-              {(formAula.tipo === 'video' || formAula.tipo === 'link') && (
+              {formAula.tipo === 'link' && (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    {formAula.tipo === 'video' ? 'URL do Vídeo (YouTube, Vimeo ou direto)' : 'URL do Link'}
-                  </label>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">URL do Link</label>
                   <input value={formAula.url_conteudo} onChange={e => setFormAula(f => ({ ...f, url_conteudo: e.target.value }))}
                     placeholder="https://..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                </div>
+              )}
+              {formAula.tipo === 'video' && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Arquivo de Vídeo ou URL</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-purple-300 bg-purple-50/30 rounded-lg cursor-pointer hover:bg-purple-50 text-sm text-gray-500">
+                      <PlayCircle className="w-4 h-4 text-purple-500" />
+                      {uploadingVideo ? 'Enviando...' : formAula._video_nome || (formAula.url_conteudo && !formAula.url_conteudo.includes('youtube') && !formAula.url_conteudo.includes('vimeo') ? 'Trocar vídeo' : 'Clique para anexar vídeo')}
+                      <input type="file" accept="video/*" className="hidden"
+                        onChange={e => e.target.files[0] && handleUploadVideo(e.target.files[0])} disabled={uploadingVideo} />
+                    </label>
+                    {formAula.url_conteudo && (
+                      <a href={formAula.url_conteudo} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-purple-600 hover:underline flex items-center gap-1">
+                        <PlayCircle className="w-3 h-3" /> Visualizar vídeo atual
+                      </a>
+                    )}
+                    <p className="text-[10px] text-gray-400">Ou cole uma URL (YouTube, Vimeo, etc):</p>
+                    <input value={formAula.url_conteudo} onChange={e => setFormAula(f => ({ ...f, url_conteudo: e.target.value, _video_nome: '' }))}
+                      placeholder="https://youtube.com/... ou https://vimeo.com/..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                  </div>
                 </div>
               )}
               {formAula.tipo === 'pdf' && (
