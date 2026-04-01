@@ -1,0 +1,45 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user"
+      ],
+      "default": "user",
+      "description": "Papel do usu\u00e1rio"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Usu\u00e1rio ativo \u2014 se false, acesso bloqueado"
+    },
+    "nome_tratamento": {
+      "type": "string",
+      "description": "Nome de tratamento exibido no sistema"
+    },
+    "permissao_admin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permiss\u00e3o administrativa extra"
+    },
+    "menus_acesso": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de menus que o usu\u00e1rio pode acessar"
+    },
+    "ultimo_acesso": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do \u00faltimo acesso"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL do avatar do usu\u00e1rio"
+    }
+  }
+}

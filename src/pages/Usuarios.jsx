@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -117,6 +117,13 @@ export default function Usuarios() {
     setMenusEditando(prev =>
       prev.includes(menuId) ? prev.filter(m => m !== menuId) : [...prev, menuId]
     );
+  };
+
+  const toggleAtivo = (usuario) => {
+    const novoAtivo = usuario.ativo !== false ? false : true;
+    if (!novoAtivo && !confirm(`Bloquear ${usuario.full_name || usuario.email}? O usuário perderá acesso imediatamente.`)) return;
+    updateUserMutation.mutate({ id: usuario.id, data: { ativo: novoAtivo } });
+    toast.success(novoAtivo ? 'Usuário reativado!' : 'Usuário bloqueado!');
   };
 
   const toggleAdmin = (usuario) => {
@@ -390,7 +397,13 @@ export default function Usuarios() {
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Ativo</span>
+                        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                          usuario.ativo === false
+                            ? 'bg-red-100 text-red-600'
+                            : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {usuario.ativo === false ? 'Bloqueado' : 'Ativo'}
+                        </span>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
@@ -407,6 +420,17 @@ export default function Usuarios() {
                             title={isAdminUser ? 'Remover admin' : 'Tornar admin'}
                           >
                             <Shield className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleAtivo(usuario)}
+                            className={`p-1.5 rounded-lg transition ${
+                              usuario.ativo === false
+                                ? 'text-emerald-500 hover:bg-emerald-50'
+                                : 'text-gray-400 hover:bg-red-50 hover:text-red-500'
+                            }`}
+                            title={usuario.ativo === false ? 'Reativar usuário' : 'Bloquear usuário'}
+                          >
+                            {usuario.ativo === false ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                           </button>
                           <button
                             onClick={() => { if (confirm(`Remover ${usuario.full_name || usuario.email}?`)) deleteUserMutation.mutate(usuario.id); }}

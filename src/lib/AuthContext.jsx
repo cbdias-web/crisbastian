@@ -92,6 +92,18 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+
+      // Check if user is blocked
+      if (currentUser.ativo === false) {
+        setIsLoadingAuth(false);
+        setIsAuthenticated(false);
+        setAuthError({
+          type: 'user_inactive',
+          message: 'Usuário inativo'
+        });
+        return;
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);

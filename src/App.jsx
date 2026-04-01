@@ -6,6 +6,7 @@ import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { base44 } from '@/api/base44Client';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import RelatorioComissoes from './pages/RelatorioComissoes';
 import Manual from './pages/Manual';
@@ -43,8 +44,25 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
+    } else if (authError.type === 'user_inactive') {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 p-6">
+          <div className="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center border border-gray-100">
+            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🔒</span>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Acesso Bloqueado</h2>
+            <p className="text-sm text-gray-500 mb-6">Sua conta foi desativada. Entre em contato com o administrador para reativar o acesso.</p>
+            <button
+              onClick={() => base44.auth.logout()}
+              className="w-full px-4 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition"
+            >
+              Sair
+            </button>
+          </div>
+        </div>
+      );
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
       navigateToLogin();
       return null;
     }
