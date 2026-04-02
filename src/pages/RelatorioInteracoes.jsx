@@ -432,25 +432,30 @@ export default function RelatorioInteracoes() {
           })}
         </div>
 
-        {/* Gráficos */}
+        {/* Painéis */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Canal de Contato */}
           {dadosPorTipo.length > 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700">Interações por Tipo</h3>
+                <h3 className="text-sm font-semibold text-gray-700">Canal de Contato</h3>
               </div>
-              <div className="p-5">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={dadosPorTipo} layout="vertical" margin={{ left: 20, right: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis type="number" fontSize={11} />
-                    <YAxis dataKey="tipo" type="category" fontSize={11} width={90} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} cursor={{ fill: '#0f1e3508' }} />
-                    <Bar dataKey="quantidade" fill="#1a3150" name="Quantidade" radius={[0, 6, 6, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="p-4 space-y-2">
+                {dadosPorTipo.map(d => {
+                  const pct = maxTipo > 0 ? Math.round((d.quantidade / maxTipo) * 100) : 0;
+                  const pctTotal = interacoesFiltradas.length > 0 ? Math.round((d.quantidade / interacoesFiltradas.length) * 100) : 0;
+                  return (
+                    <div key={d.tipo} className="flex items-center gap-3 py-1.5 hover:bg-gray-50 px-2 rounded-lg transition cursor-default">
+                      <span className="w-20 text-sm text-gray-700 font-medium truncate flex-shrink-0">{d.tipo}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <div className="bg-[#1a3150] h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-400 w-8 text-right flex-shrink-0">{pctTotal}%</span>
+                      <span className="text-sm font-bold text-gray-800 w-6 text-right flex-shrink-0">{d.quantidade}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -462,24 +467,36 @@ export default function RelatorioInteracoes() {
                 <Users className="w-4 h-4 text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-700">Produtividade por Vendedor</h3>
               </div>
-              <div className="p-5">
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart
-                    data={Object.entries(resumoPorVendedor)
-                      .sort((a, b) => b[1].total - a[1].total)
-                      .map(([nome, d]) => ({ vendedor: nome.split(' ')[0], total: d.total, positivo: d.positivo, negativo: d.negativo }))}
-                    margin={{ bottom: 30 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="vendedor" fontSize={10} angle={-35} textAnchor="end" height={60} />
-                    <YAxis fontSize={11} />
-                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} cursor={{ fill: '#0f1e3508' }} />
-                    <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <Bar dataKey="total" fill="#0f1e35" name="Total" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="positivo" fill="#10b981" name="Positivos" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="negativo" fill="#f87171" name="Negativos" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="p-4 space-y-3 max-h-80 overflow-y-auto">
+                {Object.entries(resumoPorVendedor)
+                  .sort((a, b) => b[1].total - a[1].total)
+                  .map(([nome, d]) => {
+                    const pctPos = d.total > 0 ? Math.round((d.positivo / d.total) * 100) : 0;
+                    const pctNeg = d.total > 0 ? Math.round((d.negativo / d.total) * 100) : 0;
+                    const pctNeu = d.total > 0 ? Math.round((d.neutro / d.total) * 100) : 0;
+                    return (
+                      <div key={nome} className="flex items-center gap-3 hover:bg-gray-50 px-2 py-1.5 rounded-lg transition cursor-default">
+                        <div className="w-7 h-7 rounded-full bg-[#1a3150] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                          {nome.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 uppercase truncate">{nome}</p>
+                          <div className="flex items-center gap-0.5 mt-1 h-2">
+                            <div className="bg-blue-500 h-2 rounded-l" style={{ width: `${pctPos + pctNeu}%` }} />
+                            <div className="bg-red-400 h-2 rounded-r" style={{ width: `${pctNeg}%` }} />
+                            {(pctPos + pctNeu + pctNeg) < 100 && <div className="bg-gray-100 h-2 flex-1 rounded-r" />}
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-800 flex-shrink-0 w-6 text-right">{d.total}</span>
+                        <span className="text-xs text-red-500 flex-shrink-0 w-8 text-right">{pctNeg}%</span>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="px-5 py-2 border-t border-gray-50 flex items-center gap-4">
+                <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />Positivo</span>
+                <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-blue-300 inline-block" />Neutro</span>
+                <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />Negativo</span>
               </div>
             </div>
           )}
