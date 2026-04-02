@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield, Image } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield, Image, Printer, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TIPOS = [
@@ -27,6 +27,7 @@ export default function TreinamentoAdmin() {
   const [uploadingPDF, setUploadingPDF] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingImagem, setUploadingImagem] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -137,6 +138,67 @@ export default function TreinamentoAdmin() {
   // Relatório
   const totalAulas = aulas.length;
   const usuariosComProgresso = [...new Set(progressos.map(p => p.user_id))];
+
+  const toggleSelectUser = (id) => setSelectedUsers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  const toggleAllUsers = () => setSelectedUsers(prev => prev.length === usuarios.length ? [] : usuarios.map(u => u.id));
+
+  const usuariosFiltrados = selectedUsers.length > 0 ? usuarios.filter(u => selectedUsers.includes(u.id)) : usuarios;
+
+  const gerarRelatorioTreinamento = () => {
+    const lista = usuariosFiltrados;
+    const rows = lista.map(u => {
+      const progUser = progressos.filter(p => p.user_id === u.id);
+      const pct = totalAulas > 0 ? Math.round((progUser.length / totalAulas) * 100) : 0;
+      const modulosFeitos = [...new Set(progUser.map(p => p.modulo_id))].length;
+      return `
+        <tr>
+          <td>${u.nome_tratamento || u.full_name || u.email}</td>
+          <td style="text-align:center">${progUser.length}</td>
+          <td style="text-align:center">${totalAulas}</td>
+          <td style="text-align:center">${modulosFeitos}</td>
+          <td style="text-align:center">${modulos.length}</td>
+          <td style="text-align:center;font-weight:bold;color:${pct === 100 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444'}">${pct}%</td>
+        </tr>`;
+    }).join('');
+
+    const moduloRows = modulos.map(mod => {
+      const aulasDoMod = aulas.filter(a => a.modulo_id === mod.id);
+      const userCols = lista.map(u => {
+        const feitas = aulasDoMod.filter(a => progressos.some(p => p.user_id === u.id && p.aula_id === a.id)).length;
+        const pct = aulasDoMod.length > 0 ? Math.round((feitas / aulasDoMod.length) * 100) : 0;
+        return `<td style="text-align:center;color:${pct === 100 ? '#10b981' : pct > 0 ? '#f59e0b' : '#9ca3af'}">${feitas}/${aulasDoMod.length} (${pct}%)</td>`;
+      }).join('');
+      return `<tr><td><strong>${mod.titulo}</strong></td>${userCols}</tr>`;
+    }).join('');
+
+    const userHeaders = lista.map(u => `<th>${u.nome_tratamento || u.full_name || u.email}</th>`).join('');
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de Treinamentos</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; padding: 20px; }
+      h1 { color: #0f1e35; font-size: 18px; margin-bottom: 4px; }
+      h2 { color: #1a3150; font-size: 14px; margin-top: 24px; margin-bottom: 8px; }
+      .sub { color: #666; font-size: 11px; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th { background: #0f1e35; color: white; padding: 8px 10px; text-align: left; font-size: 11px; }
+      td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+      tr:nth-child(even) td { background: #f9fafb; }
+      @media print { button { display: none; } }
+    </style></head><body>
+    <h1>Villela Exchange — Relatório de Treinamentos</h1>
+    <p class="sub">Gerado em: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · ${lista.length} usuário(s) selecionado(s)</p>
+    <button onclick="window.print()" style="padding:6px 16px;background:#0f1e35;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:16px;">Imprimir / Salvar PDF</button>
+    <h2>Resumo por Usuário</h2>
+    <table><thead><tr><th>Usuário</th><th>Aulas Concluídas</th><th>Total Aulas</th><th>Módulos Iniciados</th><th>Total Módulos</th><th>Progresso</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+    <h2>Detalhamento por Módulo</h2>
+    <table><thead><tr><th>Módulo</th>${userHeaders}</tr></thead><tbody>${moduloRows}</tbody></table>
+    </body></html>`;
+
+    const janela = window.open('', '_blank');
+    janela.document.write(html);
+    janela.document.close();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -252,6 +314,41 @@ export default function TreinamentoAdmin() {
         {/* TAB: Relatório */}
         {tab === 'relatorio' && (
           <div className="space-y-4">
+            {/* Seleção de usuários */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2"><Users className="w-4 h-4" /> Selecionar Usuários</h3>
+                  <span className="text-xs text-gray-400">{selectedUsers.length > 0 ? `${selectedUsers.length} selecionado(s)` : 'Todos selecionados'}</span>
+                </div>
+                <button
+                  onClick={gerarRelatorioTreinamento}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#1a3150] text-white text-sm font-medium rounded-xl hover:bg-[#0f1e35] transition shadow-sm">
+                  <Printer className="w-4 h-4" /> Gerar Relatório
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={toggleAllUsers}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
+                    selectedUsers.length === 0 ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                  }`}>
+                  <Check className="w-3 h-3" /> Todos
+                </button>
+                {usuarios.map(u => (
+                  <button
+                    key={u.id}
+                    onClick={() => toggleSelectUser(u.id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
+                      selectedUsers.includes(u.id) ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                    }`}>
+                    {selectedUsers.includes(u.id) && <Check className="w-3 h-3" />}
+                    {u.nome_tratamento || u.full_name || u.email}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Resumo */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
@@ -272,7 +369,7 @@ export default function TreinamentoAdmin() {
                 <h3 className="font-semibold text-gray-900 flex items-center gap-2"><Users className="w-4 h-4" /> Progresso por Usuário</h3>
               </div>
               <div className="divide-y divide-gray-50">
-                {usuarios.map(u => {
+                {usuariosFiltrados.map(u => {
                   const progUser = progressos.filter(p => p.user_id === u.id);
                   const pct = totalAulas > 0 ? Math.round((progUser.length / totalAulas) * 100) : 0;
                   return (
@@ -292,7 +389,7 @@ export default function TreinamentoAdmin() {
                     </div>
                   );
                 })}
-                {usuarios.length === 0 && <p className="px-5 py-6 text-sm text-gray-400 text-center">Nenhum usuário encontrado.</p>}
+                {usuariosFiltrados.length === 0 && <p className="px-5 py-6 text-sm text-gray-400 text-center">Nenhum usuário encontrado.</p>}
               </div>
             </div>
           </div>
