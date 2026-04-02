@@ -37,6 +37,7 @@ export default function Leads() {
   // Seleção de vendedores por lote (distribuição e redistribuição)
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [showVendedoresModal, setShowVendedoresModal] = useState(null); // { lote, modo: 'distribuir'|'redistribuir' }
+  const [distribuicaoTipo, setDistribuicaoTipo] = useState('coletivo'); // 'individual' | 'coletivo'
   const fileRef = useRef();
   const queryClient = useQueryClient();
 
@@ -96,7 +97,8 @@ export default function Leads() {
   };
 
   const abrirDistribuicao = (lote, modo) => {
-    setSelectedVendedores(vendedores.map(v => v.id)); // todos selecionados por padrão
+    setSelectedVendedores(vendedores.map(v => v.id));
+    setDistribuicaoTipo('coletivo');
     setShowVendedoresModal({ lote, modo });
   };
 
@@ -126,15 +128,20 @@ export default function Leads() {
 
       // Embaralhar e atribuir vendedor
       const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
-      const assignments = embaralhados.map((lead, i) => ({
-        leadId: lead.id,
-        leadNome: lead.nome,
-        leadCpfCnpj: lead.cpf_cnpj || '',
-        leadTelefone: lead.telefone || '',
-        leadClienteId: lead.cliente_id || '',
-        vendedorId: vendedoresSelecionados[i % vendedoresSelecionados.length].id,
-        vendedorNome: vendedoresSelecionados[i % vendedoresSelecionados.length].nome,
-      }));
+      const assignments = embaralhados.map((lead, i) => {
+        const vendedorAtribuido = distribuicaoTipo === 'individual'
+          ? vendedoresSelecionados[0]
+          : vendedoresSelecionados[i % vendedoresSelecionados.length];
+        return {
+          leadId: lead.id,
+          leadNome: lead.nome,
+          leadCpfCnpj: lead.cpf_cnpj || '',
+          leadTelefone: lead.telefone || '',
+          leadClienteId: lead.cliente_id || '',
+          vendedorId: vendedorAtribuido.id,
+          vendedorNome: vendedorAtribuido.nome,
+        };
+      });
 
       // Dividir em lotes de 300 e chamar função sequencialmente
       const LOTE_SIZE = 300;
@@ -449,22 +456,56 @@ export default function Leads() {
               <button onClick={() => setShowVendedoresModal(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-6 space-y-3">
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-xs text-gray-500">Selecione quem receberá os leads:</p>
+              {/* Tipo de distribuição */}
+              <div className="flex gap-2 mb-1">
                 <button
-                  onClick={() => setSelectedVendedores(selectedVendedores.length === vendedores.length ? [] : vendedores.map(v => v.id))}
-                  className="text-xs text-blue-600 hover:underline"
+                  onClick={() => { setDistribuicaoTipo('coletivo'); setSelectedVendedores(vendedores.map(v => v.id)); }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${
+                    distribuicaoTipo === 'coletivo' ? 'bg-[#0f1e35] text-white border-[#0f1e35]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}
                 >
-                  {selectedVendedores.length === vendedores.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                  Coletivo (vários)
+                </button>
+                <button
+                  onClick={() => { setDistribuicaoTipo('individual'); setSelectedVendedores(vendedores.length > 0 ? [vendedores[0].id] : []); }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition ${
+                    distribuicaoTipo === 'individual' ? 'bg-[#0f1e35] text-white border-[#0f1e35]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  Individual (um só)
                 </button>
               </div>
+              {distribuicaoTipo === 'coletivo' && (
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-gray-500">Leads distribuídos aleatoriamente entre os selecionados:</p>
+                  <button
+                    onClick={() => setSelectedVendedores(selectedVendedores.length === vendedores.length ? [] : vendedores.map(v => v.id))}
+                    className="text-xs text-blue-600 hover:underline"
+                  >
+                    {selectedVendedores.length === vendedores.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                  </button>
+                </div>
+              )}
+              {distribuicaoTipo === 'individual' && (
+                <p className="text-xs text-gray-500">Todos os leads irão para o vendedor selecionado:</p>
+              )}
               <div className="space-y-1.5 max-h-64 overflow-y-auto">
                 {vendedores.map(v => (
-                  <label key={v.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition text-sm ${selectedVendedores.includes(v.id) ? 'bg-[#0f1e35]/5 border-[#1a3150]/30 text-gray-900' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'}`}>
+                  <label key={v.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition text-sm ${
+                    (distribuicaoTipo === 'individual' ? selectedVendedores[0] === v.id : selectedVendedores.includes(v.id))
+                      ? 'bg-[#0f1e35]/5 border-[#1a3150]/30 text-gray-900' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'
+                  }`}>
                     <input
-                      type="checkbox"
-                      checked={selectedVendedores.includes(v.id)}
-                      onChange={() => setSelectedVendedores(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id])}
+                      type={distribuicaoTipo === 'individual' ? 'radio' : 'checkbox'}
+                      name="vendedor-dist"
+                      checked={distribuicaoTipo === 'individual' ? selectedVendedores[0] === v.id : selectedVendedores.includes(v.id)}
+                      onChange={() => {
+                        if (distribuicaoTipo === 'individual') {
+                          setSelectedVendedores([v.id]);
+                        } else {
+                          setSelectedVendedores(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id]);
+                        }
+                      }}
                       className="w-4 h-4 accent-[#1a3150]"
                     />
                     <span className="font-medium flex-1">{v.nome}</span>
