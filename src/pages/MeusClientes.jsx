@@ -466,8 +466,8 @@ export default function MeusClientes() {
 
   const handleEditarInteracao = (interacao, e) => {
     e.stopPropagation();
-    // Verificar permissão
-    if (!isAdmin && interacao.vendedor_id !== vendedor?.id) {
+    const podEditar = isAdmin || interacao.vendedor_id === vendedor?.id || interacao.created_by === user?.email;
+    if (!podEditar) {
       toast.error('Você pode editar apenas suas próprias interações');
       return;
     }
