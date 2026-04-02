@@ -25,7 +25,7 @@ const resultadoConfig = {
 export default function RelatorioInteracoes() {
   const [user, setUser] = useState(null);
   const [vendedor, setVendedor] = useState(null);
-  const [dataInicio, setDataInicio] = useState(firstOfMonth());
+  const [dataInicio, setDataInicio] = useState(today());
   const [dataFim, setDataFim] = useState(today());
   const [filtroVendedor, setFiltroVendedor] = useState('todos');
   const [filtroResultado, setFiltroResultado] = useState('todos');
@@ -404,27 +404,27 @@ export default function RelatorioInteracoes() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total de Interações', value: interacoesFiltradas.length, icon: FileText, bg: 'bg-[#0f1e35]', text: 'text-white', iconBg: 'bg-white/10', iconColor: 'text-white' },
-            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, icon: CheckCircle2, bg: 'bg-white border border-emerald-100', text: 'text-emerald-700', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
-            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, icon: XCircle, bg: 'bg-white border border-red-100', text: 'text-red-600', iconBg: 'bg-red-50', iconColor: 'text-red-400' },
-            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, icon: Clock, bg: 'bg-white border border-gray-200', text: 'text-gray-600', iconBg: 'bg-gray-100', iconColor: 'text-gray-400' },
+            { label: 'Total de Interações', value: interacoesFiltradas.length, icon: FileText, base: 'bg-[#0f1e35]', hover: 'hover:bg-[#1a3150]', text: 'text-white', iconBg: 'bg-white/10', iconColor: 'text-white' },
+            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, icon: CheckCircle2, base: 'bg-white border border-emerald-100', hover: 'hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-emerald-100', text: 'text-emerald-700', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
+            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, icon: XCircle, base: 'bg-white border border-red-100', hover: 'hover:bg-red-50 hover:border-red-300 hover:shadow-red-100', text: 'text-red-600', iconBg: 'bg-red-50', iconColor: 'text-red-400' },
+            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, icon: Clock, base: 'bg-white border border-gray-200', hover: 'hover:bg-gray-50 hover:border-gray-300 hover:shadow-gray-100', text: 'text-gray-600', iconBg: 'bg-gray-100', iconColor: 'text-gray-400' },
           ].map(kpi => {
             const Icon = kpi.icon;
             return (
-              <div key={kpi.label} className={`rounded-2xl p-5 shadow-sm flex items-center justify-between gap-3 ${kpi.bg}`}>
+              <div key={kpi.label} className={`rounded-xl px-4 py-3 shadow-sm flex items-center justify-between gap-2 cursor-default transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${kpi.base} ${kpi.hover}`}>
                 <div>
-                  <p className={`text-xs font-medium mb-1 opacity-70 ${kpi.text}`}>{kpi.label}</p>
-                  <p className={`text-3xl font-bold ${kpi.text}`}>{kpi.value}</p>
+                  <p className={`text-[11px] font-medium mb-0.5 opacity-70 ${kpi.text}`}>{kpi.label}</p>
+                  <p className={`text-2xl font-bold leading-none ${kpi.text}`}>{kpi.value}</p>
                   {interacoesFiltradas.length > 0 && (
-                    <p className={`text-[10px] mt-1 opacity-60 ${kpi.text}`}>
+                    <p className={`text-[10px] mt-1 opacity-50 ${kpi.text}`}>
                       {Math.round((kpi.value / interacoesFiltradas.length) * 100)}% do total
                     </p>
                   )}
                 </div>
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg}`}>
-                  <Icon className={`w-5 h-5 ${kpi.iconColor}`} />
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 ${kpi.iconBg}`}>
+                  <Icon className={`w-4 h-4 ${kpi.iconColor}`} />
                 </div>
               </div>
             );
