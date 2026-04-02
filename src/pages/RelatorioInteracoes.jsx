@@ -221,8 +221,6 @@ export default function RelatorioInteracoes() {
       ? [...new Set(interacoesFiltradas.map(i => i.vendedor_nome).filter(Boolean))].sort()
       : [vendedor?.nome].filter(Boolean);
 
-    const clientesLista = [...new Set(interacoesFiltradas.map(i => i.cliente_nome).filter(Boolean))].sort();
-
     const resumoRows = vendedoresLista.map(v => {
       const ints = interacoesFiltradas.filter(i => i.vendedor_nome === v);
       const pos = ints.filter(i => i.resultado === 'Positivo').length;
@@ -241,16 +239,51 @@ export default function RelatorioInteracoes() {
       </tr>`;
     }).join('');
 
-    const vendHeaders = vendedoresLista.map(v => `<th>${v}</th>`).join('');
-
-    const detalhamentoRows = clientesLista.map(c => {
-      const cols = vendedoresLista.map(v => {
-        const count = interacoesFiltradas.filter(i => i.cliente_nome === c && i.vendedor_nome === v).length;
-        return `<td style="text-align:center;color:${count > 0 ? '#1a3150' : '#9ca3af'}">${count > 0 ? count : '—'}</td>`;
-      }).join('');
-      const total = interacoesFiltradas.filter(i => i.cliente_nome === c).length;
-      return `<tr><td><strong>${c}</strong></td>${cols}<td style="text-align:center;font-weight:bold">${total}</td></tr>`;
+    // Canal de Contato
+    const tiposData = tipos.map(tipo => ({
+      tipo,
+      quantidade: interacoesFiltradas.filter(i => i.tipo === tipo).length
+    })).sort((a, b) => b.quantidade - a.quantidade).filter(d => d.quantidade > 0);
+    const maxQ = tiposData[0]?.quantidade || 1;
+    const totalInts = interacoesFiltradas.length || 1;
+    const canalRows = tiposData.map(d => {
+      const pct = Math.round((d.quantidade / maxQ) * 100);
+      const pctTotal = Math.round((d.quantidade / totalInts) * 100);
+      return `<tr>
+        <td style="width:120px;font-weight:500">${d.tipo}</td>
+        <td style="width:100%;padding:0 12px">
+          <div style="background:#e5e7eb;border-radius:4px;height:10px;width:100%">
+            <div style="background:#1a3150;border-radius:4px;height:10px;width:${pct}%"></div>
+          </div>
+        </td>
+        <td style="text-align:right;color:#6b7280;width:40px">${pctTotal}%</td>
+        <td style="text-align:right;font-weight:bold;width:30px">${d.quantidade}</td>
+      </tr>`;
     }).join('');
+
+    // Produtividade por Vendedor
+    const prodRows = Object.entries(resumoPorVendedor)
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(([nome, d]) => {
+        const pctPos = d.total > 0 ? Math.round((d.positivo / d.total) * 100) : 0;
+        const pctNeu = d.total > 0 ? Math.round((d.neutro / d.total) * 100) : 0;
+        const pctNeg = d.total > 0 ? Math.round((d.negativo / d.total) * 100) : 0;
+        const initial = nome.charAt(0).toUpperCase();
+        return `<tr>
+          <td style="width:32px">
+            <div style="width:28px;height:28px;border-radius:50%;background:#1a3150;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:12px;text-align:center;line-height:28px">${initial}</div>
+          </td>
+          <td style="font-weight:600;text-transform:uppercase;font-size:11px;padding:4px 8px">${nome}</td>
+          <td style="padding:4px 8px;width:200px">
+            <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:#e5e7eb">
+              <div style="width:${pctPos + pctNeu}%;background:#3b82f6"></div>
+              <div style="width:${pctNeg}%;background:#f87171"></div>
+            </div>
+          </td>
+          <td style="text-align:right;font-weight:bold;width:30px">${d.total}</td>
+          <td style="text-align:right;color:#ef4444;width:40px">${pctNeg}%</td>
+        </tr>`;
+      }).join('');
 
     const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
 
@@ -260,20 +293,38 @@ export default function RelatorioInteracoes() {
       h1 { color: #0f1e35; font-size: 18px; margin-bottom: 4px; }
       h2 { color: #1a3150; font-size: 14px; margin-top: 24px; margin-bottom: 8px; }
       .sub { color: #666; font-size: 11px; margin-bottom: 16px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 8px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; }
+      .card-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+      table { width: 100%; border-collapse: collapse; }
       th { background: #0f1e35; color: white; padding: 8px 10px; text-align: left; font-size: 11px; }
-      td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+      td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; vertical-align: middle; }
       tr:nth-child(even) td { background: #f9fafb; }
+      .chart-table td { border: none; padding: 5px 4px; background: transparent !important; }
       @media print { button { display: none; } }
     </style></head><body>
     <h1>Villela Exchange — Relatório de Interações</h1>
     <p class="sub">Período: ${periodoLabel} · ${filtroVendedor !== 'todos' ? `Vendedor: ${filtroVendedor} · ` : ''}Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
     <button onclick="window.print()" style="padding:6px 16px;background:#0f1e35;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:16px;">Imprimir / Salvar PDF</button>
+
     <h2>Resumo por Vendedor</h2>
     <table><thead><tr><th>Vendedor</th><th style="text-align:center">Total</th><th style="text-align:center">Positivas</th><th style="text-align:center">Neutras</th><th style="text-align:center">Negativas</th><th style="text-align:center">Sem Resposta</th><th style="text-align:center">% Positivo</th></tr></thead>
     <tbody>${resumoRows}</tbody></table>
-    <h2>Detalhamento por Cliente</h2>
-    <table><thead><tr><th>Cliente</th>${vendHeaders}<th style="text-align:center">Total</th></tr></thead><tbody>${detalhamentoRows}</tbody></table>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Canal de Contato</div>
+        <table class="chart-table"><tbody>${canalRows}</tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-title">Produtividade por Vendedor</div>
+        <table class="chart-table"><tbody>${prodRows}</tbody></table>
+        <div style="margin-top:10px;display:flex;gap:16px;font-size:10px;color:#6b7280">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3b82f6;margin-right:4px"></span>Positivo/Neutro</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;margin-right:4px"></span>Negativo</span>
+        </div>
+      </div>
+    </div>
     </body></html>`;
 
     const janela = window.open('', '_blank');
