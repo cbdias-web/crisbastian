@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield, Image, Printer, Check } from 'lucide-react';
@@ -28,7 +28,18 @@ export default function TreinamentoAdmin() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [uploadingImagem, setUploadingImagem] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [userDropOpen, setUserDropOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+  const userDropRef = useRef(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (userDropRef.current && !userDropRef.current.contains(e.target)) setUserDropOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -316,36 +327,58 @@ export default function TreinamentoAdmin() {
           <div className="space-y-4">
             {/* Seleção de usuários */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2"><Users className="w-4 h-4" /> Selecionar Usuários</h3>
-                  <span className="text-xs text-gray-400">{selectedUsers.length > 0 ? `${selectedUsers.length} selecionado(s)` : 'Todos selecionados'}</span>
+              <div className="flex items-center justify-between gap-3">
+                <div className="relative flex-1" ref={userDropRef}>
+                  <button
+                    onClick={() => setUserDropOpen(p => !p)}
+                    className="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-[#1a3150] transition bg-white shadow-sm">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="flex-1 text-left">
+                      {selectedUsers.length === 0 ? 'Todos os usuários' : `${selectedUsers.length} usuário(s) selecionado(s)`}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {userDropOpen && (
+                    <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-2xl shadow-lg w-full min-w-64 p-3">
+                      <input
+                        type="text"
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                        placeholder="Pesquisar usuário..."
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] mb-2"
+                        autoFocus
+                      />
+                      <label className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                        <input type="checkbox" checked={selectedUsers.length === 0}
+                          onChange={toggleAllUsers}
+                          className="w-4 h-4 accent-[#1a3150]" />
+                        <span className="font-medium text-gray-700">Todos</span>
+                      </label>
+                      <div className="my-1 border-t border-gray-100" />
+                      <div className="max-h-52 overflow-y-auto space-y-0.5">
+                        {usuarios
+                          .filter(u => {
+                            const nome = (u.nome_tratamento || u.full_name || u.email || '').toLowerCase();
+                            return nome.includes(userSearch.toLowerCase());
+                          })
+                          .map(u => (
+                            <label key={u.id} className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
+                              <input type="checkbox" checked={selectedUsers.includes(u.id)}
+                                onChange={() => toggleSelectUser(u.id)}
+                                className="w-4 h-4 accent-[#1a3150]" />
+                              <span className="text-gray-700">{u.nome_tratamento || u.full_name || u.email}</span>
+                            </label>
+                          ))
+                        }
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={gerarRelatorioTreinamento}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1a3150] text-white text-sm font-medium rounded-xl hover:bg-[#0f1e35] transition shadow-sm">
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm font-medium rounded-xl hover:bg-[#0f1e35] transition shadow-sm whitespace-nowrap">
                   <Printer className="w-4 h-4" /> Gerar Relatório
                 </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={toggleAllUsers}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
-                    selectedUsers.length === 0 ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                  }`}>
-                  <Check className="w-3 h-3" /> Todos
-                </button>
-                {usuarios.map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => toggleSelectUser(u.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition ${
-                      selectedUsers.includes(u.id) ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                    }`}>
-                    {selectedUsers.includes(u.id) && <Check className="w-3 h-3" />}
-                    {u.nome_tratamento || u.full_name || u.email}
-                  </button>
-                ))}
               </div>
             </div>
 
