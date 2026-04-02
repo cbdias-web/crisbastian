@@ -128,20 +128,32 @@ export default function Leads() {
 
       // Embaralhar e atribuir vendedor
       const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
-      const assignments = embaralhados.map((lead, i) => {
-        const vendedorAtribuido = distribuicaoTipo === 'individual'
-          ? vendedoresSelecionados[0]
-          : vendedoresSelecionados[i % vendedoresSelecionados.length];
-        return {
+      let assignments;
+      if (distribuicaoTipo === 'individual') {
+        // Cada vendedor selecionado recebe TODOS os leads
+        assignments = vendedoresSelecionados.flatMap(vendedor =>
+          embaralhados.map(lead => ({
+            leadId: lead.id,
+            leadNome: lead.nome,
+            leadCpfCnpj: lead.cpf_cnpj || '',
+            leadTelefone: lead.telefone || '',
+            leadClienteId: lead.cliente_id || '',
+            vendedorId: vendedor.id,
+            vendedorNome: vendedor.nome,
+          }))
+        );
+      } else {
+        // Leads divididos aleatoriamente entre os vendedores
+        assignments = embaralhados.map((lead, i) => ({
           leadId: lead.id,
           leadNome: lead.nome,
           leadCpfCnpj: lead.cpf_cnpj || '',
           leadTelefone: lead.telefone || '',
           leadClienteId: lead.cliente_id || '',
-          vendedorId: vendedorAtribuido.id,
-          vendedorNome: vendedorAtribuido.nome,
-        };
-      });
+          vendedorId: vendedoresSelecionados[i % vendedoresSelecionados.length].id,
+          vendedorNome: vendedoresSelecionados[i % vendedoresSelecionados.length].nome,
+        }));
+      }
 
       // Dividir em lotes de 300 e chamar função sequencialmente
       const LOTE_SIZE = 300;
@@ -487,25 +499,18 @@ export default function Leads() {
                 </div>
               )}
               {distribuicaoTipo === 'individual' && (
-                <p className="text-xs text-gray-500">Todos os leads irão para o vendedor selecionado:</p>
+                <p className="text-xs text-gray-500">Cada vendedor selecionado recebe <strong>todos</strong> os leads:</p>
               )}
               <div className="space-y-1.5 max-h-64 overflow-y-auto">
                 {vendedores.map(v => (
                   <label key={v.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition text-sm ${
-                    (distribuicaoTipo === 'individual' ? selectedVendedores[0] === v.id : selectedVendedores.includes(v.id))
+                    selectedVendedores.includes(v.id)
                       ? 'bg-[#0f1e35]/5 border-[#1a3150]/30 text-gray-900' : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'
                   }`}>
                     <input
-                      type={distribuicaoTipo === 'individual' ? 'radio' : 'checkbox'}
-                      name="vendedor-dist"
-                      checked={distribuicaoTipo === 'individual' ? selectedVendedores[0] === v.id : selectedVendedores.includes(v.id)}
-                      onChange={() => {
-                        if (distribuicaoTipo === 'individual') {
-                          setSelectedVendedores([v.id]);
-                        } else {
-                          setSelectedVendedores(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id]);
-                        }
-                      }}
+                      type="checkbox"
+                      checked={selectedVendedores.includes(v.id)}
+                      onChange={() => setSelectedVendedores(prev => prev.includes(v.id) ? prev.filter(id => id !== v.id) : [...prev, v.id])}
                       className="w-4 h-4 accent-[#1a3150]"
                     />
                     <span className="font-medium flex-1">{v.nome}</span>
