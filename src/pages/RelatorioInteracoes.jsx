@@ -4,6 +4,7 @@ import { getImpersonatedVendedor } from '@/lib/impersonation';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
  import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2, ChevronRight } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
  import { format, parseISO } from 'date-fns';
 
  import { toast } from 'sonner';
@@ -431,216 +432,59 @@ export default function RelatorioInteracoes() {
           })}
         </div>
 
-        {/* Painel de análise */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Ranking por tipo */}
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Canal de Contato */}
           {dadosPorTipo.length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#0f1e35]/5 flex items-center justify-center">
-                  <FileText className="w-3.5 h-3.5 text-[#1a3150]" />
-                </div>
-                <h3 className="text-sm font-semibold text-gray-700">Canal de Contato</h3>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700">Interações por Tipo</h3>
               </div>
-              <div className="space-y-3">
-                {dadosPorTipo.map(({ tipo, quantidade }) => {
-                  const pct = Math.round((quantidade / maxTipo) * 100);
-                  const pctTotal = interacoesFiltradas.length > 0 ? Math.round((quantidade / interacoesFiltradas.length) * 100) : 0;
-                  return (
-                    <div key={tipo}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-700">{tipo}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400">{pctTotal}%</span>
-                          <span className="text-xs font-bold text-gray-900 w-6 text-right">{quantidade}</span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div className="bg-[#1a3150] h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="p-5">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={dadosPorTipo} layout="vertical" margin={{ left: 20, right: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" fontSize={11} />
+                    <YAxis dataKey="tipo" type="category" fontSize={11} width={90} />
+                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} cursor={{ fill: '#0f1e3508' }} />
+                    <Bar dataKey="quantidade" fill="#1a3150" name="Quantidade" radius={[0, 6, 6, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
 
-          {/* Produtividade por vendedor (admin) */}
+          {/* Produtividade por Vendedor */}
           {isAdmin && Object.keys(resumoPorVendedor).length > 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-[#0f1e35]/5 flex items-center justify-center">
-                  <Users className="w-3.5 h-3.5 text-[#1a3150]" />
-                </div>
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-400" />
                 <h3 className="text-sm font-semibold text-gray-700">Produtividade por Vendedor</h3>
               </div>
-              <div className="space-y-3 max-h-52 overflow-y-auto pr-1">
-                {Object.entries(resumoPorVendedor)
-                  .sort((a, b) => b[1].total - a[1].total)
-                  .map(([nome, dados]) => {
-                    const pctPos = dados.total > 0 ? Math.round((dados.positivo / dados.total) * 100) : 0;
-                    const pctNeg = dados.total > 0 ? Math.round((dados.negativo / dados.total) * 100) : 0;
-                    const pctNeutro = dados.total > 0 ? Math.round((dados.neutro / dados.total) * 100) : 0;
-                    return (
-                      <div key={nome} className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
-                          {nome.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-medium text-gray-700 truncate">{nome.split(' ')[0]}</span>
-                            <span className="text-xs font-bold text-gray-900 ml-2">{dados.total}</span>
-                          </div>
-                          <div className="w-full bg-gray-100 rounded-full h-2 flex overflow-hidden">
-                            <div className="bg-emerald-500 h-2 transition-all" style={{ width: `${pctPos}%` }} title={`${pctPos}% positivo`} />
-                            <div className="bg-blue-400 h-2 transition-all" style={{ width: `${pctNeutro}%` }} title={`${pctNeutro}% neutro`} />
-                            <div className="bg-red-400 h-2 transition-all" style={{ width: `${pctNeg}%` }} title={`${pctNeg}% negativo`} />
-                          </div>
-                        </div>
-                        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                          pctPos >= 50 ? 'bg-emerald-50 text-emerald-700' : pctPos >= 25 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-600'
-                        }`}>{pctPos}%</span>
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
-                <span className="flex items-center gap-1 text-[10px] text-gray-400"><span className="w-2 h-2 rounded-full bg-emerald-500" />Positivo</span>
-                <span className="flex items-center gap-1 text-[10px] text-gray-400"><span className="w-2 h-2 rounded-full bg-blue-400" />Neutro</span>
-                <span className="flex items-center gap-1 text-[10px] text-gray-400"><span className="w-2 h-2 rounded-full bg-red-400" />Negativo</span>
+              <div className="p-5">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    data={Object.entries(resumoPorVendedor)
+                      .sort((a, b) => b[1].total - a[1].total)
+                      .map(([nome, d]) => ({ vendedor: nome.split(' ')[0], total: d.total, positivo: d.positivo, negativo: d.negativo }))}
+                    margin={{ bottom: 30 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="vendedor" fontSize={10} angle={-35} textAnchor="end" height={60} />
+                    <YAxis fontSize={11} />
+                    <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }} cursor={{ fill: '#0f1e3508' }} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="total" fill="#0f1e35" name="Total" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="positivo" fill="#10b981" name="Positivos" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="negativo" fill="#f87171" name="Negativos" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           )}
         </div>
 
-        {/* Detalhamento agrupado por usuário */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">Detalhamento por Usuário ({interacoesFiltradas.length} registros)</h3>
-            {(() => {
-              const nomes = [...new Set(interacoesFiltradas.map(i => i.vendedor_nome || 'Sem vendedor'))];
-              return nomes.length > 0 ? (
-                <button onClick={() => toggleAllVendedores(nomes)} className="text-xs text-[#1a3150] hover:underline font-medium">
-                  {expandedVendedores.size === nomes.length ? 'Retrair todos' : 'Expandir todos'}
-                </button>
-              ) : null;
-            })()}
-          </div>
-          {isLoading ? (
-            <div className="py-16 flex justify-center"><div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" /></div>
-          ) : interacoesFiltradas.length === 0 ? (
-            <div className="py-16 text-center text-gray-400">
-              <FileText className="w-10 h-10 mx-auto mb-2 text-gray-200" />
-              <p className="text-sm">Nenhuma interação encontrada</p>
-            </div>
-          ) : (() => {
-            // Agrupar por vendedor
-            const grupos = {};
-            interacoesFiltradas.forEach(i => {
-              const key = i.vendedor_nome || 'Sem vendedor';
-              if (!grupos[key]) grupos[key] = [];
-              grupos[key].push(i);
-            });
-            const nomesOrdenados = Object.keys(grupos).sort();
-            return (
-              <div className="divide-y divide-gray-100">
-                {nomesOrdenados.map(vendedorNome => {
-                  const ints = grupos[vendedorNome];
-                  const isOpen = expandedVendedores.has(vendedorNome);
-                  const positivos = ints.filter(i => i.resultado === 'Positivo').length;
-                  const negativos = ints.filter(i => i.resultado === 'Negativo').length;
-                  const semResposta = ints.filter(i => i.resultado === 'Sem resposta').length;
-                  const pctPositivo = ints.length > 0 ? Math.round((positivos / ints.length) * 100) : 0;
-                  return (
-                    <div key={vendedorNome}>
-                      {/* Cabeçalho do vendedor */}
-                      <button
-                        onClick={() => toggleVendedor(vendedorNome)}
-                        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition text-left group"
-                      >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 transition ${
-                          isOpen ? 'bg-[#0f1e35]' : 'bg-[#1a3150]'
-                        }`}>
-                          {vendedorNome.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-gray-900 text-sm">{vendedorNome}</span>
-                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{ints.length} interação{ints.length !== 1 ? 'ões' : ''}</span>
-                            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{positivos} positivas</span>
-                            {negativos > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{negativos} negativas</span>}
-                            {semResposta > 0 && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{semResposta} s/ resposta</span>}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <div className="w-32 bg-gray-100 rounded-full h-1.5">
-                              <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${pctPositivo}%` }} />
-                            </div>
-                            <span className="text-[10px] text-gray-400">{pctPositivo}% positivo</span>
-                          </div>
-                        </div>
-                        <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
-                      </button>
-
-                      {/* Interações expandidas */}
-                      {isOpen && (
-                        <div className="border-t border-gray-50 bg-gray-50/30">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="border-b border-gray-100">
-                                <th className="px-6 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Data</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Tipo</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Resultado</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Descrição</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Próx. Contato</th>
-                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                              {ints.sort((a, b) => b.data_interacao?.localeCompare(a.data_interacao)).map(i => {
-                                const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
-                                const ResIcon = res.icon;
-                                return (
-                                  <tr key={i.id} className="hover:bg-white transition">
-                                    <td className="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
-                                      {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
-                                    </td>
-                                    <td className="px-4 py-3 text-xs font-medium text-gray-800 max-w-[180px] truncate">{i.cliente_nome}</td>
-                                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{i.tipo}</td>
-                                    <td className="px-4 py-3">
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 w-fit ${res.color}`}>
-                                        <ResIcon className="w-2.5 h-2.5" />{i.resultado}
-                                      </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
-                                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                                      {i.resultado === 'Negativo' ? <span className="text-gray-300">—</span> : (i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM/yyyy') : '—')}
-                                    </td>
-                                    <td className="px-4 py-3 flex items-center gap-1">
-                                      <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-300 hover:text-[#1a3150] transition" title="Ver perfil">
-                                        <Eye className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button onClick={(e) => handleEditarInteracao(i, e)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-300 hover:text-blue-600 transition" title="Editar">
-                                        <Edit2 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-500 transition" title="Excluir">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
       </div>
     </div>
 
