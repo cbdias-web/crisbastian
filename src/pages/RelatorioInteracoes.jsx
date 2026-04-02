@@ -221,6 +221,71 @@ export default function RelatorioInteracoes() {
     setPerfilCliente(c || { nome: interacao.cliente_nome, id: interacao.cliente_id });
   };
 
+  const gerarRelatorioEmTela = () => {
+    const vendedoresLista = isAdmin
+      ? [...new Set(interacoesFiltradas.map(i => i.vendedor_nome).filter(Boolean))].sort()
+      : [vendedor?.nome].filter(Boolean);
+
+    const clientesLista = [...new Set(interacoesFiltradas.map(i => i.cliente_nome).filter(Boolean))].sort();
+
+    const resumoRows = vendedoresLista.map(v => {
+      const ints = interacoesFiltradas.filter(i => i.vendedor_nome === v);
+      const pos = ints.filter(i => i.resultado === 'Positivo').length;
+      const neu = ints.filter(i => i.resultado === 'Neutro').length;
+      const neg = ints.filter(i => i.resultado === 'Negativo').length;
+      const sr = ints.filter(i => i.resultado === 'Sem resposta').length;
+      const pct = ints.length > 0 ? Math.round((pos / ints.length) * 100) : 0;
+      return `<tr>
+        <td>${v}</td>
+        <td style="text-align:center">${ints.length}</td>
+        <td style="text-align:center;color:#10b981;font-weight:bold">${pos}</td>
+        <td style="text-align:center;color:#3b82f6">${neu}</td>
+        <td style="text-align:center;color:#ef4444">${neg}</td>
+        <td style="text-align:center;color:#9ca3af">${sr}</td>
+        <td style="text-align:center;font-weight:bold;color:${pct >= 60 ? '#10b981' : pct >= 30 ? '#f59e0b' : '#ef4444'}">${pct}%</td>
+      </tr>`;
+    }).join('');
+
+    const vendHeaders = vendedoresLista.map(v => `<th>${v}</th>`).join('');
+
+    const detalhamentoRows = clientesLista.map(c => {
+      const cols = vendedoresLista.map(v => {
+        const count = interacoesFiltradas.filter(i => i.cliente_nome === c && i.vendedor_nome === v).length;
+        return `<td style="text-align:center;color:${count > 0 ? '#1a3150' : '#9ca3af'}">${count > 0 ? count : '—'}</td>`;
+      }).join('');
+      const total = interacoesFiltradas.filter(i => i.cliente_nome === c).length;
+      return `<tr><td><strong>${c}</strong></td>${cols}<td style="text-align:center;font-weight:bold">${total}</td></tr>`;
+    }).join('');
+
+    const periodoLabel = `${dataInicio ? format(parseISO(dataInicio), 'dd/MM/yyyy') : '—'} a ${dataFim ? format(parseISO(dataFim), 'dd/MM/yyyy') : '—'}`;
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de Interações</title>
+    <style>
+      body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a1a; padding: 20px; }
+      h1 { color: #0f1e35; font-size: 18px; margin-bottom: 4px; }
+      h2 { color: #1a3150; font-size: 14px; margin-top: 24px; margin-bottom: 8px; }
+      .sub { color: #666; font-size: 11px; margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      th { background: #0f1e35; color: white; padding: 8px 10px; text-align: left; font-size: 11px; }
+      td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+      tr:nth-child(even) td { background: #f9fafb; }
+      @media print { button { display: none; } }
+    </style></head><body>
+    <h1>Villela Exchange — Relatório de Interações</h1>
+    <p class="sub">Período: ${periodoLabel} · ${filtroVendedor !== 'todos' ? `Vendedor: ${filtroVendedor} · ` : ''}Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+    <button onclick="window.print()" style="padding:6px 16px;background:#0f1e35;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:16px;">Imprimir / Salvar PDF</button>
+    <h2>Resumo por Vendedor</h2>
+    <table><thead><tr><th>Vendedor</th><th style="text-align:center">Total</th><th style="text-align:center">Positivas</th><th style="text-align:center">Neutras</th><th style="text-align:center">Negativas</th><th style="text-align:center">Sem Resposta</th><th style="text-align:center">% Positivo</th></tr></thead>
+    <tbody>${resumoRows}</tbody></table>
+    <h2>Detalhamento por Cliente</h2>
+    <table><thead><tr><th>Cliente</th>${vendHeaders}<th style="text-align:center">Total</th></tr></thead><tbody>${detalhamentoRows}</tbody></table>
+    </body></html>`;
+
+    const janela = window.open('', '_blank');
+    janela.document.write(html);
+    janela.document.close();
+  };
+
   const gerarPDF = async () => {
     setGerandoPDF(true);
     try {
@@ -248,6 +313,7 @@ export default function RelatorioInteracoes() {
   };
 
   if (!user) return (
+
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
     </div>
@@ -269,6 +335,15 @@ export default function RelatorioInteracoes() {
               <p className="text-xs text-gray-500">Total no período</p>
               <p className="text-2xl font-bold text-[#0f1e35]">{interacoesFiltradas.length}</p>
             </div>
+            <Button
+              onClick={gerarRelatorioEmTela}
+              disabled={interacoesFiltradas.length === 0}
+              variant="outline"
+              className="border-[#0f1e35] text-[#0f1e35]"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Relatório em Tela
+            </Button>
             <Button
               onClick={gerarPDF}
               disabled={gerandoPDF || interacoesFiltradas.length === 0}
