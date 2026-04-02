@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield, Image } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TIPOS = [
@@ -9,6 +9,7 @@ const TIPOS = [
   { value: 'pdf', label: 'PDF', icon: FileText },
   { value: 'texto', label: 'Texto', icon: BookOpen },
   { value: 'link', label: 'Link', icon: Link2 },
+  { value: 'imagem', label: 'Imagem', icon: Image },
 ];
 
 const EMPTY_MODULO = { titulo: '', descricao: '', categoria: '', ordem: 0, ativo: true, capa_url: '' };
@@ -25,6 +26,7 @@ export default function TreinamentoAdmin() {
   const [uploadingCapa, setUploadingCapa] = useState(false);
   const [uploadingPDF, setUploadingPDF] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingImagem, setUploadingImagem] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -111,6 +113,14 @@ export default function TreinamentoAdmin() {
     setFormAula(f => ({ ...f, url_conteudo: file_url, _video_nome: file.name }));
     setUploadingVideo(false);
     toast.success('Vídeo anexado!');
+  };
+
+  const handleUploadImagem = async (file) => {
+    setUploadingImagem(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setFormAula(f => ({ ...f, url_conteudo: file_url, _imagem_nome: file.name }));
+    setUploadingImagem(false);
+    toast.success('Imagem anexada!');
   };
 
   if (!isAdmin && user) {
@@ -376,6 +386,22 @@ export default function TreinamentoAdmin() {
                   <input value={formAula.url_conteudo} onChange={e => setFormAula(f => ({ ...f, url_conteudo: e.target.value }))}
                     placeholder="https://..."
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
+                </div>
+              )}
+              {formAula.tipo === 'imagem' && (
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Arquivo de Imagem</label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-emerald-300 bg-emerald-50/30 rounded-lg cursor-pointer hover:bg-emerald-50 text-sm text-gray-500">
+                      <Image className="w-4 h-4 text-emerald-500" />
+                      {uploadingImagem ? 'Enviando...' : formAula._imagem_nome || (formAula.url_conteudo ? 'Trocar imagem' : 'Clique para anexar imagem')}
+                      <input type="file" accept="image/*" className="hidden"
+                        onChange={e => e.target.files[0] && handleUploadImagem(e.target.files[0])} disabled={uploadingImagem} />
+                    </label>
+                    {formAula.url_conteudo && (
+                      <img src={formAula.url_conteudo} alt="Preview" className="max-h-32 rounded-lg object-contain border border-gray-200" />
+                    )}
+                  </div>
                 </div>
               )}
               {formAula.tipo === 'video' && (

@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ChevronRight, ChevronDown, ArrowLeft, ExternalLink } from 'lucide-react';
+import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ChevronRight, ChevronDown, ArrowLeft, ExternalLink, Image } from 'lucide-react';
 
 const TIPO_ICONS = {
   video: PlayCircle,
   pdf: FileText,
   texto: BookOpen,
   link: Link2,
+  imagem: Image,
 };
 
-const TIPO_LABELS = { video: 'Vídeo', pdf: 'PDF', texto: 'Texto', link: 'Link' };
+const TIPO_LABELS = { video: 'Vídeo', pdf: 'PDF', texto: 'Texto', link: 'Link', imagem: 'Imagem' };
 
 function embedUrl(url) {
   if (!url) return null;
@@ -126,6 +127,11 @@ export default function Treinamento() {
               </div>
               {aulaAtiva.tipo === 'texto' && aulaAtiva.texto_conteudo && (
                 <div className="mt-6 prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">{aulaAtiva.texto_conteudo}</div>
+              )}
+              {aulaAtiva.tipo === 'imagem' && aulaAtiva.url_conteudo && (
+                <div className="p-4 flex justify-center">
+                  <img src={aulaAtiva.url_conteudo} alt={aulaAtiva.titulo} className="max-w-full max-h-[70vh] rounded-xl object-contain border border-gray-100 shadow-sm" />
+                </div>
               )}
               {aulaAtiva.tipo === 'link' && aulaAtiva.url_conteudo && (
                 <a href={aulaAtiva.url_conteudo} target="_blank" rel="noopener noreferrer"

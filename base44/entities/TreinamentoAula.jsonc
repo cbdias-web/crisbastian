@@ -20,14 +20,15 @@
         "video",
         "pdf",
         "texto",
-        "link"
+        "link",
+        "imagem"
       ],
       "default": "video",
       "description": "Tipo de conte\u00fado"
     },
     "url_conteudo": {
       "type": "string",
-      "description": "URL do v\u00eddeo, PDF ou link externo"
+      "description": "URL do v\u00eddeo, PDF, imagem ou link externo"
     },
     "texto_conteudo": {
       "type": "string",
