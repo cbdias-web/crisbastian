@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
  import { base44 } from '@/api/base44Client';
  import { Button } from '@/components/ui/button';
- import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2 } from 'lucide-react';
+ import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2, ChevronRight } from 'lucide-react';
  import { format, parseISO } from 'date-fns';
  import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
  import { toast } from 'sonner';
@@ -39,7 +39,18 @@ export default function RelatorioInteracoes() {
   const [editandoInteracao, setEditandoInteracao] = useState(null);
   const [editInteracaoForm, setEditInteracaoForm] = useState({});
   const [salvandoInteracao, setSalvandoInteracao] = useState(false);
+  const [expandedVendedores, setExpandedVendedores] = useState(new Set());
   const queryClient = useQueryClient();
+
+  const toggleVendedor = (nome) => setExpandedVendedores(prev => {
+    const next = new Set(prev);
+    next.has(nome) ? next.delete(nome) : next.add(nome);
+    return next;
+  });
+
+  const toggleAllVendedores = (nomes) => {
+    setExpandedVendedores(prev => prev.size === nomes.length ? new Set() : new Set(nomes));
+  };
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-relatorio-perfil'],
@@ -488,10 +499,18 @@ export default function RelatorioInteracoes() {
           )}
         </div>
 
-        {/* Tabela */}
+        {/* Detalhamento agrupado por usuário */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700">Detalhamento ({interacoesFiltradas.length} registros)</h3>
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700">Detalhamento por Usuário ({interacoesFiltradas.length} registros)</h3>
+            {(() => {
+              const nomes = [...new Set(interacoesFiltradas.map(i => i.vendedor_nome || 'Sem vendedor'))];
+              return nomes.length > 0 ? (
+                <button onClick={() => toggleAllVendedores(nomes)} className="text-xs text-[#1a3150] hover:underline font-medium">
+                  {expandedVendedores.size === nomes.length ? 'Retrair todos' : 'Expandir todos'}
+                </button>
+              ) : null;
+            })()}
           </div>
           {isLoading ? (
             <div className="py-16 flex justify-center"><div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" /></div>
@@ -500,60 +519,113 @@ export default function RelatorioInteracoes() {
               <FileText className="w-10 h-10 mx-auto mb-2 text-gray-200" />
               <p className="text-sm">Nenhuma interação encontrada</p>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr className="border-b border-gray-100">
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Data</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Cliente</th>
-                    {isAdmin && <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Vendedor</th>}
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Tipo</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Resultado</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Descrição</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">Próx. Contato</th>
-                    <th className="px-4 py-3 text-left text-[11px] font-semibold text-gray-600 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {interacoesFiltradas.map(i => {
-                    const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
-                    const ResIcon = res.icon;
-                    return (
-                      <tr key={i.id} className="hover:bg-gray-50/50 transition border-b border-gray-50">
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                          {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM') : '—'}
-                        </td>
-                        <td className="px-4 py-3 text-xs font-medium text-gray-800 truncate max-w-xs">{i.cliente_nome}</td>
-                        {isAdmin && <td className="px-4 py-3 text-xs text-gray-600 truncate whitespace-nowrap">{i.vendedor_nome}</td>}
-                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{i.tipo}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 w-fit ${res.color}`}>
-                            <ResIcon className="w-2.5 h-2.5" />{i.resultado}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                          {i.resultado === 'Negativo' ? <span className="text-gray-300 text-[10px]">—</span> : (i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM') : '—')}
-                        </td>
-                        <td className="px-4 py-3 text-center flex items-center justify-center gap-1">
-                          <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-[#1a3150] transition" title="Ver perfil">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button onClick={(e) => handleEditarInteracao(i, e)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-400 hover:text-blue-600 transition" title="Editar interação">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition" title="Deletar interação">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          ) : (() => {
+            // Agrupar por vendedor
+            const grupos = {};
+            interacoesFiltradas.forEach(i => {
+              const key = i.vendedor_nome || 'Sem vendedor';
+              if (!grupos[key]) grupos[key] = [];
+              grupos[key].push(i);
+            });
+            const nomesOrdenados = Object.keys(grupos).sort();
+            return (
+              <div className="divide-y divide-gray-100">
+                {nomesOrdenados.map(vendedorNome => {
+                  const ints = grupos[vendedorNome];
+                  const isOpen = expandedVendedores.has(vendedorNome);
+                  const positivos = ints.filter(i => i.resultado === 'Positivo').length;
+                  const negativos = ints.filter(i => i.resultado === 'Negativo').length;
+                  const semResposta = ints.filter(i => i.resultado === 'Sem resposta').length;
+                  const pctPositivo = ints.length > 0 ? Math.round((positivos / ints.length) * 100) : 0;
+                  return (
+                    <div key={vendedorNome}>
+                      {/* Cabeçalho do vendedor */}
+                      <button
+                        onClick={() => toggleVendedor(vendedorNome)}
+                        className="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition text-left group"
+                      >
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0 transition ${
+                          isOpen ? 'bg-[#0f1e35]' : 'bg-[#1a3150]'
+                        }`}>
+                          {vendedorNome.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-gray-900 text-sm">{vendedorNome}</span>
+                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{ints.length} interação{ints.length !== 1 ? 'ões' : ''}</span>
+                            <span className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{positivos} positivas</span>
+                            {negativos > 0 && <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">{negativos} negativas</span>}
+                            {semResposta > 0 && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{semResposta} s/ resposta</span>}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <div className="w-32 bg-gray-100 rounded-full h-1.5">
+                              <div className="bg-emerald-500 h-1.5 rounded-full transition-all" style={{ width: `${pctPositivo}%` }} />
+                            </div>
+                            <span className="text-[10px] text-gray-400">{pctPositivo}% positivo</span>
+                          </div>
+                        </div>
+                        <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+                      </button>
+
+                      {/* Interações expandidas */}
+                      {isOpen && (
+                        <div className="border-t border-gray-50 bg-gray-50/30">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="border-b border-gray-100">
+                                <th className="px-6 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Data</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Tipo</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Resultado</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Descrição</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Próx. Contato</th>
+                                <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                              {ints.sort((a, b) => b.data_interacao?.localeCompare(a.data_interacao)).map(i => {
+                                const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
+                                const ResIcon = res.icon;
+                                return (
+                                  <tr key={i.id} className="hover:bg-white transition">
+                                    <td className="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
+                                      {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
+                                    </td>
+                                    <td className="px-4 py-3 text-xs font-medium text-gray-800 max-w-[180px] truncate">{i.cliente_nome}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{i.tipo}</td>
+                                    <td className="px-4 py-3">
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex items-center gap-0.5 w-fit ${res.color}`}>
+                                        <ResIcon className="w-2.5 h-2.5" />{i.resultado}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-xs text-gray-600 max-w-xs truncate">{i.descricao}</td>
+                                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                                      {i.resultado === 'Negativo' ? <span className="text-gray-300">—</span> : (i.proximo_contato ? format(parseISO(i.proximo_contato), 'dd/MM/yyyy') : '—')}
+                                    </td>
+                                    <td className="px-4 py-3 flex items-center gap-1">
+                                      <button onClick={(e) => abrirPerfil(i, e)} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-300 hover:text-[#1a3150] transition" title="Ver perfil">
+                                        <Eye className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button onClick={(e) => handleEditarInteracao(i, e)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-300 hover:text-blue-600 transition" title="Editar">
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-500 transition" title="Excluir">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
