@@ -123,7 +123,8 @@ export default function RelatorioInteracoes() {
 
   const handleEditarInteracao = (interacao, e) => {
     e.stopPropagation();
-    if (!isAdmin && interacao.vendedor_id !== vendedor?.id) {
+    const podEditar = isAdmin || interacao.vendedor_id === vendedor?.id || interacao.created_by === user?.email;
+    if (!podEditar) {
       toast.error('Você pode editar apenas suas próprias interações');
       return;
     }
