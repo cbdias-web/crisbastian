@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -53,6 +53,7 @@ export default function MeusClientes() {
   const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
   const [clienteModalId, setClienteModalId] = useState(null);
   const [criandoLead, setCriandoLead] = useState(false);
+  const [mostrarClientes, setMostrarClientes] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -527,9 +528,22 @@ export default function MeusClientes() {
                 Remover Duplicados
               </Button>
             )}
-            <div className="text-right">
-              <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
-              <p className="text-xs text-gray-400">clientes</p>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-2xl font-bold text-[#1a3150]">{clientesFiltrados.length}</p>
+                <p className="text-xs text-gray-400">clientes</p>
+              </div>
+              <button
+                onClick={() => setMostrarClientes(p => !p)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition ${
+                  mostrarClientes
+                    ? 'bg-[#0f1e35] text-white border-[#0f1e35]'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#0f1e35] hover:text-[#0f1e35]'
+                }`}
+              >
+                {mostrarClientes ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {mostrarClientes ? 'Ocultar' : 'Exibir Clientes'}
+              </button>
             </div>
           </div>
         </div>
@@ -667,6 +681,19 @@ export default function MeusClientes() {
         )}
 
         {/* Lista de clientes */}
+        {!mostrarClientes ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-14 text-center">
+            <Eye className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium text-sm">Clientes ocultos por privacidade</p>
+            <p className="text-gray-400 text-xs mt-1 mb-4">Clique em "Exibir Clientes" para visualizar a lista</p>
+            <button
+              onClick={() => setMostrarClientes(true)}
+              className="px-5 py-2 bg-[#0f1e35] text-white text-sm font-medium rounded-xl hover:bg-[#1a3150] transition"
+            >
+              Exibir Clientes
+            </button>
+          </div>
+        ) : (
         <div className="space-y-2">
           {clientesFiltrados.length > 0 && (
             <div className="flex items-center gap-2 px-1">
@@ -922,6 +949,7 @@ export default function MeusClientes() {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Modal Edição de Cliente */}
