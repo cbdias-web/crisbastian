@@ -423,19 +423,29 @@ export default function RelatorioInteracoes() {
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total', value: interacoesFiltradas.length, icon: '📊', color: 'bg-[#0f1e35] text-white' },
-            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, icon: '✅', color: 'bg-emerald-50 text-emerald-700' },
-            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, icon: '❌', color: 'bg-red-50 text-red-600' },
-            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, icon: '❓', color: 'bg-gray-100 text-gray-600' },
-          ].map(kpi => (
-            <div key={kpi.label} className={`rounded-2xl p-4 shadow-sm ${kpi.color}`}>
-              <p className="text-sm opacity-70 mb-1">{kpi.label}</p>
-              <div className="flex items-end justify-between">
-                <p className="text-3xl font-bold">{kpi.value}</p>
-                <span className="text-2xl">{kpi.icon}</span>
+            { label: 'Total de Interações', value: interacoesFiltradas.length, icon: FileText, bg: 'bg-[#0f1e35]', text: 'text-white', iconBg: 'bg-white/10', iconColor: 'text-white' },
+            { label: 'Positivas', value: interacoesFiltradas.filter(i => i.resultado === 'Positivo').length, icon: CheckCircle2, bg: 'bg-white border border-emerald-100', text: 'text-emerald-700', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-500' },
+            { label: 'Negativas', value: interacoesFiltradas.filter(i => i.resultado === 'Negativo').length, icon: XCircle, bg: 'bg-white border border-red-100', text: 'text-red-600', iconBg: 'bg-red-50', iconColor: 'text-red-400' },
+            { label: 'Sem Resposta', value: interacoesFiltradas.filter(i => i.resultado === 'Sem resposta').length, icon: Clock, bg: 'bg-white border border-gray-200', text: 'text-gray-600', iconBg: 'bg-gray-100', iconColor: 'text-gray-400' },
+          ].map(kpi => {
+            const Icon = kpi.icon;
+            return (
+              <div key={kpi.label} className={`rounded-2xl p-5 shadow-sm flex items-center justify-between gap-3 ${kpi.bg}`}>
+                <div>
+                  <p className={`text-xs font-medium mb-1 opacity-70 ${kpi.text}`}>{kpi.label}</p>
+                  <p className={`text-3xl font-bold ${kpi.text}`}>{kpi.value}</p>
+                  {interacoesFiltradas.length > 0 && (
+                    <p className={`text-[10px] mt-1 opacity-60 ${kpi.text}`}>
+                      {Math.round((kpi.value / interacoesFiltradas.length) * 100)}% do total
+                    </p>
+                  )}
+                </div>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${kpi.iconBg}`}>
+                  <Icon className={`w-5 h-5 ${kpi.iconColor}`} />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Gráficos em grid */}
