@@ -63,11 +63,12 @@ export default function TreinamentoAdmin() {
     enabled: tab === 'relatorio',
   });
 
-  const { data: usuarios = [] } = useQuery({
+  const { data: usuariosRaw = [] } = useQuery({
     queryKey: ['usuarios-lista'],
     queryFn: () => base44.entities.User.list('full_name'),
     enabled: tab === 'relatorio',
   });
+  const usuarios = usuariosRaw.filter(u => u.ativo !== false);
 
   // Mutations módulo
   const saveModulo = useMutation({
@@ -153,7 +154,7 @@ export default function TreinamentoAdmin() {
   const toggleSelectUser = (id) => setSelectedUsers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   const toggleAllUsers = () => setSelectedUsers(prev => prev.length === usuarios.length ? [] : usuarios.map(u => u.id));
 
-  const usuariosFiltrados = selectedUsers.length > 0 ? usuarios.filter(u => selectedUsers.includes(u.id)) : usuarios;
+  const usuariosFiltrados = usuarios.filter(u => selectedUsers.includes(u.id));
 
   const gerarRelatorioTreinamento = () => {
     const lista = usuariosFiltrados;
@@ -334,7 +335,7 @@ export default function TreinamentoAdmin() {
                     className="flex items-center gap-2 w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:border-[#1a3150] transition bg-white shadow-sm">
                     <Users className="w-4 h-4 text-gray-400" />
                     <span className="flex-1 text-left">
-                      {selectedUsers.length === 0 ? 'Todos os usuários' : `${selectedUsers.length} usuário(s) selecionado(s)`}
+                      {selectedUsers.length === 0 ? 'Selecione os usuários...' : `${selectedUsers.length} usuário(s) selecionado(s)`}
                     </span>
                     <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${userDropOpen ? 'rotate-180' : ''}`} />
                   </button>
@@ -349,10 +350,10 @@ export default function TreinamentoAdmin() {
                         autoFocus
                       />
                       <label className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer text-sm">
-                        <input type="checkbox" checked={selectedUsers.length === 0}
+                        <input type="checkbox" checked={selectedUsers.length === usuarios.length && usuarios.length > 0}
                           onChange={toggleAllUsers}
                           className="w-4 h-4 accent-[#1a3150]" />
-                        <span className="font-medium text-gray-700">Todos</span>
+                        <span className="font-medium text-gray-700">Todos os ativos</span>
                       </label>
                       <div className="my-1 border-t border-gray-100" />
                       <div className="max-h-52 overflow-y-auto space-y-0.5">
@@ -376,7 +377,8 @@ export default function TreinamentoAdmin() {
                 </div>
                 <button
                   onClick={gerarRelatorioTreinamento}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm font-medium rounded-xl hover:bg-[#0f1e35] transition shadow-sm whitespace-nowrap">
+                  disabled={selectedUsers.length === 0}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm font-medium rounded-xl hover:bg-[#0f1e35] transition shadow-sm whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                   <Printer className="w-4 h-4" /> Gerar Relatório
                 </button>
               </div>
