@@ -30,6 +30,7 @@ export default function Leads() {
   const [deduplicando, setDeduplicando] = useState(false);
   const [progresso, setProgresso] = useState(null); // { atual, total, loteId }
   const [excluindo, setExcluindo] = useState(null);
+  const [revertendo, setRevertendo] = useState(null);
   const [nomeLote, setNomeLote] = useState('');
   const [preview, setPreview] = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -240,6 +241,19 @@ export default function Leads() {
     setDeduplicando(false);
   };
 
+  const reverterDistribuicao = async (lote) => {
+    if (!confirm(`Reverter a distribuição do lote "${lote.nome}"? Todos os leads voltarão para pendente e os clientes criados (sem interações) serão removidos.`)) return;
+    setRevertendo(lote.id);
+    try {
+      const res = await base44.functions.invoke('reverterDistribuicao', { loteId: lote.id });
+      const { leadsRevertidos, clientesExcluidos } = res.data;
+      toast.success(`${leadsRevertidos} lead(s) revertido(s), ${clientesExcluidos} cliente(s) removido(s)!`);
+      queryClient.invalidateQueries(['lotes-leads']);
+      queryClient.invalidateQueries(['leads-todos']);
+    } catch (e) { toast.error('Erro ao reverter: ' + (e.response?.data?.error || e.message)); }
+    setRevertendo(null);
+  };
+
   const excluirLote = async (lote) => {
     if (!confirm(`Excluir o lote "${lote.nome}"? Os clientes já convertidos em carteira serão mantidos.`)) return;
     setExcluindo(lote.id);
@@ -415,6 +429,12 @@ export default function Leads() {
                       <Button size="sm" onClick={() => abrirDistribuicao(lote, 'distribuir')} disabled={distribuindo === lote.id} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
                         {distribuindo === lote.id ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Shuffle className="w-3.5 h-3.5 mr-1.5" />}
                         Distribuir
+                      </Button>
+                    )}
+                    {lote.status === 'distribuido' && (
+                      <Button size="sm" variant="outline" onClick={() => reverterDistribuicao(lote)} disabled={revertendo === lote.id} className="border-orange-200 text-orange-600 hover:bg-orange-50">
+                        {revertendo === lote.id ? <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-1.5" /> : <span className="mr-1.5">↩</span>}
+                        Reverter
                       </Button>
                     )}
                     {lote.status === 'distribuido' && stats.naoConvertidos > 0 && (
