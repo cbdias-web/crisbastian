@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
-    const { mode, assignments, loteId, loteNome, agendaRecords, modo } = await req.json();
+    const { mode, assignments, loteId, loteNome, agendaRecords, modo, subcarteira } = await req.json();
 
     // MODE: processar lote de assignments [{leadId, leadNome, leadCpfCnpj, leadTelefone, leadClienteId, vendedorId, vendedorNome}]
     if (mode === 'batch') {
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
         if (modo === 'redistribuir' && a.leadClienteId) {
           await base44.asServiceRole.entities.Cliente.delete(a.leadClienteId).catch(() => {});
         }
-        const cliente = await base44.asServiceRole.entities.Cliente.create({
+        const clienteData = {
           nome: a.leadNome,
           cpf_cnpj: a.leadCpfCnpj || '',
           telefone: a.leadTelefone || '',
@@ -45,7 +45,9 @@ Deno.serve(async (req) => {
           origem: 'lead',
           lead_id: a.leadId,
           observacao: `Lead importado — lote: ${loteNome}`
-        });
+        };
+        if (subcarteira) clienteData.subcarteira = subcarteira;
+        const cliente = await base44.asServiceRole.entities.Cliente.create(clienteData);
         await base44.asServiceRole.entities.Lead.update(a.leadId, {
           status: 'distribuido',
           vendedor_id: a.vendedorId,

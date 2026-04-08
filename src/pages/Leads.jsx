@@ -38,6 +38,7 @@ export default function Leads() {
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [showVendedoresModal, setShowVendedoresModal] = useState(null); // { lote, modo: 'distribuir'|'redistribuir' }
   const [distribuicaoTipo, setDistribuicaoTipo] = useState('coletivo'); // 'individual' | 'coletivo'
+  const [subcarteira, setSubcarteira] = useState('');
   const fileRef = useRef();
   const queryClient = useQueryClient();
 
@@ -99,6 +100,7 @@ export default function Leads() {
   const abrirDistribuicao = (lote, modo) => {
     setSelectedVendedores(vendedores.map(v => v.id));
     setDistribuicaoTipo('coletivo');
+    setSubcarteira('');
     setShowVendedoresModal({ lote, modo });
   };
 
@@ -171,6 +173,7 @@ export default function Leads() {
           modo,
           loteNome: lote.nome,
           assignments: batch,
+          subcarteira: subcarteira.trim() || null,
         });
         processados += batch.length;
         setProgresso({ atual: processados, total: assignments.length, loteId: lote.id });
@@ -517,6 +520,17 @@ export default function Leads() {
                     {v.time && <span className="text-xs text-gray-400">{v.time}</span>}
                   </label>
                 ))}
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 mb-1 block">Subcarteira / Pasta <span className="text-gray-400 font-normal">(opcional)</span></label>
+                <input
+                  type="text"
+                  value={subcarteira}
+                  onChange={e => setSubcarteira(e.target.value)}
+                  placeholder="Ex: Importadores Abril, Lista SP..."
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Se preenchido, os leads ficam agrupados nesta pasta na carteira do vendedor.</p>
               </div>
               {showVendedoresModal.modo === 'redistribuir' && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">

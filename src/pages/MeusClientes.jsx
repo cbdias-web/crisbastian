@@ -35,6 +35,7 @@ export default function MeusClientes() {
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroOrigem, setFiltroOrigem] = useState('todos');
+  const [filtroSubcarteira, setFiltroSubcarteira] = useState('todas');
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showTrocarGerenteModal, setShowTrocarGerenteModal] = useState(false);
   const [novoGerenteId, setNovoGerenteId] = useState('');
@@ -451,13 +452,16 @@ export default function MeusClientes() {
   const totalLeads = clientesFiltradosPorVendedor.filter(c => c.origem === 'lead').length;
   const totalClientes = clientesFiltradosPorVendedor.filter(c => c.origem !== 'lead').length;
 
+  const subcarteirasDisponiveis = [...new Set(clientesFiltradosPorVendedor.map(c => c.subcarteira).filter(Boolean))].sort();
+
   const clientesFiltrados = clientesFiltradosPorVendedor.filter(c => {
     const matchSearch = !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm);
     const matchOrigem =
       filtroOrigem === 'todos' ||
       (filtroOrigem === 'clientes' && (c.origem === 'nativo' || c.origem === 'lead_convertido' || !c.origem)) ||
       (filtroOrigem === 'leads' && c.origem === 'lead');
-    return matchSearch && matchOrigem;
+    const matchSubcarteira = filtroSubcarteira === 'todas' || c.subcarteira === filtroSubcarteira;
+    return matchSearch && matchOrigem && matchSubcarteira;
   });
 
   const vendedorParaAgenda = isAdmin
@@ -670,7 +674,31 @@ export default function MeusClientes() {
                 </button>
               ))}
             </div>
-            <input
+            {subcarteirasDisponiveis.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-gray-500 font-medium">Subcarteira:</span>
+              <button
+                onClick={() => setFiltroSubcarteira('todas')}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                  filtroSubcarteira === 'todas' ? 'bg-[#0f1e35] text-white border-[#0f1e35]' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                Todas
+              </button>
+              {subcarteirasDisponiveis.map(sc => (
+                <button
+                  key={sc}
+                  onClick={() => setFiltroSubcarteira(filtroSubcarteira === sc ? 'todas' : sc)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    filtroSubcarteira === sc ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  📁 {sc}
+                </button>
+              ))}
+            </div>
+          )}
+          <input
               type="text"
               placeholder="Buscar cliente..."
               value={searchTerm}
@@ -749,6 +777,9 @@ export default function MeusClientes() {
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
+                    {cliente.subcarteira && (
+                      <span className="text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full">📁 {cliente.subcarteira}</span>
+                    )}
                     {cliente.origem === 'lead' && (
                       <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">🎯 Lead</span>
                     )}
