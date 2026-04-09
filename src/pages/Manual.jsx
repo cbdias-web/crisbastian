@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp, GraduationCap, Bot } from 'lucide-react';
 
 const sections = [
   {
@@ -650,6 +650,110 @@ const sections = [
           '**Aguardando distribuição:** leads ainda não distribuídos.',
           '**Leads convertidos:** leads transformados em clientes cativos.',
         ],
+      },
+    ],
+  },
+  {
+    id: 'treinamentos',
+    icon: GraduationCap,
+    title: 'Treinamentos',
+    color: 'bg-rose-50 text-rose-600',
+    border: 'border-rose-200',
+    content: [
+      {
+        subtitle: 'O que é a plataforma de Treinamentos?',
+        text: 'A plataforma de treinamentos reúne todos os conteúdos de capacitação da equipe em um só lugar. Os módulos são organizados por tema e podem conter aulas em vídeo, PDF, texto, imagens ou links externos.',
+      },
+      {
+        subtitle: 'Acessar treinamentos',
+        text: 'Clique em "Treinamentos" no menu lateral. Você verá todos os módulos publicados, com barra de progresso individual mostrando quantas aulas já foram concluídas em cada módulo.',
+      },
+      {
+        subtitle: 'Assistir/consumir uma aula',
+        steps: [
+          'Clique em um módulo para expandir e ver suas aulas.',
+          'Clique em uma aula para abrir o conteúdo (vídeo, PDF, texto, imagem ou link).',
+          'Ao finalizar, clique em "Marcar como Concluída" para registrar seu progresso.',
+          'A barra de progresso do módulo e da plataforma é atualizada automaticamente.',
+        ],
+      },
+      {
+        subtitle: 'Tipos de conteúdo disponíveis',
+        items: [
+          '**Vídeo:** reprodução direta na plataforma (upload ou link YouTube/Vimeo).',
+          '**PDF:** visualização inline ou download do arquivo.',
+          '**Texto:** conteúdo formatado diretamente na tela.',
+          '**Imagem:** arquivo de imagem exibido na tela.',
+          '**Link:** redirecionamento para um recurso externo.',
+        ],
+      },
+      {
+        subtitle: 'Notificações de novos conteúdos',
+        text: 'Sempre que um novo conteúdo for adicionado a qualquer módulo, você receberá automaticamente um comunicado na plataforma para ficar atualizado.',
+      },
+      {
+        subtitle: 'Administração de treinamentos (admin)',
+        text: 'Administradores acessam "Treinamentos" no menu Administrativo para criar módulos, adicionar aulas e publicar ou ocultar conteúdos. O painel de Relatório de Progresso mostra o avanço de cada usuário em cada módulo.',
+      },
+      {
+        subtitle: 'Criar módulo (admin)',
+        steps: [
+          'Acesse Administrativo > Treinamentos.',
+          'Clique em "Novo Módulo" e preencha: Título, Descrição, Categoria, Ordem e Imagem de capa.',
+          'Salve o módulo e clique nele para expandi-lo.',
+          'Clique em "Adicionar Aula" e preencha: Título, Tipo de conteúdo, arquivo/URL, Descrição e Duração.',
+          'Publique o módulo clicando em "Publicar" — módulos ocultos não aparecem para os usuários.',
+        ],
+      },
+      {
+        subtitle: 'Relatório de progresso (admin)',
+        text: 'Em Treinamentos > Relatório de Progresso, selecione os usuários desejados e gere um relatório detalhado com: aulas concluídas por usuário, percentual de conclusão por módulo e progresso geral da equipe.',
+      },
+    ],
+  },
+  {
+    id: 'assistente-ia',
+    icon: Bot,
+    title: 'Assistente IA — Villela',
+    color: 'bg-blue-50 text-blue-600',
+    border: 'border-blue-200',
+    content: [
+      {
+        subtitle: 'O que é o Assistente Villela?',
+        text: 'O Assistente Villela é um chatbot com inteligência artificial que fica disponível em todas as páginas da plataforma, no canto inferior direito da tela. Ele acessa informações da plataforma e da internet para responder suas dúvidas.',
+      },
+      {
+        subtitle: 'Como acessar',
+        text: 'Clique no avatar animado "V" no canto inferior direito de qualquer página da plataforma. O chat abre em um painel flutuante — sem sair da tela em que você está.',
+      },
+      {
+        subtitle: 'O que o assistente pode fazer',
+        items: [
+          '**Treinamentos:** encontrar módulos, aulas e fornecer links diretos para documentos e PDFs.',
+          '**Produtos:** informar detalhes sobre os produtos disponíveis na plataforma.',
+          '**Comunicados:** listar e resumir comunicados publicados.',
+          '**Vendedores:** consultar informações sobre membros da equipe.',
+          '**Busca na Web:** pesquisar informações sobre mercado financeiro, câmbio, offshore e outros temas externos, com citação de fontes.',
+          '**Dúvidas gerais:** responder perguntas sobre processos, regulamentações e melhores práticas.',
+        ],
+      },
+      {
+        subtitle: 'Como usar o assistente',
+        steps: [
+          'Clique no avatar "V" no canto inferior direito.',
+          'Digite sua pergunta no campo de texto e pressione Enter (ou clique no botão de envio).',
+          'Aguarde a resposta — o assistente acessa a plataforma e/ou a web automaticamente.',
+          'Clique nos links fornecidos para abrir documentos, PDFs ou fontes externas.',
+          'Clique em "+" para iniciar uma nova conversa a qualquer momento.',
+        ],
+      },
+      {
+        subtitle: 'Busca na web',
+        text: 'Quando sua pergunta envolve informações externas (cotações, legislação, notícias do mercado), o assistente busca na internet e apresenta as respostas com links para as fontes consultadas.',
+      },
+      {
+        subtitle: 'Privacidade e acesso',
+        text: 'O assistente respeita as permissões da plataforma: ele acessa apenas informações publicadas e disponíveis para usuários comuns. Dados exclusivos de administradores não são expostos através do chat.',
       },
     ],
   },
