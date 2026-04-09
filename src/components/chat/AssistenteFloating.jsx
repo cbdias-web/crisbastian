@@ -97,6 +97,7 @@ export default function AssistenteFloating() {
   const [sending, setSending] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userLoaded, setUserLoaded] = useState(false);
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -104,13 +105,14 @@ export default function AssistenteFloating() {
   useEffect(() => {
     base44.auth.me().then(u => {
       setUserName(u?.nome_tratamento || u?.full_name || u?.email || '');
-    }).catch(() => {});
+      setUserLoaded(true);
+    }).catch(() => setUserLoaded(true));
   }, []);
 
   useEffect(() => {
-    if (open && !initialized) initConversation();
+    if (open && !initialized && userLoaded) initConversation();
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
-  }, [open]);
+  }, [open, userLoaded]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
