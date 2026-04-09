@@ -96,8 +96,13 @@ export default function AssistenteFloating() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [user, setUser] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (open && !initialized) initConversation();
@@ -108,6 +113,8 @@ export default function AssistenteFloating() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, sending]);
 
+  const userName = user?.nome_tratamento || user?.full_name || user?.email || '';
+
   const initConversation = async () => {
     try {
       const list = await base44.agents.listConversations({ agent_name: 'assistente_treinamentos' });
@@ -117,8 +124,15 @@ export default function AssistenteFloating() {
       } else {
         conv = await base44.agents.createConversation({
           agent_name: 'assistente_treinamentos',
-          metadata: { name: 'Chat' }
+          metadata: { name: 'Chat', user_name: userName }
         });
+        // Envia contexto inicial para o agente saudar o usuário
+        if (userName) {
+          await base44.agents.addMessage(conv, {
+            role: 'user',
+            content: `[contexto interno: meu nome é ${userName}] Olá!`
+          });
+        }
       }
       setConversation(conv);
       setMessages(conv.messages || []);
@@ -132,8 +146,14 @@ export default function AssistenteFloating() {
   const newChat = async () => {
     const conv = await base44.agents.createConversation({
       agent_name: 'assistente_treinamentos',
-      metadata: { name: 'Chat' }
+      metadata: { name: 'Chat', user_name: userName }
     });
+    if (userName) {
+      await base44.agents.addMessage(conv, {
+        role: 'user',
+        content: `[contexto interno: meu nome é ${userName}] Olá!`
+      });
+    }
     setConversation(conv);
     setMessages([]);
     base44.agents.subscribeToConversation(conv.id, (data) => {
@@ -210,7 +230,7 @@ export default function AssistenteFloating() {
             {messages.length === 0 && !sending && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
                 <Avatar size="lg" />
-                <p className="mt-3 text-sm font-semibold text-gray-800">Olá! Sou o Assistente Villela 👋</p>
+                <p className="mt-3 text-sm font-semibold text-gray-800">Olá{userName ? `, ${userName.split(' ')[0]}` : ''}! Sou o Assistente Villela 👋</p>
                 <p className="text-xs text-gray-500 mt-1 mb-4">Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
                 <div className="flex flex-col gap-1.5 w-full">
                   {SUGGESTIONS.map(s => (
