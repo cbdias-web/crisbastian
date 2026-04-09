@@ -164,8 +164,8 @@ export default function AssistenteFloating() {
       conv = await base44.agents.createConversation({ agent_name: 'assistente_treinamentos', metadata: { name: 'Chat' } });
       setConversation(conv);
     }
-    // Na primeira mensagem, prefixar com o nome do usuário para saudação nominal
-    const content = isFirstMessage && userName ? `[Usuário: ${userName}] ${msg}` : msg;
+    // Sempre inclui o contexto do usuário para que o agente saiba com quem está falando
+    const content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
     setIsFirstMessage(false);
     await base44.agents.addMessage(conv, { role: 'user', content });
     setSending(false);
@@ -241,7 +241,7 @@ export default function AssistenteFloating() {
             {messages.map((msg, i) => {
               // Ocultar o prefixo [Usuário: NOME] na bolha do usuário
               const display = { ...msg };
-              if (msg.role === 'user' && msg.content?.startsWith('[Usuário:')) {
+              if (msg.role === 'user' && msg.content?.includes('[Usuário:')) {
                 display.content = msg.content.replace(/^\[Usuário:[^\]]*\]\s*/, '');
               }
               return <Message key={i} message={display} />;
