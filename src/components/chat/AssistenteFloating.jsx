@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Send, X, Loader2, Plus, ChevronDown, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+
 const Avatar = ({ size = 'md', pulse = false }) => {
   const s = size === 'lg' ? 'w-14 h-14' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
   return (
@@ -54,6 +55,15 @@ const Message = ({ message }) => {
                   {children}<Globe className="w-2.5 h-2.5 inline ml-0.5" />
                 </a>
               ),
+              table: ({ children }) => (
+                <div className="overflow-x-auto my-2 rounded-lg border border-slate-200 text-xs">
+                  <table className="w-full border-collapse">{children}</table>
+                </div>
+              ),
+              thead: ({ children }) => <thead className="bg-[#0f1e35] text-white">{children}</thead>,
+              th: ({ children }) => <th className="px-2.5 py-1.5 text-left font-semibold whitespace-nowrap">{children}</th>,
+              td: ({ children }) => <td className="px-2.5 py-1.5 border-t border-slate-100">{children}</td>,
+              tr: ({ children }) => <tr className="even:bg-slate-50">{children}</tr>,
               p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
               ul: ({ children }) => <ul className="my-1 ml-3 list-disc">{children}</ul>,
               ol: ({ children }) => <ol className="my-1 ml-3 list-decimal">{children}</ol>,
@@ -73,9 +83,10 @@ const Message = ({ message }) => {
 };
 
 const SUGGESTIONS = [
+  'Quantas interações fiz este mês?',
   'Quais treinamentos estão disponíveis?',
-  'Quais produtos oferecemos?',
-  'Como funciona o offshore?',
+  'Quais leads ainda não foram convertidos?',
+  'Qual o volume de vendas deste mês?',
 ];
 
 export default function AssistenteFloating() {
