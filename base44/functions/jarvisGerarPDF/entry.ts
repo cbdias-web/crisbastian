@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
     }
 
     const { titulo, subtitulo, secoes } = await req.json();
-    // secoes: [{ titulo: string, colunas: string[], linhas: string[][] }]
 
     if (!titulo || !secoes || secoes.length === 0) {
       return Response.json({ error: 'titulo e secoes são obrigatórios' }, { status: 400 });
@@ -40,7 +39,6 @@ Deno.serve(async (req) => {
 
     let y = 36;
 
-    // Subtítulo
     if (subtitulo) {
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
@@ -49,9 +47,7 @@ Deno.serve(async (req) => {
       y += 6;
     }
 
-    // ---- SEÇÕES ----
     for (const secao of secoes) {
-      // Título da seção
       if (y > 270) { doc.addPage(); y = 16; }
 
       if (secao.titulo) {
@@ -65,13 +61,11 @@ Deno.serve(async (req) => {
         y += 8;
       }
 
-      // Tabela
       if (secao.colunas && secao.linhas) {
         const colunas = secao.colunas;
         const linhas = secao.linhas;
         const colW = contentWidth / colunas.length;
 
-        // Cabeçalho da tabela
         doc.setFillColor(26, 49, 80);
         doc.rect(marginLeft, y, contentWidth, 7, 'F');
         doc.setTextColor(255, 255, 255);
@@ -82,7 +76,6 @@ Deno.serve(async (req) => {
         });
         y += 7;
 
-        // Linhas da tabela
         doc.setFont('helvetica', 'normal');
         linhas.forEach((linha, ri) => {
           if (y > 275) { doc.addPage(); y = 16; }
@@ -97,13 +90,11 @@ Deno.serve(async (req) => {
           y += 6.5;
         });
 
-        // Borda inferior
         doc.setDrawColor(229, 231, 235);
         doc.line(marginLeft, y, marginLeft + contentWidth, y);
         y += 5;
       }
 
-      // Texto livre
       if (secao.texto) {
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
@@ -131,11 +122,21 @@ Deno.serve(async (req) => {
 
     const pdfBytes = doc.output('arraybuffer');
 
-    // Upload e retorna URL pública
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+    // Retorna o PDF como base64 no JSON para o agente poder linkar
+    const uint8 = new Uint8Array(pdfBytes);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8.length; i += chunkSize) {
+      binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+    }
+    const base64 = btoa(binary);
 
-    return Response.json({ success: true, file_url, message: `PDF gerado com sucesso!` });
+    return Response.json({
+      success: true,
+      pdf_base64: base64,
+      filename: titulo.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf',
+      message: 'PDF gerado com sucesso!'
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
