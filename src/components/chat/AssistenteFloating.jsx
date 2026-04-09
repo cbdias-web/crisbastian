@@ -5,15 +5,43 @@ import ReactMarkdown from 'react-markdown';
 
 
 const Avatar = ({ size = 'md', pulse = false }) => {
+  const dim = size === 'lg' ? 56 : size === 'sm' ? 32 : 40;
   const s = size === 'lg' ? 'w-14 h-14' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
   return (
     <div className={`relative ${s} flex-shrink-0`}>
       {pulse && (
         <span className="absolute inset-0 rounded-full bg-blue-400 opacity-30 animate-ping" />
       )}
-      <div className={`${s} rounded-full bg-gradient-to-br from-[#1a3150] to-blue-500 flex items-center justify-center shadow-lg relative z-10`}>
-        <span className="text-white font-bold" style={{ fontSize: size === 'lg' ? 22 : size === 'sm' ? 13 : 17 }}>V</span>
-      </div>
+      <svg width={dim} height={dim} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 drop-shadow-lg">
+        {/* Ears/arms */}
+        <ellipse cx="7" cy="30" rx="6" ry="8" fill="#e8e8e8" />
+        <ellipse cx="49" cy="30" rx="6" ry="8" fill="#e8e8e8" />
+        {/* Body */}
+        <rect x="10" y="10" width="36" height="36" rx="14" fill="white" />
+        <rect x="10" y="10" width="36" height="36" rx="14" fill="url(#grad)" opacity="0.15" />
+        {/* Screen face */}
+        <rect x="15" y="16" width="26" height="20" rx="6" fill="#1a1a1a" />
+        {/* Left eye — normal */}
+        <rect x="19" y="21" width="7" height="7" rx="3.5" fill="white" />
+        {/* Right eye — wink */}
+        <path d="M31 24.5 Q34 21.5 37 24.5" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
+        {/* Smile */}
+        <path d="M20 31 Q28 36 36 31" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        {/* Ears inner */}
+        <ellipse cx="7" cy="30" rx="3" ry="5" fill="#d0d0d0" />
+        <ellipse cx="49" cy="30" rx="3" ry="5" fill="#d0d0d0" />
+        {/* Cat ears on top */}
+        <polygon points="18,12 14,4 22,10" fill="white" />
+        <polygon points="38,12 42,4 34,10" fill="white" />
+        <polygon points="18,11 15.5,6 21,10" fill="#e0e0e0" />
+        <polygon points="38,11 40.5,6 35,10" fill="#e0e0e0" />
+        <defs>
+          <linearGradient id="grad" x1="10" y1="10" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#a0c4ff" />
+            <stop offset="100%" stopColor="#ffffff" />
+          </linearGradient>
+        </defs>
+      </svg>
       <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full z-20" />
     </div>
   );
