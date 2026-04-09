@@ -154,6 +154,25 @@ export default function AssistenteFloating() {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const inactivityTimer = useRef(null);
+
+  const INACTIVITY_MINUTES = 30;
+
+  const resetInactivityTimer = () => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(async () => {
+      const conv = await base44.agents.createConversation({
+        agent_name: 'assistente_treinamentos',
+        metadata: { name: 'Chat' }
+      });
+      setConversation(conv);
+      setMessages([]);
+      setIsFirstMessage(true);
+      base44.agents.subscribeToConversation(conv.id, (data) => {
+        setMessages(data.messages || []);
+      });
+    }, INACTIVITY_MINUTES * 60 * 1000);
+  };
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -219,6 +238,7 @@ export default function AssistenteFloating() {
     }
     const content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
     setIsFirstMessage(false);
+    resetInactivityTimer();
     await base44.agents.addMessage(conv, { role: 'user', content });
     setSending(false);
   };
