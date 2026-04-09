@@ -51,12 +51,28 @@ const TypingIndicator = () => (
   </div>
 );
 
-const PdfButton = ({ toolCalls }) => {
-  if (!toolCalls?.length) return null;
-  const pdfCall = toolCalls.find(tc => tc.name === 'jarvisGerarPDF' && tc.results);
-  if (!pdfCall) return null;
-  let res;
-  try { res = typeof pdfCall.results === 'string' ? JSON.parse(pdfCall.results) : pdfCall.results; } catch { return null; }
+const PdfButton = ({ toolCalls, content }) => {
+  // Tenta encontrar pdf_base64 em qualquer tool_call com results
+  let res = null;
+  if (toolCalls?.length) {
+    for (const tc of toolCalls) {
+      if (!tc.results) continue;
+      try {
+        const parsed = typeof tc.results === 'string' ? JSON.parse(tc.results) : tc.results;
+        if (parsed?.pdf_base64) { res = parsed; break; }
+        // Busca aninhada
+        if (parsed?.data?.pdf_base64) { res = parsed.data; break; }
+      } catch {}
+    }
+  }
+  // Também tenta extrair base64 do conteúdo de texto da mensagem (fallback)
+  if (!res && content) {
+    try {
+      const match = content.match(/"pdf_base64"\s*:\s*"([A-Za-z0-9+/=]+)"/);
+      const fnMatch = content.match(/"filename"\s*:\s*"([^"]+)"/);
+      if (match) res = { pdf_base64: match[1], filename: fnMatch?.[1] || 'relatorio.pdf' };
+    } catch {}
+  }
   if (!res?.pdf_base64) return null;
   const handleDownload = () => {
     const binary = atob(res.pdf_base64);
@@ -129,7 +145,7 @@ const Message = ({ message }) => {
             {message.content}
           </ReactMarkdown>
         )}
-        <PdfButton toolCalls={message.tool_calls} />
+        <PdfButton toolCalls={message.tool_calls} content={message.content} />
       </div>
     </div>
   );
