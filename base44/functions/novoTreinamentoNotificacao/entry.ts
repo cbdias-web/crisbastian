@@ -5,18 +5,24 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const payload = await req.json();
 
-    const modulo = payload.data;
-    if (!modulo || !modulo.titulo) {
-      return Response.json({ ok: true, skipped: 'sem dados do módulo' });
+    const aula = payload.data;
+    if (!aula || !aula.titulo) {
+      return Response.json({ ok: true, skipped: 'sem dados da aula' });
     }
 
-    // Só notifica se o módulo estiver ativo
-    if (modulo.ativo === false) {
-      return Response.json({ ok: true, skipped: 'módulo inativo' });
+    if (aula.ativo === false) {
+      return Response.json({ ok: true, skipped: 'aula inativa' });
     }
 
-    const titulo = `📚 Novo Treinamento Disponível: ${modulo.titulo}`;
-    const mensagem = `Um novo módulo de treinamento foi adicionado à plataforma!\n\n**${modulo.titulo}**${modulo.descricao ? `\n\n${modulo.descricao}` : ''}\n\nAcesse a seção de **Treinamentos** para começar.`;
+    // Buscar o nome do módulo
+    let moduloTitulo = '';
+    if (aula.modulo_id) {
+      const modulos = await base44.asServiceRole.entities.TreinamentoModulo.filter({ id: aula.modulo_id }).catch(() => []);
+      if (modulos.length > 0) moduloTitulo = modulos[0].titulo;
+    }
+
+    const titulo = `📚 Novo Conteúdo de Treinamento${moduloTitulo ? `: ${moduloTitulo}` : ''}`;
+    const mensagem = `Um novo conteúdo foi adicionado à plataforma de treinamentos!\n\n**${aula.titulo}**${moduloTitulo ? `\n📂 Módulo: ${moduloTitulo}` : ''}${aula.descricao ? `\n\n${aula.descricao}` : ''}\n\nAcesse a seção de **Treinamentos** para ver o conteúdo completo. 🎓`;
 
     await base44.asServiceRole.entities.Comunicado.create({
       titulo,
