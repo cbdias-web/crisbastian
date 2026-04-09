@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, Bot } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap } from 'lucide-react';
+import AssistenteFloating from '@/components/chat/AssistenteFloating';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -127,7 +128,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Treinamentos', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-    { name: 'Assistente IA', icon: Bot, page: 'AssistenteTreinamentos', allowUser: true, alwaysVisible: true },
+
     { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
     { name: 'Rel. Interacoes', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   ].filter(item => {
@@ -441,6 +442,7 @@ export default function Layout({ children, currentPageName }) {
       {/* ===== MAIN CONTENT ===== */}
       <main className={`flex-1 transition-all duration-300 ${!isMobile ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
         {children}
+        <AssistenteFloating />
       </main>
     </div>
   );
