@@ -187,7 +187,7 @@ export default function AssistenteFloating() {
         <button
           onClick={() => setOpen(o => !o)}
           className="group relative"
-          title="Assistente Villela"
+          title="Jarvis"
         >
           <Avatar size="lg" pulse={!open} />
           {open && (
@@ -207,7 +207,7 @@ export default function AssistenteFloating() {
           <div className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] px-4 py-3 flex items-center gap-3">
             <Avatar size="sm" />
             <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold text-sm">Assistente Villela</p>
+              <p className="text-white font-semibold text-sm">Jarvis</p>
               <p className="text-blue-300 text-[10px] flex items-center gap-1">
                 <Globe className="w-2.5 h-2.5" /> Acesso à plataforma + web
               </p>
@@ -226,7 +226,7 @@ export default function AssistenteFloating() {
             {messages.length === 0 && !sending && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
                 <Avatar size="lg" />
-                <p className="mt-3 text-sm font-semibold text-gray-800">Olá! Sou o Assistente Villela 👋</p>
+                <p className="mt-3 text-sm font-semibold text-gray-800">Olá! Sou o Jarvis 👋</p>
                 <p className="text-xs text-gray-500 mt-1 mb-4">Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
                 <div className="flex flex-col gap-1.5 w-full">
                   {SUGGESTIONS.map(s => (
