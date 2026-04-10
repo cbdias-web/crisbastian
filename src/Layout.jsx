@@ -6,7 +6,7 @@ import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
 import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap } from 'lucide-react';
-import AssistenteFloating from '@/components/chat/AssistenteFloating';
+import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';

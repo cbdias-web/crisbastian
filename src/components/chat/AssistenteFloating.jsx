@@ -3,6 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { Send, X, Loader2, Plus, ChevronDown, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+const INACTIVITY_MS = 30 * 60 * 1000;
+const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
+
 const Avatar = ({ size = 'md', pulse = false }) => {
   const dim = size === 'lg' ? 56 : size === 'sm' ? 32 : 40;
   const s = size === 'lg' ? 'w-14 h-14' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
@@ -52,7 +55,6 @@ const TypingIndicator = () => (
 );
 
 const PdfButton = ({ toolCalls, content }) => {
-  // Tenta encontrar pdf_base64 em qualquer tool_call com results
   let res = null;
   if (toolCalls?.length) {
     for (const tc of toolCalls) {
@@ -60,12 +62,10 @@ const PdfButton = ({ toolCalls, content }) => {
       try {
         const parsed = typeof tc.results === 'string' ? JSON.parse(tc.results) : tc.results;
         if (parsed?.pdf_base64) { res = parsed; break; }
-        // Busca aninhada
         if (parsed?.data?.pdf_base64) { res = parsed.data; break; }
       } catch {}
     }
   }
-  // Também tenta extrair base64 do conteúdo de texto da mensagem (fallback)
   if (!res && content) {
     try {
       const match = content.match(/"pdf_base64"\s*:\s*"([A-Za-z0-9+/=]+)"/);
@@ -100,11 +100,9 @@ const PdfButton = ({ toolCalls, content }) => {
   );
 };
 
-// Varre TODAS as mensagens em busca de pdf_base64 e mostra botão fixo na última ocorrência
 const extractPdf = (messages) => {
   for (let i = messages.length - 1; i >= 0; i--) {
     const msg = messages[i];
-    // Tenta tool_calls
     if (msg.tool_calls?.length) {
       for (const tc of msg.tool_calls) {
         if (!tc.results) continue;
@@ -115,7 +113,6 @@ const extractPdf = (messages) => {
         } catch {}
       }
     }
-    // Tenta conteúdo da mensagem de role=tool
     if (msg.role === 'tool' && msg.content) {
       try {
         const r = typeof msg.content === 'string' ? JSON.parse(msg.content) : msg.content;
@@ -216,6 +213,15 @@ const SUGGESTIONS = [
   'Qual o volume de vendas deste mês?',
 ];
 
+function recordActivity() {
+  localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+}
+
+function isInactive() {
+  const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10);
+  return last > 0 && (Date.now() - last) > INACTIVITY_MS;
+}
+
 export default function AssistenteFloating() {
   const [open, setOpen] = useState(false);
   const [conversation, setConversation] = useState(null);
@@ -229,25 +235,6 @@ export default function AssistenteFloating() {
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-  const inactivityTimer = useRef(null);
-
-  const INACTIVITY_MINUTES = 30;
-
-  const resetInactivityTimer = () => {
-    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
-    inactivityTimer.current = setTimeout(async () => {
-      const conv = await base44.agents.createConversation({
-        agent_name: 'assistente_treinamentos',
-        metadata: { name: 'Chat' }
-      });
-      setConversation(conv);
-      setMessages([]);
-      setIsFirstMessage(true);
-      base44.agents.subscribeToConversation(conv.id, (data) => {
-        setMessages(data.messages || []);
-      });
-    }, INACTIVITY_MINUTES * 60 * 1000);
-  };
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -257,7 +244,14 @@ export default function AssistenteFloating() {
   }, []);
 
   useEffect(() => {
-    if (open && !initialized && userLoaded) initConversation();
+    if (open && userLoaded) {
+      if (!initialized) {
+        initConversation();
+      } else if (isInactive()) {
+        // Já inicializado mas ficou inativo: abre tela limpa (histórico preservado no servidor)
+        startFreshConversation();
+      }
+    }
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open, userLoaded]);
 
@@ -265,8 +259,30 @@ export default function AssistenteFloating() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, sending]);
 
+  const startFreshConversation = async () => {
+    const conv = await base44.agents.createConversation({
+      agent_name: 'assistente_treinamentos',
+      metadata: { name: 'Chat' }
+    });
+    setConversation(conv);
+    setMessages([]);
+    setIsFirstMessage(true);
+    setPdfDownloaded(false);
+    base44.agents.subscribeToConversation(conv.id, (data) => {
+      setMessages(data.messages || []);
+    });
+    return conv;
+  };
+
   const initConversation = async () => {
     try {
+      // Se ficou inativo por mais de 30 min, começa conversa nova (tela limpa)
+      if (isInactive()) {
+        await startFreshConversation();
+        setInitialized(true);
+        return;
+      }
+
       const list = await base44.agents.listConversations({ agent_name: 'assistente_treinamentos' });
       let conv;
       if (list.length > 0) {
@@ -289,17 +305,8 @@ export default function AssistenteFloating() {
   };
 
   const newChat = async () => {
-    const conv = await base44.agents.createConversation({
-      agent_name: 'assistente_treinamentos',
-      metadata: { name: 'Chat' }
-    });
-    setConversation(conv);
-    setMessages([]);
-    setIsFirstMessage(true);
-    setPdfDownloaded(false);
-    base44.agents.subscribeToConversation(conv.id, (data) => {
-      setMessages(data.messages || []);
-    });
+    await startFreshConversation();
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
   };
 
   const send = async (text) => {
@@ -314,7 +321,7 @@ export default function AssistenteFloating() {
     }
     const content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
     setIsFirstMessage(false);
-    resetInactivityTimer();
+    recordActivity();
     await base44.agents.addMessage(conv, { role: 'user', content });
     setSending(false);
   };
