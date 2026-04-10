@@ -60,7 +60,7 @@ export default function MarketTicker() {
   const doubled = [...quotes, ...quotes]; // duplica para loop contínuo
 
   return (
-    <div className="w-full overflow-hidden" style={{ background: 'linear-gradient(90deg, #0a1628 0%, #0f1e35 50%, #0a1628 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+    <div className="overflow-hidden" style={{ background: 'linear-gradient(90deg, #0a1628 0%, #0f1e35 50%, #0a1628 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)', maxWidth: '100%', width: '100%' }}>
       <div className="flex items-center">
         {/* Label fixo */}
         <div className="flex-shrink-0 px-3 py-1.5 flex items-center gap-1.5 border-r border-white/10 bg-white/5">
@@ -68,7 +68,7 @@ export default function MarketTicker() {
         </div>
 
         {/* Ticker scrolling */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative" style={{ minWidth: 0 }}>
           <div
             className="flex animate-ticker-scroll"
             style={{ width: 'max-content' }}
