@@ -33,15 +33,20 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Monta saudação personalizada com o primeiro nome do destinatário
+        const nomeCompleto = destinatario.data?.nome_tratamento || destinatario.full_name || email.split('@')[0];
+        const primeiroNome = nomeCompleto.split(' ')[0];
+        const mensagemPersonalizada = `Bom dia, ${primeiroNome}! 👋\n\n${mensagem}`;
+
         // Salva a mensagem na entidade JarvisMensagem
         await base44.asServiceRole.entities.JarvisMensagem.create({
           destinatario_email: email,
           remetente_nome: remetente,
-          mensagem,
+          mensagem: mensagemPersonalizada,
           lida: false
         });
 
-        resultados.push({ email, status: 'enviado', nome: destinatario.full_name || destinatario.email });
+        resultados.push({ email, status: 'enviado', nome: nomeCompleto });
       } catch (err) {
         resultados.push({ email, status: 'erro', motivo: err.message });
       }
