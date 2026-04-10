@@ -252,7 +252,16 @@ export default function AssistenteFloating() {
     }).catch(() => setUserLoaded(true));
   }, []);
 
-  // Verifica mensagens pendentes do admin ao abrir
+  // Verifica mensagens pendentes ao carregar e periodicamente
+  useEffect(() => {
+    if (userLoaded) {
+      checkMensagensPendentes();
+      const interval = setInterval(checkMensagensPendentes, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [userLoaded]);
+
+  // Re-verifica ao abrir
   useEffect(() => {
     if (open && userName) {
       checkMensagensPendentes();
@@ -264,16 +273,24 @@ export default function AssistenteFloating() {
       const user = await base44.auth.me();
       if (!user?.email) return;
       const pendentes = await base44.entities.JarvisMensagem.filter({ destinatario_email: user.email, lida: false });
-      if (pendentes.length > 0) {
-        setMensagensPendentes(pendentes);
-      }
+      setMensagensPendentes(pendentes);
     } catch (e) {}
   };
 
   const marcarMensagensComoLidas = async (msgs) => {
+    const agora = new Date().toISOString();
     for (const msg of msgs) {
       try {
-        await base44.entities.JarvisMensagem.update(msg.id, { lida: true });
+        await base44.entities.JarvisMensagem.update(msg.id, { lida: true, lida_em: agora });
+        // Enviar confirmação de leitura ao remetente
+        if (msg.remetente_email) {
+          const destinatario = userName || 'O destinatário';
+          await base44.integrations.Core.SendEmail({
+            to: msg.remetente_email,
+            subject: `✅ Mensagem lida por ${destinatario}`,
+            body: `<p>Olá, <strong>${msg.remetente_nome || 'Admin'}</strong>!</p><p>Sua mensagem enviada pelo Jarvis foi lida por <strong>${destinatario}</strong> em ${new Date(agora).toLocaleString('pt-BR')}.</p><blockquote style="border-left:3px solid #1a3150;padding-left:12px;color:#555;">${msg.mensagem}</blockquote><p style="color:#888;font-size:12px;">— Jarvis · Villela Exchange</p>`
+          });
+        }
       } catch (e) {}
     }
   };
@@ -376,7 +393,20 @@ export default function AssistenteFloating() {
           </div>
         )}
         <button onClick={() => setOpen(o => !o)} className="group relative" title="Jarvis">
-          <Avatar size="lg" pulse={!open} />
+          {mensagensPendentes.length > 0 && !open ? (
+            <div className="relative w-14 h-14 flex items-center justify-center">
+              <span className="absolute inset-0 rounded-full bg-red-500 opacity-40 animate-ping" />
+              <span className="absolute inset-0 rounded-full bg-red-500 opacity-20 animate-ping" style={{ animationDelay: '0.3s' }} />
+              <div className="relative z-10">
+                <Avatar size="lg" />
+              </div>
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center z-20 shadow-lg">
+                <span className="text-white text-[10px] font-bold">{mensagensPendentes.length}</span>
+              </span>
+            </div>
+          ) : (
+            <Avatar size="lg" pulse={!open} />
+          )}
           {open && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center z-20">
               <ChevronDown className="w-3 h-3 text-white" />

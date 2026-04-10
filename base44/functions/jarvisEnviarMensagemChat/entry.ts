@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.JarvisMensagem.create({
           destinatario_email: email,
           remetente_nome: remetente,
+          remetente_email: user.email,
           mensagem: mensagemPersonalizada,
           lida: false
         });
