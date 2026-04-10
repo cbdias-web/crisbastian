@@ -333,9 +333,9 @@ export default function AssistenteFloating() {
   return (
     <>
       {/* Floating button */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-2">
+      <div className="fixed top-6 right-6 z-[100] flex flex-col items-end gap-2">
         {!open && (
-          <div className="flex items-center gap-2 animate-bounce-slow">
+          <div className="flex items-center gap-2">
             <div className="bg-white text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg border border-gray-100 whitespace-nowrap">
               Posso te ajudar? 👋
             </div>
@@ -353,7 +353,7 @@ export default function AssistenteFloating() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-[99] w-[360px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
+        <div className="fixed top-24 right-6 z-[99] w-[360px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
           style={{ height: '520px' }}>
 
           {/* Header */}
