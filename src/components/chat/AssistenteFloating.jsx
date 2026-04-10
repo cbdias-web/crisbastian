@@ -219,7 +219,9 @@ function recordActivity() {
 
 function isInactive() {
   const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10);
-  return last > 0 && (Date.now() - last) > INACTIVITY_MS;
+  // Sem registro = nunca usou o novo sistema → tela limpa
+  if (last === 0) return true;
+  return (Date.now() - last) > INACTIVITY_MS;
 }
 
 export default function AssistenteFloating() {
