@@ -20,7 +20,6 @@ Deno.serve(async (req) => {
     }
 
     const remetente = remetente_nome || user.full_name || 'Administrador';
-    const conteudoAssistente = `📢 *Mensagem de ${remetente}:*\n\n${mensagem}`;
 
     const resultados = [];
 
@@ -35,18 +34,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Sempre cria uma nova conversa para a notificação
+        // Cria nova conversa para a notificação
         const conversa = await base44.asServiceRole.agents.createConversation({
           agent_name: 'assistente_treinamentos',
           user_id: destinatario.id,
-          metadata: { name: `Notificação - ${new Date().toLocaleDateString('pt-BR')}` }
+          metadata: { name: `📢 Aviso - ${new Date().toLocaleDateString('pt-BR')}` }
         });
 
-        // A API exige uma mensagem de usuário antes de uma mensagem de assistente
-        // Enviamos uma mensagem "gatilho" oculta para o agente processar
+        // Envia trigger para o agente apresentar a mensagem do admin
+        const trigger = `[BROADCAST_ADMIN remetente="${remetente}"] ${mensagem}`;
         await base44.asServiceRole.agents.addMessage(conversa, {
           role: 'user',
-          content: `[NOTIFICAÇÃO INTERNA - NÃO RESPONDER AUTOMATICAMENTE] ${conteudoAssistente}`
+          content: trigger
         });
 
         resultados.push({ email, status: 'enviado', nome: destinatario.full_name });
