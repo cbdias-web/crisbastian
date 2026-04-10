@@ -19,15 +19,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'mensagem é obrigatória' }, { status: 400 });
     }
 
-    const conteudo = remetente_nome
-      ? `📢 *Mensagem de ${remetente_nome}:*\n\n${mensagem}`
-      : `📢 *Mensagem do Administrador:*\n\n${mensagem}`;
+    const remetente = remetente_nome || user.full_name || 'Administrador';
+    const conteudoAssistente = `📢 *Mensagem de ${remetente}:*\n\n${mensagem}`;
 
     const resultados = [];
 
     for (const email of destinatarios_emails) {
       try {
-        // Busca usuário pelo email para pegar o ID
+        // Busca usuário pelo email
         const usuarios = await base44.asServiceRole.entities.User.filter({ email });
         const destinatario = usuarios[0];
 
@@ -36,29 +35,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Lista conversas existentes do usuário com o agente
-        const conversas = await base44.asServiceRole.agents.listConversations({
+        // Sempre cria uma nova conversa para a notificação
+        const conversa = await base44.asServiceRole.agents.createConversation({
           agent_name: 'assistente_treinamentos',
-          user_id: destinatario.id
+          user_id: destinatario.id,
+          metadata: { name: `Notificação - ${new Date().toLocaleDateString('pt-BR')}` }
         });
 
-        let conversa;
-        if (conversas && conversas.length > 0) {
-          // Usa a conversa mais recente
-          conversa = conversas[0];
-        } else {
-          // Cria nova conversa para o usuário
-          conversa = await base44.asServiceRole.agents.createConversation({
-            agent_name: 'assistente_treinamentos',
-            user_id: destinatario.id,
-            metadata: { name: 'Chat com Jarvis' }
-          });
-        }
-
-        // Envia a mensagem como o assistente (role: assistant)
+        // A API exige uma mensagem de usuário antes de uma mensagem de assistente
+        // Enviamos uma mensagem "gatilho" oculta para o agente processar
         await base44.asServiceRole.agents.addMessage(conversa, {
-          role: 'assistant',
-          content: conteudo
+          role: 'user',
+          content: `[NOTIFICAÇÃO INTERNA - NÃO RESPONDER AUTOMATICAMENTE] ${conteudoAssistente}`
         });
 
         resultados.push({ email, status: 'enviado', nome: destinatario.full_name });
