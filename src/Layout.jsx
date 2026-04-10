@@ -7,6 +7,7 @@ import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
 import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
+import MarketTicker from '@/components/MarketTicker.jsx';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -441,6 +442,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* ===== MAIN CONTENT ===== */}
       <main className={`flex-1 transition-all duration-300 ${!isMobile ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
+        <MarketTicker />
         {children}
         <AssistenteFloating />
       </main>
