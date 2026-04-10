@@ -441,7 +441,7 @@ export default function Layout({ children, currentPageName }) {
       )}
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className={`flex-1 transition-all duration-300 ${!isMobile ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
+      <main className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${!isMobile ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
         <MarketTicker />
         {children}
         <AssistenteFloating />
