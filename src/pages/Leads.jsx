@@ -41,6 +41,7 @@ export default function Leads() {
   const [distribuicaoTipo, setDistribuicaoTipo] = useState('coletivo'); // 'individual' | 'coletivo'
   const [subcarteira, setSubcarteira] = useState('');
   const fileRef = useRef();
+  const [dragging, setDragging] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -631,10 +632,21 @@ export default function Leads() {
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Arquivo CSV</label>
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-[#1a3150] transition" onClick={() => fileRef.current?.click()}>
-                  <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Clique para selecionar o arquivo</p>
+                <label className="text-xs text-gray-500 mb-1 block">Arquivo CSV ou Excel</label>
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${dragging ? 'border-[#1a3150] bg-blue-50' : 'border-gray-200 hover:border-[#1a3150]'}`}
+                  onClick={() => fileRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setDragging(true); }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={e => {
+                    e.preventDefault();
+                    setDragging(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) handleFileChange({ target: { files: [file], value: '' } });
+                  }}
+                >
+                  <Upload className={`w-8 h-8 mx-auto mb-2 ${dragging ? 'text-[#1a3150]' : 'text-gray-300'}`} />
+                  <p className="text-sm text-gray-500">{dragging ? 'Solte o arquivo aqui' : 'Clique ou arraste o arquivo aqui'}</p>
                   <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
                 </div>
               </div>
