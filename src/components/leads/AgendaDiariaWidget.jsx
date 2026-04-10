@@ -88,6 +88,9 @@ export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
   const realizadosHoje = (grouped[todayStr] || []).filter(i => i.status === 'realizado').length;
   const pendentesHoje = (grouped[todayStr] || []).filter(i => i.status === 'pendente').length;
 
+  // Agenda de hoje concluída = sem pendentes (ou não há agenda hoje)
+  const agendaHojeConcluida = totalHoje === 0 || pendentesHoje === 0;
+
   if (isLoading) return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <div className="w-6 h-6 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -182,7 +185,7 @@ export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
                               </div>
                             )}
                           </div>
-                          {item.status === 'pendente' && isHoje && (
+                          {item.status === 'pendente' && (isHoje || agendaHojeConcluida) && (
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <button onClick={() => marcarStatus(item, 'realizado')} disabled={updating === item.id} title="Realizado"
                                 className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition">
