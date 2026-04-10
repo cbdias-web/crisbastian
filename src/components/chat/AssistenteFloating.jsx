@@ -219,8 +219,13 @@ function recordActivity() {
 
 function isInactive() {
   const last = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0', 10);
-  // Sem registro = nunca usou o novo sistema → tela limpa
+  // Sem registro = nunca usou → tela limpa
   if (last === 0) return true;
+  // Dia diferente → sempre tela limpa
+  const lastDate = new Date(last).toDateString();
+  const today = new Date().toDateString();
+  if (lastDate !== today) return true;
+  // Mesmo dia mas inativo por mais de 30 min
   return (Date.now() - last) > INACTIVITY_MS;
 }
 
