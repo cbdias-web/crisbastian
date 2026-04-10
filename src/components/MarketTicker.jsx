@@ -68,7 +68,10 @@ export default function MarketTicker() {
         </div>
 
         {/* Ticker scrolling */}
-        <div className="flex-1 overflow-hidden relative" style={{ minWidth: 0 }}>
+        <div className="flex-1 overflow-hidden relative" style={{ minWidth: 0 }}
+          onMouseEnter={e => e.currentTarget.querySelector('.animate-ticker-scroll').style.animationPlayState = 'paused'}
+          onMouseLeave={e => e.currentTarget.querySelector('.animate-ticker-scroll').style.animationPlayState = 'running'}
+        >
           <div
             className="flex animate-ticker-scroll"
             style={{ width: 'max-content' }}
