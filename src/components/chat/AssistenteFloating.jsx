@@ -235,6 +235,7 @@ export default function AssistenteFloating() {
   const [userLoaded, setUserLoaded] = useState(false);
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [mensagensPendentes, setMensagensPendentes] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -245,12 +246,37 @@ export default function AssistenteFloating() {
     }).catch(() => setUserLoaded(true));
   }, []);
 
+  // Verifica mensagens pendentes do admin ao abrir
+  useEffect(() => {
+    if (open && userName) {
+      checkMensagensPendentes();
+    }
+  }, [open, userName]);
+
+  const checkMensagensPendentes = async () => {
+    try {
+      const user = await base44.auth.me();
+      if (!user?.email) return;
+      const pendentes = await base44.entities.JarvisMensagem.filter({ destinatario_email: user.email, lida: false });
+      if (pendentes.length > 0) {
+        setMensagensPendentes(pendentes);
+      }
+    } catch (e) {}
+  };
+
+  const marcarMensagensComoLidas = async (msgs) => {
+    for (const msg of msgs) {
+      try {
+        await base44.entities.JarvisMensagem.update(msg.id, { lida: true });
+      } catch (e) {}
+    }
+  };
+
   useEffect(() => {
     if (open && userLoaded) {
       if (!initialized) {
         initConversation();
       } else if (isInactive()) {
-        // Já inicializado mas ficou inativo: abre tela limpa (histórico preservado no servidor)
         startFreshConversation();
       }
     }
@@ -375,7 +401,23 @@ export default function AssistenteFloating() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50">
-            {messages.length === 0 && !sending && (
+            {/* Mensagens pendentes do admin */}
+            {mensagensPendentes.length > 0 && (
+              <div className="space-y-2">
+                {mensagensPendentes.map((msg) => (
+                  <div key={msg.id} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                    <p className="text-[10px] font-semibold text-blue-600 mb-1">📢 Mensagem de {msg.remetente_nome || 'Administrador'}</p>
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{msg.mensagem}</p>
+                  </div>
+                ))}
+                <button
+                  onClick={() => { marcarMensagensComoLidas(mensagensPendentes); setMensagensPendentes([]); }}
+                  className="w-full text-xs text-blue-600 hover:text-blue-800 py-1 underline"
+                >Marcar como lida</button>
+              </div>
+            )}
+
+            {messages.length === 0 && !sending && mensagensPendentes.length === 0 && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
                 <Avatar size="lg" />
                 <p className="mt-3 text-sm font-semibold text-gray-800">Olá! Sou o Jarvis 👋</p>
@@ -390,10 +432,14 @@ export default function AssistenteFloating() {
                 </div>
               </div>
             )}
-            {messages.map((msg, i) => {
+            {messages.length === 0 && !sending && mensagensPendentes.length > 0 && null}
+            {messages.length > 0 && messages.map((msg, i) => {
               const display = { ...msg };
               if (msg.role === 'user' && msg.content?.includes('[Usuário:')) {
                 display.content = msg.content.replace(/^\[Usuário:[^\]]*\]\s*/, '');
+              }
+              if (msg.role === 'user' && msg.content?.includes('[BROADCAST_ADMIN')) {
+                return null;
               }
               return <Message key={i} message={display} />;
             })}

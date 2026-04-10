@@ -20,12 +20,11 @@ Deno.serve(async (req) => {
     }
 
     const remetente = remetente_nome || user.full_name || 'Administrador';
-
     const resultados = [];
 
     for (const email of destinatarios_emails) {
       try {
-        // Busca usuário pelo email
+        // Verifica se o usuário existe
         const usuarios = await base44.asServiceRole.entities.User.filter({ email });
         const destinatario = usuarios[0];
 
@@ -34,21 +33,15 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Cria nova conversa para a notificação
-        const conversa = await base44.asServiceRole.agents.createConversation({
-          agent_name: 'assistente_treinamentos',
-          user_id: destinatario.id,
-          metadata: { name: `📢 Aviso - ${new Date().toLocaleDateString('pt-BR')}` }
+        // Salva a mensagem na entidade JarvisMensagem
+        await base44.asServiceRole.entities.JarvisMensagem.create({
+          destinatario_email: email,
+          remetente_nome: remetente,
+          mensagem,
+          lida: false
         });
 
-        // Envia trigger para o agente apresentar a mensagem do admin
-        const trigger = `[BROADCAST_ADMIN remetente="${remetente}"] ${mensagem}`;
-        await base44.asServiceRole.agents.addMessage(conversa, {
-          role: 'user',
-          content: trigger
-        });
-
-        resultados.push({ email, status: 'enviado', nome: destinatario.full_name });
+        resultados.push({ email, status: 'enviado', nome: destinatario.full_name || destinatario.email });
       } catch (err) {
         resultados.push({ email, status: 'erro', motivo: err.message });
       }
