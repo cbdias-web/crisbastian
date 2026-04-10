@@ -243,6 +243,7 @@ export default function AssistenteFloating() {
   const [mensagensPendentes, setMensagensPendentes] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const unsubscribeRef = useRef(null);
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -293,6 +294,7 @@ export default function AssistenteFloating() {
   }, [messages, sending]);
 
   const startFreshConversation = async () => {
+    if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
     const conv = await base44.agents.createConversation({
       agent_name: 'assistente_treinamentos',
       metadata: { name: 'Chat' }
@@ -301,7 +303,7 @@ export default function AssistenteFloating() {
     setMessages([]);
     setIsFirstMessage(true);
     setPdfDownloaded(false);
-    base44.agents.subscribeToConversation(conv.id, (data) => {
+    unsubscribeRef.current = base44.agents.subscribeToConversation(conv.id, (data) => {
       setMessages(data.messages || []);
     });
     return conv;
@@ -309,12 +311,13 @@ export default function AssistenteFloating() {
 
   const initConversation = async () => {
     try {
-      // Se ficou inativo por mais de 30 min, começa conversa nova (tela limpa)
       if (isInactive()) {
         await startFreshConversation();
         setInitialized(true);
         return;
       }
+
+      if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
 
       const list = await base44.agents.listConversations({ agent_name: 'assistente_treinamentos' });
       let conv;
@@ -331,7 +334,7 @@ export default function AssistenteFloating() {
       setMessages(msgs);
       setIsFirstMessage(msgs.length === 0);
       setInitialized(true);
-      base44.agents.subscribeToConversation(conv.id, (data) => {
+      unsubscribeRef.current = base44.agents.subscribeToConversation(conv.id, (data) => {
         setMessages(data.messages || []);
       });
     } catch (e) {}
