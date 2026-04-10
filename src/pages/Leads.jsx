@@ -70,14 +70,50 @@ export default function Leads() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const text = await file.text();
-    const rows = parseCSV(text);
-    if (rows.length === 0) {
-      toast.error('Nenhum dado válido. Use CSV com colunas: nome, cpf_cnpj, telefone');
-      return;
+    // Reset input so same file can be selected again
+    e.target.value = '';
+    try {
+      const isExcel = file.name.match(/\.xlsx?$/i);
+      let rows = [];
+      if (isExcel) {
+        // Upload e extração via integração
+        toast.info('Processando arquivo Excel...');
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+          file_url,
+          json_schema: {
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    nome: { type: 'string' },
+                    cpf_cnpj: { type: 'string' },
+                    telefone: { type: 'string' },
+                  }
+                }
+              }
+            }
+          }
+        });
+        if (result.status === 'error') throw new Error(result.details || 'Erro ao processar Excel');
+        rows = (result.output?.items || []).filter(r => r.nome?.trim());
+      } else {
+        const text = await file.text();
+        rows = parseCSV(text);
+      }
+      if (rows.length === 0) {
+        toast.error('Nenhum dado válido encontrado. Verifique se o arquivo tem a coluna "nome".');
+        return;
+      }
+      setPreview(rows);
+      setNomeLote(file.name.replace(/\.[^.]+$/, ''));
+      toast.success(`${rows.length} registros encontrados`);
+    } catch (err) {
+      toast.error('Erro ao ler arquivo: ' + (err.message || 'Verifique o formato do arquivo'));
     }
-    setPreview(rows);
-    setNomeLote(file.name.replace(/\.[^.]+$/, ''));
   };
 
   const importarLote = async () => {
@@ -585,7 +621,7 @@ export default function Leads() {
             <div className="p-6 space-y-4">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
                 <p className="text-xs text-blue-700">
-                  <strong>Formato:</strong> CSV com colunas <code className="bg-blue-100 px-1 rounded">nome</code>, <code className="bg-blue-100 px-1 rounded">cpf_cnpj</code> e <code className="bg-blue-100 px-1 rounded">telefone</code>. Separador: vírgula ou ponto-e-vírgula.
+                  <strong>Formato:</strong> CSV ou Excel (.xlsx) com colunas <code className="bg-blue-100 px-1 rounded">nome</code>, <code className="bg-blue-100 px-1 rounded">cpf_cnpj</code> e <code className="bg-blue-100 px-1 rounded">telefone</code>. Separador: vírgula ou ponto-e-vírgula.
                 </p>
               </div>
               <div>
@@ -599,7 +635,7 @@ export default function Leads() {
                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-[#1a3150] transition" onClick={() => fileRef.current?.click()}>
                   <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">Clique para selecionar o arquivo</p>
-                  <input ref={fileRef} type="file" accept=".csv,.txt" className="hidden" onChange={handleFileChange} />
+                  <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
                 </div>
               </div>
               {preview && (
