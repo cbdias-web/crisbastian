@@ -229,8 +229,20 @@ function isInactive() {
   return (Date.now() - last) > INACTIVITY_MS;
 }
 
+const POSITION_KEY = 'jarvis_position';
+
+function loadPosition() {
+  try {
+    const saved = localStorage.getItem(POSITION_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { right: 24, bottom: 24 };
+}
+
 export default function AssistenteFloating() {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(loadPosition);
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 });
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -381,18 +393,72 @@ export default function AssistenteFloating() {
 
   const isTyping = sending || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
 
+  // Drag logic
+  const btnContainerRef = useRef(null);
+  const hasDragged = useRef(false);
+
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    const el = btnContainerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    hasDragged.current = false;
+    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+    e.preventDefault();
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
+      if (!hasDragged.current) return;
+      const newLeft = Math.max(0, Math.min(window.innerWidth - 64, dragRef.current.origLeft + dx));
+      const newTop = Math.max(0, Math.min(window.innerHeight - 64, dragRef.current.origTop + dy));
+      const newPos = { left: newLeft, top: newTop };
+      setPos(newPos);
+      localStorage.setItem(POSITION_KEY, JSON.stringify(newPos));
+    };
+
+    const onUp = () => {
+      dragRef.current.dragging = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const handleBtnClick = () => {
+    if (hasDragged.current) return;
+    setOpen(o => !o);
+  };
+
+  // Compute style: support both {right,bottom} default and {left,top} after drag
+  const btnStyle = pos.left !== undefined
+    ? { position: 'fixed', left: pos.left, top: pos.top, zIndex: 100 }
+    : { position: 'fixed', right: pos.right ?? 24, bottom: pos.bottom ?? 24, zIndex: 100 };
+
+  const chatStyle = pos.left !== undefined
+    ? { position: 'fixed', left: Math.min(pos.left, window.innerWidth - 376), top: Math.max(0, pos.top - 540), zIndex: 99 }
+    : { position: 'fixed', right: (pos.right ?? 24), bottom: (pos.bottom ?? 24) + 72, zIndex: 99 };
+
   return (
     <>
       {/* Floating button */}
-      <div className="fixed top-6 right-6 z-[100] flex flex-col items-end gap-2">
+      <div ref={btnContainerRef} style={btnStyle} className="flex flex-col items-end gap-2 select-none">
         {!open && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" style={{ pointerEvents: 'none' }}>
             <div className="bg-white text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg border border-gray-100 whitespace-nowrap">
               Posso te ajudar? 👋
             </div>
           </div>
         )}
-        <button onClick={() => setOpen(o => !o)} className="group relative" title="Jarvis">
+        <button
+          onMouseDown={onMouseDown}
+          onClick={handleBtnClick}
+          className="group relative cursor-grab active:cursor-grabbing"
+          title="Jarvis (arraste para mover)"
+        >
           {mensagensPendentes.length > 0 && !open ? (
             <div className="relative w-14 h-14 flex items-center justify-center">
               <span className="absolute inset-0 rounded-full bg-red-500 opacity-40 animate-ping" />
@@ -417,8 +483,7 @@ export default function AssistenteFloating() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed top-24 right-6 z-[99] w-[360px] max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
-          style={{ height: '520px' }}>
+        <div style={{ ...chatStyle, width: '360px', maxWidth: 'calc(100vw - 24px)', height: '520px' }} className="bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
 
           {/* Header */}
           <div className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] px-4 py-3 flex items-center gap-3">
