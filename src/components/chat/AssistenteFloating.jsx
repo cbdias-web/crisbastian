@@ -43,6 +43,7 @@ const Avatar = ({ size = 'md', pulse = false }) => {
 
 const TypingIndicator = () => (
   <div className="flex gap-3 items-end">
+    <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>
     <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
@@ -159,7 +160,8 @@ const Message = ({ message }) => {
   if (!message.content && !message.tool_calls?.length) return null;
   return (
     <div className={`flex gap-2 items-end ${isUser ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
+      {!isUser && <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>}
+      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
           ? 'bg-[#0f1e35] text-white rounded-br-sm'
           : 'bg-white border border-slate-200 text-gray-800 rounded-bl-sm'
