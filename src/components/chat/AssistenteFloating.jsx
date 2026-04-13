@@ -160,7 +160,6 @@ const Message = ({ message }) => {
   if (!message.content && !message.tool_calls?.length) return null;
   return (
     <div className={`flex gap-2 items-end ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && <Avatar size="sm" />}
       <div className={`max-w-[82%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
           ? 'bg-[#0f1e35] text-white rounded-br-sm'
@@ -351,32 +350,8 @@ export default function AssistenteFloating() {
 
   const initConversation = async () => {
     try {
-      if (isInactive()) {
-        await startFreshConversation();
-        setInitialized(true);
-        return;
-      }
-
-      if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
-
-      const list = await base44.agents.listConversations({ agent_name: 'assistente_treinamentos' });
-      let conv;
-      if (list.length > 0) {
-        conv = await base44.agents.getConversation(list[0].id);
-      } else {
-        conv = await base44.agents.createConversation({
-          agent_name: 'assistente_treinamentos',
-          metadata: { name: 'Chat' }
-        });
-      }
-      setConversation(conv);
-      const msgs = conv.messages || [];
-      setMessages(msgs);
-      setIsFirstMessage(msgs.length === 0);
+      await startFreshConversation();
       setInitialized(true);
-      unsubscribeRef.current = base44.agents.subscribeToConversation(conv.id, (data) => {
-        setMessages(data.messages || []);
-      });
     } catch (e) {}
   };
 
@@ -559,12 +534,12 @@ export default function AssistenteFloating() {
             })}
             {!pdfDownloaded && <GlobalPdfButton messages={messages} onDownloaded={() => setPdfDownloaded(true)} />}
             {isTyping && <TypingIndicator />}
-            {/* Post-response suggestions */}
-            {!isTyping && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
+            {/* Post-response suggestions: só após >= 3 trocas completas */}
+            {!isTyping && messages.length >= 6 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
               const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
               return (
-                <div className="mt-2 space-y-1.5">
-                  <p className="text-[10px] text-gray-400 font-medium px-1">💡 Outras opções</p>
+                <div className="mt-3 border-t border-gray-100 pt-3 space-y-1.5">
+                  <p className="text-[10px] text-gray-400 font-medium px-1">Quer explorar outro assunto?</p>
                   {shuffled.map(s => (
                     <button key={s} onClick={() => send(s)}
                       className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
@@ -572,8 +547,8 @@ export default function AssistenteFloating() {
                     </button>
                   ))}
                   <button onClick={newChat}
-                    className="w-full text-left text-xs px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition text-gray-500 flex items-center gap-1.5">
-                    <Plus className="w-3 h-3" /> Encerrar e iniciar nova conversa
+                    className="w-full text-center text-[11px] py-1.5 text-gray-400 hover:text-gray-600 transition">
+                    ou encerrar esta conversa e começar uma nova
                   </button>
                 </div>
               );
