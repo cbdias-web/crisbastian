@@ -422,12 +422,12 @@ export default function AssistenteFloating() {
 
   // Compute style: support both {right,bottom} default and {left,top} after drag
   const btnStyle = pos.left !== undefined
-    ? { position: 'fixed', left: pos.left, top: pos.top, zIndex: 100 }
-    : { position: 'fixed', right: pos.right ?? 24, bottom: pos.bottom ?? 24, zIndex: 100 };
+    ? { position: 'fixed', left: pos.left, top: pos.top, zIndex: 9999 }
+    : { position: 'fixed', right: pos.right ?? 24, bottom: pos.bottom ?? 24, zIndex: 9999 };
 
   const chatStyle = pos.left !== undefined
-    ? { position: 'fixed', left: Math.min(pos.left, window.innerWidth - 376), top: Math.max(0, pos.top - 540), zIndex: 99 }
-    : { position: 'fixed', right: (pos.right ?? 24), bottom: (pos.bottom ?? 24) + 72, zIndex: 99 };
+    ? { position: 'fixed', left: Math.min(pos.left, window.innerWidth - 376), top: Math.max(0, pos.top - 540), zIndex: 9998 }
+    : { position: 'fixed', right: (pos.right ?? 24), bottom: (pos.bottom ?? 24) + 88, zIndex: 9998 };
 
   return (
     <>
