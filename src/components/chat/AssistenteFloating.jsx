@@ -43,7 +43,6 @@ const Avatar = ({ size = 'md', pulse = false }) => {
 
 const TypingIndicator = () => (
   <div className="flex gap-3 items-end">
-    <Avatar size="sm" />
     <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
@@ -534,8 +533,8 @@ export default function AssistenteFloating() {
             })}
             {!pdfDownloaded && <GlobalPdfButton messages={messages} onDownloaded={() => setPdfDownloaded(true)} />}
             {isTyping && <TypingIndicator />}
-            {/* Post-response suggestions: só após >= 3 trocas completas */}
-            {!isTyping && messages.length >= 6 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
+            {/* Post-response suggestions: após pelo menos 1 troca completa */}
+            {!isTyping && messages.length >= 2 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
               const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
               return (
                 <div className="mt-3 border-t border-gray-100 pt-3 space-y-1.5">
