@@ -213,6 +213,17 @@ const SUGGESTIONS = [
   'Qual o volume de vendas deste mês?',
 ];
 
+const POST_SUGGESTIONS = [
+  'Ver ranking de vendedores do mês',
+  'Quais leads não foram convertidos?',
+  'Resumo das minhas comissões',
+  'Treinamentos disponíveis',
+  'Relatório de interações com clientes',
+  'Metas do time este mês',
+  'Clientes sem contato recente',
+  'Agenda de prospecção de hoje',
+];
+
 function recordActivity() {
   localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 }
@@ -548,6 +559,25 @@ export default function AssistenteFloating() {
             })}
             {!pdfDownloaded && <GlobalPdfButton messages={messages} onDownloaded={() => setPdfDownloaded(true)} />}
             {isTyping && <TypingIndicator />}
+            {/* Post-response suggestions */}
+            {!isTyping && messages.length > 0 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
+              const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
+              return (
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-[10px] text-gray-400 font-medium px-1">💡 Outras opções</p>
+                  {shuffled.map(s => (
+                    <button key={s} onClick={() => send(s)}
+                      className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
+                      {s}
+                    </button>
+                  ))}
+                  <button onClick={newChat}
+                    className="w-full text-left text-xs px-3 py-2 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200 transition text-gray-500 flex items-center gap-1.5">
+                    <Plus className="w-3 h-3" /> Encerrar e iniciar nova conversa
+                  </button>
+                </div>
+              );
+            })()}
             <div ref={messagesEndRef} />
           </div>
 
