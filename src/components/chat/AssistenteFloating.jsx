@@ -507,8 +507,7 @@ export default function AssistenteFloating() {
 
             {messages.length === 0 && !sending && mensagensPendentes.length === 0 && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
-                <Avatar size="lg" />
-                <p className="mt-3 text-sm font-semibold text-gray-800">Olá! Sou o Jarvis 👋</p>
+                <p className="text-sm font-semibold text-gray-800">Olá! Sou o Jarvis 👋</p>
                 <p className="text-xs text-gray-500 mt-1 mb-4">Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
                 <div className="flex flex-col gap-1.5 w-full">
                   {SUGGESTIONS.map(s => (
