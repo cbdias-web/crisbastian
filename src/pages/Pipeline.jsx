@@ -314,11 +314,21 @@ export default function Pipeline() {
     setConvertendo(null);
   };
 
-  // KPIs
+  // KPIs — totais gerais (todos os negócios, sem filtro de gerente/temperatura/busca)
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
   const valorTotal = negocios.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const valorFechado = negocios.filter(n => n.temperatura === 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
+  const totalGeral = negocios.length;
   const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))];
+
+  // KPIs do gerente selecionado
+  const negociosGerente = filtroVendedor !== 'Todos'
+    ? negocios.filter(n => n.vendedor_nome === filtroVendedor)
+    : null;
+  const gerenteAtivos = negociosGerente?.filter(n => n.temperatura !== 'Perdido').length ?? 0;
+  const gerenteEmNegociacao = negociosGerente?.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0) ?? 0;
+  const gerenteFechados = negociosGerente?.filter(n => n.temperatura === 'Fechado').length ?? 0;
+  const gerenteVolumeFechado = negociosGerente?.filter(n => n.temperatura === 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0) ?? 0;
 
   const gerarRelatorio = () => {
     const dados = negociosFiltrados;
@@ -381,9 +391,13 @@ export default function Pipeline() {
           </div>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* KPIs — totais gerais */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="bg-[#0f1e35] text-white rounded-2xl p-4 shadow-sm">
+            <p className="text-2xl font-bold">{totalGeral}</p>
+            <p className="text-xs opacity-70 mt-0.5">Total de negociações</p>
+          </div>
+          <div className="bg-[#0f1e35]/80 text-white rounded-2xl p-4 shadow-sm">
             <p className="text-2xl font-bold">{totalAtivos}</p>
             <p className="text-xs opacity-70 mt-0.5">Negócios ativos</p>
           </div>
@@ -400,6 +414,33 @@ export default function Pipeline() {
             <p className="text-xs text-emerald-600 mt-0.5">Volume fechado</p>
           </div>
         </div>
+
+        {/* KPIs do gerente selecionado */}
+        {isAdmin && filtroVendedor !== 'Todos' && negociosGerente && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-3">
+              📊 Totais de {filtroVendedor}
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+                <p className="text-xl font-bold text-indigo-700">{negociosGerente.length}</p>
+                <p className="text-[10px] text-indigo-500 mt-0.5">Total negociações</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+                <p className="text-xl font-bold text-indigo-700">{gerenteAtivos}</p>
+                <p className="text-[10px] text-indigo-500 mt-0.5">Ativos</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+                <p className="text-sm font-bold text-orange-600">{fmtVal(gerenteEmNegociacao)}</p>
+                <p className="text-[10px] text-indigo-500 mt-0.5">Em negociação</p>
+              </div>
+              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+                <p className="text-sm font-bold text-emerald-600">{fmtVal(gerenteVolumeFechado)}</p>
+                <p className="text-[10px] text-indigo-500 mt-0.5">Volume fechado ({gerenteFechados})</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filtros */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
