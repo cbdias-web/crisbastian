@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, Filter, TrendingUp, DollarSign, Target, Thermometer } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 const TEMPERATURAS = [
-  { value: 'Frio', color: 'bg-blue-100 text-blue-700 border-blue-200', dot: 'bg-blue-500', emoji: '🧊' },
-  { value: 'Morno', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', dot: 'bg-yellow-500', emoji: '🌤️' },
-  { value: 'Quente', color: 'bg-orange-100 text-orange-700 border-orange-200', dot: 'bg-orange-500', emoji: '🔥' },
-  { value: 'Fechado', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500', emoji: '✅' },
-  { value: 'Perdido', color: 'bg-red-100 text-red-700 border-red-200', dot: 'bg-red-400', emoji: '❌' },
+  { value: 'Frio', dot: 'bg-blue-500', emoji: '🧊' },
+  { value: 'Morno', dot: 'bg-yellow-500', emoji: '🌤️' },
+  { value: 'Quente', dot: 'bg-orange-500', emoji: '🔥' },
+  { value: 'Fechado', dot: 'bg-emerald-500', emoji: '✅' },
+  { value: 'Perdido', dot: 'bg-red-400', emoji: '❌' },
 ];
 
 const ORIGENS = ['Carteira', 'Lead', 'Indicação', 'Prospecção Ativa', 'Outro'];
@@ -20,14 +21,111 @@ const ORIGENS = ['Carteira', 'Lead', 'Indicação', 'Prospecção Ativa', 'Outro
 const fmtVal = (v) => v?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00';
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
 
-const getTempStyle = (t) => TEMPERATURAS.find(x => x.value === t) || TEMPERATURAS[0];
-
 const EMPTY = {
   cliente_nome: '', cliente_cpf_cnpj: '', cliente_telefone: '', cliente_id: '',
   produto: '', valor_estimado: '', data_prevista: '', temperatura: 'Frio',
   descricao: '', origem: 'Prospecção Ativa', proximo_contato: '', observacao: '',
   vendedor_id: '', vendedor_nome: '',
 };
+
+// ── Componente de busca de cliente com autocomplete ──────────────────────────
+function ClienteSearch({ clientes, form, setForm }) {
+  const [query, setQuery] = useState(form.cliente_nome || '');
+  const [open, setOpen] = useState(false);
+  const [novoCliente, setNovoCliente] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    setQuery(form.cliente_nome || '');
+  }, [form.cliente_nome]);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = query.length >= 2
+    ? clientes.filter(c => c.nome?.toLowerCase().includes(query.toLowerCase()) || c.cpf_cnpj?.includes(query))
+    : [];
+
+  const selectCliente = (c) => {
+    setQuery(c.nome);
+    setForm(f => ({
+      ...f,
+      cliente_nome: c.nome,
+      cliente_id: c.id,
+      cliente_cpf_cnpj: c.cpf_cnpj || f.cliente_cpf_cnpj,
+      cliente_telefone: c.telefone || f.cliente_telefone,
+    }));
+    setOpen(false);
+    setNovoCliente(false);
+  };
+
+  const handleInput = (e) => {
+    const val = e.target.value;
+    setQuery(val);
+    setForm(f => ({ ...f, cliente_nome: val, cliente_id: '' }));
+    setOpen(true);
+    setNovoCliente(false);
+  };
+
+  const handleNovoCliente = () => {
+    setNovoCliente(true);
+    setOpen(false);
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="relative">
+        <input
+          value={query}
+          onChange={handleInput}
+          onFocus={() => query.length >= 2 && setOpen(true)}
+          placeholder="Busque ou digite o nome do cliente"
+          required
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+        />
+        {form.cliente_id && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500">
+            <Check className="w-4 h-4" />
+          </span>
+        )}
+      </div>
+
+      {open && query.length >= 2 && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+          {filtered.length > 0 ? (
+            filtered.slice(0, 8).map(c => (
+              <button key={c.id} type="button" onClick={() => selectCliente(c)}
+                className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition text-sm border-b border-gray-50 last:border-0">
+                <p className="font-medium text-gray-800">{c.nome}</p>
+                {c.cpf_cnpj && <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>}
+              </button>
+            ))
+          ) : (
+            <div className="px-3 py-2.5 text-sm text-gray-400 text-center">
+              Nenhum cliente encontrado
+            </div>
+          )}
+          <button type="button" onClick={handleNovoCliente}
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition border-t border-gray-100 font-medium">
+            <UserPlus className="w-3.5 h-3.5" /> Inserir como novo cliente
+          </button>
+        </div>
+      )}
+
+      {novoCliente && (
+        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 flex items-center gap-2">
+          <UserPlus className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+          <p className="text-xs text-blue-700">
+            <strong>"{query}"</strong> será salvo como novo cliente na base ao confirmar.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Pipeline() {
   const [user, setUser] = useState(null);
@@ -37,8 +135,9 @@ export default function Pipeline() {
   const [filtroTemp, setFiltroTemp] = useState('Todos');
   const [filtroVendedor, setFiltroVendedor] = useState('Todos');
   const [busca, setBusca] = useState('');
-  const [showRelatorio, setShowRelatorio] = useState(false);
+  const [convertendo, setConvertendo] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -46,7 +145,7 @@ export default function Pipeline() {
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
-  const { data: negociosRaw = [], isLoading } = useQuery({
+  const { data: negociosRaw = [] } = useQuery({
     queryKey: ['pipeline'],
     queryFn: () => base44.entities.Pipeline.list('-created_date', 500),
     enabled: !!user,
@@ -60,7 +159,7 @@ export default function Pipeline() {
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-pipeline'],
-    queryFn: () => base44.entities.Cliente.list('nome', 500),
+    queryFn: () => base44.entities.Cliente.list('nome', 1000),
     enabled: !!user,
   });
 
@@ -70,7 +169,6 @@ export default function Pipeline() {
     enabled: !!user,
   });
 
-  // Filtrar por vendedor se não for admin
   const negocios = negociosRaw.filter(n => {
     if (!isAdmin) return n.vendedor_id === user?.id || n.created_by === user?.email;
     return true;
@@ -102,13 +200,27 @@ export default function Pipeline() {
     onSuccess: () => { queryClient.invalidateQueries(['pipeline']); toast.success('Removido do pipeline.'); },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const data = { ...form, valor_estimado: parseFloat(form.valor_estimado) || 0 };
-    // Se não for admin, usar próprio vendedor
     if (!isAdmin && user) {
       data.vendedor_id = user.id;
       data.vendedor_nome = user.nome_tratamento || user.full_name || user.email;
+    }
+    // Se cliente não existe na base, criar
+    if (!data.cliente_id && data.cliente_nome) {
+      try {
+        const novoC = await base44.entities.Cliente.create({
+          nome: data.cliente_nome,
+          cpf_cnpj: data.cliente_cpf_cnpj || '',
+          telefone: data.cliente_telefone || '',
+          vendedor_id: data.vendedor_id || '',
+          vendedor_nome: data.vendedor_nome || '',
+        });
+        data.cliente_id = novoC.id;
+        queryClient.invalidateQueries(['clientes-pipeline']);
+        toast.success(`Cliente "${data.cliente_nome}" criado na base!`);
+      } catch {}
     }
     saveMutation.mutate(data);
   };
@@ -125,19 +237,46 @@ export default function Pipeline() {
     setShowForm(true);
   };
 
+  // Converter prospecção em venda e navegar para Vendas
+  const converterEmVenda = async (n) => {
+    if (!confirm(`Converter "${n.cliente_nome}" em venda? Você será direcionado para a página de Vendas para completar os detalhes.`)) return;
+    setConvertendo(n.id);
+    try {
+      // Cria um rascunho de venda com dados do pipeline
+      const vendedorNome = n.vendedor_nome || '';
+      const vendedorId = n.vendedor_id || '';
+      const novaVenda = await base44.entities.Venda.create({
+        produto: n.produto || '',
+        assessor_comercial: vendedorNome,
+        vendedor_id: vendedorId,
+        cliente: n.cliente_nome || '',
+        cpf_cnpj: n.cliente_cpf_cnpj || '',
+        valor: n.valor_estimado || 0,
+        data: new Date().toISOString().split('T')[0],
+        observacao: `Originado do Pipeline. ${n.descricao || ''}`.trim(),
+      });
+      // Marca o pipeline como Fechado
+      await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
+      queryClient.invalidateQueries(['pipeline']);
+      toast.success('Venda criada! Redirecionando para Vendas...');
+      setTimeout(() => navigate('/Vendas'), 1200);
+    } catch (err) {
+      toast.error('Erro ao converter: ' + err.message);
+    }
+    setConvertendo(null);
+  };
+
   // KPIs
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
   const valorTotal = negocios.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const valorFechado = negocios.filter(n => n.temperatura === 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))];
 
-  // Gerar relatório HTML
   const gerarRelatorio = () => {
     const dados = negociosFiltrados;
     const totalVal = dados.reduce((s, n) => s + (n.valor_estimado || 0), 0);
     const fechados = dados.filter(n => n.temperatura === 'Fechado');
     const valFechado = fechados.reduce((s, n) => s + (n.valor_estimado || 0), 0);
-
     const linhas = dados.map(n => `
       <tr>
         <td>${n.cliente_nome || '—'}</td>
@@ -149,51 +288,22 @@ export default function Pipeline() {
         <td>${fmtDate(n.proximo_contato)}</td>
         <td>${n.descricao || '—'}</td>
       </tr>`).join('');
-
-    const html = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<title>Relatório Pipeline</title>
-<style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
-  .header { background: linear-gradient(135deg, #0f1e35, #1a3150); color: white; padding: 20px 24px; border-radius: 8px; margin-bottom: 20px; }
-  .header h1 { margin: 0; font-size: 20px; }
-  .header p { margin: 4px 0 0; font-size: 11px; opacity: 0.7; }
-  .kpis { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-  .kpi { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 120px; }
-  .kpi .val { font-size: 18px; font-weight: bold; color: #0f1e35; }
-  .kpi .lbl { font-size: 10px; color: #64748b; margin-top: 2px; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  thead tr { background: #0f1e35; color: white; }
-  th { padding: 8px 10px; text-align: left; font-weight: 600; }
-  td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; }
-  tr:nth-child(even) td { background: #f8fafc; }
-  .footer { margin-top: 20px; text-align: center; font-size: 10px; color: #94a3b8; }
-  @media print { body { padding: 10px; } }
-</style></head><body>
-<div class="header">
-  <h1>Relatório de Pipeline</h1>
-  <p>Villela Exchange &mdash; Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
-</div>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório Pipeline</title>
+<style>body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#333}.header{background:linear-gradient(135deg,#0f1e35,#1a3150);color:white;padding:20px 24px;border-radius:8px;margin-bottom:20px}.header h1{margin:0;font-size:20px}.header p{margin:4px 0 0;font-size:11px;opacity:.7}.kpis{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}.kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;flex:1;min-width:120px}.kpi .val{font-size:18px;font-weight:bold;color:#0f1e35}.kpi .lbl{font-size:10px;color:#64748b;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:11px}thead tr{background:#0f1e35;color:white}th{padding:8px 10px;text-align:left;font-weight:600}td{padding:7px 10px;border-bottom:1px solid #f1f5f9}tr:nth-child(even) td{background:#f8fafc}.footer{margin-top:20px;text-align:center;font-size:10px;color:#94a3b8}@media print{body{padding:10px}}</style>
+</head><body>
+<div class="header"><h1>Relatório de Pipeline</h1><p>Villela Exchange — Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p></div>
 <div class="kpis">
   <div class="kpi"><div class="val">${dados.length}</div><div class="lbl">Negócios</div></div>
   <div class="kpi"><div class="val">${fmtVal(totalVal)}</div><div class="lbl">Em negociação</div></div>
   <div class="kpi"><div class="val">${fechados.length}</div><div class="lbl">Fechados</div></div>
   <div class="kpi"><div class="val">${fmtVal(valFechado)}</div><div class="lbl">Volume fechado</div></div>
 </div>
-<table>
-  <thead><tr>
-    <th>Cliente</th><th>Produto</th><th>Gerente</th><th>Valor Est.</th>
-    <th>Temperatura</th><th>Prev. Fechamento</th><th>Próx. Contato</th><th>Descrição</th>
-  </tr></thead>
-  <tbody>${linhas}</tbody>
-</table>
-<div class="footer">Villela Exchange &mdash; Pipeline Comercial</div>
-</body></html>`;
-
+<table><thead><tr><th>Cliente</th><th>Produto</th><th>Gerente</th><th>Valor Est.</th><th>Temperatura</th><th>Prev. Fechamento</th><th>Próx. Contato</th><th>Descrição</th></tr></thead>
+<tbody>${linhas}</tbody></table>
+<div class="footer">Villela Exchange — Pipeline Comercial</div></body></html>`;
     const win = window.open('', '_blank');
     win.document.write(html);
     win.document.close();
-    win.focus();
     setTimeout(() => win.print(), 500);
   };
 
@@ -246,13 +356,9 @@ export default function Pipeline() {
         {/* Filtros */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <div className="flex flex-wrap gap-3 items-center">
-            <input
-              type="text"
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
+            <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
               placeholder="Buscar cliente ou produto..."
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] w-48"
-            />
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] w-48" />
             <div className="flex gap-1.5 flex-wrap">
               {['Todos', ...TEMPERATURAS.map(t => t.value)].map(t => (
                 <button key={t} onClick={() => setFiltroTemp(t)}
@@ -272,14 +378,14 @@ export default function Pipeline() {
           </div>
         </div>
 
-        {/* Kanban por temperatura */}
+        {/* Kanban */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {TEMPERATURAS.map(temp => {
             const items = negociosFiltrados.filter(n => n.temperatura === temp.value);
             const total = items.reduce((s, n) => s + (n.valor_estimado || 0), 0);
             return (
               <div key={temp.value} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className={`px-3 py-2.5 border-b border-gray-100 flex items-center justify-between`}>
+                <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${temp.dot}`} />
                     <span className="text-xs font-semibold text-gray-700">{temp.emoji} {temp.value}</span>
@@ -292,18 +398,28 @@ export default function Pipeline() {
                   </div>
                 )}
                 <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
-                  {items.length === 0 && (
-                    <p className="text-[10px] text-gray-300 text-center py-4">Nenhum negócio</p>
-                  )}
+                  {items.length === 0 && <p className="text-[10px] text-gray-300 text-center py-4">Nenhum negócio</p>}
                   {items.map(n => (
                     <div key={n.id} className="bg-gray-50 rounded-xl p-2.5 hover:bg-blue-50 transition cursor-default group">
                       <div className="flex items-start justify-between gap-1">
                         <p className="text-xs font-semibold text-gray-800 leading-tight flex-1">{n.cliente_nome}</p>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                          <button onClick={() => openEdit(n)} className="p-0.5 text-gray-400 hover:text-blue-600">
+                          {/* Converter em venda */}
+                          <button
+                            onClick={() => converterEmVenda(n)}
+                            disabled={convertendo === n.id}
+                            title="Converter em venda"
+                            className="p-0.5 text-gray-400 hover:text-emerald-600"
+                          >
+                            {convertendo === n.id
+                              ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                              : <ShoppingCart className="w-3 h-3" />
+                            }
+                          </button>
+                          <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
                             <Pencil className="w-3 h-3" />
                           </button>
-                          <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} className="p-0.5 text-gray-400 hover:text-red-500">
+                          <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
@@ -346,13 +462,13 @@ export default function Pipeline() {
                 </div>
               )}
 
+              {/* Campo cliente com busca */}
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Cliente / Prospect *</label>
+                <ClienteSearch clientes={clientes} form={form} setForm={setForm} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Cliente / Prospect *</label>
-                  <input value={form.cliente_nome} onChange={e => setForm(f => ({ ...f, cliente_nome: e.target.value }))}
-                    placeholder="Nome do cliente" required
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-                </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">CPF / CNPJ</label>
                   <input value={form.cliente_cpf_cnpj} onChange={e => setForm(f => ({ ...f, cliente_cpf_cnpj: e.target.value }))}
