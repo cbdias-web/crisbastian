@@ -397,13 +397,13 @@ export default function Pipeline() {
             <p className="text-2xl font-bold text-teal-700">{fmtVal(valorTotal)}</p>
             <p className="text-xs text-teal-600 mt-0.5">Total em negociação</p>
           </div>
-          <div className="bg-slate-400 text-white rounded-2xl p-4 shadow-sm">
-            <p className="text-2xl font-bold">{totalAtivos}</p>
-            <p className="text-xs opacity-80 mt-0.5">Negócios ativos</p>
+          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
+            <p className="text-2xl font-bold text-teal-700">{totalAtivos}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Negócios ativos</p>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <p className="text-2xl font-bold text-gray-800">{totalGeral}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Total de negócios</p>
+          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
+            <p className="text-2xl font-bold text-teal-700">{totalGeral}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Total de negócios</p>
           </div>
           <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
             <p className="text-2xl font-bold text-teal-700">{negocios.filter(n => n.temperatura === 'Fechado').length}</p>
