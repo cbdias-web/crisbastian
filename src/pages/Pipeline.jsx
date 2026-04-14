@@ -26,6 +26,7 @@ const EMPTY = {
   produto: '', valor_estimado: '', data_prevista: '', temperatura: 'Frio',
   descricao: '', origem: 'Prospecção Ativa', proximo_contato: '', observacao: '',
   vendedor_id: '', vendedor_nome: '',
+  tipo_contato: 'Ligação', resultado_contato: 'Neutro', data_contato: new Date().toISOString().split('T')[0],
 };
 
 // ── Componente de busca de cliente com autocomplete ──────────────────────────
@@ -188,11 +189,53 @@ export default function Pipeline() {
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      if (editing) return base44.entities.Pipeline.update(editing.id, data);
-      return base44.entities.Pipeline.create(data);
+      let pipeline;
+      if (editing) {
+        pipeline = await base44.entities.Pipeline.update(editing.id, data);
+      } else {
+        pipeline = await base44.entities.Pipeline.create(data);
+      }
+      // Registrar interação no histórico do cliente (se existir cliente vinculado)
+      if (data.cliente_id && data.descricao?.trim()) {
+        try {
+          await base44.entities.InteracaoCliente.create({
+            cliente_id: data.cliente_id,
+            cliente_nome: data.cliente_nome || '',
+            vendedor_id: data.vendedor_id || '',
+            vendedor_nome: data.vendedor_nome || '',
+            tipo: data.tipo_contato || 'Outro',
+            descricao: data.descricao,
+            data_interacao: data.data_contato || new Date().toISOString().split('T')[0],
+            proximo_contato: data.proximo_contato || '',
+            resultado: data.resultado_contato || 'Neutro',
+          });
+        } catch (e) { /* silently fail */ }
+      }
+      // Se tem próximo contato, criar entrada na AgendaContato
+      if (data.proximo_contato && data.cliente_id && data.vendedor_id) {
+        try {
+          const agendas = await base44.entities.AgendaContato.filter({ lead_id: data.cliente_id, data_agendada: data.proximo_contato });
+          if (agendas.length === 0) {
+            await base44.entities.AgendaContato.create({
+              lead_id: data.cliente_id,
+              lead_nome: data.cliente_nome || '',
+              lead_cpf_cnpj: data.cliente_cpf_cnpj || '',
+              lead_telefone: data.cliente_telefone || '',
+              vendedor_id: data.vendedor_id,
+              vendedor_nome: data.vendedor_nome || '',
+              data_agendada: data.proximo_contato,
+              posicao_dia: 0,
+              status: 'pendente',
+              resultado: '',
+            });
+          }
+        } catch (e) { /* silently fail */ }
+      }
+      return pipeline;
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['agenda-contatos']);
       setShowForm(false);
       setEditing(null);
       setForm(EMPTY);
@@ -523,6 +566,44 @@ export default function Pipeline() {
                 </div>
               </div>
 
+              {/* Seção Interação — visual igual ao ClienteInteracaoModal */}
+              <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Registrar Interação</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
+                    <select value={form.tipo_contato} onChange={e => setForm(f => ({ ...f, tipo_contato: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                      {['Ligação','WhatsApp','E-mail','Reunião','Visita','Outro'].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Resultado</label>
+                    <select value={form.resultado_contato} onChange={e => setForm(f => ({ ...f, resultado_contato: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                      {['Positivo','Neutro','Negativo','Sem resposta'].map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Data do contato</label>
+                    <input type="date" value={form.data_contato} onChange={e => setForm(f => ({ ...f, data_contato: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Próximo contato <span className="text-indigo-500 font-semibold">(agenda)</span></label>
+                    <input type="date" value={form.proximo_contato} disabled={form.resultado_contato === 'Negativo'} onChange={e => setForm(f => ({ ...f, proximo_contato: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] disabled:opacity-40 disabled:cursor-not-allowed" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Descrição / Próximos Passos</label>
+                  <textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
+                    placeholder="Descreva o que foi tratado e os próximos passos..."
+                    rows={3}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150] resize-none" />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Prev. Fechamento</label>
@@ -530,26 +611,11 @@ export default function Pipeline() {
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Próximo Contato</label>
-                  <input type="date" value={form.proximo_contato} onChange={e => setForm(f => ({ ...f, proximo_contato: e.target.value }))}
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Observações</label>
+                  <input value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
+                    placeholder="Observações adicionais..."
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Descrição / Próximos Passos</label>
-                <textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
-                  placeholder="Descreva o status da negociação, próximos passos..."
-                  rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] resize-none" />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Observações</label>
-                <textarea value={form.observacao} onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
-                  placeholder="Observações adicionais..."
-                  rows={2}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] resize-none" />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
