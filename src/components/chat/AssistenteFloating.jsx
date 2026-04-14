@@ -384,27 +384,32 @@ export default function AssistenteFloating() {
   const btnContainerRef = useRef(null);
   const hasDragged = useRef(false);
 
-  const onMouseDown = (e) => {
-    if (e.button !== 0) return;
+  const startDrag = (clientX, clientY) => {
     const el = btnContainerRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     hasDragged.current = false;
-    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+    dragRef.current = { dragging: true, startX: clientX, startY: clientY, origLeft: rect.left, origTop: rect.top };
+  };
+
+  const moveDrag = (clientX, clientY) => {
+    const dx = clientX - dragRef.current.startX;
+    const dy = clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
+    if (!hasDragged.current) return;
+    const newLeft = Math.max(0, Math.min(window.innerWidth - 64, dragRef.current.origLeft + dx));
+    const newTop = Math.max(0, Math.min(window.innerHeight - 64, dragRef.current.origTop + dy));
+    const newPos = { left: newLeft, top: newTop };
+    setPos(newPos);
+    localStorage.setItem(POSITION_KEY, JSON.stringify(newPos));
+  };
+
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    startDrag(e.clientX, e.clientY);
     e.preventDefault();
 
-    const onMove = (ev) => {
-      const dx = ev.clientX - dragRef.current.startX;
-      const dy = ev.clientY - dragRef.current.startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
-      if (!hasDragged.current) return;
-      const newLeft = Math.max(0, Math.min(window.innerWidth - 64, dragRef.current.origLeft + dx));
-      const newTop = Math.max(0, Math.min(window.innerHeight - 64, dragRef.current.origTop + dy));
-      const newPos = { left: newLeft, top: newTop };
-      setPos(newPos);
-      localStorage.setItem(POSITION_KEY, JSON.stringify(newPos));
-    };
-
+    const onMove = (ev) => moveDrag(ev.clientX, ev.clientY);
     const onUp = () => {
       dragRef.current.dragging = false;
       window.removeEventListener('mousemove', onMove);
@@ -413,6 +418,26 @@ export default function AssistenteFloating() {
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
+  };
+
+  const onTouchStart = (e) => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+    // não chama preventDefault aqui para não bloquear o clique
+
+    const onMove = (ev) => {
+      const t = ev.touches[0];
+      moveDrag(t.clientX, t.clientY);
+      if (hasDragged.current) ev.preventDefault();
+    };
+    const onEnd = () => {
+      dragRef.current.dragging = false;
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
   };
 
   const handleBtnClick = () => {
@@ -442,6 +467,7 @@ export default function AssistenteFloating() {
         )}
         <button
           onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
           onClick={handleBtnClick}
           className="group relative cursor-grab active:cursor-grabbing"
           title="Jarvis (arraste para mover)"
