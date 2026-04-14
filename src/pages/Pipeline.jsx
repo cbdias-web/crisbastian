@@ -35,8 +35,9 @@ function ClienteSearch({ clientes, form, setForm }) {
   const [novoCliente, setNovoCliente] = useState(false);
   const ref = useRef(null);
 
+  // Só sincroniza quando o form é resetado (cliente_nome vai a '')
   useEffect(() => {
-    setQuery(form.cliente_nome || '');
+    if (!form.cliente_nome) setQuery('');
   }, [form.cliente_nome]);
 
   useEffect(() => {
@@ -46,7 +47,10 @@ function ClienteSearch({ clientes, form, setForm }) {
   }, []);
 
   const filtered = query.length >= 2
-    ? clientes.filter(c => c.nome?.toLowerCase().includes(query.toLowerCase()) || c.cpf_cnpj?.includes(query))
+    ? clientes.filter(c =>
+        c.nome?.toLowerCase().includes(query.toLowerCase()) ||
+        (c.cpf_cnpj && c.cpf_cnpj.includes(query))
+      ).slice(0, 10)
     : [];
 
   const selectCliente = (c) => {
@@ -159,8 +163,9 @@ export default function Pipeline() {
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-pipeline'],
-    queryFn: () => base44.entities.Cliente.list('nome', 1000),
+    queryFn: () => base44.entities.Cliente.list('nome', 5000),
     enabled: !!user,
+    staleTime: 60000,
   });
 
   const { data: produtos = [] } = useQuery({

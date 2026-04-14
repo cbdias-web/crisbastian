@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw, ChevronDown, ChevronRight, TrendingUp, X } from 'lucide-react';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -24,13 +24,41 @@ function getLabelData(dateStr) {
   } catch { return dateStr; }
 }
 
-export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
+export default function AgendaDiariaWidget({ vendedorId, vendedor, user, onClienteClick }) {
   const [expanded, setExpanded] = useState(true);
   const [showAllDates, setShowAllDates] = useState(false);
   const [updating, setUpdating] = useState(null);
   const [reagendandoId, setReagendandoId] = useState(null);
   const [novaData, setNovaData] = useState('');
+  const [pipelineItemId, setPipelineItemId] = useState(null); // id do item de agenda com form pipeline aberto
+  const [pipelineForm, setPipelineForm] = useState({ produto: '', valor_estimado: '', temperatura: 'Morno' });
+  const [salvandoPipeline, setSalvandoPipeline] = useState(false);
   const queryClient = useQueryClient();
+
+  const handleEnviarPipeline = async (item) => {
+    if (!pipelineForm.produto.trim()) { toast.error('Informe o produto'); return; }
+    setSalvandoPipeline(true);
+    try {
+      await base44.entities.Pipeline.create({
+        cliente_id: item.cliente_id || item.lead_id,
+        cliente_nome: item.lead_nome || '',
+        cliente_cpf_cnpj: item.lead_cpf_cnpj || '',
+        cliente_telefone: item.lead_telefone || '',
+        produto: pipelineForm.produto,
+        valor_estimado: parseFloat(pipelineForm.valor_estimado) || 0,
+        temperatura: pipelineForm.temperatura,
+        vendedor_id: vendedor?.id || vendedorId || '',
+        vendedor_nome: vendedor?.nome || user?.full_name || '',
+        origem: 'Carteira',
+      });
+      toast.success(`${item.lead_nome} adicionado ao Pipeline!`);
+      setPipelineItemId(null);
+      setPipelineForm({ produto: '', valor_estimado: '', temperatura: 'Morno' });
+    } catch (e) {
+      toast.error('Erro ao adicionar ao Pipeline');
+    }
+    setSalvandoPipeline(false);
+  };
 
   const { data: agenda = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos', vendedorId],
@@ -184,9 +212,37 @@ export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
                                 <button onClick={() => setReagendandoId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
                               </div>
                             )}
+                            {/* Mini-form Pipeline inline */}
+                            {pipelineItemId === item.id && (
+                              <div className="mt-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-2">
+                                <p className="text-[10px] font-semibold text-indigo-700 uppercase tracking-wider">Adicionar ao Pipeline</p>
+                                <input value={pipelineForm.produto} onChange={e => setPipelineForm(p => ({ ...p, produto: e.target.value }))}
+                                  placeholder="Produto *"
+                                  className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400 bg-white" />
+                                <div className="flex gap-2">
+                                  <input type="number" value={pipelineForm.valor_estimado} onChange={e => setPipelineForm(p => ({ ...p, valor_estimado: e.target.value }))}
+                                    placeholder="Valor estimado" min="0"
+                                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-indigo-400 bg-white" />
+                                  <select value={pipelineForm.temperatura} onChange={e => setPipelineForm(p => ({ ...p, temperatura: e.target.value }))}
+                                    className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-indigo-400">
+                                    {['Frio','Morno','Quente'].map(t => <option key={t}>{t}</option>)}
+                                  </select>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button onClick={() => handleEnviarPipeline(item)} disabled={salvandoPipeline}
+                                    className="flex-1 text-xs bg-indigo-700 hover:bg-indigo-800 text-white px-2 py-1.5 rounded-lg transition flex items-center justify-center gap-1">
+                                    <TrendingUp className="w-3 h-3" /> {salvandoPipeline ? '...' : 'Adicionar'}
+                                  </button>
+                                  <button onClick={() => setPipelineItemId(null)}
+                                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg border border-gray-200">
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          {item.status === 'pendente' && (isHoje || agendaHojeConcluida) && (
-                            <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
+                            {item.status === 'pendente' && (isHoje || agendaHojeConcluida) && (<>
                               <button onClick={() => marcarStatus(item, 'realizado')} disabled={updating === item.id} title="Realizado"
                                 className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg transition">
                                 <CheckCircle2 className="w-4 h-4" />
@@ -199,8 +255,12 @@ export default function AgendaDiariaWidget({ vendedorId, onClienteClick }) {
                                 className="p-1.5 bg-blue-50 hover:bg-blue-100 text-blue-500 rounded-lg transition">
                                 <RotateCcw className="w-4 h-4" />
                               </button>
-                            </div>
-                          )}
+                            </>)}
+                            <button onClick={() => { setPipelineItemId(pipelineItemId === item.id ? null : item.id); setPipelineForm({ produto: '', valor_estimado: '', temperatura: 'Morno' }); }} title="Enviar ao Pipeline"
+                              className={`p-1.5 rounded-lg transition ${pipelineItemId === item.id ? 'bg-indigo-200 text-indigo-800' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-500'}`}>
+                              <TrendingUp className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       );
                     })}

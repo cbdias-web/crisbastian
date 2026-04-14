@@ -621,8 +621,9 @@ export default function MeusClientes() {
         {vendedorParaAgenda && (
           <AgendaDiariaWidget
             vendedorId={vendedorParaAgenda.id}
+            vendedor={vendedorParaAgenda}
+            user={user}
             onClienteClick={(leadId) => {
-              // Abrir modal diretamente com o id do lead
               setClienteModalId(leadId);
             }}
           />

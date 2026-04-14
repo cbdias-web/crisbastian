@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { X, Save, Star, Phone, Mail, MapPin, Clock, CheckCircle2, XCircle, MinusCircle, MessageSquare, Users, Calendar, Plus } from 'lucide-react';
+import { X, Save, Star, Phone, Mail, MapPin, Clock, CheckCircle2, XCircle, MinusCircle, MessageSquare, Users, Calendar, Plus, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -19,6 +19,9 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro' });
   const [salvando, setSalvando] = useState(false);
+  const [showPipelineForm, setShowPipelineForm] = useState(false);
+  const [pipelineForm, setPipelineForm] = useState({ produto: '', valor_estimado: '', temperatura: 'Morno', descricao: '' });
+  const [salvandoPipeline, setSalvandoPipeline] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: cliente, isLoading } = useQuery({
@@ -88,6 +91,32 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
     setSalvando(false);
   };
 
+  const handleEnviarPipeline = async () => {
+    if (!pipelineForm.produto.trim()) { toast.error('Informe o produto'); return; }
+    setSalvandoPipeline(true);
+    try {
+      await base44.entities.Pipeline.create({
+        cliente_id: clienteId,
+        cliente_nome: cliente?.nome || '',
+        cliente_cpf_cnpj: cliente?.cpf_cnpj || '',
+        cliente_telefone: cliente?.telefone || '',
+        produto: pipelineForm.produto,
+        valor_estimado: parseFloat(pipelineForm.valor_estimado) || 0,
+        temperatura: pipelineForm.temperatura,
+        descricao: pipelineForm.descricao,
+        vendedor_id: vendedor?.id || '',
+        vendedor_nome: vendedor?.nome || user?.full_name || '',
+        origem: 'Carteira',
+      });
+      toast.success('Adicionado ao Pipeline!');
+      setShowPipelineForm(false);
+      setPipelineForm({ produto: '', valor_estimado: '', temperatura: 'Morno', descricao: '' });
+    } catch (e) {
+      toast.error('Erro ao adicionar ao Pipeline');
+    }
+    setSalvandoPipeline(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
@@ -120,10 +149,15 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-6 space-y-4">
           {/* Ações */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {!showForm && (
               <Button size="sm" onClick={() => setShowForm(true)} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
                 <Plus className="w-3.5 h-3.5 mr-1.5" /> Nova Interação
+              </Button>
+            )}
+            {!showForm && !showPipelineForm && (
+              <Button size="sm" variant="outline" onClick={() => setShowPipelineForm(true)} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50">
+                <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Enviar ao Pipeline
               </Button>
             )}
             {cliente?.origem === 'lead' && !showForm && (
@@ -138,6 +172,48 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
               </Button>
             )}
           </div>
+
+          {/* Formulário Pipeline */}
+          {showPipelineForm && (
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Adicionar ao Pipeline</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500 mb-1 block">Produto *</label>
+                  <input value={pipelineForm.produto} onChange={e => setPipelineForm(p => ({ ...p, produto: e.target.value }))}
+                    placeholder="Produto em negociação"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Valor Estimado</label>
+                  <input type="number" value={pipelineForm.valor_estimado} onChange={e => setPipelineForm(p => ({ ...p, valor_estimado: e.target.value }))}
+                    placeholder="0,00" min="0" step="0.01"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Temperatura</label>
+                  <select value={pipelineForm.temperatura} onChange={e => setPipelineForm(p => ({ ...p, temperatura: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]">
+                    {['Frio','Morno','Quente','Fechado','Perdido'].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-gray-500 mb-1 block">Observação</label>
+                  <input value={pipelineForm.descricao} onChange={e => setPipelineForm(p => ({ ...p, descricao: e.target.value }))}
+                    placeholder="Próximos passos, contexto..."
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleEnviarPipeline} disabled={salvandoPipeline} className="bg-indigo-700 hover:bg-indigo-800 text-white">
+                  <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> {salvandoPipeline ? 'Salvando...' : 'Adicionar ao Pipeline'}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setShowPipelineForm(false)}>
+                  <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Formulário de interação */}
           {showForm && (
