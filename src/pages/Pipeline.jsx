@@ -324,7 +324,9 @@ export default function Pipeline() {
 
   // KPIs — totais gerais (todos os negócios, sem filtro de gerente/temperatura/busca)
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
-  const valorTotal = negocios.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
+  const temFiltroPeriodo = !!(filtroDataInicio || filtroDataFim);
+  const baseKpiValor = temFiltroPeriodo ? negociosFiltrados : negocios;
+  const valorTotal = baseKpiValor.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const valorFechado = negocios.filter(n => n.temperatura === 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const totalGeral = negocios.length;
   const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))];
@@ -403,7 +405,9 @@ export default function Pipeline() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
             <p className="text-2xl font-bold text-teal-700">{fmtVal(valorTotal)}</p>
-            <p className="text-xs text-teal-600 mt-0.5">Total em negociação</p>
+            <p className="text-xs text-teal-600 mt-0.5">
+              Total em negociação{temFiltroPeriodo ? <span className="ml-1 text-[10px] bg-teal-200 text-teal-800 px-1.5 py-0.5 rounded-full font-semibold">período</span> : ''}
+            </p>
           </div>
           <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
             <p className="text-2xl font-bold text-teal-700">{totalAtivos}</p>
