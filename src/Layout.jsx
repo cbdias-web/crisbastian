@@ -21,6 +21,8 @@ export default function Layout({ children, currentPageName }) {
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [comercialMenuOpen, setComercialMenuOpen] = useState(true);
+  const [apoioMenuOpen, setApoioMenuOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [aceite, setAceite] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -379,10 +381,14 @@ export default function Layout({ children, currentPageName }) {
           })()}
 
           {/* BLOCO COMERCIAL */}
-          {!sidebarCollapsed && menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && (
-            <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Comercial</p>
+          {menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed && (
+            <button onClick={() => setComercialMenuOpen(prev => !prev)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+              <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Comercial</span>
+              <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${comercialMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
           )}
-          {menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+          {(comercialMenuOpen || sidebarCollapsed) && menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
@@ -397,10 +403,14 @@ export default function Layout({ children, currentPageName }) {
           })}
 
           {/* BLOCO APOIO */}
-          {!sidebarCollapsed && menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && (
-            <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Apoio</p>
+          {menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed && (
+            <button onClick={() => setApoioMenuOpen(prev => !prev)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+              <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Apoio</span>
+              <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${apoioMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </button>
           )}
-          {menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+          {(apoioMenuOpen || sidebarCollapsed) && menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
