@@ -139,6 +139,9 @@ export default function Pipeline() {
   const [form, setForm] = useState(EMPTY);
   const [filtroTemp, setFiltroTemp] = useState('Todos');
   const [filtroVendedor, setFiltroVendedor] = useState('Todos');
+  const [filtroProduto, setFiltroProduto] = useState('Todos');
+  const [filtroDataInicio, setFiltroDataInicio] = useState('');
+  const [filtroDataFim, setFiltroDataFim] = useState('');
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
   const queryClient = useQueryClient();
@@ -180,11 +183,16 @@ export default function Pipeline() {
     return true;
   });
 
+  const produtosUnicos = [...new Set(negocios.map(n => n.produto).filter(Boolean))].sort();
+
   const negociosFiltrados = negocios.filter(n => {
     const tempOk = filtroTemp === 'Todos' || n.temperatura === filtroTemp;
     const vendOk = filtroVendedor === 'Todos' || n.vendedor_nome === filtroVendedor;
+    const prodOk = filtroProduto === 'Todos' || n.produto === filtroProduto;
+    const dataOk = (!filtroDataInicio || (n.data_prevista && n.data_prevista >= filtroDataInicio)) &&
+                   (!filtroDataFim || (n.data_prevista && n.data_prevista <= filtroDataFim));
     const buscaOk = !busca || n.cliente_nome?.toLowerCase().includes(busca.toLowerCase()) || n.produto?.toLowerCase().includes(busca.toLowerCase());
-    return tempOk && vendOk && buscaOk;
+    return tempOk && vendOk && prodOk && dataOk && buscaOk;
   });
 
   const saveMutation = useMutation({
@@ -443,7 +451,7 @@ export default function Pipeline() {
         )}
 
         {/* Filtros */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
           <div className="flex flex-wrap gap-3 items-center">
             <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
               placeholder="Buscar cliente ou produto..."
@@ -464,6 +472,25 @@ export default function Pipeline() {
               </select>
             )}
             <span className="text-xs text-gray-400 ml-auto">{negociosFiltrados.length} negócio(s)</span>
+          </div>
+          <div className="flex flex-wrap gap-3 items-center border-t border-gray-50 pt-3">
+            <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
+              className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]">
+              <option value="Todos">Todos os produtos</option>
+              {produtosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Prev. efetivação:</span>
+              <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              <span className="text-xs text-gray-400">até</span>
+              <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
+                className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              {(filtroDataInicio || filtroDataFim || filtroProduto !== 'Todos') && (
+                <button onClick={() => { setFiltroDataInicio(''); setFiltroDataFim(''); setFiltroProduto('Todos'); }}
+                  className="text-xs text-red-400 hover:text-red-600 underline">Limpar</button>
+              )}
+            </div>
           </div>
         </div>
 
