@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp, GraduationCap, Bot } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp, GraduationCap, Bot, Megaphone, Receipt } from 'lucide-react';
 
 const sections = [
   {
@@ -714,38 +714,46 @@ const sections = [
   {
     id: 'assistente-ia',
     icon: Bot,
-    title: 'Assistente IA — Villela',
+    title: 'Jarvis — Assistente IA',
     color: 'bg-blue-50 text-blue-600',
     border: 'border-blue-200',
     content: [
       {
-        subtitle: 'O que é o Assistente Villela?',
-        text: 'O Assistente Villela é um chatbot com inteligência artificial que fica disponível em todas as páginas da plataforma, no canto inferior direito da tela. Ele acessa informações da plataforma e da internet para responder suas dúvidas.',
+        subtitle: 'O que é o Jarvis?',
+        text: 'O Jarvis é o assistente de inteligência artificial da Villela Exchange. Ele fica disponível em todas as páginas da plataforma, no canto inferior direito da tela, podendo ser movido livremente pela tela (arraste o avatar). Ele acessa dados da plataforma e da internet para responder perguntas, gerar relatórios e enviar mensagens.',
       },
       {
         subtitle: 'Como acessar',
-        text: 'Clique no avatar animado "V" no canto inferior direito de qualquer página da plataforma. O chat abre em um painel flutuante — sem sair da tela em que você está.',
+        text: 'Clique no avatar do Jarvis (robô) no canto inferior direito de qualquer página. O chat abre em um painel flutuante. O avatar pode ser arrastado para qualquer posição — inclusive em dispositivos móveis (toque e arraste).',
       },
       {
-        subtitle: 'O que o assistente pode fazer',
+        subtitle: 'O que o Jarvis pode fazer',
         items: [
+          '**Vendas e relatórios:** consultar volumes de venda, rankings, metas e gerar relatórios PDF automaticamente.',
+          '**Clientes e leads:** localizar clientes, checar histórico de interações e leads não convertidos.',
           '**Treinamentos:** encontrar módulos, aulas e fornecer links diretos para documentos e PDFs.',
-          '**Produtos:** informar detalhes sobre os produtos disponíveis na plataforma.',
-          '**Comunicados:** listar e resumir comunicados publicados.',
-          '**Vendedores:** consultar informações sobre membros da equipe.',
-          '**Busca na Web:** pesquisar informações sobre mercado financeiro, câmbio, offshore e outros temas externos, com citação de fontes.',
-          '**Dúvidas gerais:** responder perguntas sobre processos, regulamentações e melhores práticas.',
+          '**Produtos e comunicados:** informar detalhes sobre produtos e resumir comunicados publicados.',
+          '**Comissões e metas:** consultar saldo de comissões, metas do mês e progresso individual.',
+          '**Agenda de prospecção:** mostrar contatos agendados para hoje e próximos dias.',
+          '**Busca na Web:** pesquisar cotações, legislação, notícias do mercado financeiro em tempo real.',
+          '**Envio de e-mails:** o administrador pode pedir ao Jarvis para enviar relatórios ou mensagens por e-mail.',
         ],
       },
       {
-        subtitle: 'Como usar o assistente',
-        steps: [
-          'Clique no avatar "V" no canto inferior direito.',
-          'Digite sua pergunta no campo de texto e pressione Enter (ou clique no botão de envio).',
-          'Aguarde a resposta — o assistente acessa a plataforma e/ou a web automaticamente.',
-          'Clique nos links fornecidos para abrir documentos, PDFs ou fontes externas.',
-          'Clique em "+" para iniciar uma nova conversa a qualquer momento.',
-        ],
+        subtitle: 'Mensagens do administrador via Jarvis',
+        text: 'Administradores podem enviar mensagens diretamente para usuários específicos através do Jarvis. Quando você recebe uma mensagem, o avatar pisca em vermelho e exibe o número de mensagens não lidas. Clique no avatar para ler e marcar como lida — o admin recebe confirmação automática por e-mail.',
+      },
+      {
+        subtitle: 'Gerar relatórios PDF pelo chat',
+        text: 'Pergunte ao Jarvis: "Gere o relatório de comissões de [Vendedor] de [mês]" e ele cria e apresenta um botão de download do PDF diretamente no chat, sem precisar navegar para outras páginas.',
+      },
+      {
+        subtitle: 'Nova conversa e histórico',
+        text: 'O Jarvis mantém contexto durante a sessão. Clique no "+" no cabeçalho do chat para iniciar uma nova conversa limpa. Conversas antigas ficam inativas automaticamente após 30 minutos de inatividade ou ao trocar de dia.',
+      },
+      {
+        subtitle: 'Sugestões rápidas',
+        text: 'Ao abrir o chat, o Jarvis exibe sugestões de perguntas comuns. Após cada resposta, novas sugestões contextuais aparecem para facilitar a navegação por outros tópicos.',
       },
       {
         subtitle: 'Busca na web',
@@ -753,7 +761,153 @@ const sections = [
       },
       {
         subtitle: 'Privacidade e acesso',
-        text: 'O assistente respeita as permissões da plataforma: ele acessa apenas informações publicadas e disponíveis para usuários comuns. Dados exclusivos de administradores não são expostos através do chat.',
+        text: 'O Jarvis respeita as permissões da plataforma: acessa apenas informações disponíveis para seu perfil. Dados exclusivos de administradores não são expostos a usuários comuns.',
+      },
+    ],
+  },
+  {
+    id: 'pipeline',
+    icon: TrendingUp,
+    title: 'Pipeline Comercial',
+    color: 'bg-indigo-50 text-indigo-600',
+    border: 'border-indigo-200',
+    content: [
+      {
+        subtitle: 'O que é o Pipeline?',
+        text: 'O Pipeline Comercial é uma ferramenta de CRM pessoal para gerentes e vendedores acompanharem prospecções e negociações em andamento. Organizado no formato kanban por temperatura de negociação, permite rastrear cada oportunidade do primeiro contato até o fechamento.',
+      },
+      {
+        subtitle: 'Como acessar',
+        text: 'Clique em "Pipeline" no bloco "Apoio" da barra lateral. Gerentes veem apenas suas prospecções; administradores têm visão de toda a equipe com filtro por gerente.',
+      },
+      {
+        subtitle: 'Temperaturas de negociação',
+        items: [
+          '🧊 **Frio:** prospecção inicial, sem engajamento confirmado.',
+          '🌤️ **Morno:** cliente demonstrou interesse, negociação em andamento.',
+          '🔥 **Quente:** negociação avançada, alta probabilidade de fechamento.',
+          '✅ **Fechado:** negócio concluído (gerado venda no sistema).',
+          '❌ **Perdido:** negociação encerrada sem resultado.',
+        ],
+      },
+      {
+        subtitle: 'Criar nova prospecção',
+        steps: [
+          'Clique em "Nova Prospecção".',
+          'No campo "Cliente / Prospect", comece a digitar o nome — o sistema busca automaticamente na base de clientes cadastrados.',
+          'Se o cliente já existir, selecione-o — CPF/CNPJ e telefone são preenchidos automaticamente.',
+          'Se não existir, digite o nome e o sistema exibirá a opção "Inserir como novo cliente". Ao salvar, o cliente é criado na base automaticamente.',
+          'Preencha Produto, Valor Estimado, Temperatura e Origem.',
+          'Opcionalmente, defina data prevista de fechamento e próximo contato.',
+          'Adicione descrição dos próximos passos e observações.',
+          'Clique em "Adicionar ao Pipeline".',
+        ],
+      },
+      {
+        subtitle: 'Editar prospecção',
+        text: 'Passe o mouse sobre o card no kanban e clique no ícone de lápis (✏️) para abrir o formulário de edição com todos os campos preenchidos.',
+      },
+      {
+        subtitle: 'Converter prospecção em venda',
+        text: 'Quando uma negociação for fechada, clique no ícone de carrinho (🛒) no card da prospecção. O sistema cria automaticamente um rascunho de venda com os dados do pipeline (produto, cliente, valor, vendedor) e redireciona para a página de Vendas, onde você pode completar as informações de comissões, espelhamentos, forma de pagamento e outros detalhes.',
+      },
+      {
+        subtitle: 'Filtros e busca',
+        items: [
+          '**Busca livre:** filtre por nome de cliente ou produto.',
+          '**Temperatura:** clique em qualquer temperatura para filtrar apenas aquelas negociações.',
+          '**Gerente (admin):** selecione um gerente específico ou visualize todos.',
+        ],
+      },
+      {
+        subtitle: 'KPIs do Pipeline',
+        items: [
+          '**Negócios ativos:** total de prospecções em andamento (exceto Perdidas).',
+          '**Em negociação:** soma do valor estimado de negócios não fechados e não perdidos.',
+          '**Fechados:** quantidade de negócios marcados como Fechado.',
+          '**Volume fechado:** soma do valor estimado dos negócios Fechados.',
+        ],
+      },
+      {
+        subtitle: 'Relatório PDF do Pipeline',
+        text: 'Clique em "Relatório PDF" para gerar um documento com todos os negócios filtrados, incluindo KPIs, tabela detalhada por negócio e data de geração. O documento abre para impressão diretamente no navegador.',
+      },
+    ],
+  },
+  {
+    id: 'comunicados',
+    icon: Megaphone,
+    title: 'Comunicados',
+    color: 'bg-amber-50 text-amber-600',
+    border: 'border-amber-200',
+    content: [
+      {
+        subtitle: 'O que são Comunicados?',
+        text: 'Comunicados são avisos e informações importantes publicados pelos administradores para toda a equipe. Eles aparecem automaticamente como um modal ao acessar a plataforma, garantindo que todos leiam as novidades.',
+      },
+      {
+        subtitle: 'Receber um comunicado',
+        text: 'Ao acessar a plataforma, se houver um comunicado que você ainda não leu, ele abrirá automaticamente. Clique em "Li e Entendi" para confirmar a leitura e fechar o modal. A confirmação é registrada no sistema.',
+      },
+      {
+        subtitle: 'Criar comunicado (admin)',
+        steps: [
+          'Acesse Administrativo > Comunicados.',
+          'Clique em "Novo Comunicado".',
+          'Preencha o Título e a Mensagem.',
+          'Clique em "Salvar". O comunicado é publicado imediatamente para todos os usuários que ainda não o viram.',
+        ],
+      },
+      {
+        subtitle: 'Gerenciar comunicados (admin)',
+        items: [
+          '**Ativar/Desativar:** comunicados inativos não são exibidos para novos usuários.',
+          '**Ver quem leu:** clique no comunicado para ver a lista de usuários que confirmaram a leitura e a data/hora.',
+          '**Excluir:** remove o comunicado e todo o histórico de leituras associado.',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'notas-fiscais',
+    icon: Receipt,
+    title: 'Notas Fiscais',
+    color: 'bg-teal-50 text-teal-600',
+    border: 'border-teal-200',
+    content: [
+      {
+        subtitle: 'O que é o módulo de Notas Fiscais?',
+        text: 'Módulo administrativo para controle do ciclo de emissão, envio e pagamento de notas fiscais. Permite anexar o mapa de produção (origem), vincular a NF gerada, e acompanhar o status de cada nota.',
+      },
+      {
+        subtitle: 'Criar registro de NF',
+        steps: [
+          'Acesse Administrativo > Notas Fiscais.',
+          'Clique em "Nova NF".',
+          'Preencha: Cliente/Parceiro, Valor Líquido, Produto, Data de Emissão e ID de Cobrança.',
+          'Opcionalmente, faça upload do Mapa de Produção (PDF/planilha).',
+          'Salve o registro.',
+        ],
+      },
+      {
+        subtitle: 'Ciclo de vida da NF',
+        items: [
+          '**Solicitada:** marque quando a nota foi solicitada ao contador/emissor.',
+          '**Enviada:** marque quando a NF foi enviada ao cliente/parceiro. Faça upload do arquivo PDF da NF.',
+          '**Paga:** marque quando o pagamento da NF for confirmado — o sistema cria automaticamente uma Venda vinculada a este registro.',
+        ],
+      },
+      {
+        subtitle: 'Relatório de NFs',
+        text: 'Clique em "Relatório PDF" para gerar um documento com todas as notas do período filtrado, incluindo totais por status (pendente, enviada, paga) e valor acumulado.',
+      },
+      {
+        subtitle: 'Filtros disponíveis',
+        items: [
+          '**Busca livre:** por cliente, produto ou ID de cobrança.',
+          '**Data de emissão:** filtre por período.',
+          '**Status:** Todas, Pendentes, Enviadas ou Pagas.',
+        ],
       },
     ],
   },
