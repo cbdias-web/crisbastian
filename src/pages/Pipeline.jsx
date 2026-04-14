@@ -393,25 +393,25 @@ export default function Pipeline() {
 
         {/* KPIs — totais gerais */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-[#0f1e35] text-white rounded-2xl p-4 shadow-sm">
-            <p className="text-2xl font-bold">{totalGeral}</p>
-            <p className="text-xs opacity-70 mt-0.5">Total de negociações</p>
+          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
+            <p className="text-2xl font-bold text-teal-700">{fmtVal(valorTotal)}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Total em negociação</p>
           </div>
-          <div className="bg-[#0f1e35]/80 text-white rounded-2xl p-4 shadow-sm">
+          <div className="bg-[#0f1e35] text-white rounded-2xl p-4 shadow-sm">
             <p className="text-2xl font-bold">{totalAtivos}</p>
             <p className="text-xs opacity-70 mt-0.5">Negócios ativos</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-            <p className="text-2xl font-bold text-orange-600">{fmtVal(valorTotal)}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Em negociação</p>
+            <p className="text-2xl font-bold text-gray-800">{totalGeral}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Total de negócios</p>
           </div>
-          <div className="bg-emerald-50 rounded-2xl p-4 shadow-sm border border-emerald-100">
-            <p className="text-2xl font-bold text-emerald-700">{negocios.filter(n => n.temperatura === 'Fechado').length}</p>
-            <p className="text-xs text-emerald-600 mt-0.5">Fechados</p>
+          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
+            <p className="text-2xl font-bold text-teal-700">{negocios.filter(n => n.temperatura === 'Fechado').length}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Fechados</p>
           </div>
-          <div className="bg-emerald-50 rounded-2xl p-4 shadow-sm border border-emerald-100">
-            <p className="text-lg font-bold text-emerald-700">{fmtVal(valorFechado)}</p>
-            <p className="text-xs text-emerald-600 mt-0.5">Volume fechado</p>
+          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
+            <p className="text-lg font-bold text-teal-700">{fmtVal(valorFechado)}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Volume fechado</p>
           </div>
         </div>
 
