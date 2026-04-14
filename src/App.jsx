@@ -20,6 +20,7 @@ import NotasFiscais from './pages/NotasFiscais';
 import Treinamento from './pages/Treinamento';
 import TreinamentoAdmin from './pages/TreinamentoAdmin';
 import AssistenteTreinamentos from './pages/AssistenteTreinamentos';
+import Pipeline from './pages/Pipeline';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -181,6 +182,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="AssistenteTreinamentos">
             <AssistenteTreinamentos />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Pipeline"
+        element={
+          <LayoutWrapper currentPageName="Pipeline">
+            <Pipeline />
           </LayoutWrapper>
         }
       />

@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
 import { Button } from '@/components/ui/button';
@@ -119,19 +119,14 @@ export default function Layout({ children, currentPageName }) {
 
   const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
 
-  const menuItems = [
-    { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', allowUser: true },
+  // BLOCO COMERCIAL
+  const menuComercial = [
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
-    { name: 'Comissões', icon: DollarSign, page: 'Comissoes', allowUser: false },
+    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
-    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', allowUser: false, badge: totalPendentes },
-    { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
-    { name: 'Treinamentos', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-
-    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
-    { name: 'Rel. Interacoes', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
+    { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
@@ -139,11 +134,27 @@ export default function Layout({ children, currentPageName }) {
     return menusUsuario.includes(item.page);
   });
 
+  // BLOCO APOIO
+  const menuApoio = [
+    { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
+    { name: 'Treinamentos', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
+    { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
+  ].filter(item => {
+    if (isAdmin) return true;
+    if (item.alwaysVisible) return true;
+    return menusUsuario.includes(item.page);
+  });
+
+  // BLOCO ADMINISTRATIVO
+  const menuItems = []; // mantido vazio, substituído pelos blocos acima
+
   const adminMenuItems = [
+    { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
+    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
     { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
     { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
-    { name: 'Treinamentos', icon: GraduationCap, page: 'TreinamentoAdmin' },
-    { name: 'Relatório', icon: FileText, page: 'RelatorioComissoes' },
+    { name: 'Treinamentos (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
+    { name: 'Relatório Comissões', icon: FileText, page: 'RelatorioComissoes' },
     { name: 'Prospecção', icon: Users, page: 'Leads' },
     { name: 'Metas', icon: Target, page: 'Metas' },
     { name: 'Produtos', icon: Package, page: 'Produtos' },
@@ -186,7 +197,9 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const allMenuItems = [
-    ...menuItems,
+    { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
+    ...menuComercial,
+    ...menuApoio,
     ...(adminMenuItems.length > 0 ? adminMenuItems : []),
     ...(isAdmin ? [{ name: 'Usuários', icon: Users, page: 'Usuarios' }] : []),
   ];
@@ -238,38 +251,59 @@ export default function Layout({ children, currentPageName }) {
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto px-3 py-4">
-              <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mb-2">Menu</p>
-              {menuItems.map((item) => {
+              {/* Dashboard */}
+              {(() => {
+                const isActive = currentPageName === 'Dashboard';
+                return (
+                  <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+                    <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">Dashboard</span>
+                  </Link>
+                );
+              })()}
+
+              {/* Comercial */}
+              {menuComercial.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Comercial</p>}
+              {menuComercial.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.page;
                 return (
-                  <Link key={item.page} to={createPageUrl(item.page)}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
-                      isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                    }`}>
+                  <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
-                    {item.badge > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
-                    )}
                   </Link>
                 );
               })}
+
+              {/* Apoio */}
+              {menuApoio.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Apoio</p>}
+              {menuApoio.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPageName === item.page;
+                return (
+                  <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>
+                );
+              })}
+
+              {/* Administrativo */}
               {adminMenuItems.length > 0 && (
                 <>
-                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-4 mb-2">Administrativo</p>
+                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Administrativo</p>
                   {adminMenuItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = currentPageName === item.page;
                     return (
-                      <Link key={item.page} to={createPageUrl(item.page)}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
-                          isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                        }`}>
+                      <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm font-medium">{item.name}</span>
+                        {item.badge > 0 && <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>}
                       </Link>
                     );
                   })}
@@ -329,13 +363,26 @@ export default function Layout({ children, currentPageName }) {
             </div>
           )}
         </div>
-        {!sidebarCollapsed && (
-          <div className="px-5 pb-2 flex-shrink-0">
-            <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em]">Menu</p>
-          </div>
-        )}
         <nav className="px-3 pb-4 flex-1 overflow-y-auto">
-          {menuItems.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+          {/* Dashboard sempre no topo */}
+          {(() => {
+            const isActive = currentPageName === 'Dashboard';
+            return (
+              <Link to={createPageUrl('Dashboard')} title={sidebarCollapsed ? 'Dashboard' : undefined}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                }`}>
+                <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
+              </Link>
+            );
+          })()}
+
+          {/* BLOCO COMERCIAL */}
+          {!sidebarCollapsed && menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && (
+            <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Comercial</p>
+          )}
+          {menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
@@ -345,19 +392,33 @@ export default function Layout({ children, currentPageName }) {
                 }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-                {!sidebarCollapsed && item.badge > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
-                )}
-                {sidebarCollapsed && item.badge > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                )}
               </Link>
             );
           })}
+
+          {/* BLOCO APOIO */}
+          {!sidebarCollapsed && menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && (
+            <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Apoio</p>
+          )}
+          {menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPageName === item.page;
+            return (
+              <Link key={item.page} to={createPageUrl(item.page)} title={sidebarCollapsed ? item.name : undefined}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                }`}>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+              </Link>
+            );
+          })}
+
+          {/* BLOCO ADMINISTRATIVO */}
           {adminMenuItems.length > 0 && !sidebarCollapsed && (
             <>
               <button onClick={() => setAdminMenuOpen(prev => !prev)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-2 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
                 <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
                 <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
@@ -366,16 +427,33 @@ export default function Layout({ children, currentPageName }) {
                 const isActive = currentPageName === item.page;
                 return (
                   <Link key={item.page} to={createPageUrl(item.page)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
                       isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
                     }`}>
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
+                    {item.badge > 0 && (
+                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
+                    )}
                   </Link>
                 );
               })}
             </>
           )}
+          {/* Administrativo colapsado: ícones com badge */}
+          {adminMenuItems.length > 0 && sidebarCollapsed && adminMenuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPageName === item.page;
+            return (
+              <Link key={item.page} to={createPageUrl(item.page)} title={item.name}
+                className={`flex items-center justify-center px-2 py-2.5 rounded-xl mb-1 transition-all relative ${
+                  isActive ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
+                }`}>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {item.badge > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
+              </Link>
+            );
+          })}
         </nav>
         <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
           {isAdmin && (
