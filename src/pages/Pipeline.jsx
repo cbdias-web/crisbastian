@@ -397,9 +397,9 @@ export default function Pipeline() {
             <p className="text-2xl font-bold text-teal-700">{fmtVal(valorTotal)}</p>
             <p className="text-xs text-teal-600 mt-0.5">Total em negociação</p>
           </div>
-          <div className="bg-[#0f1e35] text-white rounded-2xl p-4 shadow-sm">
+          <div className="bg-slate-400 text-white rounded-2xl p-4 shadow-sm">
             <p className="text-2xl font-bold">{totalAtivos}</p>
-            <p className="text-xs opacity-70 mt-0.5">Negócios ativos</p>
+            <p className="text-xs opacity-80 mt-0.5">Negócios ativos</p>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <p className="text-2xl font-bold text-gray-800">{totalGeral}</p>
