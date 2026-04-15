@@ -129,6 +129,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
     { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
+    { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
@@ -140,7 +141,6 @@ export default function Layout({ children, currentPageName }) {
   const menuApoio = [
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Treinamentos', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-    { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
