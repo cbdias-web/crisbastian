@@ -17,9 +17,12 @@ Deno.serve(async (req) => {
     const criadas = [];
     for (let idx = 0; idx < parcelas.length; idx++) {
       const p = parcelas[idx];
+      const numeroParcela = idx + 1;
+
+      // Criar ParcelaVenda
       const registro = await base44.asServiceRole.entities.ParcelaVenda.create({
         venda_id,
-        numero_parcela: idx + 1,
+        numero_parcela: numeroParcela,
         total_parcelas: parcelas.length,
         valor_parcela: p.valor,
         data_vencimento: p.vencimento,
@@ -35,6 +38,29 @@ Deno.serve(async (req) => {
         forma_pagamento: venda_data.forma_pagamento || '',
       });
       criadas.push(registro);
+
+      // Criar entrada na AgendaContato do gerente para o dia do vencimento
+      if (venda_data.vendedor_id && p.vencimento) {
+        try {
+          await base44.asServiceRole.entities.AgendaContato.create({
+            lead_id: venda_id, // usa o id da venda como referência
+            lead_nome: `${venda_data.cliente || 'Cliente'} — Parcela ${numeroParcela}/${parcelas.length}`,
+            lead_cpf_cnpj: venda_data.cpf_cnpj || '',
+            lead_telefone: '',
+            cliente_id: '',
+            vendedor_id: venda_data.vendedor_id,
+            vendedor_nome: venda_data.assessor_comercial || '',
+            data_agendada: p.vencimento,
+            posicao_dia: numeroParcela,
+            lote_id: '',
+            status: 'pendente',
+            resultado: `Vencimento parcela ${numeroParcela}/${parcelas.length} — ${venda_data.produto || ''} — ${(p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+          });
+        } catch (e) {
+          // Não bloqueia se agenda falhar
+          console.error('Erro ao criar agenda para parcela:', e.message);
+        }
+      }
     }
 
     return Response.json({ success: true, criadas: criadas.length });

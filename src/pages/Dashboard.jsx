@@ -73,6 +73,7 @@ export default function Dashboard() {
   const [vendedores, setVendedores] = useState([]);
   const [metas, setMetas] = useState([]);
   const [comissoes, setComissoes] = useState([]);
+  const [parcelasMes, setParcelasMes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -143,16 +144,19 @@ export default function Dashboard() {
       base44.entities.Meta.list(),
       base44.entities.Comissao.list(),
       base44.auth.me(),
-    ]).then(async ([v, vend, m, com, u]) => {
+      base44.entities.ParcelaVenda.filter({ status: 'pendente' }),
+    ]).then(async ([v, vend, m, com, u, parc]) => {
       const vendas = v.status === 'fulfilled' ? v.value : [];
       const vends = vend.status === 'fulfilled' ? vend.value : [];
       const mts = m.status === 'fulfilled' ? m.value : [];
       const coms = com.status === 'fulfilled' ? com.value : [];
       const usr = u.status === 'fulfilled' ? u.value : null;
+      const parcelas = parc.status === 'fulfilled' ? parc.value : [];
       setVendas(vendas);
       setVendedores(vends);
       setMetas(mts);
       setComissoes(coms);
+      setParcelasMes(parcelas);
       setUser(usr);
       setSelectedVendedores(vends.map(vv => vv.id));
       const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
@@ -278,13 +282,20 @@ export default function Dashboard() {
   // Últimas vendas
   const recentes = vendasFiltradas.slice(0, 8);
 
+  // Parcelas vincendas do mês atual por vendedor
+  const parcelasPorVendedor = (vendedorId) =>
+    parcelasMes
+      .filter(p => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim)
+      .reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0);
+
   // Ranking
   const ranking = vendedores
     .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
     .map(v => {
       const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
       const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-      return { ...v, qtd: vs.length, vol };
+      const vincendas = parcelasPorVendedor(v.id);
+      return { ...v, qtd: vs.length, vol, vincendas };
     })
     .sort((a, b) => b.vol - a.vol);
 
@@ -550,32 +561,67 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="p-5">
-            {ranking.filter(v => v.vol > 0).length === 0 ? (
+            {ranking.filter(v => v.vol > 0 || v.vincendas > 0).length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-4">Nenhuma venda no período</p>
             ) : (
               <div className="space-y-3">
-                {ranking.filter(v => v.vol > 0).map((v, i) => {
-                  const maxVol = ranking[0]?.vol || 1;
+                {/* Cabeçalho */}
+                <div className="flex items-center gap-3 pb-1 border-b border-gray-50">
+                  <div className="w-8" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between text-[10px] text-gray-400 uppercase tracking-wider">
+                      <span>Gerente</span>
+                      <div className="flex gap-4">
+                        <span>Realizado</span>
+                        <span className="text-amber-500">Vincendas/mês</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {ranking.filter(v => v.vol > 0 || v.vincendas > 0).map((v, i) => {
+                  const maxVol = ranking.filter(r => r.vol > 0)[0]?.vol || 1;
                   const pct = Math.round((v.vol / maxVol) * 100);
                   const medals = ["🥇", "🥈", "🥉"];
                   return (
                     <div key={v.id} className="flex items-center gap-3">
                       <div className="w-8 text-center text-lg flex-shrink-0">
-                        {i < 3 ? medals[i] : <span className="text-sm font-bold text-gray-400">{i + 1}</span>}
+                        {i < 3 && v.vol > 0 ? medals[i] : <span className="text-sm font-bold text-gray-400">{v.vol > 0 ? i + 1 : '—'}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between text-sm mb-1">
+                        <div className="flex justify-between text-sm mb-1 gap-2">
                           <span className="font-medium text-gray-900 truncate">{v.nome}</span>
-                          <span className="font-semibold text-gray-900 ml-2 flex-shrink-0">{formatCurrency(v.vol)}</span>
+                          <div className="flex gap-4 flex-shrink-0">
+                            <span className="font-semibold text-gray-900">{formatCurrency(v.vol)}</span>
+                            {v.vincendas > 0 && (
+                              <span className="font-semibold text-amber-600" title="Parcelas vincendas no mês">
+                                +{formatCurrency(v.vincendas)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full ${i === 0 ? "bg-[#D4AF37]" : "bg-[#1a3150]"}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <p className="text-xs text-gray-400 mt-0.5">{v.qtd} venda{v.qtd !== 1 ? "s" : ""}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-gray-400">{v.qtd} venda{v.qtd !== 1 ? "s" : ""}</p>
+                          {v.vincendas > 0 && (
+                            <p className="text-[10px] text-amber-500">· {parcelasMes.filter(p => p.vendedor_id === v.id && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length} parcela(s) vincendo no mês</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
                 })}
+
+                {/* Total time — vincendas do mês */}
+                {parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Vincendas do Time no Mês</span>
+                    <span className="text-sm font-bold text-amber-600">
+                      {formatCurrency(parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0))}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
