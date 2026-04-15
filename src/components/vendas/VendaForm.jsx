@@ -114,10 +114,16 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   });
 
   const [numParcelas, setNumParcelas] = useState(venda?.num_parcelas || 1);
-  // Valor total do contrato (novo campo)
-  const [valorTotalContrato, setValorTotalContrato] = useState(venda?.valor_total_contrato ? String(venda.valor_total_contrato) : '');
-  // Valor de entrada (flexível)
-  const [valorEntradaCustom, setValorEntradaCustom] = useState(venda?.valor ? String(venda.valor) : '');
+  // Valor total do contrato — suporta venda normal e venda importada do pipeline (valor_estimado)
+  const [valorTotalContrato, setValorTotalContrato] = useState(
+    venda?.valor_total_contrato ? String(venda.valor_total_contrato) :
+    venda?.valor_estimado ? String(venda.valor_estimado) : ''
+  );
+  // Valor de entrada — se vier do pipeline sem entrada separada, assume o total
+  const [valorEntradaCustom, setValorEntradaCustom] = useState(
+    venda?.valor ? String(venda.valor) :
+    venda?.valor_estimado ? String(venda.valor_estimado) : ''
+  );
 
   const valorTotal = parseFloat(valorTotalContrato) || 0;
   const valorEntrada = parseFloat(valorEntradaCustom) || 0;
@@ -131,19 +137,34 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
 
 
-  const parcelasPreview = React.useMemo(() => {
-    if (numParcelas <= 1 || valorRestante <= 0) return [];
+  // Parcelas editáveis (datas ajustáveis pelo usuário)
+  const [parcelasEditaveis, setParcelasEditaveis] = useState([]);
+
+  // Regenera as parcelas quando muda quantidade, data base ou valor restante
+  React.useEffect(() => {
+    if (numParcelas <= 1 || valorRestante <= 0) {
+      setParcelasEditaveis([]);
+      return;
+    }
     const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-    return Array.from({ length: numParcelas }, (_, i) => {
+    setParcelasEditaveis(prev => Array.from({ length: numParcelas }, (_, i) => {
       const dt = new Date(dataBase);
       dt.setMonth(dt.getMonth() + i + 1);
+      const defaultDate = dt.toISOString().split('T')[0];
+      // Mantém data editada se já existir e número de parcela não mudou
       return {
         numero: i + 2,
-        vencimento: dt.toISOString().split('T')[0],
+        vencimento: prev[i]?.vencimento || defaultDate,
         valor: valorRestante / numParcelas,
       };
-    });
+    }));
   }, [numParcelas, formData.data, valorRestante]);
+
+  const parcelasPreview = parcelasEditaveis;
+
+  const updateVencimentoParcela = (idx, novaData) => {
+    setParcelasEditaveis(prev => prev.map((p, i) => i === idx ? { ...p, vencimento: novaData } : p));
+  };
 
   // Multi-indicador state — carrega indicadores da venda
   const [indicadores, setIndicadores] = useState(() => {
@@ -452,10 +473,27 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     )}
                   </div>
                 )}
-                {numParcelas > 1 && valorRestante > 0 && (
-                  <p className="text-[10px] text-blue-600 font-medium">
-                    💡 {numParcelas} parcela(s) de {(valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} serão geradas no Pipeline com vencimentos mensais
-                  </p>
+                {numParcelas > 1 && valorRestante > 0 && parcelasEditaveis.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-[10px] text-blue-600 font-medium">
+                      💡 Ajuste as datas de vencimento de cada parcela se necessário:
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {parcelasEditaveis.map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-blue-100">
+                          <span className="text-[10px] font-semibold text-amber-600 whitespace-nowrap">
+                            Parcela {i + 1} — {(p.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                          <input
+                            type="date"
+                            value={p.vencimento}
+                            onChange={e => updateVencimentoParcela(i, e.target.value)}
+                            className="flex-1 text-[10px] border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:border-[#1a3150] min-w-0"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
