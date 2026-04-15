@@ -1,0 +1,91 @@
+{
+  "name": "ParcelaVenda",
+  "type": "object",
+  "properties": {
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda original"
+    },
+    "numero_parcela": {
+      "type": "number",
+      "description": "N\u00famero da parcela (2, 3, 4...)"
+    },
+    "total_parcelas": {
+      "type": "number",
+      "description": "Total de parcelas da venda"
+    },
+    "valor_parcela": {
+      "type": "number",
+      "description": "Valor desta parcela"
+    },
+    "data_vencimento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento da parcela"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "recebida",
+        "inadimplente"
+      ],
+      "default": "pendente",
+      "description": "Status da parcela"
+    },
+    "data_recebimento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que a parcela foi recebida"
+    },
+    "venda_gerada_id": {
+      "type": "string",
+      "description": "ID da Venda criada ao receber esta parcela"
+    },
+    "pipeline_id": {
+      "type": "string",
+      "description": "ID do registro no Pipeline vinculado a esta parcela"
+    },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "cliente_cpf_cnpj": {
+      "type": "string",
+      "description": "CPF/CNPJ do cliente"
+    },
+    "produto": {
+      "type": "string",
+      "description": "Produto da venda"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "percentual_comissao": {
+      "type": "number",
+      "description": "Percentual de comiss\u00e3o do vendedor"
+    },
+    "indicadores": {
+      "type": "array",
+      "description": "Lista de indicadores da venda original",
+      "items": {
+        "type": "object"
+      }
+    },
+    "forma_pagamento": {
+      "type": "string",
+      "description": "Forma de pagamento"
+    }
+  },
+  "required": [
+    "venda_id",
+    "numero_parcela",
+    "valor_parcela",
+    "data_vencimento"
+  ]
+}

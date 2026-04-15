@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
@@ -112,6 +112,27 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
   });
+
+  const [numParcelas, setNumParcelas] = useState(venda?.num_parcelas || 1);
+
+  // Calcula preview das parcelas futuras
+  const valorTotal = parseFloat(formData.valor) || 0;
+  const valorEntrada = numParcelas > 1 ? valorTotal : valorTotal;
+  const valorParcela = numParcelas > 1 ? (valorTotal / numParcelas) : 0;
+
+  const parcelasPreview = React.useMemo(() => {
+    if (numParcelas <= 1) return [];
+    const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
+    return Array.from({ length: numParcelas - 1 }, (_, i) => {
+      const dt = new Date(dataBase);
+      dt.setMonth(dt.getMonth() + i + 1);
+      return {
+        numero: i + 2,
+        vencimento: dt.toISOString().split('T')[0],
+        valor: valorTotal / numParcelas,
+      };
+    });
+  }, [numParcelas, formData.data, formData.valor]);
 
   // Multi-indicador state — carrega indicadores da venda
   const [indicadores, setIndicadores] = useState(() => {
@@ -256,6 +277,9 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     if (selectedVendedores.length === 0) { toast.error('Selecione ao menos um vendedor'); return; }
 
     const primaryVendedor = selectedVendedores[0];
+    const valorFull = parseFloat(formData.valor) || 0;
+    const valorEntradaCalc = numParcelas > 1 ? valorFull / numParcelas : valorFull;
+
     const dataToSave = {
       ...formData,
       produto: selectedProdutos.join(', '),
@@ -263,11 +287,14 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       vendedor_id: primaryVendedor.id,
       percentual_comissao: parseFloat(formData.percentual_comissao) || primaryVendedor.percentual_comissao || 10,
       vendedores_ids: selectedVendedores,
-      valor: parseFloat(formData.valor) || 0,
+      valor: valorEntradaCalc,
+      valor_total_contrato: valorFull,
+      num_parcelas: numParcelas,
       indicadores,
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
+      _parcelasPreview: numParcelas > 1 ? parcelasPreview : [],
     };
 
     if (requerAutorizacao) {
@@ -355,6 +382,21 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <Label>Valor *</Label>
               <Input type="number" step="0.01" value={formData.valor}
                 onChange={e => setFormData({ ...formData, valor: e.target.value })} required />
+            </div>
+            <div>
+              <Label>Parcelamento</Label>
+              <select value={numParcelas} onChange={e => setNumParcelas(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background h-9 focus:outline-none focus:ring-1 focus:ring-ring">
+                <option value={1}>À vista (entrada única)</option>
+                {Array.from({ length: 11 }, (_, i) => i + 2).map(n => (
+                  <option key={n} value={n}>{n}x de {valorTotal > 0 ? (valorTotal / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `--`}</option>
+                ))}
+              </select>
+              {numParcelas > 1 && valorTotal > 0 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Entrada: {(valorTotal / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · {numParcelas - 1} parcela(s) no Pipeline
+                </p>
+              )}
             </div>
             <div>
               <Label>Data *</Label>

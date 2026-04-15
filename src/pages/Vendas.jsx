@@ -67,9 +67,10 @@ export default function Vendas() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const venda = await base44.entities.Venda.create(data);
+      const { _parcelasPreview, ...vendaData } = data;
+      const venda = await base44.entities.Venda.create(vendaData);
 
-      // Comissão do vendedor
+      // Comissão do vendedor (sobre o valor da entrada)
       if (data.vendedor_id && data.valor && data.percentual_comissao) {
         await base44.entities.Comissao.create({
           venda_id: venda.id,
@@ -88,7 +89,6 @@ export default function Vendas() {
       for (const ind of indicadores) {
         if (ind.id && ind.percentual > 0) {
           if (ind.tipo === 'vendedor') {
-            // Vendedor usado como indicador: vai para tabela Comissao
             await base44.entities.Comissao.create({
               venda_id: venda.id,
               vendedor_id: ind.id,
@@ -101,7 +101,6 @@ export default function Vendas() {
               tipo: 'comissao'
             });
           } else {
-            // Indicador puro: vai para tabela ComissaoEspelhamento
             await base44.entities.ComissaoEspelhamento.create({
               venda_id: venda.id,
               vendedor_id: ind.id,
@@ -137,15 +136,71 @@ export default function Vendas() {
         }
       }
 
+      // Criar parcelas futuras no Pipeline e AgendaContato
+      const parcelas = _parcelasPreview || [];
+      for (const p of parcelas) {
+        // Criar registro no Pipeline como parcela a receber
+        const pipeline = await base44.entities.Pipeline.create({
+          cliente_nome: data.cliente || '',
+          cliente_cpf_cnpj: data.cpf_cnpj || '',
+          produto: `${data.produto} (Parcela ${p.numero}/${data.num_parcelas})`,
+          valor_estimado: p.valor,
+          data_prevista: p.vencimento,
+          temperatura: 'Frio',
+          descricao: `Parcela ${p.numero} de ${data.num_parcelas} — Venda ID: ${venda.id}`,
+          origem: 'Carteira',
+          vendedor_id: data.vendedor_id || '',
+          vendedor_nome: data.assessor_comercial || '',
+        });
+
+        // Criar ParcelaVenda vinculando pipeline
+        await base44.entities.ParcelaVenda.create({
+          venda_id: venda.id,
+          numero_parcela: p.numero,
+          total_parcelas: data.num_parcelas,
+          valor_parcela: p.valor,
+          data_vencimento: p.vencimento,
+          status: 'pendente',
+          pipeline_id: pipeline.id,
+          cliente_nome: data.cliente || '',
+          cliente_cpf_cnpj: data.cpf_cnpj || '',
+          produto: data.produto || '',
+          vendedor_id: data.vendedor_id || '',
+          vendedor_nome: data.assessor_comercial || '',
+          percentual_comissao: data.percentual_comissao || 0,
+          indicadores: data.indicadores || [],
+          forma_pagamento: data.forma_pagamento || '',
+        });
+
+        // Criar AgendaContato para o vencimento
+        if (data.vendedor_id) {
+          await base44.entities.AgendaContato.create({
+            lead_id: venda.id,
+            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${p.numero}/${data.num_parcelas}`,
+            lead_cpf_cnpj: data.cpf_cnpj || '',
+            lead_telefone: '',
+            vendedor_id: data.vendedor_id,
+            vendedor_nome: data.assessor_comercial || '',
+            data_agendada: p.vencimento,
+            posicao_dia: 0,
+            status: 'pendente',
+            resultado: '',
+          });
+        }
+      }
+
       return venda;
     },
-    onSuccess: () => {
+    onSuccess: (_, data) => {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
       queryClient.invalidateQueries(['comissoesEspelhamento']);
       queryClient.invalidateQueries(['clientes']);
+      queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['agenda-contatos']);
       setShowForm(false);
-      toast.success('Venda criada com sucesso!');
+      const np = data.num_parcelas || 1;
+      toast.success(np > 1 ? `Venda criada! ${np - 1} parcela(s) adicionada(s) ao Pipeline.` : 'Venda criada com sucesso!');
     },
   });
 

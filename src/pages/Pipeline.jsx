@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -144,6 +144,7 @@ export default function Pipeline() {
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
+  const [recebenndoParcela, setRecebenndoParcela] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -177,6 +178,16 @@ export default function Pipeline() {
     queryFn: () => base44.entities.Produto.filter({ ativo: true }, 'nome'),
     enabled: !!user,
   });
+
+  const { data: parcelasVenda = [] } = useQuery({
+    queryKey: ['parcelas-venda-pipeline'],
+    queryFn: () => base44.entities.ParcelaVenda.filter({ status: 'pendente' }),
+    enabled: !!user,
+    staleTime: 30000,
+  });
+
+  // Set de pipeline_ids que são parcelas pendentes
+  const parcelaPipelineIds = new Set(parcelasVenda.map(p => p.pipeline_id).filter(Boolean));
 
   const negocios = negociosRaw.filter(n => {
     if (!isAdmin) return n.vendedor_id === user?.id || n.created_by === user?.email;
@@ -293,6 +304,70 @@ export default function Pipeline() {
     setShowForm(true);
   };
 
+  // Receber parcela de venda parcelada
+  const receberParcela = async (n) => {
+    if (!confirm(`Confirmar recebimento da parcela de ${fmtVal(n.valor_estimado)} de "${n.cliente_nome}"? Uma venda será criada e ela contará na meta do mês.`)) return;
+    setRecebenndoParcela(n.id);
+    try {
+      // Buscar a ParcelaVenda vinculada a este pipeline
+      const parcelas = await base44.entities.ParcelaVenda.filter({ pipeline_id: n.id });
+      const parcela = parcelas[0];
+
+      const hoje = new Date().toISOString().split('T')[0];
+
+      // Criar venda para contar na meta
+      const novaVenda = await base44.entities.Venda.create({
+        produto: parcela?.produto || n.produto || '',
+        assessor_comercial: parcela?.vendedor_nome || n.vendedor_nome || '',
+        vendedor_id: parcela?.vendedor_id || n.vendedor_id || '',
+        cliente: n.cliente_nome || '',
+        cpf_cnpj: n.cliente_cpf_cnpj || parcela?.cliente_cpf_cnpj || '',
+        valor: n.valor_estimado || 0,
+        data: hoje,
+        forma_pagamento: parcela?.forma_pagamento || '',
+        percentual_comissao: parcela?.percentual_comissao || 0,
+        indicadores: parcela?.indicadores || [],
+        observacao: `Parcela recebida — ${n.produto}`,
+        num_parcelas: 1,
+        valor_total_contrato: n.valor_estimado,
+      });
+
+      // Criar comissão do vendedor sobre a parcela
+      if ((parcela?.vendedor_id || n.vendedor_id) && parcela?.percentual_comissao) {
+        await base44.entities.Comissao.create({
+          venda_id: novaVenda.id,
+          vendedor_id: parcela.vendedor_id,
+          vendedor_nome: parcela.vendedor_nome,
+          valor_venda: n.valor_estimado,
+          percentual: parcela.percentual_comissao,
+          valor_comissao: (n.valor_estimado * parcela.percentual_comissao) / 100,
+          data_venda: hoje,
+          pago: false,
+        });
+      }
+
+      // Atualizar ParcelaVenda como recebida
+      if (parcela) {
+        await base44.entities.ParcelaVenda.update(parcela.id, {
+          status: 'recebida',
+          data_recebimento: hoje,
+          venda_gerada_id: novaVenda.id,
+        });
+      }
+
+      // Marcar o pipeline como Fechado
+      await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
+
+      queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['vendas']);
+      queryClient.invalidateQueries(['comissoes']);
+      toast.success('Parcela recebida! Venda registrada e meta atualizada.');
+    } catch (err) {
+      toast.error('Erro ao registrar recebimento: ' + err.message);
+    }
+    setRecebenndoParcela(null);
+  };
+
   // Converter prospecção em venda e navegar para Vendas
   const converterEmVenda = async (n) => {
     if (!confirm(`Converter "${n.cliente_nome}" em venda? Você será direcionado para a página de Vendas para completar os detalhes.`)) return;
@@ -321,6 +396,10 @@ export default function Pipeline() {
     }
     setConvertendo(null);
   };
+
+  // KPI parcelas pendentes
+  const totalParcelasPendentes = parcelasVenda.length;
+  const valorParcelasPendentes = parcelasVenda.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
   // KPIs — totais gerais (todos os negócios, sem filtro de gerente/temperatura/busca)
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
@@ -400,6 +479,18 @@ export default function Pipeline() {
             </Button>
           </div>
         </div>
+
+        {/* KPI Parcelas a Receber */}
+        {totalParcelasPendentes > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
+            <div>
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">💰 Parcelas a Receber</p>
+              <p className="text-2xl font-bold text-amber-700 mt-1">{fmtVal(valorParcelasPendentes)}</p>
+              <p className="text-xs text-amber-600 mt-0.5">{totalParcelasPendentes} parcela(s) pendente(s) no Pipeline</p>
+            </div>
+            <DollarSign className="w-10 h-10 text-amber-300 flex-shrink-0" />
+          </div>
+        )}
 
         {/* KPIs — totais gerais */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -519,23 +610,44 @@ export default function Pipeline() {
                 )}
                 <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
                   {items.length === 0 && <p className="text-[10px] text-gray-300 text-center py-4">Nenhum negócio</p>}
-                  {items.map(n => (
-                    <div key={n.id} className="bg-gray-50 rounded-xl p-2.5 hover:bg-blue-50 transition cursor-default group">
+                  {items.map(n => {
+                    const isParcela = parcelaPipelineIds.has(n.id);
+                    return (
+                    <div key={n.id} className={`rounded-xl p-2.5 hover:bg-blue-50 transition cursor-default group ${isParcela ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
                       <div className="flex items-start justify-between gap-1">
-                        <p className="text-xs font-semibold text-gray-800 leading-tight flex-1">{n.cliente_nome}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800 leading-tight">{n.cliente_nome}</p>
+                          {isParcela && <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">💰 PARCELA</span>}
+                        </div>
                         <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                          {/* Converter em venda */}
-                          <button
-                            onClick={() => converterEmVenda(n)}
-                            disabled={convertendo === n.id}
-                            title="Converter em venda"
-                            className="p-0.5 text-gray-400 hover:text-emerald-600"
-                          >
-                            {convertendo === n.id
-                              ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                              : <ShoppingCart className="w-3 h-3" />
-                            }
-                          </button>
+                          {/* Receber parcela */}
+                          {isParcela && (
+                            <button
+                              onClick={() => receberParcela(n)}
+                              disabled={recebenndoParcela === n.id}
+                              title="Registrar recebimento da parcela"
+                              className="p-0.5 text-gray-400 hover:text-emerald-600"
+                            >
+                              {recebenndoParcela === n.id
+                                ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                : <DollarSign className="w-3 h-3" />
+                              }
+                            </button>
+                          )}
+                          {/* Converter em venda (apenas não-parcelas) */}
+                          {!isParcela && (
+                            <button
+                              onClick={() => converterEmVenda(n)}
+                              disabled={convertendo === n.id}
+                              title="Converter em venda"
+                              className="p-0.5 text-gray-400 hover:text-emerald-600"
+                            >
+                              {convertendo === n.id
+                                ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                : <ShoppingCart className="w-3 h-3" />
+                              }
+                            </button>
+                          )}
                           <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
                             <Pencil className="w-3 h-3" />
                           </button>
@@ -546,10 +658,11 @@ export default function Pipeline() {
                       </div>
                       <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
                       {n.valor_estimado > 0 && <p className="text-[10px] font-bold text-[#1a3150] mt-1">{fmtVal(n.valor_estimado)}</p>}
-                      {n.data_prevista && <p className="text-[10px] text-gray-400 mt-0.5">Prev: {fmtDate(n.data_prevista)}</p>}
+                      {n.data_prevista && <p className={`text-[10px] mt-0.5 ${isParcela ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>Venc: {fmtDate(n.data_prevista)}</p>}
                       {isAdmin && n.vendedor_nome && <p className="text-[10px] text-blue-500 mt-0.5">{n.vendedor_nome}</p>}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
