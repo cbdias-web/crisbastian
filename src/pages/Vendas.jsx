@@ -141,7 +141,7 @@ export default function Vendas() {
       const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
       for (let idx = 0; idx < parcelas.length; idx++) {
-        if (idx > 0) await delay(300); // evita rate limit 429
+        if (idx > 0) await delay(500); // evita rate limit 429
 
         const p = parcelas[idx];
         const numParcela = idx + 1;
