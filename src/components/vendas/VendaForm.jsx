@@ -115,10 +115,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const [numParcelas, setNumParcelas] = useState(venda?.num_parcelas || 1);
   // Valor total do contrato — suporta venda normal e venda importada do pipeline (valor_estimado)
-  const [valorTotalContrato, setValorTotalContrato] = useState(
+  const valorInicialContrato =
     venda?.valor_total_contrato ? String(venda.valor_total_contrato) :
-    venda?.valor_estimado ? String(venda.valor_estimado) : ''
-  );
+    venda?.valor_estimado ? String(venda.valor_estimado) :
+    venda?.valor ? String(venda.valor) : '';
+  const [valorTotalContrato, setValorTotalContrato] = useState(valorInicialContrato);
   // Valor de entrada — se vier do pipeline sem entrada separada, assume o total
   const [valorEntradaCustom, setValorEntradaCustom] = useState(
     venda?.valor ? String(venda.valor) :
@@ -163,7 +164,19 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const parcelasPreview = parcelasEditaveis;
 
   const updateVencimentoParcela = (idx, novaData) => {
-    setParcelasEditaveis(prev => prev.map((p, i) => i === idx ? { ...p, vencimento: novaData } : p));
+    setParcelasEditaveis(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], vencimento: novaData };
+      // Se alterou a primeira parcela (idx=0), propaga +30 dias para as demais
+      if (idx === 0 && novaData) {
+        for (let i = 1; i < updated.length; i++) {
+          const base = new Date(novaData + 'T00:00:00');
+          base.setDate(base.getDate() + 30 * i);
+          updated[i] = { ...updated[i], vencimento: base.toISOString().split('T')[0] };
+        }
+      }
+      return updated;
+    });
   };
 
   // Multi-indicador state — carrega indicadores da venda
