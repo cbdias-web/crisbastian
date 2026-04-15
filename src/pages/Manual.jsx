@@ -766,6 +766,63 @@ const sections = [
     ],
   },
   {
+    id: 'parcelas-vincendas',
+    icon: CalendarClock,
+    title: 'Parcelas Vincendas',
+    color: 'bg-amber-50 text-amber-600',
+    border: 'border-amber-200',
+    content: [
+      {
+        subtitle: 'O que são Parcelas Vincendas?',
+        text: 'Parcelas Vincendas são prestações do saldo restante de vendas parceladas. Quando uma venda é registrada com múltiplas parcelas, o sistema cria automaticamente registros de cada parcela para acompanhamento do recebimento.',
+      },
+      {
+        subtitle: 'Como aparecem as parcelas',
+        text: 'Ao registrar uma venda parcelada (ex: 3x), o sistema gera automaticamente as 3 parcelas com datas de vencimento mensais a partir da data da venda. A entrada (primeira parcela) conta para a meta do mês; as demais parcelas aparecem em "Parcelas Vincendas".',
+      },
+      {
+        subtitle: 'Acessar Parcelas Vincendas',
+        text: 'No Pipeline Comercial, clique na aba "Parcelas Vincendas" (ou use o botão com o ícone de calendário) para visualizar todas as parcelas pendentes de recebimento.',
+      },
+      {
+        subtitle: 'Estrutura de pagamento ao vender parcelado',
+        steps: [
+          'Ao registrar uma nova venda, selecione o número de parcelas desejadas.',
+          'Defina o Valor de Entrada (que conta para a meta do mês atual).',
+          'O Saldo Restante é dividido igualmente entre as parcelas.',
+          'Você pode ajustar manualmente a data de vencimento de cada parcela conforme necessário.',
+          'Ao salvar, as parcelas são criadas automaticamente no sistema.',
+        ],
+      },
+      {
+        subtitle: 'Sincronizar / Atualizar parcelas',
+        text: 'Clique no botão "Atualizar" na aba "Parcelas Vincendas" para sincronizar todas as vendas parceladas e criar automaticamente as parcelas que ainda não foram geradas (útil para vendas importadas ou registradas sem parcelas).',
+      },
+      {
+        subtitle: 'Registrar recebimento de parcela',
+        steps: [
+          'Na tabela de "Parcelas Vincendas", localize a parcela a receber.',
+          'Clique no botão "Receber" (ícone de moeda).',
+          'Confirme o recebimento — o sistema gera automaticamente uma Venda no sistema (para contar na meta do mês).',
+          'A parcela é marcada como "Recebida" com data do recebimento registrada.',
+          'As comissões da parcela são geradas e o Pipeline relacionado é marcado como "Fechado".',
+        ],
+      },
+      {
+        subtitle: 'KPIs de Parcelas Vincendas',
+        items: [
+          '**Total de parcelas pendentes:** quantidade de parcelas ainda não recebidas.',
+          '**Valor total a receber:** soma do valor de todas as parcelas pendentes.',
+          '**Parcelas do gerente selecionado:** quando você filtra por gerente no Pipeline, o card "Parcelas a Receber" mostra o total específico daquele gerente.',
+        ],
+      },
+      {
+        subtitle: 'Visualizar histórico de parcelas',
+        text: 'Na tabela de "Parcelas Vincendas", todas as informações da parcela são exibidas: número (ex: 2/3), cliente, produto, vendedor, data de vencimento, valor e status. Parcelas vencidas aparecem com fundo vermelho.',
+      },
+    ],
+  },
+  {
     id: 'pipeline',
     icon: TrendingUp,
     title: 'Pipeline Comercial',
