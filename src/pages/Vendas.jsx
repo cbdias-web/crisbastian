@@ -65,10 +65,13 @@ export default function Vendas() {
     queryFn: () => base44.entities.Vendedor.list('nome'),
   });
 
+  const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
       const { _parcelasPreview, ...vendaData } = data;
       const venda = await base44.entities.Venda.create(vendaData);
+      await sleep(400);
 
       // Comissão do vendedor (sobre o valor da entrada)
       if (data.vendedor_id && data.valor && data.percentual_comissao) {
@@ -82,9 +85,10 @@ export default function Vendas() {
           data_venda: data.data,
           pago: false
         });
+        await sleep(300);
       }
 
-      // Comissões dos indicadores (múltiplos)
+      // Comissões dos indicadores (múltiplos) — sequencial com delay
       const indicadores = data.indicadores || [];
       for (const ind of indicadores) {
         if (ind.id && ind.percentual > 0) {
@@ -112,6 +116,7 @@ export default function Vendas() {
               pago: false
             });
           }
+          await sleep(300);
         }
       }
 
@@ -127,6 +132,7 @@ export default function Vendas() {
             });
           }
         } else {
+          await sleep(300);
           await base44.entities.Cliente.create({
             nome: data.cliente.trim(),
             cpf_cnpj: data.cpf_cnpj || '',
@@ -139,6 +145,7 @@ export default function Vendas() {
       // Criar parcelas via backend function (evita rate limit)
       const parcelas = _parcelasPreview || [];
       if (parcelas.length > 0) {
+        await sleep(500);
         await base44.functions.invoke('criarParcelasVenda', {
           venda_id: venda.id,
           parcelas,
