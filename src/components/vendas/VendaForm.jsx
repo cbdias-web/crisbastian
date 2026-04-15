@@ -124,10 +124,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const valorRestante = Math.max(0, valorTotal - valorEntrada);
   const valorParcela = numParcelas > 1 && valorRestante > 0 ? valorRestante / numParcelas : 0;
 
-  // Sincroniza formData.valor com a entrada
+  // Sincroniza formData.valor com a entrada (apenas o valor de entrada conta na meta)
   useEffect(() => {
     setFormData(f => ({ ...f, valor: valorEntradaCustom }));
   }, [valorEntradaCustom]);
+
+
 
   const parcelasPreview = React.useMemo(() => {
     if (numParcelas <= 1 || valorRestante <= 0) return [];
@@ -392,7 +394,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <Input type="number" step="0.01" value={valorTotalContrato}
                 onChange={e => {
                   setValorTotalContrato(e.target.value);
-                  // Se não há entrada customizada, sincroniza entrada = total (à vista)
+                  // Se à vista, mantém entrada = total
                   if (numParcelas === 1) setValorEntradaCustom(e.target.value);
                 }} required placeholder="Ex: 150000,00" />
             </div>
@@ -401,18 +403,27 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Estrutura de Pagamento</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Valor de Entrada *</label>
-                    <Input type="number" step="0.01" value={valorEntradaCustom}
+                    <label className="text-xs text-gray-500 mb-1 block">Valor de Entrada</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={valorEntradaCustom}
                       onChange={e => setValorEntradaCustom(e.target.value)}
-                      placeholder="Ex: 50000,00" required />
+                      placeholder={valorTotal > 0 ? valorTotal.toString() : 'Ex: 50000,00'}
+                      disabled={numParcelas === 1}
+                    />
                     <p className="text-[10px] text-gray-400 mt-0.5">Conta na meta do mês atual</p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Parcelas do saldo restante</label>
-                    <select value={numParcelas} onChange={e => setNumParcelas(parseInt(e.target.value))}
+                    <select value={numParcelas} onChange={e => {
+                      const n = parseInt(e.target.value);
+                      setNumParcelas(n);
+                      if (n === 1) setValorEntradaCustom(valorTotalContrato);
+                    }}
                       className="w-full px-3 py-2 border border-input rounded-md text-sm bg-white h-9 focus:outline-none focus:ring-1 focus:ring-ring">
-                      <option value={1}>Sem parcelas (tudo na entrada)</option>
-                      {Array.from({ length: 11 }, (_, i) => i + 1).map(n => {
+                      <option value={1}>Sem parcelas (pagamento total na entrada)</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(n => {
                         const vp = valorRestante > 0 ? (valorRestante / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--';
                         return <option key={n} value={n}>{n}x de {vp}</option>;
                       })}
@@ -420,28 +431,30 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                   </div>
                 </div>
                 {valorTotal > 0 && (
-                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-blue-100">
-                    <div className="text-center">
-                      <p className="text-[10px] text-gray-500">Total contrato</p>
+                  <div className={`grid gap-2 pt-2 border-t border-blue-100 ${numParcelas > 1 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                    <div className="text-center bg-white rounded-lg py-2 px-3">
+                      <p className="text-[10px] text-gray-500">Total do contrato</p>
                       <p className="text-sm font-bold text-gray-800">{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
-                    <div className="text-center">
+                    <div className="text-center bg-white rounded-lg py-2 px-3">
                       <p className="text-[10px] text-gray-500">Entrada (meta)</p>
                       <p className="text-sm font-bold text-emerald-600">{valorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-gray-500">Saldo em {numParcelas}x</p>
-                      <p className="text-sm font-bold text-amber-600">
-                        {numParcelas > 1 && valorRestante > 0
-                          ? `${numParcelas}x ${(valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
-                          : valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
+                    {numParcelas > 1 && (
+                      <div className="text-center bg-white rounded-lg py-2 px-3">
+                        <p className="text-[10px] text-gray-500">Saldo ({numParcelas}x)</p>
+                        <p className="text-sm font-bold text-amber-600">
+                          {valorRestante > 0
+                            ? (valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                            : '--'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
                 {numParcelas > 1 && valorRestante > 0 && (
                   <p className="text-[10px] text-blue-600 font-medium">
-                    💡 {numParcelas} parcela(s) de saldo serão geradas no Pipeline com vencimentos mensais
+                    💡 {numParcelas} parcela(s) de {(valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} serão geradas no Pipeline com vencimentos mensais
                   </p>
                 )}
               </div>
