@@ -138,16 +138,20 @@ export default function Vendas() {
 
       // Criar parcelas futuras no Pipeline e AgendaContato
       const parcelas = _parcelasPreview || [];
-      for (const p of parcelas) {
+      for (let idx = 0; idx < parcelas.length; idx++) {
+        const p = parcelas[idx];
+        const numParcela = idx + 1; // 1, 2, 3...
+        const totalParcelas = parcelas.length;
+
         // Criar registro no Pipeline como parcela a receber
         const pipeline = await base44.entities.Pipeline.create({
           cliente_nome: data.cliente || '',
           cliente_cpf_cnpj: data.cpf_cnpj || '',
-          produto: `${data.produto} (Parcela ${p.numero - 1}/${data.num_parcelas})`,
+          produto: `${data.produto} (Parcela ${numParcela}/${totalParcelas})`,
           valor_estimado: p.valor,
           data_prevista: p.vencimento,
           temperatura: 'Frio',
-          descricao: `Parcela ${p.numero - 1} de ${data.num_parcelas} — Venda ID: ${venda.id}`,
+          descricao: `Parcela ${numParcela} de ${totalParcelas} — Venda ID: ${venda.id}`,
           origem: 'Carteira',
           vendedor_id: data.vendedor_id || '',
           vendedor_nome: data.assessor_comercial || '',
@@ -156,8 +160,8 @@ export default function Vendas() {
         // Criar ParcelaVenda vinculando pipeline
         await base44.entities.ParcelaVenda.create({
           venda_id: venda.id,
-          numero_parcela: p.numero,
-          total_parcelas: data.num_parcelas,
+          numero_parcela: numParcela,
+          total_parcelas: totalParcelas,
           valor_parcela: p.valor,
           data_vencimento: p.vencimento,
           status: 'pendente',
@@ -176,7 +180,7 @@ export default function Vendas() {
         if (data.vendedor_id) {
           await base44.entities.AgendaContato.create({
             lead_id: venda.id,
-            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${p.numero - 1}/${data.num_parcelas}`,
+            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${numParcela}/${totalParcelas}`,
             lead_cpf_cnpj: data.cpf_cnpj || '',
             lead_telefone: '',
             vendedor_id: data.vendedor_id,
@@ -293,7 +297,7 @@ export default function Vendas() {
           await base44.entities.Pipeline.update(parcela.pipeline_id, {
             cliente_nome: data.cliente || '',
             cliente_cpf_cnpj: data.cpf_cnpj || '',
-            produto: `${data.produto} (Parcela ${parcela.numero_parcela}/${totalParc})`,
+            produto: `${data.produto} (Parcela ${parcela.numero_parcela}/${parcela.total_parcelas || totalParc})`,
             valor_estimado: novoValorParcela,
             vendedor_id: data.vendedor_id || '',
             vendedor_nome: data.assessor_comercial || '',
