@@ -136,28 +136,18 @@ export default function Vendas() {
         }
       }
 
-      // Criar parcelas futuras no Pipeline e AgendaContato
+      // Criar parcelas futuras — sequencial com delay para evitar rate limit
       const parcelas = _parcelasPreview || [];
+      const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
       for (let idx = 0; idx < parcelas.length; idx++) {
+        if (idx > 0) await delay(300); // evita rate limit 429
+
         const p = parcelas[idx];
-        const numParcela = idx + 1; // 1, 2, 3...
+        const numParcela = idx + 1;
         const totalParcelas = parcelas.length;
 
-        // Criar registro no Pipeline como parcela a receber
-        const pipeline = await base44.entities.Pipeline.create({
-          cliente_nome: data.cliente || '',
-          cliente_cpf_cnpj: data.cpf_cnpj || '',
-          produto: `${data.produto} (Parcela ${numParcela}/${totalParcelas})`,
-          valor_estimado: p.valor,
-          data_prevista: p.vencimento,
-          temperatura: 'Frio',
-          descricao: `Parcela ${numParcela} de ${totalParcelas} — Venda ID: ${venda.id}`,
-          origem: 'Carteira',
-          vendedor_id: data.vendedor_id || '',
-          vendedor_nome: data.assessor_comercial || '',
-        });
-
-        // Criar ParcelaVenda vinculando pipeline
+        // Criar ParcelaVenda
         await base44.entities.ParcelaVenda.create({
           venda_id: venda.id,
           numero_parcela: numParcela,
@@ -165,7 +155,7 @@ export default function Vendas() {
           valor_parcela: p.valor,
           data_vencimento: p.vencimento,
           status: 'pendente',
-          pipeline_id: pipeline.id,
+          pipeline_id: '',
           cliente_nome: data.cliente || '',
           cliente_cpf_cnpj: data.cpf_cnpj || '',
           produto: data.produto || '',
@@ -175,22 +165,6 @@ export default function Vendas() {
           indicadores: data.indicadores || [],
           forma_pagamento: data.forma_pagamento || '',
         });
-
-        // Criar AgendaContato para o vencimento
-        if (data.vendedor_id) {
-          await base44.entities.AgendaContato.create({
-            lead_id: venda.id,
-            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${numParcela}/${totalParcelas}`,
-            lead_cpf_cnpj: data.cpf_cnpj || '',
-            lead_telefone: '',
-            vendedor_id: data.vendedor_id,
-            vendedor_nome: data.assessor_comercial || '',
-            data_agendada: p.vencimento,
-            posicao_dia: 0,
-            status: 'pendente',
-            resultado: '',
-          });
-        }
       }
 
       return venda;
@@ -550,7 +524,13 @@ export default function Vendas() {
 
         {showForm && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-6">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-6 relative">
+              <button
+                onClick={() => { setShowForm(false); setEditingVenda(null); }}
+                className="absolute top-4 right-4 z-10 p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-700 transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
               <VendaForm
                 venda={editingVenda}
                 onSave={handleSave}
