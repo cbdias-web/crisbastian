@@ -149,6 +149,7 @@ export default function Pipeline() {
   const [recebenndoParcela, setRecebenndoParcela] = useState(null);
   const [aba, setAba] = useState('pipeline'); // 'pipeline' | 'parcelas'
   const [showParcelasModal, setShowParcelasModal] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -643,11 +644,25 @@ export default function Pipeline() {
                   <Settings className="w-3.5 h-3.5" /> Gerenciar / Editar
                 </button>
                 <button
-                  onClick={() => queryClient.invalidateQueries(['parcelas-venda-pipeline'])}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                  onClick={async () => {
+                    setSincronizando(true);
+                    try {
+                      const res = await base44.functions.invoke('sincronizarParcelasVendas', {});
+                      toast.success(res.data?.message || 'Parcelas sincronizadas!');
+                      queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+                    } catch (e) {
+                      toast.error('Erro ao sincronizar: ' + e.message);
+                    }
+                    setSincronizando(false);
+                  }}
+                  disabled={sincronizando}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                  Atualizar
+                  {sincronizando
+                    ? <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin" />
+                    : <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                  }
+                  {sincronizando ? 'Sincronizando...' : 'Atualizar'}
                 </button>
               </div>
             </div>
