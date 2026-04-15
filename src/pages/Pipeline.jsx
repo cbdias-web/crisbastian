@@ -557,26 +557,40 @@ export default function Pipeline() {
 
         {/* KPIs do gerente selecionado */}
         {isAdmin && filtroVendedor !== 'Todos' && negociosGerente && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-3">
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
+            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-2">
               📊 Totais de {filtroVendedor}
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
-                <p className="text-xl font-bold text-indigo-700">{negociosGerente.length}</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
+                <p className="text-lg font-bold text-indigo-700">{negociosGerente.length}</p>
                 <p className="text-[10px] text-indigo-500 mt-0.5">Total negociações</p>
               </div>
-              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
-                <p className="text-xl font-bold text-indigo-700">{gerenteAtivos}</p>
+              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
+                <p className="text-lg font-bold text-indigo-700">{gerenteAtivos}</p>
                 <p className="text-[10px] text-indigo-500 mt-0.5">Ativos</p>
               </div>
-              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
                 <p className="text-sm font-bold text-orange-600">{fmtVal(gerenteEmNegociacao)}</p>
                 <p className="text-[10px] text-indigo-500 mt-0.5">Em negociação</p>
               </div>
-              <div className="bg-white rounded-xl p-3 border border-indigo-100 text-center">
+              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
                 <p className="text-sm font-bold text-emerald-600">{fmtVal(gerenteVolumeFechado)}</p>
                 <p className="text-[10px] text-indigo-500 mt-0.5">Volume fechado ({gerenteFechados})</p>
+              </div>
+              <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-200 text-center">
+                <p className="text-sm font-bold text-amber-600">
+                  {fmtVal(parcelasVenda.filter(p => {
+                    const vend = vendedores.find(v => v.nome === filtroVendedor);
+                    return vend && p.vendedor_id === vend.id;
+                  }).reduce((s, p) => s + (p.valor_parcela || 0), 0))}
+                </p>
+                <p className="text-[10px] text-amber-600 mt-0.5 font-medium">
+                  💰 Parcelas a receber ({parcelasVenda.filter(p => {
+                    const vend = vendedores.find(v => v.nome === filtroVendedor);
+                    return vend && p.vendedor_id === vend.id;
+                  }).length})
+                </p>
               </div>
             </div>
           </div>
