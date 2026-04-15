@@ -143,11 +143,11 @@ export default function Vendas() {
         const pipeline = await base44.entities.Pipeline.create({
           cliente_nome: data.cliente || '',
           cliente_cpf_cnpj: data.cpf_cnpj || '',
-          produto: `${data.produto} (Parcela ${p.numero}/${data.num_parcelas})`,
+          produto: `${data.produto} (Parcela ${p.numero - 1}/${data.num_parcelas})`,
           valor_estimado: p.valor,
           data_prevista: p.vencimento,
           temperatura: 'Frio',
-          descricao: `Parcela ${p.numero} de ${data.num_parcelas} — Venda ID: ${venda.id}`,
+          descricao: `Parcela ${p.numero - 1} de ${data.num_parcelas} — Venda ID: ${venda.id}`,
           origem: 'Carteira',
           vendedor_id: data.vendedor_id || '',
           vendedor_nome: data.assessor_comercial || '',
@@ -176,7 +176,7 @@ export default function Vendas() {
         if (data.vendedor_id) {
           await base44.entities.AgendaContato.create({
             lead_id: venda.id,
-            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${p.numero}/${data.num_parcelas}`,
+            lead_nome: `${data.cliente || 'Cliente'} — Parcela ${p.numero - 1}/${data.num_parcelas}`,
             lead_cpf_cnpj: data.cpf_cnpj || '',
             lead_telefone: '',
             vendedor_id: data.vendedor_id,
