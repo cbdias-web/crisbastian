@@ -233,51 +233,86 @@ export default function Vendas() {
       }
 
       // Reconstrói comissões de indicadores — apaga todas e recria
-      const comissoesEsp = await base44.entities.ComissaoEspelhamento.filter({ venda_id: id });
-      for (const c of comissoesEsp) {
-        await base44.entities.ComissaoEspelhamento.delete(c.id);
-      }
-      
-      // Remove comissões extras de vendedores usados como indicadores
-      const todasComissoes = await base44.entities.Comissao.filter({ venda_id: id });
+      const [comissoesEsp, todasComissoes, parcelas] = await Promise.all([
+        base44.entities.ComissaoEspelhamento.filter({ venda_id: id }),
+        base44.entities.Comissao.filter({ venda_id: id }),
+        base44.entities.ParcelaVenda.filter({ venda_id: id }),
+      ]);
+
+      await Promise.all(comissoesEsp.map(c => base44.entities.ComissaoEspelhamento.delete(c.id)));
+
+      // Remove comissões extras de vendedores usados como indicadores (mantém bônus)
       const comissaoVendedorPrincipal = todasComissoes.find(c => c.vendedor_id === data.vendedor_id && c.tipo !== 'bonus');
-      for (const c of todasComissoes) {
-        if (c.id !== comissaoVendedorPrincipal?.id && c.tipo !== 'bonus') {
-          await base44.entities.Comissao.delete(c.id);
-        }
-      }
-      
+      await Promise.all(
+        todasComissoes
+          .filter(c => c.id !== comissaoVendedorPrincipal?.id && c.tipo !== 'bonus')
+          .map(c => base44.entities.Comissao.delete(c.id))
+      );
+
       const indicadores = data.indicadores || [];
       for (const ind of indicadores) {
         if (ind.id && ind.percentual > 0) {
           if (ind.tipo === 'vendedor') {
-            // Vendedor usado como indicador: vai para tabela Comissao
             await base44.entities.Comissao.create({
-              venda_id: id,
-              vendedor_id: ind.id,
-              vendedor_nome: ind.nome,
-              valor_venda: data.valor,
-              percentual: ind.percentual,
+              venda_id: id, vendedor_id: ind.id, vendedor_nome: ind.nome,
+              valor_venda: data.valor, percentual: ind.percentual,
               valor_comissao: (data.valor * ind.percentual) / 100,
-              data_venda: data.data,
-              pago: false,
-              tipo: 'comissao'
+              data_venda: data.data, pago: false, tipo: 'comissao'
             });
           } else {
-            // Indicador puro: vai para tabela ComissaoEspelhamento
             await base44.entities.ComissaoEspelhamento.create({
-              venda_id: id,
-              vendedor_id: ind.id,
-              vendedor_nome: ind.nome,
-              valor_venda: data.valor,
-              percentual: ind.percentual,
+              venda_id: id, vendedor_id: ind.id, vendedor_nome: ind.nome,
+              valor_venda: data.valor, percentual: ind.percentual,
               valor_comissao: (data.valor * ind.percentual) / 100,
-              data_venda: data.data,
-              pago: false
+              data_venda: data.data, pago: false
             });
           }
         }
       }
+
+      // Atualiza parcelas pendentes vinculadas (valor, cliente, vendedor, produto)
+      for (const parcela of parcelas.filter(p => p.status === 'pendente')) {
+        const novoPct = parcela.numero_parcela / (data.num_parcelas || parcela.total_parcelas || 1);
+        const novoValorRestante = (parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0) - (parseFloat(data.valor) || 0);
+        const totalParc = data.num_parcelas || parcela.total_parcelas || 1;
+        const novoValorParcela = totalParc > 0 ? novoValorRestante / totalParc : parcela.valor_parcela;
+
+        await base44.entities.ParcelaVenda.update(parcela.id, {
+          cliente_nome: data.cliente || parcela.cliente_nome,
+          cliente_cpf_cnpj: data.cpf_cnpj || parcela.cliente_cpf_cnpj,
+          produto: data.produto || parcela.produto,
+          vendedor_id: data.vendedor_id || parcela.vendedor_id,
+          vendedor_nome: data.assessor_comercial || parcela.vendedor_nome,
+          percentual_comissao: data.percentual_comissao || parcela.percentual_comissao,
+          indicadores: data.indicadores || parcela.indicadores,
+          valor_parcela: novoValorParcela,
+        });
+
+        // Atualiza o Pipeline vinculado
+        if (parcela.pipeline_id) {
+          await base44.entities.Pipeline.update(parcela.pipeline_id, {
+            cliente_nome: data.cliente || '',
+            cliente_cpf_cnpj: data.cpf_cnpj || '',
+            produto: `${data.produto} (Parcela ${parcela.numero_parcela}/${totalParc})`,
+            valor_estimado: novoValorParcela,
+            vendedor_id: data.vendedor_id || '',
+            vendedor_nome: data.assessor_comercial || '',
+          });
+        }
+      }
+
+      // Atualiza AgendaContato vinculados (lead_id = venda.id)
+      const agendas = await base44.entities.AgendaContato.filter({ lead_id: id });
+      await Promise.all(
+        agendas.filter(a => a.status === 'pendente').map(a =>
+          base44.entities.AgendaContato.update(a.id, {
+            lead_nome: `${data.cliente || 'Cliente'} — Parcela`,
+            lead_cpf_cnpj: data.cpf_cnpj || '',
+            vendedor_id: data.vendedor_id || a.vendedor_id,
+            vendedor_nome: data.assessor_comercial || a.vendedor_nome,
+          })
+        )
+      );
 
       return venda;
     },
@@ -285,30 +320,53 @@ export default function Vendas() {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
       queryClient.invalidateQueries(['comissoesEspelhamento']);
+      queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+      queryClient.invalidateQueries(['agenda-contatos']);
       setShowForm(false);
       setEditingVenda(null);
-      toast.success('Venda atualizada com sucesso!');
+      toast.success('Venda e registros vinculados atualizados!');
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      // Remove comissões associadas antes de excluir a venda
-      const [comissoes, comissoesEsp] = await Promise.all([
+      // Busca todas entidades relacionadas em paralelo
+      const [comissoes, comissoesEsp, parcelas, agendas, notasFiscais] = await Promise.all([
         base44.entities.Comissao.filter({ venda_id: id }),
         base44.entities.ComissaoEspelhamento.filter({ venda_id: id }),
+        base44.entities.ParcelaVenda.filter({ venda_id: id }),
+        base44.entities.AgendaContato.filter({ lead_id: id }),
+        base44.entities.NotaFiscal.filter({ venda_id: id }),
       ]);
+
+      // Coleta os pipeline_ids vinculados às parcelas para remover do Pipeline
+      const pipelineIds = parcelas.map(p => p.pipeline_id).filter(Boolean);
+
+      // Remove tudo em paralelo
       await Promise.all([
         ...comissoes.map(c => base44.entities.Comissao.delete(c.id)),
         ...comissoesEsp.map(c => base44.entities.ComissaoEspelhamento.delete(c.id)),
+        ...parcelas.map(p => base44.entities.ParcelaVenda.delete(p.id)),
+        ...agendas.map(a => base44.entities.AgendaContato.delete(a.id)),
+        // Desvincula NFs (não deleta a NF, apenas remove o venda_id)
+        ...notasFiscais.map(nf => base44.entities.NotaFiscal.update(nf.id, { venda_id: '', paga: false })),
       ]);
+
+      // Remove registros do Pipeline vinculados às parcelas
+      await Promise.all(pipelineIds.map(pid => base44.entities.Pipeline.delete(pid)));
+
       return base44.entities.Venda.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
       queryClient.invalidateQueries(['comissoesEspelhamento']);
-      toast.success('Venda excluída com sucesso!');
+      queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+      queryClient.invalidateQueries(['agenda-contatos']);
+      queryClient.invalidateQueries(['notasfiscais']);
+      toast.success('Venda e todos os registros vinculados foram excluídos!');
     },
   });
 
