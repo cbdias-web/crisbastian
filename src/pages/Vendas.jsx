@@ -136,34 +136,22 @@ export default function Vendas() {
         }
       }
 
-      // Criar parcelas futuras — sequencial com delay para evitar rate limit
+      // Criar parcelas via backend function (evita rate limit)
       const parcelas = _parcelasPreview || [];
-      const delay = (ms) => new Promise(res => setTimeout(res, ms));
-
-      for (let idx = 0; idx < parcelas.length; idx++) {
-        if (idx > 0) await delay(500); // evita rate limit 429
-
-        const p = parcelas[idx];
-        const numParcela = idx + 1;
-        const totalParcelas = parcelas.length;
-
-        // Criar ParcelaVenda
-        await base44.entities.ParcelaVenda.create({
+      if (parcelas.length > 0) {
+        await base44.functions.invoke('criarParcelasVenda', {
           venda_id: venda.id,
-          numero_parcela: numParcela,
-          total_parcelas: totalParcelas,
-          valor_parcela: p.valor,
-          data_vencimento: p.vencimento,
-          status: 'pendente',
-          pipeline_id: '',
-          cliente_nome: data.cliente || '',
-          cliente_cpf_cnpj: data.cpf_cnpj || '',
-          produto: data.produto || '',
-          vendedor_id: data.vendedor_id || '',
-          vendedor_nome: data.assessor_comercial || '',
-          percentual_comissao: data.percentual_comissao || 0,
-          indicadores: data.indicadores || [],
-          forma_pagamento: data.forma_pagamento || '',
+          parcelas,
+          venda_data: {
+            cliente: data.cliente || '',
+            cpf_cnpj: data.cpf_cnpj || '',
+            produto: data.produto || '',
+            vendedor_id: data.vendedor_id || '',
+            assessor_comercial: data.assessor_comercial || '',
+            percentual_comissao: data.percentual_comissao || 0,
+            indicadores: data.indicadores || [],
+            forma_pagamento: data.forma_pagamento || '',
+          },
         });
       }
 
