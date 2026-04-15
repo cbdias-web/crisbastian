@@ -30,12 +30,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Parâmetros inválidos' }, { status: 400 });
     }
 
+    // Buscar parcelas já existentes para esta venda (evitar duplicidade)
+    const existentes = await base44.asServiceRole.entities.ParcelaVenda.filter({ venda_id });
+    const numerosExistentes = new Set(existentes.map(p => p.numero_parcela));
+
     const criadas = [];
+    const puladas = [];
+
     for (let idx = 0; idx < parcelas.length; idx++) {
       const p = parcelas[idx];
       const numeroParcela = idx + 1;
 
-      if (idx > 0) await sleep(600);
+      // Pular se já existe parcela com este número para esta venda
+      if (numerosExistentes.has(numeroParcela)) {
+        puladas.push(numeroParcela);
+        continue;
+      }
+
+      if (criadas.length > 0) await sleep(600);
 
       // Criar ParcelaVenda com retry
       const registro = await createWithRetry(() =>
@@ -86,7 +98,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ success: true, criadas: criadas.length });
+    return Response.json({ success: true, criadas: criadas.length, puladas: puladas.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
