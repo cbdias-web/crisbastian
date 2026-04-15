@@ -1,0 +1,119 @@
+{
+  "name": "Venda",
+  "type": "object",
+  "properties": {
+    "produto": {
+      "type": "string",
+      "description": "Nome do produto vendido"
+    },
+    "assessor_comercial": {
+      "type": "string",
+      "description": "Nome do assessor/vendedor"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor"
+    },
+    "time": {
+      "type": "string",
+      "description": "Time do vendedor"
+    },
+    "espelhamento": {
+      "type": "string",
+      "description": "Nome do primeiro indicador (backward compat)"
+    },
+    "espelhamento_id": {
+      "type": "string",
+      "description": "ID do primeiro indicador (backward compat)"
+    },
+    "percentual_comissao_espelhamento": {
+      "type": "number",
+      "description": "Percentual do primeiro indicador (backward compat)"
+    },
+    "indicadores": {
+      "type": "array",
+      "description": "Lista de indicadores/espelhamentos da venda",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "valor": {
+      "type": "number",
+      "description": "Valor da entrada/ades\u00e3o"
+    },
+    "valor_total_contrato": {
+      "type": "number",
+      "description": "Valor total do contrato (entrada + parcelas)"
+    },
+    "num_parcelas": {
+      "type": "number",
+      "description": "N\u00famero de parcelas do saldo restante"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    },
+    "forma_pagamento": {
+      "type": "string",
+      "enum": [
+        "D\u00c9BITO EM CONTA",
+        "CART\u00c3O DE CR\u00c9DITO",
+        "BOLETO",
+        "PIX",
+        "TRANSFER\u00caNCIA",
+        "DINHEIRO"
+      ],
+      "description": "Forma de pagamento utilizada"
+    },
+    "parcelamento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de parcelamento"
+    },
+    "cpf_cnpj": {
+      "type": "string",
+      "description": "CPF ou CNPJ do cliente"
+    },
+    "cliente": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "bitrix": {
+      "type": "string",
+      "description": "Link do Bitrix"
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es sobre a venda"
+    },
+    "percentual_comissao": {
+      "type": "number",
+      "description": "Percentual de comiss\u00e3o do vendedor"
+    },
+    "vendedores_ids": {
+      "type": "array",
+      "description": "Lista de vendedores da venda",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "produto",
+    "assessor_comercial",
+    "valor",
+    "data"
+  ]
+}

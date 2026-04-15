@@ -337,19 +337,29 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
     // Calcula parcelas no momento do submit com valores finais
     const restanteFinal = Math.max(0, totalFinal - entradaFinal);
-    const parcelasFinais = numParcelas > 1 && restanteFinal > 0
-      ? parcelasEditaveis.length > 0
-        ? parcelasEditaveis.map(p => ({ ...p, valor: restanteFinal / numParcelas }))
-        : Array.from({ length: numParcelas }, (_, i) => {
-            const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-            dataBase.setMonth(dataBase.getMonth() + i + 1);
-            return {
-              numero: i + 2,
-              vencimento: dataBase.toISOString().split('T')[0],
-              valor: restanteFinal / numParcelas,
-            };
-          })
-      : [];
+    let parcelasFinais = [];
+    if (numParcelas > 1 && restanteFinal > 0) {
+      const valorPorParcela = restanteFinal / numParcelas;
+      if (parcelasEditaveis.length === numParcelas) {
+        // Usa as datas editadas pelo usuário, recalcula apenas os valores
+        parcelasFinais = parcelasEditaveis.map((p, i) => ({
+          numero: i + 1,
+          vencimento: p.vencimento,
+          valor: valorPorParcela,
+        }));
+      } else {
+        // Gera parcelas com datas automáticas (fallback)
+        parcelasFinais = Array.from({ length: numParcelas }, (_, i) => {
+          const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
+          dataBase.setMonth(dataBase.getMonth() + i + 1);
+          return {
+            numero: i + 1,
+            vencimento: dataBase.toISOString().split('T')[0],
+            valor: valorPorParcela,
+          };
+        });
+      }
+    }
 
     const dataToSave = {
       ...formData,
@@ -367,6 +377,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
       _parcelasPreview: parcelasFinais,
     };
+
+    console.log('[VendaForm] Submit — parcelas geradas:', parcelasFinais.length, parcelasFinais);
 
     if (requerAutorizacao) {
       try {
@@ -536,7 +548,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       {parcelasEditaveis.map((p, i) => (
                         <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-blue-100">
                           <span className="text-[10px] font-semibold text-amber-600 whitespace-nowrap">
-                            Parcela {i + 1} — {(p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            {i + 1}/{numParcelas} — {(valorRestante > 0 ? valorRestante / numParcelas : p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                           </span>
                           <input
                             type="date"
