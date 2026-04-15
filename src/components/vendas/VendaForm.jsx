@@ -114,25 +114,34 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   });
 
   const [numParcelas, setNumParcelas] = useState(venda?.num_parcelas || 1);
+  // Valor total do contrato (novo campo)
+  const [valorTotalContrato, setValorTotalContrato] = useState(venda?.valor_total_contrato ? String(venda.valor_total_contrato) : '');
+  // Valor de entrada (flexível)
+  const [valorEntradaCustom, setValorEntradaCustom] = useState(venda?.valor ? String(venda.valor) : '');
 
-  // Calcula preview das parcelas futuras
-  const valorTotal = parseFloat(formData.valor) || 0;
-  const valorEntrada = numParcelas > 1 ? valorTotal : valorTotal;
-  const valorParcela = numParcelas > 1 ? (valorTotal / numParcelas) : 0;
+  const valorTotal = parseFloat(valorTotalContrato) || 0;
+  const valorEntrada = parseFloat(valorEntradaCustom) || 0;
+  const valorRestante = Math.max(0, valorTotal - valorEntrada);
+  const valorParcela = numParcelas > 1 && valorRestante > 0 ? valorRestante / numParcelas : 0;
+
+  // Sincroniza formData.valor com a entrada
+  useEffect(() => {
+    setFormData(f => ({ ...f, valor: valorEntradaCustom }));
+  }, [valorEntradaCustom]);
 
   const parcelasPreview = React.useMemo(() => {
-    if (numParcelas <= 1) return [];
+    if (numParcelas <= 1 || valorRestante <= 0) return [];
     const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-    return Array.from({ length: numParcelas - 1 }, (_, i) => {
+    return Array.from({ length: numParcelas }, (_, i) => {
       const dt = new Date(dataBase);
       dt.setMonth(dt.getMonth() + i + 1);
       return {
         numero: i + 2,
         vencimento: dt.toISOString().split('T')[0],
-        valor: valorTotal / numParcelas,
+        valor: valorRestante / numParcelas,
       };
     });
-  }, [numParcelas, formData.data, formData.valor]);
+  }, [numParcelas, formData.data, valorRestante]);
 
   // Multi-indicador state — carrega indicadores da venda
   const [indicadores, setIndicadores] = useState(() => {
@@ -277,8 +286,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     if (selectedVendedores.length === 0) { toast.error('Selecione ao menos um vendedor'); return; }
 
     const primaryVendedor = selectedVendedores[0];
-    const valorFull = parseFloat(formData.valor) || 0;
-    const valorEntradaCalc = numParcelas > 1 ? valorFull / numParcelas : valorFull;
+    const entradaFinal = parseFloat(valorEntradaCustom) || 0;
+    const totalFinal = parseFloat(valorTotalContrato) || entradaFinal;
 
     const dataToSave = {
       ...formData,
@@ -287,14 +296,14 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       vendedor_id: primaryVendedor.id,
       percentual_comissao: parseFloat(formData.percentual_comissao) || primaryVendedor.percentual_comissao || 10,
       vendedores_ids: selectedVendedores,
-      valor: valorEntradaCalc,
-      valor_total_contrato: valorFull,
+      valor: entradaFinal,
+      valor_total_contrato: totalFinal,
       num_parcelas: numParcelas,
       indicadores,
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
-      _parcelasPreview: numParcelas > 1 ? parcelasPreview : [],
+      _parcelasPreview: numParcelas > 1 && valorRestante > 0 ? parcelasPreview : [],
     };
 
     if (requerAutorizacao) {
@@ -379,24 +388,63 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 onChange={e => setFormData({ ...formData, percentual_comissao: e.target.value })} />
             </div>
             <div>
-              <Label>Valor *</Label>
-              <Input type="number" step="0.01" value={formData.valor}
-                onChange={e => setFormData({ ...formData, valor: e.target.value })} required />
+              <Label>Valor Total do Contrato *</Label>
+              <Input type="number" step="0.01" value={valorTotalContrato}
+                onChange={e => {
+                  setValorTotalContrato(e.target.value);
+                  // Se não há entrada customizada, sincroniza entrada = total (à vista)
+                  if (numParcelas === 1) setValorEntradaCustom(e.target.value);
+                }} required placeholder="Ex: 150000,00" />
             </div>
-            <div>
-              <Label>Parcelamento</Label>
-              <select value={numParcelas} onChange={e => setNumParcelas(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background h-9 focus:outline-none focus:ring-1 focus:ring-ring">
-                <option value={1}>À vista (entrada única)</option>
-                {Array.from({ length: 11 }, (_, i) => i + 2).map(n => (
-                  <option key={n} value={n}>{n}x de {valorTotal > 0 ? (valorTotal / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : `--`}</option>
-                ))}
-              </select>
-              {numParcelas > 1 && valorTotal > 0 && (
-                <p className="text-xs text-amber-600 mt-1">
-                  Entrada: {(valorTotal / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} · {numParcelas - 1} parcela(s) no Pipeline
-                </p>
-              )}
+            <div className="md:col-span-2">
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Estrutura de Pagamento</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Valor de Entrada *</label>
+                    <Input type="number" step="0.01" value={valorEntradaCustom}
+                      onChange={e => setValorEntradaCustom(e.target.value)}
+                      placeholder="Ex: 50000,00" required />
+                    <p className="text-[10px] text-gray-400 mt-0.5">Conta na meta do mês atual</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Parcelas do saldo restante</label>
+                    <select value={numParcelas} onChange={e => setNumParcelas(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-input rounded-md text-sm bg-white h-9 focus:outline-none focus:ring-1 focus:ring-ring">
+                      <option value={1}>Sem parcelas (tudo na entrada)</option>
+                      {Array.from({ length: 11 }, (_, i) => i + 1).map(n => {
+                        const vp = valorRestante > 0 ? (valorRestante / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--';
+                        return <option key={n} value={n}>{n}x de {vp}</option>;
+                      })}
+                    </select>
+                  </div>
+                </div>
+                {valorTotal > 0 && (
+                  <div className="grid grid-cols-3 gap-2 pt-1 border-t border-blue-100">
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500">Total contrato</p>
+                      <p className="text-sm font-bold text-gray-800">{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500">Entrada (meta)</p>
+                      <p className="text-sm font-bold text-emerald-600">{valorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-gray-500">Saldo em {numParcelas}x</p>
+                      <p className="text-sm font-bold text-amber-600">
+                        {numParcelas > 1 && valorRestante > 0
+                          ? `${numParcelas}x ${(valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+                          : valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {numParcelas > 1 && valorRestante > 0 && (
+                  <p className="text-[10px] text-blue-600 font-medium">
+                    💡 {numParcelas} parcela(s) de saldo serão geradas no Pipeline com vencimentos mensais
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <Label>Data *</Label>
