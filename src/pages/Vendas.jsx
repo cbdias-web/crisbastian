@@ -755,8 +755,16 @@ export default function Vendas() {
                       <TableCell>
                         {venda.time && <Badge variant="secondary">{venda.time}</Badge>}
                       </TableCell>
-                      <TableCell className="font-semibold text-green-600">
-                        {venda.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      <TableCell>
+                        <div className="font-semibold text-green-600">
+                          {venda.valor?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          {venda.valor_total_contrato && venda.valor_total_contrato > venda.valor && (
+                            <div className="text-[10px] text-gray-400 font-normal">
+                              Contrato: {venda.valor_total_contrato.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              {venda.num_parcelas > 1 && ` · ${venda.num_parcelas}x`}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {venda.forma_pagamento && (

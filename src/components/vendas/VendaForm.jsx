@@ -113,17 +113,25 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
   });
 
-  const [numParcelas, setNumParcelas] = useState(venda?.num_parcelas || 1);
-  // Valor total do contrato — suporta venda normal e venda importada do pipeline (valor_estimado)
+  const numParcelasInicial = venda?.num_parcelas || 1;
+  const [numParcelas, setNumParcelas] = useState(numParcelasInicial);
+
+  // Valor total do contrato
   const valorInicialContrato =
     venda?.valor_total_contrato ? String(venda.valor_total_contrato) :
     venda?.valor_estimado ? String(venda.valor_estimado) :
     venda?.valor ? String(venda.valor) : '';
   const [valorTotalContrato, setValorTotalContrato] = useState(valorInicialContrato);
-  // Valor de entrada — só preenche automaticamente se for à vista (sem parcelas)
-  const [valorEntradaCustom, setValorEntradaCustom] = useState(
-    venda?.valor ? String(venda.valor) : ''
-  );
+
+  // Valor de entrada — se tem parcelas, é o valor salvo (entrada); se à vista, é o total
+  const [valorEntradaCustom, setValorEntradaCustom] = useState(() => {
+    if (venda?.num_parcelas > 1) {
+      // Tem parcelas: entrada é o valor registrado na venda (diferente do total)
+      return venda?.valor ? String(venda.valor) : '';
+    }
+    // À vista: entrada = total
+    return venda?.valor ? String(venda.valor) : '';
+  });
 
   const valorTotal = parseFloat(valorTotalContrato) || 0;
   const valorEntrada = parseFloat(valorEntradaCustom) || 0;
@@ -137,28 +145,65 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
 
 
-  // Parcelas editáveis (datas ajustáveis pelo usuário)
+  // Flag: parcelas já foram carregadas do banco (evita reset ao editar)
+  const [parcelasCarregadas, setParcelasCarregadas] = useState(false);
   const [parcelasEditaveis, setParcelasEditaveis] = useState([]);
 
-  // Regenera as parcelas quando muda quantidade, data base ou valor restante
-  React.useEffect(() => {
-    if (numParcelas <= 1 || valorRestante <= 0) {
+  // Ao abrir edição de venda com parcelas, carrega do banco
+  useEffect(() => {
+    if (venda?.id && numParcelasInicial > 1 && !parcelasCarregadas) {
+      base44.entities.ParcelaVenda.filter({ venda_id: venda.id }).then(parcelas => {
+        const pendentes = parcelas.filter(p => p.status === 'pendente').sort((a, b) => a.numero_parcela - b.numero_parcela);
+        if (pendentes.length > 0) {
+          setParcelasEditaveis(pendentes.map((p, i) => ({
+            numero: p.numero_parcela,
+            vencimento: p.data_vencimento,
+            valor: p.valor_parcela,
+          })));
+        }
+        setParcelasCarregadas(true);
+      }).catch(() => setParcelasCarregadas(true));
+    } else if (!venda?.id) {
+      setParcelasCarregadas(true);
+    }
+  }, [venda?.id]);
+
+  // Regenera parcelas apenas quando o usuário muda numParcelas ou dataBase (não ao editar valores)
+  // Só roda após parcelasCarregadas=true para não sobrescrever dados do banco
+  const dataBaseRef = React.useRef(formData.data);
+  const numParcelasRef = React.useRef(numParcelas);
+  useEffect(() => {
+    if (!parcelasCarregadas) return;
+    const dataMudou = dataBaseRef.current !== formData.data;
+    const numMudou = numParcelasRef.current !== numParcelas;
+    dataBaseRef.current = formData.data;
+    numParcelasRef.current = numParcelas;
+
+    if (numParcelas <= 1) {
       setParcelasEditaveis([]);
       return;
     }
-    const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-    setParcelasEditaveis(prev => Array.from({ length: numParcelas }, (_, i) => {
-      const dt = new Date(dataBase);
-      dt.setMonth(dt.getMonth() + i + 1);
-      const defaultDate = dt.toISOString().split('T')[0];
-      // Mantém data editada se já existir e número de parcela não mudou
-      return {
-        numero: i + 2,
-        vencimento: prev[i]?.vencimento || defaultDate,
-        valor: valorRestante / numParcelas,
-      };
-    }));
-  }, [numParcelas, formData.data, valorRestante]);
+    // Só regenera datas se o usuário mudou numParcelas ou data base
+    if (dataMudou || numMudou) {
+      const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
+      const restante = Math.max(0, (parseFloat(valorTotalContrato) || 0) - (parseFloat(valorEntradaCustom) || 0));
+      if (restante <= 0 && !dataMudou) return; // aguardar entrada ser preenchida
+      setParcelasEditaveis(prev => Array.from({ length: numParcelas }, (_, i) => {
+        const dt = new Date(dataBase);
+        dt.setMonth(dt.getMonth() + i + 1);
+        const defaultDate = dt.toISOString().split('T')[0];
+        return {
+          numero: i + 2,
+          vencimento: prev[i]?.vencimento || defaultDate,
+          valor: restante > 0 ? restante / numParcelas : 0,
+        };
+      }));
+    } else {
+      // Apenas atualiza o valor das parcelas (sem resetar datas)
+      const restante = Math.max(0, (parseFloat(valorTotalContrato) || 0) - (parseFloat(valorEntradaCustom) || 0));
+      setParcelasEditaveis(prev => prev.map(p => ({ ...p, valor: restante > 0 ? restante / numParcelas : p.valor })));
+    }
+  }, [numParcelas, formData.data, valorTotalContrato, valorEntradaCustom, parcelasCarregadas]);
 
   const parcelasPreview = parcelasEditaveis;
 
