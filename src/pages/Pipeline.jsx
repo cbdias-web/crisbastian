@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings } from 'lucide-react';
+import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -147,6 +148,7 @@ export default function Pipeline() {
   const [convertendo, setConvertendo] = useState(null);
   const [recebenndoParcela, setRecebenndoParcela] = useState(null);
   const [aba, setAba] = useState('pipeline'); // 'pipeline' | 'parcelas'
+  const [showParcelasModal, setShowParcelasModal] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -633,13 +635,21 @@ export default function Pipeline() {
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">{parcelasVenda.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}</p>
               </div>
-              <button
-                onClick={() => queryClient.invalidateQueries(['parcelas-venda-pipeline'])}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
-                Atualizar
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowParcelasModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#0f1e35] text-white rounded-lg hover:bg-[#1a3150] transition"
+                >
+                  <Settings className="w-3.5 h-3.5" /> Gerenciar / Editar
+                </button>
+                <button
+                  onClick={() => queryClient.invalidateQueries(['parcelas-venda-pipeline'])}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                  Atualizar
+                </button>
+              </div>
             </div>
             {parcelasVenda.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -854,6 +864,11 @@ export default function Pipeline() {
           </div>
         </DragDropContext>}
       </div>
+
+      {/* Modal Parcelas Vincendas */}
+      {showParcelasModal && (
+        <ParcelasVincendasModal user={user} onClose={() => { setShowParcelasModal(false); queryClient.invalidateQueries(['parcelas-venda-pipeline']); }} />
+      )}
 
       {/* Modal form */}
       {showForm && (

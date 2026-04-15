@@ -6,8 +6,9 @@ import { createPageUrl } from "@/utils";
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload,
-  Briefcase, BarChart2, Target, BookOpen, MessageSquare
+  Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock
 } from "lucide-react";
+import ParcelasVincendasModal from "@/components/parcelas/ParcelasVincendasModal";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -81,6 +82,7 @@ export default function Dashboard() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [vendedor, setVendedor] = useState(null);
 
+  const [showParcelasModal, setShowParcelasModal] = useState(false);
   const [impersonadoUser, setImpersonadoUser] = useState(null);
   const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
   const [agendaPendentes, setAgendaPendentes] = useState(0);
@@ -556,9 +558,20 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm">Ranking de Vendedores</h3>
-            <Link to={createPageUrl("Vendedores")} className="text-xs text-[#1a3150] font-medium flex items-center gap-1 hover:underline">
-              Ver equipe <ArrowUpRight className="w-3 h-3" />
-            </Link>
+            <div className="flex items-center gap-3">
+              {parcelasMes.length > 0 && (
+                <button
+                  onClick={() => setShowParcelasModal(true)}
+                  className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:underline"
+                >
+                  <CalendarClock className="w-3.5 h-3.5" />
+                  Gerenciar Parcelas ({parcelasMes.filter(p => p.status === 'pendente').length})
+                </button>
+              )}
+              <Link to={createPageUrl("Vendedores")} className="text-xs text-[#1a3150] font-medium flex items-center gap-1 hover:underline">
+                Ver equipe <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
           <div className="p-5">
             {ranking.filter(v => v.vol > 0 || v.vincendas > 0).length === 0 ? (
@@ -680,6 +693,11 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal Parcelas Vincendas */}
+        {showParcelasModal && (
+          <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />
         )}
 
         {/* Modal de Perfil */}
