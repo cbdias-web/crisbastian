@@ -120,10 +120,9 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     venda?.valor_estimado ? String(venda.valor_estimado) :
     venda?.valor ? String(venda.valor) : '';
   const [valorTotalContrato, setValorTotalContrato] = useState(valorInicialContrato);
-  // Valor de entrada — se vier do pipeline sem entrada separada, assume o total
+  // Valor de entrada — só preenche automaticamente se for à vista (sem parcelas)
   const [valorEntradaCustom, setValorEntradaCustom] = useState(
-    venda?.valor ? String(venda.valor) :
-    venda?.valor_estimado ? String(venda.valor_estimado) : ''
+    venda?.valor ? String(venda.valor) : ''
   );
 
   const valorTotal = parseFloat(valorTotalContrato) || 0;
@@ -325,6 +324,15 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     const entradaFinal = parseFloat(valorEntradaCustom) || 0;
     const totalFinal = parseFloat(valorTotalContrato) || entradaFinal;
 
+    if (numParcelas > 1 && entradaFinal >= totalFinal) {
+      toast.error('O valor de entrada deve ser menor que o total do contrato quando há parcelas.');
+      return;
+    }
+    if (numParcelas > 1 && entradaFinal <= 0) {
+      toast.error('Informe o valor de entrada (pode ser zero, mas deve ser preenchido).');
+      return;
+    }
+
     const dataToSave = {
       ...formData,
       produto: selectedProdutos.join(', '),
@@ -428,9 +436,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <Input type="number" step="0.01" value={valorTotalContrato}
                 onChange={e => {
                   setValorTotalContrato(e.target.value);
-                  // Se à vista, mantém entrada = total
+                  // Só sincroniza entrada se for à vista
                   if (numParcelas === 1) setValorEntradaCustom(e.target.value);
                 }} required placeholder="Ex: 150000,00" />
+              {numParcelas > 1 && valorTotalContrato && !valorEntradaCustom && (
+                <p className="text-[10px] text-amber-600 mt-0.5">⚠️ Preencha o valor de entrada abaixo</p>
+              )}
             </div>
             <div className="md:col-span-2">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
@@ -443,17 +454,25 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       step="0.01"
                       value={valorEntradaCustom}
                       onChange={e => setValorEntradaCustom(e.target.value)}
-                      placeholder={valorTotal > 0 ? valorTotal.toString() : 'Ex: 50000,00'}
+                      placeholder={numParcelas === 1 ? (valorTotal > 0 ? valorTotal.toString() : 'Ex: 150000,00') : 'Ex: 50000,00'}
                       disabled={numParcelas === 1}
                     />
-                    <p className="text-[10px] text-gray-400 mt-0.5">Conta na meta do mês atual</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {numParcelas === 1 ? 'Igual ao total (à vista)' : 'Conta na meta do mês atual'}
+                    </p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Parcelas do saldo restante</label>
                     <select value={numParcelas} onChange={e => {
                       const n = parseInt(e.target.value);
                       setNumParcelas(n);
-                      if (n === 1) setValorEntradaCustom(valorTotalContrato);
+                      if (n === 1) {
+                        // À vista: entrada = total do contrato
+                        setValorEntradaCustom(valorTotalContrato);
+                      } else if (!valorEntradaCustom) {
+                        // Parcelado sem entrada definida: deixa em branco para o usuário preencher
+                        setValorEntradaCustom('');
+                      }
                     }}
                       className="w-full px-3 py-2 border border-input rounded-md text-sm bg-white h-9 focus:outline-none focus:ring-1 focus:ring-ring">
                       <option value={1}>Sem parcelas (pagamento total na entrada)</option>
