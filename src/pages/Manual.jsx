@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, TrendingUp, GraduationCap, Bot, Megaphone, Receipt } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt } from 'lucide-react';
 
 const sections = [
   {
