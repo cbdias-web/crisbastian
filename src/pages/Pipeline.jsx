@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -146,6 +146,7 @@ export default function Pipeline() {
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
   const [recebenndoParcela, setRecebenndoParcela] = useState(null);
+  const [aba, setAba] = useState('pipeline'); // 'pipeline' | 'parcelas'
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -488,6 +489,22 @@ export default function Pipeline() {
             <p className="text-sm text-gray-500 mt-0.5">Gerencie suas prospecções e negociações em andamento</p>
           </div>
           <div className="flex gap-2">
+            {/* Abas */}
+            <div className="flex border border-gray-200 rounded-xl overflow-hidden">
+              <button onClick={() => setAba('pipeline')}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition ${aba === 'pipeline' ? 'bg-[#0f1e35] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                <LayoutList className="w-4 h-4" /> Pipeline
+              </button>
+              <button onClick={() => setAba('parcelas')}
+                className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium transition relative ${aba === 'parcelas' ? 'bg-[#0f1e35] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                <CalendarClock className="w-4 h-4" /> Parcelas Vincendas
+                {totalParcelasPendentes > 0 && (
+                  <span className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${aba === 'parcelas' ? 'bg-white/20 text-white' : 'bg-amber-500 text-white'}`}>
+                    {totalParcelasPendentes}
+                  </span>
+                )}
+              </button>
+            </div>
             <Button variant="outline" onClick={gerarRelatorio} className="border-gray-200 text-gray-600 hover:bg-gray-50">
               <FileText className="w-4 h-4 mr-2" /> Relatório PDF
             </Button>
@@ -606,8 +623,134 @@ export default function Pipeline() {
           </div>
         </div>
 
+        {/* ABA PARCELAS VINCENDAS */}
+        {aba === 'parcelas' && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <CalendarClock className="w-4 h-4 text-amber-500" /> Parcelas Vincendas
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">{parcelasVenda.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}</p>
+              </div>
+            </div>
+            {parcelasVenda.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <CalendarClock className="w-10 h-10 mb-3 opacity-30" />
+                <p className="text-sm">Nenhuma parcela vincenda encontrada</p>
+                <p className="text-xs mt-1">Parcelas de vendas parceladas aparecem aqui</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left font-semibold">Parcela</th>
+                      <th className="px-4 py-3 text-left font-semibold">Cliente</th>
+                      <th className="px-4 py-3 text-left font-semibold">Produto</th>
+                      <th className="px-4 py-3 text-left font-semibold">Vendedor</th>
+                      <th className="px-4 py-3 text-left font-semibold">Vencimento</th>
+                      <th className="px-4 py-3 text-right font-semibold">Valor</th>
+                      <th className="px-4 py-3 text-center font-semibold">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {[...parcelasVenda].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
+                      const vencido = p.data_vencimento && p.data_vencimento < new Date().toISOString().split('T')[0];
+                      return (
+                        <tr key={p.id} className={`hover:bg-gray-50 transition ${vencido ? 'bg-red-50' : ''}`}>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-xs font-bold text-[#1a3150]">{p.numero_parcela}</span>
+                              <span className="text-xs text-gray-400">/{p.total_parcelas}</span>
+                            </span>
+                            {vencido && <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-semibold">Vencida</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-gray-800">{p.cliente_nome || '—'}</p>
+                            {p.cliente_cpf_cnpj && <p className="text-[10px] text-gray-400">{p.cliente_cpf_cnpj}</p>}
+                          </td>
+                          <td className="px-4 py-3 text-gray-600">{p.produto || '—'}</td>
+                          <td className="px-4 py-3 text-gray-600">{p.vendedor_nome || '—'}</td>
+                          <td className="px-4 py-3">
+                            <span className={`font-semibold ${vencido ? 'text-red-600' : 'text-gray-700'}`}>
+                              {fmtDate(p.data_vencimento)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-[#1a3150]">{fmtVal(p.valor_parcela)}</td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Confirmar recebimento de ${fmtVal(p.valor_parcela)} — Parcela ${p.numero_parcela}/${p.total_parcelas} de "${p.cliente_nome}"?`)) return;
+                                setRecebenndoParcela(p.id);
+                                try {
+                                  const hoje = new Date().toISOString().split('T')[0];
+                                  const novaVenda = await base44.entities.Venda.create({
+                                    produto: p.produto || '',
+                                    assessor_comercial: p.vendedor_nome || '',
+                                    vendedor_id: p.vendedor_id || '',
+                                    cliente: p.cliente_nome || '',
+                                    cpf_cnpj: p.cliente_cpf_cnpj || '',
+                                    valor: p.valor_parcela || 0,
+                                    data: hoje,
+                                    forma_pagamento: p.forma_pagamento || '',
+                                    percentual_comissao: p.percentual_comissao || 0,
+                                    indicadores: p.indicadores || [],
+                                    observacao: `Parcela ${p.numero_parcela}/${p.total_parcelas} recebida`,
+                                    num_parcelas: 1,
+                                    valor_total_contrato: p.valor_parcela,
+                                  });
+                                  if (p.vendedor_id && p.percentual_comissao) {
+                                    await base44.entities.Comissao.create({
+                                      venda_id: novaVenda.id,
+                                      vendedor_id: p.vendedor_id,
+                                      vendedor_nome: p.vendedor_nome,
+                                      valor_venda: p.valor_parcela,
+                                      percentual: p.percentual_comissao,
+                                      valor_comissao: (p.valor_parcela * p.percentual_comissao) / 100,
+                                      data_venda: hoje,
+                                      pago: false,
+                                    });
+                                  }
+                                  await base44.entities.ParcelaVenda.update(p.id, {
+                                    status: 'recebida',
+                                    data_recebimento: hoje,
+                                    venda_gerada_id: novaVenda.id,
+                                  });
+                                  if (p.pipeline_id) {
+                                    await base44.entities.Pipeline.update(p.pipeline_id, { temperatura: 'Fechado' });
+                                  }
+                                  queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+                                  queryClient.invalidateQueries(['pipeline']);
+                                  queryClient.invalidateQueries(['vendas']);
+                                  queryClient.invalidateQueries(['comissoes']);
+                                  toast.success('Parcela recebida! Venda registrada.');
+                                } catch (err) {
+                                  toast.error('Erro: ' + err.message);
+                                }
+                                setRecebenndoParcela(null);
+                              }}
+                              disabled={recebenndoParcela === p.id}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition disabled:opacity-50"
+                            >
+                              {recebenndoParcela === p.id
+                                ? <div className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                                : <DollarSign className="w-3 h-3" />}
+                              Receber
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Kanban com Drag & Drop */}
-        <DragDropContext onDragEnd={onDragEnd}>
+        {aba === 'pipeline' && <DragDropContext onDragEnd={onDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
             {TEMPERATURAS.map(temp => {
               const items = negociosFiltrados.filter(n => n.temperatura === temp.value);
@@ -702,7 +845,7 @@ export default function Pipeline() {
               );
             })}
           </div>
-        </DragDropContext>
+        </DragDropContext>}
       </div>
 
       {/* Modal form */}
