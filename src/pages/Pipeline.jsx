@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const TEMPERATURAS = [
   { value: 'Frio', dot: 'bg-blue-500', emoji: '🧊' },
@@ -266,6 +267,22 @@ export default function Pipeline() {
     mutationFn: (id) => base44.entities.Pipeline.delete(id),
     onSuccess: () => { queryClient.invalidateQueries(['pipeline']); toast.success('Removido do pipeline.'); },
   });
+
+  const moveTemperaturaMutation = useMutation({
+    mutationFn: ({ id, temperatura }) => base44.entities.Pipeline.update(id, { temperatura }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['pipeline']);
+    },
+  });
+
+  const onDragEnd = (result) => {
+    const { destination, source, draggableId } = result;
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId) return;
+    const novaTemp = destination.droppableId;
+    moveTemperaturaMutation.mutate({ id: draggableId, temperatura: novaTemp });
+    toast.success(`Movido para "${novaTemp}"`);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -589,85 +606,103 @@ export default function Pipeline() {
           </div>
         </div>
 
-        {/* Kanban */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {TEMPERATURAS.map(temp => {
-            const items = negociosFiltrados.filter(n => n.temperatura === temp.value);
-            const total = items.reduce((s, n) => s + (n.valor_estimado || 0), 0);
-            return (
-              <div key={temp.value} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${temp.dot}`} />
-                    <span className="text-xs font-semibold text-gray-700">{temp.emoji} {temp.value}</span>
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">{items.length}</span>
-                </div>
-                {total > 0 && (
-                  <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-                    <p className="text-[10px] text-gray-500 font-medium">{fmtVal(total)}</p>
-                  </div>
-                )}
-                <div className="p-2 space-y-2 max-h-96 overflow-y-auto">
-                  {items.length === 0 && <p className="text-[10px] text-gray-300 text-center py-4">Nenhum negócio</p>}
-                  {items.map(n => {
-                    const isParcela = parcelaPipelineIds.has(n.id);
-                    return (
-                    <div key={n.id} className={`rounded-xl p-2.5 hover:bg-blue-50 transition cursor-default group ${isParcela ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}>
-                      <div className="flex items-start justify-between gap-1">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-800 leading-tight">{n.cliente_nome}</p>
-                          {isParcela && <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">💰 PARCELA</span>}
-                        </div>
-                        <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
-                          {/* Receber parcela */}
-                          {isParcela && (
-                            <button
-                              onClick={() => receberParcela(n)}
-                              disabled={recebenndoParcela === n.id}
-                              title="Registrar recebimento da parcela"
-                              className="p-0.5 text-gray-400 hover:text-emerald-600"
-                            >
-                              {recebenndoParcela === n.id
-                                ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                                : <DollarSign className="w-3 h-3" />
-                              }
-                            </button>
-                          )}
-                          {/* Converter em venda (apenas não-parcelas) */}
-                          {!isParcela && (
-                            <button
-                              onClick={() => converterEmVenda(n)}
-                              disabled={convertendo === n.id}
-                              title="Converter em venda"
-                              className="p-0.5 text-gray-400 hover:text-emerald-600"
-                            >
-                              {convertendo === n.id
-                                ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                                : <ShoppingCart className="w-3 h-3" />
-                              }
-                            </button>
-                          )}
-                          <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
-                      {n.valor_estimado > 0 && <p className="text-[10px] font-bold text-[#1a3150] mt-1">{fmtVal(n.valor_estimado)}</p>}
-                      {n.data_prevista && <p className={`text-[10px] mt-0.5 ${isParcela ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>Venc: {fmtDate(n.data_prevista)}</p>}
-                      {isAdmin && n.vendedor_nome && <p className="text-[10px] text-blue-500 mt-0.5">{n.vendedor_nome}</p>}
+        {/* Kanban com Drag & Drop */}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {TEMPERATURAS.map(temp => {
+              const items = negociosFiltrados.filter(n => n.temperatura === temp.value);
+              const total = items.reduce((s, n) => s + (n.valor_estimado || 0), 0);
+              return (
+                <div key={temp.value} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+                  <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${temp.dot}`} />
+                      <span className="text-xs font-semibold text-gray-700">{temp.emoji} {temp.value}</span>
                     </div>
-                    );
-                  })}
+                    <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                  </div>
+                  {total > 0 && (
+                    <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
+                      <p className="text-[10px] text-gray-500 font-medium">{fmtVal(total)}</p>
+                    </div>
+                  )}
+                  <Droppable droppableId={temp.value}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className={`p-2 space-y-2 min-h-24 max-h-96 overflow-y-auto flex-1 transition-colors ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
+                      >
+                        {items.length === 0 && !snapshot.isDraggingOver && (
+                          <p className="text-[10px] text-gray-300 text-center py-4">Nenhum negócio</p>
+                        )}
+                        {items.map((n, index) => {
+                          const isParcela = parcelaPipelineIds.has(n.id);
+                          return (
+                            <Draggable key={n.id} draggableId={n.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={`rounded-xl p-2.5 transition group ${snapshot.isDragging ? 'shadow-lg ring-2 ring-blue-300 rotate-1 opacity-90' : 'hover:bg-blue-50'} ${isParcela ? 'bg-amber-50 border border-amber-100' : 'bg-gray-50'}`}
+                                >
+                                  <div className="flex items-start justify-between gap-1">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-semibold text-gray-800 leading-tight">{n.cliente_nome}</p>
+                                      {isParcela && <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">💰 PARCELA</span>}
+                                    </div>
+                                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
+                                      {isParcela && (
+                                        <button
+                                          onClick={() => receberParcela(n)}
+                                          disabled={recebenndoParcela === n.id}
+                                          title="Registrar recebimento da parcela"
+                                          className="p-0.5 text-gray-400 hover:text-emerald-600"
+                                        >
+                                          {recebenndoParcela === n.id
+                                            ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                            : <DollarSign className="w-3 h-3" />}
+                                        </button>
+                                      )}
+                                      {!isParcela && (
+                                        <button
+                                          onClick={() => converterEmVenda(n)}
+                                          disabled={convertendo === n.id}
+                                          title="Converter em venda"
+                                          className="p-0.5 text-gray-400 hover:text-emerald-600"
+                                        >
+                                          {convertendo === n.id
+                                            ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                            : <ShoppingCart className="w-3 h-3" />}
+                                        </button>
+                                      )}
+                                      <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
+                                        <Pencil className="w-3 h-3" />
+                                      </button>
+                                      <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
+                                  {n.valor_estimado > 0 && <p className="text-[10px] font-bold text-[#1a3150] mt-1">{fmtVal(n.valor_estimado)}</p>}
+                                  {n.data_prevista && <p className={`text-[10px] mt-0.5 ${isParcela ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>Venc: {fmtDate(n.data_prevista)}</p>}
+                                  {isAdmin && n.vendedor_nome && <p className="text-[10px] text-blue-500 mt-0.5">{n.vendedor_nome}</p>}
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </DragDropContext>
       </div>
 
       {/* Modal form */}
