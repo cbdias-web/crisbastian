@@ -191,9 +191,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     gerarParcelasNovas(numParcelas);
   }, [numParcelas]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Atualiza apenas o valor das parcelas quando valorRestante muda (preserva datas)
+  // Atualiza apenas o valor das parcelas quando valorRestante muda (preserva datas e valores já editados pelo usuário)
+  const parcelasValoresEditadosRef = useRef(false);
   useEffect(() => {
     if (numParcelas <= 1 || parcelasEditaveis.length === 0) return;
+    if (parcelasValoresEditadosRef.current) return; // não sobrescreve se o usuário já editou manualmente
     const novoValor = numParcelas > 0 ? valorRestante / numParcelas : 0;
     setParcelasEditaveis(prev => prev.map(p => ({ ...p, valor: novoValor })));
   }, [valorRestante]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -209,6 +211,15 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
           updated[i] = { ...updated[i], vencimento: base.toISOString().split('T')[0] };
         }
       }
+      return updated;
+    });
+  };
+
+  const updateValorParcela = (idx, novoValor) => {
+    parcelasValoresEditadosRef.current = true;
+    setParcelasEditaveis(prev => {
+      const updated = [...prev];
+      updated[idx] = { ...updated[idx], valor: parseFloat(novoValor) || 0 };
       return updated;
     });
   };
@@ -339,16 +350,16 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     const restanteFinal = Math.max(0, totalFinal - entradaFinal);
     let parcelasFinais = [];
     if (numParcelas > 1 && restanteFinal > 0) {
-      const valorPorParcela = restanteFinal / numParcelas;
       if (parcelasEditaveis.length === numParcelas) {
-        // Usa as datas editadas pelo usuário, recalcula apenas os valores
+        // Usa datas E valores editados pelo usuário
         parcelasFinais = parcelasEditaveis.map((p, i) => ({
           numero: i + 1,
           vencimento: p.vencimento,
-          valor: valorPorParcela,
+          valor: p.valor || (restanteFinal / numParcelas),
         }));
       } else {
         // Gera parcelas com datas automáticas (fallback)
+        const valorPorParcela = restanteFinal / numParcelas;
         parcelasFinais = Array.from({ length: numParcelas }, (_, i) => {
           const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
           dataBase.setMonth(dataBase.getMonth() + i + 1);
@@ -538,29 +549,58 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                   </div>
                 )}
 
-                {/* Datas das parcelas — editáveis */}
-                {numParcelas > 1 && parcelasEditaveis.length > 0 && (
-                  <div className="space-y-2 pt-1">
-                    <p className="text-[10px] text-blue-600 font-medium">
-                      💡 Ajuste as datas de vencimento de cada parcela se necessário:
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {parcelasEditaveis.map((p, i) => (
-                        <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-blue-100">
-                          <span className="text-[10px] font-semibold text-amber-600 whitespace-nowrap">
-                            {i + 1}/{numParcelas} — {(valorRestante > 0 ? valorRestante / numParcelas : p.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </span>
-                          <input
-                            type="date"
-                            value={p.vencimento || ''}
-                            onChange={e => updateVencimentoParcela(i, e.target.value)}
-                            className="flex-1 text-[10px] border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:border-[#1a3150] min-w-0"
-                          />
-                        </div>
-                      ))}
+                {/* Parcelas — datas e valores editáveis */}
+                {numParcelas > 1 && parcelasEditaveis.length > 0 && (() => {
+                  const totalDistribuido = parcelasEditaveis.reduce((s, p) => s + (p.valor || 0), 0);
+                  const diff = Math.abs(totalDistribuido - valorRestante);
+                  const diffOk = diff < 0.01;
+                  return (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] text-blue-600 font-medium">
+                          💡 Ajuste datas e valores de cada parcela:
+                        </p>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${diffOk ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                          {diffOk ? '✓ Valores OK' : `Diferença: ${(totalDistribuido - valorRestante).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {parcelasEditaveis.map((p, i) => (
+                          <div key={i} className="flex items-center gap-2 bg-white rounded-lg px-2 py-1.5 border border-blue-100">
+                            <span className="text-[10px] font-bold text-amber-700 w-10 flex-shrink-0 text-center">
+                              {i + 1}/{numParcelas}
+                            </span>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <span className="text-[10px] text-gray-400">R$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={p.valor || ''}
+                                onChange={e => updateValorParcela(i, e.target.value)}
+                                className="w-24 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-[#1a3150] text-right"
+                                placeholder="0,00"
+                              />
+                            </div>
+                            <span className="text-gray-300 text-xs">|</span>
+                            <input
+                              type="date"
+                              value={p.vencimento || ''}
+                              onChange={e => updateVencimentoParcela(i, e.target.value)}
+                              className="flex-1 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-[#1a3150] min-w-0"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[10px] pt-1 border-t border-blue-100">
+                        <span className="text-gray-500">Saldo restante: <strong>{valorRestante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></span>
+                        <span className={diffOk ? 'text-emerald-600 font-semibold' : 'text-red-500 font-semibold'}>
+                          Distribuído: {totalDistribuido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
 
