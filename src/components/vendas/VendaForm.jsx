@@ -155,27 +155,32 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               vencimento: p.data_vencimento,
               valor: p.valor_parcela,
             })));
-          } else if (numParcelasInicial > 1) {
+          } else {
             // Sem parcelas pendentes no banco: gera com base nos valores atuais
-            gerarParcelasNovas(numParcelasInicial);
+            const restante = Math.max(0, (venda.valor_total_contrato || venda.valor || 0) - (venda.valor || 0));
+            setParcelasEditaveis(gerarParcelasNovas(numParcelasInicial, restante, venda.data));
           }
         })
         .catch(() => {});
+    } else if (!venda?.id && numParcelasInicial > 1) {
+      // Nova venda com parcelas pré-selecionadas
+      const restante = Math.max(0, (parseFloat(valorTotalContrato) || 0) - (parseFloat(valorEntradaCustom) || 0));
+      setParcelasEditaveis(gerarParcelasNovas(numParcelasInicial, restante, formData.data));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gerarParcelasNovas = (n) => {
-    const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-    const restante = Math.max(0, valorTotal - valorEntrada);
-    setParcelasEditaveis(Array.from({ length: n }, (_, i) => {
+  const gerarParcelasNovas = (n, restante, dataRef) => {
+    const dataBase = dataRef ? new Date(dataRef + 'T00:00:00') : (formData.data ? new Date(formData.data + 'T00:00:00') : new Date());
+    const valorParcela = restante > 0 ? restante / n : 0;
+    return Array.from({ length: n }, (_, i) => {
       const dt = new Date(dataBase);
       dt.setMonth(dt.getMonth() + i + 1);
       return {
-        numero: i + 2,
+        numero: i + 1,
         vencimento: dt.toISOString().split('T')[0],
-        valor: restante > 0 ? restante / n : 0,
+        valor: valorParcela,
       };
-    }));
+    });
   };
 
   // Reage à mudança do número de parcelas pelo usuário
@@ -188,38 +193,22 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       setParcelasEditaveis([]);
       return;
     }
-    gerarParcelasNovas(numParcelas);
+    const restante = Math.max(0, (parseFloat(valorTotalContrato) || 0) - (parseFloat(valorEntradaCustom) || 0));
+    setParcelasEditaveis(gerarParcelasNovas(numParcelas, restante, formData.data));
   }, [numParcelas]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Atualiza apenas o valor das parcelas quando valorRestante muda (preserva datas e valores já editados pelo usuário)
-  const parcelasValoresEditadosRef = useRef(false);
-  useEffect(() => {
-    if (numParcelas <= 1 || parcelasEditaveis.length === 0) return;
-    if (parcelasValoresEditadosRef.current) return; // não sobrescreve se o usuário já editou manualmente
-    const novoValor = numParcelas > 0 ? valorRestante / numParcelas : 0;
-    setParcelasEditaveis(prev => prev.map(p => ({ ...p, valor: novoValor })));
-  }, [valorRestante]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateVencimentoParcela = (idx, novaData) => {
     setParcelasEditaveis(prev => {
       const updated = [...prev];
       updated[idx] = { ...updated[idx], vencimento: novaData };
-      if (idx === 0 && novaData) {
-        for (let i = 1; i < updated.length; i++) {
-          const base = new Date(novaData + 'T00:00:00');
-          base.setDate(base.getDate() + 30 * i);
-          updated[i] = { ...updated[i], vencimento: base.toISOString().split('T')[0] };
-        }
-      }
       return updated;
     });
   };
 
   const updateValorParcela = (idx, novoValor) => {
-    parcelasValoresEditadosRef.current = true;
     setParcelasEditaveis(prev => {
       const updated = [...prev];
-      updated[idx] = { ...updated[idx], valor: parseFloat(novoValor) || 0 };
+      updated[idx] = { ...updated[idx], valor: novoValor };
       return updated;
     });
   };
