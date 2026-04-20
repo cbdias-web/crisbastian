@@ -511,7 +511,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       <option value={1}>Sem parcelas (pagamento total na entrada)</option>
                       {Array.from({ length: 12 }, (_, i) => i + 2).map(n => {
                         const vp = valorRestante > 0 ? (valorRestante / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--';
-                        return <option key={n} value={n}>{n}x de {vp}</option>;
+                        return <option key={n} value={n}>Entrada + {n}x de {vp}</option>;
                       })}
                     </select>
                   </div>
@@ -529,7 +529,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                     </div>
                     {numParcelas > 1 && (
                       <div className="text-center bg-white rounded-lg py-2 px-3">
-                        <p className="text-[10px] text-gray-500">Saldo ({numParcelas}x)</p>
+                        <p className="text-[10px] text-gray-500">Saldo (entrada + {numParcelas}x)</p>
                         <p className="text-sm font-bold text-amber-600">
                           {valorRestante > 0 ? (valorRestante / numParcelas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--'}
                         </p>
