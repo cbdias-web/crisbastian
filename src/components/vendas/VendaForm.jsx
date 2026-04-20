@@ -208,7 +208,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const updateValorParcela = (idx, novoValor) => {
     setParcelasEditaveis(prev => {
       const updated = [...prev];
-      updated[idx] = { ...updated[idx], valor: novoValor };
+      updated[idx] = { ...updated[idx], valor: parseFloat(novoValor) || 0 };
       return updated;
     });
   };
