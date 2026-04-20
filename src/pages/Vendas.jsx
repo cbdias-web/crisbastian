@@ -179,7 +179,8 @@ export default function Vendas() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const venda = await base44.entities.Venda.update(id, data);
+      const { _parcelasPreview, ...vendaData } = data;
+      const venda = await base44.entities.Venda.update(id, vendaData);
 
       // Atualiza comissão do vendedor
       const comissoesVend = await base44.entities.Comissao.filter({ venda_id: id });
@@ -243,12 +244,15 @@ export default function Vendas() {
         }
       }
 
-      // Atualiza parcelas pendentes vinculadas (valor, cliente, vendedor, produto)
-      for (const parcela of parcelas.filter(p => p.status === 'pendente')) {
-        const novoPct = parcela.numero_parcela / (data.num_parcelas || parcela.total_parcelas || 1);
-        const novoValorRestante = (parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0) - (parseFloat(data.valor) || 0);
-        const totalParc = data.num_parcelas || parcela.total_parcelas || 1;
-        const novoValorParcela = totalParc > 0 ? novoValorRestante / totalParc : parcela.valor_parcela;
+      // Atualiza parcelas vinculadas usando valores editados pelo usuário (_parcelasPreview) quando disponíveis
+      const totalParc = data.num_parcelas || 1;
+      const novoValorRestante = (parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0) - (parseFloat(data.valor) || 0);
+
+      for (const parcela of parcelas) {
+        // Busca o valor editado pelo usuário para este número de parcela
+        const parcelaEditada = _parcelasPreview?.find(p => p.numero === parcela.numero_parcela);
+        const novoValorParcela = parcelaEditada?.valor ?? (totalParc > 0 ? novoValorRestante / totalParc : parcela.valor_parcela);
+        const novoVencimento = parcelaEditada?.vencimento ?? parcela.data_vencimento;
 
         await base44.entities.ParcelaVenda.update(parcela.id, {
           cliente_nome: data.cliente || parcela.cliente_nome,
@@ -259,6 +263,8 @@ export default function Vendas() {
           percentual_comissao: data.percentual_comissao || parcela.percentual_comissao,
           indicadores: data.indicadores || parcela.indicadores,
           valor_parcela: novoValorParcela,
+          data_vencimento: novoVencimento,
+          total_parcelas: totalParc,
         });
 
         // Atualiza o Pipeline vinculado
@@ -266,12 +272,32 @@ export default function Vendas() {
           await base44.entities.Pipeline.update(parcela.pipeline_id, {
             cliente_nome: data.cliente || '',
             cliente_cpf_cnpj: data.cpf_cnpj || '',
-            produto: `${data.produto} (Parcela ${parcela.numero_parcela}/${parcela.total_parcelas || totalParc})`,
+            produto: `${data.produto} (Parcela ${parcela.numero_parcela}/${totalParc})`,
             valor_estimado: novoValorParcela,
             vendedor_id: data.vendedor_id || '',
             vendedor_nome: data.assessor_comercial || '',
           });
         }
+      }
+
+      // Cria parcelas faltantes (quando num_parcelas aumentou ou nunca foram criadas)
+      const numerosExistentes = new Set(parcelas.map(p => p.numero_parcela));
+      const parcelasFaltantes = (_parcelasPreview || []).filter(p => !numerosExistentes.has(p.numero));
+      if (parcelasFaltantes.length > 0) {
+        await base44.functions.invoke('criarParcelasVenda', {
+          venda_id: id,
+          parcelas: parcelasFaltantes,
+          venda_data: {
+            cliente: data.cliente || '',
+            cpf_cnpj: data.cpf_cnpj || '',
+            produto: data.produto || '',
+            vendedor_id: data.vendedor_id || '',
+            assessor_comercial: data.assessor_comercial || '',
+            percentual_comissao: data.percentual_comissao || 0,
+            indicadores: data.indicadores || [],
+            forma_pagamento: data.forma_pagamento || '',
+          },
+        });
       }
 
       // Atualiza AgendaContato vinculados (lead_id = venda.id)

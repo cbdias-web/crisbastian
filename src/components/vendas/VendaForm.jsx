@@ -147,16 +147,24 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       base44.entities.ParcelaVenda.filter({ venda_id: venda.id })
         .then(parcelas => {
           const ordenadas = parcelas
-            .filter(p => p.status === 'pendente')
             .sort((a, b) => a.numero_parcela - b.numero_parcela);
           if (ordenadas.length > 0) {
-            setParcelasEditaveis(ordenadas.map(p => ({
-              numero: p.numero_parcela,
-              vencimento: p.data_vencimento,
-              valor: p.valor_parcela,
-            })));
+            // Monta array com numParcelasInicial slots, preenchendo do banco ou gerando fallback
+            const restante = Math.max(0, (venda.valor_total_contrato || venda.valor || 0) - (venda.valor || 0));
+            const valorPadrao = restante > 0 ? restante / numParcelasInicial : 0;
+            const dataBase = venda.data ? new Date(venda.data + 'T00:00:00') : new Date();
+            const result = Array.from({ length: numParcelasInicial }, (_, i) => {
+              const existente = ordenadas.find(p => p.numero_parcela === i + 1);
+              if (existente) {
+                return { numero: existente.numero_parcela, vencimento: existente.data_vencimento, valor: existente.valor_parcela };
+              }
+              const dt = new Date(dataBase);
+              dt.setMonth(dt.getMonth() + i + 1);
+              return { numero: i + 1, vencimento: dt.toISOString().split('T')[0], valor: valorPadrao };
+            });
+            setParcelasEditaveis(result);
           } else {
-            // Sem parcelas pendentes no banco: gera com base nos valores atuais
+            // Sem parcelas no banco: gera com base nos valores atuais
             const restante = Math.max(0, (venda.valor_total_contrato || venda.valor || 0) - (venda.valor || 0));
             setParcelasEditaveis(gerarParcelasNovas(numParcelasInicial, restante, venda.data));
           }
@@ -339,26 +347,17 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     const restanteFinal = Math.max(0, totalFinal - entradaFinal);
     let parcelasFinais = [];
     if (numParcelas > 1 && restanteFinal > 0) {
-      if (parcelasEditaveis.length === numParcelas) {
-        // Usa datas E valores editados pelo usuário
-        parcelasFinais = parcelasEditaveis.map((p, i) => ({
-          numero: i + 1,
-          vencimento: p.vencimento,
-          valor: p.valor || (restanteFinal / numParcelas),
-        }));
-      } else {
-        // Gera parcelas com datas automáticas (fallback)
-        const valorPorParcela = restanteFinal / numParcelas;
-        parcelasFinais = Array.from({ length: numParcelas }, (_, i) => {
-          const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
-          dataBase.setMonth(dataBase.getMonth() + i + 1);
-          return {
-            numero: i + 1,
-            vencimento: dataBase.toISOString().split('T')[0],
-            valor: valorPorParcela,
-          };
-        });
-      }
+      const valorPorParcela = restanteFinal / numParcelas;
+      parcelasFinais = Array.from({ length: numParcelas }, (_, i) => {
+        const editada = parcelasEditaveis[i];
+        if (editada) {
+          return { numero: i + 1, vencimento: editada.vencimento, valor: editada.valor || valorPorParcela };
+        }
+        // Fallback para parcelas sem dados editáveis
+        const dataBase = formData.data ? new Date(formData.data + 'T00:00:00') : new Date();
+        dataBase.setMonth(dataBase.getMonth() + i + 1);
+        return { numero: i + 1, vencimento: dataBase.toISOString().split('T')[0], valor: valorPorParcela };
+      });
     }
 
     const dataToSave = {
