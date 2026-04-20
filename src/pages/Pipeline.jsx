@@ -147,6 +147,8 @@ export default function Pipeline() {
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
   const [recebenndoParcela, setRecebenndoParcela] = useState(null);
+  const [modalReceber, setModalReceber] = useState(null); // parcela a receber
+  const [recebimentoForm, setRecebimentoForm] = useState({ data: '', valor: '' });
   const [aba, setAba] = useState('pipeline'); // 'pipeline' | 'parcelas'
   const [showParcelasModal, setShowParcelasModal] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
@@ -726,63 +728,14 @@ export default function Pipeline() {
                           <td className="px-4 py-3 text-right font-bold text-[#1a3150]">{fmtVal(p.valor_parcela)}</td>
                           <td className="px-4 py-3 text-center">
                             <button
-                              onClick={async () => {
-                                if (!confirm(`Confirmar recebimento de ${fmtVal(p.valor_parcela)} — Parcela ${p.numero_parcela}/${p.total_parcelas} de "${p.cliente_nome}"?`)) return;
-                                setRecebenndoParcela(p.id);
-                                try {
-                                  const hoje = new Date().toISOString().split('T')[0];
-                                  const novaVenda = await base44.entities.Venda.create({
-                                    produto: p.produto || '',
-                                    assessor_comercial: p.vendedor_nome || '',
-                                    vendedor_id: p.vendedor_id || '',
-                                    cliente: p.cliente_nome || '',
-                                    cpf_cnpj: p.cliente_cpf_cnpj || '',
-                                    valor: p.valor_parcela || 0,
-                                    data: hoje,
-                                    forma_pagamento: p.forma_pagamento || '',
-                                    percentual_comissao: p.percentual_comissao || 0,
-                                    indicadores: p.indicadores || [],
-                                    observacao: `Parcela ${p.numero_parcela}/${p.total_parcelas} recebida`,
-                                    num_parcelas: 1,
-                                    valor_total_contrato: p.valor_parcela,
-                                  });
-                                  if (p.vendedor_id && p.percentual_comissao) {
-                                    await base44.entities.Comissao.create({
-                                      venda_id: novaVenda.id,
-                                      vendedor_id: p.vendedor_id,
-                                      vendedor_nome: p.vendedor_nome,
-                                      valor_venda: p.valor_parcela,
-                                      percentual: p.percentual_comissao,
-                                      valor_comissao: (p.valor_parcela * p.percentual_comissao) / 100,
-                                      data_venda: hoje,
-                                      pago: false,
-                                    });
-                                  }
-                                  await base44.entities.ParcelaVenda.update(p.id, {
-                                    status: 'recebida',
-                                    data_recebimento: hoje,
-                                    venda_gerada_id: novaVenda.id,
-                                  });
-                                  if (p.pipeline_id) {
-                                    await base44.entities.Pipeline.update(p.pipeline_id, { temperatura: 'Fechado' });
-                                  }
-                                  queryClient.invalidateQueries(['parcelas-venda-pipeline']);
-                                  queryClient.invalidateQueries(['pipeline']);
-                                  queryClient.invalidateQueries(['vendas']);
-                                  queryClient.invalidateQueries(['comissoes']);
-                                  toast.success('Parcela recebida! Venda registrada.');
-                                } catch (err) {
-                                  toast.error('Erro: ' + err.message);
-                                }
-                                setRecebenndoParcela(null);
+                              onClick={() => {
+                                setModalReceber(p);
+                                setRecebimentoForm({ data: new Date().toISOString().split('T')[0], valor: String(p.valor_parcela || '') });
                               }}
                               disabled={recebenndoParcela === p.id}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition disabled:opacity-50"
                             >
-                              {recebenndoParcela === p.id
-                                ? <div className="w-3 h-3 border border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                                : <DollarSign className="w-3 h-3" />}
-                              Receber
+                              <DollarSign className="w-3 h-3" /> Receber
                             </button>
                           </td>
                         </tr>
@@ -893,6 +846,111 @@ export default function Pipeline() {
           </div>
         </DragDropContext>}
       </div>
+
+      {/* Modal Receber Parcela */}
+      {modalReceber && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Confirmar Recebimento</h3>
+              <button onClick={() => setModalReceber(null)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3 text-sm space-y-1">
+              <p className="font-medium text-gray-800">{modalReceber.cliente_nome}</p>
+              <p className="text-gray-500 text-xs">Parcela {modalReceber.numero_parcela}/{modalReceber.total_parcelas} · {modalReceber.produto}</p>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Data de recebimento *</label>
+                <input
+                  type="date"
+                  value={recebimentoForm.data}
+                  onChange={e => setRecebimentoForm(f => ({ ...f, data: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Valor recebido *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={recebimentoForm.valor}
+                  onChange={e => setRecebimentoForm(f => ({ ...f, valor: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setModalReceber(null)}
+                className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50">
+                Cancelar
+              </button>
+              <button
+                disabled={!recebimentoForm.data || !recebimentoForm.valor || recebenndoParcela === modalReceber.id}
+                onClick={async () => {
+                  const p = modalReceber;
+                  const dataReceb = recebimentoForm.data;
+                  const valorReceb = parseFloat(recebimentoForm.valor) || p.valor_parcela;
+                  setRecebenndoParcela(p.id);
+                  try {
+                    const novaVenda = await base44.entities.Venda.create({
+                      produto: p.produto || '',
+                      assessor_comercial: p.vendedor_nome || '',
+                      vendedor_id: p.vendedor_id || '',
+                      cliente: p.cliente_nome || '',
+                      cpf_cnpj: p.cliente_cpf_cnpj || '',
+                      valor: valorReceb,
+                      data: dataReceb,
+                      forma_pagamento: p.forma_pagamento || '',
+                      percentual_comissao: p.percentual_comissao || 0,
+                      indicadores: p.indicadores || [],
+                      observacao: `Parcela ${p.numero_parcela}/${p.total_parcelas} recebida`,
+                      num_parcelas: 1,
+                      valor_total_contrato: valorReceb,
+                    });
+                    if (p.vendedor_id && p.percentual_comissao) {
+                      await base44.entities.Comissao.create({
+                        venda_id: novaVenda.id,
+                        vendedor_id: p.vendedor_id,
+                        vendedor_nome: p.vendedor_nome,
+                        valor_venda: valorReceb,
+                        percentual: p.percentual_comissao,
+                        valor_comissao: (valorReceb * p.percentual_comissao) / 100,
+                        data_venda: dataReceb,
+                        pago: false,
+                      });
+                    }
+                    await base44.entities.ParcelaVenda.update(p.id, {
+                      status: 'recebida',
+                      data_recebimento: dataReceb,
+                      venda_gerada_id: novaVenda.id,
+                    });
+                    if (p.pipeline_id) {
+                      await base44.entities.Pipeline.update(p.pipeline_id, { temperatura: 'Fechado' });
+                    }
+                    queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+                    queryClient.invalidateQueries(['pipeline']);
+                    queryClient.invalidateQueries(['vendas']);
+                    queryClient.invalidateQueries(['comissoes']);
+                    toast.success('Parcela recebida! Venda registrada.');
+                    setModalReceber(null);
+                  } catch (err) {
+                    toast.error('Erro: ' + err.message);
+                  }
+                  setRecebenndoParcela(null);
+                }}
+                className="flex-1 px-4 py-2 text-sm bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 font-medium disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {recebenndoParcela === modalReceber.id
+                  ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <><DollarSign className="w-3.5 h-3.5" /> Confirmar Recebimento</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Parcelas Vincendas */}
       {showParcelasModal && (
