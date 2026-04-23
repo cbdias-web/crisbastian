@@ -205,7 +205,9 @@ export default function Pipeline() {
 
   const negociosFiltrados = negocios.filter(n => {
     const tempOk = filtroTemp === 'Todos' || n.temperatura === filtroTemp;
-    const vendOk = filtroVendedor === 'Todos' || n.vendedor_nome === filtroVendedor;
+    const vendOk = filtroVendedor === 'Todos' ||
+      n.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase() ||
+      n.vendedor_id === vendedores.find(v => v.nome === filtroVendedor)?.id;
     const prodOk = filtroProduto === 'Todos' || n.produto === filtroProduto;
     const dataOk = (!filtroDataInicio || (n.data_prevista && n.data_prevista >= filtroDataInicio)) &&
                    (!filtroDataFim || (n.data_prevista && n.data_prevista <= filtroDataFim));
