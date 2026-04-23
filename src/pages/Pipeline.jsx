@@ -436,8 +436,12 @@ export default function Pipeline() {
   const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))];
 
   // KPIs do gerente selecionado
+  const vendedorSelecionado = vendedores.find(v => v.nome === filtroVendedor);
   const negociosGerente = filtroVendedor !== 'Todos'
-    ? negocios.filter(n => n.vendedor_nome === filtroVendedor)
+    ? negocios.filter(n =>
+        n.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase() ||
+        (vendedorSelecionado && n.vendedor_id === vendedorSelecionado.id)
+      )
     : null;
   const gerenteAtivos = negociosGerente?.filter(n => n.temperatura !== 'Perdido').length ?? 0;
   const gerenteEmNegociacao = negociosGerente?.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0) ?? 0;
