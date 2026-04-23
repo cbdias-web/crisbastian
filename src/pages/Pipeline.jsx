@@ -163,7 +163,7 @@ export default function Pipeline() {
 
   const { data: negociosRaw = [] } = useQuery({
     queryKey: ['pipeline'],
-    queryFn: () => base44.entities.Pipeline.list('-created_date', 500),
+    queryFn: () => base44.entities.Pipeline.list('-created_date', 2000),
     enabled: !!user,
   });
 
@@ -616,7 +616,9 @@ export default function Pipeline() {
               <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
                 className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]">
                 <option value="Todos">Todos os gerentes</option>
-                {vendedoresUnicos.map(v => <option key={v} value={v}>{v}</option>)}
+                {vendedores.length > 0
+                  ? vendedores.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
+                  : vendedoresUnicos.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             )}
             <span className="text-xs text-gray-400 ml-auto">{negociosFiltrados.length} negócio(s)</span>
