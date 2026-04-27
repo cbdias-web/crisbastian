@@ -115,7 +115,20 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   };
 
   const cor = TIPO_COLOR[tipo] || '#0f1e35';
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const set = (k, v) => setForm(f => {
+    const updated = { ...f, [k]: v };
+    // Recalcular valor_total automaticamente ao mudar adesão, parcela ou nº parcelas
+    if (['valor_adesao', 'valor_parcela', 'num_parcelas'].includes(k)) {
+      const adesao = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
+      const parcela = parseFloat(k === 'valor_parcela' ? v : updated.valor_parcela) || 0;
+      const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas) || 1;
+      if (adesao > 0 || parcela > 0) {
+        updated.valor_total = String(adesao + parcela * (nParcelas > 1 ? nParcelas : 0));
+      }
+    }
+    return updated;
+  });
 
   const campo = (label, key, type = 'text', opts = {}) => (
     <div>
@@ -236,7 +249,18 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
             {aba === 'financeiro' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {campo('Valor Total do Contrato (R$)', 'valor_total', 'number')}
+                <div>
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+                    Valor Total do Contrato (R$) <span className="text-blue-400 font-normal normal-case">(calculado auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={form.valor_total || ''}
+                    onChange={e => set('valor_total', e.target.value)}
+                    placeholder="Preenchido automaticamente"
+                    className="w-full px-3 py-2 text-sm border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1a3150] focus:border-[#1a3150]"
+                  />
+                </div>
                 {campo('Valor de Adesão / Entrada (R$)', 'valor_adesao', 'number')}
                 {campo('Valor da Parcela (R$)', 'valor_parcela', 'number')}
                 <div>

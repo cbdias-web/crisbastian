@@ -34,18 +34,22 @@ export default function ContratoViewer({ contrato, onBack, onUpdate }) {
     if (!confirm('Enviar este contrato para o Pipeline como nova prospecção?')) return;
     setEnviandoPipeline(true);
     try {
+      // Buscar dados atualizados do contrato antes de enviar
+      const contratoAtualizado = await base44.entities.Contrato.get(contrato.id);
+      const c = contratoAtualizado || contrato;
+
       const pipeline = await base44.entities.Pipeline.create({
-        cliente_nome: contrato.nome,
-        cliente_cpf_cnpj: contrato.cpf_cnpj,
-        cliente_telefone: contrato.telefone,
-        produto: contrato.tipo,
-        valor_estimado: contrato.valor_total || contrato.valor_adesao || 0,
+        cliente_nome: c.nome,
+        cliente_cpf_cnpj: c.cpf_cnpj,
+        cliente_telefone: c.telefone || '',
+        produto: c.tipo,
+        valor_estimado: c.valor_total || c.valor_adesao || 0,
         temperatura: 'Quente',
         origem: 'Carteira',
-        vendedor_id: contrato.vendedor_id || '',
-        vendedor_nome: contrato.vendedor_nome || '',
-        descricao: `Contrato ${contrato.tipo} gerado. Aguardando finalização da venda.`,
-        data_prevista: contrato.data_primeiro_pagamento || '',
+        vendedor_id: c.vendedor_id || '',
+        vendedor_nome: c.vendedor_nome || '',
+        descricao: `Contrato ${c.tipo} gerado. Valor total: R$ ${Number(c.valor_total || c.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Aguardando finalização da venda.`,
+        data_prevista: c.data_primeiro_pagamento || '',
       });
       await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline', pipeline_id: pipeline.id });
       queryClient.invalidateQueries(['contratos']);
