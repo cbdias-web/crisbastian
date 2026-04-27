@@ -24,8 +24,21 @@ const TIPO_COLOR = {
   'DOLARIZE AQUI': '#b45309',
 };
 
-export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente }) {
-  const [form, setForm] = useState(contratoExistente ? { ...EMPTY, ...contratoExistente } : EMPTY);
+export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado }) {
+  const [form, setForm] = useState(() => {
+    if (contratoExistente) return { ...EMPTY, ...contratoExistente };
+    if (clientePreSelecionado) return {
+      ...EMPTY,
+      nome: clientePreSelecionado.nome || '',
+      cpf_cnpj: clientePreSelecionado.cpf_cnpj || '',
+      email: clientePreSelecionado.email || '',
+      telefone: clientePreSelecionado.telefone || '',
+      cidade: clientePreSelecionado.cidade || '',
+      estado: clientePreSelecionado.estado || '',
+      cliente_id: clientePreSelecionado.id || '',
+    };
+    return EMPTY;
+  });
   const [buscaCliente, setBuscaCliente] = useState('');
   const [showBusca, setShowBusca] = useState(false);
   const [aba, setAba] = useState('dados');
@@ -181,6 +194,19 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
           </div>
           <FileText className="w-10 h-10 opacity-20" />
         </div>
+
+        {/* Banner cliente pré-selecionado via drag-and-drop */}
+        {clientePreSelecionado && !contratoExistente && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 mb-4 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+              {(clientePreSelecionado.nome || '?').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-emerald-800">Cliente pré-selecionado: <span className="font-bold">{clientePreSelecionado.nome}</span></p>
+              <p className="text-xs text-emerald-600">Dados pessoais preenchidos automaticamente. Complete as demais abas e salve.</p>
+            </div>
+          </div>
+        )}
 
         {/* Buscar cliente */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4 relative">
