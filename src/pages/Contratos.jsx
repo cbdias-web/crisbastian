@@ -199,15 +199,15 @@ export default function Contratos() {
                         <p className="font-medium text-gray-800">{c.nome || '—'}</p>
                         <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full border ${cfg?.light || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                      <td className="px-4 py-3 min-w-[130px]">
+                        <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${cfg?.light || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
                           {c.tipo}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-[#1a3150]">{fmtVal(c.valor_total)}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
+                      <td className="px-4 py-3 min-w-[110px]">
+                        <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
                       </td>
                       {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
                       <td className="px-4 py-3">
