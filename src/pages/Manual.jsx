@@ -1000,21 +1000,36 @@ const sections = [
         ],
       },
       {
+        subtitle: 'Fluxo de etapas do contrato (após assinatura)',
+        items: [
+          '**Assinado:** gerente anexa o arquivo do contrato assinado pelo cliente.',
+          '**Aguardando Pagamento:** administrador adiciona boleto ou link de pagamento para o cliente efetuar o pagamento.',
+          '**Pago:** gerente anexa o comprovante de pagamento e informa a origem (Boleto, PIX, TED, etc.).',
+          '**No Pipeline / Vendas:** após confirmação do pagamento, o botão "Enviar para Vendas" fica disponível para finalizar a venda.',
+        ],
+      },
+      {
         subtitle: 'Status do contrato',
         items: [
           '**Rascunho:** contrato criado mas ainda sem PDF gerado.',
           '**PDF Gerado:** PDF foi gerado e baixado pelo menos uma vez.',
-          '**Assinado:** marcado manualmente após confirmação de assinatura pelo cliente.',
-          '**No Pipeline:** contrato enviado ao Pipeline Comercial como nova prospecção.',
+          '**Assinado:** contrato assinado pelo cliente, arquivo anexado pelo gerente.',
+          '**Aguardando Pagamento:** boleto ou link de pagamento fornecido pelo administrador.',
+          '**Pago:** comprovante de pagamento anexado pelo gerente.',
+          '**No Pipeline:** contrato finalizado e venda criada na aba Vendas.',
         ],
       },
       {
         subtitle: 'Marcar como Assinado',
-        text: 'Após o cliente assinar o contrato, abra o visualizador e clique em "Assinado". O status é atualizado para "Assinado" e fica registrado no histórico do contrato.',
+        text: 'Após o cliente assinar o contrato, abra o visualizador, faça upload do arquivo assinado e clique em "Confirmar Assinatura". O status avança para "Assinado".',
       },
       {
-        subtitle: 'Enviar contrato ao Pipeline',
-        text: 'Clique em "Enviar ao Pipeline" no visualizador ou diretamente na lista de contratos (ícone de tendência 📈). O sistema cria automaticamente uma prospecção no Pipeline Comercial com os dados do cliente, produto (tipo de contrato), valor total e vendedor responsável, permitindo acompanhar a evolução do negócio.',
+        subtitle: 'Converter do Pipeline para Contratos',
+        text: 'Quando uma negociação do Pipeline envolve um produto de contrato (CONTA GLOBAL, CONTA INTERNACIONAL ou DOLARIZE AQUI), clique no ícone de documento (📜) no card do Pipeline. O sistema cria automaticamente um contrato em rascunho pré-preenchido com os dados do cliente (nome, CPF/CNPJ, telefone, vendedor, valor e produto) e redireciona para a aba Contratos. O negócio no Pipeline é marcado como "Fechado" automaticamente.',
+      },
+      {
+        subtitle: 'Enviar contrato para Vendas',
+        text: 'Após concluir todas as etapas do fluxo do contrato (assinado + pagamento confirmado com comprovante anexado), clique em "Enviar para Vendas" no visualizador. O sistema cria automaticamente uma venda pré-preenchida com os dados do contrato e redireciona para a aba Vendas, onde o gerente pode finalizar os detalhes de comissão e indicadores.',
       },
       {
         subtitle: 'Editar contrato',
