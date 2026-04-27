@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
@@ -88,6 +89,7 @@ function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
 
 export default function Clientes() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filterVendedor, setFilterVendedor] = useState("");
   const [modal, setModal] = useState(null);
@@ -299,6 +301,10 @@ export default function Clientes() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
+                          <button onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })} 
+                            className="p-1.5 hover:bg-blue-50 rounded-lg transition" title="Criar contrato">
+                            <FileText className="w-3.5 h-3.5 text-blue-400" />
+                          </button>
                           <button onClick={() => setModal(c)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />
                           </button>

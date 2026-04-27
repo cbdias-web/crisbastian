@@ -133,7 +133,7 @@ export default function Contratos() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto space-y-5">
+      <div className="max-w-6xl mx-auto space-y-5">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -145,59 +145,30 @@ export default function Contratos() {
           </div>
         </div>
 
-        {/* Layout com sidebar */}
-        <div className="flex gap-4 items-start">
-          {/* Sidebar de clientes draggable */}
-          <ClientesDraggableSidebar
-            user={user}
-            isAdmin={isAdmin}
-            onDragStart={(c) => setClienteArrastado(c)}
-          />
-
-          {/* Conteúdo principal */}
-          <div className="flex-1 min-w-0 space-y-5">
-            {/* Cards de tipo — droppable */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {Object.entries(TIPO_CONFIG).map(([tipo, cfg]) => {
-                const Icon = cfg.icon;
-                const qtd = contratos.filter(c => c.tipo === tipo && (isAdmin || c.created_by === user?.email || c.vendedor_id === user?.id)).length;
-                const isDragOver = dragOverTipo === tipo;
-                return (
-                  <div
-                    key={tipo}
-                    onDragOver={e => { e.preventDefault(); setDragOverTipo(tipo); }}
-                    onDragLeave={() => setDragOverTipo(null)}
-                    onDrop={e => handleDropCliente(e, tipo)}
-                    className="relative"
-                  >
-                    <button
-                      onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
-                      className={`w-full relative rounded-2xl p-5 text-left text-white overflow-hidden transition-all hover:scale-[1.02] hover:shadow-xl ${cfg.color} shadow-md ${isDragOver ? 'ring-4 ring-white/60 scale-[1.04] brightness-110' : ''}`}
-                    >
-                      <div className="absolute right-4 top-4 opacity-10">
-                        <Icon className="w-16 h-16" />
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <FilePlus className="w-4 h-4 opacity-80" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Novo Contrato</span>
-                      </div>
-                      <p className="font-bold text-base leading-tight">{tipo}</p>
-                      <p className="text-xs opacity-60 mt-1 leading-snug">{cfg.desc}</p>
-                      <div className="mt-3 flex items-center gap-1.5">
-                        <span className="text-xs font-semibold opacity-80">{qtd} contrato(s)</span>
-                      </div>
-                      {isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
-                          <div className="bg-white/90 text-gray-800 text-xs font-bold px-4 py-2 rounded-xl shadow">
-                            📄 Soltar para criar contrato
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+        {/* Cards de tipo */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {Object.entries(TIPO_CONFIG).map(([tipo, cfg]) => {
+            const Icon = cfg.icon;
+            const qtd = contratos.filter(c => c.tipo === tipo && (isAdmin || c.created_by === user?.email || c.vendedor_id === user?.id)).length;
+            return (
+              <button key={tipo} onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
+                className={`relative rounded-2xl p-5 text-left text-white overflow-hidden transition-all hover:scale-[1.02] hover:shadow-xl ${cfg.color} shadow-md`}>
+                <div className="absolute right-4 top-4 opacity-10">
+                  <Icon className="w-16 h-16" />
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <FilePlus className="w-4 h-4 opacity-80" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Novo Contrato</span>
+                </div>
+                <p className="font-bold text-base leading-tight">{tipo}</p>
+                <p className="text-xs opacity-60 mt-1 leading-snug">{cfg.desc}</p>
+                <div className="mt-3 flex items-center gap-1.5">
+                  <span className="text-xs font-semibold opacity-80">{qtd} contrato(s)</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
             {/* Filtros */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-center">
@@ -297,8 +268,7 @@ export default function Contratos() {
                 </table>
               </div>
             )}
-          </div>{/* fim conteúdo principal */}
-        </div>{/* fim layout com sidebar */}
+        </div>
       </div>
     </div>
   );
