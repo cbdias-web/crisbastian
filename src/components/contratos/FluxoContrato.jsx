@@ -29,6 +29,7 @@ function statusAnterior(status) {
 
 export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   const [uploading, setUploading] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
   const [linkPagInput, setLinkPagInput] = useState(contrato.link_pagamento || '');
   const [editandoLinkPag, setEditandoLinkPag] = useState(false);
   const [salvandoLinkPag, setSalvandoLinkPag] = useState(false);
@@ -264,7 +265,8 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
             <div className="flex items-center gap-2 flex-wrap">
               <ArquivoAnexado url={contrato.contrato_assinado_url} nome={contrato.contrato_assinado_nome} />
               <UploadBtn label="Substituir" carregando={uploading === 'contrato_assinado_url'}
-                onChange={f => uploadArquivo(f, 'contrato_assinado_url', 'contrato_assinado_nome', null)} small />
+                onChange={f => uploadArquivo(f, 'contrato_assinado_url', 'contrato_assinado_nome', null)} small 
+                isDragOver={dragOver === 'contrato_assinado_url'} />
               <BtnRemover
                 onClick={() => removerArquivo('contrato_assinado_url', 'contrato_assinado_nome',
                   // Se não há mais dados da etapa, volta para 'gerado'
@@ -273,8 +275,16 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
               />
             </div>
           ) : (
-            <UploadBtn label="Anexar contrato assinado" carregando={uploading === 'contrato_assinado_url'}
-              onChange={f => uploadArquivo(f, 'contrato_assinado_url', 'contrato_assinado_nome', null)} />
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver('contrato_assinado_url'); }}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'contrato_assinado_url', 'contrato_assinado_nome', null); }}
+              className={`p-4 rounded-xl border-2 border-dashed transition ${dragOver === 'contrato_assinado_url' ? 'border-emerald-400 bg-emerald-50' : 'border-gray-300 bg-white hover:border-gray-400'}`}
+            >
+              <UploadBtn label="Anexar contrato assinado" carregando={uploading === 'contrato_assinado_url'}
+                onChange={f => uploadArquivo(f, 'contrato_assinado_url', 'contrato_assinado_nome', null)} 
+                isDragOver={dragOver === 'contrato_assinado_url'} />
+            </div>
           )}
         </EtapaCard>
       )}
@@ -328,13 +338,22 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <ArquivoAnexado url={contrato.boleto_url} nome={contrato.boleto_nome} />
                     <UploadBtn label="Substituir" carregando={uploading === 'boleto_url'}
-                      onChange={f => uploadArquivo(f, 'boleto_url', 'boleto_nome', 'aguardando_pagamento')} small />
+                      onChange={f => uploadArquivo(f, 'boleto_url', 'boleto_nome', 'aguardando_pagamento')} small 
+                      isDragOver={dragOver === 'boleto_url'} />
                     <BtnRemover onClick={() => removerArquivo('boleto_url', 'boleto_nome',
                       !contrato.link_pagamento ? 'assinado' : null)} />
                   </div>
                 ) : (
-                  <UploadBtn label="Anexar boleto" carregando={uploading === 'boleto_url'}
-                    onChange={f => uploadArquivo(f, 'boleto_url', 'boleto_nome', 'aguardando_pagamento')} />
+                  <div
+                    onDragOver={e => { e.preventDefault(); setDragOver('boleto_url'); }}
+                    onDragLeave={() => setDragOver(null)}
+                    onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'boleto_url', 'boleto_nome', 'aguardando_pagamento'); }}
+                    className={`p-4 rounded-xl border-2 border-dashed transition ${dragOver === 'boleto_url' ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-white hover:border-gray-400'}`}
+                  >
+                    <UploadBtn label="Anexar boleto" carregando={uploading === 'boleto_url'}
+                      onChange={f => uploadArquivo(f, 'boleto_url', 'boleto_nome', 'aguardando_pagamento')} 
+                      isDragOver={dragOver === 'boleto_url'} />
+                  </div>
                 )}
               </div>
             </div>
@@ -413,8 +432,16 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                   ))}
                 </div>
               </div>
-              <UploadBtn label="Anexar comprovante de pagamento" carregando={uploading === 'comprovante_url'}
-                onChange={f => uploadArquivo(f, 'comprovante_url', 'comprovante_nome', 'pago')} />
+              <div
+                onDragOver={e => { e.preventDefault(); setDragOver('comprovante_url'); }}
+                onDragLeave={() => setDragOver(null)}
+                onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'comprovante_url', 'comprovante_nome', 'pago'); }}
+                className={`p-4 rounded-xl border-2 border-dashed transition ${dragOver === 'comprovante_url' ? 'border-violet-400 bg-violet-50' : 'border-gray-300 bg-white hover:border-gray-400'}`}
+              >
+                <UploadBtn label="Anexar comprovante de pagamento" carregando={uploading === 'comprovante_url'}
+                  onChange={f => uploadArquivo(f, 'comprovante_url', 'comprovante_nome', 'pago')} 
+                  isDragOver={dragOver === 'comprovante_url'} />
+              </div>
             </div>
           )}
         </EtapaCard>
@@ -474,13 +501,28 @@ function ArquivoAnexado({ url, nome }) {
   );
 }
 
-function UploadBtn({ label, carregando, onChange, small }) {
+function UploadBtn({ label, carregando, onChange, small, isDragOver }) {
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.files[0]) onChange(e.dataTransfer.files[0]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <label className={`inline-flex items-center gap-2 cursor-pointer font-semibold rounded-xl transition ${
-      small
-        ? 'text-[11px] px-3 py-1.5 border border-gray-200 text-gray-500 hover:bg-gray-100'
-        : 'text-xs px-4 py-2.5 bg-[#1a3150] text-white hover:opacity-90 shadow-sm'
-    } ${carregando ? 'opacity-60 pointer-events-none' : ''}`}>
+    <label
+      className={`inline-flex items-center gap-2 cursor-pointer font-semibold rounded-xl transition ${
+        small
+          ? 'text-[11px] px-3 py-1.5 border border-gray-200 text-gray-500 hover:bg-gray-100'
+          : 'text-xs px-4 py-2.5 bg-[#1a3150] text-white hover:opacity-90 shadow-sm'
+      } ${carregando ? 'opacity-60 pointer-events-none' : ''} ${isDragOver ? 'ring-2 ring-blue-400 brightness-110' : ''}`}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+    >
       {carregando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
       {carregando ? 'Enviando...' : label}
       <input type="file" className="hidden" onChange={e => { if (e.target.files[0]) onChange(e.target.files[0]); }} />
