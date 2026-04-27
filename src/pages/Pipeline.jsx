@@ -153,6 +153,8 @@ export default function Pipeline() {
   const [aba, setAba] = useState('pipeline'); // 'pipeline' | 'parcelas'
   const [showParcelasModal, setShowParcelasModal] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
+  const [editandoProduto, setEditandoProduto] = useState(null); // negócio_id que está sendo editado
+  const [produtoTemp, setProdutoTemp] = useState('');
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -322,6 +324,17 @@ export default function Pipeline() {
     setEditing(n);
     setForm({ ...EMPTY, ...n, valor_estimado: n.valor_estimado || '' });
     setShowForm(true);
+  };
+
+  const salvarProdutoEditado = async (negocioId, novoProduto) => {
+    try {
+      await base44.entities.Pipeline.update(negocioId, { produto: novoProduto });
+      queryClient.invalidateQueries(['pipeline']);
+      setEditandoProduto(null);
+      toast.success('Produto atualizado!');
+    } catch (err) {
+      toast.error('Erro ao atualizar: ' + err.message);
+    }
   };
 
   const openNew = () => {
@@ -887,15 +900,47 @@ export default function Pipeline() {
                                              : <ShoppingCart className="w-3 h-3" />}
                                        </button>
                                       )}
-                                      <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
+                                      <button onClick={() => { setEditandoProduto(n.id); setProdutoTemp(n.produto || ''); }} title="Editar produto" className="p-0.5 text-gray-400 hover:text-amber-600">
                                         <Pencil className="w-3 h-3" />
+                                      </button>
+                                      <button onClick={() => openEdit(n)} title="Editar completo" className="p-0.5 text-gray-400 hover:text-blue-600">
+                                        <Settings className="w-3 h-3" />
                                       </button>
                                       <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
                                         <Trash2 className="w-3 h-3" />
                                       </button>
                                     </div>
                                   </div>
-                                  <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
+                                  {editandoProduto === n.id ? (
+                                    <div className="mt-1 flex gap-1">
+                                      <input
+                                        type="text"
+                                        value={produtoTemp}
+                                        onChange={e => setProdutoTemp(e.target.value)}
+                                        list="produtos-list-inline"
+                                        placeholder="Produto"
+                                        autoFocus
+                                        className="flex-1 px-2 py-1 text-[10px] border border-amber-300 rounded-lg focus:outline-none focus:border-amber-600 bg-amber-50"
+                                      />
+                                      <datalist id="produtos-list-inline">
+                                        {produtos.map(p => <option key={p.id} value={p.nome} />)}
+                                      </datalist>
+                                      <button
+                                        onClick={() => salvarProdutoEditado(n.id, produtoTemp)}
+                                        className="px-2 py-1 text-[10px] font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition"
+                                      >
+                                        ✓
+                                      </button>
+                                      <button
+                                        onClick={() => setEditandoProduto(null)}
+                                        className="px-2 py-1 text-[10px] font-semibold bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
+                                  )}
                                   {n.valor_estimado > 0 && <p className="text-[10px] font-bold text-[#1a3150] mt-1">{fmtVal(n.valor_estimado)}</p>}
                                   {n.data_prevista && <p className={`text-[10px] mt-0.5 ${isParcela ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>Venc: {fmtDate(n.data_prevista)}</p>}
                                   {isAdmin && n.vendedor_nome && <p className="text-[10px] text-blue-500 mt-0.5">{n.vendedor_nome}</p>}
