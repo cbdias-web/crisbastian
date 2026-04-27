@@ -264,6 +264,9 @@ export default function AssistenteFloating() {
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [mensagensPendentes, setMensagensPendentes] = useState([]);
+  const [showPostSuggestions, setShowPostSuggestions] = useState(false);
+  const [postSuggestions, setPostSuggestions] = useState([]);
+  const inactivityTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const unsubscribeRef = useRef(null);
@@ -334,6 +337,8 @@ export default function AssistenteFloating() {
   }, [messages, sending]);
 
   const startFreshConversation = async () => {
+    if (inactivityTimerRef.current) { clearTimeout(inactivityTimerRef.current); inactivityTimerRef.current = null; }
+    setShowPostSuggestions(false);
     if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
     const conv = await base44.agents.createConversation({
       agent_name: 'assistente_treinamentos',
@@ -361,11 +366,35 @@ export default function AssistenteFloating() {
     localStorage.removeItem(LAST_ACTIVITY_KEY);
   };
 
+  const INACTIVITY_SUGGESTIONS_MS = 5 * 60 * 1000; // 5 minutos
+
+  const schedulePostSuggestions = () => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    setShowPostSuggestions(false);
+    inactivityTimerRef.current = setTimeout(() => {
+      const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
+      setPostSuggestions(shuffled);
+      setShowPostSuggestions(true);
+    }, INACTIVITY_SUGGESTIONS_MS);
+  };
+
+  // Agenda sugestões após cada resposta completa do assistente
+  useEffect(() => {
+    const lastMsg = messages[messages.length - 1];
+    if (!isTyping && messages.length >= 2 && lastMsg?.role === 'assistant' && lastMsg?.content) {
+      schedulePostSuggestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, isTyping]);
+
   const send = async (text) => {
     const msg = (text || input).trim();
     if (!msg || sending) return;
     setInput('');
     setSending(true);
+    // Cancela timer de sugestões ao enviar nova mensagem
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    setShowPostSuggestions(false);
     let conv = conversation;
     if (!conv) {
       conv = await base44.agents.createConversation({ agent_name: 'assistente_treinamentos', metadata: { name: 'Chat' } });
@@ -560,25 +589,25 @@ export default function AssistenteFloating() {
             })}
             {!pdfDownloaded && <GlobalPdfButton messages={messages} onDownloaded={() => setPdfDownloaded(true)} />}
             {isTyping && <TypingIndicator />}
-            {/* Post-response suggestions: após pelo menos 1 troca completa */}
-            {!isTyping && messages.length >= 2 && messages[messages.length - 1]?.role === 'assistant' && messages[messages.length - 1]?.content && (() => {
-              const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
-              return (
-                <div className="mt-3 border-t border-gray-100 pt-3 space-y-1.5">
-                  <p className="text-[10px] text-gray-400 font-medium px-1">Quer explorar outro assunto?</p>
-                  {shuffled.map(s => (
-                    <button key={s} onClick={() => send(s)}
-                      className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
-                      {s}
-                    </button>
-                  ))}
-                  <button onClick={newChat}
-                    className="w-full text-center text-[11px] py-1.5 text-gray-400 hover:text-gray-600 transition">
-                    ou encerrar esta conversa e começar uma nova
+            {/* Post-response suggestions: só aparecem após 5 min de inatividade */}
+            {showPostSuggestions && !isTyping && (
+              <div className="mt-3 border-t border-gray-100 pt-3 space-y-1.5">
+                <p className="text-xs text-gray-500 font-medium px-1 leading-relaxed">
+                  {userName ? `${userName.split(' ')[0]}, precisa de mais alguma informação sobre o assunto que estamos tratando?` : 'Precisa de mais alguma informação sobre o assunto que estamos tratando?'}
+                </p>
+                <p className="text-[10px] text-gray-400 px-1 mb-1">Ou quer explorar outro assunto?</p>
+                {postSuggestions.map(s => (
+                  <button key={s} onClick={() => send(s)}
+                    className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
+                    {s}
                   </button>
-                </div>
-              );
-            })()}
+                ))}
+                <button onClick={newChat}
+                  className="w-full text-center text-[11px] py-1.5 text-gray-400 hover:text-gray-600 transition">
+                  ou encerrar esta conversa e começar uma nova
+                </button>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
