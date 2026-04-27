@@ -124,7 +124,6 @@ export default function Layout({ children, currentPageName }) {
   // BLOCO COMERCIAL
   const menuComercial = [
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
-    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
@@ -139,6 +138,7 @@ export default function Layout({ children, currentPageName }) {
 
   // BLOCO APOIO
   const menuApoio = [
+    { name: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
     { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
