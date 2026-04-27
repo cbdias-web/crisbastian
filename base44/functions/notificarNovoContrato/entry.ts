@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     // Buscar todos os admins
     const usuarios = await base44.asServiceRole.entities.User.list();
-    const admins = usuarios.filter(u => u.role === 'admin' && u.email);
+    const admins = usuarios.filter(u => (u.role === 'admin' || u.permissao_admin === true) && u.email);
 
     if (admins.length === 0) {
       console.log('Nenhum admin encontrado para notificar.');

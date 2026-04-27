@@ -431,6 +431,9 @@ export default function Layout({ children, currentPageName }) {
               <button onClick={() => setAdminMenuOpen(prev => !prev)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
                 <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
+                {!adminMenuOpen && totalPendentes > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{totalPendentes}</span>
+                )}
                 <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
               {adminMenuOpen && adminMenuItems.map((item) => {
