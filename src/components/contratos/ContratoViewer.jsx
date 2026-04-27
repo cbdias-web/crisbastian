@@ -62,14 +62,24 @@ export default function ContratoViewer({ contrato, onBack, onUpdate }) {
     setGerando(true);
     try {
       const res = await base44.functions.invoke('gerarContratosPDF', { contrato_id: contrato.id });
-      const html = res.data;
-      const janela = window.open('', '_blank');
-      janela.document.write(html);
-      janela.document.close();
-      setTimeout(() => janela.print(), 600);
+      const { pdf_base64, filename } = res.data;
+
+      // Converter base64 → Blob → download
+      const binary = atob(pdf_base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || `contrato_${contrato.tipo.replace(/ /g, '_')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+
       await base44.entities.Contrato.update(contrato.id, { status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
       queryClient.invalidateQueries(['contratos']);
-      toast.success('PDF gerado! Use Imprimir > Salvar como PDF.');
+      toast.success('PDF preenchido e baixado com sucesso!');
     } catch (err) {
       toast.error('Erro ao gerar PDF: ' + err.message);
     }
