@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, TrendingUp, Loader2 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, TrendingUp, Loader2, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ContratoForm from '@/components/contratos/ContratoForm';
@@ -103,6 +103,7 @@ export default function Contratos() {
     return (
       <ContratoViewer
         contrato={contratoAtivo}
+        isAdmin={isAdmin}
         onBack={() => { setView('lista'); setContratoAtivo(null); }}
         onUpdate={(c) => { setContratoAtivo(c); queryClient.invalidateQueries(['contratos']); }}
       />
@@ -207,7 +208,14 @@ export default function Contratos() {
                       <td className="px-4 py-3 font-semibold text-[#1a3150]">{fmtVal(c.valor_total)}</td>
                       <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
                       <td className="px-4 py-3 min-w-[110px]">
-                        <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
+                          {!c.link_assinatura && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-amber-600 whitespace-nowrap">
+                              <Link2 className="w-2.5 h-2.5" /> Link pendente
+                            </span>
+                          )}
+                        </div>
                       </td>
                       {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
                       <td className="px-4 py-3">

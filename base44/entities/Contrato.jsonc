@@ -42,6 +42,10 @@
       "type": "string",
       "description": "URL do PDF gerado"
     },
+    "link_assinatura": {
+      "type": "string",
+      "description": "Link de assinatura online (preenchido pelo administrador)"
+    },
     "nome": {
       "type": "string",
       "description": "Nome completo / Raz\u00e3o Social"

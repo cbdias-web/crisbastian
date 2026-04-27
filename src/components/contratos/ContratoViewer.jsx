@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, TrendingUp, Edit2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, TrendingUp, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoForm from './ContratoForm';
 
@@ -18,11 +18,27 @@ const STATUS_CONFIG = {
   no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-100 text-purple-700' },
 };
 
-export default function ContratoViewer({ contrato, onBack, onUpdate }) {
+export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) {
   const [editando, setEditando] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [enviandoPipeline, setEnviandoPipeline] = useState(false);
+  const [editandoLink, setEditandoLink] = useState(false);
+  const [linkInput, setLinkInput] = useState(contrato.link_assinatura || '');
+  const [salvandoLink, setSalvandoLink] = useState(false);
   const queryClient = useQueryClient();
+
+  const salvarLink = async () => {
+    setSalvandoLink(true);
+    try {
+      const updated = await base44.entities.Contrato.update(contrato.id, { link_assinatura: linkInput.trim() });
+      onUpdate({ ...contrato, link_assinatura: linkInput.trim() });
+      setEditandoLink(false);
+      toast.success('Link de assinatura salvo!');
+    } catch (err) {
+      toast.error('Erro ao salvar link: ' + err.message);
+    }
+    setSalvandoLink(false);
+  };
   const cor = TIPO_COLOR[contrato.tipo] || '#0f1e35';
 
   const marcarAssinado = useMutation({
@@ -150,6 +166,62 @@ export default function ContratoViewer({ contrato, onBack, onUpdate }) {
             {enviandoPipeline ? <Loader2 className="w-5 h-5 animate-spin" /> : <TrendingUp className="w-5 h-5" />}
             {enviandoPipeline ? 'Enviando...' : 'Enviar ao Pipeline'}
           </button>
+        </div>
+
+        {/* Link de Assinatura */}
+        <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden mb-5">
+          <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-amber-600" />
+              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Link de Assinatura Online</p>
+            </div>
+            {!editandoLink && (
+              <button onClick={() => { setEditandoLink(true); setLinkInput(contrato.link_assinatura || ''); }}
+                className="text-xs text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition">
+                <Edit2 className="w-3 h-3" /> {contrato.link_assinatura ? 'Editar' : 'Adicionar link'}
+              </button>
+            )}
+          </div>
+          <div className="p-5">
+            {editandoLink ? (
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={linkInput}
+                  onChange={e => setLinkInput(e.target.value)}
+                  placeholder="https://..."
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400"
+                  autoFocus
+                />
+                <button onClick={salvarLink} disabled={salvandoLink}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition disabled:opacity-50">
+                  {salvandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  Salvar
+                </button>
+                <button onClick={() => setEditandoLink(false)}
+                  className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl transition">
+                  Cancelar
+                </button>
+              </div>
+            ) : contrato.link_assinatura ? (
+              <div className="flex items-center gap-3">
+                <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 text-sm text-blue-600 hover:text-blue-800 underline truncate flex items-center gap-1.5">
+                  <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                  {contrato.link_assinatura}
+                </a>
+                <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                  <Copy className="w-3 h-3" /> Copiar
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-amber-600 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                Aguardando administrador adicionar o link de assinatura online.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Dados do contrato */}
