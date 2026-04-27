@@ -170,105 +170,104 @@ export default function Contratos() {
           })}
         </div>
 
-            {/* Filtros */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-center">
-              <div className="relative flex-1 min-w-48">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou CPF/CNPJ..."
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-              </div>
-              <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-                className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
-                <option value="Todos">Todos os tipos</option>
-                {Object.keys(TIPO_CONFIG).map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-                className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
-                <option value="Todos">Todos os status</option>
-                {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-              </select>
-              <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
-            </div>
-
-            {/* Lista */}
-            {contratosFiltrados.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-center">
-                <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">Nenhum contrato encontrado</p>
-                <p className="text-xs text-gray-300 mt-1">Clique em um dos tipos acima para criar seu primeiro contrato</p>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                      <th className="px-4 py-3 text-left font-semibold">Cliente</th>
-                      <th className="px-4 py-3 text-left font-semibold">Tipo</th>
-                      <th className="px-4 py-3 text-left font-semibold">Valor Total</th>
-                      <th className="px-4 py-3 text-left font-semibold">Data</th>
-                      <th className="px-4 py-3 text-left font-semibold">Status</th>
-                      {isAdmin && <th className="px-4 py-3 text-left font-semibold">Vendedor</th>}
-                      <th className="px-4 py-3 text-center font-semibold">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {contratosFiltrados.map(c => {
-                      const cfg = TIPO_CONFIG[c.tipo];
-                      const stCfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.rascunho;
-                      return (
-                        <tr key={c.id} className="hover:bg-gray-50 transition">
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-gray-800">{c.nome || '—'}</p>
-                            <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>
-                          </td>
-                          <td className="px-4 py-3 min-w-[130px]">
-                            <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${cfg?.light || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                              {c.tipo}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-[#1a3150]">{fmtVal(c.valor_total)}</td>
-                          <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
-                          <td className="px-4 py-3 min-w-[110px]">
-                            <div className="flex flex-col gap-1">
-                              <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
-                              {!c.link_assinatura && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-amber-600 whitespace-nowrap">
-                                  <Link2 className="w-2.5 h-2.5" /> Link pendente
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-1">
-                              <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}
-                                className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
-                                className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => enviarPipeline(c)}
-                                disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
-                                className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition disabled:opacity-30" title="Enviar ao Pipeline">
-                                {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                              </button>
-                              <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
-                                className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {/* Filtros */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-48">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou CPF/CNPJ..."
+              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+          </div>
+          <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
+            className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+            <option value="Todos">Todos os tipos</option>
+            {Object.keys(TIPO_CONFIG).map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+            className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+            <option value="Todos">Todos os status</option>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
         </div>
+
+        {/* Lista */}
+        {contratosFiltrados.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-center">
+            <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">Nenhum contrato encontrado</p>
+            <p className="text-xs text-gray-300 mt-1">Clique em um dos tipos acima para criar seu primeiro contrato</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left font-semibold">Cliente</th>
+                  <th className="px-4 py-3 text-left font-semibold">Tipo</th>
+                  <th className="px-4 py-3 text-left font-semibold">Valor Total</th>
+                  <th className="px-4 py-3 text-left font-semibold">Data</th>
+                  <th className="px-4 py-3 text-left font-semibold">Status</th>
+                  {isAdmin && <th className="px-4 py-3 text-left font-semibold">Vendedor</th>}
+                  <th className="px-4 py-3 text-center font-semibold">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {contratosFiltrados.map(c => {
+                  const cfg = TIPO_CONFIG[c.tipo];
+                  const stCfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.rascunho;
+                  return (
+                    <tr key={c.id} className="hover:bg-gray-50 transition">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-800">{c.nome || '—'}</p>
+                        <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>
+                      </td>
+                      <td className="px-4 py-3 min-w-[130px]">
+                        <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${cfg?.light || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                          {c.tipo}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-[#1a3150]">{fmtVal(c.valor_total)}</td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
+                      <td className="px-4 py-3 min-w-[110px]">
+                        <div className="flex flex-col gap-1">
+                          <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
+                          {!c.link_assinatura && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-semibold text-amber-600 whitespace-nowrap">
+                              <Link2 className="w-2.5 h-2.5" /> Link pendente
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}
+                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
+                            className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => enviarPipeline(c)}
+                            disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
+                            className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition disabled:opacity-30" title="Enviar ao Pipeline">
+                            {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                          </button>
+                          <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
+                            className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
