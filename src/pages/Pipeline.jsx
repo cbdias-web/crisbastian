@@ -401,13 +401,50 @@ export default function Pipeline() {
     const ehContrato = PRODUTOS_CONTRATO.includes(n.produto);
 
     if (ehContrato) {
-      if (!confirm(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Você será direcionado para a aba Contratos para iniciar o processo.`)) return;
+      if (!confirm(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Um contrato em rascunho será criado e você será direcionado para a aba Contratos.`)) return;
       setConvertendo(n.id);
       try {
+        // Buscar dados do cliente para pré-preencher o contrato
+        let clienteData = {};
+        if (n.cliente_id) {
+          try {
+            const c = await base44.entities.Cliente.get(n.cliente_id);
+            clienteData = {
+              nome: c.nome || n.cliente_nome || '',
+              cpf_cnpj: c.cpf_cnpj || n.cliente_cpf_cnpj || '',
+              telefone: c.telefone || n.cliente_telefone || '',
+              email: c.email || '',
+              cidade: c.cidade || '',
+              estado: c.estado || '',
+              cliente_id: c.id,
+            };
+          } catch {}
+        }
+
+        // Criar contrato em rascunho com dados do pipeline
+        await base44.entities.Contrato.create({
+          tipo: n.produto,
+          nome: clienteData.nome || n.cliente_nome || '',
+          cpf_cnpj: clienteData.cpf_cnpj || n.cliente_cpf_cnpj || '',
+          telefone: clienteData.telefone || n.cliente_telefone || '',
+          email: clienteData.email || '',
+          cidade: clienteData.cidade || '',
+          estado: clienteData.estado || '',
+          cliente_id: clienteData.cliente_id || n.cliente_id || '',
+          pipeline_id: n.id,
+          vendedor_id: n.vendedor_id || '',
+          vendedor_nome: n.vendedor_nome || '',
+          valor_total: n.valor_estimado || 0,
+          valor_adesao: n.valor_estimado || 0,
+          data_contrato: new Date().toISOString().split('T')[0],
+          status: 'rascunho',
+          observacoes: n.descricao || '',
+        });
+
         // Marca o pipeline como Fechado
         await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
         queryClient.invalidateQueries(['pipeline']);
-        toast.success('Redirecionando para Contratos...');
+        toast.success('Contrato criado! Redirecionando para Contratos...');
         setTimeout(() => navigate('/Contratos'), 1000);
       } catch (err) {
         toast.error('Erro: ' + err.message);
