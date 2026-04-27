@@ -104,8 +104,31 @@ const sections = [
         text: 'Se a venda possuir link do Bitrix, o ícone de link externo aparecerá na linha. Clique para abrir o registro no CRM.',
       },
       {
-        subtitle: 'Jornada completa de uma venda — do registro ao pagamento',
-        text: 'Entender o ciclo completo é fundamental para garantir que comissões, metas e relatórios estejam sempre corretos.',
+        subtitle: 'Dois caminhos para registrar uma venda',
+        text: 'A plataforma possui dois fluxos distintos de geração de venda, dependendo do produto negociado:',
+      },
+      {
+        subtitle: 'Caminho A — Venda direta (produtos sem contrato)',
+        steps: [
+          'Use este caminho para produtos que NÃO requerem contrato formal (ex: produtos avulsos, serviços).',
+          'Acesse Vendas > clique em Nova Venda.',
+          'Selecione o Produto, Vendedor, Data e preencha os dados do cliente.',
+          'Informe o Valor, Forma de Pagamento, Indicadores e parcelas (se houver).',
+          'Clique em Salvar — comissões, metas e parcelas são gerados automaticamente.',
+        ],
+      },
+      {
+        subtitle: 'Caminho B — Venda via Contrato (CONTA GLOBAL, CONTA INTERNACIONAL, DOLARIZE AQUI)',
+        steps: [
+          'Use este caminho para os três produtos que exigem contrato formal.',
+          'Acesse Contratos > clique no card do tipo desejado e preencha os dados do cliente.',
+          'Salve o contrato — o sistema notifica automaticamente os administradores.',
+          'Aguarde o administrador adicionar o link de assinatura online.',
+          'Encaminhe o PDF ao cliente para assinatura; anexe o arquivo assinado no sistema.',
+          'O administrador adiciona o boleto ou link de pagamento; gerente anexa o comprovante ao receber.',
+          'Com todas as etapas concluídas, clique em "Enviar para Vendas" no visualizador do contrato.',
+          'Uma venda pré-preenchida é criada automaticamente — complete comissões e indicadores em Vendas.',
+        ],
       },
       {
         subtitle: 'Etapa 1 – Pré-requisitos antes de registrar',
@@ -114,10 +137,11 @@ const sections = [
           '**Vendedor cadastrado** em Vendedores com percentual de comissão definido.',
           '**Indicadores cadastrados** em Indicadores, caso haja espelhamento na venda.',
           '**Meta do mês configurada** em Metas para que o progresso seja exibido corretamente.',
+          '**Para produtos de contrato:** o fluxo começa em Contratos, não em Vendas — veja Caminho B acima.',
         ],
       },
       {
-        subtitle: 'Etapa 2 – Registro da venda passo a passo',
+        subtitle: 'Etapa 2 – Registro da venda passo a passo (Caminho A)',
         steps: [
           'Acesse Vendas > clique em Nova Venda.',
           'Selecione o Produto (apenas ativos aparecem na lista).',
@@ -164,6 +188,7 @@ const sections = [
       {
         subtitle: 'Implicações e cuidados importantes',
         items: [
+          '**Produtos CONTA GLOBAL, CONTA INTERNACIONAL e DOLARIZE AQUI sempre seguem o fluxo de Contratos** — nunca devem ser lançados diretamente em Vendas sem passar pelo módulo de Contratos.',
           '**Excluir uma venda remove todas as comissões vinculadas** (vendedor e indicadores). Use com cuidado.',
           '**Editar o valor de uma venda recalcula as comissões automaticamente.** Confira os valores antes de salvar.',
           '**O percentual definido na venda prevalece** sobre o percentual padrão cadastrado no vendedor.',
@@ -422,20 +447,41 @@ const sections = [
     border: 'border-red-200',
     content: [
       {
+        subtitle: 'Tipos de notificação',
+        items: [
+          '**Espelhamento acima de 30%:** disparada quando o total de indicadores em uma venda ultrapassa 30%. Requer aprovação do administrador antes de concluir o registro.',
+          '**Novo contrato criado:** disparada automaticamente sempre que um gerente salva um contrato (Conta Global, Conta Internacional ou Dolarize Aqui). Informa os dados do contrato e solicita que o admin adicione o link de assinatura online.',
+        ],
+      },
+      {
         subtitle: 'Alerta de espelhamento acima de 30%',
         text: 'Quando o percentual total de indicadores em uma venda ultrapassa 30%, o sistema bloqueia o registro e envia uma notificação automática por e-mail para todos os administradores.',
       },
       {
-        subtitle: 'Página de Notificações',
-        text: 'Administradores têm acesso ao menu "Notificações" onde podem visualizar, aprovar ou rejeitar as solicitações pendentes. O ícone na barra lateral exibe um badge vermelho com o número de pendências.',
+        subtitle: 'Notificação de novo contrato',
+        text: 'Ao salvar um contrato, o sistema dispara três alertas simultâneos para todos os administradores: (1) mensagem no Jarvis com os dados completos do contrato, (2) card na aba "Notificações" da plataforma com botão "Marcar como resolvido", e (3) e-mail com resumo e instrução de ação — adicionar o link de assinatura online no visualizador do contrato.',
       },
       {
-        subtitle: 'Fluxo de autorização',
+        subtitle: 'Página de Notificações',
+        text: 'Administradores têm acesso ao menu "Notificações" onde podem visualizar, aprovar ou rejeitar as solicitações pendentes. O ícone na barra lateral exibe um badge vermelho com o número de pendências — incluindo notificações de novos contratos aguardando link de assinatura.',
+      },
+      {
+        subtitle: 'Fluxo de autorização — espelhamento',
         steps: [
           'Vendedor tenta registrar venda com espelhamento > 30%.',
           'Sistema envia notificação por e-mail aos administradores.',
           'Administrador acessa "Notificações" e aprova ou rejeita.',
           'Vendedor pode então registrar a venda normalmente.',
+        ],
+      },
+      {
+        subtitle: 'Fluxo de ação — novo contrato',
+        steps: [
+          'Gerente salva um novo contrato.',
+          'Administrador recebe alerta no Jarvis, em Notificações e por e-mail.',
+          'Administrador acessa o contrato, abre o visualizador e adiciona o link de assinatura online.',
+          'Gerente é notificado (link fica visível no visualizador) e encaminha ao cliente para assinar.',
+          'Marcar a notificação como "Resolvido" ao concluir a ação.',
         ],
       },
     ],
@@ -525,7 +571,11 @@ const sections = [
     content: [
       {
         subtitle: 'O que é "Meus Clientes"?',
-        text: 'Menu para visualizar, gerenciar e interagir com sua carteira de clientes e leads. Permite registro de interações diárias, acompanhamento de próximos contatos e conversão de leads em clientes cativos.',
+        text: 'Menu para visualizar, gerenciar e interagir com sua carteira de clientes e leads. Permite registro de interações diárias, acompanhamento de próximos contatos e conversão de leads em clientes cativos. Clientes também são adicionados automaticamente à carteira quando um contrato é salvo pelo gerente responsável.',
+      },
+      {
+        subtitle: 'Cadastro automático de cliente via Contrato',
+        text: 'Ao salvar um contrato (Conta Global, Conta Internacional ou Dolarize Aqui), o sistema verifica automaticamente se o CPF/CNPJ do cliente já existe na carteira. Se não existir, cria o cadastro em "Meus Clientes" vinculado ao gerente que criou o contrato — sem necessidade de cadastro manual.',
       },
       {
         subtitle: 'Criar novo lead/prospect manualmente',
@@ -890,8 +940,16 @@ const sections = [
         text: 'Passe o mouse sobre o card no kanban e clique no ícone de lápis (✏️) para abrir o formulário de edição com todos os campos preenchidos.',
       },
       {
-        subtitle: 'Converter prospecção em venda',
-        text: 'Quando uma negociação for fechada, clique no ícone de carrinho (🛒) no card da prospecção. O sistema cria automaticamente um rascunho de venda com os dados do pipeline (produto, cliente, valor, vendedor) e redireciona para a página de Vendas, onde você pode completar as informações de comissões, espelhamentos, forma de pagamento e outros detalhes.',
+        subtitle: 'Converter prospecção: dois caminhos dependendo do produto',
+        text: 'O comportamento ao clicar no ícone de conversão no kanban varia conforme o produto da prospecção:',
+      },
+      {
+        subtitle: 'Converter em Venda (produtos sem contrato)',
+        text: 'Para produtos que não exigem contrato, clique no ícone de carrinho (🛒) no card da prospecção. O sistema cria um rascunho de venda pré-preenchido e redireciona para Vendas para completar comissões, indicadores e forma de pagamento.',
+      },
+      {
+        subtitle: 'Converter em Contrato (CONTA GLOBAL, CONTA INTERNACIONAL, DOLARIZE AQUI)',
+        text: 'Para esses três produtos, clique no ícone de documento (📜) no card. O sistema cria automaticamente um contrato em rascunho pré-preenchido com dados do cliente (nome, CPF/CNPJ, telefone, vendedor, valor, produto) e redireciona para a aba Contratos. O negócio no Pipeline é marcado como "Fechado" automaticamente. A partir daí, siga o fluxo completo do módulo de Contratos até chegar em "Enviar para Vendas".',
       },
       {
         subtitle: 'Filtros e busca',
@@ -913,6 +971,15 @@ const sections = [
       {
         subtitle: 'Relatório PDF do Pipeline',
         text: 'Clique em "Relatório PDF" para gerar um documento com todos os negócios filtrados, incluindo KPIs, tabela detalhada por negócio e data de geração. O documento abre para impressão diretamente no navegador.',
+      },
+      {
+        subtitle: 'Integração Pipeline ↔ Contratos ↔ Vendas',
+        items: [
+          '**Pipeline → Contratos:** ao converter uma prospecção com produto de contrato, um contrato em rascunho é criado automaticamente.',
+          '**Contratos → Vendas:** após concluir todas as etapas do contrato (assinatura + pagamento), "Enviar para Vendas" gera a venda final.',
+          '**Vendas → Pipeline (parcelas):** ao registrar uma venda parcelada, as parcelas do saldo restante aparecem automaticamente como cards no Pipeline para acompanhamento de recebimento.',
+          '**Pipeline → Vendas (parcelas):** ao registrar o recebimento de uma parcela no Pipeline, uma venda é criada para o mês corrente com comissões calculadas.',
+        ],
       },
     ],
   },
