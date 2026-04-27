@@ -959,7 +959,7 @@ const sections = [
     content: [
       {
         subtitle: 'O que é o módulo de Contratos?',
-        text: 'O módulo de Contratos permite gerar, gerenciar e acompanhar contratos de clientes diretamente na plataforma. Estão disponíveis três tipos: Conta Global, Conta Internacional e Dolarize Aqui. O sistema preenche automaticamente um PDF com os dados do contrato e salva o cliente na carteira do gerente responsável.',
+        text: 'O módulo de Contratos permite gerar, gerenciar e acompanhar contratos de clientes diretamente na plataforma. Estão disponíveis três tipos: Conta Global, Conta Internacional e Dolarize Aqui. O sistema preenche automaticamente um PDF com os dados do contrato, salva o cliente na carteira do gerente e notifica os administradores automaticamente.',
       },
       {
         subtitle: 'Tipos de contrato disponíveis',
@@ -978,7 +978,16 @@ const sections = [
           'Preencha as abas: Dados Pessoais, Endereço, Financeiro e Obs. & Data.',
           'Na aba Financeiro, informe: Valor de Adesão, Valor da Parcela e número de parcelas — o Valor Total é calculado automaticamente.',
           'Clique em "Salvar Contrato". O cliente é criado automaticamente na sua carteira (Meus Clientes) se ainda não existir.',
+          'Ao salvar, os administradores são notificados automaticamente via Jarvis, aba de Notificações e e-mail para que adicionem o link de assinatura online.',
         ],
+      },
+      {
+        subtitle: 'Notificação automática aos administradores',
+        text: 'Sempre que um novo contrato é criado, o sistema dispara automaticamente três notificações para todos os administradores: (1) mensagem no Jarvis com os dados do contrato, (2) card na aba "Notificações" da plataforma com botão "Marcar como resolvido", e (3) e-mail com resumo completo e instrução de ação.',
+      },
+      {
+        subtitle: 'Link de assinatura online',
+        text: 'Após receber a notificação, o administrador deve acessar o contrato, abrir o visualizador e adicionar o link de assinatura online no painel destacado em amarelo. O gerente verá o link disponível no visualizador e poderá copiá-lo ou acessá-lo diretamente para encaminhar ao cliente. Contratos sem link exibem o aviso "Link pendente" na listagem.',
       },
       {
         subtitle: 'Gerar o PDF do contrato',
