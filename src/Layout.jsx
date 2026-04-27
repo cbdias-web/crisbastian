@@ -155,7 +155,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
     { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
     { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
-    { name: 'Treinamentos (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
+    { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
     { name: 'Relatório Comissões', icon: FileText, page: 'RelatorioComissoes' },
     { name: 'Prospecção', icon: Users, page: 'Leads' },
     { name: 'Metas', icon: Target, page: 'Metas' },
