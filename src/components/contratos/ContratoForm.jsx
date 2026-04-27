@@ -37,11 +37,13 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
+      const vendedorId = user?.id || '';
+      const vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
       const payload = {
         ...data,
         tipo,
-        vendedor_id: user?.id || '',
-        vendedor_nome: user?.nome_tratamento || user?.full_name || user?.email || '',
+        vendedor_id: vendedorId,
+        vendedor_nome: vendedorNome,
         valor_adesao: parseFloat(data.valor_adesao) || 0,
         valor_parcela: parseFloat(data.valor_parcela) || 0,
         num_parcelas: parseInt(data.num_parcelas) || 1,
@@ -51,10 +53,42 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         prazo_meses: parseInt(data.prazo_meses) || 0,
         dia_vencimento: parseInt(data.dia_vencimento) || 0,
       };
+
+      let contrato;
       if (contratoExistente) {
-        return base44.entities.Contrato.update(contratoExistente.id, { ...payload, status: contratoExistente.status });
+        contrato = await base44.entities.Contrato.update(contratoExistente.id, { ...payload, status: contratoExistente.status });
+      } else {
+        contrato = await base44.entities.Contrato.create({ ...payload, status: 'rascunho' });
       }
-      return base44.entities.Contrato.create({ ...payload, status: 'rascunho' });
+
+      // Salvar cliente na carteira do gerente se não existir ainda
+      if (data.nome && data.cpf_cnpj && !data.cliente_id) {
+        try {
+          const existentes = await base44.entities.Cliente.filter({ cpf_cnpj: data.cpf_cnpj });
+          if (existentes.length === 0) {
+            const novoCliente = await base44.entities.Cliente.create({
+              nome: data.nome,
+              cpf_cnpj: data.cpf_cnpj,
+              email: data.email || '',
+              telefone: data.telefone || '',
+              cidade: data.cidade || '',
+              estado: data.estado || '',
+              vendedor_id: vendedorId,
+              vendedor_nome: vendedorNome,
+              observacao: `Cliente gerado pelo contrato ${tipo}.`,
+              origem: 'nativo',
+            });
+            // Atualizar o contrato com o cliente_id recém criado
+            await base44.entities.Contrato.update(contrato.id, { cliente_id: novoCliente.id });
+            contrato = { ...contrato, cliente_id: novoCliente.id };
+            toast.success(`Cliente "${data.nome}" salvo na carteira!`);
+          }
+        } catch (e) {
+          // Não bloquear o fluxo por falha no cadastro do cliente
+        }
+      }
+
+      return contrato;
     },
     onSuccess: (c) => { toast.success('Contrato salvo!'); onSaved(c); },
   });
