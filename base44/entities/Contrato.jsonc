@@ -17,6 +17,8 @@
         "rascunho",
         "gerado",
         "assinado",
+        "aguardando_pagamento",
+        "pago",
         "no_pipeline"
       ],
       "default": "rascunho",
@@ -45,6 +47,45 @@
     "link_assinatura": {
       "type": "string",
       "description": "Link de assinatura online (preenchido pelo administrador)"
+    },
+    "contrato_assinado_url": {
+      "type": "string",
+      "description": "URL do contrato assinado (anexado pelo gerente)"
+    },
+    "contrato_assinado_nome": {
+      "type": "string",
+      "description": "Nome do arquivo do contrato assinado"
+    },
+    "link_pagamento": {
+      "type": "string",
+      "description": "Link de pagamento (preenchido pelo administrador)"
+    },
+    "boleto_url": {
+      "type": "string",
+      "description": "URL do boleto de pagamento (anexado pelo administrador)"
+    },
+    "boleto_nome": {
+      "type": "string",
+      "description": "Nome do arquivo do boleto"
+    },
+    "comprovante_url": {
+      "type": "string",
+      "description": "URL do comprovante de pagamento (anexado pelo gerente)"
+    },
+    "comprovante_nome": {
+      "type": "string",
+      "description": "Nome do arquivo do comprovante"
+    },
+    "origem_pagamento": {
+      "type": "string",
+      "enum": [
+        "Boleto",
+        "Link de Pagamento",
+        "PIX",
+        "TED",
+        "Outros"
+      ],
+      "description": "Origem/forma do pagamento realizado"
     },
     "nome": {
       "type": "string",

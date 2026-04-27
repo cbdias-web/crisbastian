@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Printer, CheckCircle2, TrendingUp, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoForm from './ContratoForm';
+import FluxoContrato from './FluxoContrato';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -15,10 +16,15 @@ const STATUS_CONFIG = {
   rascunho: { label: 'Rascunho', cls: 'bg-gray-100 text-gray-500' },
   gerado: { label: 'PDF Gerado', cls: 'bg-blue-100 text-blue-700' },
   assinado: { label: 'Assinado', cls: 'bg-emerald-100 text-emerald-700' },
+  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-100 text-amber-700' },
+  pago: { label: 'Pago', cls: 'bg-violet-100 text-violet-700' },
   no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-100 text-purple-700' },
 };
 
-export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) {
+const STATUS_ORDER = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
+
+export default function ContratoViewer({ contrato: contratoInicial, onBack, onUpdate, isAdmin }) {
+  const [contrato, setContrato] = useState(contratoInicial);
   const [editando, setEditando] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [enviandoPipeline, setEnviandoPipeline] = useState(false);
@@ -27,11 +33,16 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
   const [salvandoLink, setSalvandoLink] = useState(false);
   const queryClient = useQueryClient();
 
+  const handleUpdate = (c) => {
+    setContrato(c);
+    onUpdate(c);
+  };
+
   const salvarLink = async () => {
     setSalvandoLink(true);
     try {
-      const updated = await base44.entities.Contrato.update(contrato.id, { link_assinatura: linkInput.trim() });
-      onUpdate({ ...contrato, link_assinatura: linkInput.trim() });
+      await base44.entities.Contrato.update(contrato.id, { link_assinatura: linkInput.trim() });
+      handleUpdate({ ...contrato, link_assinatura: linkInput.trim() });
       setEditandoLink(false);
       toast.success('Link de assinatura salvo!');
     } catch (err) {
@@ -39,21 +50,27 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
     }
     setSalvandoLink(false);
   };
+
   const cor = TIPO_COLOR[contrato.tipo] || '#0f1e35';
 
   const marcarAssinado = useMutation({
     mutationFn: () => base44.entities.Contrato.update(contrato.id, { status: 'assinado' }),
-    onSuccess: (c) => { onUpdate(c); toast.success('Contrato marcado como assinado!'); },
+    onSuccess: (c) => { handleUpdate(c); toast.success('Contrato marcado como assinado!'); },
   });
 
+  // Pipeline só liberado se pago + comprovante anexado (ou admin)
+  const podePipeline = isAdmin ||
+    (STATUS_ORDER.indexOf(contrato.status) >= STATUS_ORDER.indexOf('pago') && !!contrato.comprovante_url);
+
   const enviarPipeline = async () => {
+    if (!podePipeline) {
+      toast.error('Conclua todas as etapas antes de enviar ao Pipeline.');
+      return;
+    }
     if (!confirm('Enviar este contrato para o Pipeline como nova prospecção?')) return;
     setEnviandoPipeline(true);
     try {
-      // Buscar dados atualizados do contrato antes de enviar
-      const contratoAtualizado = await base44.entities.Contrato.get(contrato.id);
-      const c = contratoAtualizado || contrato;
-
+      const c = contrato;
       const pipeline = await base44.entities.Pipeline.create({
         cliente_nome: c.nome,
         cliente_cpf_cnpj: c.cpf_cnpj,
@@ -64,13 +81,13 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
         origem: 'Carteira',
         vendedor_id: c.vendedor_id || '',
         vendedor_nome: c.vendedor_nome || '',
-        descricao: `Contrato ${c.tipo} gerado. Valor total: R$ ${Number(c.valor_total || c.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Aguardando finalização da venda.`,
+        descricao: `Contrato ${c.tipo} gerado. Valor total: R$ ${Number(c.valor_total || c.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Pagamento confirmado.`,
         data_prevista: c.data_primeiro_pagamento || '',
       });
       await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline', pipeline_id: pipeline.id });
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['pipeline']);
-      onUpdate({ ...contrato, status: 'no_pipeline', pipeline_id: pipeline.id });
+      handleUpdate({ ...contrato, status: 'no_pipeline', pipeline_id: pipeline.id });
       toast.success('Enviado para o Pipeline com sucesso!');
     } catch (err) {
       toast.error('Erro: ' + err.message);
@@ -83,23 +100,22 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
     try {
       const res = await base44.functions.invoke('gerarContratosPDF', { contrato_id: contrato.id });
       const { pdf_base64, filename } = res.data;
-
-      // Converter base64 → Blob → download
       const binary = atob(pdf_base64);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
       const blob = new Blob([bytes], { type: 'application/pdf' });
-
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = filename || `contrato_${contrato.tipo.replace(/ /g, '_')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-
-      await base44.entities.Contrato.update(contrato.id, { status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
+      if (contrato.status === 'rascunho') {
+        await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
+        handleUpdate({ ...contrato, status: 'gerado' });
+      }
       queryClient.invalidateQueries(['contratos']);
-      toast.success('PDF preenchido e baixado com sucesso!');
+      toast.success('PDF gerado e baixado!');
     } catch (err) {
       toast.error('Erro ao gerar PDF: ' + err.message);
     }
@@ -112,7 +128,7 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
         tipo={contrato.tipo}
         user={{ id: contrato.vendedor_id, email: contrato.created_by }}
         contratoExistente={contrato}
-        onSaved={(c) => { onUpdate(c); setEditando(false); }}
+        onSaved={(c) => { handleUpdate(c); setEditando(false); }}
         onCancel={() => setEditando(false)}
       />
     );
@@ -139,7 +155,7 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
           <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
         </div>
 
-        {/* Ações */}
+        {/* Ações rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
           <button onClick={gerarPDF} disabled={gerando}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-white text-xs font-semibold transition hover:opacity-90 shadow-md disabled:opacity-50"
@@ -154,28 +170,29 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
           </button>
           <button
             onClick={() => marcarAssinado.mutate()}
-            disabled={contrato.status === 'assinado' || contrato.status === 'no_pipeline' || marcarAssinado.isPending}
+            disabled={STATUS_ORDER.indexOf(contrato.status) >= STATUS_ORDER.indexOf('assinado') || marcarAssinado.isPending}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-md disabled:opacity-40">
             <CheckCircle2 className="w-5 h-5" />
             Assinado
           </button>
           <button
             onClick={enviarPipeline}
-            disabled={contrato.status === 'no_pipeline' || enviandoPipeline}
+            disabled={contrato.status === 'no_pipeline' || enviandoPipeline || !podePipeline}
+            title={!podePipeline ? 'Conclua todas as etapas antes' : ''}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition shadow-md disabled:opacity-40">
             {enviandoPipeline ? <Loader2 className="w-5 h-5 animate-spin" /> : <TrendingUp className="w-5 h-5" />}
             {enviandoPipeline ? 'Enviando...' : 'Enviar ao Pipeline'}
           </button>
         </div>
 
-        {/* Link de Assinatura */}
+        {/* Link de Assinatura (admin) */}
         <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden mb-5">
           <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Link2 className="w-4 h-4 text-amber-600" />
               <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Link de Assinatura Online</p>
             </div>
-            {!editandoLink && (
+            {(isAdmin || !contrato.link_assinatura) && !editandoLink && (
               <button onClick={() => { setEditandoLink(true); setLinkInput(contrato.link_assinatura || ''); }}
                 className="text-xs text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition">
                 <Edit2 className="w-3 h-3" /> {contrato.link_assinatura ? 'Editar' : 'Adicionar link'}
@@ -185,30 +202,20 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
           <div className="p-5">
             {editandoLink ? (
               <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={linkInput}
-                  onChange={e => setLinkInput(e.target.value)}
-                  placeholder="https://..."
-                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400"
-                  autoFocus
-                />
+                <input type="url" value={linkInput} onChange={e => setLinkInput(e.target.value)}
+                  placeholder="https://..." autoFocus
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400" />
                 <button onClick={salvarLink} disabled={salvandoLink}
                   className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition disabled:opacity-50">
-                  {salvandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  Salvar
+                  {salvandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
                 </button>
-                <button onClick={() => setEditandoLink(false)}
-                  className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl transition">
-                  Cancelar
-                </button>
+                <button onClick={() => setEditandoLink(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
               </div>
             ) : contrato.link_assinatura ? (
               <div className="flex items-center gap-3">
                 <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
                   className="flex-1 text-sm text-blue-600 hover:text-blue-800 underline truncate flex items-center gap-1.5">
-                  <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                  {contrato.link_assinatura}
+                  <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura}
                 </a>
                 <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
@@ -223,6 +230,9 @@ export default function ContratoViewer({ contrato, onBack, onUpdate, isAdmin }) 
             )}
           </div>
         </div>
+
+        {/* Fluxo de etapas */}
+        <FluxoContrato contrato={contrato} isAdmin={isAdmin} onUpdate={handleUpdate} />
 
         {/* Dados do contrato */}
         <div className="space-y-4">

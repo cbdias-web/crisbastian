@@ -17,6 +17,8 @@ const STATUS_CONFIG = {
   rascunho: { label: 'Rascunho', cls: 'bg-gray-100 text-gray-500' },
   gerado: { label: 'PDF Gerado', cls: 'bg-blue-100 text-blue-700' },
   assinado: { label: 'Assinado', cls: 'bg-emerald-100 text-emerald-700' },
+  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-100 text-amber-700' },
+  pago: { label: 'Pago', cls: 'bg-violet-100 text-violet-700' },
   no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-100 text-purple-700' },
 };
 
@@ -165,6 +167,7 @@ export default function Contratos() {
             className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
             <option value="Todos">Todos os status</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+
           </select>
           <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
         </div>
