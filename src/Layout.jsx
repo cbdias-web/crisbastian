@@ -140,7 +140,7 @@ export default function Layout({ children, currentPageName }) {
   // BLOCO APOIO
   const menuApoio = [
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
-    { name: 'Treinamentos', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
+    { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
