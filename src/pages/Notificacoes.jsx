@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bell, Check, X, Clock, CheckCircle2, XCircle, AlertTriangle,
-  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw
+  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -288,53 +288,96 @@ export default function Notificacoes() {
                 <p className="text-gray-500 font-medium">{pendentes.length === 0 ? 'Nenhuma autorização pendente' : 'Nenhum resultado encontrado'}</p>
                 <p className="text-gray-400 text-sm mt-1">{pendentes.length === 0 ? 'Todas as solicitações foram tratadas.' : 'Tente outro termo de busca.'}</p>
               </div>
-            ) : pendentesFiltrados.map(notif => (
-              <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-5 py-3 border-b border-amber-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                    <span className="font-semibold text-amber-900">Espelhamento acima de 30%</span>
-                  </div>
-                  <span className="text-xs text-amber-600 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    {formatDateTime(notif.created_date)}
-                  </span>
-                </div>
-                <div className="p-5">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div><p className="text-xs text-gray-500 mb-1">Vendedor</p><p className="font-semibold text-gray-900 text-sm">{notif.vendedor_nome}</p></div>
-                    <div><p className="text-xs text-gray-500 mb-1">Cliente</p><p className="font-semibold text-gray-900 text-sm">{notif.cliente || '—'}</p></div>
-                    <div><p className="text-xs text-gray-500 mb-1">Valor da Venda</p><p className="font-semibold text-gray-900 text-sm">{formatCurrency(notif.valor_venda)}</p></div>
-                    <div><p className="text-xs text-gray-500 mb-1">Data da Venda</p><p className="font-semibold text-gray-900 text-sm">{formatDate(notif.data_venda)}</p></div>
-                  </div>
-                  <div className="bg-amber-50 rounded-xl p-4 mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider">Total de Espelhamento</p>
-                      <p className="text-2xl font-bold text-amber-700">{notif.total_espelhamento?.toFixed(1)}%</p>
+            ) : pendentesFiltrados.map(notif => {
+              // Card para novo contrato
+              if (notif.tipo === 'novo_contrato') {
+                return (
+                  <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-blue-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-5 py-3 border-b border-blue-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ScrollText className="w-5 h-5 text-blue-600" />
+                        <span className="font-semibold text-blue-900">Novo Contrato — Adicionar Link de Assinatura</span>
+                      </div>
+                      <span className="text-xs text-blue-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatDateTime(notif.created_date)}
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-amber-800 mb-1">Distribuição:</p>
-                      {notif.indicadores?.map((ind, idx) => (
-                        <div key={idx} className="flex justify-between text-xs text-amber-700">
-                          <span>• {ind.nome}</span>
-                          <span className="font-semibold">{ind.percentual}%</span>
-                        </div>
-                      ))}
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div><p className="text-xs text-gray-500 mb-1">Tipo de Contrato</p><p className="font-semibold text-gray-900 text-sm">{notif.contrato_tipo || '—'}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">Cliente</p><p className="font-semibold text-gray-900 text-sm">{notif.cliente || '—'}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">Gerente</p><p className="font-semibold text-gray-900 text-sm">{notif.vendedor_nome || '—'}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">Valor Total</p><p className="font-semibold text-gray-900 text-sm">{formatCurrency(notif.valor_venda)}</p></div>
+                      </div>
+                      <div className="bg-blue-50 rounded-xl p-3 mb-4 flex items-start gap-2">
+                        <Link2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-blue-700">Acesse o contrato na plataforma, abra o visualizador e adicione o <strong>link de assinatura online</strong> para que o gerente possa encaminhar ao cliente.</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium text-sm disabled:opacity-50">
+                          <Check className="w-4 h-4" /> Marcar como resolvido
+                        </button>
+                        <button onClick={() => { if (confirm('Remover esta notificação?')) excluirMutation.mutate(notif.id); }}
+                          className="px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition text-sm">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-medium text-sm disabled:opacity-50">
-                      <Check className="w-4 h-4" /> Aprovar
-                    </button>
-                    <button onClick={() => rejeitarMutation.mutate(notif.id)} disabled={rejeitarMutation.isPending}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm disabled:opacity-50">
-                      <X className="w-4 h-4" /> Rejeitar
-                    </button>
+                );
+              }
+
+              // Card padrão: espelhamento acima de 30%
+              return (
+                <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-amber-50 to-amber-100 px-5 py-3 border-b border-amber-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600" />
+                      <span className="font-semibold text-amber-900">Espelhamento acima de 30%</span>
+                    </div>
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      {formatDateTime(notif.created_date)}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div><p className="text-xs text-gray-500 mb-1">Vendedor</p><p className="font-semibold text-gray-900 text-sm">{notif.vendedor_nome}</p></div>
+                      <div><p className="text-xs text-gray-500 mb-1">Cliente</p><p className="font-semibold text-gray-900 text-sm">{notif.cliente || '—'}</p></div>
+                      <div><p className="text-xs text-gray-500 mb-1">Valor da Venda</p><p className="font-semibold text-gray-900 text-sm">{formatCurrency(notif.valor_venda)}</p></div>
+                      <div><p className="text-xs text-gray-500 mb-1">Data da Venda</p><p className="font-semibold text-gray-900 text-sm">{formatDate(notif.data_venda)}</p></div>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-4 mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-amber-900 uppercase tracking-wider">Total de Espelhamento</p>
+                        <p className="text-2xl font-bold text-amber-700">{notif.total_espelhamento?.toFixed(1)}%</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-amber-800 mb-1">Distribuição:</p>
+                        {notif.indicadores?.map((ind, idx) => (
+                          <div key={idx} className="flex justify-between text-xs text-amber-700">
+                            <span>• {ind.nome}</span>
+                            <span className="font-semibold">{ind.percentual}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-medium text-sm disabled:opacity-50">
+                        <Check className="w-4 h-4" /> Aprovar
+                      </button>
+                      <button onClick={() => rejeitarMutation.mutate(notif.id)} disabled={rejeitarMutation.isPending}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm disabled:opacity-50">
+                        <X className="w-4 h-4" /> Rejeitar
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

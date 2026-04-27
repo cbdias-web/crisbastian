@@ -1,0 +1,87 @@
+{
+  "name": "NotificacaoAutorizacao",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "espelhamento_acima_30",
+        "novo_contrato"
+      ],
+      "description": "Tipo da notifica\u00e7\u00e3o"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "cliente": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "valor_venda": {
+      "type": "number",
+      "description": "Valor da venda"
+    },
+    "total_espelhamento": {
+      "type": "number",
+      "description": "Percentual total de espelhamento"
+    },
+    "indicadores": {
+      "type": "array",
+      "description": "Lista de indicadores com seus percentuais",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "data_venda": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    },
+    "contrato_id": {
+      "type": "string",
+      "description": "ID do contrato relacionado (para tipo novo_contrato)"
+    },
+    "contrato_tipo": {
+      "type": "string",
+      "description": "Tipo do contrato (ex: CONTA GLOBAL)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "aprovado",
+        "rejeitado"
+      ],
+      "default": "pendente",
+      "description": "Status da autoriza\u00e7\u00e3o"
+    },
+    "lida": {
+      "type": "boolean",
+      "default": false,
+      "description": "Notifica\u00e7\u00e3o foi lida"
+    },
+    "aprovado_por": {
+      "type": "string",
+      "description": "Email do administrador que aprovou/rejeitou"
+    },
+    "data_aprovacao": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data da aprova\u00e7\u00e3o/rejei\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "tipo",
+    "vendedor_nome",
+    "status"
+  ]
+}
