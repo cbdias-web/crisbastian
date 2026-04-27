@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, FileText, Eye, Trash2, Search, CheckCircle2, Clock, Globe, DollarSign, ArrowLeft, FilePlus } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, TrendingUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ContratoForm from '@/components/contratos/ContratoForm';
@@ -31,6 +31,7 @@ export default function Contratos() {
   const [busca, setBusca] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('Todos');
   const [filtroStatus, setFiltroStatus] = useState('Todos');
+  const [enviandoPipelineId, setEnviandoPipelineId] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -50,6 +51,34 @@ export default function Contratos() {
     onSuccess: () => { queryClient.invalidateQueries(['contratos']); toast.success('Contrato excluído.'); },
   });
 
+  const enviarPipeline = async (c) => {
+    if (!confirm(`Enviar contrato de "${c.nome}" para o Pipeline?`)) return;
+    setEnviandoPipelineId(c.id);
+    try {
+      const contratoAtualizado = await base44.entities.Contrato.get(c.id);
+      const ct = contratoAtualizado || c;
+      const pipeline = await base44.entities.Pipeline.create({
+        cliente_nome: ct.nome,
+        cliente_cpf_cnpj: ct.cpf_cnpj,
+        cliente_telefone: ct.telefone || '',
+        produto: ct.tipo,
+        valor_estimado: ct.valor_total || ct.valor_adesao || 0,
+        temperatura: 'Quente',
+        origem: 'Carteira',
+        vendedor_id: ct.vendedor_id || '',
+        vendedor_nome: ct.vendedor_nome || '',
+        descricao: `Contrato ${ct.tipo} gerado. Valor total: R$ ${Number(ct.valor_total || ct.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Aguardando finalização da venda.`,
+        data_prevista: ct.data_primeiro_pagamento || '',
+      });
+      await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline', pipeline_id: pipeline.id });
+      queryClient.invalidateQueries(['contratos']);
+      toast.success('Enviado para o Pipeline com sucesso!');
+    } catch (err) {
+      toast.error('Erro: ' + err.message);
+    }
+    setEnviandoPipelineId(null);
+  };
+
   const contratosFiltrados = contratos.filter(c => {
     if (!isAdmin && c.vendedor_id !== user?.id && c.created_by !== user?.email) return false;
     const tipoOk = filtroTipo === 'Todos' || c.tipo === filtroTipo;
@@ -63,8 +92,9 @@ export default function Contratos() {
       <ContratoForm
         tipo={tipoSelecionado}
         user={user}
+        contratoExistente={contratoAtivo || undefined}
         onSaved={(c) => { setContratoAtivo(c); setView('viewer'); queryClient.invalidateQueries(['contratos']); }}
-        onCancel={() => setView('lista')}
+        onCancel={() => { setView('lista'); setContratoAtivo(null); }}
       />
     );
   }
@@ -181,16 +211,26 @@ export default function Contratos() {
                       </td>
                       {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-1">
-                          <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}
-                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
-                            className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                       <div className="flex items-center justify-center gap-1">
+                         <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}
+                           className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
+                           <Eye className="w-3.5 h-3.5" />
+                         </button>
+                         <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
+                           className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
+                           <Edit2 className="w-3.5 h-3.5" />
+                         </button>
+                         <button
+                           onClick={() => enviarPipeline(c)}
+                           disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
+                           className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition disabled:opacity-30" title="Enviar ao Pipeline">
+                           {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                         </button>
+                         <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
+                           className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
+                           <Trash2 className="w-3.5 h-3.5" />
+                         </button>
+                       </div>
                       </td>
                     </tr>
                   );
