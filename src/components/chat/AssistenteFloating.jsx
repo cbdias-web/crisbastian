@@ -366,6 +366,8 @@ export default function AssistenteFloating() {
     localStorage.removeItem(LAST_ACTIVITY_KEY);
   };
 
+  const isTyping = sending || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
+
   const INACTIVITY_SUGGESTIONS_MS = 5 * 60 * 1000; // 5 minutos
 
   const schedulePostSuggestions = () => {
@@ -406,8 +408,6 @@ export default function AssistenteFloating() {
     await base44.agents.addMessage(conv, { role: 'user', content });
     setSending(false);
   };
-
-  const isTyping = sending || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
 
   // Drag logic
   const btnContainerRef = useRef(null);
