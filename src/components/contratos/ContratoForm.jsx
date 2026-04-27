@@ -62,7 +62,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       }
 
       // Salvar cliente na carteira do gerente se não existir ainda
-      if (data.nome && data.cpf_cnpj && !data.cliente_id) {
+      if (data.nome && data.cpf_cnpj) {
         try {
           const existentes = await base44.entities.Cliente.filter({ cpf_cnpj: data.cpf_cnpj });
           if (existentes.length === 0) {
@@ -78,10 +78,13 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
               observacao: `Cliente gerado pelo contrato ${tipo}.`,
               origem: 'nativo',
             });
-            // Atualizar o contrato com o cliente_id recém criado
             await base44.entities.Contrato.update(contrato.id, { cliente_id: novoCliente.id });
             contrato = { ...contrato, cliente_id: novoCliente.id };
             toast.success(`Cliente "${data.nome}" salvo na carteira!`);
+          } else if (!contrato.cliente_id) {
+            // Vincular contrato ao cliente já existente
+            await base44.entities.Contrato.update(contrato.id, { cliente_id: existentes[0].id });
+            contrato = { ...contrato, cliente_id: existentes[0].id };
           }
         } catch (e) {
           // Não bloquear o fluxo por falha no cadastro do cliente
