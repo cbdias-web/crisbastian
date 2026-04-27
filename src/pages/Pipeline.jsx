@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { todayBrasilia, isoNowBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ const EMPTY = {
   produto: '', valor_estimado: '', data_prevista: '', temperatura: 'Frio',
   descricao: '', origem: 'Prospecção Ativa', proximo_contato: '', observacao: '',
   vendedor_id: '', vendedor_nome: '',
-  tipo_contato: 'Ligação', resultado_contato: 'Neutro', data_contato: new Date().toISOString().split('T')[0],
+  tipo_contato: 'Ligação', resultado_contato: 'Neutro', data_contato: todayBrasilia(),
 };
 
 // ── Componente de busca de cliente com autocomplete ──────────────────────────
@@ -338,7 +339,7 @@ export default function Pipeline() {
       const parcelas = await base44.entities.ParcelaVenda.filter({ pipeline_id: n.id });
       const parcela = parcelas[0];
 
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = todayBrasilia();
 
       // Criar venda para contar na meta
       const novaVenda = await base44.entities.Venda.create({
@@ -436,7 +437,7 @@ export default function Pipeline() {
           vendedor_nome: n.vendedor_nome || '',
           valor_total: n.valor_estimado || 0,
           valor_adesao: n.valor_estimado || 0,
-          data_contrato: new Date().toISOString().split('T')[0],
+          data_contrato: todayBrasilia(),
           status: 'rascunho',
           observacoes: n.descricao || '',
         });

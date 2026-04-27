@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
@@ -82,7 +83,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         cpf_cnpj: c.cpf_cnpj || '',
         valor: c.valor_adesao || c.valor_total || 0,
         valor_total_contrato: c.valor_total || 0,
-        data: new Date().toISOString().split('T')[0],
+        data: todayBrasilia(),
         forma_pagamento: c.origem_pagamento || '',
         observacao: `Originado do Contrato ${c.tipo}. Comprovante de pagamento anexado.`,
       });

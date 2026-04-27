@@ -1,5 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+function isoNowBrasilia() {
+  const d = new Date();
+  const tzDate = new Date(d.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  const diff = d.getTime() - tzDate.getTime();
+  return new Date(d.getTime() - diff).toISOString().replace('Z', '-03:00');
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);

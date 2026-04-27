@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { todayBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Save, Search, User, DollarSign, MapPin, FileText } from 'lucide-react';
@@ -11,7 +12,7 @@ const EMPTY = {
   valor_adesao: '', valor_parcela: '', num_parcelas: 1, valor_total: '',
   forma_pagamento: '', data_primeiro_pagamento: '', dia_vencimento: '',
   banco: '', agencia: '', conta: '', moeda: 'USD', cotacao: '', valor_em_moeda: '',
-  prazo_meses: '', observacoes: '', data_contrato: new Date().toISOString().split('T')[0],
+  prazo_meses: '', observacoes: '', data_contrato: todayBrasilia(),
 };
 
 const FORMAS = ['PIX', 'TED/DOC', 'DÉBITO EM CONTA', 'BOLETO', 'CARTÃO DE CRÉDITO'];

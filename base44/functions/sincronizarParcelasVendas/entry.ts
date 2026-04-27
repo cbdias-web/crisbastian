@@ -2,6 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
+// Retorna data no formato YYYY-MM-DD no fuso de Brasília
+function todayBrasilia() {
+  return new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .split('/').reverse().join('-');
+}
+
+function toDateStringBrasilia(date) {
+  return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .split('/').reverse().join('-');
+}
+
 async function createWithRetry(fn, retries = 3, delay = 800) {
   for (let i = 0; i < retries; i++) {
     try {
@@ -65,7 +76,7 @@ Deno.serve(async (req) => {
       for (const numeroParcela of faltando) {
         const dtVenc = new Date(dataBase);
         dtVenc.setMonth(dtVenc.getMonth() + numeroParcela);
-        const dataVencimento = dtVenc.toISOString().split('T')[0];
+        const dataVencimento = toDateStringBrasilia(dtVenc);
 
         await sleep(400);
 
