@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users, DollarSign, Target, FileText, Upload, AlertTriangle, Star, Info, CheckCircle2, ArrowRight, Briefcase, Calendar, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt, ScrollText } from 'lucide-react';
 
 const sections = [
   {
@@ -947,6 +947,86 @@ const sections = [
           '**Ver quem leu:** clique no comunicado para ver a lista de usuários que confirmaram a leitura e a data/hora.',
           '**Excluir:** remove o comunicado e todo o histórico de leituras associado.',
         ],
+      },
+    ],
+  },
+  {
+    id: 'contratos',
+    icon: ScrollText,
+    title: 'Contratos',
+    color: 'bg-amber-50 text-amber-700',
+    border: 'border-amber-200',
+    content: [
+      {
+        subtitle: 'O que é o módulo de Contratos?',
+        text: 'O módulo de Contratos permite gerar, gerenciar e acompanhar contratos de clientes diretamente na plataforma. Estão disponíveis três tipos: Conta Global, Conta Internacional e Dolarize Aqui. O sistema preenche automaticamente um PDF com os dados do contrato e salva o cliente na carteira do gerente responsável.',
+      },
+      {
+        subtitle: 'Tipos de contrato disponíveis',
+        items: [
+          '**Conta Global:** conta em moeda estrangeira para câmbio e investimentos internacionais.',
+          '**Conta Internacional:** abertura de conta internacional com transações em múltiplas moedas.',
+          '**Dolarize Aqui:** dolarização de ativos e proteção patrimonial em dólar americano.',
+        ],
+      },
+      {
+        subtitle: 'Criar um novo contrato',
+        steps: [
+          'Acesse o menu "Contratos" no bloco Apoio da barra lateral.',
+          'Clique no card do tipo de contrato desejado (Conta Global, Conta Internacional ou Dolarize Aqui).',
+          'Opcionalmente, busque um cliente já cadastrado na base pelo campo de pesquisa — os dados serão preenchidos automaticamente.',
+          'Preencha as abas: Dados Pessoais, Endereço, Financeiro e Obs. & Data.',
+          'Na aba Financeiro, informe: Valor de Adesão, Valor da Parcela e número de parcelas — o Valor Total é calculado automaticamente.',
+          'Clique em "Salvar Contrato". O cliente é criado automaticamente na sua carteira (Meus Clientes) se ainda não existir.',
+        ],
+      },
+      {
+        subtitle: 'Gerar o PDF do contrato',
+        steps: [
+          'Na lista de contratos, clique no ícone de olho (👁️) para abrir o visualizador do contrato.',
+          'Clique em "Gerar PDF".',
+          'O sistema preenche automaticamente o PDF com todos os dados do contrato (nome, CPF/CNPJ, endereço, valores, datas, forma de pagamento, etc.).',
+          'O arquivo é baixado automaticamente no seu dispositivo.',
+          'O status do contrato é atualizado para "PDF Gerado".',
+        ],
+      },
+      {
+        subtitle: 'Status do contrato',
+        items: [
+          '**Rascunho:** contrato criado mas ainda sem PDF gerado.',
+          '**PDF Gerado:** PDF foi gerado e baixado pelo menos uma vez.',
+          '**Assinado:** marcado manualmente após confirmação de assinatura pelo cliente.',
+          '**No Pipeline:** contrato enviado ao Pipeline Comercial como nova prospecção.',
+        ],
+      },
+      {
+        subtitle: 'Marcar como Assinado',
+        text: 'Após o cliente assinar o contrato, abra o visualizador e clique em "Assinado". O status é atualizado para "Assinado" e fica registrado no histórico do contrato.',
+      },
+      {
+        subtitle: 'Enviar contrato ao Pipeline',
+        text: 'Clique em "Enviar ao Pipeline" no visualizador ou diretamente na lista de contratos (ícone de tendência 📈). O sistema cria automaticamente uma prospecção no Pipeline Comercial com os dados do cliente, produto (tipo de contrato), valor total e vendedor responsável, permitindo acompanhar a evolução do negócio.',
+      },
+      {
+        subtitle: 'Editar contrato',
+        text: 'Clique no ícone de lápis (✏️) na lista ou no botão "Editar" no visualizador para alterar qualquer campo do contrato. Após editar, gere novamente o PDF para atualizar o documento.',
+      },
+      {
+        subtitle: 'Excluir contrato',
+        text: 'Clique no ícone de lixeira (🗑️) na lista de contratos. O contrato é excluído permanentemente — o cliente cadastrado na carteira não é afetado.',
+      },
+      {
+        subtitle: 'Filtros e busca',
+        items: [
+          '**Busca:** filtre por nome do cliente ou CPF/CNPJ.',
+          '**Tipo:** filtre por Conta Global, Conta Internacional ou Dolarize Aqui.',
+          '**Status:** filtre por Rascunho, PDF Gerado, Assinado ou No Pipeline.',
+          'Administradores veem contratos de toda a equipe; gerentes veem apenas os seus.',
+        ],
+      },
+      {
+        subtitle: 'Cadastro automático do cliente na carteira',
+        text: 'Ao salvar ou gerar o PDF de um contrato, o sistema verifica automaticamente se o cliente (pelo CPF/CNPJ) já existe na carteira. Se não existir, cria o cadastro automaticamente em "Meus Clientes" vinculado ao gerente responsável pelo contrato.',
       },
     ],
   },
