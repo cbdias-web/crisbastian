@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, TrendingUp, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
 import FluxoContrato from './FluxoContrato';
 
@@ -27,8 +28,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [contrato, setContrato] = useState(contratoInicial);
   const [editando, setEditando] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [enviandoPipeline, setEnviandoPipeline] = useState(false);
+  const [enviandoVenda, setEnviandoVenda] = useState(false);
   const [editandoLink, setEditandoLink] = useState(false);
+  const navigate = useNavigate();
   const [linkInput, setLinkInput] = useState(contrato.link_assinatura || '');
   const [salvandoLink, setSalvandoLink] = useState(false);
   const queryClient = useQueryClient();
@@ -58,41 +60,42 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     onSuccess: (c) => { handleUpdate(c); toast.success('Contrato marcado como assinado!'); },
   });
 
-  // Pipeline só liberado se pago + comprovante anexado (ou admin)
-  const podePipeline = isAdmin ||
+  // Enviar para Vendas só liberado se pago + comprovante (ou admin)
+  const podeEnviarVendas = isAdmin ||
     (STATUS_ORDER.indexOf(contrato.status) >= STATUS_ORDER.indexOf('pago') && !!contrato.comprovante_url);
 
-  const enviarPipeline = async () => {
-    if (!podePipeline) {
-      toast.error('Conclua todas as etapas antes de enviar ao Pipeline.');
+  const enviarParaVendas = async () => {
+    if (!podeEnviarVendas) {
+      toast.error('Conclua todas as etapas do contrato antes de enviar para Vendas.');
       return;
     }
-    if (!confirm('Enviar este contrato para o Pipeline como nova prospecção?')) return;
-    setEnviandoPipeline(true);
+    if (!confirm('Criar pré-venda a partir deste contrato e ir para a aba Vendas para finalizar?')) return;
+    setEnviandoVenda(true);
     try {
       const c = contrato;
-      const pipeline = await base44.entities.Pipeline.create({
-        cliente_nome: c.nome,
-        cliente_cpf_cnpj: c.cpf_cnpj,
-        cliente_telefone: c.telefone || '',
+      // Criar venda pré-preenchida com dados do contrato
+      await base44.entities.Venda.create({
         produto: c.tipo,
-        valor_estimado: c.valor_total || c.valor_adesao || 0,
-        temperatura: 'Quente',
-        origem: 'Carteira',
+        assessor_comercial: c.vendedor_nome || '',
         vendedor_id: c.vendedor_id || '',
-        vendedor_nome: c.vendedor_nome || '',
-        descricao: `Contrato ${c.tipo} gerado. Valor total: R$ ${Number(c.valor_total || c.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Pagamento confirmado.`,
-        data_prevista: c.data_primeiro_pagamento || '',
+        cliente: c.nome || '',
+        cpf_cnpj: c.cpf_cnpj || '',
+        valor: c.valor_adesao || c.valor_total || 0,
+        valor_total_contrato: c.valor_total || 0,
+        data: new Date().toISOString().split('T')[0],
+        forma_pagamento: c.origem_pagamento || '',
+        observacao: `Originado do Contrato ${c.tipo}. Comprovante de pagamento anexado.`,
       });
-      await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline', pipeline_id: pipeline.id });
+      await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline' });
       queryClient.invalidateQueries(['contratos']);
-      queryClient.invalidateQueries(['pipeline']);
-      handleUpdate({ ...contrato, status: 'no_pipeline', pipeline_id: pipeline.id });
-      toast.success('Enviado para o Pipeline com sucesso!');
+      queryClient.invalidateQueries(['vendas']);
+      handleUpdate({ ...contrato, status: 'no_pipeline' });
+      toast.success('Venda criada! Redirecionando para Vendas...');
+      setTimeout(() => navigate('/Vendas'), 1200);
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
-    setEnviandoPipeline(false);
+    setEnviandoVenda(false);
   };
 
   const gerarPDF = async () => {
@@ -176,12 +179,12 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
             Assinado
           </button>
           <button
-            onClick={enviarPipeline}
-            disabled={contrato.status === 'no_pipeline' || enviandoPipeline || !podePipeline}
-            title={!podePipeline ? 'Conclua todas as etapas antes' : ''}
-            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-purple-600 text-white text-xs font-semibold hover:bg-purple-700 transition shadow-md disabled:opacity-40">
-            {enviandoPipeline ? <Loader2 className="w-5 h-5 animate-spin" /> : <TrendingUp className="w-5 h-5" />}
-            {enviandoPipeline ? 'Enviando...' : 'Enviar ao Pipeline'}
+            onClick={enviarParaVendas}
+            disabled={contrato.status === 'no_pipeline' || enviandoVenda || !podeEnviarVendas}
+            title={!podeEnviarVendas ? 'Conclua todas as etapas antes' : 'Criar venda e ir para Vendas'}
+            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition shadow-md disabled:opacity-40">
+            {enviandoVenda ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
+            {enviandoVenda ? 'Enviando...' : 'Enviar para Vendas'}
           </button>
         </div>
 

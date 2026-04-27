@@ -427,7 +427,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
             <p className="text-sm font-semibold text-purple-800">Pronto para enviar ao Pipeline!</p>
             <p className="text-xs text-purple-500 mt-0.5">Todas as etapas foram concluídas.</p>
           </div>
-          <span className="text-xs text-purple-500 font-medium">Use o botão "Enviar ao Pipeline" acima ↑</span>
+          <span className="text-xs text-purple-500 font-medium">Use o botão "Enviar para Vendas" acima ↑</span>
         </div>
       )}
     </div>

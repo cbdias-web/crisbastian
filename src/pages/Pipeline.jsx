@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText } from 'lucide-react';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -393,12 +393,33 @@ export default function Pipeline() {
     setRecebenndoParcela(null);
   };
 
-  // Converter prospecção em venda e navegar para Vendas
+  // Produtos que seguem o fluxo de Contratos (não vão direto para Vendas)
+  const PRODUTOS_CONTRATO = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE AQUI'];
+
+  // Converter prospecção: produtos de contrato → aba Contratos; demais → aba Vendas
   const converterEmVenda = async (n) => {
+    const ehContrato = PRODUTOS_CONTRATO.includes(n.produto);
+
+    if (ehContrato) {
+      if (!confirm(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Você será direcionado para a aba Contratos para iniciar o processo.`)) return;
+      setConvertendo(n.id);
+      try {
+        // Marca o pipeline como Fechado
+        await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
+        queryClient.invalidateQueries(['pipeline']);
+        toast.success('Redirecionando para Contratos...');
+        setTimeout(() => navigate('/Contratos'), 1000);
+      } catch (err) {
+        toast.error('Erro: ' + err.message);
+      }
+      setConvertendo(null);
+      return;
+    }
+
+    // Fluxo normal: criar venda e ir para Vendas
     if (!confirm(`Converter "${n.cliente_nome}" em venda? Você será direcionado para a página de Vendas para completar os detalhes.`)) return;
     setConvertendo(n.id);
     try {
-      // Cria um rascunho de venda com dados do pipeline
       const vendedorNome = n.vendedor_nome || '';
       const vendedorId = n.vendedor_id || '';
       const novaVenda = await base44.entities.Venda.create({
@@ -411,7 +432,6 @@ export default function Pipeline() {
         data: new Date().toISOString().split('T')[0],
         observacao: `Originado do Pipeline. ${n.descricao || ''}`.trim(),
       });
-      // Marca o pipeline como Fechado
       await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
       queryClient.invalidateQueries(['pipeline']);
       toast.success('Venda criada! Redirecionando para Vendas...');
@@ -816,16 +836,18 @@ export default function Pipeline() {
                                         </button>
                                       )}
                                       {!isParcela && (
-                                        <button
-                                          onClick={() => converterEmVenda(n)}
-                                          disabled={convertendo === n.id}
-                                          title="Converter em venda"
-                                          className="p-0.5 text-gray-400 hover:text-emerald-600"
-                                        >
-                                          {convertendo === n.id
-                                            ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                                            : <ShoppingCart className="w-3 h-3" />}
-                                        </button>
+                                       <button
+                                         onClick={() => converterEmVenda(n)}
+                                         disabled={convertendo === n.id}
+                                         title={PRODUTOS_CONTRATO.includes(n.produto) ? 'Ir para Contratos' : 'Converter em venda'}
+                                         className={`p-0.5 text-gray-400 ${PRODUTOS_CONTRATO.includes(n.produto) ? 'hover:text-amber-600' : 'hover:text-emerald-600'}`}
+                                       >
+                                         {convertendo === n.id
+                                           ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                                           : PRODUTOS_CONTRATO.includes(n.produto)
+                                             ? <ScrollText className="w-3 h-3" />
+                                             : <ShoppingCart className="w-3 h-3" />}
+                                       </button>
                                       )}
                                       <button onClick={() => openEdit(n)} title="Editar" className="p-0.5 text-gray-400 hover:text-blue-600">
                                         <Pencil className="w-3 h-3" />
