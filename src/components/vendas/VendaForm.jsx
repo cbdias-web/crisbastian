@@ -17,7 +17,7 @@ const formasPagamento = [
 export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin }) {
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
-    queryFn: () => base44.entities.Vendedor.list('nome'),
+    queryFn: () => base44.entities.Vendedor.list('nome', 500),
   });
 
   const { data: produtos = [] } = useQuery({
@@ -27,7 +27,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const { data: espelhamentos = [] } = useQuery({
     queryKey: ['espelhamentos'],
-    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
+    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome', 500),
   });
 
   const indicadoresDisponiveis = [
