@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Save, Search, User, DollarSign, MapPin, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Search, User, DollarSign, MapPin, FileText, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const EMPTY = {
@@ -42,12 +42,44 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   const [buscaCliente, setBuscaCliente] = useState('');
   const [showBusca, setShowBusca] = useState(false);
   const [aba, setAba] = useState('dados');
+  const [indicadores, setIndicadores] = useState(() => {
+    if (contratoExistente?.indicadores?.length > 0) return contratoExistente.indicadores;
+    return [];
+  });
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-contrato'],
     queryFn: () => base44.entities.Cliente.list('nome', 5000),
     enabled: !!user,
   });
+
+  const { data: vendedoresList = [] } = useQuery({
+    queryKey: ['vendedores-contrato'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    enabled: !!user,
+  });
+
+  const { data: espelhamentosList = [] } = useQuery({
+    queryKey: ['espelhamentos-contrato'],
+    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
+    enabled: !!user,
+  });
+
+  const indicadoresDisponiveis = [
+    ...vendedoresList.map(v => ({ id: v.id, nome: v.nome, tipo: 'vendedor', percentual_comissao: v.percentual_comissao || 10 })),
+    ...espelhamentosList.map(e => ({ id: e.id, nome: e.nome, tipo: 'indicador', percentual_comissao: e.percentual_comissao || 10 })),
+  ].sort((a, b) => a.nome.localeCompare(b.nome));
+
+  const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
+  const limiteIndicadoresExcedido = totalPctIndicadores > 50;
+
+  const addIndicador = () => setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo: 'indicador' }]);
+  const removeIndicador = (idx) => setIndicadores(prev => prev.filter((_, i) => i !== idx));
+  const updateIndicador = (idx, field, value) => setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, [field]: value } : ind));
+  const selectIndicadorPessoa = (idx, selectedId) => {
+    const found = indicadoresDisponiveis.find(x => x.id === selectedId);
+    if (found) setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, id: found.id, nome: found.nome, tipo: found.tipo, percentual: ind.percentual || found.percentual_comissao } : ind));
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
@@ -68,11 +100,13 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         dia_vencimento: parseInt(data.dia_vencimento) || 0,
       };
 
+      const payloadFinal = { ...payload, indicadores };
+
       let contrato;
       if (contratoExistente) {
-        contrato = await base44.entities.Contrato.update(contratoExistente.id, { ...payload, status: contratoExistente.status });
+        contrato = await base44.entities.Contrato.update(contratoExistente.id, { ...payloadFinal, status: contratoExistente.status });
       } else {
-        contrato = await base44.entities.Contrato.create({ ...payload, status: 'rascunho' });
+        contrato = await base44.entities.Contrato.create({ ...payloadFinal, status: 'rascunho' });
       }
 
       // Salvar cliente na carteira do gerente se não existir ainda
@@ -311,6 +345,59 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                 {campo('Moeda', 'moeda', 'text', { placeholder: 'USD, EUR...' })}
                 {campo('Cotação (R$ por unidade)', 'cotacao', 'number', { placeholder: 'Ex: 5.7850' })}
                 {campo('Valor em Moeda Estrangeira', 'valor_em_moeda', 'number')}
+              </div>
+
+              {/* Indicadores */}
+              <div className="col-span-full border border-gray-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Indicadores (Espelhamento)</p>
+                    {indicadores.length > 0 && (
+                      <p className={`text-xs mt-0.5 ${limiteIndicadoresExcedido ? 'text-red-600 font-semibold' : totalPctIndicadores > 30 ? 'text-amber-600' : 'text-gray-400'}`}>
+                        Total: {totalPctIndicadores.toFixed(1)}% (máx 50%)
+                      </p>
+                    )}
+                  </div>
+                  <button type="button" onClick={addIndicador}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[#1a3150] text-white rounded-lg hover:opacity-90 transition">
+                    <Plus className="w-3 h-3" /> Adicionar
+                  </button>
+                </div>
+                {limiteIndicadoresExcedido && (
+                  <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                    <p className="text-xs text-red-600">O total de indicadores não pode ultrapassar 50%.</p>
+                  </div>
+                )}
+                {indicadores.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-2">Nenhum indicador adicionado</p>
+                ) : (
+                  <div className="space-y-2">
+                    {indicadores.map((ind, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <select value={ind.tipo} onChange={e => { updateIndicador(idx, 'tipo', e.target.value); updateIndicador(idx, 'id', ''); updateIndicador(idx, 'nome', ''); }}
+                          className="w-28 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                          <option value="indicador">Indicador</option>
+                          <option value="vendedor">Vendedor</option>
+                        </select>
+                        <select value={ind.id} onChange={e => selectIndicadorPessoa(idx, e.target.value)}
+                          className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                          <option value="">Selecionar...</option>
+                          {indicadoresDisponiveis.filter(x => x.tipo === ind.tipo).map(x => (
+                            <option key={x.id} value={x.id}>{x.nome}</option>
+                          ))}
+                        </select>
+                        <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
+                          onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
+                          className="w-16 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] text-center" />
+                        <span className="text-xs text-gray-400">%</span>
+                        <button type="button" onClick={() => removeIndicador(idx)} className="p-1 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

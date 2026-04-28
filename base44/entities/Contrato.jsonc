@@ -46,7 +46,11 @@
     },
     "link_assinatura": {
       "type": "string",
-      "description": "Link de assinatura online (preenchido pelo administrador)"
+      "description": "Link de assinatura online do contrato (preenchido pelo administrador)"
+    },
+    "link_assinatura_aditivo": {
+      "type": "string",
+      "description": "Link de assinatura online do aditivo de contrato (preenchido pelo administrador)"
     },
     "contrato_assinado_url": {
       "type": "string",
@@ -86,6 +90,27 @@
         "Outros"
       ],
       "description": "Origem/forma do pagamento realizado"
+    },
+    "indicadores": {
+      "type": "array",
+      "description": "Indicadores/espelhamentos vinculados ao contrato",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "number"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        }
+      }
     },
     "nome": {
       "type": "string",

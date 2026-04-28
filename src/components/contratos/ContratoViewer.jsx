@@ -31,6 +31,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [gerando, setGerando] = useState(false);
   const [enviandoVenda, setEnviandoVenda] = useState(false);
   const [editandoLink, setEditandoLink] = useState(false);
+  const [editandoLinkAditivo, setEditandoLinkAditivo] = useState(false);
+  const [linkAditivoInput, setLinkAditivoInput] = useState(contrato.link_assinatura_aditivo || '');
+  const [salvandoLinkAditivo, setSalvandoLinkAditivo] = useState(false);
   const navigate = useNavigate();
   const [linkInput, setLinkInput] = useState(contrato.link_assinatura || '');
   const [salvandoLink, setSalvandoLink] = useState(false);
@@ -54,6 +57,19 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     setSalvandoLink(false);
   };
 
+  const salvarLinkAditivo = async () => {
+    setSalvandoLinkAditivo(true);
+    try {
+      await base44.entities.Contrato.update(contrato.id, { link_assinatura_aditivo: linkAditivoInput.trim() || null });
+      handleUpdate({ ...contrato, link_assinatura_aditivo: linkAditivoInput.trim() || null });
+      setEditandoLinkAditivo(false);
+      toast.success('Link do aditivo salvo!');
+    } catch (err) {
+      toast.error('Erro ao salvar link: ' + err.message);
+    }
+    setSalvandoLinkAditivo(false);
+  };
+
   const cor = TIPO_COLOR[contrato.tipo] || '#0f1e35';
 
   const marcarAssinado = useMutation({
@@ -75,7 +91,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     try {
       const c = contrato;
       // Criar venda pré-preenchida com dados do contrato
-      await base44.entities.Venda.create({
+      const vendaPayload = {
         produto: c.tipo,
         assessor_comercial: c.vendedor_nome || '',
         vendedor_id: c.vendedor_id || '',
@@ -86,7 +102,15 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         data: todayBrasilia(),
         forma_pagamento: c.origem_pagamento || '',
         observacao: `Originado do Contrato ${c.tipo}. Comprovante de pagamento anexado.`,
-      });
+      };
+      // Preservar indicadores do contrato
+      if (c.indicadores?.length > 0) {
+        vendaPayload.indicadores = c.indicadores;
+        vendaPayload.espelhamento = c.indicadores[0]?.nome || '';
+        vendaPayload.espelhamento_id = c.indicadores[0]?.id || '';
+        vendaPayload.percentual_comissao_espelhamento = c.indicadores[0]?.percentual || 0;
+      }
+      await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline' });
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
@@ -189,49 +213,91 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           </button>
         </div>
 
-        {/* Link de Assinatura (admin) */}
+        {/* Links de Assinatura (admin) */}
         <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden mb-5">
-          <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-amber-600" />
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Link de Assinatura Online</p>
-            </div>
-            {(isAdmin || !contrato.link_assinatura) && !editandoLink && (
-              <button onClick={() => { setEditandoLink(true); setLinkInput(contrato.link_assinatura || ''); }}
-                className="text-xs text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition">
-                <Edit2 className="w-3 h-3" /> {contrato.link_assinatura ? 'Editar' : 'Adicionar link'}
-              </button>
-            )}
+          <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center gap-2">
+            <Link2 className="w-4 h-4 text-amber-600" />
+            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Links de Assinatura Online</p>
           </div>
-          <div className="p-5">
-            {editandoLink ? (
-              <div className="flex gap-2">
-                <input type="url" value={linkInput} onChange={e => setLinkInput(e.target.value)}
-                  placeholder="https://..." autoFocus
-                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400" />
-                <button onClick={salvarLink} disabled={salvandoLink}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition disabled:opacity-50">
-                  {salvandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
-                </button>
-                <button onClick={() => setEditandoLink(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
-              </div>
-            ) : contrato.link_assinatura ? (
-              <div className="flex items-center gap-3">
-                <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
-                  className="flex-1 text-sm text-blue-600 hover:text-blue-800 underline truncate flex items-center gap-1.5">
-                  <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura}
-                </a>
-                <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
-                  <Copy className="w-3 h-3" /> Copiar
-                </button>
-              </div>
-            ) : (
-              <p className="text-sm text-amber-600 font-medium flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
-                Aguardando administrador adicionar o link de assinatura online.
+          <div className="p-5 space-y-4">
+            {/* Link Contrato */}
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                Contrato
+                {(isAdmin || !contrato.link_assinatura) && !editandoLink && (
+                  <button onClick={() => { setEditandoLink(true); setLinkInput(contrato.link_assinatura || ''); }}
+                    className="text-[10px] text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition normal-case">
+                    <Edit2 className="w-2.5 h-2.5" /> {contrato.link_assinatura ? 'Editar' : 'Adicionar link'}
+                  </button>
+                )}
               </p>
-            )}
+              {editandoLink ? (
+                <div className="flex gap-2">
+                  <input type="url" value={linkInput} onChange={e => setLinkInput(e.target.value)}
+                    placeholder="https://..." autoFocus
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400" />
+                  <button onClick={salvarLink} disabled={salvandoLink}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition disabled:opacity-50">
+                    {salvandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
+                  </button>
+                  <button onClick={() => setEditandoLink(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                </div>
+              ) : contrato.link_assinatura ? (
+                <div className="flex items-center gap-3">
+                  <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-sm text-blue-600 hover:text-blue-800 underline truncate flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura}
+                  </a>
+                  <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    <Copy className="w-3 h-3" /> Copiar
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-amber-600 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                  Aguardando administrador adicionar o link de assinatura online.
+                </p>
+              )}
+            </div>
+
+            {/* Link Aditivo */}
+            <div className="border-t border-amber-100 pt-4">
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                Aditivo de Contrato <span className="text-[9px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-semibold normal-case">opcional</span>
+                {isAdmin && !editandoLinkAditivo && (
+                  <button onClick={() => { setEditandoLinkAditivo(true); setLinkAditivoInput(contrato.link_assinatura_aditivo || ''); }}
+                    className="text-[10px] text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition normal-case">
+                    <Edit2 className="w-2.5 h-2.5" /> {contrato.link_assinatura_aditivo ? 'Editar' : 'Adicionar link'}
+                  </button>
+                )}
+              </p>
+              {editandoLinkAditivo ? (
+                <div className="flex gap-2">
+                  <input type="url" value={linkAditivoInput} onChange={e => setLinkAditivoInput(e.target.value)}
+                    placeholder="https://..." autoFocus
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400" />
+                  <button onClick={salvarLinkAditivo} disabled={salvandoLinkAditivo}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 text-white text-xs font-semibold rounded-xl hover:bg-amber-700 transition disabled:opacity-50">
+                    {salvandoLinkAditivo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
+                  </button>
+                  <button onClick={() => setEditandoLinkAditivo(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                </div>
+              ) : contrato.link_assinatura_aditivo ? (
+                <div className="flex items-center gap-3">
+                  <a href={contrato.link_assinatura_aditivo} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-sm text-blue-600 hover:text-blue-800 underline truncate flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura_aditivo}
+                  </a>
+                  <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura_aditivo); toast.success('Link copiado!'); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    <Copy className="w-3 h-3" /> Copiar
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Nenhum link de aditivo adicionado</p>
+              )}
+            </div>
           </div>
         </div>
 

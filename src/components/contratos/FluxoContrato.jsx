@@ -38,6 +38,9 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   const [editandoLinkAssin, setEditandoLinkAssin] = useState(false);
   const [linkAssinInput, setLinkAssinInput] = useState(contrato.link_assinatura || '');
   const [salvandoLinkAssin, setSalvandoLinkAssin] = useState(false);
+  const [editandoLinkAditivo, setEditandoLinkAditivo] = useState(false);
+  const [linkAditivoInput, setLinkAditivoInput] = useState(contrato.link_assinatura_aditivo || '');
+  const [salvandoLinkAditivo, setSalvandoLinkAditivo] = useState(false);
 
   const statusAtual = contrato.status || 'rascunho';
   const ordemAtual = STATUS_ORDER.indexOf(statusAtual);
@@ -110,6 +113,25 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     await salvarCampo({ link_assinatura: null });
     setLinkAssinInput('');
     toast.success('Link de assinatura removido.');
+  };
+
+  const salvarLinkAditivo = async () => {
+    setSalvandoLinkAditivo(true);
+    try {
+      await salvarCampo({ link_assinatura_aditivo: linkAditivoInput.trim() || null });
+      setEditandoLinkAditivo(false);
+      toast.success('Link do aditivo salvo!');
+    } catch (err) {
+      toast.error('Erro: ' + err.message);
+    }
+    setSalvandoLinkAditivo(false);
+  };
+
+  const removerLinkAditivo = async () => {
+    if (!confirm('Remover o link de assinatura do aditivo?')) return;
+    await salvarCampo({ link_assinatura_aditivo: null });
+    setLinkAditivoInput('');
+    toast.success('Link do aditivo removido.');
   };
 
   const salvarOrigemPagamento = async (origem) => {
@@ -255,6 +277,44 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
               Aguardando administrador adicionar o link de assinatura.
             </p>
           )}
+        </EtapaCard>
+      )}
+
+      {/* Link de Assinatura do ADITIVO (admin pode adicionar quando necessário) */}
+      {(contrato.link_assinatura_aditivo || isAdmin) && etapaAtingida(statusAtual, 'assinado') && (
+        <EtapaCard titulo="Link de Assinatura — Aditivo de Contrato" cor="amber" concluida={!!contrato.link_assinatura_aditivo}>
+          {editandoLinkAditivo ? (
+            <div className="flex gap-2">
+              <input type="url" value={linkAditivoInput} onChange={e => setLinkAditivoInput(e.target.value)}
+                placeholder="https://..." autoFocus
+                className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-400" />
+              <button onClick={salvarLinkAditivo} disabled={salvandoLinkAditivo}
+                className="flex items-center gap-1 px-3 py-2 bg-amber-600 text-white text-xs rounded-xl disabled:opacity-50">
+                {salvandoLinkAditivo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Salvar
+              </button>
+              <button onClick={() => setEditandoLinkAditivo(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl"><X className="w-3 h-3" /></button>
+            </div>
+          ) : contrato.link_assinatura_aditivo ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <a href={contrato.link_assinatura_aditivo} target="_blank" rel="noopener noreferrer"
+                className="flex-1 text-sm text-blue-600 underline truncate flex items-center gap-1 min-w-0">
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />{contrato.link_assinatura_aditivo}
+              </a>
+              <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura_aditivo); toast.success('Copiado!'); }}
+                className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-xs rounded-lg shrink-0"><Copy className="w-3 h-3" /> Copiar</button>
+              {isAdmin && <>
+                <button onClick={() => { setLinkAditivoInput(contrato.link_assinatura_aditivo); setEditandoLinkAditivo(true); }}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 shrink-0"><Edit2 className="w-3 h-3" /></button>
+                <button onClick={removerLinkAditivo}
+                  className="p-1.5 text-red-400 hover:text-red-600 shrink-0" title="Remover link"><Trash2 className="w-3 h-3" /></button>
+              </>}
+            </div>
+          ) : isAdmin ? (
+            <button onClick={() => { setLinkAditivoInput(''); setEditandoLinkAditivo(true); }}
+              className="text-xs text-amber-600 hover:underline font-semibold flex items-center gap-1">
+              <Link2 className="w-3 h-3" /> Adicionar link do aditivo
+            </button>
+          ) : null}
         </EtapaCard>
       )}
 
