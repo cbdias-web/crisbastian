@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { X, Pencil, Trash2, Save, Check, DollarSign } from 'lucide-react';
+import { X, Pencil, Trash2, Save, Check, DollarSign, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -72,6 +72,36 @@ export default function ParcelasVincendasModal({ onClose, user }) {
       queryClient.invalidateQueries(['parcelas-venda-pipeline']);
       queryClient.invalidateQueries(['pipeline']);
       toast.success('Parcela excluída!');
+    },
+  });
+
+  const estornarMutation = useMutation({
+    mutationFn: async (parcela) => {
+      // Remove a venda gerada, se existir
+      if (parcela.venda_gerada_id) {
+        await base44.entities.Venda.delete(parcela.venda_gerada_id).catch(() => {});
+        // Remove comissões vinculadas à venda gerada
+        const comissoes = await base44.entities.Comissao.filter({ venda_id: parcela.venda_gerada_id }).catch(() => []);
+        await Promise.all(comissoes.map(c => base44.entities.Comissao.delete(c.id).catch(() => {})));
+      }
+      // Reverte a parcela para pendente
+      await base44.entities.ParcelaVenda.update(parcela.id, {
+        status: 'pendente',
+        data_recebimento: null,
+        venda_gerada_id: null,
+      });
+      // Reverte o pipeline se vinculado
+      if (parcela.pipeline_id) {
+        await base44.entities.Pipeline.update(parcela.pipeline_id, { temperatura: 'Quente' }).catch(() => {});
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['parcelas-modal']);
+      queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+      queryClient.invalidateQueries(['pipeline']);
+      queryClient.invalidateQueries(['vendas']);
+      queryClient.invalidateQueries(['comissoes']);
+      toast.success('Parcela estornada! Voltou para pendente.');
     },
   });
 
@@ -153,6 +183,11 @@ export default function ParcelasVincendasModal({ onClose, user }) {
   const handleReceber = (parcela) => {
     if (!confirm(`Confirmar recebimento de ${fmtVal(parcela.valor_parcela)} — Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?`)) return;
     receberMutation.mutate(parcela);
+  };
+
+  const handleEstornar = (parcela) => {
+    if (!confirm(`Estornar parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?\nA venda e comissão geradas serão removidas e a parcela voltará para "pendente".`)) return;
+    estornarMutation.mutate(parcela);
   };
 
   const statusBadge = (s) => {
@@ -329,6 +364,14 @@ export default function ParcelasVincendasModal({ onClose, user }) {
                                   className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition disabled:opacity-50"
                                   title="Marcar como recebida">
                                   <Check className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {p.status === 'recebida' && isAdmin && (
+                                <button onClick={() => handleEstornar(p)}
+                                  disabled={estornarMutation.isPending}
+                                  className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition disabled:opacity-50"
+                                  title="Estornar — reverter para pendente">
+                                  <RotateCcw className="w-3.5 h-3.5" />
                                 </button>
                               )}
                               <button onClick={() => startEdit(p)}
