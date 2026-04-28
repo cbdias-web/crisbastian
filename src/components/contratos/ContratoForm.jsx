@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -138,10 +138,23 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     setBuscandoCep(false);
   };
 
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+
+  // Estado para edição do vendedor (admin editando contrato existente)
+  const [vendedorEditId, setVendedorEditId] = useState(contratoExistente?.vendedor_id || '');
+  const [vendedorEditNome, setVendedorEditNome] = useState(contratoExistente?.vendedor_nome || '');
+
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      const vendedorId = user?.id || '';
-      const vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+      // Ao criar: usa o usuário logado. Ao editar: preserva o vendedor original (ou o alterado pelo admin)
+      let vendedorId, vendedorNome;
+      if (contratoExistente) {
+        vendedorId = vendedorEditId || contratoExistente.vendedor_id || user?.id || '';
+        vendedorNome = vendedorEditNome || contratoExistente.vendedor_nome || user?.nome_tratamento || user?.full_name || '';
+      } else {
+        vendedorId = user?.id || '';
+        vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+      }
       const payload = {
         ...data,
         tipo,
@@ -586,8 +599,30 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
             {aba === 'obs' && (
               <div className="space-y-4">
-                <div className="max-w-xs">
+                <div className={`grid gap-4 ${isAdmin && contratoExistente ? 'grid-cols-2' : 'max-w-xs'}`}>
                   {campo('Data do Contrato', 'data_contrato', 'date')}
+                  {isAdmin && contratoExistente && (
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Vendedor Responsável
+                      </label>
+                      <select
+                        value={vendedorEditId}
+                        onChange={e => {
+                          const v = vendedoresList.find(x => x.id === e.target.value);
+                          setVendedorEditId(e.target.value);
+                          setVendedorEditNome(v?.nome || '');
+                        }}
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Selecione o vendedor...</option>
+                        {vendedoresList.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+                      </select>
+                      {vendedorEditNome && (
+                        <p className="text-[10px] text-emerald-600 mt-1 font-medium">✓ {vendedorEditNome}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="group">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Observações</label>
