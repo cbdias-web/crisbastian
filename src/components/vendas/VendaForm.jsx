@@ -257,9 +257,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const toggleVendedor = (vendedor) => {
     setSelectedVendedores(prev => {
       const exists = prev.find(v => v.id === vendedor.id);
-      if (exists) return prev.filter(v => v.id !== vendedor.id);
-      return [...prev, { id: vendedor.id, nome: vendedor.nome, percentual_comissao: vendedor.percentual_comissao || 10 }];
+      // Seleção única: clicar no mesmo desmarca; clicar em outro substitui
+      if (exists) return [];
+      return [{ id: vendedor.id, nome: vendedor.nome, percentual_comissao: vendedor.percentual_comissao || 10 }];
     });
+    // Atualiza o percentual de comissão automaticamente ao trocar vendedor
+    setFormData(f => ({ ...f, percentual_comissao: vendedor.percentual_comissao || 10 }));
   };
 
   const addIndicador = () => {
@@ -435,26 +438,29 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
             {/* Vendedor */}
             <div ref={vendedorRef}>
-              <Label>Vendedor * {selectedVendedores.length > 0 && <span className="text-xs font-normal text-gray-400">({selectedVendedores.length} selecionado{selectedVendedores.length > 1 ? 's' : ''})</span>}</Label>
+              <Label>Vendedor *</Label>
               <div className="relative">
                 <button type="button" onClick={() => setVendedorOpen(o => !o)}
                   className="w-full flex items-center justify-between px-3 py-2 border border-input rounded-md text-sm bg-background hover:bg-gray-50 transition text-left">
                   <span className={selectedVendedores.length === 0 ? 'text-gray-400' : 'text-gray-900'}>
-                    {selectedVendedores.length === 0 ? 'Selecione o(s) vendedor(es)' : selectedVendedores.map(v => v.nome).join(', ')}
+                    {selectedVendedores.length === 0 ? 'Selecione o vendedor' : selectedVendedores[0].nome}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${vendedorOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {vendedorOpen && (
                   <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
-                    {vendedores.map(v => (
-                      <button key={v.id} type="button" onClick={() => toggleVendedor(v)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
-                        <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selectedVendedores.find(sv => sv.id === v.id) ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
-                          {selectedVendedores.find(sv => sv.id === v.id) && <Check className="w-3 h-3 text-white" />}
-                        </span>
-                        <span className="text-gray-800">{v.nome}</span>
-                      </button>
-                    ))}
+                    {vendedores.map(v => {
+                      const isSelected = !!selectedVendedores.find(sv => sv.id === v.id);
+                      return (
+                        <button key={v.id} type="button" onClick={() => { toggleVendedor(v); setVendedorOpen(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-left text-sm transition">
+                          <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-[#1a3150]' : 'border-gray-300'}`}>
+                            {isSelected && <span className="w-2 h-2 rounded-full bg-[#1a3150]" />}
+                          </span>
+                          <span className={`${isSelected ? 'font-semibold text-[#1a3150]' : 'text-gray-800'}`}>{v.nome}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
