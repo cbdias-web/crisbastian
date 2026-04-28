@@ -191,13 +191,16 @@ export default function Pipeline() {
 
   const { data: parcelasVenda = [] } = useQuery({
     queryKey: ['parcelas-venda-pipeline'],
-    queryFn: () => base44.entities.ParcelaVenda.filter({ status: 'pendente' }),
+    queryFn: () => base44.entities.ParcelaVenda.list('-data_vencimento', 1000),
     enabled: !!user,
     staleTime: 30000,
   });
 
+  // Apenas pendentes para KPIs e tabela inline
+  const parcelasVendaPendentes = parcelasVenda.filter(p => p.status === 'pendente');
+
   // Set de pipeline_ids que são parcelas pendentes
-  const parcelaPipelineIds = new Set(parcelasVenda.map(p => p.pipeline_id).filter(Boolean));
+  const parcelaPipelineIds = new Set(parcelasVendaPendentes.map(p => p.pipeline_id).filter(Boolean));
 
   const negocios = negociosRaw.filter(n => {
     if (!isAdmin) return n.vendedor_id === user?.id || n.created_by === user?.email;
@@ -494,8 +497,8 @@ export default function Pipeline() {
   };
 
   // KPI parcelas pendentes
-  const totalParcelasPendentes = parcelasVenda.length;
-  const valorParcelasPendentes = parcelasVenda.reduce((s, p) => s + (p.valor_parcela || 0), 0);
+  const totalParcelasPendentes = parcelasVendaPendentes.length;
+  const valorParcelasPendentes = parcelasVendaPendentes.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
   // KPIs — totais gerais (todos os negócios, sem filtro de gerente/temperatura/busca)
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
@@ -659,13 +662,13 @@ export default function Pipeline() {
               </div>
               <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-200 text-center">
                 <p className="text-sm font-bold text-amber-600">
-                  {fmtVal(parcelasVenda.filter(p => {
+                  {fmtVal(parcelasVendaPendentes.filter(p => {
                     const vend = vendedores.find(v => v.nome === filtroVendedor);
                     return vend && p.vendedor_id === vend.id;
                   }).reduce((s, p) => s + (p.valor_parcela || 0), 0))}
                 </p>
                 <p className="text-[10px] text-amber-600 mt-0.5 font-medium">
-                  💰 Parcelas a receber ({parcelasVenda.filter(p => {
+                  💰 Parcelas a receber ({parcelasVendaPendentes.filter(p => {
                     const vend = vendedores.find(v => v.nome === filtroVendedor);
                     return vend && p.vendedor_id === vend.id;
                   }).length})
@@ -729,7 +732,7 @@ export default function Pipeline() {
                 <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                   <CalendarClock className="w-4 h-4 text-amber-500" /> Parcelas Vincendas
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">{parcelasVenda.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{parcelasVendaPendentes.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -761,7 +764,7 @@ export default function Pipeline() {
                 </button>
               </div>
             </div>
-            {parcelasVenda.length === 0 ? (
+            {parcelasVendaPendentes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <CalendarClock className="w-10 h-10 mb-3 opacity-30" />
                 <p className="text-sm">Nenhuma parcela vincenda encontrada</p>
@@ -782,7 +785,7 @@ export default function Pipeline() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {[...parcelasVenda].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
+                    {[...parcelasVendaPendentes].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
                       const vencido = p.data_vencimento && p.data_vencimento < new Date().toISOString().split('T')[0];
                       return (
                         <tr key={p.id} className={`hover:bg-gray-50 transition ${vencido ? 'bg-red-50' : ''}`}>
