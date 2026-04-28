@@ -312,92 +312,94 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             )}
 
             {aba === 'financeiro' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
-                    Valor Total do Contrato (R$) <span className="text-blue-400 font-normal normal-case">(calculado auto)</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={form.valor_total || ''}
-                    onChange={e => set('valor_total', e.target.value)}
-                    placeholder="Preenchido automaticamente"
-                    className="w-full px-3 py-2 text-sm border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1a3150] focus:border-[#1a3150]"
-                  />
-                </div>
-                {campo('Valor de Adesão / Entrada (R$)', 'valor_adesao', 'number')}
-                {campo('Valor da Parcela (R$)', 'valor_parcela', 'number')}
-                <div>
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">Número de Parcelas</label>
-                  <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1a3150] bg-white">
-                    <option value={1}>À vista (sem parcelas)</option>
-                    {[2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => <option key={n} value={n}>{n}x</option>)}
-                  </select>
-                </div>
-                {select('Forma de Pagamento', 'forma_pagamento', FORMAS)}
-                {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
-                {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
-                {campo('Prazo (meses)', 'prazo_meses', 'number')}
-                {campo('Banco', 'banco')}
-                {campo('Agência', 'agencia')}
-                {campo('Conta', 'conta')}
-                {campo('Moeda', 'moeda', 'text', { placeholder: 'USD, EUR...' })}
-                {campo('Cotação (R$ por unidade)', 'cotacao', 'number', { placeholder: 'Ex: 5.7850' })}
-                {campo('Valor em Moeda Estrangeira', 'valor_em_moeda', 'number')}
-              </div>
-
-              {/* Indicadores */}
-              <div className="col-span-full border border-gray-200 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Indicadores (Espelhamento)</p>
-                    {indicadores.length > 0 && (
-                      <p className={`text-xs mt-0.5 ${limiteIndicadoresExcedido ? 'text-red-600 font-semibold' : totalPctIndicadores > 30 ? 'text-amber-600' : 'text-gray-400'}`}>
-                        Total: {totalPctIndicadores.toFixed(1)}% (máx 50%)
-                      </p>
-                    )}
+                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">
+                      Valor Total do Contrato (R$) <span className="text-blue-400 font-normal normal-case">(calculado auto)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={form.valor_total || ''}
+                      onChange={e => set('valor_total', e.target.value)}
+                      placeholder="Preenchido automaticamente"
+                      className="w-full px-3 py-2 text-sm border border-blue-200 bg-blue-50 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1a3150] focus:border-[#1a3150]"
+                    />
                   </div>
-                  <button type="button" onClick={addIndicador}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[#1a3150] text-white rounded-lg hover:opacity-90 transition">
-                    <Plus className="w-3 h-3" /> Adicionar
-                  </button>
+                  {campo('Valor de Adesão / Entrada (R$)', 'valor_adesao', 'number')}
+                  {campo('Valor da Parcela (R$)', 'valor_parcela', 'number')}
+                  <div>
+                    <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block mb-1">Número de Parcelas</label>
+                    <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#1a3150] bg-white">
+                      <option value={1}>À vista (sem parcelas)</option>
+                      {[2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => <option key={n} value={n}>{n}x</option>)}
+                    </select>
+                  </div>
+                  {select('Forma de Pagamento', 'forma_pagamento', FORMAS)}
+                  {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
+                  {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
+                  {campo('Prazo (meses)', 'prazo_meses', 'number')}
+                  {campo('Banco', 'banco')}
+                  {campo('Agência', 'agencia')}
+                  {campo('Conta', 'conta')}
+                  {campo('Moeda', 'moeda', 'text', { placeholder: 'USD, EUR...' })}
+                  {campo('Cotação (R$ por unidade)', 'cotacao', 'number', { placeholder: 'Ex: 5.7850' })}
+                  {campo('Valor em Moeda Estrangeira', 'valor_em_moeda', 'number')}
                 </div>
-                {limiteIndicadoresExcedido && (
-                  <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
-                    <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
-                    <p className="text-xs text-red-600">O total de indicadores não pode ultrapassar 50%.</p>
+
+                {/* Indicadores */}
+                <div className="border border-gray-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Indicadores (Espelhamento)</p>
+                      {indicadores.length > 0 && (
+                        <p className={`text-xs mt-0.5 ${limiteIndicadoresExcedido ? 'text-red-600 font-semibold' : totalPctIndicadores > 30 ? 'text-amber-600' : 'text-gray-400'}`}>
+                          Total: {totalPctIndicadores.toFixed(1)}% (máx 50%)
+                        </p>
+                      )}
+                    </div>
+                    <button type="button" onClick={addIndicador}
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-[#1a3150] text-white rounded-lg hover:opacity-90 transition">
+                      <Plus className="w-3 h-3" /> Adicionar
+                    </button>
                   </div>
-                )}
-                {indicadores.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-2">Nenhum indicador adicionado</p>
-                ) : (
-                  <div className="space-y-2">
-                    {indicadores.map((ind, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <select value={ind.tipo} onChange={e => { updateIndicador(idx, 'tipo', e.target.value); updateIndicador(idx, 'id', ''); updateIndicador(idx, 'nome', ''); }}
-                          className="w-28 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
-                          <option value="indicador">Indicador</option>
-                          <option value="vendedor">Vendedor</option>
-                        </select>
-                        <select value={ind.id} onChange={e => selectIndicadorPessoa(idx, e.target.value)}
-                          className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
-                          <option value="">Selecionar...</option>
-                          {indicadoresDisponiveis.filter(x => x.tipo === ind.tipo).map(x => (
-                            <option key={x.id} value={x.id}>{x.nome}</option>
-                          ))}
-                        </select>
-                        <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
-                          onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
-                          className="w-16 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] text-center" />
-                        <span className="text-xs text-gray-400">%</span>
-                        <button type="button" onClick={() => removeIndicador(idx)} className="p-1 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  {limiteIndicadoresExcedido && (
+                    <div className="flex items-center gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                      <p className="text-xs text-red-600">O total de indicadores não pode ultrapassar 50%.</p>
+                    </div>
+                  )}
+                  {indicadores.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-2">Nenhum indicador adicionado</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {indicadores.map((ind, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <select value={ind.tipo} onChange={e => { updateIndicador(idx, 'tipo', e.target.value); updateIndicador(idx, 'id', ''); updateIndicador(idx, 'nome', ''); }}
+                            className="w-28 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                            <option value="indicador">Indicador</option>
+                            <option value="vendedor">Vendedor</option>
+                          </select>
+                          <select value={ind.id} onChange={e => selectIndicadorPessoa(idx, e.target.value)}
+                            className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                            <option value="">Selecionar...</option>
+                            {indicadoresDisponiveis.filter(x => x.tipo === ind.tipo).map(x => (
+                              <option key={x.id} value={x.id}>{x.nome}</option>
+                            ))}
+                          </select>
+                          <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
+                            onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
+                            className="w-16 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] text-center" />
+                          <span className="text-xs text-gray-400">%</span>
+                          <button type="button" onClick={() => removeIndicador(idx)} className="p-1 hover:bg-red-50 rounded-lg text-red-400 hover:text-red-600">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
