@@ -418,10 +418,15 @@ export default function Pipeline() {
 
   // Produtos que seguem o fluxo de Contratos (não vão direto para Vendas)
   const PRODUTOS_CONTRATO = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE AQUI'];
+  const isProdutoContrato = (produto) => {
+    if (!produto) return false;
+    const p = produto.toUpperCase();
+    return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE');
+  };
 
   // Converter prospecção: produtos de contrato → aba Contratos; demais → aba Vendas
   const converterEmVenda = async (n) => {
-    const ehContrato = PRODUTOS_CONTRATO.includes(n.produto);
+    const ehContrato = isProdutoContrato(n.produto);
 
     if (ehContrato) {
       if (!confirm(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Um contrato em rascunho será criado e você será direcionado para a aba Contratos.`)) return;
@@ -936,12 +941,12 @@ export default function Pipeline() {
                                        <button
                                          onClick={() => converterEmVenda(n)}
                                          disabled={convertendo === n.id}
-                                         title={PRODUTOS_CONTRATO.includes(n.produto) ? 'Ir para Contratos' : 'Converter em venda'}
-                                         className={`p-0.5 text-gray-400 ${PRODUTOS_CONTRATO.includes(n.produto) ? 'hover:text-amber-600' : 'hover:text-emerald-600'}`}
+                                         title={isProdutoContrato(n.produto) ? 'Ir para Contratos' : 'Converter em venda'}
+                                         className={`p-0.5 text-gray-400 ${isProdutoContrato(n.produto) ? 'hover:text-amber-600' : 'hover:text-emerald-600'}`}
                                        >
                                          {convertendo === n.id
                                            ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                                           : PRODUTOS_CONTRATO.includes(n.produto)
+                                           : isProdutoContrato(n.produto)
                                              ? <ScrollText className="w-3 h-3" />
                                              : <ShoppingCart className="w-3 h-3" />}
                                        </button>
