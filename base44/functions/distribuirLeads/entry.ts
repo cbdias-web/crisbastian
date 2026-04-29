@@ -1,13 +1,33 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 import { addDays, format } from 'npm:date-fns@3.6.0';
 
-const PARALLEL = 30;
+const PARALLEL = 5;
+
+async function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function withRetry(fn, retries = 5) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (e) {
+      const isRateLimit = e?.message?.includes('429') || e?.message?.includes('Rate limit');
+      if (isRateLimit && attempt < retries - 1) {
+        await sleep(1000 * Math.pow(2, attempt));
+      } else {
+        throw e;
+      }
+    }
+  }
+}
 
 async function runParallel(items, fn) {
   const results = [];
   for (let i = 0; i < items.length; i += PARALLEL) {
     const batch = await Promise.all(items.slice(i, i + PARALLEL).map(fn));
     results.push(...batch);
+    if (i + PARALLEL < items.length) await sleep(300);
   }
   return results;
 }
@@ -26,9 +46,8 @@ Deno.serve(async (req) => {
     if (mode === 'batch') {
       const resultados = await runParallel(assignments, async (a) => {
         // Validar que o lead ainda está pendente (evitar duplicação)
-        const lead = await base44.asServiceRole.entities.Lead.filter({ id: a.leadId, status: 'pendente' });
+        const lead = await withRetry(() => base44.asServiceRole.entities.Lead.filter({ id: a.leadId, status: 'pendente' }));
         if (lead.length === 0) {
-          // Lead já foi distribuído, pular
           return null;
         }
         
@@ -47,13 +66,13 @@ Deno.serve(async (req) => {
           observacao: `Lead importado — lote: ${loteNome}`
         };
         if (subcarteira) clienteData.subcarteira = subcarteira;
-        const cliente = await base44.asServiceRole.entities.Cliente.create(clienteData);
-        await base44.asServiceRole.entities.Lead.update(a.leadId, {
+        const cliente = await withRetry(() => base44.asServiceRole.entities.Cliente.create(clienteData));
+        await withRetry(() => base44.asServiceRole.entities.Lead.update(a.leadId, {
           status: 'distribuido',
           vendedor_id: a.vendedorId,
           vendedor_nome: a.vendedorNome,
           cliente_id: cliente.id
-        });
+        }));
         return { ...a, clienteId: cliente.id };
       });
       const processados = resultados.filter(r => r !== null);
