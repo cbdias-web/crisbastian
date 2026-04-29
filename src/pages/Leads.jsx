@@ -278,11 +278,16 @@ export default function Leads() {
     setDeduplicando(false);
   };
 
-  const reverterDistribuicao = async (lote) => {
-    if (!confirm(`Reverter a distribuição do lote "${lote.nome}"? Todos os leads voltarão para pendente e os clientes criados (sem interações) serão removidos.`)) return;
+  const reverterDistribuicao = async (lote, vendedor = null) => {
+    const msg = vendedor
+      ? `Reverter os leads de "${vendedor.nome}" no lote "${lote.nome}"? Os leads voltarão para pendente e os clientes criados serão removidos.`
+      : `Reverter TODA a distribuição do lote "${lote.nome}"? Todos os leads voltarão para pendente.`;
+    if (!confirm(msg)) return;
     setRevertendo(lote.id);
     try {
-      const res = await base44.functions.invoke('reverterDistribuicao', { loteId: lote.id });
+      const payload = { loteId: lote.id };
+      if (vendedor) payload.vendedorId = vendedor.id;
+      const res = await base44.functions.invoke('reverterDistribuicao', payload);
       const { leadsRevertidos, clientesExcluidos } = res.data;
       toast.success(`${leadsRevertidos} lead(s) revertido(s), ${clientesExcluidos} cliente(s) removido(s)!`);
       queryClient.invalidateQueries(['lotes-leads']);
@@ -487,20 +492,43 @@ export default function Leads() {
                 </div>
 
                 {/* Leads não convertidos expandido */}
-                {isExpanded && naoConvertidos.length > 0 && (
-                  <div className="px-5 pb-4 bg-gray-50/50">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Leads não convertidos ({naoConvertidos.length})</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
-                      {naoConvertidos.map(lead => (
-                        <div key={lead.id} className="flex items-center gap-2 bg-white rounded-lg border border-gray-100 px-3 py-2 text-xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                          <span className="font-medium text-gray-800 truncate flex-1">{lead.nome}</span>
-                          <span className="text-gray-400 truncate">{lead.vendedor_nome}</span>
-                        </div>
-                      ))}
+                {isExpanded && naoConvertidos.length > 0 && (() => {
+                  // Agrupar por vendedor
+                  const porVendedor = {};
+                  naoConvertidos.forEach(l => {
+                    if (!porVendedor[l.vendedor_id]) porVendedor[l.vendedor_id] = { id: l.vendedor_id, nome: l.vendedor_nome, leads: [] };
+                    porVendedor[l.vendedor_id].leads.push(l);
+                  });
+                  return (
+                    <div className="px-5 pb-4 bg-gray-50/50">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Leads por vendedor ({naoConvertidos.length})</p>
+                      <div className="space-y-2">
+                        {Object.values(porVendedor).map(vend => (
+                          <div key={vend.id} className="bg-white rounded-xl border border-gray-100 p-3">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <p className="text-xs font-semibold text-gray-700">{vend.nome} <span className="text-gray-400 font-normal">({vend.leads.length} leads)</span></p>
+                              <button
+                                onClick={() => reverterDistribuicao(lote, vend)}
+                                disabled={revertendo === lote.id}
+                                className="text-[10px] font-semibold text-orange-600 hover:text-orange-800 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-1 rounded-lg transition disabled:opacity-40"
+                              >
+                                ↩ Reverter apenas {vend.nome.split(' ')[0]}
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-1 max-h-32 overflow-y-auto">
+                              {vend.leads.map(lead => (
+                                <div key={lead.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2.5 py-1.5 text-xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                                  <span className="font-medium text-gray-800 truncate">{lead.nome}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 {isExpanded && naoConvertidos.length === 0 && lote.status === 'distribuido' && (
                   <div className="px-5 pb-4 bg-emerald-50/30">
                     <p className="text-xs text-emerald-600 flex items-center gap-1.5">
