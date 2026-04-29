@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, TrendingUp, Loader2, Link2 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ContratoForm from '@/components/contratos/ContratoForm';
@@ -252,8 +252,8 @@ export default function Contratos() {
                           <button
                             onClick={() => enviarPipeline(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
-                            className="p-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg transition disabled:opacity-30" title="Enviar ao Pipeline">
-                            {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                            className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition disabled:opacity-30" title="Enviar para Vendas">
+                            {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                           </button>
                           <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
                             className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
