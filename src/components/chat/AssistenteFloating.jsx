@@ -242,6 +242,7 @@ function isInactive() {
 }
 
 const POSITION_KEY = 'jarvis_position';
+const CONVERSATION_KEY = 'jarvis_conversation_id';
 
 function loadPosition() {
   try {
@@ -409,6 +410,7 @@ export default function AssistenteFloating() {
       agent_name: 'assistente_treinamentos',
       metadata: { name: 'Chat' }
     });
+    localStorage.setItem(CONVERSATION_KEY, conv.id);
     setConversation(conv);
     setMessages([]);
     setIsFirstMessage(true);
@@ -421,14 +423,37 @@ export default function AssistenteFloating() {
 
   const initConversation = async () => {
     try {
+      // Tenta restaurar conversa existente do localStorage
+      const savedId = localStorage.getItem(CONVERSATION_KEY);
+      if (savedId && !isInactive()) {
+        try {
+          const existingConv = await base44.agents.getConversation(savedId);
+          if (existingConv) {
+            if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+            setConversation(existingConv);
+            setMessages(existingConv.messages || []);
+            setIsFirstMessage((existingConv.messages || []).length === 0);
+            setPdfDownloaded(false);
+            unsubscribeRef.current = base44.agents.subscribeToConversation(existingConv.id, (data) => {
+              setMessages(data.messages || []);
+            });
+            setInitialized(true);
+            return;
+          }
+        } catch (e) {
+          // Conversa não encontrada, cria nova
+          localStorage.removeItem(CONVERSATION_KEY);
+        }
+      }
       await startFreshConversation();
       setInitialized(true);
     } catch (e) {}
   };
 
   const newChat = async () => {
-    await startFreshConversation();
     localStorage.removeItem(LAST_ACTIVITY_KEY);
+    localStorage.removeItem(CONVERSATION_KEY);
+    await startFreshConversation();
   };
 
   const isTyping = sending || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
