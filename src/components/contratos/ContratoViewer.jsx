@@ -355,17 +355,15 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
             {/* Comissões */}
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Comissões</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Vendedor & Indicadores</p>
               <div className="space-y-2">
-                {contrato.vendedor_nome && (
-                  <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{contrato.vendedor_nome}</p>
-                      <p className="text-[10px] text-gray-400">Vendedor responsável</p>
-                    </div>
+                <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{contrato.vendedor_nome || <span className="text-gray-400 italic font-normal">Não informado</span>}</p>
+                    <p className="text-[10px] text-gray-400">Vendedor responsável</p>
                   </div>
-                )}
-                {contrato.indicadores?.map((ind, i) => (
+                </div>
+                {contrato.indicadores?.length > 0 ? contrato.indicadores.map((ind, i) => (
                   <div key={i} className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
                     <div>
                       <p className="text-sm font-semibold text-gray-800">{ind.nome}</p>
@@ -373,7 +371,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     </div>
                     <span className="text-sm font-bold text-amber-700">{ind.percentual}%</span>
                   </div>
-                ))}
+                )) : (
+                  <div className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl">
+                    <p className="text-xs text-gray-400 italic">Nenhum indicador/espelhamento cadastrado</p>
+                  </div>
+                )}
               </div>
             </div>
           </Section>
