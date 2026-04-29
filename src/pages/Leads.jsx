@@ -473,13 +473,13 @@ export default function Leads() {
                         Distribuir
                       </Button>
                     )}
-                    {lote.status === 'distribuido' && (
+                    {(lote.status === 'distribuido' || stats.distribuidos > 0) && (
                       <Button size="sm" variant="outline" onClick={() => reverterDistribuicao(lote)} disabled={revertendo === lote.id} className="border-orange-200 text-orange-600 hover:bg-orange-50">
                         {revertendo === lote.id ? <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-1.5" /> : <span className="mr-1.5">↩</span>}
                         Reverter
                       </Button>
                     )}
-                    {lote.status === 'distribuido' && stats.naoConvertidos > 0 && (
+                    {(lote.status === 'distribuido' || stats.distribuidos > 0) && stats.naoConvertidos > 0 && (
                       <Button size="sm" variant="outline" onClick={() => abrirDistribuicao(lote, 'redistribuir')} disabled={redistribuindo === lote.id} className="border-blue-200 text-blue-600 hover:bg-blue-50">
                         {redistribuindo === lote.id ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
                         Redistribuir ({stats.naoConvertidos})
