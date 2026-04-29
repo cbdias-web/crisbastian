@@ -7,7 +7,7 @@
       "enum": [
         "CONTA GLOBAL",
         "CONTA INTERNACIONAL",
-        "DOLARIZE AQUI"
+        "DOLARIZE"
       ],
       "description": "Tipo de contrato"
     },

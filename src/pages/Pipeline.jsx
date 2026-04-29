@@ -420,7 +420,7 @@ export default function Pipeline() {
   const PRODUTOS_CONTRATO = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE AQUI'];
   const isProdutoContrato = (produto) => {
     if (!produto) return false;
-    const p = produto.toUpperCase();
+    const p = produto.toUpperCase().trim();
     return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE');
   };
 
@@ -449,9 +449,11 @@ export default function Pipeline() {
           } catch {}
         }
 
+        // Normaliza produto para tipo do contrato
+        const tipoContrato = n.produto?.toUpperCase().includes('DOLARIZE') ? 'DOLARIZE' : n.produto;
         // Criar contrato em rascunho com dados do pipeline
         await base44.entities.Contrato.create({
-          tipo: n.produto,
+          tipo: tipoContrato,
           nome: clienteData.nome || n.cliente_nome || '',
           cpf_cnpj: clienteData.cpf_cnpj || n.cliente_cpf_cnpj || '',
           telefone: clienteData.telefone || n.cliente_telefone || '',

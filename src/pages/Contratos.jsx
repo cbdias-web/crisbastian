@@ -11,7 +11,7 @@ import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSi
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-50 text-[#0f1e35] border-blue-200', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
   'CONTA INTERNACIONAL': { color: 'bg-[#1a3a6b]', light: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: Globe, desc: 'Abertura de conta internacional com transações em múltiplas moedas' },
-  'DOLARIZE AQUI': { color: 'bg-amber-700', light: 'bg-amber-50 text-amber-700 border-amber-200', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
+  'DOLARIZE': { color: 'bg-amber-700', light: 'bg-amber-50 text-amber-700 border-amber-200', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
 };
 
 const STATUS_CONFIG = {

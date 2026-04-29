@@ -25,13 +25,13 @@ const ESTADOS_CIVIS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)',
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
   'CONTA INTERNACIONAL': '#1a3a6b',
-  'DOLARIZE AQUI': '#b45309',
+  'DOLARIZE': '#b45309',
 };
 
 const TIPO_GRADIENT = {
   'CONTA GLOBAL': 'from-[#0f1e35] to-[#1a3150]',
   'CONTA INTERNACIONAL': 'from-[#1a3a6b] to-[#2a4a8b]',
-  'DOLARIZE AQUI': 'from-[#b45309] to-[#d97706]',
+  'DOLARIZE': 'from-[#b45309] to-[#d97706]',
 };
 
 // Calcula quantos campos obrigatórios/relevantes estão preenchidos por aba

@@ -11,7 +11,7 @@ import FluxoContrato from './FluxoContrato';
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
   'CONTA INTERNACIONAL': '#1a3a6b',
-  'DOLARIZE AQUI': '#b45309',
+  'DOLARIZE': '#b45309',
 };
 
 const STATUS_CONFIG = {
