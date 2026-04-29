@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, X, Loader2, Plus, ChevronDown, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 
 const INACTIVITY_MS = 30 * 60 * 1000;
 const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
@@ -250,7 +251,67 @@ function loadPosition() {
   return { right: 24, bottom: 24 };
 }
 
+// Rotas conhecidas da plataforma
+const ROTAS_PLATAFORMA = {
+  'dashboard': '/',
+  'vendas': '/Vendas',
+  'vendedores': '/Vendedores',
+  'clientes': '/Clientes',
+  'indicadores': '/Espelhamentos',
+  'espelhamentos': '/Espelhamentos',
+  'pipeline': '/Pipeline',
+  'contratos': '/Contratos',
+  'comissões': '/Comissoes',
+  'comissoes': '/Comissoes',
+  'meus clientes': '/MeusClientes',
+  'meusclientes': '/MeusClientes',
+  'treinamento': '/Treinamento',
+  'capacitação': '/Treinamento',
+  'manual': '/Manual',
+  'metas': '/Metas',
+  'leads': '/Leads',
+  'prospecção': '/Leads',
+  'comunicados': '/Comunicados',
+  'notificações': '/Notificacoes',
+  'notificacoes': '/Notificacoes',
+  'usuários': '/Usuarios',
+  'usuarios': '/Usuarios',
+  'notas fiscais': '/NotasFiscais',
+  'notasfiscais': '/NotasFiscais',
+  'relatório': '/RelatorioComissoes',
+  'relatoriocomissoes': '/RelatorioComissoes',
+};
+
+function executarComandoMensagem(mensagem, navigate) {
+  if (!mensagem || !navigate) return false;
+  const texto = mensagem.toLowerCase();
+
+  // Padrão explícito: [NAVEGAR:/Pagina] ou [IR:/Pagina]
+  const cmdMatch = mensagem.match(/\[(NAVEGAR|IR|ABRIR|GOTO)\s*[:/]?\s*([^\]]+)\]/i);
+  if (cmdMatch) {
+    const destino = cmdMatch[2].trim();
+    const rota = destino.startsWith('/') ? destino : `/${destino}`;
+    navigate(rota);
+    return true;
+  }
+
+  // Padrão: "acesse/abra/vá para/navegue para X"
+  const navegacaoMatch = texto.match(/(?:acesse|abra|vá para|va para|navegue para|abrir|ir para)\s+(?:a\s+)?(?:página\s+de\s+|aba\s+de\s+|módulo\s+de\s+)?(.+?)(?:\.|!|$)/i);
+  if (navegacaoMatch) {
+    const destino = navegacaoMatch[1].trim().toLowerCase().replace(/^(a|o|as|os)\s+/, '');
+    for (const [chave, rota] of Object.entries(ROTAS_PLATAFORMA)) {
+      if (destino.includes(chave)) {
+        navigate(rota);
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export default function AssistenteFloating() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState(loadPosition);
   const dragRef = useRef({ dragging: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 });
@@ -299,6 +360,10 @@ export default function AssistenteFloating() {
       const user = await base44.auth.me();
       if (!user?.email) return;
       const pendentes = await base44.entities.JarvisMensagem.filter({ destinatario_email: user.email, lida: false });
+      // Executa comandos automaticamente nas novas mensagens
+      pendentes.forEach(msg => {
+        executarComandoMensagem(msg.mensagem, navigate);
+      });
       setMensagensPendentes(pendentes);
     } catch (e) {}
   };
@@ -549,12 +614,24 @@ export default function AssistenteFloating() {
             {/* Mensagens pendentes do admin */}
             {mensagensPendentes.length > 0 && (
               <div className="space-y-2">
-                {mensagensPendentes.map((msg) => (
-                  <div key={msg.id} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                    <p className="text-[10px] font-semibold text-blue-600 mb-1">📢 Mensagem de {msg.remetente_nome || 'Administrador'}</p>
-                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{msg.mensagem}</p>
-                  </div>
-                ))}
+                {mensagensPendentes.map((msg) => {
+                  const temComando = /\[(NAVEGAR|IR|ABRIR|GOTO)[:/]/i.test(msg.mensagem) ||
+                    /(?:acesse|abra|vá para|navegue para|ir para)\s+/i.test(msg.mensagem);
+                  return (
+                    <div key={msg.id} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                      <p className="text-[10px] font-semibold text-blue-600 mb-1">📢 Mensagem de {msg.remetente_nome || 'Administrador'}</p>
+                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{msg.mensagem}</p>
+                      {temComando && (
+                        <button
+                          onClick={() => executarComandoMensagem(msg.mensagem, navigate)}
+                          className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-white bg-[#0f1e35] px-2.5 py-1 rounded-lg hover:bg-[#1a3150] transition"
+                        >
+                          ▶ Executar comando
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
                 <button
                   onClick={() => { marcarMensagensComoLidas(mensagensPendentes); setMensagensPendentes([]); }}
                   className="w-full text-xs text-blue-600 hover:text-blue-800 py-1 underline"
