@@ -331,26 +331,6 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
             </Grid>
           </Section>
 
-          <Section title="Comissões">
-            <Grid>
-              <Item label="Vendedor Responsável" value={contrato.vendedor_nome} highlight />
-            </Grid>
-            {contrato.indicadores?.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Indicadores</p>
-                {contrato.indicadores.map((ind, i) => (
-                  <div key={i} className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">{ind.nome}</p>
-                      <p className="text-[10px] text-gray-400 capitalize">{ind.tipo || 'indicador'}</p>
-                    </div>
-                    <span className="text-sm font-bold text-amber-700">{ind.percentual}%</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Section>
-
           <Section title="Dados Financeiros">
             <Grid>
               <Item label="Valor Total" value={fmtVal(contrato.valor_total)} highlight />
@@ -372,6 +352,30 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                 <Item label="Conta" value={contrato.conta} />
               </Grid>
             )}
+
+            {/* Comissões */}
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Comissões</p>
+              <div className="space-y-2">
+                {contrato.vendedor_nome && (
+                  <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{contrato.vendedor_nome}</p>
+                      <p className="text-[10px] text-gray-400">Vendedor responsável</p>
+                    </div>
+                  </div>
+                )}
+                {contrato.indicadores?.map((ind, i) => (
+                  <div key={i} className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{ind.nome}</p>
+                      <p className="text-[10px] text-gray-400 capitalize">{ind.tipo || 'indicador'}</p>
+                    </div>
+                    <span className="text-sm font-bold text-amber-700">{ind.percentual}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </Section>
 
           {contrato.observacoes && (
