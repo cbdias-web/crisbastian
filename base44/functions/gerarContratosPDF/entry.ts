@@ -92,16 +92,18 @@ function mapearCampos(contrato) {
     'TELEFONE': extrairTelefone(contrato.telefone),
 
     // Financeiro
-    'VALOR DA ADESÃO': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : '',
-    // Conta Internacional usa "VALOR DA ENTRADA" no lugar de adesão
+    // VALOR DA ADESÃO = valor total do contrato (campo "valor_total" na plataforma)
+    'VALOR DA ADESÃO': contrato.valor_total ? `R$ ${fmtVal(contrato.valor_total)}` : '',
+    // VALOR DA ENTRADA = entrada efetiva paga pelo cliente (campo "valor_adesao" na plataforma)
     'VALOR DA ENTRADA': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : '',
-    'VALOR DA PARCELA': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
-    'VALOR DA MENSALIDADE': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
-    'VALOR MENSALIDADE': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
+    // Parcela e mensalidade: só preenche se houver parcelas (num_parcelas > 0)
+    'VALOR DA PARCELA': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
+    'VALOR DA MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
+    'VALOR MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
     // Nomes exatos dos campos de parcelas em cada PDF
-    'Nº PARCELAS DA ADESÃO': contrato.num_parcelas ? String(contrato.num_parcelas) : '',
-    'numero de parcelas': contrato.num_parcelas ? String(contrato.num_parcelas) : '', // Dolarize Aqui
-    'PARCELAS': contrato.num_parcelas ? String(contrato.num_parcelas) : '',
+    'Nº PARCELAS DA ADESÃO': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
+    'numero de parcelas': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '', // Dolarize Aqui
+    'PARCELAS': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
     'PAGAMENTO TODO DIA': contrato.dia_vencimento ? String(contrato.dia_vencimento) : '',
     // DATA DE PAGAMENTO como data completa
     'DATA DE PAGAMENTO': contrato.data_primeiro_pagamento ? fmtDate(contrato.data_primeiro_pagamento) : '',
