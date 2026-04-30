@@ -112,6 +112,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   // ── FINANCEIRO ─────────────────────────────────────────────────────────────
   const numParcelasInicial = venda?.num_parcelas || 1;
   const [numParcelas, setNumParcelas] = useState(numParcelasInicial);
+  // semParcelas = true significa "pagamento total na entrada" (à vista), false = tem parcelas do saldo
+  const [semParcelas, setSemParcelas] = useState(!venda?.id || (venda?.num_parcelas || 0) <= 0);
 
   // Valor total do contrato
   const [valorTotalContrato, setValorTotalContrato] = useState(
@@ -197,13 +199,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     prevNumParcelasRef.current = numParcelas;
     if (!numMudou) return;
 
-    if (numParcelas <= 1) {
+    if (semParcelas || numParcelas <= 0) {
       setParcelasEditaveis([]);
       return;
     }
     const restante = Math.max(0, (parseFloat(valorTotalContrato) || 0) - (parseFloat(valorEntradaCustom) || 0));
     setParcelasEditaveis(gerarParcelasNovas(numParcelas, restante, formData.data));
-  }, [numParcelas]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [numParcelas, semParcelas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateVencimentoParcela = (idx, novaData) => {
     setParcelasEditaveis(prev => {
@@ -341,7 +343,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     const entradaFinal = parseFloat(valorEntradaCustom) || 0;
     const totalFinal = parseFloat(valorTotalContrato) || entradaFinal;
 
-    if (numParcelas > 1) {
+    const temParcelas = !semParcelas && numParcelas > 0;
+    if (temParcelas) {
       if (totalFinal <= 0) { toast.error('Informe o valor total do contrato.'); return; }
       if (entradaFinal >= totalFinal) { toast.error('O valor de entrada deve ser menor que o total do contrato.'); return; }
     }
@@ -349,7 +352,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     // Calcula parcelas no momento do submit com valores finais
     const restanteFinal = Math.max(0, totalFinal - entradaFinal);
     let parcelasFinais = [];
-    if (numParcelas > 1 && restanteFinal > 0) {
+    if (temParcelas && restanteFinal > 0) {
       const valorPorParcela = restanteFinal / numParcelas;
       parcelasFinais = Array.from({ length: numParcelas }, (_, i) => {
         const editada = parcelasEditaveis[i];
@@ -372,7 +375,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       vendedores_ids: selectedVendedores,
       valor: entradaFinal,
       valor_total_contrato: totalFinal,
-      num_parcelas: numParcelas,
+      num_parcelas: semParcelas ? 0 : numParcelas,
       indicadores,
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
@@ -493,28 +496,34 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       step="0.01"
                       value={valorEntradaCustom}
                       onChange={e => setValorEntradaCustom(e.target.value)}
-                      placeholder={numParcelas === 1 ? 'Igual ao total' : 'Ex: 50000,00'}
-                      disabled={numParcelas === 1}
+                      placeholder={semParcelas ? 'Igual ao total' : 'Ex: 50000,00'}
+                      disabled={semParcelas}
                     />
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      {numParcelas === 1 ? 'Igual ao total (à vista)' : 'Conta na meta do mês atual'}
+                      {semParcelas ? 'Igual ao total (à vista)' : 'Conta na meta do mês atual'}
                     </p>
                   </div>
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Parcelas do saldo restante</label>
                     <select
-                      value={numParcelas}
+                      value={semParcelas ? '__sem_parcelas__' : numParcelas}
                       onChange={e => {
-                        const n = parseInt(e.target.value);
-                        setNumParcelas(n);
-                        if (n === 1) {
+                        const isSemParcelas = e.target.value === '__sem_parcelas__';
+                        if (isSemParcelas) {
+                          setSemParcelas(true);
+                          setNumParcelas(0);
                           setValorEntradaCustom(valorTotalContrato);
+                          setParcelasEditaveis([]);
+                        } else {
+                          const n = parseInt(e.target.value);
+                          setSemParcelas(false);
+                          setNumParcelas(n);
                         }
                       }}
                       className="w-full px-3 py-2 border border-input rounded-md text-sm bg-white h-9 focus:outline-none focus:ring-1 focus:ring-ring"
                     >
-                      <option value={1}>Sem parcelas (pagamento total na entrada)</option>
-                      {Array.from({ length: 12 }, (_, i) => i + 2).map(n => {
+                      <option value="__sem_parcelas__">Sem parcelas (pagamento total na entrada)</option>
+                      {Array.from({ length: 13 }, (_, i) => i + 1).map(n => {
                         const vp = valorRestante > 0 ? (valorRestante / n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '--';
                         return <option key={n} value={n}>Entrada + {n}x de {vp}</option>;
                       })}
@@ -523,7 +532,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 </div>
 
                 {valorTotal > 0 && (
-                  <div className={`grid gap-2 pt-2 border-t border-blue-100 ${numParcelas > 1 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <div className={`grid gap-2 pt-2 border-t border-blue-100 ${!semParcelas && numParcelas > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                     <div className="text-center bg-white rounded-lg py-2 px-3">
                       <p className="text-[10px] text-gray-500">Total do contrato</p>
                       <p className="text-sm font-bold text-gray-800">{valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
@@ -532,7 +541,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       <p className="text-[10px] text-gray-500">Entrada (meta)</p>
                       <p className="text-sm font-bold text-emerald-600">{valorEntrada.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                     </div>
-                    {numParcelas > 1 && (
+                    {!semParcelas && numParcelas > 0 && (
                       <div className="text-center bg-white rounded-lg py-2 px-3">
                         <p className="text-[10px] text-gray-500">Saldo (entrada + {numParcelas}x)</p>
                         <p className="text-sm font-bold text-amber-600">
@@ -544,7 +553,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 )}
 
                 {/* Parcelas — datas e valores editáveis */}
-                {numParcelas > 1 && parcelasEditaveis.length > 0 && (() => {
+                {!semParcelas && numParcelas > 0 && parcelasEditaveis.length > 0 && (() => {
                   const totalDistribuido = parcelasEditaveis.reduce((s, p) => s + (p.valor || 0), 0);
                   const diff = Math.abs(totalDistribuido - valorRestante);
                   const diffOk = diff < 0.01;
