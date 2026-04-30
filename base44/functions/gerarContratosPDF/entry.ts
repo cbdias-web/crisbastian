@@ -11,8 +11,8 @@ const PDF_URLS = {
 const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
 function fmtVal(v) {
-  if (!v) return '';
-  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Sempre retorna valor formatado, mesmo zero
+  return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function fmtDate(d) {
@@ -95,26 +95,27 @@ function mapearCampos(contrato) {
     'TELEFONE': extrairTelefone(contrato.telefone),
 
     // Financeiro — nomes EXATOS dos campos AcroForm (verificados via diagnóstico)
+    // NOTA: Os PDFs já têm "R$" impresso antes dos campos — passamos só o número formatado
     // Conta Global usa: "VALOR DA ADESÃO" (com acento unicode)
-    'VALOR DA ADES\u00c3O': `R$ ${fmtVal(contrato.valor_total || 0)}`,
-    'VALOR DA ADESÃO': `R$ ${fmtVal(contrato.valor_total || 0)}`,
+    'VALOR DA ADES\u00c3O': fmtVal(contrato.valor_total || 0),
+    'VALOR DA ADESÃO': fmtVal(contrato.valor_total || 0),
     // Conta Internacional usa: "VALOR TOTAL DA ADESAO" (sem acento)
-    'VALOR TOTAL DA ADESAO': `R$ ${fmtVal(contrato.valor_total || 0)}`,
+    'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
     // Entrada
-    'VALOR DA ENTRADA': contrato.valor_adesao > 0 ? `R$ ${fmtVal(contrato.valor_adesao)}` : 'R$ 0,00',
-    // Parcela e mensalidade: só preenche se houver parcelas (num_parcelas > 0)
-    'VALOR DA PARCELA': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
-    'VALOR PARCELAS': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
-    'VALOR DA MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
-    'VALOR MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
+    'VALOR DA ENTRADA': fmtVal(contrato.valor_adesao || 0),
+    // Parcela e mensalidade
+    'VALOR DA PARCELA': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
+    'VALOR PARCELAS': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
+    'VALOR DA MENSALIDADE': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
+    'VALOR MENSALIDADE': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
     // Número de parcelas
-    'N\u00ba PARCELAS DA ADES\u00c3O': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
-    'Nº PARCELAS DA ADESÃO': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
-    'numero de parcelas': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
-    'PARCELAS': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
-    // Dia de vencimento — Conta Internacional usa "TOD DIA"
-    'TOD DIA': contrato.dia_vencimento > 0 ? String(contrato.dia_vencimento) : '',
-    'PAGAMENTO TODO DIA': contrato.dia_vencimento > 0 ? String(contrato.dia_vencimento) : '',
+    'N\u00ba PARCELAS DA ADES\u00c3O': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
+    'Nº PARCELAS DA ADESÃO': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
+    'numero de parcelas': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
+    'PARCELAS': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
+    // Dia de vencimento
+    'TOD DIA': contrato.dia_vencimento > 0 ? String(Math.round(contrato.dia_vencimento)) : '',
+    'PAGAMENTO TODO DIA': contrato.dia_vencimento > 0 ? String(Math.round(contrato.dia_vencimento)) : '',
     // DATA DE PAGAMENTO como data completa
     'DATA DE PAGAMENTO': contrato.data_primeiro_pagamento ? fmtDate(contrato.data_primeiro_pagamento) : '',
     // Campo Data1_af_date (Dolarize Aqui) — campo de data Adobe, formato DD/MM/YYYY
