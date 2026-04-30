@@ -200,9 +200,19 @@ export default function Pipeline() {
   const parcelasVendaPendentes = parcelasVenda.filter(p => {
     if (p.status !== 'pendente') return false;
     if (!isAdmin) return true; // não-admin já vê só as suas pela query
-    if (filtroVendedor === 'Todos') return true;
-    const vend = vendedores.find(v => v.nome === filtroVendedor);
-    return vend ? p.vendedor_id === vend.id : p.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase();
+    if (filtroVendedor !== 'Todos') {
+      const vend = vendedores.find(v => v.nome === filtroVendedor);
+      const vendOk = vend ? p.vendedor_id === vend.id : p.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase();
+      if (!vendOk) return false;
+    }
+    return true;
+  });
+
+  // Parcelas filtradas por período (quando filtro de data está ativo — usa data_vencimento)
+  const parcelasVendaFiltradas = parcelasVendaPendentes.filter(p => {
+    if (filtroDataInicio && p.data_vencimento && p.data_vencimento < filtroDataInicio) return false;
+    if (filtroDataFim && p.data_vencimento && p.data_vencimento > filtroDataFim) return false;
+    return true;
   });
 
   // Set de pipeline_ids que são parcelas pendentes
@@ -509,9 +519,10 @@ export default function Pipeline() {
     setConvertendo(null);
   };
 
-  // KPI parcelas pendentes
-  const totalParcelasPendentes = parcelasVendaPendentes.length;
-  const valorParcelasPendentes = parcelasVendaPendentes.reduce((s, p) => s + (p.valor_parcela || 0), 0);
+  // KPI parcelas pendentes (usa filtradas quando há período selecionado)
+  const parcelasParaExibir = (filtroDataInicio || filtroDataFim) ? parcelasVendaFiltradas : parcelasVendaPendentes;
+  const totalParcelasPendentes = parcelasParaExibir.length;
+  const valorParcelasPendentes = parcelasParaExibir.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
   // KPIs — totais gerais (todos os negócios, sem filtro de gerente/temperatura/busca)
   const totalAtivos = negocios.filter(n => n.temperatura !== 'Perdido').length;
@@ -733,8 +744,8 @@ export default function Pipeline() {
             {/* Contador */}
             <div className="ml-auto flex flex-col items-end gap-0.5 pb-0.5">
               <span className="text-xs font-bold text-gray-700">{negociosFiltrados.length} negócio(s)</span>
-              {filtroVendedor !== 'Todos' && aba === 'parcelas' && (
-                <span className="text-[10px] text-amber-600 font-semibold">{parcelasVendaPendentes.length} parcela(s)</span>
+              {aba === 'parcelas' && (filtroVendedor !== 'Todos' || filtroDataInicio || filtroDataFim) && (
+                <span className="text-[10px] text-amber-600 font-semibold">{parcelasParaExibir.length} parcela(s) filtrada(s)</span>
               )}
             </div>
           </div>
@@ -782,7 +793,10 @@ export default function Pipeline() {
                 <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                   <CalendarClock className="w-4 h-4 text-amber-500" /> Parcelas Vincendas
                 </h2>
-                <p className="text-xs text-gray-400 mt-0.5">{parcelasVendaPendentes.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {parcelasParaExibir.length} parcela(s) pendente(s) · Total: {fmtVal(valorParcelasPendentes)}
+                  {(filtroDataInicio || filtroDataFim) && <span className="ml-2 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-semibold">filtrado por período</span>}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -814,10 +828,10 @@ export default function Pipeline() {
                 </button>
               </div>
             </div>
-            {parcelasVendaPendentes.length === 0 ? (
+            {parcelasParaExibir.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-gray-400">
                 <CalendarClock className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">Nenhuma parcela vincenda encontrada</p>
+                <p className="text-sm">Nenhuma parcela encontrada {(filtroDataInicio || filtroDataFim) ? 'no período selecionado' : 'vincenda'}</p>
                 <p className="text-xs mt-1">Parcelas de vendas parceladas aparecem aqui</p>
               </div>
             ) : (
@@ -835,7 +849,7 @@ export default function Pipeline() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {[...parcelasVendaPendentes].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
+                    {[...parcelasParaExibir].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
                       const vencido = p.data_vencimento && p.data_vencimento < new Date().toISOString().split('T')[0];
                       return (
                         <tr key={p.id} className={`hover:bg-gray-50 transition ${vencido ? 'bg-red-50' : ''}`}>
