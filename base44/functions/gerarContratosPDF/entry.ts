@@ -83,6 +83,7 @@ function mapearCampos(contrato) {
     'ENDEREÇO': contrato.endereco || '',
     'BAIRRO': contrato.bairro || '',
     'MUNICÍPIO': contrato.cidade || '',
+    'MUNIC\u00cdPIO': contrato.cidade || '',
     'UF': contrato.estado || '',
     'CEP': contrato.cep || '',
 
@@ -92,6 +93,9 @@ function mapearCampos(contrato) {
 
     // Financeiro
     'VALOR DA ADESÃO': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : '',
+    // Conta Internacional usa "VALOR DA ENTRADA" no lugar de adesão
+    'VALOR DA ENTRADA': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : '',
+    'VALOR DA PARCELA': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
     'VALOR DA MENSALIDADE': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
     'VALOR MENSALIDADE': contrato.valor_parcela ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
     // Nomes exatos dos campos de parcelas em cada PDF
