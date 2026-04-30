@@ -95,12 +95,14 @@ function mapearCampos(contrato) {
   }
 
   if (contrato.tipo === 'CONTA INTERNACIONAL') {
-    // Campos financeiros confirmados via diagnóstico:
-    // VALOR TOTAL DA ADESAO, VALOR DA ENTRADA, TOD DIA, VALOR PARCELAS, VALOR DA MENSALIDADE
+    // Se não há entrada separada (valor_adesao = 0), a entrada = valor total
+    const entradaInt = (contrato.valor_adesao && contrato.valor_adesao > 0)
+      ? contrato.valor_adesao
+      : contrato.valor_total || 0;
     return {
       ...base,
       'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
-      'VALOR DA ENTRADA': fmtVal(contrato.valor_adesao || 0),
+      'VALOR DA ENTRADA': fmtVal(entradaInt),
       'VALOR PARCELAS': valorParcela,
       'VALOR DA MENSALIDADE': valorParcela,
       'TOD DIA': diaVenc,

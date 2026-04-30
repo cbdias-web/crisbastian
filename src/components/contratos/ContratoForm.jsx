@@ -514,7 +514,20 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     />
                   </div>
                   {/* VALOR DE ENTRADA = adesão/entrada efetiva */}
-                  {campo('Valor de Entrada (R$)', 'valor_adesao', 'number')}
+                  <div className="group">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                      Valor de Entrada (R$)
+                      {parseInt(form.num_parcelas) === 0 && <span className="ml-1 text-[9px] text-emerald-500 normal-case font-normal">(igual ao total)</span>}
+                    </label>
+                    <input
+                      type="number"
+                      value={form.valor_adesao || ''}
+                      onChange={e => set('valor_adesao', e.target.value)}
+                      placeholder={parseInt(form.num_parcelas) === 0 ? 'Igual ao valor total' : 'Ex: 5000,00'}
+                      disabled={parseInt(form.num_parcelas) === 0}
+                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+                    />
+                  </div>
                   {/* VALOR DA PARCELA = calculado automaticamente */}
                   <div className="group">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
