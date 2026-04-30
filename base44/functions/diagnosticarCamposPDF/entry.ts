@@ -15,7 +15,9 @@ Deno.serve(async (req) => {
 
     const resultado = {};
 
-    for (const [nome, url] of Object.entries(PDFs)) {
+    const { tipo } = await req.json().catch(() => ({}));
+    const pdfsToCheck = tipo ? { [tipo]: PDFs[tipo] } : PDFs;
+    for (const [nome, url] of Object.entries(pdfsToCheck)) {
       try {
         const res = await fetch(url);
         if (!res.ok) {
@@ -28,10 +30,7 @@ Deno.serve(async (req) => {
         const fields = form.getFields();
         resultado[nome] = {
           total_campos: fields.length,
-          campos: fields.map(f => ({
-            nome: f.getName(),
-            tipo: f.constructor.name,
-          }))
+          campos: fields.map(f => f.getName()),
         };
       } catch (e) {
         resultado[nome] = { erro: e.message };

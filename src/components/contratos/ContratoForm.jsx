@@ -224,17 +224,20 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const set = (k, v) => setForm(f => {
     const updated = { ...f, [k]: v };
-    // Recalcula valor da parcela automaticamente
+    // Recalcula campos financeiros automaticamente
     if (['valor_total', 'valor_adesao', 'num_parcelas'].includes(k)) {
       const total = parseFloat(k === 'valor_total' ? v : updated.valor_total) || 0;
+      const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas) || 0;
       const entrada = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
-      const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas);
-      if (nParcelas > 0) {
-        // Se há entrada: (total - entrada) / parcelas. Se não há entrada: total / parcelas
-        const base = entrada > 0 ? total - entrada : total;
-        updated.valor_parcela = base > 0 ? String((base / nParcelas).toFixed(2)) : '';
+
+      if (nParcelas === 0) {
+        // Sem parcelas: entrada = total, valor_parcela = 0
+        updated.valor_adesao = total > 0 ? String(total) : updated.valor_adesao;
+        updated.valor_parcela = '0';
       } else {
-        updated.valor_parcela = '';
+        // Com parcelas: parcela = (total - entrada) / num_parcelas
+        const restante = Math.max(0, total - entrada);
+        updated.valor_parcela = restante > 0 ? String((restante / nParcelas).toFixed(2)) : '0';
       }
     }
     return updated;

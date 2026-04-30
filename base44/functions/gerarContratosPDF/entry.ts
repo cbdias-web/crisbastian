@@ -34,18 +34,14 @@ function extrairTelefone(telefone) {
 }
 
 function preencherCampo(form, nome, valor) {
-  if (!valor) return;
+  // Pula apenas undefined/null — zero e string vazia são válidos
+  if (valor === undefined || valor === null) return;
+  const str = String(valor);
   try {
     const field = form.getTextField(nome);
-    field.setText(String(valor));
-  } catch (e) {
-    // Pode ser campo de data ou outro tipo — tenta como texto genérico
-    try {
-      const field = form.getField(nome);
-      if (field && field.setText) field.setText(String(valor));
-    } catch (_) {
-      // campo não existe ou tipo incompatível, ignorar
-    }
+    field.setText(str);
+  } catch (_) {
+    // campo não existe ou tipo incompatível, ignorar silenciosamente
   }
 }
 
@@ -54,97 +50,80 @@ function listarCampos(form) {
   return form.getFields().map(f => f.getName());
 }
 
-// Mapeamento dos campos do formulário para os AcroFields de cada contrato
-function mapearCampos(contrato) {
-  const data = contrato.data_contrato ? new Date(contrato.data_contrato + 'T00:00:00') : new Date();
-  const dia = String(data.getDate()).padStart(2, '0');
-  const mesNum = data.getMonth(); // 0-indexed
-  const mesNome = MESES_PT[mesNum]; // por extenso: "abril"
-  const ano = String(data.getFullYear());
-
-  // Data de pagamento separada em dia/mês/ano
-  let diaPagamento = '', mesPagamento = '', anoPagamento = '';
-  if (contrato.data_primeiro_pagamento) {
-    const dp = new Date(contrato.data_primeiro_pagamento + 'T00:00:00');
-    diaPagamento = String(dp.getDate()).padStart(2, '0');
-    mesPagamento = String(dp.getMonth() + 1).padStart(2, '0');
-    anoPagamento = String(dp.getFullYear());
-  }
-
+// Campos comuns a todos os contratos (nomes exatos dos AcroFields verificados via diagnóstico)
+function camposComuns(contrato, dia, mesNome, ano) {
   return {
-    // Dados pessoais — nomes exatos com unicode
     'RAZ\u00c3O SOCIAL': contrato.nome || '',
-    'RAZÃO SOCIAL': contrato.nome || '',
     'E-MAIL': contrato.email || '',
     'NOME RESPONS\u00c1VEL': contrato.responsavel_legal || '',
-    'NOME RESPONSÁVEL': contrato.responsavel_legal || '',
     'CPF/CNPJ': contrato.cpf_cnpj || '',
     'CPF': contrato.cpf_responsavel || '',
-
-    // Endereço — nomes exatos com unicode
     'ENDERE\u00c7O': contrato.endereco || '',
-    'ENDEREÇO': contrato.endereco || '',
-    'BAIRRO': contrato.bairro || '',
     'MUNIC\u00cdPIO': contrato.cidade || '',
-    'MUNICÍPIO': contrato.cidade || '',
+    'BAIRRO': contrato.bairro || '',
     'UF': contrato.estado || '',
     'CEP': contrato.cep || '',
-
-    // Telefone
     'DDD': extrairDDD(contrato.telefone),
     'TELEFONE': extrairTelefone(contrato.telefone),
-
-    // Financeiro — nomes EXATOS dos campos AcroForm (verificados via diagnóstico)
-    // NOTA: Os PDFs já têm "R$" impresso antes dos campos — passamos só o número formatado
-    // Conta Global usa: "VALOR DA ADESÃO" (com acento unicode)
-    'VALOR DA ADES\u00c3O': fmtVal(contrato.valor_total || 0),
-    'VALOR DA ADESÃO': fmtVal(contrato.valor_total || 0),
-    // Conta Internacional usa: "VALOR TOTAL DA ADESAO" (sem acento)
-    'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
-    // Entrada
-    'VALOR DA ENTRADA': fmtVal(contrato.valor_adesao || 0),
-    // Parcela e mensalidade
-    'VALOR DA PARCELA': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
-    'VALOR PARCELAS': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
-    'VALOR DA MENSALIDADE': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
-    'VALOR MENSALIDADE': fmtVal(contrato.num_parcelas > 0 ? (contrato.valor_parcela || 0) : 0),
-    // Número de parcelas
-    'N\u00ba PARCELAS DA ADES\u00c3O': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
-    'Nº PARCELAS DA ADESÃO': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
-    'numero de parcelas': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
-    'PARCELAS': contrato.num_parcelas > 0 ? String(Math.round(contrato.num_parcelas)) : '',
-    // Dia de vencimento
-    'TOD DIA': contrato.dia_vencimento > 0 ? String(Math.round(contrato.dia_vencimento)) : '',
-    'PAGAMENTO TODO DIA': contrato.dia_vencimento > 0 ? String(Math.round(contrato.dia_vencimento)) : '',
-    // DATA DE PAGAMENTO como data completa
-    'DATA DE PAGAMENTO': contrato.data_primeiro_pagamento ? fmtDate(contrato.data_primeiro_pagamento) : '',
-    // Campo Data1_af_date (Dolarize Aqui) — campo de data Adobe, formato DD/MM/YYYY
-    'Data1_af_date': contrato.data_primeiro_pagamento ? fmtDate(contrato.data_primeiro_pagamento) : '',
-    'DIA PAGAMENTO': diaPagamento,
-    'MES PAGAMENTO': mesPagamento,
-    'ANO PAGAMENTO': anoPagamento,
-    'DIA': contrato.dia_vencimento ? String(contrato.dia_vencimento) : '',
-
-    // Moeda (para Dolarize/Internacional)
-    'MOEDA': contrato.moeda || 'USD',
-    'COTAÇÃO': contrato.cotacao ? fmtVal(contrato.cotacao) : '',
-    'VALOR EM MOEDA': contrato.valor_em_moeda ? fmtVal(contrato.valor_em_moeda) : '',
-    'PRAZO': contrato.prazo_meses ? String(contrato.prazo_meses) : '',
-
-    // Data do contrato — MES por extenso ("abril")
     'DIIA': dia,
     'MES': mesNome,
     'ANO': ano,
-    'DATA': fmtDate(contrato.data_contrato || new Date().toISOString().split('T')[0]),
-
-    // Forma de pagamento
-    'FORMA DE PAGAMENTO': contrato.forma_pagamento || '',
-
-    // Banco
-    'BANCO': contrato.banco || '',
-    'AGÊNCIA': contrato.agencia || '',
-    'CONTA': contrato.conta || '',
   };
+}
+
+// Mapeamento por tipo de contrato — campos EXATOS confirmados via diagnóstico dos AcroFields
+function mapearCampos(contrato) {
+  const data = contrato.data_contrato ? new Date(contrato.data_contrato + 'T00:00:00') : new Date();
+  const dia = String(data.getDate()).padStart(2, '0');
+  const mesNome = MESES_PT[data.getMonth()];
+  const ano = String(data.getFullYear());
+
+  const numParcelas = Math.round(contrato.num_parcelas || 0);
+  const valorParcela = numParcelas > 0 ? fmtVal(contrato.valor_parcela || 0) : '0,00';
+  const diaVenc = contrato.dia_vencimento ? String(Math.round(contrato.dia_vencimento)) : '';
+
+  const base = camposComuns(contrato, dia, mesNome, ano);
+
+  if (contrato.tipo === 'CONTA GLOBAL') {
+    // Campos financeiros confirmados: VALOR DA ADESÃO, VALOR DA MENSALIDADE, PAGAMENTO TODO DIA
+    return {
+      ...base,
+      'VALOR DA ADES\u00c3O': fmtVal(contrato.valor_total || 0),
+      'VALOR DA MENSALIDADE': valorParcela,
+      'PAGAMENTO TODO DIA': diaVenc,
+    };
+  }
+
+  if (contrato.tipo === 'CONTA INTERNACIONAL') {
+    // Campos financeiros confirmados via diagnóstico:
+    // VALOR TOTAL DA ADESAO, VALOR DA ENTRADA, TOD DIA, VALOR PARCELAS, VALOR DA MENSALIDADE
+    return {
+      ...base,
+      'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
+      'VALOR DA ENTRADA': fmtVal(contrato.valor_adesao || 0),
+      'VALOR PARCELAS': valorParcela,
+      'VALOR DA MENSALIDADE': valorParcela,
+      'TOD DIA': diaVenc,
+    };
+  }
+
+  if (contrato.tipo === 'DOLARIZE' || contrato.tipo === 'DOLARIZE AQUI') {
+    // Campos financeiros confirmados via diagnóstico:
+    // VALOR DA ADESÃO (= total), numero de parcelas, PAGAMENTO TODO DIA, Data1_af_date
+    // Não há campo de valor de parcela neste PDF
+    return {
+      ...base,
+      'VALOR DA ADES\u00c3O': fmtVal(contrato.valor_total || 0),
+      'numero de parcelas': numParcelas > 0 ? String(numParcelas) : '',
+      'PAGAMENTO TODO DIA': diaVenc,
+      'Data1_af_date': contrato.data_primeiro_pagamento ? fmtDate(contrato.data_primeiro_pagamento) : '',
+      'MOEDA': contrato.moeda || 'USD',
+      'PRAZO': contrato.prazo_meses ? String(contrato.prazo_meses) : '',
+    };
+  }
+
+  // Fallback genérico
+  return base;
 }
 
 Deno.serve(async (req) => {
