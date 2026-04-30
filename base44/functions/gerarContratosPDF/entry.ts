@@ -72,18 +72,21 @@ function mapearCampos(contrato) {
   }
 
   return {
-    // Dados pessoais
+    // Dados pessoais — nomes exatos com unicode
+    'RAZ\u00c3O SOCIAL': contrato.nome || '',
     'RAZÃO SOCIAL': contrato.nome || '',
     'E-MAIL': contrato.email || '',
+    'NOME RESPONS\u00c1VEL': contrato.responsavel_legal || '',
     'NOME RESPONSÁVEL': contrato.responsavel_legal || '',
     'CPF/CNPJ': contrato.cpf_cnpj || '',
     'CPF': contrato.cpf_responsavel || '',
 
-    // Endereço
+    // Endereço — nomes exatos com unicode
+    'ENDERE\u00c7O': contrato.endereco || '',
     'ENDEREÇO': contrato.endereco || '',
     'BAIRRO': contrato.bairro || '',
-    'MUNICÍPIO': contrato.cidade || '',
     'MUNIC\u00cdPIO': contrato.cidade || '',
+    'MUNICÍPIO': contrato.cidade || '',
     'UF': contrato.estado || '',
     'CEP': contrato.cep || '',
 
@@ -91,18 +94,20 @@ function mapearCampos(contrato) {
     'DDD': extrairDDD(contrato.telefone),
     'TELEFONE': extrairTelefone(contrato.telefone),
 
-    // Financeiro
-    // VALOR DA ADESÃO = valor total do contrato (campo "valor_total" na plataforma)
-    'VALOR DA ADESÃO': contrato.valor_total ? `R$ ${fmtVal(contrato.valor_total)}` : '',
-    // VALOR DA ENTRADA = entrada efetiva paga pelo cliente (campo "valor_adesao" na plataforma)
-    'VALOR DA ENTRADA': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : '',
-    // Parcela e mensalidade: só preenche se houver parcelas (num_parcelas > 0)
-    'VALOR DA PARCELA': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
-    'VALOR DA MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
-    'VALOR MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : '',
+    // Financeiro — nomes exatos dos campos AcroForm (com acentos unicode)
+    // VALOR DA ADESÃO = valor total do contrato
+    'VALOR DA ADES\u00c3O': contrato.valor_total ? `R$ ${fmtVal(contrato.valor_total)}` : 'R$ 0,00',
+    'VALOR DA ADESÃO': contrato.valor_total ? `R$ ${fmtVal(contrato.valor_total)}` : 'R$ 0,00',
+    // VALOR DA ENTRADA = entrada efetiva
+    'VALOR DA ENTRADA': contrato.valor_adesao ? `R$ ${fmtVal(contrato.valor_adesao)}` : 'R$ 0,00',
+    // Parcela e mensalidade: só preenche se houver parcelas (num_parcelas > 0), senão 0,00
+    'VALOR DA PARCELA': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
+    'VALOR DA MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
+    'VALOR MENSALIDADE': (contrato.num_parcelas > 0 && contrato.valor_parcela) ? `R$ ${fmtVal(contrato.valor_parcela)}` : 'R$ 0,00',
     // Nomes exatos dos campos de parcelas em cada PDF
+    'N\u00ba PARCELAS DA ADES\u00c3O': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
     'Nº PARCELAS DA ADESÃO': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
-    'numero de parcelas': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '', // Dolarize Aqui
+    'numero de parcelas': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
     'PARCELAS': (contrato.num_parcelas > 0) ? String(contrato.num_parcelas) : '',
     'PAGAMENTO TODO DIA': contrato.dia_vencimento ? String(contrato.dia_vencimento) : '',
     // DATA DE PAGAMENTO como data completa
