@@ -224,12 +224,16 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const set = (k, v) => setForm(f => {
     const updated = { ...f, [k]: v };
-    if (['valor_adesao', 'valor_parcela', 'num_parcelas'].includes(k)) {
-      const adesao = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
-      const parcela = parseFloat(k === 'valor_parcela' ? v : updated.valor_parcela) || 0;
-      const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas) || 1;
-      if (adesao > 0 || parcela > 0) {
-        updated.valor_total = String(adesao + parcela * (nParcelas > 1 ? nParcelas : 0));
+    // Recalcula valor da parcela automaticamente
+    if (['valor_total', 'valor_adesao', 'num_parcelas'].includes(k)) {
+      const total = parseFloat(k === 'valor_total' ? v : updated.valor_total) || 0;
+      const entrada = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
+      const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas);
+      const saldoRestante = total - entrada;
+      if (nParcelas > 0 && saldoRestante > 0) {
+        updated.valor_parcela = String((saldoRestante / nParcelas).toFixed(2));
+      } else {
+        updated.valor_parcela = '';
       }
     }
     return updated;
@@ -469,7 +473,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                 {(form.valor_total || form.valor_adesao) && (
                   <div className="grid grid-cols-3 gap-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
                     <div className="text-center">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Valor de Adesão</p>
                       <p className="text-lg font-bold text-[#1a3150] mt-0.5">
                         {form.valor_total ? `R$ ${Number(form.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
@@ -483,35 +487,51 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parcelas</p>
                       <p className="text-base font-bold text-gray-600 mt-0.5">
-                        {form.valor_parcela && form.num_parcelas > 1
+                        {form.valor_parcela && parseInt(form.num_parcelas) > 0
                           ? `${form.num_parcelas}× R$ ${Number(form.valor_parcela).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                          : form.num_parcelas == 1 ? 'À vista' : '—'}
+                          : parseInt(form.num_parcelas) === 0 ? 'Só entrada' : '—'}
                       </p>
                     </div>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* VALOR DE ADESÃO = valor total do contrato */}
                   <div className="group">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
-                      Valor Total (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
+                      Valor de Adesão (R$) <span className="text-red-400 ml-0.5">*</span>
                     </label>
                     <input
                       type="number"
                       value={form.valor_total || ''}
                       onChange={e => set('valor_total', e.target.value)}
+                      placeholder="Valor total do contrato"
+                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
+                    />
+                  </div>
+                  {/* VALOR DE ENTRADA = adesão/entrada efetiva */}
+                  {campo('Valor de Entrada (R$)', 'valor_adesao', 'number')}
+                  {/* VALOR DA PARCELA = calculado automaticamente */}
+                  <div className="group">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                      Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={form.valor_parcela || ''}
+                      onChange={e => setForm(f => ({ ...f, valor_parcela: e.target.value }))}
                       placeholder="Calculado automaticamente"
                       className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all placeholder:text-blue-300"
                     />
                   </div>
-                  {campo('Valor de Adesão / Entrada (R$)', 'valor_adesao', 'number')}
-                  {campo('Valor da Parcela (R$)', 'valor_parcela', 'number')}
                   <div className="group">
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Número de Parcelas</label>
                     <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
                       className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all cursor-pointer">
-                      <option value={1}>À vista (sem parcelas)</option>
-                      {[2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => <option key={n} value={n}>{n}x</option>)}
+                      <option value={0}>Entrada (sem parcelas)</option>
+                      {[1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => (
+                        <option key={n} value={n}>{n === 0 ? 'Entrada (sem parcelas)' : `Entrada + ${n}x`}</option>
+                      ))}
                     </select>
                   </div>
                   {selectField('Forma de Pagamento', 'forma_pagamento', FORMAS)}
