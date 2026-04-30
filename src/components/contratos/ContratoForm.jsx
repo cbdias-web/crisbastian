@@ -229,9 +229,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       const total = parseFloat(k === 'valor_total' ? v : updated.valor_total) || 0;
       const entrada = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
       const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas);
-      const saldoRestante = total - entrada;
-      if (nParcelas > 0 && saldoRestante > 0) {
-        updated.valor_parcela = String((saldoRestante / nParcelas).toFixed(2));
+      if (nParcelas > 0) {
+        // Se há entrada: (total - entrada) / parcelas. Se não há entrada: total / parcelas
+        const base = entrada > 0 ? total - entrada : total;
+        updated.valor_parcela = base > 0 ? String((base / nParcelas).toFixed(2)) : '';
       } else {
         updated.valor_parcela = '';
       }
@@ -528,9 +529,9 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Número de Parcelas</label>
                     <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
                       className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all cursor-pointer">
-                      <option value={0}>Entrada (sem parcelas)</option>
+                      <option value={0}>Sem parcelas (só entrada)</option>
                       {[1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => (
-                        <option key={n} value={n}>{n === 0 ? 'Entrada (sem parcelas)' : `Entrada + ${n}x`}</option>
+                        <option key={n} value={n}>{n}x</option>
                       ))}
                     </select>
                   </div>
