@@ -267,7 +267,6 @@ export default function Espelhamentos() {
   };
 
   const indicadoresFiltrados = indicadores.filter(i => {
-    if (!isAdmin && user?.email && i.email !== user.email) return false;
     if (statusFilter === "ativo" && i.ativo === false) return false;
     if (statusFilter === "inativo" && i.ativo !== false) return false;
     if (indicadorSelecionado && i.id !== indicadorSelecionado) return false;
@@ -335,6 +334,16 @@ export default function Espelhamentos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* Filtro de período */}
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
+            <input
+              type="month"
+              value={mesFiltro}
+              onChange={e => setMesFiltro(e.target.value)}
+              className="text-sm focus:outline-none bg-transparent text-gray-600"
+            />
+            <span className="text-[10px] text-gray-400 font-medium">(período das vendas)</span>
+          </div>
           {/* Busca por nome */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
