@@ -51,7 +51,7 @@ export default function MeusClientes() {
   const [vendedoresSelecionados, setVendedoresSelecionados] = useState([]);
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const [showNovoLeadModal, setShowNovoLeadModal] = useState(false);
-  const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
+  const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '', subcarteira: '' });
   const [clienteModalId, setClienteModalId] = useState(null);
   const [criandoLead, setCriandoLead] = useState(false);
   const [mostrarClientes, setMostrarClientes] = useState(false);
@@ -366,11 +366,12 @@ export default function MeusClientes() {
         email: novoLeadForm.email?.trim() || '',
         vendedor_id: vendedor?.id || '',
         vendedor_nome: vendedor?.nome || '',
-        origem: 'nativo'
+        origem: 'nativo',
+        subcarteira: novoLeadForm.subcarteira?.trim() || undefined,
       });
       toast.success('Lead criado com sucesso!');
       setShowNovoLeadModal(false);
-      setNovoLeadForm({ nome: '', cpf_cnpj: '', telefone: '', email: '' });
+      setNovoLeadForm({ nome: '', cpf_cnpj: '', telefone: '', email: '', subcarteira: '' });
       queryClient.invalidateQueries(['clientes-crm']);
       // Expandir o novo cliente e abrir formulário de nova interação
       setTimeout(() => {
@@ -1009,6 +1010,16 @@ export default function MeusClientes() {
                 <input type="email" value={novoLeadForm.email} onChange={e => setNovoLeadForm(p => ({ ...p, email: e.target.value }))}
                   placeholder="email@exemplo.com"
                   className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Subcarteira (opcional)</label>
+                <select value={novoLeadForm.subcarteira} onChange={e => setNovoLeadForm(p => ({ ...p, subcarteira: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                  <option value="">Nenhuma</option>
+                  {subcarteirasDisponiveis.map(sc => (
+                    <option key={sc} value={sc}>📁 {sc}</option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
