@@ -113,8 +113,21 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   const [showNovoIndicador, setShowNovoIndicador] = useState(false);
   const [salvandoNovoIndicador, setSalvandoNovoIndicador] = useState(false);
 
+  const [buscaIndicador, setBuscaIndicador] = useState(() => {
+    const init = {};
+    if (contratoExistente?.indicadores?.length > 0) {
+      contratoExistente.indicadores.forEach((ind, i) => { init[i] = ind.nome || ''; });
+    }
+    return init;
+  });
+  const [showDropIndicador, setShowDropIndicador] = useState({});
+
   const addIndicador = () => setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo: 'indicador' }]);
-  const removeIndicador = (idx) => setIndicadores(prev => prev.filter((_, i) => i !== idx));
+  const removeIndicador = (idx) => {
+    setIndicadores(prev => prev.filter((_, i) => i !== idx));
+    setBuscaIndicador(prev => { const n = {...prev}; delete n[idx]; return n; });
+    setShowDropIndicador(prev => { const n = {...prev}; delete n[idx]; return n; });
+  };
   const updateIndicador = (idx, field, value) => setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, [field]: value } : ind));
   const criarNovoIndicador = async () => {
     if (!novoIndicadorNome.trim()) { toast.error('Nome é obrigatório.'); return; }
@@ -144,9 +157,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     setSalvandoNovoIndicador(false);
   };
 
-  const selectIndicadorPessoa = (idx, selectedId) => {
-    const found = indicadoresDisponiveis.find(x => x.id === selectedId);
-    if (found) setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, id: found.id, nome: found.nome, tipo: found.tipo, percentual: ind.percentual || found.percentual_comissao } : ind));
+  const selectIndicadorPessoa = (idx, pessoa) => {
+    setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, id: pessoa.id, nome: pessoa.nome, tipo: pessoa.tipo, percentual: ind.percentual || pessoa.percentual_comissao } : ind));
+    setBuscaIndicador(prev => ({ ...prev, [idx]: pessoa.nome }));
+    setShowDropIndicador(prev => ({ ...prev, [idx]: false }));
   };
 
   // Fechar dropdown ao clicar fora
@@ -681,20 +695,68 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {indicadores.map((ind, idx) => (
+                        {indicadores.map((ind, idx) => {
+                          const termoBusca = buscaIndicador[idx] ?? ind.nome ?? '';
+                          const showDrop = showDropIndicador[idx] || false;
+                          const opcoesFiltradas = indicadoresDisponiveis.filter(x =>
+                            termoBusca.length === 0 || x.nome.toLowerCase().includes(termoBusca.toLowerCase())
+                          );
+                          const naoEncontrado = termoBusca.length >= 2 && opcoesFiltradas.length === 0;
+                          return (
                           <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
-                            <select value={ind.tipo} onChange={e => { updateIndicador(idx, 'tipo', e.target.value); updateIndicador(idx, 'id', ''); updateIndicador(idx, 'nome', ''); }}
-                              className="w-28 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
-                              <option value="indicador">Indicador</option>
-                              <option value="vendedor">Vendedor</option>
-                            </select>
-                            <select value={ind.id} onChange={e => selectIndicadorPessoa(idx, e.target.value)}
-                              className="flex-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
-                              <option value="">Selecionar...</option>
-                              {indicadoresDisponiveis.filter(x => x.tipo === ind.tipo).map(x => (
-                                <option key={x.id} value={x.id}>{x.nome}</option>
-                              ))}
-                            </select>
+                            {/* Campo de busca do indicador */}
+                            <div className="flex-1 relative">
+                              <div className="relative">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                <input
+                                  type="text"
+                                  value={termoBusca}
+                                  onChange={e => {
+                                    setBuscaIndicador(prev => ({ ...prev, [idx]: e.target.value }));
+                                    setShowDropIndicador(prev => ({ ...prev, [idx]: true }));
+                                    if (!e.target.value) updateIndicador(idx, 'id', '');
+                                  }}
+                                  onFocus={() => setShowDropIndicador(prev => ({ ...prev, [idx]: true }))}
+                                  placeholder="Buscar indicador ou vendedor..."
+                                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white"
+                                />
+                                {ind.id && (
+                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                )}
+                              </div>
+                              {showDrop && (
+                                <div className="absolute z-40 left-0 right-0 mt-0.5 bg-white border border-gray-200 rounded-xl shadow-xl max-h-44 overflow-y-auto">
+                                  {opcoesFiltradas.length > 0 ? (
+                                    opcoesFiltradas.map(x => (
+                                      <button key={x.id} type="button"
+                                        onMouseDown={() => selectIndicadorPessoa(idx, x)}
+                                        className="w-full text-left px-3 py-2 hover:bg-blue-50 transition flex items-center gap-2 border-b border-gray-50 last:border-0">
+                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${x.tipo === 'vendedor' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                          {x.tipo === 'vendedor' ? 'Vend.' : 'Ind.'}
+                                        </span>
+                                        <span className="text-xs text-gray-800 font-medium">{x.nome}</span>
+                                        <span className="ml-auto text-[10px] text-gray-400">{x.percentual_comissao}%</span>
+                                      </button>
+                                    ))
+                                  ) : termoBusca.length >= 2 ? (
+                                    <div className="px-3 py-3 text-center">
+                                      <p className="text-xs text-gray-500 mb-2">Nenhum resultado para "<strong>{termoBusca}</strong>"</p>
+                                      <button type="button"
+                                        onMouseDown={() => {
+                                          setNovoIndicadorNome(termoBusca);
+                                          setShowNovoIndicador(true);
+                                          setShowDropIndicador(prev => ({ ...prev, [idx]: false }));
+                                        }}
+                                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 mx-auto">
+                                        <Plus className="w-3 h-3" /> Cadastrar "{termoBusca}" como novo indicador
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="px-3 py-2 text-xs text-gray-400">Digite para buscar...</div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1">
                               <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
                                 onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
@@ -705,7 +767,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
