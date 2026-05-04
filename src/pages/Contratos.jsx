@@ -154,24 +154,43 @@ export default function Contratos() {
         </div>
 
         {/* Cards de tipo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {Object.entries(TIPO_CONFIG).map(([tipo, cfg]) => {
             const Icon = cfg.icon;
             const qtd = contratos.filter(c => c.tipo === tipo && (isAdmin || c.created_by === user?.email || c.vendedor_id === user?.id)).length;
             return (
               <button key={tipo} onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
-                className={`relative rounded-2xl p-5 text-left text-white overflow-hidden transition-all hover:scale-[1.02] hover:shadow-xl ${cfg.color} shadow-md`}>
-                <div className="absolute right-4 top-4 opacity-10">
-                  <Icon className="w-16 h-16" />
+                className={`group relative rounded-2xl p-4 text-left text-white overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl active:scale-[0.98] ${cfg.color} shadow-lg border border-white/10`}>
+                {/* Fundo decorativo */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
+                <div className="absolute -right-3 -bottom-3 opacity-[0.08] pointer-events-none">
+                  <Icon className="w-20 h-20" />
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <FilePlus className="w-4 h-4 opacity-80" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Novo Contrato</span>
+
+                {/* Badge novo */}
+                <div className="flex items-center gap-1.5 mb-3">
+                  <div className="w-5 h-5 rounded-lg bg-white/15 flex items-center justify-center">
+                    <FilePlus className="w-3 h-3" />
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.18em] opacity-60">Novo</span>
                 </div>
-                <p className="font-bold text-base leading-tight">{tipo}</p>
-                <p className="text-xs opacity-60 mt-1 leading-snug">{cfg.desc}</p>
-                <div className="mt-3 flex items-center gap-1.5">
-                  <span className="text-xs font-semibold opacity-80">{qtd} contrato(s)</span>
+
+                {/* Nome */}
+                <p className="font-bold text-sm leading-tight mb-1.5 group-hover:opacity-100 opacity-95">{tipo}</p>
+
+                {/* Desc */}
+                <p className="text-[10px] opacity-50 leading-snug mb-3 line-clamp-2">{cfg.desc}</p>
+
+                {/* Contador */}
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${qtd > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
+                    {qtd} contrato{qtd !== 1 ? 's' : ''}
+                  </span>
+                  <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/25 transition-colors">
+                    <svg className="w-2.5 h-2.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
                 </div>
               </button>
             );
