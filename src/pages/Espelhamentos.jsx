@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, Send, CheckCircle2 } from 'lucide-react';
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, Send, CheckCircle2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Espelhamentos() {
@@ -23,6 +23,8 @@ export default function Espelhamentos() {
   const [enviosRealizados, setEnviosRealizados] = useState([]);
   const [user, setUser] = useState(null);
   const [selectedForRelatorio, setSelectedForRelatorio] = useState([]);
+  const [buscaNome, setBuscaNome] = useState('');
+  const [indicadorSelecionado, setIndicadorSelecionado] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -265,9 +267,11 @@ export default function Espelhamentos() {
 
   const indicadoresFiltrados = indicadores.filter(i => {
     if (!isAdmin && user?.email && i.email !== user.email) return false;
-    if (statusFilter === "todos") return true;
-    if (statusFilter === "ativo") return i.ativo !== false;
-    return i.ativo === false;
+    if (statusFilter === "ativo" && i.ativo === false) return false;
+    if (statusFilter === "inativo" && i.ativo !== false) return false;
+    if (indicadorSelecionado && i.id !== indicadorSelecionado) return false;
+    if (buscaNome && !i.nome?.toLowerCase().includes(buscaNome.toLowerCase())) return false;
+    return true;
   });
 
   const visibleIndicadores = indicadoresFiltrados.map(i => {
@@ -333,13 +337,43 @@ export default function Espelhamentos() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="month"
             value={mesFiltro}
             onChange={e => setMesFiltro(e.target.value)}
             className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600"
           />
+          {/* Busca por nome */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={buscaNome}
+              onChange={e => { setBuscaNome(e.target.value); setIndicadorSelecionado(''); }}
+              placeholder="Buscar por nome..."
+              className="pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white w-52"
+            />
+            {buscaNome && (
+              <button onClick={() => setBuscaNome('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {/* Menu suspenso de seleção */}
+          <select
+            value={indicadorSelecionado}
+            onChange={e => { setIndicadorSelecionado(e.target.value); setBuscaNome(''); }}
+            className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600 max-w-xs"
+          >
+            <option value="">Todos os indicadores</option>
+            {indicadores
+              .filter(i => statusFilter === 'todos' || (statusFilter === 'ativo' ? i.ativo !== false : i.ativo === false))
+              .sort((a, b) => a.nome.localeCompare(b.nome))
+              .map(i => (
+                <option key={i.id} value={i.id}>{i.nome}</option>
+              ))}
+          </select>
           {isAdmin && (
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
               className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
@@ -347,6 +381,12 @@ export default function Espelhamentos() {
               <option value="inativo">Inativos</option>
               <option value="todos">Todos</option>
             </select>
+          )}
+          {(buscaNome || indicadorSelecionado) && (
+            <button onClick={() => { setBuscaNome(''); setIndicadorSelecionado(''); }}
+              className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1.5 hover:bg-red-50 rounded-lg transition">
+              Limpar filtros
+            </button>
           )}
         </div>
 
