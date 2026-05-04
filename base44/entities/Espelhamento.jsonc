@@ -4,7 +4,7 @@
   "properties": {
     "nome": {
       "type": "string",
-      "description": "Nome do indicador (espelhamento)"
+      "description": "Nome do indicador"
     },
     "email": {
       "type": "string",
@@ -16,7 +16,7 @@
     },
     "percentual_comissao": {
       "type": "number",
-      "description": "Percentual de comiss\u00e3o padr\u00e3o (%)",
+      "description": "Percentual de comissao padrao",
       "default": 10
     },
     "ativo": {
