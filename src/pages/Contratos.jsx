@@ -284,20 +284,26 @@ export default function Contratos() {
                             className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
-                            className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Editar: próprio contrato ou admin */}
+                          {(isAdmin || c.vendedor_id === user?.id || c.created_by === user?.email) && (
+                            <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
+                              className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => enviarPipeline(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
                             className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition disabled:opacity-30" title="Enviar para Vendas">
                             {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                           </button>
-                          <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
-                            className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {/* Excluir: apenas admin */}
+                          {isAdmin && (
+                            <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
+                              className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

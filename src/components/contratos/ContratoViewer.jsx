@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
@@ -39,6 +39,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const navigate = useNavigate();
   const [linkInput, setLinkInput] = useState(contrato.link_assinatura || '');
   const [salvandoLink, setSalvandoLink] = useState(false);
+  const [uploadandoPDF, setUploadandoPDF] = useState(false);
   const queryClient = useQueryClient();
 
   const handleUpdate = (c) => {
@@ -70,6 +71,24 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error('Erro ao salvar link: ' + err.message);
     }
     setSalvandoLinkAditivo(false);
+  };
+
+  const uploadPDFExterno = async (file) => {
+    if (!file || file.type !== 'application/pdf') {
+      toast.error('Por favor, selecione um arquivo PDF.');
+      return;
+    }
+    setUploadandoPDF(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await base44.entities.Contrato.update(contrato.id, { pdf_url: file_url, status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
+      handleUpdate({ ...contrato, pdf_url: file_url, status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
+      queryClient.invalidateQueries(['contratos']);
+      toast.success('PDF enviado com sucesso! O status foi atualizado para "PDF Gerado".');
+    } catch (err) {
+      toast.error('Erro ao enviar PDF: ' + err.message);
+    }
+    setUploadandoPDF(false);
   };
 
   const cor = TIPO_COLOR[contrato.tipo] || '#0f1e35';
@@ -213,6 +232,48 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
             {enviandoVenda ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
             {enviandoVenda ? 'Enviando...' : 'Enviar para Vendas'}
           </button>
+        </div>
+
+        {/* Upload de PDF externo */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
+          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+            <FileUp className="w-4 h-4 text-gray-500" />
+            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Arquivo do Contrato (PDF)</p>
+          </div>
+          <div className="p-5">
+            {contrato.pdf_url ? (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                  <FileUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <a href={contrato.pdf_url} target="_blank" rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 underline truncate">
+                    Visualizar PDF do contrato
+                  </a>
+                </div>
+                <label className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition text-gray-600 ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {uploadandoPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  Substituir
+                  <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0])} />
+                </label>
+              </div>
+            ) : (
+              <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition group ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}>
+                {uploadandoPDF ? (
+                  <>
+                    <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
+                    <p className="text-xs text-gray-500 font-medium">Enviando PDF...</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition" />
+                    <p className="text-sm font-semibold text-gray-500 group-hover:text-blue-600 transition">Clique para enviar o PDF do contrato</p>
+                    <p className="text-[10px] text-gray-400">Envie um PDF assinado externamente para habilitar o link de assinatura</p>
+                  </>
+                )}
+                <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0])} />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* Links de Assinatura (admin) */}
