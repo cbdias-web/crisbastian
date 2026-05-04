@@ -6,6 +6,9 @@ const PDF_URLS = {
   'CONTA INTERNACIONAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/f9b7f91fb_Contrato-ContaInternacional.pdf',
   'DOLARIZE': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/bd9fb551e_ContratoDolarizeAqui.pdf',
   'DOLARIZE AQUI': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/bd9fb551e_ContratoDolarizeAqui.pdf',
+  // ROF e CANAL BANCÁRIO usam geração por texto (sem template PDF externo)
+  'ROF': null,
+  'CANAL BANCÁRIO': null,
 };
 
 const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -144,6 +147,99 @@ Deno.serve(async (req) => {
     if (!contrato) return Response.json({ error: 'Contrato não encontrado' }, { status: 404 });
 
     const pdfUrl = PDF_URLS[contrato.tipo];
+    
+    // ROF e CANAL BANCÁRIO: gerar PDF textual (sem template AcroForm)
+    if (pdfUrl === null) {
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([595, 842]); // A4
+      const { width, height } = page.getSize();
+      const font = await pdfDoc.embedFont('Helvetica');
+      const fontBold = await pdfDoc.embedFont('Helvetica-Bold');
+      
+      const data = contrato;
+      const dataContrato = data.data_contrato ? new Date(data.data_contrato + 'T00:00:00') : new Date();
+      const diaStr = String(dataContrato.getDate()).padStart(2, '0');
+      const mesStr = MESES_PT[dataContrato.getMonth()];
+      const anoStr = String(dataContrato.getFullYear());
+      
+      let y = height - 60;
+      const drawText = (text, x, yPos, size = 10, bold = false) => {
+        page.drawText(String(text || ''), { x, y: yPos, size, font: bold ? fontBold : font, color: { type: 'RGB', red: 0, green: 0, blue: 0 } });
+      };
+      const line = (label, value, yPos) => {
+        drawText(label + ':', 50, yPos, 9, true);
+        drawText(value || '—', 200, yPos, 9);
+      };
+      
+      drawText(`CONTRATO — ${data.tipo}`, 50, y, 16, true); y -= 30;
+      drawText(`${diaStr} de ${mesStr} de ${anoStr}`, 50, y, 10); y -= 30;
+      
+      drawText('DADOS DO CONTRATANTE', 50, y, 11, true); y -= 18;
+      line('Nome / Razão Social', data.nome, y); y -= 16;
+      line('CPF / CNPJ', data.cpf_cnpj, y); y -= 16;
+      line('Responsável Legal', data.responsavel_legal, y); y -= 16;
+      line('CPF Responsável', data.cpf_responsavel, y); y -= 16;
+      line('Nascimento', data.nascimento ? new Date(data.nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : '', y); y -= 16;
+      line('Profissão', data.profissao, y); y -= 16;
+      line('Estado Civil', data.estado_civil, y); y -= 16;
+      line('Nacionalidade', data.nacionalidade, y); y -= 16;
+      line('E-mail', data.email, y); y -= 16;
+      line('Telefone', data.telefone, y); y -= 24;
+      
+      drawText('ENDEREÇO', 50, y, 11, true); y -= 18;
+      line('Endereço', data.endereco, y); y -= 16;
+      line('Bairro', data.bairro, y); y -= 16;
+      line('Cidade / Estado', `${data.cidade || ''} / ${data.estado || ''}`, y); y -= 16;
+      line('CEP', data.cep, y); y -= 24;
+      
+      drawText('DADOS FINANCEIROS', 50, y, 11, true); y -= 18;
+      line('Valor Total', `R$ ${fmtVal(data.valor_total)}`, y); y -= 16;
+      line('Valor de Entrada', `R$ ${fmtVal(data.valor_adesao || data.valor_total)}`, y); y -= 16;
+      if ((data.num_parcelas || 0) > 0) {
+        line('Nº de Parcelas', `${data.num_parcelas}x`, y); y -= 16;
+        line('Valor da Parcela', `R$ ${fmtVal(data.valor_parcela)}`, y); y -= 16;
+      }
+      line('Forma de Pagamento', data.forma_pagamento, y); y -= 16;
+      if (data.dia_vencimento) { line('Dia de Vencimento', `Dia ${data.dia_vencimento}`, y); y -= 16; }
+      if (data.data_primeiro_pagamento) { line('1º Pagamento', new Date(data.data_primeiro_pagamento + 'T00:00:00').toLocaleDateString('pt-BR'), y); y -= 16; }
+      if (data.prazo_meses) { line('Prazo', `${data.prazo_meses} meses`, y); y -= 16; }
+      if (data.moeda && data.valor_em_moeda) {
+        line('Moeda', data.moeda, y); y -= 16;
+        line('Cotação', data.cotacao ? `R$ ${Number(data.cotacao).toFixed(4)}` : '', y); y -= 16;
+        line(`Valor em ${data.moeda}`, `${data.moeda} ${Number(data.valor_em_moeda).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, y); y -= 16;
+      }
+      
+      if (data.observacoes) {
+        y -= 8;
+        drawText('OBSERVAÇÕES', 50, y, 11, true); y -= 18;
+        // Quebrar texto longo
+        const obs = data.observacoes;
+        const maxChars = 80;
+        for (let i = 0; i < obs.length; i += maxChars) {
+          drawText(obs.slice(i, i + maxChars), 50, y, 9); y -= 14;
+        }
+      }
+      
+      // Assinaturas
+      y -= 30;
+      drawText('_________________________________', 50, y, 10);
+      drawText('_________________________________', 320, y, 10);
+      y -= 14;
+      drawText('Contratante', 50, y, 9);
+      drawText('Villela Exchange', 320, y, 9);
+      
+      const pdfPreenchido = await pdfDoc.save();
+      const uint8 = new Uint8Array(pdfPreenchido);
+      let base64 = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < uint8.length; i += chunkSize) {
+        base64 += String.fromCharCode(...uint8.slice(i, i + chunkSize));
+      }
+      base64 = btoa(base64);
+      const nomeArq = `contrato_${data.tipo.replace(/ /g, '_')}.pdf`;
+      return Response.json({ pdf_base64: base64, filename: nomeArq, tipo: data.tipo });
+    }
+
     if (!pdfUrl) return Response.json({ error: `Tipo de contrato não suportado: ${contrato.tipo}` }, { status: 400 });
 
     // Baixar o PDF original

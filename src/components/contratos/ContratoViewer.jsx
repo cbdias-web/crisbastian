@@ -12,6 +12,8 @@ const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
   'CONTA INTERNACIONAL': '#1a3a6b',
   'DOLARIZE': '#b45309',
+  'ROF': '#047857',
+  'CANAL BANCÁRIO': '#6d28d9',
 };
 
 const STATUS_CONFIG = {

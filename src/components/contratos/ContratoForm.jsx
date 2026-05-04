@@ -26,12 +26,16 @@ const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
   'CONTA INTERNACIONAL': '#1a3a6b',
   'DOLARIZE': '#b45309',
+  'ROF': '#047857',
+  'CANAL BANCÁRIO': '#6d28d9',
 };
 
 const TIPO_GRADIENT = {
   'CONTA GLOBAL': 'from-[#0f1e35] to-[#1a3150]',
   'CONTA INTERNACIONAL': 'from-[#1a3a6b] to-[#2a4a8b]',
   'DOLARIZE': 'from-[#b45309] to-[#d97706]',
+  'ROF': 'from-emerald-700 to-emerald-600',
+  'CANAL BANCÁRIO': 'from-violet-700 to-violet-600',
 };
 
 // Calcula quantos campos obrigatórios/relevantes estão preenchidos por aba

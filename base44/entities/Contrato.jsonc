@@ -7,7 +7,9 @@
       "enum": [
         "CONTA GLOBAL",
         "CONTA INTERNACIONAL",
-        "DOLARIZE"
+        "DOLARIZE",
+        "ROF",
+        "CANAL BANC\u00c1RIO"
       ],
       "description": "Tipo de contrato"
     },

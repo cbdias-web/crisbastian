@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ContratoForm from '@/components/contratos/ContratoForm';
@@ -12,6 +12,8 @@ const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-50 text-[#0f1e35] border-blue-200', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
   'CONTA INTERNACIONAL': { color: 'bg-[#1a3a6b]', light: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: Globe, desc: 'Abertura de conta internacional com transações em múltiplas moedas' },
   'DOLARIZE': { color: 'bg-amber-700', light: 'bg-amber-50 text-amber-700 border-amber-200', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
+  'ROF': { color: 'bg-emerald-700', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: FileText, desc: 'Registro de Operação Financeira para movimentações cambiais regulamentadas' },
+  'CANAL BANCÁRIO': { color: 'bg-violet-700', light: 'bg-violet-50 text-violet-700 border-violet-200', icon: Building2, desc: 'Operações via canal bancário para transferências e câmbio direto' },
 };
 
 const STATUS_CONFIG = {
@@ -146,7 +148,7 @@ export default function Contratos() {
         </div>
 
         {/* Cards de tipo */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {Object.entries(TIPO_CONFIG).map(([tipo, cfg]) => {
             const Icon = cfg.icon;
             const qtd = contratos.filter(c => c.tipo === tipo && (isAdmin || c.created_by === user?.email || c.vendedor_id === user?.id)).length;
