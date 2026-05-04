@@ -16,6 +16,7 @@ export default function Espelhamentos() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const [filtrarPorMes, setFiltrarPorMes] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ativo");
   const [selectedForEmail, setSelectedForEmail] = useState([]);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -280,14 +281,10 @@ export default function Espelhamentos() {
       v.data && v.data >= dateFrom && v.data <= dateTo
     );
     return { ...i, _temDados: vendasI.length > 0 };
-  }).sort((a, b) => {
-    if (a._temDados && !b._temDados) return -1;
-    if (!a._temDados && b._temDados) return 1;
-    return a.nome.localeCompare(b.nome);
-  });
+  }).sort((a, b) => a.nome.localeCompare(b.nome));
 
-  const comDados = visibleIndicadores.filter(i => i._temDados);
-  const semDados = visibleIndicadores.filter(i => !i._temDados);
+  const comDados = visibleIndicadores;
+  const semDados = [];
 
   const exportCSV = (items) => {
     const headers = ["Nome", "E-mail", "Telefone", "Comissão (%)", "Status"];
@@ -338,12 +335,6 @@ export default function Espelhamentos() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="month"
-            value={mesFiltro}
-            onChange={e => setMesFiltro(e.target.value)}
-            className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600"
-          />
           {/* Busca por nome */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -530,59 +521,7 @@ export default function Espelhamentos() {
               </>
             )}
 
-            {!isLoading && semDados.length > 0 && (
-              <>
-                <div className="pt-4">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-3">
-                    Sem vendas no período
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 opacity-60">
-                  {semDados.map(i => (
-                    <div key={i.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                            {i.nome?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-sm">{i.nome}</p>
-                            <p className="text-xs text-gray-400">{i.email || "—"}</p>
-                          </div>
-                        </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${i.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                          {i.ativo !== false ? "Ativo" : "Inativo"}
-                        </span>
-                      </div>
 
-                      <div className="grid grid-cols-2 gap-2 mb-4">
-                        <div className="text-center p-2 bg-gray-50 rounded-xl">
-                          <p className="text-lg font-bold text-gray-400">0</p>
-                          <p className="text-[10px] text-gray-400">Vendas</p>
-                        </div>
-                        <div className="text-center p-2 bg-blue-50 rounded-xl">
-                          <p className="text-xs font-bold text-blue-300">{i.percentual_comissao ?? 0}%</p>
-                          <p className="text-[10px] text-blue-300">Comissão</p>
-                        </div>
-                      </div>
-
-                      {isAdmin && (
-                        <div className="flex items-center justify-end text-xs text-gray-400">
-                          <div className="flex gap-1">
-                            <button onClick={() => handleEdit(i)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                              <Edit2 className="w-3.5 h-3.5 text-gray-400" />
-                            </button>
-                            <button onClick={() => handleDelete(i.id)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
           </>
         )}
 
