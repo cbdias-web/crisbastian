@@ -50,6 +50,18 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     onUpdate({ ...contrato, ...campos });
   };
 
+  const notificar = async (evento, destinatarios) => {
+    try {
+      await base44.functions.invoke('notificarStatusContrato', {
+        contrato_id: contrato.id,
+        evento,
+        destinatarios,
+      });
+    } catch (e) {
+      console.warn('Notificação falhou (não crítico):', e.message);
+    }
+  };
+
   const uploadArquivo = async (file, fieldUrl, fieldNome, novoStatus) => {
     setUploading(fieldUrl);
     try {
@@ -58,6 +70,15 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
       if (novoStatus && STATUS_ORDER.indexOf(novoStatus) > ordemAtual) campos.status = novoStatus;
       await salvarCampo(campos);
       toast.success('Arquivo enviado com sucesso!');
+
+      // Notificações por tipo de arquivo
+      if (fieldUrl === 'contrato_assinado_url') {
+        notificar('contrato_assinado', 'admins');
+      } else if (fieldUrl === 'boleto_url') {
+        notificar('cobranca_enviada', 'gerente');
+      } else if (fieldUrl === 'comprovante_url') {
+        notificar('comprovante_anexado', 'admins');
+      }
     } catch (err) {
       toast.error('Erro no upload: ' + err.message);
     }
@@ -80,6 +101,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
       await salvarCampo(campos);
       setEditandoLinkPag(false);
       toast.success('Link de pagamento salvo!');
+      notificar('cobranca_enviada', 'gerente');
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
@@ -102,6 +124,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
       await salvarCampo({ link_assinatura: linkAssinInput.trim() || null });
       setEditandoLinkAssin(false);
       toast.success('Link de assinatura atualizado!');
+      if (linkAssinInput.trim()) notificar('link_assinatura_adicionado', 'gerente');
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
@@ -160,6 +183,16 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     if (!confirm(`Forçar etapa para "${label}"?`)) return;
     await salvarCampo({ status: novoStatus });
     toast.success('Etapa atualizada!');
+
+    // Notificar conforme etapa forçada
+    const eventoMap = {
+      assinado: ['contrato_assinado', 'admins'],
+      aguardando_pagamento: ['cobranca_enviada', 'gerente'],
+      pago: ['contrato_pago', 'gerente'],
+      no_pipeline: ['no_pipeline', 'gerente'],
+    };
+    const ev = eventoMap[novoStatus];
+    if (ev) notificar(ev[0], ev[1]);
   };
 
   // Desbloqueios

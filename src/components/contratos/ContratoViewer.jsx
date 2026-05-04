@@ -54,6 +54,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       handleUpdate({ ...contrato, link_assinatura: linkInput.trim() });
       setEditandoLink(false);
       toast.success('Link de assinatura salvo!');
+      if (linkInput.trim()) notificar('link_assinatura_adicionado', 'gerente');
     } catch (err) {
       toast.error('Erro ao salvar link: ' + err.message);
     }
@@ -73,6 +74,18 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     setSalvandoLinkAditivo(false);
   };
 
+  const notificar = async (evento, destinatarios) => {
+    try {
+      await base44.functions.invoke('notificarStatusContrato', {
+        contrato_id: contrato.id,
+        evento,
+        destinatarios,
+      });
+    } catch (e) {
+      console.warn('Notificação falhou (não crítico):', e.message);
+    }
+  };
+
   const uploadPDFExterno = async (file) => {
     if (!file || file.type !== 'application/pdf') {
       toast.error('Por favor, selecione um arquivo PDF.');
@@ -81,10 +94,12 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     setUploadandoPDF(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.Contrato.update(contrato.id, { pdf_url: file_url, status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
-      handleUpdate({ ...contrato, pdf_url: file_url, status: contrato.status === 'rascunho' ? 'gerado' : contrato.status });
+      const novoStatus = contrato.status === 'rascunho' ? 'gerado' : contrato.status;
+      await base44.entities.Contrato.update(contrato.id, { pdf_url: file_url, status: novoStatus });
+      handleUpdate({ ...contrato, pdf_url: file_url, status: novoStatus });
       queryClient.invalidateQueries(['contratos']);
       toast.success('PDF enviado com sucesso! O status foi atualizado para "PDF Gerado".');
+      notificar('pdf_anexado', 'admins');
     } catch (err) {
       toast.error('Erro ao enviar PDF: ' + err.message);
     }
@@ -95,7 +110,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
   const marcarAssinado = useMutation({
     mutationFn: () => base44.entities.Contrato.update(contrato.id, { status: 'assinado' }),
-    onSuccess: (c) => { handleUpdate(c); toast.success('Contrato marcado como assinado!'); },
+    onSuccess: (c) => {
+      handleUpdate(c);
+      toast.success('Contrato marcado como assinado!');
+      notificar('contrato_assinado', 'admins');
+    },
   });
 
   // Enviar para Vendas só liberado se pago + comprovante (ou admin)
@@ -136,6 +155,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
       handleUpdate({ ...contrato, status: 'no_pipeline' });
+      notificar('no_pipeline', 'todos');
       toast.success('Venda criada! Redirecionando para Vendas...');
       setTimeout(() => navigate('/Vendas'), 1200);
     } catch (err) {
@@ -162,6 +182,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       if (contrato.status === 'rascunho') {
         await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
         handleUpdate({ ...contrato, status: 'gerado' });
+        notificar('pdf_gerado', 'admins');
       }
       queryClient.invalidateQueries(['contratos']);
       toast.success('PDF gerado e baixado!');
