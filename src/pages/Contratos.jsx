@@ -14,6 +14,7 @@ const TIPO_CONFIG = {
   'DOLARIZE': { color: 'bg-amber-700', light: 'bg-amber-50 text-amber-700 border-amber-200', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
   'ROF': { color: 'bg-emerald-700', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: FileText, desc: 'Registro de Operação Financeira para movimentações cambiais regulamentadas' },
   'CANAL BANCÁRIO': { color: 'bg-violet-700', light: 'bg-violet-50 text-violet-700 border-violet-200', icon: Building2, desc: 'Operações via canal bancário para transferências e câmbio direto' },
+  'OFFSHORE': { color: 'bg-cyan-700', light: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: Globe, desc: 'Estruturação de empresa e conta bancária offshore no exterior' },
 };
 
 const STATUS_CONFIG = {
@@ -36,6 +37,8 @@ export default function Contratos() {
   const [busca, setBusca] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('Todos');
   const [filtroStatus, setFiltroStatus] = useState('Todos');
+  const [filtroDataInicio, setFiltroDataInicio] = useState('');
+  const [filtroDataFim, setFiltroDataFim] = useState('');
   const [enviandoPipelineId, setEnviandoPipelineId] = useState(null);
   const [clienteArrastado, setClienteArrastado] = useState(null);
   const [dragOverTipo, setDragOverTipo] = useState(null);
@@ -92,7 +95,10 @@ export default function Contratos() {
     const tipoOk = filtroTipo === 'Todos' || c.tipo === filtroTipo;
     const statusOk = filtroStatus === 'Todos' || c.status === filtroStatus;
     const buscaOk = !busca || c.nome?.toLowerCase().includes(busca.toLowerCase()) || c.cpf_cnpj?.includes(busca);
-    return tipoOk && statusOk && buscaOk;
+    const dataRef = c.data_contrato || c.created_date?.split('T')[0] || '';
+    const dataInicioOk = !filtroDataInicio || dataRef >= filtroDataInicio;
+    const dataFimOk = !filtroDataFim || dataRef <= filtroDataFim;
+    return tipoOk && statusOk && buscaOk && dataInicioOk && dataFimOk;
   });
 
   const handleDropCliente = (e, tipo) => {
@@ -189,6 +195,18 @@ export default function Contratos() {
             <option value="Todos">Todos os status</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-medium">Período:</span>
+            <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
+              className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+            <span className="text-xs text-gray-400">até</span>
+            <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
+              className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+            {(filtroDataInicio || filtroDataFim) && (
+              <button onClick={() => { setFiltroDataInicio(''); setFiltroDataFim(''); }}
+                className="text-xs text-red-400 hover:text-red-600 font-semibold px-1.5 py-1 hover:bg-red-50 rounded-lg transition">✕</button>
+            )}
+          </div>
           <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
         </div>
 

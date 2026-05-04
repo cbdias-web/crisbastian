@@ -427,11 +427,11 @@ export default function Pipeline() {
   };
 
   // Produtos que seguem o fluxo de Contratos (não vão direto para Vendas)
-  const PRODUTOS_CONTRATO = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE AQUI'];
+  const PRODUTOS_CONTRATO = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO', 'OFFSHORE'];
   const isProdutoContrato = (produto) => {
     if (!produto) return false;
     const p = produto.toUpperCase().trim();
-    return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE');
+    return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE') || p.includes('ROF') || p.includes('CANAL BANC') || p.includes('OFFSHORE');
   };
 
   // Converter prospecção: produtos de contrato → aba Contratos; demais → aba Vendas
@@ -460,7 +460,12 @@ export default function Pipeline() {
         }
 
         // Normaliza produto para tipo do contrato
-        const tipoContrato = n.produto?.toUpperCase().includes('DOLARIZE') ? 'DOLARIZE' : n.produto;
+        const prodUp = n.produto?.toUpperCase().trim() || '';
+        const tipoContrato = prodUp.includes('DOLARIZE') ? 'DOLARIZE'
+          : prodUp.includes('ROF') ? 'ROF'
+          : prodUp.includes('CANAL BANC') ? 'CANAL BANCÁRIO'
+          : prodUp.includes('OFFSHORE') ? 'OFFSHORE'
+          : n.produto;
         // Criar contrato em rascunho com dados do pipeline
         await base44.entities.Contrato.create({
           tipo: tipoContrato,

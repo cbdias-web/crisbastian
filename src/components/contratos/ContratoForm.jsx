@@ -28,6 +28,7 @@ const TIPO_COLOR = {
   'DOLARIZE': '#b45309',
   'ROF': '#047857',
   'CANAL BANCÁRIO': '#6d28d9',
+  'OFFSHORE': '#0e7490',
 };
 
 const TIPO_GRADIENT = {
@@ -36,6 +37,7 @@ const TIPO_GRADIENT = {
   'DOLARIZE': 'from-[#b45309] to-[#d97706]',
   'ROF': 'from-emerald-700 to-emerald-600',
   'CANAL BANCÁRIO': 'from-violet-700 to-violet-600',
+  'OFFSHORE': 'from-cyan-700 to-cyan-600',
 };
 
 // Calcula quantos campos obrigatórios/relevantes estão preenchidos por aba
