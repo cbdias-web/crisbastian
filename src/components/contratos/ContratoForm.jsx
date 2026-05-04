@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   ArrowLeft, Save, Search, User, DollarSign, MapPin, FileText,
@@ -69,6 +69,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     return EMPTY;
   });
 
+  const queryClient = useQueryClient();
   const [buscaCliente, setBuscaCliente] = useState('');
   const [showBusca, setShowBusca] = useState(false);
   const [aba, setAba] = useState('dados');
@@ -105,9 +106,44 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteIndicadoresExcedido = totalPctIndicadores > 50;
 
+  const [novoIndicadorNome, setNovoIndicadorNome] = useState('');
+  const [novoIndicadorEmail, setNovoIndicadorEmail] = useState('');
+  const [novoIndicadorTelefone, setNovoIndicadorTelefone] = useState('');
+  const [novoIndicadorPercentual, setNovoIndicadorPercentual] = useState(10);
+  const [showNovoIndicador, setShowNovoIndicador] = useState(false);
+  const [salvandoNovoIndicador, setSalvandoNovoIndicador] = useState(false);
+
   const addIndicador = () => setIndicadores(prev => [...prev, { id: '', nome: '', percentual: 10, tipo: 'indicador' }]);
   const removeIndicador = (idx) => setIndicadores(prev => prev.filter((_, i) => i !== idx));
   const updateIndicador = (idx, field, value) => setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, [field]: value } : ind));
+  const criarNovoIndicador = async () => {
+    if (!novoIndicadorNome.trim()) { toast.error('Nome é obrigatório.'); return; }
+    setSalvandoNovoIndicador(true);
+    try {
+      const novo = await base44.entities.Espelhamento.create({
+        nome: novoIndicadorNome.trim(),
+        email: novoIndicadorEmail.trim() || undefined,
+        telefone: novoIndicadorTelefone.trim() || undefined,
+        percentual_comissao: novoIndicadorPercentual || 10,
+        ativo: true,
+      });
+      // Recarregar lista de espelhamentos
+      await queryClient.invalidateQueries(['espelhamentos-contrato']);
+      // Adicionar automaticamente à lista do contrato
+      setIndicadores(prev => [...prev, { id: novo.id, nome: novo.nome, percentual: novoIndicadorPercentual || 10, tipo: 'indicador' }]);
+      // Limpar form
+      setNovoIndicadorNome('');
+      setNovoIndicadorEmail('');
+      setNovoIndicadorTelefone('');
+      setNovoIndicadorPercentual(10);
+      setShowNovoIndicador(false);
+      toast.success(`Indicador "${novo.nome}" criado e adicionado!`);
+    } catch (err) {
+      toast.error('Erro ao criar indicador: ' + err.message);
+    }
+    setSalvandoNovoIndicador(false);
+  };
+
   const selectIndicadorPessoa = (idx, selectedId) => {
     const found = indicadoresDisponiveis.find(x => x.id === selectedId);
     if (found) setIndicadores(prev => prev.map((ind, i) => i === idx ? { ...ind, id: found.id, nome: found.nome, tipo: found.tipo, percentual: ind.percentual || found.percentual_comissao } : ind));
@@ -586,17 +622,54 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         </div>
                       )}
                     </div>
-                    <button type="button" onClick={addIndicador}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition hover:opacity-90"
-                      style={{ background: cor, color: 'white' }}>
-                      <Plus className="w-3 h-3" /> Adicionar
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setShowNovoIndicador(v => !v)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition bg-emerald-600 hover:bg-emerald-700 text-white">
+                        <Plus className="w-3 h-3" /> Novo Indicador
+                      </button>
+                      <button type="button" onClick={addIndicador}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition hover:opacity-90"
+                        style={{ background: cor, color: 'white' }}>
+                        <Plus className="w-3 h-3" /> Adicionar
+                      </button>
+                    </div>
                   </div>
 
                   {limiteIndicadoresExcedido && (
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border-b border-red-100">
                       <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                       <p className="text-xs text-red-600">O total de indicadores não pode ultrapassar 50%.</p>
+                    </div>
+                  )}
+
+                  {showNovoIndicador && (
+                    <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100">
+                      <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-2">Cadastrar novo indicador</p>
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <input value={novoIndicadorNome} onChange={e => setNovoIndicadorNome(e.target.value)}
+                          placeholder="Nome *" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
+                        <input value={novoIndicadorEmail} onChange={e => setNovoIndicadorEmail(e.target.value)}
+                          placeholder="E-mail" type="email" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
+                        <input value={novoIndicadorTelefone} onChange={e => setNovoIndicadorTelefone(e.target.value)}
+                          placeholder="Telefone" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
+                        <div className="flex items-center gap-1">
+                          <input type="number" step="0.1" min="0" max="50" value={novoIndicadorPercentual}
+                            onChange={e => setNovoIndicadorPercentual(parseFloat(e.target.value) || 10)}
+                            className="w-16 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 text-center font-semibold bg-white" />
+                          <span className="text-xs text-gray-500">% comissão padrão</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button type="button" onClick={criarNovoIndicador} disabled={salvandoNovoIndicador}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50">
+                          {salvandoNovoIndicador ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                          {salvandoNovoIndicador ? 'Salvando...' : 'Salvar e Adicionar'}
+                        </button>
+                        <button type="button" onClick={() => setShowNovoIndicador(false)}
+                          className="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-100 rounded-lg transition">
+                          Cancelar
+                        </button>
+                      </div>
                     </div>
                   )}
 
