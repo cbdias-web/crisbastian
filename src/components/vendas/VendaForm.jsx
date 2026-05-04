@@ -27,7 +27,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const { data: espelhamentos = [] } = useQuery({
     queryKey: ['espelhamentos'],
-    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome', 500),
+    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
   });
 
   const indicadoresDisponiveis = [

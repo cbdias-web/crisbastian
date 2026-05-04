@@ -94,7 +94,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const { data: espelhamentosList = [] } = useQuery({
     queryKey: ['espelhamentos-contrato'],
-    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
+    queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }),
     enabled: !!user,
   });
 
