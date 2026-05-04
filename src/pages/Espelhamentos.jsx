@@ -42,12 +42,15 @@ export default function Espelhamentos() {
 
   const { data: indicadores = [], isLoading } = useQuery({
     queryKey: ['espelhamentos'],
-    queryFn: () => base44.entities.Espelhamento.list('nome'),
+    queryFn: () => base44.entities.Espelhamento.list('nome', 5000),
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: vendas = [] } = useQuery({
     queryKey: ['vendas'],
-    queryFn: () => base44.entities.Venda.list(),
+    queryFn: () => base44.entities.Venda.list('-data', 5000),
+    staleTime: 0,
   });
 
   const createMutation = useMutation({
