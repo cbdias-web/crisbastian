@@ -91,7 +91,6 @@ export default function Contratos() {
   };
 
   const contratosFiltrados = contratos.filter(c => {
-    if (!isAdmin && c.vendedor_id !== user?.id && c.created_by !== user?.email) return false;
     const tipoOk = filtroTipo === 'Todos' || c.tipo === filtroTipo;
     const statusOk = filtroStatus === 'Todos' || c.status === filtroStatus;
     const buscaOk = !busca || c.nome?.toLowerCase().includes(busca.toLowerCase()) || c.cpf_cnpj?.includes(busca);

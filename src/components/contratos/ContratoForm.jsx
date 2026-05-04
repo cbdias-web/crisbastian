@@ -163,7 +163,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       }
       const payload = {
         ...data,
-        tipo,
+        tipo: data._tipoOverride || tipo,
         vendedor_id: vendedorId,
         vendedor_nome: vendedorNome,
         valor_adesao: parseFloat(data.valor_adesao) || 0,
@@ -642,8 +642,24 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
             {aba === 'obs' && (
               <div className="space-y-4">
-                <div className={`grid gap-4 ${isAdmin && contratoExistente ? 'grid-cols-2' : 'max-w-xs'}`}>
+                <div className={`grid gap-4 ${contratoExistente ? 'grid-cols-2' : 'max-w-xs'}`}>
                   {campo('Data do Contrato', 'data_contrato', 'date')}
+                  {contratoExistente && (
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Tipo do Contrato
+                      </label>
+                      <select
+                        value={form._tipoOverride || tipo}
+                        onChange={e => setForm(f => ({ ...f, _tipoOverride: e.target.value }))}
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all appearance-none cursor-pointer"
+                      >
+                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   {isAdmin && contratoExistente && (
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
