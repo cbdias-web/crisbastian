@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { todayBrasilia } from '@/lib/dateUtils';
 import ContratoForm from '@/components/contratos/ContratoForm';
 import ContratoViewer from '@/components/contratos/ContratoViewer';
 import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSidebar';
@@ -62,28 +63,36 @@ export default function Contratos() {
     onSuccess: () => { queryClient.invalidateQueries(['contratos']); toast.success('Contrato excluído.'); },
   });
 
-  const enviarPipeline = async (c) => {
-    if (!confirm(`Enviar contrato de "${c.nome}" para o Pipeline?`)) return;
+  const enviarParaVendas = async (c) => {
+    if (!confirm(`Criar venda a partir do contrato de "${c.nome}" e ir para Vendas?`)) return;
     setEnviandoPipelineId(c.id);
     try {
       const contratoAtualizado = await base44.entities.Contrato.get(c.id);
       const ct = contratoAtualizado || c;
-      const pipeline = await base44.entities.Pipeline.create({
-        cliente_nome: ct.nome,
-        cliente_cpf_cnpj: ct.cpf_cnpj,
-        cliente_telefone: ct.telefone || '',
+      const vendaPayload = {
         produto: ct.tipo,
-        valor_estimado: ct.valor_total || ct.valor_adesao || 0,
-        temperatura: 'Quente',
-        origem: 'Carteira',
+        assessor_comercial: ct.vendedor_nome || '',
         vendedor_id: ct.vendedor_id || '',
-        vendedor_nome: ct.vendedor_nome || '',
-        descricao: `Contrato ${ct.tipo} gerado. Valor total: R$ ${Number(ct.valor_total || ct.valor_adesao || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}. Aguardando finalização da venda.`,
-        data_prevista: ct.data_primeiro_pagamento || '',
-      });
-      await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline', pipeline_id: pipeline.id });
+        cliente: ct.nome || '',
+        cpf_cnpj: ct.cpf_cnpj || '',
+        valor: ct.valor_adesao || ct.valor_total || 0,
+        valor_total_contrato: ct.valor_total || 0,
+        data: todayBrasilia(),
+        forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
+        observacao: `Originado do Contrato ${ct.tipo}. Comprovante de pagamento anexado.`,
+      };
+      if (ct.indicadores?.length > 0) {
+        vendaPayload.indicadores = ct.indicadores;
+        vendaPayload.espelhamento = ct.indicadores[0]?.nome || '';
+        vendaPayload.espelhamento_id = ct.indicadores[0]?.id || '';
+        vendaPayload.percentual_comissao_espelhamento = ct.indicadores[0]?.percentual || 0;
+      }
+      await base44.entities.Venda.create(vendaPayload);
+      await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
       queryClient.invalidateQueries(['contratos']);
-      toast.success('Enviado para o Pipeline com sucesso!');
+      queryClient.invalidateQueries(['vendas']);
+      toast.success('Venda criada! Redirecionando para Vendas...');
+      setTimeout(() => window.location.href = '/Vendas', 1200);
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
@@ -291,7 +300,7 @@ export default function Contratos() {
                             </button>
                           )}
                           <button
-                            onClick={() => enviarPipeline(c)}
+                            onClick={() => enviarParaVendas(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
                             className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition disabled:opacity-30" title="Enviar para Vendas">
                             {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
