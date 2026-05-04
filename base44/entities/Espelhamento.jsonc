@@ -16,12 +16,10 @@
     },
     "percentual_comissao": {
       "type": "number",
-      "description": "Percentual de comissao padrao",
-      "default": 10
+      "description": "Percentual de comissao padrao"
     },
     "ativo": {
       "type": "boolean",
-      "default": true,
       "description": "Indicador ativo"
     }
   },
