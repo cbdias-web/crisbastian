@@ -12,12 +12,17 @@ export default function Espelhamentos() {
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(null);
-  const [mesFiltro, setMesFiltro] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
   const [filtrarPorMes, setFiltrarPorMes] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("ativo");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [dataInicio, setDataInicio] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [dataFim, setDataFim] = useState(() => {
+    const now = new Date();
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  });
   const [selectedForEmail, setSelectedForEmail] = useState([]);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [sendingBulk, setSendingBulk] = useState(false);
@@ -99,10 +104,8 @@ export default function Espelhamentos() {
     }
   };
 
-  const [anoFiltro, mesFiltroNum] = mesFiltro.split("-");
-  const dateFrom = `${mesFiltro}-01`;
-  const lastDay = new Date(parseInt(anoFiltro), parseInt(mesFiltroNum), 0).getDate();
-  const dateTo = `${mesFiltro}-${String(lastDay).padStart(2, "0")}`;
+  const dateFrom = dataInicio;
+  const dateTo = dataFim;
 
   const gerarRelatorio = async (indicador) => {
     setGeratingPDF(indicador.id);
@@ -156,7 +159,7 @@ export default function Espelhamentos() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-indicadores-${mesFiltro}.pdf`;
+      a.download = `relatorio-indicadores-${dateFrom}-a-${dateTo}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatório gerado!');
@@ -214,7 +217,7 @@ export default function Espelhamentos() {
       toast.error('Nenhum indicador com e-mail cadastrado');
       return;
     }
-    const historicoKey = `envios_relatorios_indicadores_${mesFiltro}`;
+    const historicoKey = `envios_relatorios_indicadores_${dateFrom}_${dateTo}`;
     const historico = JSON.parse(localStorage.getItem(historicoKey) || '[]');
     setEnviosRealizados(historico);
     setShowEmailModal(true);
@@ -251,7 +254,7 @@ export default function Espelhamentos() {
       }
     }
     
-    const historicoKey = `envios_relatorios_indicadores_${mesFiltro}`;
+    const historicoKey = `envios_relatorios_indicadores_${dateFrom}_${dateTo}`;
     const historicoAtual = JSON.parse(localStorage.getItem(historicoKey) || '[]');
     localStorage.setItem(historicoKey, JSON.stringify([...historicoAtual, ...novosEnvios]));
     
@@ -336,13 +339,20 @@ export default function Espelhamentos() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Filtro de período */}
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2">
+            <span className="text-xs text-gray-400 font-medium">De</span>
             <input
-              type="month"
-              value={mesFiltro}
-              onChange={e => setMesFiltro(e.target.value)}
+              type="date"
+              value={dataInicio}
+              onChange={e => setDataInicio(e.target.value)}
               className="text-sm focus:outline-none bg-transparent text-gray-600"
             />
-            <span className="text-[10px] text-gray-400 font-medium">(período das vendas)</span>
+            <span className="text-xs text-gray-400 font-medium">até</span>
+            <input
+              type="date"
+              value={dataFim}
+              onChange={e => setDataFim(e.target.value)}
+              className="text-sm focus:outline-none bg-transparent text-gray-600"
+            />
           </div>
           {/* Busca por nome */}
           <div className="relative">
@@ -374,14 +384,12 @@ export default function Espelhamentos() {
                 <option key={i.id} value={i.id}>{i.nome}</option>
               ))}
           </select>
-          {isAdmin && (
-            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
-              <option value="ativo">Ativos</option>
-              <option value="inativo">Inativos</option>
-              <option value="todos">Todos</option>
-            </select>
-          )}
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
+            <option value="todos">Todos</option>
+            <option value="ativo">Ativos</option>
+            <option value="inativo">Inativos</option>
+          </select>
           {(buscaNome || indicadorSelecionado) && (
             <button onClick={() => { setBuscaNome(''); setIndicadorSelecionado(''); }}
               className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1.5 hover:bg-red-50 rounded-lg transition">
