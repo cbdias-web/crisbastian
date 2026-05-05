@@ -30,75 +30,7 @@ const FRASES = {
   ],
 };
 
-const EinsteinSVG = () => (
-  <svg width="100" height="150" viewBox="0 0 100 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Cabelo selvagem */}
-    <ellipse cx="50" cy="32" rx="28" ry="10" fill="#f0f0f0"/>
-    <path d="M22 38 Q14 20 22 12 Q28 6 34 14" fill="#e8e8e8"/>
-    <path d="M78 38 Q86 20 78 12 Q72 6 66 14" fill="#e8e8e8"/>
-    <path d="M26 28 Q18 14 26 6 Q32 1 36 10" fill="#f0f0f0"/>
-    <path d="M74 28 Q82 14 74 6 Q68 1 64 10" fill="#f0f0f0"/>
-    <path d="M30 22 Q24 8 34 4 Q42 0 42 12" fill="#e8e8e8"/>
-    <path d="M70 22 Q76 8 66 4 Q58 0 58 12" fill="#e8e8e8"/>
-    {/* Cabeça */}
-    <ellipse cx="50" cy="46" rx="22" ry="24" fill="#FDDBB4"/>
-    {/* Sobrancelhas */}
-    <path d="M32 36 Q38 32 44 36" stroke="#888" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    <path d="M56 36 Q62 32 68 36" stroke="#888" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    {/* Óculos */}
-    <circle cx="38" cy="44" r="7" stroke="#555" strokeWidth="1.8" fill="white" fillOpacity="0.5"/>
-    <circle cx="62" cy="44" r="7" stroke="#555" strokeWidth="1.8" fill="white" fillOpacity="0.5"/>
-    <line x1="45" y1="44" x2="55" y2="44" stroke="#555" strokeWidth="1.5"/>
-    <line x1="31" y1="44" x2="27" y2="46" stroke="#555" strokeWidth="1.5"/>
-    <line x1="69" y1="44" x2="73" y2="46" stroke="#555" strokeWidth="1.5"/>
-    {/* Olhos */}
-    <circle cx="38" cy="44" r="3" fill="#4a3728"/>
-    <circle cx="62" cy="44" r="3" fill="#4a3728"/>
-    <circle cx="39" cy="43" r="1" fill="white"/>
-    <circle cx="63" cy="43" r="1" fill="white"/>
-    {/* Nariz */}
-    <path d="M50 48 Q47 54 50 56 Q53 54 50 48" fill="#e8a87c"/>
-    {/* Bigode */}
-    <path d="M38 60 Q44 57 50 60 Q56 57 62 60" fill="#e8e8e8" stroke="#ccc" strokeWidth="0.5"/>
-    <path d="M40 62 Q45 58 50 61 Q55 58 60 62" fill="#e0e0e0"/>
-    {/* Boca sorrindo */}
-    <path d="M44 65 Q50 70 56 65" stroke="#c0735a" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
-    {/* Orelhas */}
-    <ellipse cx="28" cy="48" rx="4" ry="6" fill="#FDDBB4"/>
-    <ellipse cx="72" cy="48" rx="4" ry="6" fill="#FDDBB4"/>
-    {/* Pescoço */}
-    <rect x="44" y="68" width="12" height="10" fill="#FDDBB4"/>
-    {/* Camisa/gravata */}
-    <path d="M40 76 Q50 80 60 76 L65 95 Q50 98 35 95 Z" fill="white" stroke="#ddd" strokeWidth="0.5"/>
-    <path d="M47 78 L50 92 L53 78 Q50 76 47 78Z" fill="#c0392b"/>
-    {/* Jaleco */}
-    <path d="M28 78 Q36 74 40 76 L38 130 Q28 132 22 128 Z" fill="#f5f5f5" stroke="#ddd" strokeWidth="0.8"/>
-    <path d="M72 78 Q64 74 60 76 L62 130 Q72 132 78 128 Z" fill="#f5f5f5" stroke="#ddd" strokeWidth="0.8"/>
-    {/* Corpo/camisa por baixo */}
-    <path d="M40 76 L38 130 Q50 133 62 130 L60 76 Q50 80 40 76Z" fill="white" stroke="#eee" strokeWidth="0.5"/>
-    {/* Bolso jaleco */}
-    <rect x="30" y="92" width="10" height="8" rx="1" fill="white" stroke="#ddd" strokeWidth="0.8"/>
-    {/* Braço esquerdo levantado */}
-    <path d="M28 82 Q18 78 14 68 Q12 62 18 60" stroke="#f5f5f5" strokeWidth="12" strokeLinecap="round" fill="none"/>
-    <path d="M28 82 Q18 78 14 68 Q12 62 18 60" stroke="#ddd" strokeWidth="12.5" strokeLinecap="round" fill="none" opacity="0.3"/>
-    {/* Mão esquerda apontando */}
-    <ellipse cx="19" cy="58" rx="5" ry="6" fill="#FDDBB4"/>
-    <rect x="17" y="48" width="4" height="12" rx="2" fill="#FDDBB4"/>
-    {/* Braço direito */}
-    <path d="M72 82 Q80 86 82 96" stroke="#f5f5f5" strokeWidth="11" strokeLinecap="round" fill="none"/>
-    <path d="M72 82 Q80 86 82 96" stroke="#ddd" strokeWidth="11.5" strokeLinecap="round" fill="none" opacity="0.3"/>
-    {/* Mão direita */}
-    <ellipse cx="83" cy="98" rx="5" ry="5" fill="#FDDBB4"/>
-    {/* Calça */}
-    <path d="M38 130 Q44 132 50 131 Q56 132 62 130 L64 148 Q57 150 50 149 Q43 150 36 148 Z" fill="#555"/>
-    {/* Pernas */}
-    <rect x="36" y="140" width="12" height="10" rx="2" fill="#555"/>
-    <rect x="52" y="140" width="12" height="10" rx="2" fill="#555"/>
-    {/* Sapatos */}
-    <ellipse cx="42" cy="150" rx="8" ry="4" fill="#333"/>
-    <ellipse cx="58" cy="150" rx="8" ry="4" fill="#333"/>
-  </svg>
-);
+const EINSTEIN_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/8c19256a8_generated_image.png';
 
 function loadPos() {
   try {
@@ -250,7 +182,17 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
         title="Arraste para mover · clique para dica"
         style={{ lineHeight: 0 }}
       >
-        <EinsteinSVG />
+        <img
+          src={EINSTEIN_IMG}
+          alt="Prof. Einstein"
+          draggable={false}
+          style={{
+            width: 72,
+            height: 'auto',
+            display: 'block',
+            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))',
+          }}
+        />
       </div>
     </div>
   );
