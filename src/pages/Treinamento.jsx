@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw } from 'lucide-react';
 import EinsteinCoach from '@/components/treinamento/JarvisCoach';
+import ProfessorMascote from '@/components/treinamento/ProfessorMascote';
 
 const TIPO_ICONS = {
   video: PlayCircle,
@@ -201,6 +202,10 @@ export default function Treinamento() {
         proximaAula={proximaAula}
         onProxima={() => setAulaAtiva(proximaAula)}
       />
+      <ProfessorMascote
+        contexto={concluida ? 'concluida' : 'aula'}
+        userName={user?.nome_tratamento || user?.full_name || ''}
+      />
       </>
     );
   }
@@ -213,6 +218,7 @@ export default function Treinamento() {
     if (!modulo) { setModuloAberto(null); return null; }
 
     return (
+      <>
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-3xl mx-auto">
           <button onClick={() => setModuloAberto(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-5 transition">
@@ -280,6 +286,13 @@ export default function Treinamento() {
           </div>
         </div>
       </div>
+      <ProfessorMascote
+        contexto="modulo"
+        progresso={progresso}
+        nomeModulo={modulo.titulo}
+        userName={user?.nome_tratamento || user?.full_name || ''}
+      />
+      </>
     );
   }
 
@@ -416,6 +429,11 @@ export default function Treinamento() {
           </div>
         )}
       </div>
+      <ProfessorMascote
+        contexto="dashboard"
+        progresso={progressoGeral}
+        userName={user?.nome_tratamento || user?.full_name || ''}
+      />
     </div>
   );
 }
