@@ -341,28 +341,20 @@ export default function AssistenteFloating() {
   }, []);
 
   // Verifica mensagens pendentes ao carregar e periodicamente
-  // Se o chat estiver aberto, marca como lidas automaticamente ao encontrar novas
   useEffect(() => {
     if (!userLoaded) return;
     const poll = async () => {
-      const result = await checkMensagensPendentes();
-      if (open && result?.pendentes?.length > 0) {
-        marcarMensagensComoLidas(result.pendentes, userName);
-      }
+      await checkMensagensPendentes();
     };
     poll();
     const interval = setInterval(poll, 30000);
     return () => clearInterval(interval);
-  }, [userLoaded, open, userName]);
+  }, [userLoaded]);
 
-  // Re-verifica ao abrir — e marca como lidas automaticamente se houver pendentes
+  // Re-verifica ao abrir — apenas carrega as pendentes, sem marcar automaticamente
   useEffect(() => {
     if (open && userName) {
-      checkMensagensPendentes().then(result => {
-        if (result?.pendentes?.length > 0) {
-          marcarMensagensComoLidas(result.pendentes, userName);
-        }
-      });
+      checkMensagensPendentes();
     }
   }, [open, userName]);
 
