@@ -125,9 +125,8 @@ export default function Layout({ children, currentPageName }) {
   const menuComercial = [
     { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
-    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
-    { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
-    { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
+    { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
+    { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
     { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
@@ -138,10 +137,11 @@ export default function Layout({ children, currentPageName }) {
 
   // BLOCO APOIO
   const menuApoio = [
-    { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
+    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
+    { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
+    { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-    { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
   ].filter(item => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
