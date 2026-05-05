@@ -335,7 +335,7 @@ export default function Treinamento() {
             <p className="text-sm">Nenhum módulo disponível ainda</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {modulos.map((modulo, idx) => {
               const aulasModulo = aulas.filter(a => a.modulo_id === modulo.id);
               const progresso = getProgressoModulo(modulo.id);
@@ -343,9 +343,9 @@ export default function Treinamento() {
               const totalDuracao = aulasModulo.reduce((s, a) => s + (a.duracao_min || 0), 0);
 
               return (
-                <div key={modulo.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-300 group hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] hover:bg-gradient-to-b hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200 cursor-pointer">
+                <div key={modulo.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-300 group hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200 cursor-pointer">
                   {/* Cover */}
-                  <div className={`relative h-36 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
+                  <div className={`relative h-24 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
                     {modulo.capa_url ? (
                       <img src={modulo.capa_url} alt="" className="w-full h-full object-cover absolute inset-0" />
                     ) : (
@@ -359,14 +359,11 @@ export default function Treinamento() {
                   </div>
 
                   {/* Info */}
-                  <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="font-bold text-gray-900 text-sm leading-tight">{modulo.titulo}</h3>
-                    {modulo.descricao && (
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{modulo.descricao}</p>
-                    )}
+                  <div className="p-3 flex-1 flex flex-col">
+                    <h3 className="font-bold text-gray-900 text-xs leading-tight">{modulo.titulo}</h3>
 
                     {/* Meta */}
-                    <div className="flex items-center gap-3 mt-3 text-[11px] text-gray-400">
+                    <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-400">
                       <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{aulasModulo.length} aulas</span>
                       {totalDuracao > 0 && (
                         <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{totalDuracao >= 60 ? `${Math.round(totalDuracao / 60)}h` : `${totalDuracao}min`}</span>
@@ -374,14 +371,14 @@ export default function Treinamento() {
                     </div>
 
                     {/* Progresso */}
-                    <div className="mt-3">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] text-gray-400">Progresso</span>
-                        <span className="text-[10px] font-semibold text-gray-600">{progresso}%</span>
+                    <div className="mt-2">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <span className="text-[9px] text-gray-400">Progresso</span>
+                        <span className="text-[9px] font-semibold text-gray-600">{progresso}%</span>
                       </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div className="w-full bg-gray-100 rounded-full h-1">
                         <div
-                          className={`h-1.5 rounded-full transition-all ${progresso === 100 ? 'bg-emerald-500' : 'bg-[#1a3150]'}`}
+                          className={`h-1 rounded-full transition-all ${progresso === 100 ? 'bg-emerald-500' : 'bg-[#1a3150]'}`}
                           style={{ width: `${progresso}%` }}
                         />
                       </div>
@@ -390,7 +387,7 @@ export default function Treinamento() {
                     {/* Botão */}
                     <button
                       onClick={() => setModuloAberto(modulo.id)}
-                      className="mt-4 w-full py-2 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 bg-[#0f1e35] hover:bg-[#1a3150] text-white"
+                      className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-[#0f1e35] hover:bg-[#1a3150] text-white"
                     >
                       {progresso === 100 ? (
                         <><RotateCcw className="w-3.5 h-3.5" /> Revisar</>
