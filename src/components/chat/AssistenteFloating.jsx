@@ -341,18 +341,28 @@ export default function AssistenteFloating() {
   }, []);
 
   // Verifica mensagens pendentes ao carregar e periodicamente
+  // Se o chat estiver aberto, marca como lidas automaticamente ao encontrar novas
   useEffect(() => {
-    if (userLoaded) {
-      checkMensagensPendentes();
-      const interval = setInterval(checkMensagensPendentes, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [userLoaded]);
+    if (!userLoaded) return;
+    const poll = async () => {
+      const result = await checkMensagensPendentes();
+      if (open && result?.pendentes?.length > 0) {
+        marcarMensagensComoLidas(result.pendentes, userName);
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 30000);
+    return () => clearInterval(interval);
+  }, [userLoaded, open, userName]);
 
-  // Re-verifica ao abrir
+  // Re-verifica ao abrir — e marca como lidas automaticamente se houver pendentes
   useEffect(() => {
     if (open && userName) {
-      checkMensagensPendentes();
+      checkMensagensPendentes().then(result => {
+        if (result?.pendentes?.length > 0) {
+          marcarMensagensComoLidas(result.pendentes, userName);
+        }
+      });
     }
   }, [open, userName]);
 
@@ -366,21 +376,26 @@ export default function AssistenteFloating() {
         executarComandoMensagem(msg.mensagem, navigate);
       });
       setMensagensPendentes(pendentes);
+      return { user, pendentes };
     } catch (e) {}
+    return null;
   };
 
-  const marcarMensagensComoLidas = async (msgs) => {
+  const marcarMensagensComoLidas = async (msgs, nomeUsuario) => {
+    if (!msgs || msgs.length === 0) return;
+    // Limpa o estado local IMEDIATAMENTE para evitar re-exibição
+    setMensagensPendentes([]);
     const agora = new Date().toISOString();
+    const nome = nomeUsuario || userName || 'O destinatário';
     for (const msg of msgs) {
       try {
         await base44.entities.JarvisMensagem.update(msg.id, { lida: true, lida_em: agora });
         // Enviar confirmação de leitura ao remetente
         if (msg.remetente_email) {
-          const destinatario = userName || 'O destinatário';
           await base44.integrations.Core.SendEmail({
             to: msg.remetente_email,
-            subject: `✅ Mensagem lida por ${destinatario}`,
-            body: `<p>Olá, <strong>${msg.remetente_nome || 'Admin'}</strong>!</p><p>Sua mensagem enviada pelo Jarvis foi lida por <strong>${destinatario}</strong> em ${new Date(agora).toLocaleString('pt-BR')}.</p><blockquote style="border-left:3px solid #1a3150;padding-left:12px;color:#555;">${msg.mensagem}</blockquote><p style="color:#888;font-size:12px;">— Jarvis · Villela Exchange</p>`
+            subject: `✅ Mensagem lida por ${nome}`,
+            body: `<p>Olá, <strong>${msg.remetente_nome || 'Admin'}</strong>!</p><p>Sua mensagem enviada pelo Jarvis foi lida por <strong>${nome}</strong> em ${new Date(agora).toLocaleString('pt-BR')}.</p><blockquote style="border-left:3px solid #1a3150;padding-left:12px;color:#555;">${msg.mensagem}</blockquote><p style="color:#888;font-size:12px;">— Jarvis · Villela Exchange</p>`
           });
         }
       } catch (e) {}
