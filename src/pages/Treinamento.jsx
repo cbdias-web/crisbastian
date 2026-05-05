@@ -355,7 +355,7 @@ export default function Treinamento() {
               const totalDuracao = aulasModulo.reduce((s, a) => s + (a.duracao_min || 0), 0);
 
               return (
-                <div key={modulo.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-300 group hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200 cursor-pointer">
+                <div key={modulo.id} onClick={() => setModuloAberto(modulo.id)} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-300 group hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200 cursor-pointer">
                   {/* Cover */}
                   <div className={`relative h-24 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
                     {modulo.capa_url ? (
