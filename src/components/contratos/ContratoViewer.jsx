@@ -164,7 +164,33 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     setEnviandoVenda(false);
   };
 
+  // Campos obrigatórios para geração do PDF
+  const CAMPOS_OBRIGATORIOS_PDF = [
+    { campo: 'nome', label: 'Nome Completo' },
+    { campo: 'cpf_cnpj', label: 'CPF / CNPJ' },
+    { campo: 'nascimento', label: 'Data de Nascimento' },
+    { campo: 'nacionalidade', label: 'Nacionalidade' },
+    { campo: 'profissao', label: 'Profissão' },
+    { campo: 'estado_civil', label: 'Estado Civil' },
+    { campo: 'email', label: 'E-mail' },
+    { campo: 'telefone', label: 'Telefone' },
+    { campo: 'cep', label: 'CEP' },
+    { campo: 'endereco', label: 'Endereço' },
+    { campo: 'bairro', label: 'Bairro' },
+    { campo: 'cidade', label: 'Cidade' },
+    { campo: 'estado', label: 'Estado (UF)' },
+    { campo: 'valor_total', label: 'Valor Total' },
+    { campo: 'forma_pagamento', label: 'Forma de Pagamento' },
+    { campo: 'data_contrato', label: 'Data do Contrato' },
+  ];
+
+  const camposFaltando = CAMPOS_OBRIGATORIOS_PDF.filter(c => !contrato[c.campo] || String(contrato[c.campo]).trim() === '');
+
   const gerarPDF = async () => {
+    if (camposFaltando.length > 0) {
+      toast.error(`Preencha os campos obrigatórios antes de gerar o PDF: ${camposFaltando.map(c => c.label).join(', ')}`, { duration: 6000 });
+      return;
+    }
     setGerando(true);
     try {
       const res = await base44.functions.invoke('gerarContratosPDF', { contrato_id: contrato.id });
@@ -227,12 +253,20 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
         {/* Ações rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-          <button onClick={gerarPDF} disabled={gerando}
-            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-white text-xs font-semibold transition hover:opacity-90 shadow-md disabled:opacity-50"
-            style={{ background: cor }}>
-            {gerando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
-            {gerando ? 'Gerando...' : 'Gerar PDF'}
-          </button>
+          <div className="flex flex-col gap-1">
+            <button onClick={gerarPDF} disabled={gerando}
+              className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-white text-xs font-semibold transition hover:opacity-90 shadow-md disabled:opacity-50"
+              style={{ background: cor, opacity: camposFaltando.length > 0 ? 0.6 : 1 }}
+              title={camposFaltando.length > 0 ? `Faltam: ${camposFaltando.map(c => c.label).join(', ')}` : 'Gerar PDF'}>
+              {gerando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Printer className="w-5 h-5" />}
+              {gerando ? 'Gerando...' : 'Gerar PDF'}
+            </button>
+            {camposFaltando.length > 0 && (
+              <p className="text-[9px] text-red-500 font-semibold text-center leading-tight">
+                {camposFaltando.length} campo{camposFaltando.length > 1 ? 's' : ''} incompleto{camposFaltando.length > 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
           <button onClick={() => setEditando(true)}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition shadow-sm">
             <Edit2 className="w-5 h-5" />

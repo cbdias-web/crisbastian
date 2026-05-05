@@ -237,20 +237,33 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
       if (data.nome && data.cpf_cnpj) {
         try {
+          const dadosCliente = {
+            nome: data.nome,
+            cpf_cnpj: data.cpf_cnpj,
+            email: data.email || '',
+            telefone: data.telefone || '',
+            cidade: data.cidade || '',
+            estado: data.estado || '',
+            vendedor_id: vendedorId,
+            vendedor_nome: vendedorNome,
+          };
           const existentes = await base44.entities.Cliente.filter({ cpf_cnpj: data.cpf_cnpj });
           if (existentes.length === 0) {
             const novoCliente = await base44.entities.Cliente.create({
-              nome: data.nome, cpf_cnpj: data.cpf_cnpj, email: data.email || '',
-              telefone: data.telefone || '', cidade: data.cidade || '', estado: data.estado || '',
-              vendedor_id: vendedorId, vendedor_nome: vendedorNome,
-              observacao: `Cliente gerado pelo contrato ${tipo}.`, origem: 'nativo',
+              ...dadosCliente,
+              observacao: `Cliente gerado pelo contrato ${tipo}.`,
+              origem: 'nativo',
             });
             await base44.entities.Contrato.update(contrato.id, { cliente_id: novoCliente.id });
             contrato = { ...contrato, cliente_id: novoCliente.id };
             toast.success(`Cliente "${data.nome}" salvo na carteira!`);
-          } else if (!contrato.cliente_id) {
-            await base44.entities.Contrato.update(contrato.id, { cliente_id: existentes[0].id });
-            contrato = { ...contrato, cliente_id: existentes[0].id };
+          } else {
+            // Atualiza cadastro do cliente com dados completos do contrato
+            await base44.entities.Cliente.update(existentes[0].id, dadosCliente);
+            if (!contrato.cliente_id) {
+              await base44.entities.Contrato.update(contrato.id, { cliente_id: existentes[0].id });
+              contrato = { ...contrato, cliente_id: existentes[0].id };
+            }
           }
         } catch (e) {}
       }
