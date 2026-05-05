@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { X, BarChart3, TrendingUp, Download, ChevronDown, Check } from 'lucide-react';
+import { X, BarChart3, TrendingUp, Download, ChevronDown, Check, FileText, Loader2 } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -118,6 +119,183 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
     return [...set].sort();
   }, [rows]);
 
+  const [exportandoPDF, setExportandoPDF] = useState(false);
+
+  const exportarPDF = () => {
+    setExportandoPDF(true);
+    setTimeout(() => {
+      try {
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const W = doc.internal.pageSize.getWidth();
+        const H = doc.internal.pageSize.getHeight();
+        const margin = 14;
+        const fmtPDF = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+        const fmtDate = (d) => d ? d.split('-').reverse().join('/') : '';
+
+        // Header azul
+        doc.setFillColor(15, 30, 53);
+        doc.rect(0, 0, W, 22, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VILLELA EXCHANGE', margin, 10);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(180, 200, 230);
+        doc.text('Relatório Consolidado de Vendas', margin, 16);
+        doc.text(`Período: ${fmtDate(dataInicio)} a ${fmtDate(dataFim)}`, W - margin, 10, { align: 'right' });
+        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, W - margin, 16, { align: 'right' });
+
+        // KPIs
+        let y = 30;
+        const kpis = [
+          { label: 'Vendedores', value: String(rows.length) },
+          { label: 'Total Vendas', value: String(totais.qtdVendas) },
+          { label: 'Vol. Entrada', value: fmtPDF(totais.volume) },
+          { label: 'Vol. Total', value: fmtPDF(totais.volumeTotal) },
+          { label: 'Comissão Est.', value: fmtPDF(totais.comissaoEstimada) },
+        ];
+        const kpiW = (W - margin * 2) / kpis.length;
+        kpis.forEach((k, i) => {
+          const x = margin + i * kpiW;
+          doc.setFillColor(245, 247, 250);
+          doc.roundedRect(x, y, kpiW - 3, 16, 2, 2, 'F');
+          doc.setTextColor(100, 116, 139);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'normal');
+          doc.text(k.label, x + 4, y + 6);
+          doc.setTextColor(15, 30, 53);
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text(k.value, x + 4, y + 13);
+        });
+
+        y += 24;
+
+        // Colunas base
+        const baseHeaders = ['Vendedor', 'Vendas', 'Vol. Entrada', 'Vol. Total', 'Comissão Est.', '% Meta'];
+        const prodHeaders = todosProdutos.map(p => p.length > 12 ? p.substring(0, 12) + '.' : p);
+        const allHeaders = [...baseHeaders, ...prodHeaders];
+
+        // Calcular larguras das colunas
+        const totalCols = allHeaders.length;
+        const vendedorW = 38;
+        const vendasW = 14;
+        const moneyW = 28;
+        const metaW = 16;
+        const prodW = Math.min(22, (W - margin * 2 - vendedorW - vendasW - moneyW * 3 - metaW) / Math.max(todosProdutos.length, 1));
+        const colWidths = [vendedorW, vendasW, moneyW, moneyW, moneyW, metaW, ...todosProdutos.map(() => prodW)];
+
+        // Header da tabela
+        doc.setFillColor(26, 49, 80);
+        const tableW = colWidths.reduce((s, w) => s + w, 0);
+        doc.rect(margin, y, tableW, 8, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+
+        let x = margin;
+        allHeaders.forEach((h, i) => {
+          const align = i === 0 ? 'left' : 'right';
+          const tx = align === 'right' ? x + colWidths[i] - 2 : x + 2;
+          doc.text(h, tx, y + 5.5, { align });
+          x += colWidths[i];
+        });
+
+        y += 8;
+
+        // Linhas de dados
+        rows.forEach((r, idx) => {
+          if (y > H - 20) {
+            doc.addPage();
+            y = 14;
+          }
+          const bg = idx % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+          doc.setFillColor(...bg);
+          doc.rect(margin, y, tableW, 8, 'F');
+
+          doc.setTextColor(30, 41, 59);
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', idx === 0 && r.volume > 0 ? 'bold' : 'normal');
+
+          const rowData = [
+            r.nome?.length > 22 ? r.nome.substring(0, 22) + '…' : (r.nome || ''),
+            String(r.qtdVendas),
+            fmtPDF(r.volume),
+            fmtPDF(r.volumeTotal),
+            fmtPDF(r.comissaoEstimada),
+            r.pctMeta != null ? `${r.pctMeta.toFixed(0)}%` : '—',
+            ...todosProdutos.map(p => r.porProduto[p] ? `${r.porProduto[p].qtd}x` : '—'),
+          ];
+
+          x = margin;
+          rowData.forEach((val, i) => {
+            const align = i === 0 ? 'left' : 'right';
+            const tx = align === 'right' ? x + colWidths[i] - 2 : x + 2;
+            // Colorir comissão em verde
+            if (i === 4) doc.setTextColor(5, 150, 105);
+            else if (i === 0 && idx === 0 && r.volume > 0) doc.setTextColor(15, 30, 53);
+            else doc.setTextColor(30, 41, 59);
+            doc.text(val, tx, y + 5.5, { align });
+            x += colWidths[i];
+          });
+
+          // Borda inferior leve
+          doc.setDrawColor(226, 232, 240);
+          doc.line(margin, y + 8, margin + tableW, y + 8);
+          y += 8;
+        });
+
+        // Linha de total
+        if (y > H - 14) { doc.addPage(); y = 14; }
+        doc.setFillColor(15, 30, 53);
+        doc.rect(margin, y, tableW, 9, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+
+        const totalData = [
+          `TOTAL (${rows.length} vendedores)`,
+          String(totais.qtdVendas),
+          fmtPDF(totais.volume),
+          fmtPDF(totais.volumeTotal),
+          fmtPDF(totais.comissaoEstimada),
+          '—',
+          ...todosProdutos.map(p => {
+            const qtd = rows.reduce((s, r) => s + (r.porProduto[p]?.qtd || 0), 0);
+            return `${qtd}x`;
+          }),
+        ];
+
+        x = margin;
+        totalData.forEach((val, i) => {
+          const align = i === 0 ? 'left' : 'right';
+          const tx = align === 'right' ? x + colWidths[i] - 2 : x + 2;
+          if (i === 4) doc.setTextColor(110, 231, 183);
+          else doc.setTextColor(255, 255, 255);
+          doc.text(val, tx, y + 6, { align });
+          x += colWidths[i];
+        });
+
+        // Rodapé
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let p = 1; p <= totalPages; p++) {
+          doc.setPage(p);
+          doc.setFontSize(7);
+          doc.setTextColor(148, 163, 184);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`Villela Exchange — Relatório Consolidado de Vendas`, margin, H - 6);
+          doc.text(`Página ${p} de ${totalPages}`, W - margin, H - 6, { align: 'right' });
+        }
+
+        doc.save(`relatorio-consolidado-${dataInicio}-${dataFim}.pdf`);
+      } catch (e) {
+        console.error(e);
+      }
+      setExportandoPDF(false);
+    }, 50);
+  };
+
   const exportarCSV = () => {
     const prodHeaders = todosProdutos.flatMap(p => [`Qtd ${p}`, `Valor ${p}`]);
     const headers = ['Vendedor', 'Qtd Vendas', 'Volume Entrada', 'Volume Total', 'Comissão Est.', '% Meta', ...prodHeaders];
@@ -190,10 +368,17 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5 block">Vendedores</label>
             <MultiSelect options={options} selected={selectedIds} onChange={setSelectedIds} />
           </div>
-          <button onClick={exportarCSV} disabled={rows.length === 0}
-            className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-100 transition disabled:opacity-40 ml-auto">
-            <Download className="w-4 h-4" /> Exportar CSV
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            <button onClick={exportarPDF} disabled={rows.length === 0 || exportandoPDF}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#0f1e35] text-white text-sm font-medium rounded-xl hover:bg-[#1a3150] transition disabled:opacity-40">
+              {exportandoPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              {exportandoPDF ? 'Gerando PDF...' : 'Exportar PDF'}
+            </button>
+            <button onClick={exportarCSV} disabled={rows.length === 0}
+              className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-100 transition disabled:opacity-40">
+              <Download className="w-4 h-4" /> Exportar CSV
+            </button>
+          </div>
         </div>
 
         {/* Sumário KPIs */}
