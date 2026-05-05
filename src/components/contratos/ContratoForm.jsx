@@ -342,11 +342,21 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     </div>
   );
 
+  // Campos obrigatórios por aba — para validação de bloqueio
+  const dadosPessoaisCompletos =
+    form.nome?.trim() && form.cpf_cnpj?.trim() && form.email?.trim() &&
+    form.telefone?.trim() && form.nascimento && form.profissao?.trim() &&
+    form.estado_civil && form.nacionalidade?.trim();
+
+  const enderecoCompleto =
+    form.endereco?.trim() && form.cidade?.trim() && form.estado?.trim() &&
+    form.bairro?.trim() && form.cep?.trim();
+
   const abas = [
     { id: 'dados', label: 'Dados Pessoais', icon: User },
-    { id: 'endereco', label: 'Endereço', icon: MapPin },
-    { id: 'financeiro', label: 'Financeiro', icon: DollarSign },
-    { id: 'obs', label: 'Obs. & Data', icon: FileText },
+    { id: 'endereco', label: 'Endereço', icon: MapPin, bloqueada: !dadosPessoaisCompletos, motivoBloqueio: 'Preencha os dados pessoais primeiro' },
+    { id: 'financeiro', label: 'Financeiro', icon: DollarSign, bloqueada: !dadosPessoaisCompletos || !enderecoCompleto, motivoBloqueio: 'Preencha os dados pessoais e o endereço primeiro' },
+    { id: 'obs', label: 'Obs. & Data', icon: FileText, bloqueada: !dadosPessoaisCompletos || !enderecoCompleto, motivoBloqueio: 'Preencha os dados pessoais e o endereço primeiro' },
   ];
   const abaIdx = abas.findIndex(a => a.id === aba);
 
@@ -450,28 +460,40 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                 const progress = calcProgress(form, a.id);
                 const isActive = aba === a.id;
                 const isDone = progress === 100;
+                const isBloqueada = a.bloqueada;
                 return (
-                  <button key={a.id} onClick={() => setAba(a.id)}
+                  <button key={a.id}
+                    onClick={() => {
+                      if (isBloqueada) { toast.error(a.motivoBloqueio); return; }
+                      setAba(a.id);
+                    }}
+                    title={isBloqueada ? a.motivoBloqueio : a.label}
                     className={`flex-1 relative flex flex-col items-center gap-1 pt-3.5 pb-2.5 text-xs font-semibold transition-all border-b-2 ${
-                      isActive
-                        ? 'border-current text-white'
-                        : isDone
-                          ? 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
-                          : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                      isBloqueada
+                        ? 'border-transparent text-gray-300 cursor-not-allowed bg-gray-50/50'
+                        : isActive
+                          ? 'border-current text-white'
+                          : isDone
+                            ? 'border-emerald-300 text-emerald-600 hover:bg-emerald-50'
+                            : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
                     }`}
-                    style={isActive ? { background: cor, borderColor: cor } : {}}>
+                    style={isActive && !isBloqueada ? { background: cor, borderColor: cor } : {}}>
                     <div className="flex items-center gap-1.5">
-                      {isDone && !isActive
-                        ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                        : <Icon className="w-3.5 h-3.5" />
+                      {isBloqueada
+                        ? <X className="w-3.5 h-3.5 text-gray-300" />
+                        : isDone && !isActive
+                          ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          : <Icon className="w-3.5 h-3.5" />
                       }
                       <span className="hidden sm:inline">{a.label}</span>
                     </div>
                     {/* Mini progress bar */}
-                    <div className="w-8 h-0.5 rounded-full bg-current opacity-20 overflow-hidden">
-                      <div className="h-full rounded-full bg-current opacity-100 transition-all"
-                        style={{ width: `${progress}%`, opacity: isActive ? 0.7 : isDone ? 1 : 0.5 }} />
-                    </div>
+                    {!isBloqueada && (
+                      <div className="w-8 h-0.5 rounded-full bg-current opacity-20 overflow-hidden">
+                        <div className="h-full rounded-full bg-current opacity-100 transition-all"
+                          style={{ width: `${progress}%`, opacity: isActive ? 0.7 : isDone ? 1 : 0.5 }} />
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -875,11 +897,22 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
             <div className="flex items-center gap-2">
               {abaIdx < abas.length - 1 ? (
-                <button onClick={() => setAba(abas[abaIdx + 1].id)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-xl transition hover:opacity-90"
-                  style={{ background: cor }}>
-                  Próxima <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                (() => {
+                  const proxima = abas[abaIdx + 1];
+                  const bloqueada = proxima.bloqueada;
+                  return (
+                    <button
+                      onClick={() => {
+                        if (bloqueada) { toast.error(proxima.motivoBloqueio); return; }
+                        setAba(proxima.id);
+                      }}
+                      title={bloqueada ? proxima.motivoBloqueio : 'Próxima aba'}
+                      className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition ${bloqueada ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'text-white hover:opacity-90'}`}
+                      style={!bloqueada ? { background: cor } : {}}>
+                      Próxima <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  );
+                })()
               ) : null}
               <button
                 onClick={() => saveMutation.mutate(form)}
