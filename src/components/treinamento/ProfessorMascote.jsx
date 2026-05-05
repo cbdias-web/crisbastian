@@ -29,8 +29,20 @@ const FRASES = {
   ],
 };
 
-// SVG boneco Einstein corpo inteiro
+const EINSTEIN_3D_URL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/48c3902d4_generated_image.png';
+
+// Imagem 3D Einstein
 function ProfessorSVG() {
+  return (
+    <img
+      src={EINSTEIN_3D_URL}
+      alt="Prof. Einstein"
+      style={{ width: 120, height: 'auto', filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.25))' }}
+    />
+  );
+}
+
+function _OldSVG() {
   return (
     <svg
       width="90"
@@ -148,6 +160,7 @@ function ProfessorSVG() {
     </svg>
   );
 }
+
 
 export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0, nomeModulo = '', userName = '' }) {
   const [visivel, setVisivel] = useState(false);
