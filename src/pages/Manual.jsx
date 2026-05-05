@@ -17,7 +17,7 @@ const sections = [
       { subtitle: 'O que é o Villela Exchange – Gestão Comercial?', text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial. Integra Contratos, Pipeline, Prospecção, Treinamentos e IA em um único ambiente.' },
       { subtitle: 'Acesso e Login', text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.' },
       { subtitle: 'Perfil do Usuário', text: 'Clique no seu nome no canto superior do Dashboard para acessar seu perfil. Você pode alterar seu nome de tratamento (como aparece no sistema).' },
-      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Vendas, Clientes, Vendedores, Indicadores, Rel. Interações, Pipeline.', '**Bloco Apoio:** Meus Clientes, Manual, Capacitação, Contratos.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação Admin, Relatório Comissões, Prospecção, Metas, Produtos, Importar.'] },
+      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Vendas, Clientes, Vendedores, Indicadores, Rel. Interações, Pipeline.', '**Bloco Apoio:** Agenda do Dia, Manual, Capacitação, Contratos.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação Admin, Relatório Comissões, Prospecção, Metas, Produtos, Importar.'] },
     ],
   },
   {
@@ -136,7 +136,7 @@ const sections = [
     ],
   },
   {
-    id: 'meus-clientes', icon: Briefcase, title: 'Meus Clientes',
+    id: 'meus-clientes', icon: Briefcase, title: 'Agenda do Dia',
     color: 'from-green-500 to-green-600', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100',
     content: [
       { subtitle: 'O que é?', text: 'Gerenciamento da carteira de clientes e leads. Registre interações, acompanhe contatos e converta leads em clientes cativos.' },
