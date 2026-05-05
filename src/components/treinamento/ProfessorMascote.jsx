@@ -29,83 +29,122 @@ const FRASES = {
   ],
 };
 
-// SVG boneco professor corpo inteiro
-function ProfessorSVG({ animating }) {
+// SVG boneco Einstein corpo inteiro
+function ProfessorSVG() {
   return (
     <svg
       width="90"
-      height="160"
-      viewBox="0 0 90 160"
+      height="170"
+      viewBox="0 0 90 170"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={animating ? 'animate-bounce' : ''}
       style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
     >
-      {/* Chapéu de formatura */}
-      <rect x="22" y="8" width="46" height="7" rx="3" fill="#0f1e35" />
-      <polygon points="45,2 25,8 65,8" fill="#1a3150" />
-      <line x1="65" y1="8" x2="72" y2="18" stroke="#D4AF37" strokeWidth="2.5" strokeLinecap="round"/>
-      <circle cx="72" cy="19" r="3" fill="#D4AF37" />
+      {/* ── CABELO BRANCO BAGUNÇADO ── */}
+      {/* tufos laterais e topo */}
+      <path d="M24 28 Q18 18 22 10 Q27 4 33 8 Q36 2 42 4 Q46 0 52 3 Q58 1 63 7 Q68 4 70 12 Q74 20 68 28" fill="#f0f0f0" />
+      <path d="M22 26 Q14 22 16 14 Q19 8 25 11" fill="#e8e8e8" />
+      <path d="M68 26 Q76 22 74 14 Q71 8 65 11" fill="#e8e8e8" />
+      {/* tufos extras bagunçados */}
+      <path d="M26 16 Q22 10 27 7" stroke="#d0d0d0" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      <path d="M32 10 Q30 4 35 3" stroke="#d0d0d0" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M45 8 Q44 2 48 2" stroke="#d0d0d0" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M54 10 Q55 4 59 5" stroke="#d0d0d0" strokeWidth="2" strokeLinecap="round" fill="none" />
+      <path d="M62 15 Q66 9 64 6" stroke="#d0d0d0" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+      {/* cabelo lateral esquerdo mais despenteado */}
+      <path d="M22 30 Q14 32 16 40 Q18 46 23 44" fill="#e8e8e8" />
+      <path d="M68 30 Q76 32 74 40 Q72 46 67 44" fill="#e8e8e8" />
 
-      {/* Cabeça */}
-      <circle cx="45" cy="32" r="16" fill="#FDDBB4" />
-      {/* Olhos */}
-      <circle cx="39" cy="30" r="2.5" fill="#1a1a1a" />
-      <circle cx="51" cy="30" r="2.5" fill="#1a1a1a" />
-      {/* Brilho olho */}
-      <circle cx="40" cy="29" r="0.9" fill="white" />
-      <circle cx="52" cy="29" r="0.9" fill="white" />
-      {/* Sobrancelhas */}
-      <path d="M36 26 Q39 24.5 42 26" stroke="#7a5230" strokeWidth="1.4" strokeLinecap="round" fill="none" />
-      <path d="M48 26 Q51 24.5 54 26" stroke="#7a5230" strokeWidth="1.4" strokeLinecap="round" fill="none" />
-      {/* Sorriso */}
-      <path d="M38 36 Q45 41 52 36" stroke="#c0704a" strokeWidth="1.6" strokeLinecap="round" fill="none" />
-      {/* Bochecha */}
-      <circle cx="36" cy="35" r="3.5" fill="#f4a57a" opacity="0.4" />
-      <circle cx="54" cy="35" r="3.5" fill="#f4a57a" opacity="0.4" />
-      {/* Óculos */}
-      <rect x="34" y="27.5" width="10" height="7" rx="3" stroke="#4a3728" strokeWidth="1.4" fill="none" />
-      <rect x="46" y="27.5" width="10" height="7" rx="3" stroke="#4a3728" strokeWidth="1.4" fill="none" />
-      <line x1="44" y1="31" x2="46" y2="31" stroke="#4a3728" strokeWidth="1.2" />
-      <line x1="34" y1="31" x2="31" y2="30" stroke="#4a3728" strokeWidth="1.2" />
-      <line x1="56" y1="31" x2="59" y2="30" stroke="#4a3728" strokeWidth="1.2" />
+      {/* ── CABEÇA ── */}
+      <ellipse cx="45" cy="36" rx="21" ry="22" fill="#F5D5A8" />
 
-      {/* Pescoço */}
-      <rect x="41" y="47" width="8" height="8" rx="3" fill="#FDDBB4" />
+      {/* ── SOBRANCELHAS ESPESSAS E EXPRESSIVAS ── */}
+      <path d="M30 26 Q35 22 40 25" stroke="#888" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M50 25 Q55 22 60 26" stroke="#888" strokeWidth="3" strokeLinecap="round" fill="none" />
 
-      {/* Jaleco */}
-      <path d="M18 80 Q20 55 30 52 L45 56 L60 52 Q70 55 72 80 L72 130 L18 130 Z" fill="white" />
-      {/* Gola jaleco */}
-      <path d="M30 52 L45 65 L60 52" stroke="#e0e0e0" strokeWidth="1.5" fill="none" />
-      {/* Bolso jaleco */}
-      <rect x="24" y="78" width="13" height="10" rx="2" stroke="#e0e0e0" strokeWidth="1" fill="white" />
-      <line x1="27" y1="80" x2="27" y2="86" stroke="#1a3150" strokeWidth="1" />
-      <line x1="30" y1="80" x2="30" y2="86" stroke="#1a3150" strokeWidth="1" />
-      <line x1="33" y1="80" x2="33" y2="86" stroke="#1a3150" strokeWidth="1" />
+      {/* ── OLHOS ── */}
+      <ellipse cx="36" cy="32" rx="4" ry="4.5" fill="white" />
+      <ellipse cx="54" cy="32" rx="4" ry="4.5" fill="white" />
+      <circle cx="37" cy="33" r="2.5" fill="#4a3010" />
+      <circle cx="55" cy="33" r="2.5" fill="#4a3010" />
+      <circle cx="37.8" cy="31.8" r="1" fill="black" />
+      <circle cx="55.8" cy="31.8" r="1" fill="black" />
+      {/* brilho */}
+      <circle cx="38.5" cy="31.5" r="0.7" fill="white" />
+      <circle cx="56.5" cy="31.5" r="0.7" fill="white" />
+
+      {/* ── ÓCULOS REDONDOS CLÁSSICOS ── */}
+      <circle cx="36" cy="32" r="5.5" stroke="#6b4c1e" strokeWidth="1.6" fill="none" />
+      <circle cx="54" cy="32" r="5.5" stroke="#6b4c1e" strokeWidth="1.6" fill="none" />
+      <line x1="41.5" y1="32" x2="48.5" y2="32" stroke="#6b4c1e" strokeWidth="1.4" />
+      <line x1="30.5" y1="31" x2="27" y2="30" stroke="#6b4c1e" strokeWidth="1.4" />
+      <line x1="59.5" y1="31" x2="63" y2="30" stroke="#6b4c1e" strokeWidth="1.4" />
+
+      {/* ── NARIZ ── */}
+      <path d="M44 34 Q42 40 44 43 Q46 44 48 43 Q50 40 46 34" stroke="#c9956a" strokeWidth="1.2" fill="#F0C090" />
+
+      {/* ── BIGODE CARACTERÍSTICO ── */}
+      <path d="M33 46 Q39 43 45 45 Q51 43 57 46" stroke="#bbb" strokeWidth="3" strokeLinecap="round" fill="none" />
+      <path d="M34 47 Q39 50 45 48 Q51 50 56 47" stroke="#ccc" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+      {/* ── SORRISO ── */}
+      <path d="M38 50 Q45 55 52 50" stroke="#b07050" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+
+      {/* ── BOCHECHA ── */}
+      <circle cx="32" cy="42" r="4" fill="#f4a57a" opacity="0.3" />
+      <circle cx="58" cy="42" r="4" fill="#f4a57a" opacity="0.3" />
+
+      {/* ── PESCOÇO ── */}
+      <rect x="40" y="57" width="10" height="8" rx="3" fill="#F5D5A8" />
+
+      {/* ── JALECO BRANCO ── */}
+      <path d="M16 90 Q18 63 28 60 L45 65 L62 60 Q72 63 74 90 L74 138 L16 138 Z" fill="white" />
+      {/* sombra jaleco */}
+      <path d="M16 90 Q18 63 28 60 L45 65 L62 60 Q72 63 74 90" stroke="#e0e0e0" strokeWidth="1" fill="none" />
+      {/* Gola V */}
+      <path d="M28 60 L45 76 L62 60" stroke="#d8d8d8" strokeWidth="1.5" fill="none" />
+      {/* Bolso com caneta */}
+      <rect x="22" y="85" width="14" height="11" rx="2" stroke="#ddd" strokeWidth="1" fill="#fafafa" />
+      <line x1="26" y1="84" x2="26" y2="94" stroke="#1a3150" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="29" y1="84" x2="29" y2="94" stroke="#c0392b" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="32" y1="84" x2="32" y2="94" stroke="#555" strokeWidth="1.5" strokeLinecap="round" />
       {/* Gravata */}
-      <polygon points="42,56 48,56 46,78 44,78" fill="#1a3150" />
-      <polygon points="44,78 46,78 45,84" fill="#0f1e35" />
+      <polygon points="42,65 48,65 46,86 44,86" fill="#1a3150" />
+      <polygon points="44,86 46,86 45,92" fill="#0f1e35" />
+      {/* listras gravata */}
+      <line x1="42.5" y1="70" x2="47.5" y2="70" stroke="#2d5a9e" strokeWidth="1" />
+      <line x1="43" y1="76" x2="47" y2="76" stroke="#2d5a9e" strokeWidth="1" />
 
-      {/* Braço esquerdo — levantado (apontando) */}
-      <path d="M18 70 Q6 60 10 45" stroke="white" strokeWidth="11" strokeLinecap="round" fill="none" />
-      <path d="M18 70 Q6 60 10 45" stroke="#e8e8e8" strokeWidth="9" strokeLinecap="round" fill="none" />
-      {/* Mão esquerda */}
-      <circle cx="10" cy="43" r="7" fill="#FDDBB4" />
-      {/* Dedinhos apontando */}
-      <path d="M8 37 Q7 32 10 31" stroke="#FDDBB4" strokeWidth="4" strokeLinecap="round" />
-      <path d="M10 36 Q10 31 13 30" stroke="#FDDBB4" strokeWidth="4" strokeLinecap="round" />
+      {/* ── BRAÇO ESQUERDO — LEVANTADO APONTANDO ── */}
+      <path d="M16 78 Q4 66 8 50" stroke="white" strokeWidth="12" strokeLinecap="round" fill="none" />
+      <path d="M16 78 Q4 66 8 50" stroke="#ececec" strokeWidth="10" strokeLinecap="round" fill="none" />
+      {/* Mão */}
+      <circle cx="8" cy="47" r="7.5" fill="#F5D5A8" />
+      {/* Dedo indicador apontando para cima */}
+      <path d="M7 40 Q6.5 33 9 31" stroke="#F5D5A8" strokeWidth="4.5" strokeLinecap="round" />
+      <path d="M9.5 39 Q9 33 11.5 31" stroke="#F5D5A8" strokeWidth="3.5" strokeLinecap="round" />
 
-      {/* Braço direito — ao lado */}
-      <path d="M72 70 Q84 75 82 90" stroke="white" strokeWidth="11" strokeLinecap="round" fill="none" />
-      <path d="M72 70 Q84 75 82 90" stroke="#e8e8e8" strokeWidth="9" strokeLinecap="round" fill="none" />
-      {/* Mão direita */}
-      <circle cx="82" cy="92" r="7" fill="#FDDBB4" />
+      {/* ── BRAÇO DIREITO — SEGURANDO QUADRO-NEGRO ── */}
+      <path d="M74 78 Q84 80 84 96" stroke="white" strokeWidth="12" strokeLinecap="round" fill="none" />
+      <path d="M74 78 Q84 80 84 96" stroke="#ececec" strokeWidth="10" strokeLinecap="round" fill="none" />
+      {/* Mão */}
+      <circle cx="84" cy="98" r="7.5" fill="#F5D5A8" />
+      {/* Mini quadro-negro */}
+      <rect x="76" y="102" width="20" height="14" rx="2" fill="#1a3150" />
+      <text x="78" y="113" fontSize="7" fill="#D4AF37" fontFamily="serif" fontStyle="italic">E=mc²</text>
+      <rect x="76" y="102" width="20" height="14" rx="2" stroke="#0f1e35" strokeWidth="1" fill="none" />
 
-      {/* Calça */}
-      <path d="M18 130 L22 155 L38 155 L45 135 L52 155 L68 155 L72 130 Z" fill="#1a3150" />
-      {/* Sapatos */}
-      <ellipse cx="30" cy="156" rx="10" ry="5" fill="#0f1e35" />
-      <ellipse cx="60" cy="156" rx="10" ry="5" fill="#0f1e35" />
+      {/* ── CALÇA ── */}
+      <path d="M16 138 L20 162 L36 162 L45 142 L54 162 L70 162 L74 138 Z" fill="#2c3e50" />
+      {/* Dobra calça */}
+      <line x1="45" y1="138" x2="45" y2="150" stroke="#1a2a3a" strokeWidth="1" />
+
+      {/* ── SAPATOS ── */}
+      <ellipse cx="28" cy="163" rx="11" ry="5" fill="#1a1a1a" />
+      <ellipse cx="62" cy="163" rx="11" ry="5" fill="#1a1a1a" />
+      {/* brilho sapato */}
+      <ellipse cx="25" cy="161" rx="4" ry="1.5" fill="#333" />
+      <ellipse cx="59" cy="161" rx="4" ry="1.5" fill="#333" />
     </svg>
   );
 }
