@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2 } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
 
 const EMPTY = { nome: "", email: "", time: "", percentual_comissao: 10, ativo: true };
 
@@ -18,6 +19,7 @@ const exportCSV = (vendedores) => {
 
 export default function Vendedores() {
   const [modal, setModal] = useState(null);
+  const [showRelatorioConsolidado, setShowRelatorioConsolidado] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -328,6 +330,10 @@ export default function Vendedores() {
           </div>
           {isAdmin && (
             <div className="flex gap-2">
+              <button onClick={() => setShowRelatorioConsolidado(true)}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
+                <BarChart3 className="w-4 h-4" /> Relatório Consolidado
+              </button>
               <button onClick={() => exportCSV(visibleVendedores)}
                 className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-50 transition">
                 <Download className="w-4 h-4" /> Exportar
@@ -778,6 +784,16 @@ export default function Vendedores() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Relatório Consolidado */}
+        {showRelatorioConsolidado && (
+          <RelatorioConsolidadoModal
+            vendedores={vendedoresFiltrados}
+            vendas={vendas}
+            metas={metas}
+            onClose={() => setShowRelatorioConsolidado(false)}
+          />
         )}
 
         {/* Delete confirm */}
