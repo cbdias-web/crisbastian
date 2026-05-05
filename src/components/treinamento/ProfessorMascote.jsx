@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
-const EINSTEIN_URL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/10724e2a5_generated_image.png';
+const EINSTEIN_URL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/72225470d_generated_image.png';
 const POS_KEY = 'einstein_mascote_pos_v2';
 
 const FRASES = {
@@ -188,6 +188,7 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
             width: 120,
             height: 'auto',
             display: 'block',
+            mixBlendMode: 'multiply',
             filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.15))',
           }}
           draggable={false}
