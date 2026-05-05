@@ -9,10 +9,15 @@ import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, File
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
+function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
-    nome: "", cpf_cnpj: "", email: "", telefone: "", cidade: "", estado: "", observacao: "", vendedor_id: "", vendedor_nome: ""
+    nome: "", cpf_cnpj: "", email: "", telefone: "", cidade: "", estado: "", observacao: "", vendedor_id: "", vendedor_nome: "", subcarteira: ""
   });
+
+  // Subcarteiras disponíveis com base nos clientes do mesmo vendedor
+  const subcarteirasDisponiveis = [...new Set(
+    clientes.filter(c => c.vendedor_id === form.vendedor_id && c.subcarteira).map(c => c.subcarteira)
+  )].sort();
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleVendedor = (id) => {
@@ -66,6 +71,30 @@ function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
                 ))}
               </select>
             </div>
+          </div>
+          <div>
+            <Label>Subcarteira (opcional)</Label>
+            {subcarteirasDisponiveis.length > 0 ? (
+              <select
+                value={form.subcarteira || ""}
+                onChange={e => set("subcarteira", e.target.value === "__nova__" ? "" : e.target.value)}
+                className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-[#1a3150]"
+              >
+                <option value="">— Nenhuma —</option>
+                {subcarteirasDisponiveis.map(sc => (
+                  <option key={sc} value={sc}>📁 {sc}</option>
+                ))}
+                <option value="__nova__">+ Digitar nova subcarteira...</option>
+              </select>
+            ) : null}
+            {(subcarteirasDisponiveis.length === 0 || !subcarteirasDisponiveis.includes(form.subcarteira)) && (
+              <Input
+                value={subcarteirasDisponiveis.includes(form.subcarteira) ? "" : (form.subcarteira || "")}
+                onChange={e => set("subcarteira", e.target.value)}
+                placeholder="Nome da subcarteira (ex: Clientes Redes Sociais)"
+                className="mt-1"
+              />
+            )}
           </div>
           <div>
             <Label>Observação</Label>
@@ -327,6 +356,7 @@ export default function Clientes() {
         <ClienteModal
           cliente={modal === "new" ? null : modal}
           vendedores={vendedores}
+          clientes={clientes}
           onClose={() => setModal(null)}
           onSave={handleSave}
           isLoading={isSaving}
