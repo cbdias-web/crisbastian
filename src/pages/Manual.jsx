@@ -334,30 +334,56 @@ export default function Manual() {
     <div className="min-h-screen bg-gray-50">
 
       {/* ── HERO HEADER ── */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #7f5c14 0%, #b8860b 25%, #1a3150 60%, #0f1e35 100%)' }}>
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, #fff 0%, transparent 50%)' }} />
-        <div className="relative px-6 py-10 md:py-12 max-w-5xl mx-auto">
-          <div className="mb-1 text-yellow-200/60 text-xs uppercase tracking-widest font-semibold">Villela Exchange</div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-yellow-300 flex-shrink-0" />
-            Manual da Plataforma
-          </h1>
-          <p className="text-white/60 text-sm mb-6 flex items-center gap-1.5">
-            <FileText className="w-4 h-4" /> Gestão Comercial — Guia completo de utilização
-          </p>
-          <p className="text-white/70 text-sm leading-relaxed max-w-xl mb-8">
-            Documentação completa de todas as funcionalidades: Vendas, Contratos, Pipeline, Comissões,
-            Relatórios, Prospecção, Capacitação e muito mais. Atualizado com as últimas funcionalidades do sistema.
-          </p>
-          {/* stats */}
-          <div className="flex gap-4">
-            {[{ v: sections.length, l: 'Seções' }, { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos' }, { v: 'Mai/2026', l: 'Atualizado' }].map(k => (
-              <div key={k.l} className="bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl px-5 py-3 text-center min-w-[70px]">
-                <p className="text-xl font-bold text-white">{k.v}</p>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">{k.l}</p>
-              </div>
-            ))}
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #7f5c14 0%, #b8860b 22%, #1a3150 58%, #0f1e35 100%)' }}>
+        {/* decorative glows */}
+        <div className="absolute top-0 left-0 w-72 h-72 opacity-20 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, #f5c842 0%, transparent 70%)', transform: 'translate(-30%, -40%)' }} />
+        <div className="absolute bottom-0 right-0 w-96 h-96 opacity-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, #4a90d9 0%, transparent 70%)', transform: 'translate(20%, 40%)' }} />
+
+        <div className="relative px-6 py-7 md:py-8 max-w-5xl mx-auto">
+          {/* top label */}
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-yellow-300/70 text-[10px] uppercase tracking-[0.25em] font-semibold">Villela Exchange</span>
+            <span className="w-1 h-1 rounded-full bg-white/20" />
+            <span className="text-white/40 text-[10px] uppercase tracking-[0.15em]">Gestão Comercial</span>
           </div>
+
+          {/* main row: title left, stats right */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* left */}
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #f5c842 0%, #e09b15 100%)' }}>
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
+                  Manual da Plataforma
+                </h1>
+                <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
+                  <FileText className="w-3 h-3" />
+                  Guia completo de utilização — atualizado Mai/2026
+                </p>
+              </div>
+            </div>
+
+            {/* right: stats inline */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {[
+                { v: sections.length, l: 'Seções', icon: '📋' },
+                { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
+                { v: 'Mai/2026', l: 'Atualizado', icon: '🗓' },
+              ].map((k, i) => (
+                <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
+                  <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
+                  <span className="text-[9px] text-white/45 uppercase tracking-widest mt-0.5 whitespace-nowrap">{k.l}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* description — compact, below */}
+          <p className="text-white/55 text-xs leading-relaxed mt-4 max-w-2xl border-t border-white/10 pt-4">
+            Documentação de todas as funcionalidades: Vendas, Contratos, Pipeline, Comissões, Relatórios, Prospecção, Capacitação e mais.
+          </p>
         </div>
       </div>
 
