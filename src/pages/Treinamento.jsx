@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw } from 'lucide-react';
+import JarvisCoach from '@/components/treinamento/JarvisCoach';
 
 const TIPO_ICONS = {
   video: PlayCircle,
@@ -114,6 +115,7 @@ export default function Treinamento() {
     const proximaAula = aulasModulo[aulaIdx + 1] || null;
 
     return (
+      <>
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
           <button onClick={() => setAulaAtiva(null)} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-4 transition">
@@ -190,6 +192,16 @@ export default function Treinamento() {
           </div>
         </div>
       </div>
+
+      <JarvisCoach
+        aulaIdx={aulaIdx}
+        totalAulas={aulasModulo.length}
+        nomeAula={aulaAtiva.titulo}
+        concluida={concluida}
+        proximaAula={proximaAula}
+        onProxima={() => setAulaAtiva(proximaAula)}
+      />
+      </>
     );
   }
 
