@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -325,7 +325,26 @@ export default function MeusClientes() {
       cidade: cliente.cidade || '',
       estado: cliente.estado || '',
       observacao: cliente.observacao || '',
+      subcarteira: cliente.subcarteira || '',
     });
+  };
+
+  const subcarteirasDisponiveis = [...new Set(clientesFiltradosPorVendedor.map(c => c.subcarteira).filter(Boolean))].sort();
+
+  const excluirCliente = async (cliente) => {
+    if (!confirm(`Excluir permanentemente "${cliente.nome}"? Esta ação não pode ser desfeita.`)) return;
+    setSalvandoCliente(true);
+    try {
+      const ints = interacoes.filter(i => i.cliente_id === cliente.id);
+      for (const i of ints) await base44.entities.InteracaoCliente.delete(i.id);
+      await base44.entities.Cliente.delete(cliente.id);
+      if (cliente.lead_id) await base44.entities.Lead.delete(cliente.lead_id);
+      queryClient.invalidateQueries(['clientes-crm']);
+      queryClient.invalidateQueries(['interacoes-crm']);
+      toast.success('Cliente excluído!');
+      setEditandoCliente(null);
+    } catch (e) { toast.error('Erro ao excluir cliente'); }
+    setSalvandoCliente(false);
   };
 
   const executarDeduplicacao = async () => {
@@ -452,8 +471,6 @@ export default function MeusClientes() {
 
   const totalLeads = clientesFiltradosPorVendedor.filter(c => c.origem === 'lead').length;
   const totalClientes = clientesFiltradosPorVendedor.filter(c => c.origem !== 'lead').length;
-
-  const subcarteirasDisponiveis = [...new Set(clientesFiltradosPorVendedor.map(c => c.subcarteira).filter(Boolean))].sort();
 
   const clientesFiltrados = clientesFiltradosPorVendedor.filter(c => {
     const matchSearch = !searchTerm || c.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || c.cpf_cnpj?.includes(searchTerm);
@@ -905,6 +922,31 @@ export default function MeusClientes() {
                 </div>
               ))}
               <div>
+                <label className="text-xs text-gray-500 mb-1 block">Subcarteira</label>
+                {subcarteirasDisponiveis.length > 0 ? (
+                  <select
+                    value={editClienteForm.subcarteira || ''}
+                    onChange={e => setEditClienteForm(p => ({ ...p, subcarteira: e.target.value === '__limpar__' ? '' : e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white"
+                  >
+                    <option value="">— Nenhuma —</option>
+                    {subcarteirasDisponiveis.map(sc => (
+                      <option key={sc} value={sc}>📁 {sc}</option>
+                    ))}
+                    <option value="__nova__">+ Digitar nova subcarteira...</option>
+                  </select>
+                ) : null}
+                {(subcarteirasDisponiveis.length === 0 || (editClienteForm.subcarteira === '__nova__') || (!subcarteirasDisponiveis.includes(editClienteForm.subcarteira) && editClienteForm.subcarteira !== '')) && (
+                  <input
+                    type="text"
+                    value={editClienteForm.subcarteira === '__nova__' ? '' : (editClienteForm.subcarteira || '')}
+                    onChange={e => setEditClienteForm(p => ({ ...p, subcarteira: e.target.value }))}
+                    placeholder="Digite o nome da subcarteira..."
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mt-1"
+                  />
+                )}
+              </div>
+              <div>
                 <label className="text-xs text-gray-500 mb-1 block">Observação</label>
                 <textarea
                   value={editClienteForm.observacao || ''}
@@ -915,12 +957,18 @@ export default function MeusClientes() {
                 />
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditandoCliente(null)}>Cancelar</Button>
-              <Button onClick={salvarEdicaoCliente} disabled={salvandoCliente} className="bg-[#0f1e35] hover:bg-[#1a3150]">
-                {salvandoCliente ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                Salvar
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-between gap-2">
+              <Button variant="outline" onClick={() => excluirCliente(editandoCliente)} disabled={salvandoCliente}
+                className="border-red-200 text-red-600 hover:bg-red-50">
+                <Trash2 className="w-4 h-4 mr-2" /> Excluir
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setEditandoCliente(null)}>Cancelar</Button>
+                <Button onClick={salvarEdicaoCliente} disabled={salvandoCliente} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+                  {salvandoCliente ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                  Salvar
+                </Button>
+              </div>
             </div>
           </div>
         </div>
