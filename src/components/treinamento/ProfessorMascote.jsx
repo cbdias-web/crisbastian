@@ -30,7 +30,32 @@ const FRASES = {
   ],
 };
 
-const EINSTEIN_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/8c19256a8_generated_image.png';
+const JarvisAvatar = () => (
+  <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.22))' }}>
+    <ellipse cx="7" cy="30" rx="6" ry="8" fill="#e8e8e8" />
+    <ellipse cx="49" cy="30" rx="6" ry="8" fill="#e8e8e8" />
+    <rect x="10" y="10" width="36" height="36" rx="14" fill="white" />
+    <rect x="10" y="10" width="36" height="36" rx="14" fill="url(#grad)" opacity="0.15" />
+    <rect x="15" y="16" width="26" height="20" rx="6" fill="#1a1a1a" />
+    <rect x="19" y="21" width="7" height="7" rx="3.5" fill="white" />
+    <path d="M31 24.5 Q34 21.5 37 24.5" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
+    <path d="M20 31 Q28 36 36 31" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    <ellipse cx="7" cy="30" rx="3" ry="5" fill="#d0d0d0" />
+    <ellipse cx="49" cy="30" rx="3" ry="5" fill="#d0d0d0" />
+    <polygon points="18,12 14,4 22,10" fill="white" />
+    <polygon points="38,12 42,4 34,10" fill="white" />
+    <polygon points="18,11 15.5,6 21,10" fill="#e0e0e0" />
+    <polygon points="38,11 40.5,6 35,10" fill="#e0e0e0" />
+    <circle cx="28" cy="49" r="4" fill="#e8e8e8" />
+    <rect x="24" y="46" width="8" height="3" rx="1.5" fill="#d0d0d0" />
+    <defs>
+      <linearGradient id="mascote_grad" x1="10" y1="10" x2="46" y2="46" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#a0c4ff" />
+        <stop offset="100%" stopColor="#ffffff" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
 function loadPos() {
   try {
@@ -153,7 +178,7 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
           </button>
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="w-2 h-2 bg-[#D4AF37] rounded-full" />
-            <span className="text-[10px] font-bold text-[#1a3150] uppercase tracking-wider">Prof. Einstein</span>
+            <span className="text-[10px] font-bold text-[#1a3150] uppercase tracking-wider">Jarvis</span>
           </div>
           <p className={`text-sm text-gray-700 leading-relaxed transition-opacity duration-300 ${animating ? 'opacity-0' : 'opacity-100'}`}>
             {frase}
@@ -182,17 +207,7 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
         title="Arraste para mover · clique para dica"
         style={{ lineHeight: 0 }}
       >
-        <img
-          src={EINSTEIN_IMG}
-          alt="Prof. Einstein"
-          draggable={false}
-          style={{
-            width: 72,
-            height: 'auto',
-            display: 'block',
-            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.18))',
-          }}
-        />
+        <JarvisAvatar />
       </div>
     </div>
   );
