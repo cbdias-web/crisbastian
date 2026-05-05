@@ -58,9 +58,14 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const [selectedVendedores, setSelectedVendedores] = useState(() => {
     if (!venda?.vendedor_id) return [];
-    if (venda.vendedores_ids?.length > 0) return venda.vendedores_ids;
-    if (venda.vendedor_id) return [{ id: venda.vendedor_id, nome: venda.assessor_comercial || '', percentual_comissao: venda.percentual_comissao ?? 0 }];
-    return [];
+    // Sempre usa o percentual_comissao salvo na venda, não o do cadastro do vendedor
+    if (venda.vendedores_ids?.length > 0) {
+      return venda.vendedores_ids.map(v => ({
+        ...v,
+        percentual_comissao: v.id === venda.vendedor_id ? (venda.percentual_comissao ?? v.percentual_comissao ?? 0) : (v.percentual_comissao ?? 0)
+      }));
+    }
+    return [{ id: venda.vendedor_id, nome: venda.assessor_comercial || '', percentual_comissao: venda.percentual_comissao ?? 0 }];
   });
 
   useEffect(() => {
@@ -103,10 +108,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
   const hoje = new Date().toISOString().split('T')[0];
 
-  const [formData, setFormData] = useState(venda || {
+  const [formData, setFormData] = useState(venda ?? {
     produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
-    bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: 10,
+    bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: '',
   });
 
   // ── FINANCEIRO ─────────────────────────────────────────────────────────────
