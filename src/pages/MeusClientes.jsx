@@ -1013,13 +1013,25 @@ export default function MeusClientes() {
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block">Subcarteira (opcional)</label>
-                <select value={novoLeadForm.subcarteira} onChange={e => setNovoLeadForm(p => ({ ...p, subcarteira: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
-                  <option value="">Nenhuma</option>
-                  {subcarteirasDisponiveis.map(sc => (
-                    <option key={sc} value={sc}>📁 {sc}</option>
-                  ))}
-                </select>
+                {subcarteirasDisponiveis.length > 0 ? (
+                  <select value={novoLeadForm.subcarteira} onChange={e => setNovoLeadForm(p => ({ ...p, subcarteira: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                    <option value="">Nenhuma</option>
+                    {subcarteirasDisponiveis.map(sc => (
+                      <option key={sc} value={sc}>📁 {sc}</option>
+                    ))}
+                    <option value="__nova__">+ Nova subcarteira...</option>
+                  </select>
+                ) : null}
+                {(subcarteirasDisponiveis.length === 0 || novoLeadForm.subcarteira === '__nova__') && (
+                  <input
+                    type="text"
+                    value={novoLeadForm.subcarteira === '__nova__' ? '' : novoLeadForm.subcarteira}
+                    onChange={e => setNovoLeadForm(p => ({ ...p, subcarteira: e.target.value }))}
+                    placeholder="Digite o nome da subcarteira..."
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] mt-1"
+                  />
+                )}
               </div>
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
