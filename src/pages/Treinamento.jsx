@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw } from 'lucide-react';
-import JarvisCoach from '@/components/treinamento/JarvisCoach';
+import EinsteinCoach from '@/components/treinamento/JarvisCoach';
 
 const TIPO_ICONS = {
   video: PlayCircle,
@@ -193,7 +193,7 @@ export default function Treinamento() {
         </div>
       </div>
 
-      <JarvisCoach
+      <EinsteinCoach
         aulaIdx={aulaIdx}
         totalAulas={aulasModulo.length}
         nomeAula={aulaAtiva.titulo}
