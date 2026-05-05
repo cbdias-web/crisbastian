@@ -193,14 +193,14 @@ export default function Vendas() {
           valor_comissao: (data.valor * data.percentual_comissao) / 100,
           data_venda: data.data
         });
-      } else if (data.vendedor_id && data.percentual_comissao) {
+      } else if (data.vendedor_id) {
         await base44.entities.Comissao.create({
           venda_id: id,
           vendedor_id: data.vendedor_id,
           vendedor_nome: data.assessor_comercial,
           valor_venda: data.valor,
-          percentual: data.percentual_comissao,
-          valor_comissao: (data.valor * data.percentual_comissao) / 100,
+          percentual: data.percentual_comissao ?? 0,
+          valor_comissao: (data.valor * (data.percentual_comissao ?? 0)) / 100,
           data_venda: data.data,
           pago: false
         });
@@ -260,7 +260,7 @@ export default function Vendas() {
           produto: data.produto || parcela.produto,
           vendedor_id: data.vendedor_id || parcela.vendedor_id,
           vendedor_nome: data.assessor_comercial || parcela.vendedor_nome,
-          percentual_comissao: data.percentual_comissao || parcela.percentual_comissao,
+          percentual_comissao: data.percentual_comissao ?? parcela.percentual_comissao,
           indicadores: data.indicadores || parcela.indicadores,
           valor_parcela: novoValorParcela,
           data_vencimento: novoVencimento,

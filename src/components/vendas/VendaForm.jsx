@@ -59,7 +59,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [selectedVendedores, setSelectedVendedores] = useState(() => {
     if (!venda?.vendedor_id) return [];
     if (venda.vendedores_ids?.length > 0) return venda.vendedores_ids;
-    if (venda.vendedor_id) return [{ id: venda.vendedor_id, nome: venda.assessor_comercial || '', percentual_comissao: venda.percentual_comissao || 10 }];
+    if (venda.vendedor_id) return [{ id: venda.vendedor_id, nome: venda.assessor_comercial || '', percentual_comissao: venda.percentual_comissao ?? 0 }];
     return [];
   });
 
@@ -264,7 +264,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       return [{ id: vendedor.id, nome: vendedor.nome, percentual_comissao: vendedor.percentual_comissao || 10 }];
     });
     // Atualiza o percentual de comissão automaticamente ao trocar vendedor
-    setFormData(f => ({ ...f, percentual_comissao: vendedor.percentual_comissao || 10 }));
+    setFormData(f => ({ ...f, percentual_comissao: vendedor.percentual_comissao ?? 0 }));
   };
 
   const addIndicador = () => {
@@ -371,7 +371,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       produto: selectedProdutos.join(', '),
       assessor_comercial: selectedVendedores.map(v => v.nome).join(', '),
       vendedor_id: primaryVendedor.id,
-      percentual_comissao: parseFloat(formData.percentual_comissao) || primaryVendedor.percentual_comissao || 10,
+      percentual_comissao: formData.percentual_comissao !== '' && formData.percentual_comissao !== null && formData.percentual_comissao !== undefined ? parseFloat(formData.percentual_comissao) : (primaryVendedor.percentual_comissao ?? 0),
       vendedores_ids: selectedVendedores,
       valor: entradaFinal,
       valor_total_contrato: totalFinal,
