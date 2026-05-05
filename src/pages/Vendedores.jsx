@@ -249,19 +249,21 @@ export default function Vendedores() {
   };
 
   const salvarBonus = async () => {
-    if (!valorBonus || parseFloat(valorBonus) < 0) {
+    if (valorBonus === "" || parseFloat(valorBonus) < 0) {
       toast.error('Valor inválido');
       return;
     }
     try {
       const valor = parseFloat(valorBonus);
-      if (valor === 0 && modalBonus.bonus_existente_id) {
-        await base44.entities.Comissao.delete(modalBonus.bonus_existente_id);
-        toast.success('Bônus removido!');
-      } else if (modalBonus.bonus_existente_id) {
-        await base44.entities.Comissao.update(modalBonus.bonus_existente_id, { valor_comissao: valor });
-        toast.success('Bônus atualizado!');
-      } else if (valor > 0) {
+      if (modalBonus.bonus_existente_id) {
+        if (valor === 0) {
+          await base44.entities.Comissao.delete(modalBonus.bonus_existente_id);
+          toast.success('Bônus removido!');
+        } else {
+          await base44.entities.Comissao.update(modalBonus.bonus_existente_id, { valor_comissao: valor });
+          toast.success('Bônus atualizado!');
+        }
+      } else {
         await base44.entities.Comissao.create({
           venda_id: `BONUS_MANUAL_${mesFiltro}_${modalBonus.vendedor_id}`,
           vendedor_id: modalBonus.vendedor_id,
@@ -626,7 +628,7 @@ export default function Vendedores() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">Comissão (%)</label>
-                  <input type="number" step="0.1" value={form.percentual_comissao || ""} onChange={e => setForm(p => ({ ...p, percentual_comissao: parseFloat(e.target.value) }))}
+                  <input type="number" step="0.1" value={form.percentual_comissao ?? ""} onChange={e => setForm(p => ({ ...p, percentual_comissao: e.target.value === "" ? "" : parseFloat(e.target.value) }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
                 </div>
                 <div>
@@ -678,6 +680,9 @@ export default function Vendedores() {
                 </p>
                 {parseFloat(valorBonus) === 0 && modalBonus.bonus_existente_id && (
                   <p className="text-xs text-amber-600 mt-1">⚠️ Valor zero irá remover o bônus existente</p>
+                )}
+                {parseFloat(valorBonus) === 0 && !modalBonus.bonus_existente_id && (
+                  <p className="text-xs text-blue-500 mt-1">ℹ️ Será cadastrado bônus com valor R$ 0,00</p>
                 )}
               </div>
               <div className="flex gap-2 justify-end">
