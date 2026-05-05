@@ -1,67 +1,22 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronRight, Star } from 'lucide-react';
 
-// Avatar do Einstein: cabelo bagunçado, bigode, jaleco branco
+const EINSTEIN_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/8c19256a8_generated_image.png';
+
 const EinsteinAvatar = ({ bounce }) => (
-  <svg
-    width="64" height="72"
-    viewBox="0 0 64 72"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={bounce ? 'animate-bounce' : ''}
-    style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.18))' }}
+  <div
+    className={`relative ${bounce ? 'animate-bounce' : ''}`}
+    style={{ width: 72, height: 72 }}
   >
-    {/* Corpo / jaleco */}
-    <rect x="12" y="48" width="40" height="22" rx="8" fill="#f0f0f0" />
-    <rect x="12" y="48" width="40" height="22" rx="8" fill="white" />
-    {/* Gravata */}
-    <polygon points="32,51 29,58 32,60 35,58" fill="#c0392b" />
-    {/* Gola */}
-    <path d="M20 48 L32 54 L44 48" stroke="#d0d0d0" strokeWidth="1.5" fill="none" />
-
-    {/* Pescoço */}
-    <rect x="27" y="42" width="10" height="8" rx="4" fill="#f5d5a0" />
-
-    {/* Cabeça */}
-    <ellipse cx="32" cy="30" rx="18" ry="20" fill="#f5d5a0" />
-
-    {/* Cabelo bagunçado — branco */}
-    <path d="M14 22 Q10 10 18 8 Q14 4 22 6 Q24 2 32 4 Q40 2 42 6 Q50 4 46 8 Q54 10 50 22" fill="white" stroke="#ddd" strokeWidth="0.5" />
-    {/* Mechas extras */}
-    <path d="M14 18 Q8 12 12 7" stroke="white" strokeWidth="3" strokeLinecap="round" />
-    <path d="M50 18 Q56 12 52 7" stroke="white" strokeWidth="3" strokeLinecap="round" />
-    <path d="M20 6 Q16 0 20 2" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-    <path d="M44 6 Q48 0 44 2" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-
-    {/* Sobrancelhas expressivas */}
-    <path d="M20 22 Q24 19 28 22" stroke="#888" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-    <path d="M36 22 Q40 19 44 22" stroke="#888" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-
-    {/* Olhos */}
-    <ellipse cx="25" cy="27" rx="3.5" ry="3.5" fill="white" />
-    <ellipse cx="39" cy="27" rx="3.5" ry="3.5" fill="white" />
-    <circle cx="25" cy="27" r="2" fill="#4a3728" />
-    <circle cx="39" cy="27" r="2" fill="#4a3728" />
-    <circle cx="25.8" cy="26.2" r="0.7" fill="white" />
-    <circle cx="39.8" cy="26.2" r="0.7" fill="white" />
-
-    {/* Nariz */}
-    <path d="M31 30 Q30 34 29 35 Q32 36 35 35 Q34 34 33 30" fill="#e8b88a" />
-
-    {/* Bigode branco famoso */}
-    <path d="M22 38 Q27 41 32 39 Q37 41 42 38" stroke="white" strokeWidth="3" strokeLinecap="round" fill="none" />
-    <path d="M24 37 Q32 42 40 37" stroke="#e0e0e0" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-
-    {/* Boca sorrindo */}
-    <path d="M27 37 Q32 40 37 37" stroke="#c0956a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-
-    {/* Orelhas */}
-    <ellipse cx="14" cy="30" rx="3" ry="4.5" fill="#f5d5a0" />
-    <ellipse cx="50" cy="30" rx="3" ry="4.5" fill="#f5d5a0" />
-
-    {/* Ícone E=mc² na altura do jaleco */}
-    <text x="22" y="64" fontSize="7" fill="#888" fontFamily="serif" fontStyle="italic" fontWeight="bold">E=mc²</text>
-  </svg>
+    <img
+      src={EINSTEIN_IMG}
+      alt="Einstein"
+      className="w-full h-full rounded-full object-cover border-4 border-amber-200 shadow-xl"
+      style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.22))' }}
+    />
+    {/* Badge online */}
+    <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full" />
+  </div>
 );
 
 // Mensagens no estilo Einstein
