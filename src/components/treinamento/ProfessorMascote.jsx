@@ -30,24 +30,33 @@ const FRASES = {
   ],
 };
 
-const JarvisAvatar = () => (
-  <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.22))' }}>
+const JarvisAvatar = ({ size = 56 }) => (
+  <svg width={size} height={size} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.22))' }}>
     <ellipse cx="7" cy="30" rx="6" ry="8" fill="#e8e8e8" />
     <ellipse cx="49" cy="30" rx="6" ry="8" fill="#e8e8e8" />
     <rect x="10" y="10" width="36" height="36" rx="14" fill="white" />
-    <rect x="10" y="10" width="36" height="36" rx="14" fill="url(#grad)" opacity="0.15" />
+    <rect x="10" y="10" width="36" height="36" rx="14" fill="url(#mascote_grad)" opacity="0.15" />
     <rect x="15" y="16" width="26" height="20" rx="6" fill="#1a1a1a" />
-    <rect x="19" y="21" width="7" height="7" rx="3.5" fill="white" />
-    <path d="M31 24.5 Q34 21.5 37 24.5" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
-    <path d="M20 31 Q28 36 36 31" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    {/* Olho esquerdo azul */}
+    <rect x="19" y="21" width="7" height="7" rx="3.5" fill="#4a90d9" />
+    <rect x="21" y="23" width="3" height="3" rx="1.5" fill="#7ab8f5" />
+    <rect x="20" y="22" width="1.5" height="1.5" rx="0.75" fill="white" />
+    {/* Olho direito — piscando / linha relaxada */}
+    <path d="M31 24.5 Q34 21.5 37 24.5" stroke="#4a90d9" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+    {/* Sorriso */}
+    <path d="M20 31 Q28 37 36 31" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
     <ellipse cx="7" cy="30" rx="3" ry="5" fill="#d0d0d0" />
     <ellipse cx="49" cy="30" rx="3" ry="5" fill="#d0d0d0" />
+    {/* Antenas */}
     <polygon points="18,12 14,4 22,10" fill="white" />
     <polygon points="38,12 42,4 34,10" fill="white" />
     <polygon points="18,11 15.5,6 21,10" fill="#e0e0e0" />
     <polygon points="38,11 40.5,6 35,10" fill="#e0e0e0" />
-    <circle cx="28" cy="49" r="4" fill="#e8e8e8" />
-    <rect x="24" y="46" width="8" height="3" rx="1.5" fill="#d0d0d0" />
+    {/* Pés */}
+    <rect x="20" y="46" width="6" height="5" rx="2" fill="#e8e8e8" />
+    <rect x="30" y="46" width="6" height="5" rx="2" fill="#e8e8e8" />
+    {/* Badge online */}
+    <circle cx="44" cy="42" r="4" fill="#34d399" />
     <defs>
       <linearGradient id="mascote_grad" x1="10" y1="10" x2="46" y2="46" gradientUnits="userSpaceOnUse">
         <stop offset="0%" stopColor="#a0c4ff" />
