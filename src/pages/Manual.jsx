@@ -17,7 +17,7 @@ const sections = [
       { subtitle: 'O que é o Villela Exchange – Gestão Comercial?', text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial. Integra Contratos, Pipeline, Prospecção, Treinamentos e IA em um único ambiente.' },
       { subtitle: 'Acesso e Login', text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.' },
       { subtitle: 'Perfil do Usuário', text: 'Clique no seu nome no canto superior do Dashboard para acessar seu perfil. Você pode alterar seu nome de tratamento (como aparece no sistema).' },
-      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Vendas, Clientes, Agenda do Dia, Contratos, Pipeline.', '**Bloco Apoio:** Vendedores, Indicadores, Rel. Interações, Manual, Capacitação.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação Admin, Relatório Comissões, Prospecção, Metas, Produtos, Importar.'] },
+      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Vendas, Agenda do Dia, Contratos, Pipeline.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Rel. Interações, Manual, Capacitação.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação Admin, Relatório Comissões, Prospecção, Metas, Produtos, Importar.'] },
     ],
   },
   {
