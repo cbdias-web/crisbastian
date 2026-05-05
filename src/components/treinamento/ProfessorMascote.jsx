@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 
+const EINSTEIN_3D_URL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/367989976_image.png';
+
 // Frases por contexto
 const FRASES = {
   dashboard: [
@@ -29,20 +31,24 @@ const FRASES = {
   ],
 };
 
-const EINSTEIN_3D_URL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/48c3902d4_generated_image.png';
-
 // Imagem 3D Einstein
 function ProfessorSVG() {
   return (
     <img
       src={EINSTEIN_3D_URL}
       alt="Prof. Einstein"
-      style={{ width: 120, height: 'auto', filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.25))' }}
+      style={{
+        width: 130,
+        height: 'auto',
+        mixBlendMode: 'multiply',
+        filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.20))',
+        display: 'block',
+      }}
     />
   );
 }
 
-function _OldSVG() {
+function _OldSVGUnused() {
   return (
     <svg
       width="90"
@@ -162,13 +168,24 @@ function _OldSVG() {
 }
 
 
+const POS_KEY = 'einstein_pos';
+
+function loadPos() {
+  try { const s = localStorage.getItem(POS_KEY); if (s) return JSON.parse(s); } catch {}
+  return { left: 24, bottom: 0 };
+}
+
 export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0, nomeModulo = '', userName = '' }) {
   const [visivel, setVisivel] = useState(false);
   const [dispensado, setDispensado] = useState(false);
   const [fraseIdx, setFraseIdx] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [mostrarBalao, setMostrarBalao] = useState(true);
+  const [pos, setPos] = useState(loadPos);
   const timerRef = useRef(null);
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 });
+  const hasDragged = useRef(false);
+  const containerRef = useRef(null);
 
   const frases = FRASES[contexto] || FRASES.dashboard;
 
@@ -180,25 +197,61 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
     return () => clearTimeout(t);
   }, [contexto]);
 
-  // Troca de frase automática a cada 8s
   useEffect(() => {
     if (dispensado || !visivel) return;
     timerRef.current = setInterval(() => {
       setAnimating(true);
-      setTimeout(() => {
-        setFraseIdx(i => (i + 1) % frases.length);
-        setAnimating(false);
-      }, 300);
+      setTimeout(() => { setFraseIdx(i => (i + 1) % frases.length); setAnimating(false); }, 300);
     }, 8000);
     return () => clearInterval(timerRef.current);
   }, [dispensado, visivel, frases.length, contexto]);
 
   const proximaFrase = () => {
     setAnimating(true);
-    setTimeout(() => {
-      setFraseIdx(i => (i + 1) % frases.length);
-      setAnimating(false);
-    }, 200);
+    setTimeout(() => { setFraseIdx(i => (i + 1) % frases.length); setAnimating(false); }, 200);
+  };
+
+  const startDrag = (clientX, clientY) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    hasDragged.current = false;
+    dragRef.current = { dragging: true, startX: clientX, startY: clientY, origLeft: rect.left, origTop: rect.top };
+  };
+
+  const moveDrag = (clientX, clientY) => {
+    if (!dragRef.current.dragging) return;
+    const dx = clientX - dragRef.current.startX;
+    const dy = clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
+    if (!hasDragged.current) return;
+    const el = containerRef.current;
+    const w = el ? el.offsetWidth : 200;
+    const h = el ? el.offsetHeight : 200;
+    const newLeft = Math.max(0, Math.min(window.innerWidth - w, dragRef.current.origLeft + dx));
+    const newTop = Math.max(0, Math.min(window.innerHeight - h, dragRef.current.origTop + dy));
+    const newPos = { left: newLeft, top: newTop };
+    setPos(newPos);
+    localStorage.setItem(POS_KEY, JSON.stringify(newPos));
+  };
+
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    startDrag(e.clientX, e.clientY);
+    e.preventDefault();
+    const onMove = (ev) => moveDrag(ev.clientX, ev.clientY);
+    const onUp = () => { dragRef.current.dragging = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const onTouchStart = (e) => {
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+    const onMove = (ev) => { const tt = ev.touches[0]; moveDrag(tt.clientX, tt.clientY); if (hasDragged.current) ev.preventDefault(); };
+    const onEnd = () => { dragRef.current.dragging = false; window.removeEventListener('touchmove', onMove); window.removeEventListener('touchend', onEnd); };
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
   };
 
   if (dispensado || !visivel) return null;
@@ -206,71 +259,61 @@ export default function ProfessorMascote({ contexto = 'dashboard', progresso = 0
   const primeiroNome = userName ? userName.split(' ')[0] : '';
   const frase = frases[fraseIdx].replace('{nome}', primeiroNome);
 
+  // Suporte a pos com bottom (posição inicial) ou top (após drag)
+  const containerStyle = pos.top !== undefined
+    ? { position: 'fixed', left: pos.left, top: pos.top, zIndex: 40 }
+    : { position: 'fixed', left: pos.left, bottom: pos.bottom ?? 0, zIndex: 40 };
+
   return (
     <div
-      className="fixed bottom-0 left-6 z-40 flex flex-col items-center select-none pointer-events-none"
-      style={{ maxWidth: 200 }}
+      ref={containerRef}
+      style={{ ...containerStyle, maxWidth: 220 }}
+      className="flex flex-col items-center select-none"
     >
       {/* Balão de fala */}
       {mostrarBalao && (
         <div
-          className="pointer-events-auto relative bg-white border border-blue-100 rounded-2xl rounded-bl-none shadow-xl px-4 py-3 mb-1"
+          className="relative bg-white border border-blue-100 rounded-2xl rounded-bl-none shadow-xl px-4 py-3 mb-1"
           style={{ maxWidth: 220, minWidth: 160 }}
         >
-          {/* Fechar balão */}
           <button
             onClick={() => setDispensado(true)}
             className="absolute -top-2 -right-2 w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition"
           >
             <X className="w-3 h-3 text-gray-500" />
           </button>
-
-          {/* Cabeçalho */}
           <div className="flex items-center gap-1.5 mb-1.5">
             <span className="w-2 h-2 bg-[#D4AF37] rounded-full" />
             <span className="text-[10px] font-bold text-[#1a3150] uppercase tracking-wider">Prof. Einstein</span>
           </div>
-
-          {/* Frase */}
-          <p
-            className={`text-sm text-gray-700 leading-relaxed transition-opacity duration-300 ${animating ? 'opacity-0' : 'opacity-100'}`}
-          >
+          <p className={`text-sm text-gray-700 leading-relaxed transition-opacity duration-300 ${animating ? 'opacity-0' : 'opacity-100'}`}>
             {frase}
           </p>
-
-          {/* Progresso (só no contexto modulo) */}
           {contexto === 'modulo' && progresso > 0 && (
             <div className="mt-2">
               <div className="flex justify-between text-[10px] text-gray-400 mb-0.5">
-                <span>Progresso</span>
-                <span className="font-semibold">{progresso}%</span>
+                <span>Progresso</span><span className="font-semibold">{progresso}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-1.5">
-                <div
-                  className="h-1.5 rounded-full bg-gradient-to-r from-[#1a3150] to-blue-400 transition-all"
-                  style={{ width: `${progresso}%` }}
-                />
+                <div className="h-1.5 rounded-full bg-gradient-to-r from-[#1a3150] to-blue-400 transition-all" style={{ width: `${progresso}%` }} />
               </div>
             </div>
           )}
-
-          {/* Próxima frase */}
-          <button
-            onClick={proximaFrase}
-            className="mt-2 text-[10px] text-[#1a3150] hover:underline flex items-center gap-1 font-medium"
-          >
+          <button onClick={proximaFrase} className="mt-2 text-[10px] text-[#1a3150] hover:underline flex items-center gap-1 font-medium">
             outra dica <ChevronRight className="w-3 h-3" />
           </button>
         </div>
       )}
 
-      {/* Boneco — clicável para reabrir balão */}
+      {/* Boneco — arraste para mover, clique para balão */}
       <div
-        className="pointer-events-auto cursor-pointer hover:scale-105 transition-transform"
-        onClick={() => setMostrarBalao(v => !v)}
-        title={mostrarBalao ? 'Fechar dica' : 'Ver dica'}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+        onClick={() => { if (!hasDragged.current) setMostrarBalao(v => !v); }}
+        className="cursor-grab active:cursor-grabbing hover:scale-105 transition-transform"
+        title="Arraste para mover"
       >
-        <ProfessorSVG animating={false} />
+        <ProfessorSVG />
       </div>
     </div>
   );
