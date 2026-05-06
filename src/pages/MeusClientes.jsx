@@ -696,9 +696,9 @@ export default function MeusClientes() {
         </div>
 
         {/* Agenda de contatos (leads) */}
-        {vendedorParaAgenda && (
+        {(isAdmin || vendedorParaAgenda) && (
           <AgendaCalendario
-            vendedorId={vendedorParaAgenda.id}
+            vendedorId={vendedorParaAgenda?.id || ''}
             vendedor={vendedorParaAgenda}
             user={user}
             isAdmin={isAdmin}
