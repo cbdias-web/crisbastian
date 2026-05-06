@@ -5,10 +5,22 @@ import { X, Calendar, CheckCircle2 } from 'lucide-react';
 const CONNECTOR_ID = '69fb7ca02a88fc78b9e7694f';
 const STORAGE_KEY = 'google_calendar_conectado_v1';
 
+// Exporta função utilitária para abrir o modal manualmente
+export function abrirModalGoogleCalendar() {
+  localStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(new CustomEvent('abrir-google-calendar-modal'));
+}
+
 export default function GoogleCalendarConectarModal() {
   const [show, setShow] = useState(false);
   const [conectando, setConectando] = useState(false);
   const [conectado, setConectado] = useState(false);
+
+  useEffect(() => {
+    const handleAbrir = () => setShow(true);
+    window.addEventListener('abrir-google-calendar-modal', handleAbrir);
+    return () => window.removeEventListener('abrir-google-calendar-modal', handleAbrir);
+  }, []);
 
   useEffect(() => {
     // Só verifica se ainda não foi marcado como conectado nesta sessão
