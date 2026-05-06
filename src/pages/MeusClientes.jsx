@@ -186,30 +186,38 @@ export default function MeusClientes() {
     onSuccess: async (_, variables) => {
       const todayStr = new Date().toISOString().split('T')[0];
 
-      // Remover agendamentos futuros pendentes do lead (sempre, para evitar duplicatas)
       if (variables.cliente_id) {
         const agendas = await base44.entities.AgendaContato.filter({ lead_id: variables.cliente_id });
         const futurasPendentes = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
-        for (const a of futurasPendentes) await base44.entities.AgendaContato.delete(a.id);
-      }
 
-      // Se há próximo contato e resultado não negativo, criar nova agenda para a data programada
-      if (variables.proximo_contato && variables.resultado !== 'Negativo' && variables.cliente_id) {
-        const cliente = clientes.find(c => c.id === variables.cliente_id);
-        await base44.entities.AgendaContato.create({
-          lead_id: variables.cliente_id,
-          lead_nome: variables.cliente_nome || '',
-          lead_cpf_cnpj: cliente?.cpf_cnpj || '',
-          lead_telefone: cliente?.telefone || '',
-          cliente_id: '',
-          vendedor_id: variables.vendedor_id || '',
-          vendedor_nome: variables.vendedor_nome || '',
-          data_agendada: variables.proximo_contato,
-          posicao_dia: 0,
-          lote_id: '',
-          status: 'pendente',
-          resultado: ''
-        });
+        if (variables.resultado === 'Negativo') {
+          // Resultado negativo: remover TODAS as agendas futuras
+          for (const a of futurasPendentes) await base44.entities.AgendaContato.delete(a.id);
+        } else if (variables.proximo_contato) {
+          // Remover apenas as que NÃO são a data do próximo contato (evitar duplicatas)
+          const parasRemover = futurasPendentes.filter(a => a.data_agendada !== variables.proximo_contato);
+          for (const a of parasRemover) await base44.entities.AgendaContato.delete(a.id);
+
+          // Criar agenda para o próximo contato se ainda não existir
+          const jaExiste = futurasPendentes.some(a => a.data_agendada === variables.proximo_contato);
+          if (!jaExiste) {
+            const cliente = clientes.find(c => c.id === variables.cliente_id);
+            await base44.entities.AgendaContato.create({
+              lead_id: variables.cliente_id,
+              lead_nome: variables.cliente_nome || '',
+              lead_cpf_cnpj: cliente?.cpf_cnpj || '',
+              lead_telefone: cliente?.telefone || '',
+              cliente_id: variables.cliente_id,
+              vendedor_id: variables.vendedor_id || '',
+              vendedor_nome: variables.vendedor_nome || '',
+              data_agendada: variables.proximo_contato,
+              posicao_dia: 0,
+              lote_id: '',
+              status: 'pendente',
+              resultado: ''
+            });
+          }
+        }
       }
 
       queryClient.invalidateQueries(['agenda-contatos']);
