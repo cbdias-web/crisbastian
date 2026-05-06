@@ -191,14 +191,16 @@ function MeetButton({ item, onLinkGerado }) {
 
 // ── Event Card ────────────────────────────────────────────────────────────────
 
-function EventCard({ item: itemProp, isToday: isTod, onAction, onPipeline, onClienteClick, updating }) {
+function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipeline, onClienteClick, updating }) {
   const [item, setItem] = useState(itemProp);
   const [reagendando, setReagendando] = useState(false);
   const [novaData, setNovaData] = useState('');
+  const [editando, setEditando] = useState(false);
+  const [editData, setEditData] = useState(itemProp.data_agendada);
   const sc = STATUS[item.status] || STATUS.pendente;
   const Icon = sc.icon;
 
-  React.useEffect(() => { setItem(itemProp); }, [itemProp]);
+  React.useEffect(() => { setItem(itemProp); setEditData(itemProp.data_agendada); }, [itemProp]);
 
   return (
     <div className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden
@@ -227,9 +229,25 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onPipeline, onCli
               <p className="text-[10px] text-gray-400 mt-0.5">{item.lead_cpf_cnpj}</p>
             )}
           </div>
-          <span className={`flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.pill}`}>
-            <Icon className="w-2.5 h-2.5" /> {sc.label}
-          </span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.pill}`}>
+              <Icon className="w-2.5 h-2.5" /> {sc.label}
+            </span>
+            <button
+              onClick={() => { setEditando(e => !e); setReagendando(false); setEditData(item.data_agendada); }}
+              title="Alterar data"
+              className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#1a3150] transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+            <button
+              onClick={() => { if (confirm(`Excluir agendamento de "${item.lead_nome}"?`)) onDelete(item); }}
+              title="Excluir agendamento"
+              className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>
         </div>
 
         {/* Reagendado info */}
@@ -237,6 +255,25 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onPipeline, onCli
           <p className="text-[11px] text-blue-600 mt-1 flex items-center gap-1">
             <RotateCcw className="w-2.5 h-2.5" /> Reagendado para {format(parseISO(item.nova_data), 'dd/MM', { locale: ptBR })}
           </p>
+        )}
+
+        {/* Editar agendamento inline */}
+        {editando && (
+          <div className="mt-2 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
+            <span className="text-[11px] text-gray-500 font-medium">Nova data:</span>
+            <input
+              type="date"
+              value={editData}
+              onChange={e => setEditData(e.target.value)}
+              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+            />
+            <button
+              onClick={() => { onAction(item, item.status, undefined, editData); setEditando(false); }}
+              disabled={!editData}
+              className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition"
+            >Salvar</button>
+            <button onClick={() => setEditando(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
+          </div>
         )}
 
         {/* Reagendar inline */}
@@ -518,17 +555,31 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     }
   });
 
-  const handleAction = (item, status, nova_data) => {
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.AgendaContato.delete(id),
+    onSuccess: () => queryClient.invalidateQueries(['agenda-contatos', vendedorId]),
+  });
+
+  const handleAction = (item, status, nova_data, nova_data_agendada) => {
     setUpdating(item.id);
-    updateMutation.mutate({
-      id: item.id,
-      data: {
-        status,
-        realizado_em: new Date().toISOString(),
-        ...(nova_data ? { nova_data } : {}),
-      }
-    });
-    toast.success(STATUS[status]?.label || status);
+    const updateData = nova_data_agendada
+      ? { data_agendada: nova_data_agendada }
+      : {
+          status,
+          realizado_em: new Date().toISOString(),
+          ...(nova_data ? { nova_data } : {}),
+        };
+    updateMutation.mutate({ id: item.id, data: updateData });
+    if (nova_data_agendada) {
+      toast.success('Data alterada!');
+    } else {
+      toast.success(STATUS[status]?.label || status);
+    }
+  };
+
+  const handleDelete = (item) => {
+    deleteMutation.mutate(item.id);
+    toast.success('Agendamento excluído!');
   };
 
   // Build dot set for mini-cal
@@ -735,6 +786,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                     item={item}
                     isToday={isToday(selectedDate)}
                     onAction={handleAction}
+                    onDelete={handleDelete}
                     onPipeline={setPipelineItem}
                     onClienteClick={onClienteClick}
                     updating={updating}
