@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
-  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2
+  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus
 } from 'lucide-react';
 import {
   format, isToday, isTomorrow, parseISO, startOfWeek,
@@ -369,15 +369,138 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
   );
 }
 
+// ── Novo Agendamento Modal (Admin) ────────────────────────────────────────────
+
+function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    vendedor_id: '',
+    lead_id: '',
+    data_agendada: new Date().toISOString().split('T')[0],
+    observacao: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [clienteSearch, setClienteSearch] = useState('');
+
+  const vendedorSelecionado = todosVendedores.find(v => v.id === form.vendedor_id);
+  const clientesFiltrados = clientes
+    .filter(c => !form.vendedor_id || c.vendedor_id === form.vendedor_id)
+    .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()))
+    .slice(0, 20);
+
+  const clienteSelecionado = clientes.find(c => c.id === form.lead_id);
+
+  const handleSave = async () => {
+    if (!form.vendedor_id) { toast.error('Selecione o gerente'); return; }
+    if (!form.lead_id) { toast.error('Selecione o cliente/lead'); return; }
+    if (!form.data_agendada) { toast.error('Informe a data'); return; }
+    setSaving(true);
+    try {
+      const v = vendedorSelecionado;
+      const c = clienteSelecionado;
+      await base44.entities.AgendaContato.create({
+        lead_id: c.id,
+        lead_nome: c.nome,
+        lead_cpf_cnpj: c.cpf_cnpj || '',
+        lead_telefone: c.telefone || '',
+        cliente_id: c.id,
+        vendedor_id: v.id,
+        vendedor_nome: v.nome,
+        data_agendada: form.data_agendada,
+        posicao_dia: 0,
+        lote_id: '',
+        status: 'pendente',
+        resultado: form.observacao || '',
+      });
+      toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
+      onSaved();
+    } catch (e) {
+      toast.error('Erro ao criar agendamento');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
+          <div>
+            <p className="font-bold text-white text-sm">Novo Agendamento</p>
+            <p className="text-blue-200 text-xs mt-0.5">Criar agendamento para um gerente</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Gerente *</label>
+            <select value={form.vendedor_id} onChange={e => setForm(p => ({ ...p, vendedor_id: e.target.value, lead_id: '' }))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
+              <option value="">Selecione o gerente...</option>
+              {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Cliente / Lead *</label>
+            <input
+              type="text"
+              placeholder="Buscar cliente..."
+              value={clienteSearch}
+              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); }}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
+            />
+            {clienteSelecionado ? (
+              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+                <span className="text-sm font-medium text-[#0f1e35] flex-1">{clienteSelecionado.nome}</span>
+                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            ) : clienteSearch.length > 0 && (
+              <div className="border border-gray-200 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                {clientesFiltrados.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-3">Nenhum cliente encontrado</p>
+                ) : clientesFiltrados.map(c => (
+                  <button key={c.id} onClick={() => { setForm(p => ({ ...p, lead_id: c.id })); setClienteSearch(c.nome); }}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
+                    {c.nome}
+                    {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
+            <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Observação</label>
+            <input type="text" value={form.observacao} onChange={e => setForm(p => ({ ...p, observacao: e.target.value }))}
+              placeholder="Instrução ou contexto para o gerente..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+          </div>
+        </div>
+        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2">
+            {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
+            Criar Agendamento
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-export default function AgendaCalendario({ vendedorId, vendedor, user, onClienteClick }) {
+export default function AgendaCalendario({ vendedorId, vendedor, user, onClienteClick, isAdmin, todosVendedores = [], clientes = [] }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
   const [view, setView] = useState('semana'); // 'semana' | 'dia'
   const [updating, setUpdating] = useState(null);
   const [pipelineItem, setPipelineItem] = useState(null);
   const [showPast, setShowPast] = useState(false);
+  const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: agenda = [], isLoading } = useQuery({
@@ -520,12 +643,22 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               </button>
             </div>
-            <button
-              onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('semana'); }}
-              className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"
-            >
-              Hoje
-            </button>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <button
+                  onClick={() => setShowNovoAgendamento(true)}
+                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" /> Agendar
+                </button>
+              )}
+              <button
+                onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('semana'); }}
+                className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"
+              >
+                Hoje
+              </button>
+            </div>
           </div>
 
           {/* ── SEMANA VIEW ── */}
@@ -646,6 +779,19 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           user={user}
           onClose={() => setPipelineItem(null)}
           onSaved={() => setPipelineItem(null)}
+        />
+      )}
+
+      {/* Novo Agendamento modal (admin) */}
+      {showNovoAgendamento && (
+        <NovoAgendamentoModal
+          todosVendedores={todosVendedores}
+          clientes={clientes}
+          onClose={() => setShowNovoAgendamento(false)}
+          onSaved={() => {
+            setShowNovoAgendamento(false);
+            queryClient.invalidateQueries(['agenda-contatos', vendedorId]);
+          }}
         />
       )}
     </>

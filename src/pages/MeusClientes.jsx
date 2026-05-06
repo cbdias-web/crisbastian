@@ -701,6 +701,9 @@ export default function MeusClientes() {
             vendedorId={vendedorParaAgenda.id}
             vendedor={vendedorParaAgenda}
             user={user}
+            isAdmin={isAdmin}
+            todosVendedores={todosVendedores}
+            clientes={clientes}
             onClienteClick={(leadId) => {
               setClienteModalId(leadId);
             }}
