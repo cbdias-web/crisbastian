@@ -35,6 +35,10 @@
       "format": "date",
       "description": "Data agendada para contato"
     },
+    "horario": {
+      "type": "string",
+      "description": "Hor\u00e1rio do contato (HH:MM)"
+    },
     "posicao_dia": {
       "type": "number",
       "description": "Posi\u00e7\u00e3o do contato no dia (1 a 5)"

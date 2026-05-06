@@ -197,10 +197,11 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
   const [novaData, setNovaData] = useState('');
   const [editando, setEditando] = useState(false);
   const [editData, setEditData] = useState(itemProp.data_agendada);
+  const [editHorario, setEditHorario] = useState(itemProp.horario || '');
   const sc = STATUS[item.status] || STATUS.pendente;
   const Icon = sc.icon;
 
-  React.useEffect(() => { setItem(itemProp); setEditData(itemProp.data_agendada); }, [itemProp]);
+  React.useEffect(() => { setItem(itemProp); setEditData(itemProp.data_agendada); setEditHorario(itemProp.horario || ''); }, [itemProp]);
 
   return (
     <div className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden
@@ -220,6 +221,11 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
             >
               {item.lead_nome}
             </button>
+            {item.horario && (
+              <p className="text-[11px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">
+                <Clock className="w-3 h-3" /> {item.horario}
+              </p>
+            )}
             {item.lead_telefone && (
               <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
                 <Phone className="w-3 h-3" /> {item.lead_telefone}
@@ -260,15 +266,22 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
         {/* Editar agendamento inline */}
         {editando && (
           <div className="mt-2 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
-            <span className="text-[11px] text-gray-500 font-medium">Nova data:</span>
+            <span className="text-[11px] text-gray-500 font-medium">Data:</span>
             <input
               type="date"
               value={editData}
               onChange={e => setEditData(e.target.value)}
               className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
             />
+            <span className="text-[11px] text-gray-500 font-medium">Horário:</span>
+            <input
+              type="time"
+              value={editHorario}
+              onChange={e => setEditHorario(e.target.value)}
+              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+            />
             <button
-              onClick={() => { onAction(item, item.status, undefined, editData); setEditando(false); }}
+              onClick={() => { onAction(item, item.status, undefined, editData, editHorario); setEditando(false); }}
               disabled={!editData}
               className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition"
             >Salvar</button>
@@ -413,6 +426,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
     vendedor_id: '',
     lead_id: '',
     data_agendada: new Date().toISOString().split('T')[0],
+    horario: '',
     observacao: '',
   });
   const [saving, setSaving] = useState(false);
@@ -443,6 +457,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
         vendedor_id: v.id,
         vendedor_nome: v.nome,
         data_agendada: form.data_agendada,
+        horario: form.horario || '',
         posicao_dia: 0,
         lote_id: '',
         status: 'pendente',
@@ -503,10 +518,17 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
               </div>
             )}
           </div>
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
-            <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
+              <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+            </div>
+            <div className="w-36">
+              <label className="text-xs text-gray-500 mb-1 block">Horário</label>
+              <input type="time" value={form.horario} onChange={e => setForm(p => ({ ...p, horario: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+            </div>
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Observação</label>
@@ -593,17 +615,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     onSuccess: () => invalidateAgenda(),
   });
 
-  const handleAction = (item, status, nova_data, nova_data_agendada) => {
+  const handleAction = (item, status, nova_data, nova_data_agendada, novo_horario) => {
     setUpdating(item.id);
     const updateData = nova_data_agendada
-      ? { data_agendada: nova_data_agendada }
+      ? { data_agendada: nova_data_agendada, ...(novo_horario !== undefined ? { horario: novo_horario } : {}) }
       : {
           status,
           realizado_em: new Date().toISOString(),
           ...(nova_data ? { nova_data } : {}),
         };
     updateMutation.mutate({ id: item.id, data: updateData });
-    toast.success(nova_data_agendada ? 'Data alterada!' : (STATUS[status]?.label || status));
+    toast.success(nova_data_agendada ? 'Agendamento atualizado!' : (STATUS[status]?.label || status));
   };
 
   const handleDelete = (item) => {
@@ -871,7 +893,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
                             <span className="truncate">
                               {isAdmin && !filtroVendedorId ? `[${item.vendedor_nome?.split(' ')[0] || '?'}] ` : ''}
-                              {item.lead_nome}
+                              {item.horario ? `${item.horario} · ` : ''}{item.lead_nome}
                             </span>
                           </div>
                         );
