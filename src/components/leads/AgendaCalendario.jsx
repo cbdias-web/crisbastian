@@ -104,59 +104,37 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
 function MeetButton({ item, onLinkGerado }) {
   const [loading, setLoading] = useState(false);
   const [showTimeForm, setShowTimeForm] = useState(false);
-  const [horarioInicio, setHorarioInicio] = useState('09:00');
-  const [horarioFim, setHorarioFim] = useState('10:00');
-  const [connected, setConnected] = useState(null);
-
-  // Auto-ajusta horário fim ao mudar início (+1h)
-  const handleInicioChange = (val) => {
-    setHorarioInicio(val);
-    const [h, m] = val.split(':').map(Number);
-    const fimH = String(Math.min(h + 1, 23)).padStart(2, '0');
-    setHorarioFim(`${fimH}:${String(m).padStart(2, '0')}`);
-  };
-
-  useEffect(() => {
-    base44.auth.isAuthenticated().then(async (authed) => {
-      if (!authed) { setConnected(false); return; }
-      try {
-        await base44.functions.invoke('criarMeetAgenda', { agenda_id: '__test__', data_agendada: '__test__' });
-        setConnected(true);
-      } catch (e) {
-        const msg = e?.response?.data?.error || e?.message || '';
-        setConnected(!msg.toLowerCase().includes('connection') && !msg.toLowerCase().includes('not connected') && !msg.toLowerCase().includes('token'));
-      }
-    });
-  }, []);
+  const [horario, setHorario] = useState('09:00');
+  const [needsConnect, setNeedsConnect] = useState(false);
 
   const handleConnect = async () => {
     const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
     const popup = window.open(url, '_blank');
     const timer = setInterval(() => {
-      if (!popup || popup.closed) { clearInterval(timer); setConnected(true); }
+      if (!popup || popup.closed) { clearInterval(timer); setNeedsConnect(false); }
     }, 500);
   };
 
   const handleGenerate = async () => {
     setLoading(true);
-    setShowTimeForm(false);
     try {
       const res = await base44.functions.invoke('criarMeetAgenda', {
         agenda_id: item.id,
         lead_nome: item.lead_nome,
         data_agendada: item.data_agendada,
-        horario_inicio: horarioInicio,
-        horario_fim: horarioFim,
+        horario_inicio: horario,
       });
       onLinkGerado(res.data.meet_link);
       toast.success('Link Meet criado!');
+      setShowTimeForm(false);
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || '';
-      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('not connected')) {
-        setConnected(false);
+      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('not connected') || msg.toLowerCase().includes('no active')) {
+        setNeedsConnect(true);
+        setShowTimeForm(false);
         toast.error('Conecte sua conta Google primeiro');
       } else {
-        toast.error('Erro ao gerar link Meet: ' + msg);
+        toast.error('Erro ao gerar link: ' + msg);
       }
     }
     setLoading(false);
@@ -178,39 +156,27 @@ function MeetButton({ item, onLinkGerado }) {
     );
   }
 
-  if (connected === false) {
+  if (needsConnect) {
     return (
       <button onClick={handleConnect}
         className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#1a73e8] text-[#1a73e8] text-[11px] font-semibold rounded-xl hover:bg-blue-50 transition mt-2">
-        <Link2 className="w-3 h-3" /> Conectar Google para Meet
+        <Link2 className="w-3 h-3" /> Conectar Google Calendar
       </button>
     );
   }
 
   if (showTimeForm) {
     return (
-      <div className="mt-2 p-3 bg-blue-50/60 border border-blue-100 rounded-xl space-y-2">
-        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Horário da reunião</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[10px] text-gray-400">Início</label>
-            <input type="time" value={horarioInicio} onChange={e => handleInicioChange(e.target.value)}
-              className="text-xs px-2 py-1.5 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-[#1a73e8] w-28" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <label className="text-[10px] text-gray-400">Fim</label>
-            <input type="time" value={horarioFim} onChange={e => setHorarioFim(e.target.value)}
-              className="text-xs px-2 py-1.5 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-[#1a73e8] w-28" />
-          </div>
-          <div className="flex gap-2 mt-3">
-            <button onClick={handleGenerate} disabled={loading}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
-              {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
-              Gerar Link
-            </button>
-            <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600 px-2">Cancelar</button>
-          </div>
-        </div>
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
+        <span className="text-[11px] text-gray-500 font-medium">Início:</span>
+        <input type="time" value={horario} onChange={e => setHorario(e.target.value)}
+          className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a73e8]" />
+        <button onClick={handleGenerate} disabled={loading}
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
+          {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
+          {loading ? 'Gerando...' : 'Gerar Link'}
+        </button>
+        <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600">Cancelar</button>
       </div>
     );
   }
