@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaCalendario from '@/components/leads/AgendaCalendario';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
-import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput } from 'lucide-react';
+import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput, Video, Copy, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -52,6 +52,7 @@ export default function MeusClientes() {
   const [dropdownAberto, setDropdownAberto] = useState(false);
   const [showNovoLeadModal, setShowNovoLeadModal] = useState(false);
   const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '', subcarteira: '' });
+  const [meetForm, setMeetForm] = useState({ horario: '', gerarMeet: false, link: '', loading: false });
   const [clienteModalId, setClienteModalId] = useState(null);
   const [criandoLead, setCriandoLead] = useState(false);
   const [mostrarClientes, setMostrarClientes] = useState(false);
@@ -410,6 +411,31 @@ export default function MeusClientes() {
       toast.error('Erro ao criar lead');
     }
     setCriandoLead(false);
+  };
+
+  const gerarMeetLink = async (cliente) => {
+    setMeetForm(p => ({ ...p, loading: true }));
+    try {
+      const CONNECTOR_ID = '69fb7ca02a88fc78b9e7694f';
+      const res = await base44.functions.invoke('criarMeetAgenda', {
+        agenda_id: cliente.id,
+        lead_nome: cadastroClienteForm.nome || cliente.nome,
+        data_agendada: form.proximo_contato || form.data_interacao,
+        horario_inicio: meetForm.horario || '09:00',
+      });
+      setMeetForm(p => ({ ...p, link: res.data.meet_link, loading: false }));
+      toast.success('Link Meet gerado!');
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || '';
+      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
+        const url = await base44.connectors.connectAppUser('69fb7ca02a88fc78b9e7694f');
+        window.open(url, '_blank');
+        toast.info('Conecte sua conta Google e tente novamente');
+      } else {
+        toast.error('Erro ao gerar Meet: ' + msg);
+      }
+      setMeetForm(p => ({ ...p, loading: false }));
+    }
   };
 
   const handleSave = async (cliente) => {
@@ -1116,7 +1142,7 @@ export default function MeusClientes() {
                   <h3 className="font-bold text-white text-base">Nova Interação</h3>
                   <p className="text-blue-200 text-xs mt-0.5">{cliente.nome}</p>
                 </div>
-                <button onClick={() => { setShowForm(null); setCadastroClienteForm({}); }} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition">
+                <button onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); }} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1204,6 +1230,61 @@ export default function MeusClientes() {
                   </div>
                 )}
 
+                {/* Google Meet */}
+                <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Video className="w-4 h-4 text-[#1a73e8]" />
+                      <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Reunião Google Meet</span>
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={meetForm.gerarMeet}
+                        onChange={e => setMeetForm(p => ({ ...p, gerarMeet: e.target.checked, link: '' }))}
+                        className="w-4 h-4 accent-[#1a73e8]" />
+                      <span className="text-xs text-gray-500">Agendar reunião</span>
+                    </label>
+                  </div>
+
+                  {meetForm.gerarMeet && (
+                    <div className="space-y-3">
+                      <div className="flex items-end gap-3 flex-wrap">
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Horário de início</label>
+                          <input type="time" value={meetForm.horario} onChange={e => setMeetForm(p => ({ ...p, horario: e.target.value }))}
+                            className="px-3 py-2 text-sm border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-[#1a73e8]" />
+                        </div>
+                        {!meetForm.link && (
+                          <button onClick={() => gerarMeetLink(cliente)} disabled={meetForm.loading}
+                            className="flex items-center gap-1.5 px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-semibold rounded-xl transition">
+                            {meetForm.loading
+                              ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              : <Video className="w-4 h-4" />}
+                            {meetForm.loading ? 'Gerando...' : 'Gerar Link'}
+                          </button>
+                        )}
+                      </div>
+
+                      {meetForm.link && (
+                        <div className="flex items-center gap-2 p-2.5 bg-white border border-blue-200 rounded-xl flex-wrap">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                          <a href={meetForm.link} target="_blank" rel="noopener noreferrer"
+                            className="text-xs text-[#1a73e8] font-semibold hover:underline truncate flex-1">
+                            {meetForm.link}
+                          </a>
+                          <button onClick={() => { navigator.clipboard.writeText(meetForm.link); toast.success('Link copiado!'); }}
+                            className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-lg border border-blue-100 hover:bg-blue-100 transition flex-shrink-0">
+                            <Copy className="w-3 h-3" /> Copiar
+                          </button>
+                          <button onClick={() => setMeetForm(p => ({ ...p, link: '', horario: '' }))}
+                            className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Descrição */}
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Descrição *</label>
@@ -1216,7 +1297,7 @@ export default function MeusClientes() {
 
               {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0 bg-gray-50/50">
-                <Button variant="outline" onClick={() => { setShowForm(null); setCadastroClienteForm({}); }}>
+                <Button variant="outline" onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); }}>
                   <X className="w-4 h-4 mr-1.5" /> Cancelar
                 </Button>
                 <Button onClick={() => handleSave(cliente)} disabled={createMutation.isPending} className="bg-[#0f1e35] hover:bg-[#1a3150]">
