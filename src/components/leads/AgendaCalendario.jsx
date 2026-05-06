@@ -1,17 +1,19 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
-  TrendingUp, ChevronLeft, ChevronRight, X, Plus
+  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2
 } from 'lucide-react';
 import {
-  format, isToday, isTomorrow, parseISO, startOfWeek, endOfWeek,
-  addDays, addWeeks, subWeeks, isSameDay, startOfMonth, endOfMonth,
-  addMonths, subMonths, isSameMonth, getDay
+  format, isToday, isTomorrow, parseISO, startOfWeek,
+  addDays, addWeeks, isSameDay, startOfMonth, endOfMonth,
+  addMonths, subMonths, getDay
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+
+const CONNECTOR_ID = '69fb7ca02a88fc78b9e7694f';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -97,13 +99,120 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
   );
 }
 
+// ── Google Meet Button ────────────────────────────────────────────────────────
+
+function MeetButton({ item, onLinkGerado }) {
+  const [loading, setLoading] = useState(false);
+  const [showTimeForm, setShowTimeForm] = useState(false);
+  const [horario, setHorario] = useState('09:00');
+  const [connected, setConnected] = useState(null); // null=checking, true, false
+
+  // Check connection on first render
+  React.useEffect(() => {
+    base44.auth.isAuthenticated().then(async (authed) => {
+      if (!authed) { setConnected(false); return; }
+      try {
+        await base44.functions.invoke('criarMeetAgenda', { agenda_id: '__test__', data_agendada: '__test__' });
+        setConnected(true);
+      } catch (e) {
+        // If error is NOT about missing connection → connected
+        const msg = e?.response?.data?.error || e?.message || '';
+        setConnected(!msg.toLowerCase().includes('connection') && !msg.toLowerCase().includes('not connected') && !msg.toLowerCase().includes('token'));
+      }
+    });
+  }, []);
+
+  const handleConnect = async () => {
+    const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
+    const popup = window.open(url, '_blank');
+    const timer = setInterval(() => {
+      if (!popup || popup.closed) { clearInterval(timer); setConnected(true); }
+    }, 500);
+  };
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setShowTimeForm(false);
+    try {
+      const res = await base44.functions.invoke('criarMeetAgenda', {
+        agenda_id: item.id,
+        lead_nome: item.lead_nome,
+        data_agendada: item.data_agendada,
+        horario_inicio: horario,
+      });
+      onLinkGerado(res.data.meet_link);
+      toast.success('Link Meet criado!');
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || '';
+      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('not connected')) {
+        setConnected(false);
+        toast.error('Conecte sua conta Google primeiro');
+      } else {
+        toast.error('Erro ao gerar link Meet: ' + msg);
+      }
+    }
+    setLoading(false);
+  };
+
+  // Already has a link
+  if (item.meet_link) {
+    return (
+      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+        <a href={item.meet_link} target="_blank" rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-[11px] font-semibold rounded-xl transition shadow-sm">
+          <Video className="w-3 h-3" /> Entrar no Meet
+        </a>
+        <button onClick={() => { navigator.clipboard.writeText(item.meet_link); toast.success('Link copiado!'); }}
+          className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-xl border border-blue-100 hover:bg-blue-100 transition">
+          <Copy className="w-3 h-3" /> Copiar
+        </button>
+      </div>
+    );
+  }
+
+  if (connected === false) {
+    return (
+      <button onClick={handleConnect}
+        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#1a73e8] text-[#1a73e8] text-[11px] font-semibold rounded-xl hover:bg-blue-50 transition mt-2">
+        <Link2 className="w-3 h-3" /> Conectar Google para Meet
+      </button>
+    );
+  }
+
+  if (showTimeForm) {
+    return (
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
+        <span className="text-[11px] text-gray-500">Horário:</span>
+        <input type="time" value={horario} onChange={e => setHorario(e.target.value)}
+          className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a73e8]" />
+        <button onClick={handleGenerate} disabled={loading}
+          className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
+          {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
+          Gerar
+        </button>
+        <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600">Cancelar</button>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={() => setShowTimeForm(true)}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 hover:border-[#1a73e8] text-gray-600 hover:text-[#1a73e8] text-[11px] font-semibold rounded-xl transition mt-2">
+      <Video className="w-3 h-3" /> Gerar Link Meet
+    </button>
+  );
+}
+
 // ── Event Card ────────────────────────────────────────────────────────────────
 
-function EventCard({ item, isToday: isTod, onAction, onPipeline, onClienteClick, updating }) {
+function EventCard({ item: itemProp, isToday: isTod, onAction, onPipeline, onClienteClick, updating }) {
+  const [item, setItem] = useState(itemProp);
   const [reagendando, setReagendando] = useState(false);
   const [novaData, setNovaData] = useState('');
   const sc = STATUS[item.status] || STATUS.pendente;
   const Icon = sc.icon;
+
+  React.useEffect(() => { setItem(itemProp); }, [itemProp]);
 
   return (
     <div className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden
@@ -192,6 +301,9 @@ function EventCard({ item, isToday: isTod, onAction, onPipeline, onClienteClick,
             </button>
           </div>
         )}
+
+        {/* Google Meet */}
+        <MeetButton item={item} onLinkGerado={(link) => setItem(prev => ({ ...prev, meet_link: link }))} />
       </div>
     </div>
   );

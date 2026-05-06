@@ -1,0 +1,86 @@
+{
+  "name": "AgendaContato",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "description": "ID do lead"
+    },
+    "lead_nome": {
+      "type": "string",
+      "description": "Nome do lead"
+    },
+    "lead_cpf_cnpj": {
+      "type": "string",
+      "description": "CPF/CNPJ do lead"
+    },
+    "lead_telefone": {
+      "type": "string",
+      "description": "Telefone do lead"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do cliente na carteira"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor/gerente"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor/gerente"
+    },
+    "data_agendada": {
+      "type": "string",
+      "format": "date",
+      "description": "Data agendada para contato"
+    },
+    "posicao_dia": {
+      "type": "number",
+      "description": "Posi\u00e7\u00e3o do contato no dia (1 a 5)"
+    },
+    "lote_id": {
+      "type": "string",
+      "description": "ID do lote de origem"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "realizado",
+        "nao_atendeu",
+        "reagendado"
+      ],
+      "default": "pendente",
+      "description": "Status do contato agendado"
+    },
+    "resultado": {
+      "type": "string",
+      "description": "Observa\u00e7\u00e3o/resultado do contato"
+    },
+    "realizado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora de realiza\u00e7\u00e3o"
+    },
+    "nova_data": {
+      "type": "string",
+      "format": "date",
+      "description": "Nova data (se reagendado)"
+    },
+    "meet_link": {
+      "type": "string",
+      "description": "Link da reuni\u00e3o Google Meet"
+    },
+    "google_event_id": {
+      "type": "string",
+      "description": "ID do evento no Google Calendar"
+    }
+  },
+  "required": [
+    "lead_id",
+    "lead_nome",
+    "vendedor_id",
+    "data_agendada"
+  ]
+}
