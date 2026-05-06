@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import AgendaDiariaWidget from '@/components/leads/AgendaDiariaWidget';
+import AgendaCalendario from '@/components/leads/AgendaCalendario';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput } from 'lucide-react';
 import { toast } from 'sonner';
@@ -637,7 +637,7 @@ export default function MeusClientes() {
 
         {/* Agenda de contatos (leads) */}
         {vendedorParaAgenda && (
-          <AgendaDiariaWidget
+          <AgendaCalendario
             vendedorId={vendedorParaAgenda.id}
             vendedor={vendedorParaAgenda}
             user={user}
