@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
-  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus
+  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus, AlertTriangle
 } from 'lucide-react';
+import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 import {
   format, isToday, isTomorrow, parseISO, startOfWeek,
   addDays, addWeeks, isSameDay, startOfMonth, endOfMonth,
@@ -280,8 +281,18 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
               onChange={e => setEditHorario(e.target.value)}
               className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
             />
+            {mensagemNaoDiaUtil(editData) && (
+              <p className="text-[11px] text-red-500 flex items-center gap-1 w-full">
+                <AlertTriangle className="w-3 h-3 flex-shrink-0" /> {mensagemNaoDiaUtil(editData)}
+              </p>
+            )}
             <button
-              onClick={() => { onAction(item, item.status, undefined, editData, editHorario); setEditando(false); }}
+              onClick={() => {
+                const aviso = mensagemNaoDiaUtil(editData);
+                if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
+                onAction(item, item.status, undefined, editData, editHorario);
+                setEditando(false);
+              }}
               disabled={!editData}
               className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition"
             >Salvar</button>
@@ -444,6 +455,8 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
     if (!form.vendedor_id) { toast.error('Selecione o gerente'); return; }
     if (!form.lead_id) { toast.error('Selecione o cliente/lead'); return; }
     if (!form.data_agendada) { toast.error('Informe a data'); return; }
+    const aviso = mensagemNaoDiaUtil(form.data_agendada);
+    if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
     setSaving(true);
     try {
       const v = vendedorSelecionado;
@@ -522,7 +535,12 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
               <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${mensagemNaoDiaUtil(form.data_agendada) ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
+              {mensagemNaoDiaUtil(form.data_agendada) && (
+                <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> {mensagemNaoDiaUtil(form.data_agendada)}
+                </p>
+              )}
             </div>
             <div className="w-36">
               <label className="text-xs text-gray-500 mb-1 block">Horário</label>

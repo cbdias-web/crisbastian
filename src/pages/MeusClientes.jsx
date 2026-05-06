@@ -4,6 +4,7 @@ import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaCalendario from '@/components/leads/AgendaCalendario';
+import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput, Video, Copy, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -476,6 +477,11 @@ export default function MeusClientes() {
     if (!form.descricao.trim()) { toast.error('Descreva a interação'); return; }
     if (!cadastroClienteForm.nome?.trim() || !cadastroClienteForm.cpf_cnpj?.trim() || !cadastroClienteForm.telefone?.trim() || !cadastroClienteForm.email?.trim()) {
       toast.error('Preencha todos os campos obrigatórios do cadastro: Nome, CPF/CNPJ, Telefone e E-mail');
+      return;
+    }
+    if (form.proximo_contato && !isDiaUtil(form.proximo_contato)) {
+      const aviso = mensagemNaoDiaUtil(form.proximo_contato);
+      toast.error(`Próximo contato inválido: ${aviso}`);
       return;
     }
     
@@ -1239,7 +1245,13 @@ export default function MeusClientes() {
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">Próximo contato</label>
                       <input type="date" value={form.proximo_contato} disabled={form.resultado === 'Negativo'} onChange={e => setForm(p => ({ ...p, proximo_contato: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150] disabled:opacity-40 disabled:cursor-not-allowed" />
+                        className={`w-full px-3 py-2 text-sm border rounded-xl bg-white focus:outline-none focus:border-[#1a3150] disabled:opacity-40 disabled:cursor-not-allowed ${form.proximo_contato && mensagemNaoDiaUtil(form.proximo_contato) ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
+                      {form.proximo_contato && mensagemNaoDiaUtil(form.proximo_contato) && (
+                        <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          {mensagemNaoDiaUtil(form.proximo_contato)}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
