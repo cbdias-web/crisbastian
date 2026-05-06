@@ -8,6 +8,7 @@ import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } 
 import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
+import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -225,6 +226,7 @@ export default function Layout({ children, currentPageName }) {
           onClose={() => setComunicadoPendente(null)}
         />
       )}
+      {!showOnboarding && user && <GoogleCalendarConectarModal />}
 
       {/* ===== MOBILE TOP BAR ===== */}
       {isMobile && (

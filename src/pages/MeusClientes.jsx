@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import AgendaCalendario from '@/components/leads/AgendaCalendario';
 import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
+import AgendaNotificacoes from '@/components/AgendaNotificacoes';
 import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput, Video, Copy, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -590,6 +591,7 @@ export default function MeusClientes() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+      <AgendaNotificacoes vendedorId={vendedor?.id} />
       <div className="max-w-4xl mx-auto space-y-5">
         {/* Header */}
         <div className="flex items-center justify-between">
