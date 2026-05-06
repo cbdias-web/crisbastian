@@ -540,24 +540,57 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: agenda = [], isLoading } = useQuery({
-    queryKey: ['agenda-contatos', vendedorId],
-    queryFn: () => base44.entities.AgendaContato.filter({ vendedor_id: vendedorId }, 'data_agendada'),
-    enabled: !!vendedorId,
+  // ── Filtros globais (admin) ──
+  const [filtroVendedorId, setFiltroVendedorId] = useState(''); // '' = todos
+  const [filtroPeriodoInicio, setFiltroPeriodoInicio] = useState('');
+  const [filtroPeriodoFim, setFiltroPeriodoFim] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState(''); // '' = todos
+  const [showFiltros, setShowFiltros] = useState(false);
+
+  // Admin: carrega TODOS os agendamentos; gerente: só os seus
+  const { data: agendaGlobal = [], isLoading } = useQuery({
+    queryKey: ['agenda-contatos-global'],
+    queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
+    enabled: isAdmin,
     refetchInterval: 30000,
   });
 
+  const { data: agendaVendedor = [], isLoading: isLoadingVendedor } = useQuery({
+    queryKey: ['agenda-contatos', vendedorId],
+    queryFn: () => base44.entities.AgendaContato.filter({ vendedor_id: vendedorId }, 'data_agendada'),
+    enabled: !isAdmin && !!vendedorId,
+    refetchInterval: 30000,
+  });
+
+  const agendaRaw = isAdmin ? agendaGlobal : agendaVendedor;
+  const loading = isAdmin ? isLoading : isLoadingVendedor;
+
+  // Aplica filtros
+  const agenda = useMemo(() => {
+    let items = agendaRaw;
+    if (isAdmin && filtroVendedorId) items = items.filter(a => a.vendedor_id === filtroVendedorId);
+    if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
+    if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
+    if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
+    return items;
+  }, [agendaRaw, filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, isAdmin]);
+
+  const filtroVendedorObj = todosVendedores.find(v => v.id === filtroVendedorId) || null;
+  const vendedorEfetivo = isAdmin ? (filtroVendedorObj || vendedor) : vendedor;
+
+  const invalidateAgenda = () => {
+    if (isAdmin) queryClient.invalidateQueries(['agenda-contatos-global']);
+    else queryClient.invalidateQueries(['agenda-contatos', vendedorId]);
+  };
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.AgendaContato.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['agenda-contatos', vendedorId]);
-      setUpdating(null);
-    }
+    onSuccess: () => { invalidateAgenda(); setUpdating(null); }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.AgendaContato.delete(id),
-    onSuccess: () => queryClient.invalidateQueries(['agenda-contatos', vendedorId]),
+    onSuccess: () => invalidateAgenda(),
   });
 
   const handleAction = (item, status, nova_data, nova_data_agendada) => {
@@ -570,11 +603,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           ...(nova_data ? { nova_data } : {}),
         };
     updateMutation.mutate({ id: item.id, data: updateData });
-    if (nova_data_agendada) {
-      toast.success('Data alterada!');
-    } else {
-      toast.success(STATUS[status]?.label || status);
-    }
+    toast.success(nova_data_agendada ? 'Data alterada!' : (STATUS[status]?.label || status));
   };
 
   const handleDelete = (item) => {
@@ -582,10 +611,10 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     toast.success('Agendamento excluído!');
   };
 
+  const temFiltroAtivo = !!(filtroVendedorId || filtroPeriodoInicio || filtroPeriodoFim || filtroStatus);
+
   // Build dot set for mini-cal
-  const dotDates = useMemo(() => {
-    return new Set(agenda.map(a => a.data_agendada));
-  }, [agenda]);
+  const dotDates = useMemo(() => new Set(agenda.map(a => a.data_agendada)), [agenda]);
 
   // Group by date
   const grouped = useMemo(() => {
@@ -611,16 +640,92 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const tStr = todayStr();
   const sortedDates = Object.keys(grouped).sort().filter(d => showPast ? true : d >= tStr);
 
-  if (isLoading) return (
+  if (loading) return (
     <div className="flex items-center justify-center py-12">
       <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  if (agenda.length === 0) return null;
+  if (!isAdmin && agendaRaw.length === 0) return null;
 
   return (
     <>
+      {/* ── Barra de filtros (admin) ── */}
+      {isAdmin && (
+        <div className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+          <button
+            onClick={() => setShowFiltros(f => !f)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+          >
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span>Filtros da Agenda Global</span>
+              {temFiltroAtivo && (
+                <span className="bg-[#0f1e35] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  {[filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus].filter(Boolean).length} ativo(s)
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {temFiltroAtivo && (
+                <button
+                  onClick={e => { e.stopPropagation(); setFiltroVendedorId(''); setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); setFiltroStatus(''); }}
+                  className="text-xs text-red-500 hover:underline font-normal"
+                >
+                  Limpar
+                </button>
+              )}
+              <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${showFiltros ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+
+          {showFiltros && (
+            <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 border-t border-gray-100">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block font-medium">Gerente</label>
+                <select
+                  value={filtroVendedorId}
+                  onChange={e => setFiltroVendedorId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+                >
+                  <option value="">Todos os gerentes</option>
+                  {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block font-medium">Período — início</label>
+                <input
+                  type="date"
+                  value={filtroPeriodoInicio}
+                  onChange={e => setFiltroPeriodoInicio(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block font-medium">Período — fim</label>
+                <input
+                  type="date"
+                  value={filtroPeriodoFim}
+                  onChange={e => setFiltroPeriodoFim(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block font-medium">Status</label>
+                <select
+                  value={filtroStatus}
+                  onChange={e => setFiltroStatus(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+                >
+                  <option value="">Todos</option>
+                  {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row gap-5">
 
         {/* ── LEFT: Mini Calendar + Stats ── */}
@@ -654,8 +759,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               <div className="mt-3 bg-white/10 rounded-xl h-1.5 overflow-hidden">
                 <div
                   className="h-full bg-emerald-400 rounded-xl transition-all"
-                  style={{ width: `${selItems.length > 0 ? (realizados / selItems.length) * 100 : 0}%` }}
+                  style={{ width: `${(realizados / selItems.length) * 100}%` }}
                 />
+              </div>
+            )}
+            {/* Total global filtrado */}
+            {isAdmin && (
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-blue-200/60">Total filtrado</span>
+                  <span className="text-xs font-bold text-blue-200">{agenda.length}</span>
+                </div>
               </div>
             )}
           </div>
@@ -675,7 +789,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         <div className="flex-1 min-w-0">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <button onClick={() => { setWeekOffset(w => w - 1); setView('semana'); }}
                 className="p-2 rounded-xl bg-white border border-gray-100 hover:border-gray-300 shadow-sm transition">
@@ -687,7 +801,11 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                     ? `${format(weekStart, "d MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "d MMM yyyy", { locale: ptBR })}`
                     : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                 </h2>
-                <p className="text-xs text-gray-400">Agenda de Contatos · {vendedor?.nome || 'Vendedor'}</p>
+                <p className="text-xs text-gray-400">
+                  {isAdmin
+                    ? filtroVendedorObj ? `Agenda de ${filtroVendedorObj.nome}` : 'Agenda Global — todos os gerentes'
+                    : `Agenda de Contatos · ${vendedor?.nome || 'Vendedor'}`}
+                </p>
               </div>
               <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
                 className="p-2 rounded-xl bg-white border border-gray-100 hover:border-gray-300 shadow-sm transition">
@@ -729,8 +847,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                       ${isTod ? 'border-amber-300 bg-amber-50/30' : isSelected ? 'border-[#1a3150]/30 bg-blue-50/20' : 'border-gray-100 bg-white hover:border-gray-200'}
                     `}
                   >
-                    {/* Day label */}
-                    <div className={`flex items-center justify-between mb-2`}>
+                    <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-[10px] font-semibold text-gray-400 uppercase">{WEEK_DAYS[getDay(day)]}</p>
                         <p className={`text-lg font-bold leading-none ${isTod ? 'text-amber-600' : 'text-gray-800'}`}>
@@ -744,7 +861,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                       )}
                     </div>
 
-                    {/* Event chips */}
                     <div className="space-y-1">
                       {items.slice(0, 3).map(item => {
                         const sc = STATUS[item.status] || STATUS.pendente;
@@ -753,7 +869,10 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                             className={`flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] font-medium truncate ${sc.pill}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
-                            <span className="truncate">{item.lead_nome}</span>
+                            <span className="truncate">
+                              {isAdmin && !filtroVendedorId ? `[${item.vendedor_nome?.split(' ')[0] || '?'}] ` : ''}
+                              {item.lead_nome}
+                            </span>
                           </div>
                         );
                       })}
@@ -780,22 +899,58 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                   <p className="text-gray-300 text-xs mt-1">Selecione outro dia no calendário</p>
                 </div>
               ) : (
-                selItems.map(item => (
-                  <EventCard
-                    key={item.id}
-                    item={item}
-                    isToday={isToday(selectedDate)}
-                    onAction={handleAction}
-                    onDelete={handleDelete}
-                    onPipeline={setPipelineItem}
-                    onClienteClick={onClienteClick}
-                    updating={updating}
-                  />
-                ))
+                <>
+                  {/* Agrupamento por gerente na visão global */}
+                  {isAdmin && !filtroVendedorId ? (
+                    (() => {
+                      const porGerente = selItems.reduce((acc, it) => {
+                        const key = it.vendedor_id || '_sem_gerente';
+                        if (!acc[key]) acc[key] = { nome: it.vendedor_nome || 'Sem gerente', items: [] };
+                        acc[key].items.push(it);
+                        return acc;
+                      }, {});
+                      return Object.values(porGerente).map(grupo => (
+                        <div key={grupo.nome}>
+                          <p className="text-xs font-bold text-[#1a3150] uppercase tracking-wider mb-2 mt-1 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-[#1a3150]" />
+                            {grupo.nome} · {grupo.items.length} contato{grupo.items.length !== 1 ? 's' : ''}
+                          </p>
+                          <div className="space-y-2 ml-3 pl-3 border-l-2 border-gray-100">
+                            {grupo.items.map(item => (
+                              <EventCard
+                                key={item.id}
+                                item={item}
+                                isToday={isToday(selectedDate)}
+                                onAction={handleAction}
+                                onDelete={handleDelete}
+                                onPipeline={setPipelineItem}
+                                onClienteClick={onClienteClick}
+                                updating={updating}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ));
+                    })()
+                  ) : (
+                    selItems.map(item => (
+                      <EventCard
+                        key={item.id}
+                        item={item}
+                        isToday={isToday(selectedDate)}
+                        onAction={handleAction}
+                        onDelete={handleDelete}
+                        onPipeline={setPipelineItem}
+                        onClienteClick={onClienteClick}
+                        updating={updating}
+                      />
+                    ))
+                  )}
+                </>
               )}
 
               {/* Próximas datas com eventos */}
-              {sortedDates.filter(d => d !== selStr && (showPast || d >= tStr)).length > 0 && (
+              {sortedDates.filter(d => d !== selStr && d >= tStr).length > 0 && (
                 <div className="pt-2">
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2 px-1">Outros dias</p>
                   <div className="flex flex-wrap gap-2">
@@ -827,7 +982,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
       {pipelineItem && (
         <PipelineModal
           item={pipelineItem}
-          vendedor={vendedor}
+          vendedor={vendedorEfetivo}
           user={user}
           onClose={() => setPipelineItem(null)}
           onSaved={() => setPipelineItem(null)}
@@ -842,7 +997,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);
-            queryClient.invalidateQueries(['agenda-contatos', vendedorId]);
+            invalidateAgenda();
           }}
         />
       )}
