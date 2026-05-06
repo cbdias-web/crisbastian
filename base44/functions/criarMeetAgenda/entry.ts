@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const CONNECTOR_ID = '69fb7ca02a88fc78b9e7694f';
+const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
 
 Deno.serve(async (req) => {
   try {

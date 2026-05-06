@@ -453,7 +453,7 @@ export default function MeusClientes() {
   const gerarMeetLink = async (cliente) => {
     setMeetForm(p => ({ ...p, loading: true }));
     try {
-      const CONNECTOR_ID = '69fb7ca02a88fc78b9e7694f';
+      const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
       const res = await base44.functions.invoke('criarMeetAgenda', {
         agenda_id: cliente.id,
         lead_nome: cadastroClienteForm.nome || cliente.nome,
