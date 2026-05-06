@@ -84,6 +84,12 @@ export default function GoogleCalendarConectarModal() {
               <CheckCircle2 className="w-12 h-12 text-emerald-500" />
               <p className="text-sm font-semibold text-gray-800">Google Calendar vinculado com sucesso!</p>
               <p className="text-xs text-gray-500 text-center">Você receberá notificações dos seus compromissos.</p>
+              <button
+                onClick={() => setShow(false)}
+                className="mt-2 px-5 py-2 bg-[#0f1e35] text-white text-sm font-semibold rounded-xl hover:bg-[#1a3150] transition"
+              >
+                Fechar
+              </button>
             </div>
           ) : (
             <>
