@@ -104,18 +104,25 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
 function MeetButton({ item, onLinkGerado }) {
   const [loading, setLoading] = useState(false);
   const [showTimeForm, setShowTimeForm] = useState(false);
-  const [horario, setHorario] = useState('09:00');
-  const [connected, setConnected] = useState(null); // null=checking, true, false
+  const [horarioInicio, setHorarioInicio] = useState('09:00');
+  const [horarioFim, setHorarioFim] = useState('10:00');
+  const [connected, setConnected] = useState(null);
 
-  // Check connection on first render
-  React.useEffect(() => {
+  // Auto-ajusta horário fim ao mudar início (+1h)
+  const handleInicioChange = (val) => {
+    setHorarioInicio(val);
+    const [h, m] = val.split(':').map(Number);
+    const fimH = String(Math.min(h + 1, 23)).padStart(2, '0');
+    setHorarioFim(`${fimH}:${String(m).padStart(2, '0')}`);
+  };
+
+  useEffect(() => {
     base44.auth.isAuthenticated().then(async (authed) => {
       if (!authed) { setConnected(false); return; }
       try {
         await base44.functions.invoke('criarMeetAgenda', { agenda_id: '__test__', data_agendada: '__test__' });
         setConnected(true);
       } catch (e) {
-        // If error is NOT about missing connection → connected
         const msg = e?.response?.data?.error || e?.message || '';
         setConnected(!msg.toLowerCase().includes('connection') && !msg.toLowerCase().includes('not connected') && !msg.toLowerCase().includes('token'));
       }
@@ -138,7 +145,8 @@ function MeetButton({ item, onLinkGerado }) {
         agenda_id: item.id,
         lead_nome: item.lead_nome,
         data_agendada: item.data_agendada,
-        horario_inicio: horario,
+        horario_inicio: horarioInicio,
+        horario_fim: horarioFim,
       });
       onLinkGerado(res.data.meet_link);
       toast.success('Link Meet criado!');
@@ -181,16 +189,28 @@ function MeetButton({ item, onLinkGerado }) {
 
   if (showTimeForm) {
     return (
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        <span className="text-[11px] text-gray-500">Horário:</span>
-        <input type="time" value={horario} onChange={e => setHorario(e.target.value)}
-          className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a73e8]" />
-        <button onClick={handleGenerate} disabled={loading}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
-          {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
-          Gerar
-        </button>
-        <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600">Cancelar</button>
+      <div className="mt-2 p-3 bg-blue-50/60 border border-blue-100 rounded-xl space-y-2">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Horário da reunião</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[10px] text-gray-400">Início</label>
+            <input type="time" value={horarioInicio} onChange={e => handleInicioChange(e.target.value)}
+              className="text-xs px-2 py-1.5 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-[#1a73e8] w-28" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <label className="text-[10px] text-gray-400">Fim</label>
+            <input type="time" value={horarioFim} onChange={e => setHorarioFim(e.target.value)}
+              className="text-xs px-2 py-1.5 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-[#1a73e8] w-28" />
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={handleGenerate} disabled={loading}
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
+              {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
+              Gerar Link
+            </button>
+            <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600 px-2">Cancelar</button>
+          </div>
+        </div>
       </div>
     );
   }
