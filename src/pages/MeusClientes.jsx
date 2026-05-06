@@ -184,18 +184,44 @@ export default function MeusClientes() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.InteracaoCliente.create(data),
     onSuccess: async (_, variables) => {
-      // Se resultado negativo, remover agendamentos futuros pendentes do lead
-      if (variables.resultado === 'Negativo' && variables.cliente_id) {
-        const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Remover agendamentos futuros pendentes do lead (sempre, para evitar duplicatas)
+      if (variables.cliente_id) {
         const agendas = await base44.entities.AgendaContato.filter({ lead_id: variables.cliente_id });
-        const futuras = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
-        for (const a of futuras) await base44.entities.AgendaContato.delete(a.id);
-        queryClient.invalidateQueries(['agenda-contatos']);
+        const futurasPendentes = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
+        for (const a of futurasPendentes) await base44.entities.AgendaContato.delete(a.id);
       }
+
+      // Se há próximo contato e resultado não negativo, criar nova agenda para a data programada
+      if (variables.proximo_contato && variables.resultado !== 'Negativo' && variables.cliente_id) {
+        const cliente = clientes.find(c => c.id === variables.cliente_id);
+        await base44.entities.AgendaContato.create({
+          lead_id: variables.cliente_id,
+          lead_nome: variables.cliente_nome || '',
+          lead_cpf_cnpj: cliente?.cpf_cnpj || '',
+          lead_telefone: cliente?.telefone || '',
+          cliente_id: '',
+          vendedor_id: variables.vendedor_id || '',
+          vendedor_nome: variables.vendedor_nome || '',
+          data_agendada: variables.proximo_contato,
+          posicao_dia: 0,
+          lote_id: '',
+          status: 'pendente',
+          resultado: ''
+        });
+      }
+
+      queryClient.invalidateQueries(['agenda-contatos']);
       queryClient.invalidateQueries(['interacoes-crm']);
       setShowForm(null);
       setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
-      toast.success('Interação registrada!' + (variables.resultado === 'Negativo' ? ' Agenda futura removida.' : ''));
+      const msg = variables.resultado === 'Negativo'
+        ? 'Interação registrada! Agenda futura removida.'
+        : variables.proximo_contato
+          ? `Interação registrada! Próximo contato agendado para ${variables.proximo_contato.split('-').reverse().join('/')}.`
+          : 'Interação registrada!';
+      toast.success(msg);
     }
   });
 
