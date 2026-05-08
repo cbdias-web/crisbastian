@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw } from 'lucide-react';
+import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw, Download } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import EinsteinCoach from '@/components/treinamento/JarvisCoach';
 import ProfessorMascote from '@/components/treinamento/ProfessorMascote';
 
@@ -168,13 +169,33 @@ export default function Treinamento() {
                 </button>
               </div>
               {aulaAtiva.tipo === 'texto' && aulaAtiva.texto_conteudo && (
-                <div className="mt-6 prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">{aulaAtiva.texto_conteudo}</div>
+                <div className="mt-6 prose prose-sm max-w-none text-gray-700">
+                  <ReactMarkdown>{aulaAtiva.texto_conteudo}</ReactMarkdown>
+                </div>
               )}
               {aulaAtiva.tipo === 'link' && aulaAtiva.url_conteudo && (
-                <a href={aulaAtiva.url_conteudo} target="_blank" rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition">
-                  <ExternalLink className="w-4 h-4" /> Abrir Link
-                </a>
+                aulaAtiva.url_conteudo.startsWith('/api/functions/') ? (
+                  <button
+                    onClick={async () => {
+                      const fnName = aulaAtiva.url_conteudo.replace('/api/functions/', '');
+                      const res = await base44.functions.invoke(fnName, {});
+                      const blob = new Blob([res.data], { type: 'application/pdf' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${aulaAtiva.titulo}.pdf`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#0f1e35] text-white rounded-xl text-sm font-medium hover:bg-[#1a3150] transition">
+                    <Download className="w-4 h-4" /> Baixar PDF
+                  </button>
+                ) : (
+                  <a href={aulaAtiva.url_conteudo} target="_blank" rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium hover:bg-blue-100 transition">
+                    <ExternalLink className="w-4 h-4" /> Abrir Link
+                  </a>
+                )
               )}
               {/* Próxima aula */}
               {proximaAula && (
