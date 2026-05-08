@@ -9,7 +9,15 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim } = await req.json();
+    const body = await req.json();
+
+    // Check-only mode: just verify if connection exists
+    if (body.__check_only) {
+      await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+      return Response.json({ connected: true });
+    }
+
+    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim } = body;
 
     if (!agenda_id || !data_agendada) {
       return Response.json({ error: 'agenda_id e data_agendada são obrigatórios' }, { status: 400 });

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Calendar, CheckCircle2 } from 'lucide-react';
 
 const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
-const STORAGE_KEY = 'google_calendar_conectado_v1';
+const STORAGE_KEY = 'google_calendar_conectado_v2';
 
 // Exporta função utilitária para abrir o modal manualmente
 export function abrirModalGoogleCalendar() {
