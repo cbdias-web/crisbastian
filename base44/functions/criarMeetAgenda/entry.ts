@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
     const startTime = horario_inicio || '09:00';
     const endTime = horario_fim || `${String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0')}:${startTime.split(':')[1]}`;
 
-    const startDateTime = `${dateStr}T${startTime}:00`;
-    const endDateTime = `${dateStr}T${endTime}:00`;
+    const startDateTime = `${dateStr}T${startTime}:00-03:00`;
+    const endDateTime = `${dateStr}T${endTime}:00-03:00`;
 
     const eventBody = {
       summary: `Reunião com ${lead_nome || 'Lead'}`,
