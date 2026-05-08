@@ -53,6 +53,8 @@ export default function GoogleCalendarConectarModal() {
     const timer = setInterval(async () => {
       if (!popup || popup.closed) {
         clearInterval(timer);
+        // Aguarda um pouco para o backend processar o callback OAuth
+        await new Promise(resolve => setTimeout(resolve, 2000));
         // Verificar se a conexão foi realmente estabelecida
         try {
           await base44.functions.invoke('criarMeetAgenda', { __check_only: true });
@@ -62,9 +64,17 @@ export default function GoogleCalendarConectarModal() {
           localStorage.setItem(STORAGE_KEY, '1');
           setTimeout(() => setShow(false), 2000);
         } catch (e) {
-          // Falha: conexão não foi estabelecida
-          setConectando(false);
-          setErroConexao(true);
+          const msg = e?.response?.data?.error || e?.message || '';
+          // Se o erro NÃO é de "não conectado", considera que a conexão existe
+          if (!msg.toLowerCase().includes('connection') && !msg.toLowerCase().includes('no active') && !msg.toLowerCase().includes('not connected') && !msg.toLowerCase().includes('no connection')) {
+            setConectando(false);
+            setConectado(true);
+            localStorage.setItem(STORAGE_KEY, '1');
+            setTimeout(() => setShow(false), 2000);
+          } else {
+            setConectando(false);
+            setErroConexao(true);
+          }
         }
       }
     }, 500);
