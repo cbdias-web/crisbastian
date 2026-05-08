@@ -15,6 +15,7 @@ export default function GoogleCalendarConectarModal() {
   const [show, setShow] = useState(false);
   const [conectando, setConectando] = useState(false);
   const [conectado, setConectado] = useState(false);
+  const [erroConexao, setErroConexao] = useState(false);
 
   useEffect(() => {
     const handleAbrir = () => setShow(true);
@@ -49,13 +50,22 @@ export default function GoogleCalendarConectarModal() {
     setConectando(true);
     const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
     const popup = window.open(url, '_blank', 'width=600,height=700');
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       if (!popup || popup.closed) {
         clearInterval(timer);
-        setConectando(false);
-        setConectado(true);
-        localStorage.setItem(STORAGE_KEY, '1');
-        setTimeout(() => setShow(false), 2000);
+        // Verificar se a conexão foi realmente estabelecida
+        try {
+          await base44.functions.invoke('criarMeetAgenda', { __check_only: true });
+          // Sucesso: conexão estabelecida
+          setConectando(false);
+          setConectado(true);
+          localStorage.setItem(STORAGE_KEY, '1');
+          setTimeout(() => setShow(false), 2000);
+        } catch (e) {
+          // Falha: conexão não foi estabelecida
+          setConectando(false);
+          setErroConexao(true);
+        }
       }
     }, 500);
   };
@@ -90,6 +100,21 @@ export default function GoogleCalendarConectarModal() {
               >
                 Fechar
               </button>
+            </div>
+          ) : erroConexao ? (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-800">Conexão não foi concluída</p>
+              <p className="text-xs text-gray-500 text-center">A autorização do Google não foi completada ou foi cancelada. Tente novamente.</p>
+              <button
+                onClick={() => { setErroConexao(false); }}
+                className="mt-2 px-5 py-2 bg-[#1a73e8] text-white text-sm font-semibold rounded-xl hover:bg-[#1557b0] transition"
+              >
+                Tentar novamente
+              </button>
+              <button onClick={handlePularPorAgora} className="text-xs text-gray-400 hover:text-gray-600">Fechar</button>
             </div>
           ) : (
             <>
