@@ -198,6 +198,35 @@ const sections = [
     ],
   },
   {
+    id: 'google-calendar', icon: Globe, title: 'Google Calendar & Meet',
+    color: 'from-blue-500 to-blue-600', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-100',
+    content: [
+      { subtitle: 'O que é a integração?', text: 'Cada usuário pode vincular sua própria conta Google ao sistema. Isso permite criar reuniões Google Meet com um clique direto da Agenda do Dia e receber notificações 15 minutos antes de cada compromisso.' },
+      { subtitle: 'A URI já está configurada?', text: 'Sim! O administrador já configurou a URI de redirecionamento no Google Cloud Console. Você não precisa fazer nada técnico — só autorizar sua conta Google no app.' },
+      { subtitle: 'Como vincular sua conta Google (passo a passo)', steps: [
+        'Acesse a página "Agenda do Dia" no menu lateral.',
+        'Clique no botão "Google Calendar" (ícone colorido do Google) no canto superior direito.',
+        'Uma janela popup do Google abrirá — faça login com sua conta Google corporativa.',
+        'Autorize as permissões solicitadas (Google Calendar e criação de eventos).',
+        'Feche o popup — o sistema detecta automaticamente e confirma a conexão.',
+        'Pronto! Agora você pode gerar links Meet e receber lembretes automáticos.',
+      ]},
+      { subtitle: 'Como gerar um link Google Meet', steps: [
+        'Na Agenda do Dia, localize o agendamento desejado.',
+        'Clique em "Gerar Link Meet" abaixo do card do contato.',
+        'Informe o horário de início e clique em "Gerar Link".',
+        'O link é criado e salvo automaticamente no agendamento.',
+        'Use o botão "Copiar" para compartilhar com o cliente.',
+      ]},
+      { subtitle: 'Notificações automáticas', text: 'O sistema envia uma notificação na tela (e no navegador, se permitido) 15 minutos antes de cada compromisso agendado com horário definido. Não é necessária nenhuma configuração adicional.' },
+      { subtitle: 'Solução de problemas', items: [
+        '**Erro "Acesso bloqueado":** Certifique-se de estar usando a conta Google correta e tente novamente.',
+        '**Botão "Conectar Google Calendar" aparece no lugar do Meet:** Sua conta não está vinculada — siga o passo a passo acima.',
+        '**Link Meet não gerado:** Verifique sua conexão e se a conta Google ainda está autorizada.',
+      ]},
+    ],
+  },
+  {
     id: 'comunicados', icon: Megaphone, title: 'Comunicados',
     color: 'from-yellow-500 to-yellow-600', bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-100',
     content: [
@@ -234,7 +263,7 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados'],
+    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
