@@ -110,6 +110,7 @@ export default function EinsteinCoach({ aulaIdx, totalAulas, nomeAula, concluida
     const rect = el.getBoundingClientRect();
     hasDragged.current = false;
     dragRef.current = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+
     const onMove = (ev) => {
       const dx = ev.clientX - dragRef.current.startX;
       const dy = ev.clientY - dragRef.current.startY;
@@ -119,14 +120,25 @@ export default function EinsteinCoach({ aulaIdx, totalAulas, nomeAula, concluida
       const h = el.offsetHeight;
       const newLeft = Math.max(0, Math.min(window.innerWidth - w, dragRef.current.origLeft + dx));
       const newTop = Math.max(0, Math.min(window.innerHeight - h, dragRef.current.origTop + dy));
-      const newPos = { left: newLeft, top: newTop, bottom: null, right: null };
-      setPos(newPos);
-      localStorage.setItem(POS_KEY, JSON.stringify(newPos));
+      // Mover diretamente via style para não causar re-render durante o drag
+      el.style.left = newLeft + 'px';
+      el.style.top = newTop + 'px';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      dragRef.current.lastLeft = newLeft;
+      dragRef.current.lastTop = newTop;
     };
+
     const onUp = () => {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      if (hasDragged.current && dragRef.current.lastLeft != null) {
+        const newPos = { left: dragRef.current.lastLeft, top: dragRef.current.lastTop, bottom: null, right: null };
+        setPos(newPos);
+        localStorage.setItem(POS_KEY, JSON.stringify(newPos));
+      }
     };
+
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };
