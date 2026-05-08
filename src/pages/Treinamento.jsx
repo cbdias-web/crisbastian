@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import EinsteinCoach from '@/components/treinamento/JarvisCoach';
-import ProfessorMascote from '@/components/treinamento/ProfessorMascote';
 
 const TIPO_ICONS = {
   video: PlayCircle,
@@ -223,10 +222,6 @@ export default function Treinamento() {
         proximaAula={proximaAula}
         onProxima={() => setAulaAtiva(proximaAula)}
       />
-      <ProfessorMascote
-        contexto={concluida ? 'concluida' : 'aula'}
-        userName={user?.nome_tratamento || user?.full_name || ''}
-      />
       </>
     );
   }
@@ -307,12 +302,7 @@ export default function Treinamento() {
           </div>
         </div>
       </div>
-      <ProfessorMascote
-        contexto="modulo"
-        progresso={progresso}
-        nomeModulo={modulo.titulo}
-        userName={user?.nome_tratamento || user?.full_name || ''}
-      />
+
       </>
     );
   }
@@ -450,11 +440,7 @@ export default function Treinamento() {
           </div>
         )}
       </div>
-      <ProfessorMascote
-        contexto="dashboard"
-        progresso={progressoGeral}
-        userName={user?.nome_tratamento || user?.full_name || ''}
-      />
+
     </div>
   );
 }

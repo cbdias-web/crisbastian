@@ -1,5 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, ChevronRight, Star } from 'lucide-react';
+
+const POS_KEY = 'einstein_coach_pos_v1';
+function loadPos() {
+  try { const s = localStorage.getItem(POS_KEY); if (s) return JSON.parse(s); } catch {}
+  return { right: 24, bottom: 96, left: null, top: null };
+}
 
 const EINSTEIN_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/8c19256a8_generated_image.png';
 
@@ -66,6 +72,10 @@ export default function EinsteinCoach({ aulaIdx, totalAulas, nomeAula, concluida
   const [bounce, setBounce] = useState(true);
   const [msgIdx, setMsgIdx] = useState(0);
   const [animating, setAnimating] = useState(false);
+  const [pos, setPos] = useState(loadPos);
+  const containerRef = useRef(null);
+  const dragRef = useRef(null);
+  const hasDragged = useRef(false);
 
   const mensagens = getMensagens(aulaIdx, totalAulas, nomeAula, concluida, proximaAula);
   const mensagem = mensagens[msgIdx % mensagens.length];
@@ -92,11 +102,50 @@ export default function EinsteinCoach({ aulaIdx, totalAulas, nomeAula, concluida
     }
   };
 
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    hasDragged.current = false;
+    dragRef.current = { startX: e.clientX, startY: e.clientY, origLeft: rect.left, origTop: rect.top };
+    const onMove = (ev) => {
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged.current = true;
+      if (!hasDragged.current) return;
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const newLeft = Math.max(0, Math.min(window.innerWidth - w, dragRef.current.origLeft + dx));
+      const newTop = Math.max(0, Math.min(window.innerHeight - h, dragRef.current.origTop + dy));
+      const newPos = { left: newLeft, top: newTop, bottom: null, right: null };
+      setPos(newPos);
+      localStorage.setItem(POS_KEY, JSON.stringify(newPos));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   if (dismissed || !visible) return null;
 
+  const containerStyle = {
+    position: 'fixed',
+    zIndex: 40,
+    left: pos.left ?? 'auto',
+    right: pos.right ?? 'auto',
+    top: pos.top != null ? pos.top : 'auto',
+    bottom: pos.top != null ? 'auto' : (pos.bottom ?? 96),
+  };
+
   return (
-    <div className="fixed bottom-24 right-6 z-40 flex flex-col items-end gap-1 select-none"
-      style={{ maxWidth: '300px' }}>
+    <div ref={containerRef} style={{ ...containerStyle, maxWidth: '300px' }}
+      className="flex flex-col items-end gap-1 select-none cursor-grab active:cursor-grabbing"
+      onMouseDown={onMouseDown}>
 
       {/* Balão de fala */}
       <div
