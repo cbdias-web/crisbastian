@@ -139,10 +139,24 @@ const sections = [
     id: 'meus-clientes', icon: Briefcase, title: 'Agenda do Dia',
     color: 'from-green-500 to-green-600', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-100',
     content: [
-      { subtitle: 'O que é?', text: 'Gerenciamento da carteira de clientes e leads. Registre interações, acompanhe contatos e converta leads em clientes cativos.' },
+      { subtitle: 'O que é?', text: 'Gerenciamento da carteira de clientes e leads. Registre interações, acompanhe contatos e converta leads em clientes cativos. Integra com Google Calendar e Google Meet.' },
       { subtitle: 'Criar novo lead', steps: ['Clique em "Novo Lead/Prospect".', 'Preencha nome, CPF/CNPJ, telefone e e-mail.', 'Clique em "Criar e Registrar Interação".', 'O sistema abre o formulário de primeira interação.'] },
+      { subtitle: 'Registrar uma interação', steps: ['Expanda o cliente e clique em "Nova Interação".', 'Complemente o cadastro (Nome, CPF, Telefone, E-mail — obrigatórios).', 'Defina tipo, resultado, data do contato e próximo contato.', 'Marque os produtos abordados (opcional).', 'Gere um link Google Meet se necessário.', 'Preencha a descrição e clique em "Salvar Interação".'] },
+      { subtitle: '👥 Agendar próximo contato para outro gerente (Admin)', items: [
+        '**Disponível apenas para administradores** ao definir uma data de "Próximo contato".',
+        'Um campo "Agendar para o gerente" aparece automaticamente após preencher a data.',
+        'Selecione qualquer gerente da equipe para receber o agendamento — útil para redistribuição de contatos.',
+        'Se deixado em branco, o agendamento vai para o gerente da carteira (comportamento padrão).',
+        '**Sobreposição evitada automaticamente:** se o gerente selecionado já tem um agendamento pendente com o mesmo cliente na mesma data, o sistema bloqueia e exibe aviso.',
+      ]},
+      { subtitle: '🚫 Prevenção de agendamentos duplicados', items: [
+        'O sistema verifica duplicatas antes de criar qualquer agendamento.',
+        '**Ao salvar interação:** cheque se já existe agenda pendente para o mesmo lead+gerente na data escolhida.',
+        '**Ao criar agendamento manual (admin):** mesmo lead + mesmo gerente + mesma data → bloqueado com mensagem de aviso.',
+        'Quando o agendamento já existe e seria duplicado, o sistema exibe "Agendamento já existia para este gerente nesta data — não duplicado."',
+      ]},
       { subtitle: 'Converter lead', text: 'Lead com cadastro completo e histórico de interações: clique em "Converter em Cliente".' },
-      { subtitle: 'Agenda diária', text: 'Seção "Agenda de Contatos" mostra leads agendados por data. Marque como "Realizado", "Não atendeu" ou "Reagendar".' },
+      { subtitle: 'Calendário de agendamentos', text: 'Visualize agendamentos em visão Semana ou Dia. Marque como "Realizado", "Não atendeu" ou "Reagendar". Admins veem a agenda global de todos os gerentes com filtros por gerente, período e status.' },
     ],
   },
   {
