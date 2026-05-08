@@ -461,6 +461,19 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
     try {
       const v = vendedorSelecionado;
       const c = clienteSelecionado;
+
+      // Verificar sobreposição: já existe agenda pendente para este lead+gerente nesta data?
+      const existentes = await base44.entities.AgendaContato.filter({
+        vendedor_id: v.id,
+        data_agendada: form.data_agendada,
+      });
+      const jaExiste = existentes.some(a => a.lead_id === c.id && a.status === 'pendente');
+      if (jaExiste) {
+        toast.error(`${v.nome} já tem um agendamento pendente com ${c.nome} nesta data.`);
+        setSaving(false);
+        return;
+      }
+
       await base44.entities.AgendaContato.create({
         lead_id: c.id,
         lead_nome: c.nome,

@@ -56,6 +56,7 @@ export default function MeusClientes() {
   const [showNovoLeadModal, setShowNovoLeadModal] = useState(false);
   const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '', subcarteira: '' });
   const [meetForm, setMeetForm] = useState({ horario: '', gerarMeet: false, link: '', loading: false });
+  const [agendaGerenteId, setAgendaGerenteId] = useState('');
   const [clienteModalId, setClienteModalId] = useState(null);
   const [criandoLead, setCriandoLead] = useState(false);
   const [mostrarClientes, setMostrarClientes] = useState(false);
@@ -201,8 +202,21 @@ export default function MeusClientes() {
           const parasRemover = futurasPendentes.filter(a => a.data_agendada !== variables.proximo_contato);
           for (const a of parasRemover) await base44.entities.AgendaContato.delete(a.id);
 
-          // Criar agenda para o próximo contato se ainda não existir
-          const jaExiste = futurasPendentes.some(a => a.data_agendada === variables.proximo_contato);
+          // Criar agenda para o próximo contato se ainda não existir (sem sobreposição)
+          const gerenteAgendaId = variables.agenda_gerente_id || variables.vendedor_id || '';
+          const gerenteAgendaNome = variables.agenda_gerente_id
+            ? (todosVendedores.find(v => v.id === variables.agenda_gerente_id)?.nome || variables.vendedor_nome || '')
+            : (variables.vendedor_nome || '');
+
+          // Verificar sobreposição: já tem agenda pendente para este lead+gerente nesta data?
+          const todasAgendasData = await base44.entities.AgendaContato.filter({
+            vendedor_id: gerenteAgendaId,
+            data_agendada: variables.proximo_contato,
+          });
+          const jaExiste = todasAgendasData.some(
+            a => a.lead_id === variables.cliente_id && a.status === 'pendente'
+          );
+
           if (!jaExiste) {
             const cliente = clientes.find(c => c.id === variables.cliente_id);
             await base44.entities.AgendaContato.create({
@@ -211,14 +225,16 @@ export default function MeusClientes() {
               lead_cpf_cnpj: cliente?.cpf_cnpj || '',
               lead_telefone: cliente?.telefone || '',
               cliente_id: variables.cliente_id,
-              vendedor_id: variables.vendedor_id || '',
-              vendedor_nome: variables.vendedor_nome || '',
+              vendedor_id: gerenteAgendaId,
+              vendedor_nome: gerenteAgendaNome,
               data_agendada: variables.proximo_contato,
               posicao_dia: 0,
               lote_id: '',
               status: 'pendente',
               resultado: ''
             });
+          } else {
+            toast.info('Agendamento já existia para este gerente nesta data — não duplicado.');
           }
         }
       }
@@ -508,7 +524,8 @@ export default function MeusClientes() {
       cliente_nome: cadastroClienteForm.nome.trim(),
       vendedor_id: vendedor?.id || '',
       vendedor_nome: vendedor?.nome || user?.full_name || '',
-      produtos_negociados: form.produtos.length > 0 ? form.produtos.join(', ') : ''
+      produtos_negociados: form.produtos.length > 0 ? form.produtos.join(', ') : '',
+      agenda_gerente_id: agendaGerenteId || '',
     });
   };
 
@@ -523,6 +540,7 @@ export default function MeusClientes() {
       estado: cliente.estado || '',
     });
     setForm({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro', produtos: [] });
+    setAgendaGerenteId('');
     setShowForm(cliente.id);
   };
 
@@ -1144,7 +1162,7 @@ export default function MeusClientes() {
                   <h3 className="font-bold text-white text-base">Nova Interação</h3>
                   <p className="text-blue-200 text-xs mt-0.5">{cliente.nome}</p>
                 </div>
-                <button onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); }} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition">
+                <button onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); setAgendaGerenteId(''); }} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white transition">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -1212,6 +1230,24 @@ export default function MeusClientes() {
                         </p>
                       )}
                     </div>
+                    {isAdmin && form.proximo_contato && (
+                      <div className="col-span-2">
+                        <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
+                          <Users className="w-3 h-3" /> Agendar para o gerente
+                        </label>
+                        <select
+                          value={agendaGerenteId}
+                          onChange={e => setAgendaGerenteId(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+                        >
+                          <option value="">— Gerente atual ({vendedor?.nome || 'sem vínculo'}) —</option>
+                          {todosVendedores.map(v => (
+                            <option key={v.id} value={v.id}>{v.nome}</option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-gray-400 mt-1">Se vazio, usa o gerente da carteira. Sobreposições são evitadas automaticamente.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1305,7 +1341,7 @@ export default function MeusClientes() {
 
               {/* Footer */}
               <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0 bg-gray-50/50">
-                <Button variant="outline" onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); }}>
+                <Button variant="outline" onClick={() => { setShowForm(null); setCadastroClienteForm({}); setMeetForm({ horario: '', gerarMeet: false, link: '', loading: false }); setAgendaGerenteId(''); }}>
                   <X className="w-4 h-4 mr-1.5" /> Cancelar
                 </Button>
                 <Button onClick={() => handleSave(cliente)} disabled={createMutation.isPending} className="bg-[#0f1e35] hover:bg-[#1a3150]">
