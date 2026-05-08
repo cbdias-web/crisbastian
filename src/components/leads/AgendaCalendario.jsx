@@ -866,14 +866,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               </button>
             </div>
             <div className="flex items-center gap-2">
-              {isAdmin && (
-                <button
-                  onClick={() => setShowNovoAgendamento(true)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
-                >
-                  <UserPlus className="w-3.5 h-3.5" /> Agendar
-                </button>
-              )}
+              <button
+                onClick={() => setShowNovoAgendamento(true)}
+                className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Agendar
+              </button>
               <button
                 onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('semana'); }}
                 className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"

@@ -154,7 +154,7 @@ export default function MeusClientes() {
   const { data: todosVendedores = [] } = useQuery({
     queryKey: ['vendedores-crm'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
-    enabled: isAdmin
+    enabled: !!user
   });
 
   // Para admin: busca todos e filtra client-side; para usuário normal: filtra pelo vendedor
@@ -1230,7 +1230,7 @@ export default function MeusClientes() {
                         </p>
                       )}
                     </div>
-                    {isAdmin && form.proximo_contato && (
+                    {todosVendedores.length > 0 && form.proximo_contato && (
                       <div className="col-span-2">
                         <label className="text-xs text-gray-500 mb-1 block flex items-center gap-1">
                           <Users className="w-3 h-3" /> Agendar para o gerente
