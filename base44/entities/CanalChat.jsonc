@@ -18,6 +18,18 @@
     "ativo": {
       "type": "boolean",
       "default": true
+    },
+    "membros": {
+      "type": "array",
+      "description": "Lista de emails dos membros do canal",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "criador_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio que criou o canal"
     }
   },
   "required": [
