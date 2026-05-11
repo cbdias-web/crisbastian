@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, FileText, CalendarPlus, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
 
 function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
@@ -116,6 +117,123 @@ function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoadin
   );
 }
 
+function AgendaModal({ cliente, vendedores, onClose }) {
+  const [form, setForm] = useState({
+    vendedor_id: cliente.vendedor_id || "",
+    data_agendada: "",
+    horario: "",
+    observacao: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const vendedorSelecionado = vendedores.find(v => v.id === form.vendedor_id);
+
+  const handleSave = async () => {
+    if (!form.vendedor_id) { toast.error("Selecione o gerente responsável"); return; }
+    if (!form.data_agendada) { toast.error("Informe a data do agendamento"); return; }
+    if (!form.horario) { toast.error("Informe o horário do agendamento"); return; }
+    const aviso = mensagemNaoDiaUtil(form.data_agendada);
+    if (aviso) { toast.error(`Data inválida: ${aviso}`); return; }
+
+    setSaving(true);
+    try {
+      await base44.entities.AgendaContato.create({
+        lead_id: cliente.id,
+        lead_nome: cliente.nome,
+        lead_cpf_cnpj: cliente.cpf_cnpj || "",
+        lead_telefone: cliente.telefone || "",
+        cliente_id: cliente.id,
+        vendedor_id: form.vendedor_id,
+        vendedor_nome: vendedorSelecionado?.nome || "",
+        data_agendada: form.data_agendada,
+        horario: form.horario,
+        posicao_dia: 0,
+        lote_id: "",
+        status: "pendente",
+        resultado: form.observacao || "",
+      });
+      toast.success(`Agendamento criado para ${vendedorSelecionado?.nome} em ${form.data_agendada.split("-").reverse().join("/")}!`);
+      onClose();
+    } catch (e) {
+      toast.error("Erro ao criar agendamento");
+    }
+    setSaving(false);
+  };
+
+  const avisoData = form.data_agendada ? mensagemNaoDiaUtil(form.data_agendada) : null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100" style={{ background: "linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)" }}>
+          <div>
+            <h2 className="text-sm font-bold text-white">Agendar Contato</h2>
+            <p className="text-blue-200 text-xs mt-0.5">{cliente.nome}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg transition text-white/70 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block font-medium">Gerente responsável *</label>
+            <select
+              value={form.vendedor_id}
+              onChange={e => setForm(f => ({ ...f, vendedor_id: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+            >
+              <option value="">Selecione o gerente...</option>
+              {vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+            </select>
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <label className="text-xs text-gray-500 mb-1 block font-medium">Data *</label>
+              <input
+                type="date"
+                value={form.data_agendada}
+                onChange={e => setForm(f => ({ ...f, data_agendada: e.target.value }))}
+                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${avisoData ? "border-red-300 bg-red-50" : "border-gray-200"}`}
+              />
+            </div>
+            <div className="w-32">
+              <label className="text-xs text-gray-500 mb-1 block font-medium">Horário *</label>
+              <input
+                type="time"
+                value={form.horario}
+                onChange={e => setForm(f => ({ ...f, horario: e.target.value }))}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+              />
+            </div>
+          </div>
+          {avisoData && (
+            <p className="flex items-center gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /> {avisoData}
+            </p>
+          )}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block font-medium">Observação</label>
+            <input
+              type="text"
+              value={form.observacao}
+              onChange={e => setForm(f => ({ ...f, observacao: e.target.value }))}
+              placeholder="Contexto ou motivo do contato..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100">
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={saving || !!avisoData} className="bg-[#1a3150] hover:bg-[#0f1e35]">
+            {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" /> : <CalendarPlus className="w-4 h-4 mr-2" />}
+            Agendar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Clientes() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -124,6 +242,7 @@ export default function Clientes() {
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [agendaCliente, setAgendaCliente] = useState(null);
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes"],
@@ -330,6 +449,10 @@ export default function Clientes() {
                       </td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
+                          <button onClick={() => setAgendaCliente(c)}
+                            className="p-1.5 hover:bg-emerald-50 rounded-lg transition" title="Agendar contato">
+                            <CalendarPlus className="w-3.5 h-3.5 text-emerald-500" />
+                          </button>
                           <button onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })} 
                             className="p-1.5 hover:bg-blue-50 rounded-lg transition" title="Criar contrato">
                             <FileText className="w-3.5 h-3.5 text-blue-400" />
@@ -360,6 +483,15 @@ export default function Clientes() {
           onClose={() => setModal(null)}
           onSave={handleSave}
           isLoading={isSaving}
+        />
+      )}
+
+      {/* Modal Agendar Contato */}
+      {agendaCliente && (
+        <AgendaModal
+          cliente={agendaCliente}
+          vendedores={vendedores}
+          onClose={() => setAgendaCliente(null)}
         />
       )}
 
