@@ -279,7 +279,7 @@ export default function ChatPage() {
     enabled: !!user,
     refetchInterval: 60000,
   });
-  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false && u.visivel_no_chat !== false);
+  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false);
   const todosUsuariosAtivos = usuarios.filter(u => u.ativo !== false);
 
   // Canais visíveis: fixos + canais do banco onde o usuário é membro (ou admin vê todos)
