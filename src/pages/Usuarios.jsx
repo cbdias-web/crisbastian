@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const menusDisponiveis = [
@@ -360,6 +360,7 @@ export default function Usuarios() {
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Papel</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Permissões</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Chat</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
@@ -404,6 +405,22 @@ export default function Usuarios() {
                         }`}>
                           {usuario.ativo === false ? 'Bloqueado' : 'Ativo'}
                         </span>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <button
+                          onClick={() => updateUserMutation.mutate({ id: usuario.id, data: { visivel_no_chat: usuario.visivel_no_chat === false ? true : false } })}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition ${
+                            usuario.visivel_no_chat === false
+                              ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                          }`}
+                          title={usuario.visivel_no_chat === false ? 'Oculto no chat — clique para mostrar' : 'Visível no chat — clique para ocultar'}
+                        >
+                          {usuario.visivel_no_chat === false
+                            ? <><MessageSquareOff className="w-3.5 h-3.5" /> Oculto</>
+                            : <><MessageSquare className="w-3.5 h-3.5" /> Visível</>
+                          }
+                        </button>
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
