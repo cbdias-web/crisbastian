@@ -119,6 +119,30 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 60000
   });
 
+  const { data: todasMensagensChat = [] } = useQuery({
+    queryKey: ['chat-unread-global'],
+    queryFn: async () => {
+      const all = await base44.entities.MensagemChat.list('-created_date', 100);
+      return all.filter(m => m.remetente_email !== user?.email);
+    },
+    enabled: !!user,
+    refetchInterval: 5000
+  });
+
+  const mensagensNaoLidas = (() => {
+    if (!user || !todasMensagensChat.length) return 0;
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    let count = 0;
+    for (const msg of todasMensagensChat) {
+      const canal = msg.canal;
+      const msgTime = new Date(msg.created_date).getTime();
+      const seenTime = lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0;
+      if (msgTime > seenTime) count++;
+    }
+    return count;
+  })();
+
   const totalPendentes = notificacoesPendentes.length + aceitesPendentes.length;
 
   const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
@@ -425,6 +449,9 @@ export default function Layout({ children, currentPageName }) {
                 }`}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
+                {item.page === 'ChatPage' && mensagensNaoLidas > 0 && (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
+                )}
               </Link>
             );
           })}

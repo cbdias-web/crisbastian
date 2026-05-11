@@ -328,6 +328,7 @@ export default function AssistenteFloating() {
   const [mensagensPendentes, setMensagensPendentes] = useState([]);
   const [showPostSuggestions, setShowPostSuggestions] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState([]);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const inactivityTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -340,16 +341,36 @@ export default function AssistenteFloating() {
     }).catch(() => setUserLoaded(true));
   }, []);
 
-  // Verifica mensagens pendentes ao carregar e periodicamente
+  // Verifica mensagens pendentes e não lidas do chat ao carregar e periodicamente
   useEffect(() => {
     if (!userLoaded) return;
     const poll = async () => {
       await checkMensagensPendentes();
+      await checkUnreadChat();
     };
     poll();
-    const interval = setInterval(poll, 30000);
+    const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
   }, [userLoaded]);
+
+  const checkUnreadChat = async () => {
+    try {
+      const user = await base44.auth.me();
+      if (!user?.email) return;
+      const todasMensagens = await base44.entities.MensagemChat.list('-created_date', 100);
+      const filtradas = todasMensagens.filter(m => m.remetente_email !== user.email);
+      let lastSeen = {};
+      try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+      let count = 0;
+      for (const msg of filtradas) {
+        const canal = msg.canal;
+        const msgTime = new Date(msg.created_date).getTime();
+        const seenTime = lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0;
+        if (msgTime > seenTime) count++;
+      }
+      setUnreadChatCount(count);
+    } catch (e) {}
+  };
 
   // Re-verifica ao abrir — apenas carrega as pendentes, sem marcar automaticamente
   useEffect(() => {
@@ -598,7 +619,7 @@ export default function AssistenteFloating() {
           className="group relative cursor-grab active:cursor-grabbing"
           title="Jarvis (arraste para mover)"
         >
-          {mensagensPendentes.length > 0 && !open ? (
+          {(mensagensPendentes.length > 0 || unreadChatCount > 0) && !open ? (
             <div className="relative w-14 h-14 flex items-center justify-center">
               <span className="absolute inset-0 rounded-full bg-red-500 opacity-40 animate-ping" />
               <span className="absolute inset-0 rounded-full bg-red-500 opacity-20 animate-ping" style={{ animationDelay: '0.3s' }} />
@@ -606,7 +627,7 @@ export default function AssistenteFloating() {
                 <Avatar size="lg" />
               </div>
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center z-20 shadow-lg">
-                <span className="text-white text-[10px] font-bold">{mensagensPendentes.length}</span>
+                <span className="text-white text-[10px] font-bold">{Math.max(mensagensPendentes.length, unreadChatCount)}</span>
               </span>
             </div>
           ) : (
