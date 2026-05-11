@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import {
    MessageSquare, Send, Video, Copy, Hash, Plus,
    X, Check, ExternalLink, Lock, ChevronDown, ChevronRight,
-   Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download, Phone
+   Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download
  } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -437,36 +437,7 @@ export default function ChatPage() {
     setCriandoMeet(false);
   };
 
-  const gerarChamadaAudio = async () => {
-    setCriandoMeet(true);
-    try {
-      const dataHoje = new Date().toISOString().split('T')[0];
-      const horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const nomeLocal = active.type === 'canal' ? `Chat #${active.id}` : `DM com ${active.nome}`;
-      const agendaTemp = await base44.entities.AgendaContato.create({
-        lead_id: user.id, lead_nome: `Chamada de áudio — ${nomeLocal}`,
-        vendedor_id: user.id, vendedor_nome: user.nome_tratamento || user.full_name || user.email,
-        data_agendada: dataHoje, horario: horaAgora, status: 'pendente',
-      });
-      const res = await base44.functions.invoke('criarMeetAgenda', {
-        agenda_id: agendaTemp.id, lead_nome: nomeLocal,
-        data_agendada: dataHoje, horario_inicio: horaAgora, com_meet: true,
-      });
-      const link = res.data?.meet_link;
-      if (!link) throw new Error('Link não gerado');
-      await base44.entities.AgendaContato.delete(agendaTemp.id);
-      await enviarMensagem(link);
-      window.open(link, '_blank', 'width=800,height=600');
-    } catch (e) {
-      const msg = e?.response?.data?.error || e?.message || '';
-      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
-        toast.error('Conecte sua conta Google Calendar primeiro');
-      } else {
-        toast.error('Erro ao criar chamada: ' + msg);
-      }
-    }
-    setCriandoMeet(false);
-  };
+
 
   const criarCanal = async ({ nome, icone, membros }) => {
     const canal = await base44.entities.CanalChat.create({
@@ -552,16 +523,16 @@ export default function ChatPage() {
   const podeGerenciarCanal = activeCanal && (isAdmin || activeCanal.criador_email === user?.email);
 
   return (
-    <div className="flex bg-gray-50" style={{ height: 'calc(100vh - 40px)' }}>
+    <div className="flex bg-slate-50 dark:bg-slate-900" style={{ height: 'calc(100vh - 40px)' }}>
 
       {/* ── SIDEBAR ── */}
-      <div className="w-64 flex flex-col flex-shrink-0 border-r border-gray-200 bg-white">
-        <div className="px-5 py-4 border-b border-gray-100 flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
+      <div className="w-64 flex flex-col flex-shrink-0 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex-shrink-0 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-900 dark:to-blue-950">
           <div className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-white" />
             <div>
               <h2 className="text-white font-bold text-sm">Chat Interno</h2>
-              <p className="text-blue-300/70 text-[10px]">Villela Exchange</p>
+              <p className="text-blue-100/70 text-[10px]">Villela Exchange</p>
             </div>
           </div>
         </div>
@@ -569,7 +540,7 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {/* CANAIS */}
           <button onClick={() => setShowCanais(p => !p)}
-            className="w-full flex items-center gap-1 px-2 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition">
+            className="w-full flex items-center gap-1 px-2 py-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest hover:text-slate-700 dark:hover:text-slate-300 transition">
             {showCanais ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             Canais
           </button>
@@ -582,7 +553,7 @@ export default function ChatPage() {
                 return (
                   <div key={canal.id} className="group relative">
                     <button onClick={() => setActive({ type: 'canal', id: canal.id })}
-                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 shadow-sm font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
                     >
                       <span className="text-base flex-shrink-0">{canal.icone}</span>
                       <span className="text-sm font-medium flex-1 truncate">{canal.nome}</span>
@@ -607,7 +578,7 @@ export default function ChatPage() {
               })}
               {/* Botão novo canal */}
               <button onClick={() => setShowNovoCanalModal(true)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition text-xs mt-1">
+                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition text-xs mt-1">
                 <Plus className="w-3 h-3" /> Novo canal
               </button>
             </div>
@@ -616,7 +587,7 @@ export default function ChatPage() {
           {/* MENSAGENS DIRETAS */}
           <div className="mt-3">
             <button onClick={() => setShowDMs(p => !p)}
-              className="w-full flex items-center gap-1 px-2 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-600 transition">
+              className="w-full flex items-center gap-1 px-2 py-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest hover:text-slate-700 dark:hover:text-slate-300 transition">
               {showDMs ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
               Mensagens Diretas
             </button>
@@ -631,7 +602,7 @@ export default function ChatPage() {
                   return (
                     <button key={u.email}
                       onClick={() => setActive({ type: 'dm', id: u.id, email: u.email, nome })}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 shadow-sm font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
                     >
                       <div className="relative flex-shrink-0">
                         <UserAvatar nome={nome} size="sm" />
@@ -646,21 +617,21 @@ export default function ChatPage() {
                     </button>
                   );
                 })}
-                {outrosUsuarios.length === 0 && <p className="text-xs text-gray-400 px-3 py-2 italic">Nenhum outro usuário</p>}
+                {outrosUsuarios.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 px-3 py-2 italic">Nenhum outro usuário</p>}
               </div>
             )}
           </div>
         </div>
 
         {user && (
-          <div className="p-3 border-t border-gray-100 flex-shrink-0">
+          <div className="p-3 border-t border-slate-200 dark:border-slate-700 flex-shrink-0 bg-slate-50 dark:bg-slate-700/30">
             <div className="flex items-center gap-2 px-2">
               <div className="relative flex-shrink-0">
                 <UserAvatar nome={user.nome_tratamento || user.full_name} />
                 <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white bg-emerald-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-gray-800 truncate">{user.nome_tratamento || user.full_name}</p>
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{user.nome_tratamento || user.full_name}</p>
                 <p className="text-[10px] text-emerald-500">● Online</p>
               </div>
             </div>
@@ -671,41 +642,36 @@ export default function ChatPage() {
       {/* ── ÁREA PRINCIPAL ── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-white shadow-sm flex items-center gap-3 flex-shrink-0">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm flex items-center gap-3 flex-shrink-0">
           {active.type === 'canal'
             ? <span className="text-2xl">{activeCanal?.icone || '💬'}</span>
             : <div className="relative"><UserAvatar nome={active.nome} size="lg" /></div>
           }
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="font-bold text-gray-900">
+              <h1 className="font-bold text-slate-900 dark:text-white">
                 {active.type === 'canal' ? (activeCanal?.nome || active.id) : (active.nome || active.email)}
               </h1>
               {active.type === 'dm' && (
-                <span className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                <span className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded-full">
                   <Lock className="w-2.5 h-2.5" /> Privado
                 </span>
               )}
               {active.type === 'canal' && activeCanal && !activeCanal.fixo && (
-                <span className="text-[10px] text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
                   {(activeCanal.membros || []).length} membro(s)
                 </span>
               )}
             </div>
-            {headerSub && <p className="text-xs text-gray-400">{headerSub}</p>}
+            {headerSub && <p className="text-xs text-slate-500 dark:text-slate-400">{headerSub}</p>}
           </div>
           <div className="flex items-center gap-2">
             {podeGerenciarCanal && (
-              <button onClick={() => setGerenciarCanal(activeCanal)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition">
-                <Settings className="w-4 h-4" /> Membros
-              </button>
-            )}
-            <button onClick={gerarChamadaAudio} disabled={criandoMeet}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-sm disabled:opacity-50">
-              {criandoMeet ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Phone className="w-4 h-4" />}
-              {criandoMeet ? 'Criando...' : 'Iniciar Áudio'}
-            </button>
+               <button onClick={() => setGerenciarCanal(activeCanal)}
+                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-600/50 text-slate-600 dark:text-slate-300 text-sm font-medium rounded-xl transition">
+                 <Settings className="w-4 h-4" /> Membros
+               </button>
+             )}
             <button onClick={gerarMeet} disabled={criandoMeet}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-semibold rounded-xl transition shadow-sm disabled:opacity-50">
               {criandoMeet ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-4 h-4" />}
@@ -720,20 +686,20 @@ export default function ChatPage() {
             <div className="flex flex-col items-center justify-center h-full text-center">
               {active.type === 'canal'
               ? <><span className="text-5xl mb-4">{activeCanal?.icone || '💬'}</span>
-                <p className="text-lg font-bold text-gray-700">Bem-vindo ao #{activeCanal?.nome ?? 'Canal'}!</p>
-                <p className="text-sm text-gray-400 mt-1">Este é o início do canal. Envie a primeira mensagem!</p></>
-                : <><Lock className="w-12 h-12 text-gray-200 mb-4" />
-                    <p className="text-lg font-bold text-gray-700">Conversa privada com {active.nome}</p>
-                    <p className="text-sm text-gray-400 mt-1">Apenas vocês dois podem ver estas mensagens.</p></>
+                <p className="text-lg font-bold text-slate-700 dark:text-slate-200">Bem-vindo ao #{activeCanal?.nome ?? 'Canal'}!</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Este é o início do canal. Envie a primeira mensagem!</p></>
+                : <><Lock className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4" />
+                    <p className="text-lg font-bold text-slate-700 dark:text-slate-200">Conversa privada com {active.nome}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Apenas vocês dois podem ver estas mensagens.</p></>
               }
             </div>
           ) : grouped.map((item, i) => {
             if (item.type === 'date') {
               return (
                 <div key={item.key} className="flex items-center gap-3 py-3">
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span className="text-xs text-gray-400 font-medium px-3 py-1 bg-gray-100 rounded-full">{item.label}</span>
-                  <div className="flex-1 h-px bg-gray-200" />
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium px-3 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-full">{item.label}</span>
+                  <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
                 </div>
               );
             }
@@ -743,8 +709,8 @@ export default function ChatPage() {
               <div key={msg.id} className={`flex gap-3 items-start group py-0.5 ${isOwn ? 'flex-row-reverse' : ''}`}>
                 {!isOwn && <UserAvatar nome={msg.remetente_nome} />}
                 <div className={`max-w-[70%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                  {!isOwn && <span className="text-xs text-gray-500 font-semibold mb-1 ml-1">{msg.remetente_nome}</span>}
-                  <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-[#0f1e35] text-white rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm'}`}>
+                {!isOwn && <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 ml-1">{msg.remetente_nome}</span>}
+                <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-blue-600 dark:bg-blue-700 text-white rounded-br-sm' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-bl-sm'}`}>
                     {msg.meet_link ? (
                       <div className="space-y-2">
                         <p className="text-sm">🎥 Reunião iniciada!</p>
@@ -783,7 +749,7 @@ export default function ChatPage() {
                       <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.texto}</p>
                     )}
                   </div>
-                  <span className={`text-[10px] text-gray-400 mt-0.5 ${isOwn ? 'mr-1' : 'ml-1'}`}>
+                  <span className={`text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 ${isOwn ? 'mr-1' : 'ml-1'}`}>
                     {msg.created_date ? formatTime(msg.created_date) : ''}
                   </span>
                 </div>
@@ -794,12 +760,12 @@ export default function ChatPage() {
         </div>
 
         {/* Input */}
-        <div className="px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
-          <div className="flex items-end gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-[#1a3150] transition">
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0">
+          <div className="flex items-end gap-3 bg-slate-50 dark:bg-slate-700/30 border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 focus-within:border-blue-500 transition">
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={enviando}
-              className="p-1.5 text-gray-400 hover:text-[#1a3150] hover:bg-gray-200 rounded-lg transition flex-shrink-0"
+              className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition flex-shrink-0"
               title="Enviar arquivo (imagem, documento, áudio, vídeo)"
             >
               <Paperclip className="w-4 h-4" />
@@ -816,15 +782,15 @@ export default function ChatPage() {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem(); } }}
               placeholder={active.type === 'canal' ? `Mensagem em #${activeCanal?.nome || active.id}...` : `Mensagem privada para ${active.nome || active.email}...`}
               rows={1}
-              className="flex-1 text-sm bg-transparent resize-none focus:outline-none text-gray-800 placeholder-gray-400 max-h-32"
+              className="flex-1 text-sm bg-transparent resize-none focus:outline-none text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 max-h-32"
               style={{ minHeight: '24px' }}
             />
             <button onClick={() => enviarMensagem()} disabled={(!texto.trim() && !enviando) || enviando}
-              className="p-2 bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] disabled:opacity-40 transition flex-shrink-0">
+              className="p-2 bg-blue-600 dark:bg-blue-700 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-800 disabled:opacity-40 transition flex-shrink-0">
               {enviando ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5 px-1">
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1.5 px-1">
             {active.type === 'dm' && <><Lock className="w-2.5 h-2.5 inline mr-1" />Conversa privada · </>}
             Enter para enviar · Shift+Enter para nova linha · 📎 Clipe para anexos (máx. 20MB)
           </p>
