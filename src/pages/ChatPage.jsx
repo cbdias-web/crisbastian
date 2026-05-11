@@ -220,7 +220,7 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
           </div>
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-between gap-2">
-          {!ehCanalFixo && (isAdmin || canal.criador_email === userEmail) && (
+          {(isAdmin || canal.criador_email === userEmail) && (
             <button onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-2 text-sm border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition">
               <Trash2 className="w-3.5 h-3.5" /> Remover Canal
@@ -268,7 +268,7 @@ export default function ChatPage() {
   // Canais customizados do banco
   const { data: canaisDB = [] } = useQuery({
     queryKey: ['canais-chat'],
-    queryFn: () => base44.entities.CanalChat.filter({ ativo: true }, 'nome'),
+    queryFn: () => base44.entities.CanalChat.list('nome', 500),
     enabled: !!user,
     refetchInterval: 30000,
   });
@@ -284,7 +284,7 @@ export default function ChatPage() {
   const todosUsuariosAtivos = usuarios.filter(u => u.ativo !== false);
 
   // Canais visíveis: fixos + canais do banco onde o usuário é membro (ou admin vê todos)
-  const canaisCustom = canaisDB.map(c => ({
+  const canaisCustom = canaisDB.filter(c => c.ativo !== false && !CANAIS_FIXOS.some(cf => cf.nome.toLowerCase() === c.nome?.toLowerCase())).map(c => ({
     id: c.id,
     nome: c.nome,
     icone: c.icone || '💬',
@@ -296,10 +296,18 @@ export default function ChatPage() {
   }));
 
   // Enriquecer canais fixos com membros persistidos no banco (se existirem)
-  const canaisFixosEnriquecidos = CANAIS_FIXOS.map(cf => {
-    const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === cf.nome.toLowerCase());
-    return dbEntry ? { ...cf, membros: dbEntry.membros || [], _dbId: dbEntry.id } : cf;
-  });
+  // Filtra fixos que foram desativados no banco (removidos pelo admin)
+  const canaisFixosEnriquecidos = CANAIS_FIXOS
+    .filter(cf => {
+      const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === cf.nome.toLowerCase());
+      // Se existe no banco e está inativo, não mostrar
+      if (dbEntry && dbEntry.ativo === false) return false;
+      return true;
+    })
+    .map(cf => {
+      const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === cf.nome.toLowerCase());
+      return dbEntry ? { ...cf, membros: dbEntry.membros || [], _dbId: dbEntry.id } : cf;
+    });
 
   const todosCanais = [
     ...canaisFixosEnriquecidos,
@@ -474,9 +482,24 @@ export default function ChatPage() {
   };
 
   const removerCanal = async (id) => {
-    await base44.entities.CanalChat.update(id, { ativo: false });
+    // Canal fixo: o id local é string como 'geral', 'comercial' etc.
+    // Precisa encontrar o registro real no banco pelo nome
+    const canalFixo = CANAIS_FIXOS.find(c => c.id === id);
+    if (canalFixo) {
+      const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === canalFixo.nome.toLowerCase());
+      if (dbEntry) {
+        await base44.entities.CanalChat.update(dbEntry.id, { ativo: false });
+      }
+      // Se não existe no banco, só remove localmente (sem registro persistido)
+    } else {
+      await base44.entities.CanalChat.update(id, { ativo: false });
+    }
     queryClient.invalidateQueries(['canais-chat']);
-    if (active.id === id) setActive({ type: 'canal', id: 'geral' });
+    // Se removeu o canal fixo ativo, vai para geral (ou primeiro disponível)
+    if (active.id === id) {
+      const outroCanal = CANAIS_FIXOS.find(c => c.id !== id);
+      setActive({ type: 'canal', id: outroCanal?.id || 'geral' });
+    }
     toast.success('Canal removido!');
   };
 
