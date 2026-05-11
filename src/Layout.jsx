@@ -141,6 +141,7 @@ export default function Layout({ children, currentPageName }) {
     { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
     { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
     { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
+    { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', allowUser: true, alwaysVisible: true },
     { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
     { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
     { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
