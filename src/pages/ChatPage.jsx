@@ -418,6 +418,11 @@ export default function ChatPage() {
   };
 
   const atualizarCanal = async (id, data) => {
+    const ehFixo = CANAIS_FIXOS.some(c => c.id === id);
+    if (ehFixo) {
+      setGerenciarCanal(null);
+      return;
+    }
     await base44.entities.CanalChat.update(id, data);
     queryClient.invalidateQueries(['canais-chat']);
     setGerenciarCanal(null);
