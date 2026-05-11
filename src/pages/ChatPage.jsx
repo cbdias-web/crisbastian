@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
-  MessageSquare, Send, Video, Copy, Hash, Plus,
-  X, Check, ExternalLink, Lock, ChevronDown, ChevronRight,
-  Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download
-} from 'lucide-react';
+   MessageSquare, Send, Video, Copy, Hash, Plus,
+   X, Check, ExternalLink, Lock, ChevronDown, ChevronRight,
+   Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download, Phone
+ } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -437,6 +437,37 @@ export default function ChatPage() {
     setCriandoMeet(false);
   };
 
+  const gerarChamadaAudio = async () => {
+    setCriandoMeet(true);
+    try {
+      const dataHoje = new Date().toISOString().split('T')[0];
+      const horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const nomeLocal = active.type === 'canal' ? `Chat #${active.id}` : `DM com ${active.nome}`;
+      const agendaTemp = await base44.entities.AgendaContato.create({
+        lead_id: user.id, lead_nome: `Chamada de áudio — ${nomeLocal}`,
+        vendedor_id: user.id, vendedor_nome: user.nome_tratamento || user.full_name || user.email,
+        data_agendada: dataHoje, horario: horaAgora, status: 'pendente',
+      });
+      const res = await base44.functions.invoke('criarMeetAgenda', {
+        agenda_id: agendaTemp.id, lead_nome: nomeLocal,
+        data_agendada: dataHoje, horario_inicio: horaAgora, com_meet: true,
+      });
+      const link = res.data?.meet_link;
+      if (!link) throw new Error('Link não gerado');
+      await base44.entities.AgendaContato.delete(agendaTemp.id);
+      await enviarMensagem(link);
+      setMeetModal(link);
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || '';
+      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
+        toast.error('Conecte sua conta Google Calendar primeiro');
+      } else {
+        toast.error('Erro ao criar chamada: ' + msg);
+      }
+    }
+    setCriandoMeet(false);
+  };
+
   const criarCanal = async ({ nome, icone, membros }) => {
     const canal = await base44.entities.CanalChat.create({
       nome,
@@ -670,6 +701,11 @@ export default function ChatPage() {
                 <Settings className="w-4 h-4" /> Membros
               </button>
             )}
+            <button onClick={gerarChamadaAudio} disabled={criandoMeet}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition shadow-sm disabled:opacity-50">
+              {criandoMeet ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Phone className="w-4 h-4" />}
+              {criandoMeet ? 'Criando...' : 'Iniciar Áudio'}
+            </button>
             <button onClick={gerarMeet} disabled={criandoMeet}
               className="flex items-center gap-2 px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-sm font-semibold rounded-xl transition shadow-sm disabled:opacity-50">
               {criandoMeet ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-4 h-4" />}
