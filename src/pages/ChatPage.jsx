@@ -71,7 +71,7 @@ function MeetModal({ link, onClose }) {
           </button>
         </div>
       </div>
-      <iframe src={link} allow="camera; microphone; fullscreen; display-capture; autoplay" className="flex-1 w-full border-0" title="Google Meet" />
+      <iframe src={link} allow="camera; microphone; fullscreen; display-capture; autoplay; geolocation; payment" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-top-navigation allow-modals" className="flex-1 w-full border-0" title="Google Meet" />
     </div>
   );
 }
