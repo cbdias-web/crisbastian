@@ -158,8 +158,8 @@ function NovoCanalModal({ usuarios, userEmail, onSave, onClose }) {
 }
 
 // Modal: Gerenciar membros de um canal
-function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, onDelete, onClose }) {
-  const [membros, setMembros] = useState(canal.membros || []);
+function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, onDelete, onClose, membrosIniciais }) {
+  const [membros, setMembros] = useState(membrosIniciais ?? canal.membros ?? []);
   const [saving, setSaving] = useState(false);
   const podeGerenciar = isAdmin || canal.criador_email === userEmail;
   const ehCanalFixo = canal.fixo === true;
@@ -731,6 +731,7 @@ export default function ChatPage() {
           onUpdate={atualizarCanal}
           onDelete={removerCanal}
           onClose={() => setGerenciarCanal(null)}
+          membrosIniciais={todosCanais.find(c => c.id === gerenciarCanal.id)?.membros ?? gerenciarCanal.membros ?? []}
         />
       )}
     </div>
