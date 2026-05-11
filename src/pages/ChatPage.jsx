@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import {
   MessageSquare, Send, Video, Copy, Hash, Plus,
   X, Check, ExternalLink, Lock, ChevronDown, ChevronRight,
-  Settings, Trash2, UserPlus, UserMinus, Users
+  Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download
 } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -247,6 +247,7 @@ export default function ChatPage() {
   const [active, setActive] = useState({ type: 'canal', id: 'geral' });
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const fileInputRef = useRef(null);
   const [criandoMeet, setCriandoMeet] = useState(false);
   const [meetModal, setMeetModal] = useState(null);
   const [showNovoCanalModal, setShowNovoCanalModal] = useState(false);
@@ -352,9 +353,9 @@ export default function ChatPage() {
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [mensagens]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, [active]);
 
-  const enviarMensagem = async (meetLinkExtra) => {
+  const enviarMensagem = async (meetLinkExtra, arquivoExtra) => {
     const msgTexto = texto.trim();
-    if (!msgTexto && !meetLinkExtra) return;
+    if (!msgTexto && !meetLinkExtra && !arquivoExtra) return;
     if (!user) return;
     setEnviando(true);
     setTexto('');
@@ -365,8 +366,11 @@ export default function ChatPage() {
         remetente_id: user.id,
         remetente_nome: user.nome_tratamento || user.full_name || user.email,
         remetente_email: user.email,
-        texto: meetLinkExtra ? '🎥 Reunião iniciada!' : msgTexto,
+        texto: meetLinkExtra ? '🎥 Reunião iniciada!' : (arquivoExtra ? (msgTexto || '') : msgTexto),
         meet_link: meetLinkExtra || undefined,
+        arquivo_url: arquivoExtra?.url || undefined,
+        arquivo_nome: arquivoExtra?.nome || undefined,
+        arquivo_tipo: arquivoExtra?.tipo || undefined,
       };
       if (active.type === 'dm') payload.destinatario_email = active.email;
       await base44.entities.MensagemChat.create(payload);
@@ -376,6 +380,23 @@ export default function ChatPage() {
       setTexto(msgTexto);
     }
     setEnviando(false);
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Limite de 20MB
+    if (file.size > 20 * 1024 * 1024) { toast.error('Arquivo muito grande (máx. 20MB)'); return; }
+    setEnviando(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      await enviarMensagem(null, { url: file_url, nome: file.name, tipo: file.type });
+      toast.success('Arquivo enviado!');
+    } catch {
+      toast.error('Erro ao enviar arquivo');
+    }
+    setEnviando(false);
+    e.target.value = '';
   };
 
   const gerarMeet = async () => {
@@ -674,6 +695,26 @@ export default function ChatPage() {
                           </button>
                         </div>
                       </div>
+                    ) : msg.arquivo_url ? (
+                      <div className="space-y-1.5">
+                        {msg.texto && <p className="text-sm leading-relaxed whitespace-pre-wrap break-words mb-1">{msg.texto}</p>}
+                        {msg.arquivo_tipo?.startsWith('image/') ? (
+                          <a href={msg.arquivo_url} target="_blank" rel="noopener noreferrer">
+                            <img src={msg.arquivo_url} alt={msg.arquivo_nome} className="max-w-xs max-h-60 rounded-xl object-cover border border-white/20" />
+                          </a>
+                        ) : msg.arquivo_tipo?.startsWith('video/') ? (
+                          <video src={msg.arquivo_url} controls className="max-w-xs rounded-xl border border-white/20" style={{ maxHeight: '200px' }} />
+                        ) : msg.arquivo_tipo?.startsWith('audio/') ? (
+                          <audio src={msg.arquivo_url} controls className="w-full max-w-xs" />
+                        ) : (
+                          <a href={msg.arquivo_url} target="_blank" rel="noopener noreferrer" download={msg.arquivo_nome}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition ${isOwn ? 'bg-white/15 hover:bg-white/25 text-white' : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                            <FileText className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate max-w-[180px]">{msg.arquivo_nome}</span>
+                            <Download className="w-3.5 h-3.5 flex-shrink-0 ml-auto" />
+                          </a>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{msg.texto}</p>
                     )}
@@ -691,6 +732,21 @@ export default function ChatPage() {
         {/* Input */}
         <div className="px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0">
           <div className="flex items-end gap-3 bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 focus-within:border-[#1a3150] transition">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={enviando}
+              className="p-1.5 text-gray-400 hover:text-[#1a3150] hover:bg-gray-200 rounded-lg transition flex-shrink-0"
+              title="Enviar arquivo (imagem, documento, áudio, vídeo)"
+            >
+              <Paperclip className="w-4 h-4" />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.csv"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <textarea ref={inputRef} value={texto}
               onChange={e => setTexto(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensagem(); } }}
@@ -699,14 +755,14 @@ export default function ChatPage() {
               className="flex-1 text-sm bg-transparent resize-none focus:outline-none text-gray-800 placeholder-gray-400 max-h-32"
               style={{ minHeight: '24px' }}
             />
-            <button onClick={() => enviarMensagem()} disabled={!texto.trim() || enviando}
+            <button onClick={() => enviarMensagem()} disabled={(!texto.trim() && !enviando) || enviando}
               className="p-2 bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] disabled:opacity-40 transition flex-shrink-0">
-              <Send className="w-4 h-4" />
+              {enviando ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5 px-1">
             {active.type === 'dm' && <><Lock className="w-2.5 h-2.5 inline mr-1" />Conversa privada · </>}
-            Enter para enviar · Shift+Enter para nova linha
+            Enter para enviar · Shift+Enter para nova linha · 📎 Clipe para anexos (máx. 20MB)
           </p>
         </div>
       </div>

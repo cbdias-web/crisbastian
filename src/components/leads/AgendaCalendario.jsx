@@ -433,7 +433,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 // ── Novo Agendamento Modal ────────────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, todosVendedoresCompleto = [] }) {
   const [form, setForm] = useState({
     vendedor_id: '',
     lead_id: '',
@@ -506,7 +506,6 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
     const aviso = mensagemNaoDiaUtil(form.data_agendada);
     if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
 
-    // Bloquear se erro de sobreposição do mesmo lead
     if (conflito?.tipo === 'erro') {
       toast.error(conflito.mensagem);
       return;
@@ -517,6 +516,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
       const v = vendedorSelecionado;
       const c = clienteSelecionado;
 
+      // Criar agendamento para o gerente destino
       const novoAgendamento = await base44.entities.AgendaContato.create({
         lead_id: c.id,
         lead_nome: c.nome,
@@ -533,24 +533,62 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         resultado: form.observacao || '',
       });
 
-      // Criar evento no Google Calendar do gerente (sem Meet — apenas reserva de agenda)
+      // Se quem criou é diferente do gerente destino, criar cópia na agenda de quem criou
+      // (usando o vendedor vinculado ao currentUserEmail, se existir)
+      const vendedorCriador = todosVendedoresCompleto.find(vv => vv.email?.toLowerCase() === currentUserEmail?.toLowerCase());
+      if (vendedorCriador && vendedorCriador.id !== v.id) {
+        // Verificar sobreposição para o criador antes de criar
+        const conflitoCriador = todasAgendas.filter(a =>
+          a.vendedor_id === vendedorCriador.id &&
+          a.data_agendada === form.data_agendada &&
+          a.lead_id === c.id &&
+          a.status === 'pendente'
+        );
+        if (conflitoCriador.length === 0) {
+          // Verificar conflito de horário para o criador
+          const conflitHorarioCriador = todasAgendas.find(a =>
+            a.vendedor_id === vendedorCriador.id &&
+            a.data_agendada === form.data_agendada &&
+            a.horario === form.horario &&
+            a.status === 'pendente'
+          );
+          if (conflitHorarioCriador) {
+            toast.info(`Aviso: você já tem um compromisso às ${form.horario} com ${conflitHorarioCriador.lead_nome} — cópia não criada na sua agenda.`);
+          } else {
+            await base44.entities.AgendaContato.create({
+              lead_id: c.id,
+              lead_nome: c.nome,
+              lead_cpf_cnpj: c.cpf_cnpj || '',
+              lead_telefone: c.telefone || '',
+              cliente_id: c.id,
+              vendedor_id: vendedorCriador.id,
+              vendedor_nome: vendedorCriador.nome,
+              data_agendada: form.data_agendada,
+              horario: form.horario,
+              posicao_dia: 0,
+              lote_id: '',
+              status: 'pendente',
+              resultado: form.observacao || '',
+            });
+          }
+        }
+      }
+
+      // Tentar criar evento no Google Calendar do gerente
       if (novoAgendamento?.id) {
         try {
-          const gerenteEmail = v.email || '';
           await base44.functions.invoke('criarMeetAgenda', {
             agenda_id: novoAgendamento.id,
             lead_nome: c.nome,
             data_agendada: form.data_agendada,
             horario_inicio: form.horario,
-            target_user_email: gerenteEmail,
+            target_user_email: v.email || '',
             organizer_email: currentUserEmail,
-            com_meet: false, // reserva de agenda apenas; Meet é gerado separadamente pelo botão
+            com_meet: false,
           });
-          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}! Evento registrado no Google Calendar.`);
+          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}! Evento no Google Calendar.`);
         } catch (e) {
-          // Cria agendamento interno mesmo sem Google Calendar vinculado
           toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
-          toast.info('Google Calendar não vinculado — o gerente pode conectar depois.');
         }
       }
 
@@ -1138,6 +1176,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           clientes={clientes}
           todasAgendas={todasAgendasRef}
           currentUserEmail={currentUserEmail}
+          todosVendedoresCompleto={todosVendedores}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);
