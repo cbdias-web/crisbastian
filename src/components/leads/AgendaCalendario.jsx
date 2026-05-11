@@ -124,6 +124,7 @@ function MeetButton({ item, onLinkGerado }) {
         lead_nome: item.lead_nome,
         data_agendada: item.data_agendada,
         horario_inicio: horario,
+        com_meet: true, // aqui sim gera o link Meet
       });
       onLinkGerado(res.data.meet_link);
       toast.success('Link Meet criado!');
@@ -532,7 +533,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         resultado: form.observacao || '',
       });
 
-      // Criar evento no Google Calendar do gerente + convidar quem criou
+      // Criar evento no Google Calendar do gerente (sem Meet — apenas reserva de agenda)
       if (novoAgendamento?.id) {
         try {
           const gerenteEmail = v.email || '';
@@ -543,11 +544,13 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
             horario_inicio: form.horario,
             target_user_email: gerenteEmail,
             organizer_email: currentUserEmail,
+            com_meet: false, // reserva de agenda apenas; Meet é gerado separadamente pelo botão
           });
-          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')} com evento no Google Calendar!`);
+          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}! Evento registrado no Google Calendar.`);
         } catch (e) {
+          // Cria agendamento interno mesmo sem Google Calendar vinculado
           toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
-          toast.info('Evento no Google Calendar não foi criado — o gerente pode não ter o Calendar vinculado.');
+          toast.info('Google Calendar não vinculado — o gerente pode conectar depois.');
         }
       }
 

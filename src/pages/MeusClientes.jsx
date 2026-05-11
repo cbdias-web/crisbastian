@@ -475,6 +475,7 @@ export default function MeusClientes() {
         lead_nome: cadastroClienteForm.nome || cliente.nome,
         data_agendada: form.proximo_contato || form.data_interacao,
         horario_inicio: meetForm.horario || '09:00',
+        com_meet: true, // gera link Meet explicitamente
       });
       setMeetForm(p => ({ ...p, link: res.data.meet_link, loading: false }));
       toast.success('Link Meet gerado!');
