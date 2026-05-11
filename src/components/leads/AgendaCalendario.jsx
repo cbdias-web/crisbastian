@@ -430,9 +430,9 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
   );
 }
 
-// ── Novo Agendamento Modal (Admin) ────────────────────────────────────────────
+// ── Novo Agendamento Modal ────────────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, currentUserEmail }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail }) {
   const [form, setForm] = useState({
     vendedor_id: '',
     lead_id: '',
@@ -442,37 +442,79 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
   });
   const [saving, setSaving] = useState(false);
   const [clienteSearch, setClienteSearch] = useState('');
+  const [conflito, setConflito] = useState(null); // { tipo, mensagem }
 
   const vendedorSelecionado = todosVendedores.find(v => v.id === form.vendedor_id);
+  // Busca clientes de TODOS (não filtra por gerente) para permitir qualquer usuário agendar
   const clientesFiltrados = clientes
-    .filter(c => !form.vendedor_id || c.vendedor_id === form.vendedor_id)
     .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()))
     .slice(0, 20);
 
   const clienteSelecionado = clientes.find(c => c.id === form.lead_id);
 
+  // Verificação de sobreposição em tempo real ao mudar gerente/data/horário
+  const verificarConflito = (vendedor_id, lead_id, data_agendada, horario) => {
+    if (!vendedor_id || !data_agendada) { setConflito(null); return; }
+
+    const agendasDoDia = todasAgendas.filter(a =>
+      a.vendedor_id === vendedor_id &&
+      a.data_agendada === data_agendada &&
+      a.status === 'pendente'
+    );
+
+    // 1. Mesmo lead no mesmo dia
+    if (lead_id) {
+      const mesmolead = agendasDoDia.find(a => a.lead_id === lead_id);
+      if (mesmolead) {
+        const v = todosVendedores.find(v => v.id === vendedor_id);
+        setConflito({
+          tipo: 'erro',
+          mensagem: `${v?.nome || 'Este gerente'} já tem um agendamento pendente com ${clienteSelecionado?.nome || 'este cliente'} nesta data${mesmolead.horario ? ` às ${mesmolead.horario}` : ''}.`
+        });
+        return;
+      }
+    }
+
+    // 2. Mesmo horário com outro cliente
+    if (horario && agendasDoDia.length > 0) {
+      const mesmoHorario = agendasDoDia.find(a => a.horario === horario);
+      if (mesmoHorario) {
+        const v = todosVendedores.find(v => v.id === vendedor_id);
+        setConflito({
+          tipo: 'aviso',
+          mensagem: `⚠️ ${v?.nome || 'Este gerente'} já tem um compromisso às ${horario} com ${mesmoHorario.lead_nome}. Confirme se deseja sobrepor.`
+        });
+        return;
+      }
+    }
+
+    setConflito(null);
+  };
+
+  const handleFieldChange = (updates) => {
+    const newForm = { ...form, ...updates };
+    setForm(newForm);
+    verificarConflito(newForm.vendedor_id, newForm.lead_id, newForm.data_agendada, newForm.horario);
+  };
+
   const handleSave = async () => {
     if (!form.vendedor_id) { toast.error('Selecione o gerente'); return; }
     if (!form.lead_id) { toast.error('Selecione o cliente/lead'); return; }
     if (!form.data_agendada) { toast.error('Informe a data'); return; }
+    if (!form.horario) { toast.error('Informe o horário do agendamento'); return; }
     const aviso = mensagemNaoDiaUtil(form.data_agendada);
     if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
+
+    // Bloquear se erro de sobreposição do mesmo lead
+    if (conflito?.tipo === 'erro') {
+      toast.error(conflito.mensagem);
+      return;
+    }
+
     setSaving(true);
     try {
       const v = vendedorSelecionado;
       const c = clienteSelecionado;
-
-      // Verificar sobreposição: já existe agenda pendente para este lead+gerente nesta data?
-      const existentes = await base44.entities.AgendaContato.filter({
-        vendedor_id: v.id,
-        data_agendada: form.data_agendada,
-      });
-      const jaExiste = existentes.some(a => a.lead_id === c.id && a.status === 'pendente');
-      if (jaExiste) {
-        toast.error(`${v.nome} já tem um agendamento pendente com ${c.nome} nesta data.`);
-        setSaving(false);
-        return;
-      }
 
       const novoAgendamento = await base44.entities.AgendaContato.create({
         lead_id: c.id,
@@ -483,18 +525,16 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
         vendedor_id: v.id,
         vendedor_nome: v.nome,
         data_agendada: form.data_agendada,
-        horario: form.horario || '',
+        horario: form.horario,
         posicao_dia: 0,
         lote_id: '',
         status: 'pendente',
         resultado: form.observacao || '',
       });
 
-      // Criar evento no Google Calendar do gerente selecionado
-      // O admin (usuário atual) é adicionado como convidado para receber o convite
-      if (novoAgendamento?.id && form.horario) {
+      // Criar evento no Google Calendar do gerente + convidar quem criou
+      if (novoAgendamento?.id) {
         try {
-          // Buscar o email do gerente selecionado
           const gerenteEmail = v.email || '';
           await base44.functions.invoke('criarMeetAgenda', {
             agenda_id: novoAgendamento.id,
@@ -506,12 +546,9 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
           });
           toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')} com evento no Google Calendar!`);
         } catch (e) {
-          // Agenda criada mesmo sem Meet
           toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
-          toast.info('Evento no Google Calendar não pôde ser criado (gerente pode não ter Google Calendar vinculado).');
+          toast.info('Evento no Google Calendar não foi criado — o gerente pode não ter o Calendar vinculado.');
         }
-      } else {
-        toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
       }
 
       onSaved();
@@ -527,14 +564,14 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
         <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
           <div>
             <p className="font-bold text-white text-sm">Novo Agendamento</p>
-            <p className="text-blue-200 text-xs mt-0.5">Criar agendamento para um gerente</p>
+            <p className="text-blue-200 text-xs mt-0.5">Criar agendamento para qualquer gerente</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 space-y-3">
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Gerente *</label>
-            <select value={form.vendedor_id} onChange={e => setForm(p => ({ ...p, vendedor_id: e.target.value, lead_id: '' }))}
+            <select value={form.vendedor_id} onChange={e => handleFieldChange({ vendedor_id: e.target.value, lead_id: '' })}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
               <option value="">Selecione o gerente...</option>
               {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
@@ -544,25 +581,29 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
             <label className="text-xs text-gray-500 mb-1 block">Cliente / Lead *</label>
             <input
               type="text"
-              placeholder="Buscar cliente..."
+              placeholder="Buscar cliente ou lead..."
               value={clienteSearch}
-              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); }}
+              onChange={e => { setClienteSearch(e.target.value); handleFieldChange({ lead_id: '' }); }}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
             />
             {clienteSelecionado ? (
               <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
                 <span className="text-sm font-medium text-[#0f1e35] flex-1">{clienteSelecionado.nome}</span>
-                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                {clienteSelecionado.vendedor_nome && (
+                  <span className="text-[10px] text-blue-500">Gerente: {clienteSelecionado.vendedor_nome}</span>
+                )}
+                <button onClick={() => { handleFieldChange({ lead_id: '' }); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
               </div>
             ) : clienteSearch.length > 0 && (
               <div className="border border-gray-200 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
                 {clientesFiltrados.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-3">Nenhum cliente encontrado</p>
                 ) : clientesFiltrados.map(c => (
-                  <button key={c.id} onClick={() => { setForm(p => ({ ...p, lead_id: c.id })); setClienteSearch(c.nome); }}
+                  <button key={c.id} onClick={() => { handleFieldChange({ lead_id: c.id }); setClienteSearch(c.nome); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
-                    {c.nome}
+                    <span className="font-medium">{c.nome}</span>
                     {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
+                    {c.vendedor_nome && <span className="text-[10px] text-blue-500 ml-2">· {c.vendedor_nome}</span>}
                   </button>
                 ))}
               </div>
@@ -571,7 +612,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
-              <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
+              <input type="date" value={form.data_agendada} onChange={e => handleFieldChange({ data_agendada: e.target.value })}
                 className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${mensagemNaoDiaUtil(form.data_agendada) ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
               {mensagemNaoDiaUtil(form.data_agendada) && (
                 <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
@@ -580,22 +621,33 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, cur
               )}
             </div>
             <div className="w-36">
-              <label className="text-xs text-gray-500 mb-1 block">Horário</label>
-              <input type="time" value={form.horario} onChange={e => setForm(p => ({ ...p, horario: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+              <label className="text-xs text-gray-500 mb-1 block">Horário *</label>
+              <input type="time" value={form.horario} onChange={e => handleFieldChange({ horario: e.target.value })}
+                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${!form.horario ? 'border-amber-300' : 'border-gray-200'}`} />
             </div>
           </div>
+
+          {/* Alerta de sobreposição */}
+          {conflito && (
+            <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs font-medium ${
+              conflito.tipo === 'erro' ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-amber-50 border border-amber-200 text-amber-700'
+            }`}>
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>{conflito.mensagem}</span>
+            </div>
+          )}
+
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Observação</label>
+            <label className="text-xs text-gray-500 mb-1 block">Observação / Contexto</label>
             <input type="text" value={form.observacao} onChange={e => setForm(p => ({ ...p, observacao: e.target.value }))}
-              placeholder="Instrução ou contexto para o gerente..."
+              placeholder="Motivo ou contexto da reunião..."
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
           </div>
         </div>
         <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} disabled={saving}
-            className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2">
+          <button onClick={handleSave} disabled={saving || conflito?.tipo === 'erro'}
+            className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
             Criar Agendamento
           </button>
@@ -625,7 +677,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [filtroStatus, setFiltroStatus] = useState(''); // '' = todos
   const [showFiltros, setShowFiltros] = useState(false);
 
-  // Admin: carrega TODOS os agendamentos; gerente: só os seus
+  // Admin: carrega TODOS os agendamentos; gerente/SDR: só os seus
+  // Mas para criação de agendamentos para outros, todos precisam da lista global
   const { data: agendaGlobal = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos-global'],
     queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
@@ -640,8 +693,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     refetchInterval: 30000,
   });
 
+  // Lista completa de agendamentos (para verificar sobreposição ao criar para outros gerentes)
+  const { data: todasAgendas = [] } = useQuery({
+    queryKey: ['agenda-contatos-todos'],
+    queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
+    enabled: !isAdmin, // admin já tem agendaGlobal
+    refetchInterval: 60000,
+  });
+
   const agendaRaw = isAdmin ? agendaGlobal : agendaVendedor;
   const loading = isAdmin ? isLoading : isLoadingVendedor;
+  const todasAgendasRef = isAdmin ? agendaGlobal : todasAgendas;
 
   // Aplica filtros
   const agenda = useMemo(() => {
@@ -724,7 +786,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     </div>
   );
 
-  if (!isAdmin && agendaRaw.length === 0) return null;
+  // Não ocultar o componente para não-admins sem agenda — eles podem querer criar agendamentos para outros
+  // if (!isAdmin && agendaRaw.length === 0) return null;
 
   return (
     <>
@@ -1070,11 +1133,13 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         <NovoAgendamentoModal
           todosVendedores={todosVendedores}
           clientes={clientes}
+          todasAgendas={todasAgendasRef}
           currentUserEmail={currentUserEmail}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);
             invalidateAgenda();
+            if (!isAdmin) queryClient.invalidateQueries(['agenda-contatos-todos']);
           }}
         />
       )}
