@@ -456,7 +456,7 @@ export default function ChatPage() {
       if (!link) throw new Error('Link não gerado');
       await base44.entities.AgendaContato.delete(agendaTemp.id);
       await enviarMensagem(link);
-      setMeetModal(link);
+      window.open(link, '_blank', 'width=800,height=600');
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || '';
       if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
