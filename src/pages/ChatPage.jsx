@@ -162,6 +162,7 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
   const [membros, setMembros] = useState(canal.membros || []);
   const [saving, setSaving] = useState(false);
   const podeGerenciar = isAdmin || canal.criador_email === userEmail;
+  const ehCanalFixo = canal.fixo === true;
 
   const toggleMembro = (email) => {
     if (!podeGerenciar) return;
@@ -219,7 +220,7 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
           </div>
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-between gap-2">
-          {(isAdmin || canal.criador_email === userEmail) && (
+          {!ehCanalFixo && (isAdmin || canal.criador_email === userEmail) && (
             <button onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-2 text-sm border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition">
               <Trash2 className="w-3.5 h-3.5" /> Remover Canal
@@ -418,9 +419,25 @@ export default function ChatPage() {
   };
 
   const atualizarCanal = async (id, data) => {
-    const ehFixo = CANAIS_FIXOS.some(c => c.id === id);
-    if (ehFixo) {
+    const canalFixo = CANAIS_FIXOS.find(c => c.id === id);
+    if (canalFixo) {
+      // Canal fixo: cria ou atualiza registro no banco para persistir membros
+      const existente = canaisDB.find(c => c.nome?.toLowerCase() === canalFixo.nome.toLowerCase());
+      if (existente) {
+        await base44.entities.CanalChat.update(existente.id, data);
+      } else {
+        await base44.entities.CanalChat.create({
+          nome: canalFixo.nome,
+          icone: canalFixo.icone,
+          descricao: canalFixo.descricao,
+          ativo: true,
+          criador_email: user?.email || '',
+          ...data,
+        });
+      }
+      queryClient.invalidateQueries(['canais-chat']);
       setGerenciarCanal(null);
+      toast.success('Membros do canal atualizados!');
       return;
     }
     await base44.entities.CanalChat.update(id, data);
@@ -475,7 +492,7 @@ export default function ChatPage() {
               {todosCanais.map(canal => {
                 const isActive = active.type === 'canal' && active.id === canal.id;
                 const unread = unreadMap[canal.id] || 0;
-                const podeConfig = !canal.fixo && (isAdmin || canal.criador_email === user?.email);
+                const podeConfig = isAdmin || (!canal.fixo && canal.criador_email === user?.email);
                 return (
                   <div key={canal.id} className="group relative">
                     <button onClick={() => setActive({ type: 'canal', id: canal.id })}
