@@ -121,8 +121,8 @@ export default function ChatPage() {
     refetchInterval: 60000,
   });
 
-  // Outros usuários (excluindo o próprio)
-  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email);
+  // Outros usuários ativos (excluindo o próprio)
+  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false);
 
   // Mensagens do canal/dm ativo
   const canalQuery = active.type === 'canal' ? { canal: active.id } : { canal: getDmKey(user?.email, active.email), tipo_canal: 'direto' };
