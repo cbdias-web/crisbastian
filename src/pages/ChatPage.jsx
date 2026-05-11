@@ -806,18 +806,22 @@ export default function ChatPage() {
         />
       )}
 
-      {gerenciarCanal && (
-        <GerenciarMembrosModal
-          canal={gerenciarCanal}
-          usuarios={todosUsuariosAtivos}
-          isAdmin={isAdmin}
-          userEmail={user?.email}
-          onUpdate={atualizarCanal}
-          onDelete={removerCanal}
-          onClose={() => setGerenciarCanal(null)}
-          membrosIniciais={todosCanais.find(c => c.id === gerenciarCanal.id)?.membros ?? gerenciarCanal.membros ?? []}
-        />
-      )}
+      {gerenciarCanal && (() => {
+        const canalAtual = todosCanais.find(c => c.id === gerenciarCanal.id) ?? gerenciarCanal;
+        return (
+          <GerenciarMembrosModal
+            key={gerenciarCanal.id}
+            canal={canalAtual}
+            usuarios={todosUsuariosAtivos}
+            isAdmin={isAdmin}
+            userEmail={user?.email}
+            onUpdate={atualizarCanal}
+            onDelete={removerCanal}
+            onClose={() => setGerenciarCanal(null)}
+            membrosIniciais={canalAtual.membros ?? []}
+          />
+        );
+      })()}
     </div>
   );
 }
