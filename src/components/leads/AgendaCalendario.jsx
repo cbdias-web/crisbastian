@@ -432,7 +432,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 // ── Novo Agendamento Modal (Admin) ────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved, currentUserEmail }) {
   const [form, setForm] = useState({
     vendedor_id: '',
     lead_id: '',
@@ -474,7 +474,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
         return;
       }
 
-      await base44.entities.AgendaContato.create({
+      const novoAgendamento = await base44.entities.AgendaContato.create({
         lead_id: c.id,
         lead_nome: c.nome,
         lead_cpf_cnpj: c.cpf_cnpj || '',
@@ -489,7 +489,31 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
         status: 'pendente',
         resultado: form.observacao || '',
       });
-      toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
+
+      // Criar evento no Google Calendar do gerente selecionado
+      // O admin (usuário atual) é adicionado como convidado para receber o convite
+      if (novoAgendamento?.id && form.horario) {
+        try {
+          // Buscar o email do gerente selecionado
+          const gerenteEmail = v.email || '';
+          await base44.functions.invoke('criarMeetAgenda', {
+            agenda_id: novoAgendamento.id,
+            lead_nome: c.nome,
+            data_agendada: form.data_agendada,
+            horario_inicio: form.horario,
+            target_user_email: gerenteEmail,
+            organizer_email: currentUserEmail,
+          });
+          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')} com evento no Google Calendar!`);
+        } catch (e) {
+          // Agenda criada mesmo sem Meet
+          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
+          toast.info('Evento no Google Calendar não pôde ser criado (gerente pode não ter Google Calendar vinculado).');
+        }
+      } else {
+        toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
+      }
+
       onSaved();
     } catch (e) {
       toast.error('Erro ao criar agendamento');
@@ -584,6 +608,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, onClose, onSaved }) {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function AgendaCalendario({ vendedorId, vendedor, user, onClienteClick, isAdmin, todosVendedores = [], clientes = [] }) {
+  const currentUserEmail = user?.email || '';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
   const [view, setView] = useState('semana'); // 'semana' | 'dia'
@@ -1045,6 +1070,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         <NovoAgendamentoModal
           todosVendedores={todosVendedores}
           clientes={clientes}
+          currentUserEmail={currentUserEmail}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);

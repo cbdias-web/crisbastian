@@ -17,28 +17,67 @@ Deno.serve(async (req) => {
       return Response.json({ connected: true });
     }
 
-    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim } = body;
+    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim, target_user_email, organizer_email } = body;
 
     if (!agenda_id || !data_agendada) {
       return Response.json({ error: 'agenda_id e data_agendada são obrigatórios' }, { status: 400 });
     }
 
-    // Get the app user's Google Calendar token
-    const { accessToken } = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+    // If target_user_email is provided and different from current user,
+    // try to get that user's connection. Otherwise use current user's connection.
+    let accessToken;
+    let targetEmail = user.email;
+
+    if (target_user_email && target_user_email !== user.email) {
+      // Find the target user by email to get their connection
+      try {
+        const allUsers = await base44.asServiceRole.entities.User.list();
+        const targetUser = allUsers.find(u => u.email === target_user_email);
+        if (targetUser) {
+          // Try to get the target user's Google Calendar connection
+          // We need to use their user context - use service role with user override
+          const targetConnection = await base44.asServiceRole.connectors.getAppUserConnection(CONNECTOR_ID, targetUser.id);
+          accessToken = targetConnection.accessToken;
+          targetEmail = target_user_email;
+        } else {
+          // Fallback to current user
+          const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+          accessToken = conn.accessToken;
+        }
+      } catch (e) {
+        // Fallback to current user's token if target user not connected
+        const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+        accessToken = conn.accessToken;
+      }
+    } else {
+      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+      accessToken = conn.accessToken;
+    }
 
     // Build event times (default 1h from horario_inicio)
     const dateStr = data_agendada; // yyyy-MM-dd
     const startTime = horario_inicio || '09:00';
-    const endTime = horario_fim || `${String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0')}:${startTime.split(':')[1]}`;
+    const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
+    const endTime = horario_fim || `${endHour}:${startTime.split(':')[1]}`;
 
     const startDateTime = `${dateStr}T${startTime}:00-03:00`;
     const endDateTime = `${dateStr}T${endTime}:00-03:00`;
 
+    // Build attendees list
+    const attendees = [];
+    if (organizer_email && organizer_email !== targetEmail) {
+      attendees.push({ email: organizer_email });
+    }
+    if (target_user_email && target_user_email !== user.email && target_user_email !== organizer_email) {
+      attendees.push({ email: target_user_email });
+    }
+
     const eventBody = {
       summary: `Reunião com ${lead_nome || 'Lead'}`,
-      description: `Compromisso de prospecção gerado pela Villela Exchange.`,
+      description: `Compromisso de prospecção gerado pela Villela Exchange.\nCliente: ${lead_nome || ''}`,
       start: { dateTime: startDateTime, timeZone: 'America/Sao_Paulo' },
       end: { dateTime: endDateTime, timeZone: 'America/Sao_Paulo' },
+      attendees: attendees.length > 0 ? attendees : undefined,
       conferenceData: {
         createRequest: {
           requestId: `villela-${agenda_id}-${Date.now()}`,
@@ -48,7 +87,7 @@ Deno.serve(async (req) => {
     };
 
     const res = await fetch(
-      'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1',
+      'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1&sendUpdates=all',
       {
         method: 'POST',
         headers: {
