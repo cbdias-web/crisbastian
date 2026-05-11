@@ -433,7 +433,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 // ── Novo Agendamento Modal ────────────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, todosVendedoresCompleto = [] }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, todosVendedoresCompleto = [], user }) {
   const [form, setForm] = useState({
     vendedor_id: '',
     lead_id: '',
@@ -534,12 +534,13 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
       });
 
       // Se quem criou é diferente do gerente destino, criar cópia na agenda de quem criou
-      // (usando o vendedor vinculado ao currentUserEmail, se existir)
-      const vendedorCriador = todosVendedoresCompleto.find(vv => vv.email?.toLowerCase() === currentUserEmail?.toLowerCase());
-      if (vendedorCriador && vendedorCriador.id !== v.id) {
+      // Usa o user diretamente — funciona para qualquer usuário, não apenas vendedores
+      const criadorId = user?.id;
+      const criadorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+      if (criadorId && criadorId !== v.id) {
         // Verificar sobreposição para o criador antes de criar
         const conflitoCriador = todasAgendas.filter(a =>
-          a.vendedor_id === vendedorCriador.id &&
+          a.vendedor_id === criadorId &&
           a.data_agendada === form.data_agendada &&
           a.lead_id === c.id &&
           a.status === 'pendente'
@@ -547,7 +548,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         if (conflitoCriador.length === 0) {
           // Verificar conflito de horário para o criador
           const conflitHorarioCriador = todasAgendas.find(a =>
-            a.vendedor_id === vendedorCriador.id &&
+            a.vendedor_id === criadorId &&
             a.data_agendada === form.data_agendada &&
             a.horario === form.horario &&
             a.status === 'pendente'
@@ -561,8 +562,8 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
               lead_cpf_cnpj: c.cpf_cnpj || '',
               lead_telefone: c.telefone || '',
               cliente_id: c.id,
-              vendedor_id: vendedorCriador.id,
-              vendedor_nome: vendedorCriador.nome,
+              vendedor_id: criadorId,
+              vendedor_nome: criadorNome,
               data_agendada: form.data_agendada,
               horario: form.horario,
               posicao_dia: 0,
@@ -1177,6 +1178,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           todasAgendas={todasAgendasRef}
           currentUserEmail={currentUserEmail}
           todosVendedoresCompleto={todosVendedores}
+          user={user}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);
