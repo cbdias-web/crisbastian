@@ -294,8 +294,14 @@ export default function ChatPage() {
     dbId: c.id,
   }));
 
+  // Enriquecer canais fixos com membros persistidos no banco (se existirem)
+  const canaisFixosEnriquecidos = CANAIS_FIXOS.map(cf => {
+    const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === cf.nome.toLowerCase());
+    return dbEntry ? { ...cf, membros: dbEntry.membros || [], _dbId: dbEntry.id } : cf;
+  });
+
   const todosCanais = [
-    ...CANAIS_FIXOS,
+    ...canaisFixosEnriquecidos,
     ...canaisCustom.filter(c => isAdmin || (c.membros || []).includes(user?.email)),
   ];
 
@@ -419,10 +425,10 @@ export default function ChatPage() {
   };
 
   const atualizarCanal = async (id, data) => {
-    const canalFixo = CANAIS_FIXOS.find(c => c.id === id);
+    const canalFixo = canaisFixosEnriquecidos.find(c => c.id === id);
     if (canalFixo) {
       // Canal fixo: cria ou atualiza registro no banco para persistir membros
-      const existente = canaisDB.find(c => c.nome?.toLowerCase() === canalFixo.nome.toLowerCase());
+      const existente = canalFixo._dbId ? canaisDB.find(c => c.id === canalFixo._dbId) : canaisDB.find(c => c.nome?.toLowerCase() === canalFixo.nome.toLowerCase());
       if (existente) {
         await base44.entities.CanalChat.update(existente.id, data);
       } else {
