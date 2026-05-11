@@ -4,7 +4,7 @@ import {
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
-  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe
+  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -280,6 +280,21 @@ const sections = [
     ],
   },
   {
+    id: 'chat-interno', icon: MessageSquare, title: 'Chat Interno',
+    color: 'from-blue-600 to-blue-700', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Canal de comunicação interna da equipe em tempo real, acessível pelo menu "Chat Interno" no bloco Apoio. Suporta canais públicos, canais privados com membros definidos e Mensagens Diretas (DMs) entre usuários.' },
+      { subtitle: 'Canais fixos (disponíveis para todos)', items: ['**🏢 Geral:** comunicação geral da equipe.', '**💼 Comercial:** assuntos do time comercial.', '**📢 Avisos:** comunicados e informes importantes.'] },
+      { subtitle: 'Criar um canal personalizado', steps: ['Clique em "+ Novo canal" na barra lateral.', 'Defina o ícone e o nome do canal.', 'Selecione os membros que terão acesso ao canal.', 'Clique em "Criar Canal". O criador é adicionado automaticamente.'] },
+      { subtitle: 'Gerenciar membros de um canal', items: ['**Criador do canal:** pode adicionar ou remover membros a qualquer momento.', '**Administrador:** tem acesso total a todos os canais, mesmo sem ser membro, e pode gerenciar qualquer canal.', 'Passe o mouse sobre o canal na barra lateral e clique no ícone ⚙️ para abrir o modal de gerenciamento.', 'No cabeçalho do canal ativo, o botão "Membros" abre o mesmo modal.'] },
+      { subtitle: 'Remover um canal', items: ['Apenas o **criador do canal** ou um **administrador** pode remover um canal.', 'Abra o modal de gerenciamento (⚙️) e clique em "Remover Canal".', '**Os canais fixos (Geral, Comercial, Avisos) não podem ser removidos.**', 'O canal é desativado; o histórico de mensagens é preservado.'] },
+      { subtitle: 'Mensagens Diretas (DMs)', text: 'Clique em qualquer usuário na seção "Mensagens Diretas" da barra lateral para iniciar uma conversa privada. Apenas os dois participantes podem ver as mensagens.' },
+      { subtitle: 'Ocultar usuários da lista de DMs (Admin)', items: ['Administradores podem ocultar usuários que não utilizam a plataforma.', 'Acesse **Usuários** (menu administrativo) > coluna **Chat**.', 'Clique em "Visível" para alternar para "Oculto". O usuário desaparece imediatamente da lista de DMs de todos.', 'Para reexibir, clique em "Oculto" para voltar a "Visível".'] },
+      { subtitle: 'Indicadores de notificação', items: ['**Badges vermelhos** aparecem no ícone do canal/DM com o número de mensagens não lidas.', 'O sistema marca automaticamente como lido ao abrir o canal.'] },
+      { subtitle: '🎥 Iniciar reunião Google Meet pelo Chat', steps: ['Abra o canal ou DM desejado.', 'Clique em "Iniciar Meet" no canto superior direito.', 'O sistema gera um link Meet e envia automaticamente como mensagem no canal.', 'Todos os membros verão o botão "Entrar no Meet" na mensagem.', 'É possível entrar na reunião diretamente no portal (tela cheia) ou abrindo em nova aba.'] },
+    ],
+  },
+  {
     id: 'comunicados', icon: Megaphone, title: 'Comunicados',
     color: 'from-yellow-500 to-yellow-600', bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-100',
     content: [
@@ -316,7 +331,7 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar'],
+    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
