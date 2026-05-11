@@ -518,7 +518,7 @@ export default function ChatPage() {
   const headerSub = active.type === 'canal'
     ? activeCanal?.descricao
     : `Conversa privada com ${active.nome || active.email}`;
-  const podeGerenciarCanal = activeCanal && !activeCanal.fixo && (isAdmin || activeCanal.criador_email === user?.email);
+  const podeGerenciarCanal = activeCanal && (isAdmin || activeCanal.criador_email === user?.email);
 
   return (
     <div className="flex bg-gray-50" style={{ height: 'calc(100vh - 40px)' }}>
@@ -547,7 +547,7 @@ export default function ChatPage() {
               {todosCanais.map(canal => {
                 const isActive = active.type === 'canal' && active.id === canal.id;
                 const unread = unreadMap[canal.id] || 0;
-                const podeConfig = isAdmin || (!canal.fixo && canal.criador_email === user?.email);
+                const podeConfig = isAdmin || canal.criador_email === user?.email;
                 return (
                   <div key={canal.id} className="group relative">
                     <button onClick={() => setActive({ type: 'canal', id: canal.id })}
