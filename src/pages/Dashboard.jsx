@@ -645,16 +645,16 @@ export default function Dashboard() {
           <h3 className="font-semibold text-gray-900 text-sm mb-4">Acesso Rápido</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-              { label: 'Meus Clientes', icon: Briefcase, page: 'MeusClientes', color: 'bg-blue-50 text-[#1a3150]', desc: 'Carteira e agenda' },
-              { label: 'Vendas', icon: FileText, page: 'Vendas', color: 'bg-green-50 text-green-700', desc: 'Registrar vendas' },
-              { label: 'Comissões', icon: DollarSign, page: 'Comissoes', color: 'bg-amber-50 text-amber-700', desc: 'Meus ganhos' },
-              { label: 'Rel. Interações', icon: MessageSquare, page: 'RelatorioInteracoes', color: 'bg-purple-50 text-purple-700', desc: 'Histórico de contatos' },
-              { label: 'Manual', icon: BookOpen, page: 'Manual', color: 'bg-gray-50 text-gray-700', desc: 'Como usar o sistema' },
+              { label: 'Agenda do Dia', icon: CalendarClock, page: 'MeusClientes', iconColor: 'text-[#1a3150]', bgColor: 'bg-slate-100', desc: 'Contatos e carteira' },
+              { label: 'Contratos', icon: FileText, page: 'Contratos', iconColor: 'text-indigo-600', bgColor: 'bg-indigo-50', desc: 'Gestão de contratos' },
+              { label: 'Vendas', icon: TrendingUp, page: 'Vendas', iconColor: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: 'Registrar vendas' },
+              { label: 'Clientes', icon: Users, page: 'Clientes', iconColor: 'text-blue-700', bgColor: 'bg-blue-50', desc: 'Base de clientes' },
+              { label: 'Capacitação', icon: BookOpen, page: 'Treinamento', iconColor: 'text-amber-700', bgColor: 'bg-amber-50', desc: 'Treinamentos' },
             ].map(item => (
               <Link key={item.page} to={createPageUrl(item.page)}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-[#1a3150]/30 hover:shadow-md transition cursor-pointer group">
-                <div className={`p-3 rounded-xl ${item.color} group-hover:scale-110 transition-transform`}>
-                  <item.icon className="w-5 h-5" />
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer group">
+                <div className={`p-3 rounded-xl ${item.bgColor} group-hover:scale-105 transition-transform`}>
+                  <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                 </div>
                 <p className="text-xs font-semibold text-gray-800 text-center">{item.label}</p>
                 <p className="text-[10px] text-gray-400 text-center leading-tight">{item.desc}</p>
