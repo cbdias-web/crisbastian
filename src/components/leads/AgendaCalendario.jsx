@@ -435,7 +435,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, todosVendedoresCompleto = [], user }) {
   const [form, setForm] = useState({
-    vendedor_id: '',
+    vendedores_ids: [], // múltiplos gerentes
     lead_id: '',
     data_agendada: new Date().toISOString().split('T')[0],
     horario: '',
@@ -443,118 +443,109 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
   });
   const [saving, setSaving] = useState(false);
   const [clienteSearch, setClienteSearch] = useState('');
-  const [conflito, setConflito] = useState(null); // { tipo, mensagem }
+  const [dropdownVendedor, setDropdownVendedor] = useState(false);
+  const [searchVendedor, setSearchVendedor] = useState('');
 
-  const vendedorSelecionado = todosVendedores.find(v => v.id === form.vendedor_id);
-  // Busca clientes de TODOS (não filtra por gerente) para permitir qualquer usuário agendar
   const clientesFiltrados = clientes
     .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()))
     .slice(0, 20);
 
   const clienteSelecionado = clientes.find(c => c.id === form.lead_id);
+  const vendedoresFiltrados = todosVendedores.filter(v =>
+    !searchVendedor || v.nome?.toLowerCase().includes(searchVendedor.toLowerCase())
+  );
 
-  // Verificação de sobreposição em tempo real ao mudar gerente/data/horário
-  const verificarConflito = (vendedor_id, lead_id, data_agendada, horario) => {
-    if (!vendedor_id || !data_agendada) { setConflito(null); return; }
-
-    const agendasDoDia = todasAgendas.filter(a =>
-      a.vendedor_id === vendedor_id &&
-      a.data_agendada === data_agendada &&
-      a.status === 'pendente'
-    );
-
-    // 1. Mesmo lead no mesmo dia
-    if (lead_id) {
-      const mesmolead = agendasDoDia.find(a => a.lead_id === lead_id);
-      if (mesmolead) {
-        const v = todosVendedores.find(v => v.id === vendedor_id);
-        setConflito({
-          tipo: 'erro',
-          mensagem: `${v?.nome || 'Este gerente'} já tem um agendamento pendente com ${clienteSelecionado?.nome || 'este cliente'} nesta data${mesmolead.horario ? ` às ${mesmolead.horario}` : ''}.`
-        });
-        return;
-      }
-    }
-
-    // 2. Mesmo horário com outro cliente
-    if (horario && agendasDoDia.length > 0) {
-      const mesmoHorario = agendasDoDia.find(a => a.horario === horario);
-      if (mesmoHorario) {
-        const v = todosVendedores.find(v => v.id === vendedor_id);
-        setConflito({
-          tipo: 'aviso',
-          mensagem: `⚠️ ${v?.nome || 'Este gerente'} já tem um compromisso às ${horario} com ${mesmoHorario.lead_nome}. Confirme se deseja sobrepor.`
-        });
-        return;
-      }
-    }
-
-    setConflito(null);
-  };
-
-  const handleFieldChange = (updates) => {
-    const newForm = { ...form, ...updates };
-    setForm(newForm);
-    verificarConflito(newForm.vendedor_id, newForm.lead_id, newForm.data_agendada, newForm.horario);
+  const toggleVendedor = (vid) => {
+    setForm(prev => ({
+      ...prev,
+      vendedores_ids: prev.vendedores_ids.includes(vid)
+        ? prev.vendedores_ids.filter(id => id !== vid)
+        : [...prev.vendedores_ids, vid],
+    }));
   };
 
   const handleSave = async () => {
-    if (!form.vendedor_id) { toast.error('Selecione o gerente'); return; }
+    if (form.vendedores_ids.length === 0) { toast.error('Selecione ao menos um gerente'); return; }
     if (!form.lead_id) { toast.error('Selecione o cliente/lead'); return; }
     if (!form.data_agendada) { toast.error('Informe a data'); return; }
     if (!form.horario) { toast.error('Informe o horário do agendamento'); return; }
     const aviso = mensagemNaoDiaUtil(form.data_agendada);
     if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
 
-    if (conflito?.tipo === 'erro') {
-      toast.error(conflito.mensagem);
-      return;
-    }
-
     setSaving(true);
+    const c = clienteSelecionado;
+    const criadorId = user?.id;
+    const criadorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+    let criou = 0;
+
     try {
-      const v = vendedorSelecionado;
-      const c = clienteSelecionado;
+      // Criar agendamento para cada gerente selecionado
+      for (const vid of form.vendedores_ids) {
+        const v = todosVendedores.find(vv => vv.id === vid);
+        if (!v) continue;
 
-      // Criar agendamento para o gerente destino
-      const novoAgendamento = await base44.entities.AgendaContato.create({
-        lead_id: c.id,
-        lead_nome: c.nome,
-        lead_cpf_cnpj: c.cpf_cnpj || '',
-        lead_telefone: c.telefone || '',
-        cliente_id: c.id,
-        vendedor_id: v.id,
-        vendedor_nome: v.nome,
-        data_agendada: form.data_agendada,
-        horario: form.horario,
-        posicao_dia: 0,
-        lote_id: '',
-        status: 'pendente',
-        resultado: form.observacao || '',
-      });
+        // Verificar se já existe agendamento para este lead+gerente+data
+        const jaExiste = todasAgendas.some(a =>
+          a.vendedor_id === vid &&
+          a.data_agendada === form.data_agendada &&
+          a.lead_id === c.id &&
+          a.status === 'pendente'
+        );
+        if (jaExiste) {
+          toast.info(`${v.nome} já tem agendamento pendente com ${c.nome} nesta data — pulado.`);
+          continue;
+        }
 
-      // Se quem criou é diferente do gerente destino, criar cópia na agenda de quem criou
-      // Usa o user diretamente — funciona para qualquer usuário, não apenas vendedores
-      const criadorId = user?.id;
-      const criadorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
-      if (criadorId && criadorId !== v.id) {
-        // Verificar sobreposição para o criador antes de criar
-        const conflitoCriador = todasAgendas.filter(a =>
+        const novoAgendamento = await base44.entities.AgendaContato.create({
+          lead_id: c.id,
+          lead_nome: c.nome,
+          lead_cpf_cnpj: c.cpf_cnpj || '',
+          lead_telefone: c.telefone || '',
+          cliente_id: c.id,
+          vendedor_id: v.id,
+          vendedor_nome: v.nome,
+          data_agendada: form.data_agendada,
+          horario: form.horario,
+          posicao_dia: 0,
+          lote_id: '',
+          status: 'pendente',
+          resultado: form.observacao || '',
+        });
+        criou++;
+
+        // Tentar criar evento no Google Calendar
+        if (novoAgendamento?.id) {
+          try {
+            await base44.functions.invoke('criarMeetAgenda', {
+              agenda_id: novoAgendamento.id,
+              lead_nome: c.nome,
+              data_agendada: form.data_agendada,
+              horario_inicio: form.horario,
+              target_user_email: v.email || '',
+              organizer_email: currentUserEmail,
+              com_meet: false,
+            });
+          } catch (e) {}
+        }
+      }
+
+      // Se o criador não está entre os gerentes selecionados, criar cópia para ele também
+      if (criadorId && !form.vendedores_ids.includes(criadorId) && criou > 0) {
+        const jaExisteCriador = todasAgendas.some(a =>
           a.vendedor_id === criadorId &&
           a.data_agendada === form.data_agendada &&
           a.lead_id === c.id &&
           a.status === 'pendente'
         );
-        if (conflitoCriador.length === 0) {
-          // Verificar conflito de horário para o criador
-          const conflitHorarioCriador = todasAgendas.find(a =>
+        if (!jaExisteCriador) {
+          const conflitHorario = todasAgendas.find(a =>
             a.vendedor_id === criadorId &&
             a.data_agendada === form.data_agendada &&
             a.horario === form.horario &&
             a.status === 'pendente'
           );
-          if (conflitHorarioCriador) {
-            toast.info(`Aviso: você já tem um compromisso às ${form.horario} com ${conflitHorarioCriador.lead_nome} — cópia não criada na sua agenda.`);
+          if (conflitHorario) {
+            toast.info(`Você já tem um compromisso às ${form.horario} com ${conflitHorario.lead_nome} — cópia não criada na sua agenda.`);
           } else {
             await base44.entities.AgendaContato.create({
               lead_id: c.id,
@@ -575,24 +566,9 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         }
       }
 
-      // Tentar criar evento no Google Calendar do gerente
-      if (novoAgendamento?.id) {
-        try {
-          await base44.functions.invoke('criarMeetAgenda', {
-            agenda_id: novoAgendamento.id,
-            lead_nome: c.nome,
-            data_agendada: form.data_agendada,
-            horario_inicio: form.horario,
-            target_user_email: v.email || '',
-            organizer_email: currentUserEmail,
-            com_meet: false,
-          });
-          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}! Evento no Google Calendar.`);
-        } catch (e) {
-          toast.success(`Agendamento criado para ${v.nome} em ${form.data_agendada.split('-').reverse().join('/')}!`);
-        }
+      if (criou > 0) {
+        toast.success(`${criou} agendamento(s) criado(s) para ${form.data_agendada.split('-').reverse().join('/')}!`);
       }
-
       onSaved();
     } catch (e) {
       toast.error('Erro ao criar agendamento');
@@ -602,22 +578,73 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
           <div>
             <p className="font-bold text-white text-sm">Novo Agendamento</p>
             <p className="text-blue-200 text-xs mt-0.5">Criar agendamento para qualquer gerente</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
-        <div className="p-5 space-y-3">
+        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+          {/* Seleção múltipla de gerentes */}
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Gerente *</label>
-            <select value={form.vendedor_id} onChange={e => handleFieldChange({ vendedor_id: e.target.value, lead_id: '' })}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
-              <option value="">Selecione o gerente...</option>
-              {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
-            </select>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Gerente(s) * <span className="text-blue-500 font-semibold">({form.vendedores_ids.length} selecionado{form.vendedores_ids.length !== 1 ? 's' : ''})</span>
+            </label>
+            {/* Tags dos selecionados */}
+            {form.vendedores_ids.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {form.vendedores_ids.map(vid => {
+                  const v = todosVendedores.find(vv => vv.id === vid);
+                  return (
+                    <span key={vid} className="flex items-center gap-1 px-2 py-1 bg-[#0f1e35] text-white text-xs font-medium rounded-lg">
+                      {v?.nome}
+                      <button onClick={() => toggleVendedor(vid)} className="text-white/60 hover:text-white ml-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* Dropdown de seleção */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar e selecionar gerentes..."
+                value={searchVendedor}
+                onFocus={() => setDropdownVendedor(true)}
+                onChange={e => { setSearchVendedor(e.target.value); setDropdownVendedor(true); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+              />
+              {dropdownVendedor && (
+                <>
+                  <div className="fixed inset-0 z-[9]" onClick={() => setDropdownVendedor(false)} />
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                  {vendedoresFiltrados.map(v => {
+                    const selected = form.vendedores_ids.includes(v.id);
+                    return (
+                      <button key={v.id} onClick={() => { toggleVendedor(v.id); setSearchVendedor(''); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${selected ? 'bg-blue-50' : ''}`}>
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
+                          {selected && <svg width="9" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                        </div>
+                        <span className={`font-medium ${selected ? 'text-[#0f1e35]' : 'text-gray-700'}`}>{v.nome}</span>
+                      </button>
+                    );
+                  })}
+                  {vendedoresFiltrados.length === 0 && (
+                    <p className="text-xs text-gray-400 text-center py-3">Nenhum gerente encontrado</p>
+                  )}
+                  <button onClick={() => setDropdownVendedor(false)}
+                    className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-2 border-t border-gray-100">
+                    Fechar
+                  </button>
+                </div>
+                </>
+              )}
+            </div>
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Cliente / Lead *</label>
@@ -625,7 +652,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
               type="text"
               placeholder="Buscar cliente ou lead..."
               value={clienteSearch}
-              onChange={e => { setClienteSearch(e.target.value); handleFieldChange({ lead_id: '' }); }}
+              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); }}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
             />
             {clienteSelecionado ? (
@@ -634,14 +661,14 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
                 {clienteSelecionado.vendedor_nome && (
                   <span className="text-[10px] text-blue-500">Gerente: {clienteSelecionado.vendedor_nome}</span>
                 )}
-                <button onClick={() => { handleFieldChange({ lead_id: '' }); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
               </div>
             ) : clienteSearch.length > 0 && (
               <div className="border border-gray-200 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
                 {clientesFiltrados.length === 0 ? (
                   <p className="text-xs text-gray-400 text-center py-3">Nenhum cliente encontrado</p>
                 ) : clientesFiltrados.map(c => (
-                  <button key={c.id} onClick={() => { handleFieldChange({ lead_id: c.id }); setClienteSearch(c.nome); }}
+                  <button key={c.id} onClick={() => { setForm(p => ({ ...p, lead_id: c.id })); setClienteSearch(c.nome); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
                     <span className="font-medium">{c.nome}</span>
                     {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
@@ -654,7 +681,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
-              <input type="date" value={form.data_agendada} onChange={e => handleFieldChange({ data_agendada: e.target.value })}
+              <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
                 className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${mensagemNaoDiaUtil(form.data_agendada) ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
               {mensagemNaoDiaUtil(form.data_agendada) && (
                 <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
@@ -664,20 +691,10 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
             </div>
             <div className="w-36">
               <label className="text-xs text-gray-500 mb-1 block">Horário *</label>
-              <input type="time" value={form.horario} onChange={e => handleFieldChange({ horario: e.target.value })}
+              <input type="time" value={form.horario} onChange={e => setForm(p => ({ ...p, horario: e.target.value }))}
                 className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${!form.horario ? 'border-amber-300' : 'border-gray-200'}`} />
             </div>
           </div>
-
-          {/* Alerta de sobreposição */}
-          {conflito && (
-            <div className={`flex items-start gap-2 px-3 py-2.5 rounded-xl text-xs font-medium ${
-              conflito.tipo === 'erro' ? 'bg-red-50 border border-red-200 text-red-700' : 'bg-amber-50 border border-amber-200 text-amber-700'
-            }`}>
-              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              <span>{conflito.mensagem}</span>
-            </div>
-          )}
 
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Observação / Contexto</label>
@@ -688,7 +705,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         </div>
         <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} disabled={saving || conflito?.tipo === 'erro'}
+          <button onClick={handleSave} disabled={saving}
             className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
             Criar Agendamento
