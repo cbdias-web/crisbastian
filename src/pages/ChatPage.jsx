@@ -162,7 +162,6 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
   const [membros, setMembros] = useState(membrosIniciais ?? canal.membros ?? []);
   const [saving, setSaving] = useState(false);
   const podeGerenciar = isAdmin || canal.criador_email === userEmail;
-  const ehCanalFixo = canal.fixo === true;
 
   const toggleMembro = (email) => {
     if (!podeGerenciar) return;
@@ -220,7 +219,7 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
           </div>
         </div>
         <div className="px-6 py-4 border-t border-gray-100 flex justify-between gap-2">
-          {(isAdmin || canal.criador_email === userEmail) && (
+          {podeGerenciar && (
             <button onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-2 text-sm border border-red-200 text-red-600 rounded-xl hover:bg-red-50 transition">
               <Trash2 className="w-3.5 h-3.5" /> Remover Canal
@@ -482,22 +481,28 @@ export default function ChatPage() {
   };
 
   const removerCanal = async (id) => {
-    // Canal fixo: o id local é string como 'geral', 'comercial' etc.
-    // Precisa encontrar o registro real no banco pelo nome
     const canalFixo = CANAIS_FIXOS.find(c => c.id === id);
     if (canalFixo) {
       const dbEntry = canaisDB.find(c => c.nome?.toLowerCase() === canalFixo.nome.toLowerCase());
       if (dbEntry) {
         await base44.entities.CanalChat.update(dbEntry.id, { ativo: false });
+      } else {
+        // Cria o registro no banco com ativo: false para persistir a remoção
+        await base44.entities.CanalChat.create({
+          nome: canalFixo.nome,
+          icone: canalFixo.icone,
+          descricao: canalFixo.descricao || '',
+          ativo: false,
+          criador_email: user?.email || '',
+          membros: [],
+        });
       }
-      // Se não existe no banco, só remove localmente (sem registro persistido)
     } else {
       await base44.entities.CanalChat.update(id, { ativo: false });
     }
     queryClient.invalidateQueries(['canais-chat']);
-    // Se removeu o canal fixo ativo, vai para geral (ou primeiro disponível)
     if (active.id === id) {
-      const outroCanal = CANAIS_FIXOS.find(c => c.id !== id);
+      const outroCanal = todosCanais.find(c => c.id !== id);
       setActive({ type: 'canal', id: outroCanal?.id || 'geral' });
     }
     toast.success('Canal removido!');
