@@ -683,9 +683,9 @@ export default function ChatPage() {
           {mensagens.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               {active.type === 'canal'
-                ? <><span className="text-5xl mb-4">{activeCanal?.icone || '💬'}</span>
-                    <p className="text-lg font-bold text-gray-700">Bem-vindo ao #{activeCanal?.nome || active.id}!</p>
-                    <p className="text-sm text-gray-400 mt-1">Este é o início do canal. Envie a primeira mensagem!</p></>
+              ? <><span className="text-5xl mb-4">{activeCanal?.icone || '💬'}</span>
+                <p className="text-lg font-bold text-gray-700">Bem-vindo ao #{activeCanal?.nome ?? 'Canal'}!</p>
+                <p className="text-sm text-gray-400 mt-1">Este é o início do canal. Envie a primeira mensagem!</p></>
                 : <><Lock className="w-12 h-12 text-gray-200 mb-4" />
                     <p className="text-lg font-bold text-gray-700">Conversa privada com {active.nome}</p>
                     <p className="text-sm text-gray-400 mt-1">Apenas vocês dois podem ver estas mensagens.</p></>
