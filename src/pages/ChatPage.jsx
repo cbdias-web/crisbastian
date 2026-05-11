@@ -273,13 +273,17 @@ export default function ChatPage() {
   });
 
   // Todos os usuários ativos
-  const { data: usuarios = [] } = useQuery({
+  const { data: usuarios = [], refetch: refetchUsuarios } = useQuery({
     queryKey: ['usuarios-chat'],
     queryFn: () => base44.entities.User.list(),
     enabled: !!user,
-    refetchInterval: 5000,
+    refetchInterval: 3000,
     staleTime: 0,
   });
+
+  useEffect(() => {
+    if (user) refetchUsuarios();
+  }, [user, refetchUsuarios]);
   const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false);
   const todosUsuariosAtivos = usuarios.filter(u => u.ativo !== false);
 
