@@ -277,7 +277,8 @@ export default function ChatPage() {
     queryKey: ['usuarios-chat'],
     queryFn: () => base44.entities.User.list(),
     enabled: !!user,
-    refetchInterval: 60000,
+    refetchInterval: 5000,
+    staleTime: 0,
   });
   const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false);
   const todosUsuariosAtivos = usuarios.filter(u => u.ativo !== false);
