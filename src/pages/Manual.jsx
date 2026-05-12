@@ -283,15 +283,33 @@ const sections = [
     id: 'chat-interno', icon: MessageSquare, title: 'Chat Interno',
     color: 'from-blue-600 to-blue-700', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-100',
     content: [
-      { subtitle: 'O que é?', text: 'Canal de comunicação interna da equipe em tempo real, acessível pelo menu "Chat Interno" no bloco Apoio. Suporta canais públicos, canais privados com membros definidos e Mensagens Diretas (DMs) entre usuários.' },
+      { subtitle: 'O que é?', text: 'Canal de comunicação interna da equipe em tempo real, acessível pelo menu "Chat Interno" no bloco Apoio. Suporta canais públicos, canais privados com membros definidos e Mensagens Diretas (DMs) entre todos os usuários da plataforma.' },
       { subtitle: 'Canais fixos (disponíveis para todos)', items: ['**🏢 Geral:** comunicação geral da equipe.', '**💼 Comercial:** assuntos do time comercial.', '**📢 Avisos:** comunicados e informes importantes.'] },
       { subtitle: 'Criar um canal personalizado', steps: ['Clique em "+ Novo canal" na barra lateral.', 'Defina o ícone e o nome do canal.', 'Selecione os membros que terão acesso ao canal.', 'Clique em "Criar Canal". O criador é adicionado automaticamente.'] },
       { subtitle: 'Gerenciar membros de um canal', items: ['**Criador do canal:** pode adicionar ou remover membros a qualquer momento.', '**Administrador:** tem acesso total a todos os canais, mesmo sem ser membro, e pode gerenciar qualquer canal.', 'Passe o mouse sobre o canal na barra lateral e clique no ícone ⚙️ para abrir o modal de gerenciamento.', 'No cabeçalho do canal ativo, o botão "Membros" abre o mesmo modal.'] },
       { subtitle: 'Remover um canal', items: ['Apenas o **criador do canal** ou um **administrador** pode remover um canal.', 'Abra o modal de gerenciamento (⚙️) e clique em "Remover Canal".', '**Os canais fixos (Geral, Comercial, Avisos) não podem ser removidos.**', 'O canal é desativado; o histórico de mensagens é preservado.'] },
-      { subtitle: 'Mensagens Diretas (DMs)', text: 'Clique em qualquer usuário na seção "Mensagens Diretas" da barra lateral para iniciar uma conversa privada. Apenas os dois participantes podem ver as mensagens.' },
-      { subtitle: 'Ocultar usuários da lista de DMs (Admin)', items: ['Administradores podem ocultar usuários que não utilizam a plataforma.', 'Acesse **Usuários** (menu administrativo) > coluna **Chat**.', 'Clique em "Visível" para alternar para "Oculto". O usuário desaparece imediatamente da lista de DMs de todos.', 'Para reexibir, clique em "Oculto" para voltar a "Visível".'] },
-      { subtitle: 'Indicadores de notificação', items: ['**Badges vermelhos** aparecem no ícone do canal/DM com o número de mensagens não lidas.', 'O sistema marca automaticamente como lido ao abrir o canal.'] },
+      { subtitle: 'Mensagens Diretas (DMs)', items: [
+        '**Todos os usuários** da plataforma aparecem automaticamente na seção "Mensagens Diretas" da barra lateral.',
+        'Clique em qualquer usuário para iniciar uma conversa privada. Apenas os dois participantes podem ver as mensagens.',
+        '**Indicador de presença:** ponto verde = online (ativo nos últimos 3 minutos), cinza = offline.',
+      ]},
+      { subtitle: '💬 Abrir DM direto de uma mensagem no canal', items: [
+        'Dentro de qualquer canal, clique no **avatar** ou no **nome** do remetente de uma mensagem para abrir uma conversa direta com aquele usuário.',
+        'Funciona em qualquer canal público ou privado.',
+        'Não funciona em conversas DM (evita abrir DM com você mesmo).',
+      ]},
+      { subtitle: 'Indicadores de notificação', items: [
+        '**Badges vermelhos** aparecem no ícone do canal/DM e no menu lateral com o número de mensagens não lidas.',
+        'O badge é zerado automaticamente ao abrir o canal ou ao navegar para a página Chat Interno.',
+        'O Jarvis (assistente IA) **não** exibe notificações do Chat Interno — os dois sistemas de notificação são independentes.',
+      ]},
       { subtitle: '🎥 Iniciar reunião Google Meet pelo Chat', steps: ['Abra o canal ou DM desejado.', 'Clique em "Iniciar Meet" no canto superior direito.', 'O sistema gera um link Meet e envia automaticamente como mensagem no canal.', 'Todos os membros verão o botão "Entrar no Meet" na mensagem.', 'É possível entrar na reunião diretamente no portal (tela cheia) ou abrindo em nova aba.'] },
+      { subtitle: '📎 Envio de arquivos', items: [
+        'Clique no ícone de clipe (📎) ao lado do campo de texto para anexar arquivos.',
+        'Suporta: imagens, vídeos, áudios, PDFs, documentos Office e arquivos ZIP.',
+        'Limite máximo: **20 MB** por arquivo.',
+        'Imagens são exibidas inline na conversa; outros arquivos aparecem como botão de download.',
+      ]},
     ],
   },
   {
