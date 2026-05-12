@@ -30,7 +30,7 @@ export default function Layout({ children, currentPageName }) {
   const [comunicadoPendente, setComunicadoPendente] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(async u => {
+    base44.auth.me().then(async (u) => {
       setUser(u);
       setDisplayName(u?.nome_tratamento || u?.full_name || u?.email || '');
       // Verificar aceite do usuário
@@ -47,8 +47,8 @@ export default function Layout({ children, currentPageName }) {
         const comunicados = await base44.entities.Comunicado.filter({ ativo: true });
         if (comunicados.length > 0) {
           const leituras = await base44.entities.ComunicadoLeitura.filter({ user_id: u.id });
-          const lidosIds = new Set(leituras.map(l => l.comunicado_id));
-          const pendente = comunicados.find(c => !lidosIds.has(c.id));
+          const lidosIds = new Set(leituras.map((l) => l.comunicado_id));
+          const pendente = comunicados.find((c) => !lidosIds.has(c.id));
           if (pendente) setComunicadoPendente(pendente);
         }
       } catch (e) {}
@@ -102,7 +102,7 @@ export default function Layout({ children, currentPageName }) {
     queryKey: ['notificacoes-pendentes'],
     queryFn: async () => {
       const all = await base44.entities.NotificacaoAutorizacao.list();
-      return all.filter(n => n.status === 'pendente');
+      return all.filter((n) => n.status === 'pendente');
     },
     enabled: isAdmin,
     refetchInterval: 30000
@@ -112,7 +112,7 @@ export default function Layout({ children, currentPageName }) {
     queryKey: ['aceites-pendentes'],
     queryFn: async () => {
       const all = await base44.entities.AceiteUsuario.list();
-      return all.filter(a => !a.leitura_gestao_vendas);
+      return all.filter((a) => !a.leitura_gestao_vendas);
     },
     enabled: isAdmin,
     refetchInterval: 60000
@@ -123,7 +123,7 @@ export default function Layout({ children, currentPageName }) {
     queryFn: async () => {
       const all = await base44.entities.MensagemChat.list('-created_date', 100);
       // Só mensagens de outros usuários
-      return all.filter(m => {
+      return all.filter((m) => {
         if (m.remetente_email === user?.email) return false;
         // DMs: só contar se o usuário atual é o destinatário
         if (m.tipo_canal === 'direto') {
@@ -144,7 +144,7 @@ export default function Layout({ children, currentPageName }) {
     if (!isOnChatPage) return;
     const now = new Date().toISOString();
     let lastSeen = {};
-    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    try {lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}');} catch {}
     // Marca todos os canais das mensagens carregadas
     for (const msg of todasMensagensChat) {
       lastSeen[msg.canal] = now;
@@ -159,7 +159,7 @@ export default function Layout({ children, currentPageName }) {
   const mensagensNaoLidas = (() => {
     if (!user || !todasMensagensChat.length || isOnChatPage) return 0;
     let lastSeen = {};
-    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    try {lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}');} catch {}
     let count = 0;
     for (const msg of todasMensagensChat) {
       const canal = msg.canal;
@@ -176,11 +176,11 @@ export default function Layout({ children, currentPageName }) {
 
   // BLOCO COMERCIAL
   const menuComercial = [
-    { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
-    { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
-    { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
-    { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
-  ].filter(item => {
+  { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
+  { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
+  { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
+  { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true }].
+  filter((item) => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
     if (!item.allowUser) return false;
@@ -189,14 +189,14 @@ export default function Layout({ children, currentPageName }) {
 
   // BLOCO APOIO
   const menuApoio = [
-    { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
-    { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
-    { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
-    { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', allowUser: true, alwaysVisible: true },
-    { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
-    { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
-    { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-  ].filter(item => {
+  { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
+  { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
+  { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
+  { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', allowUser: true, alwaysVisible: true },
+  { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
+  { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
+  { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true }].
+  filter((item) => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
     return menusUsuario.includes(item.page);
@@ -206,17 +206,17 @@ export default function Layout({ children, currentPageName }) {
   const menuItems = []; // mantido vazio, substituído pelos blocos acima
 
   const adminMenuItems = [
-    { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
-    { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
-    { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
-    { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
-    { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
-    { name: 'Relatório Comissões', icon: FileText, page: 'RelatorioComissoes' },
-    { name: 'Prospecção', icon: Users, page: 'Leads' },
-    { name: 'Metas', icon: Target, page: 'Metas' },
-    { name: 'Produtos', icon: Package, page: 'Produtos' },
-    { name: 'Importar', icon: Upload, page: 'Importar' },
-  ].filter(item => {
+  { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
+  { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
+  { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
+  { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
+  { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
+  { name: 'Relatório Comissões', icon: FileText, page: 'RelatorioComissoes' },
+  { name: 'Prospecção', icon: Users, page: 'Leads' },
+  { name: 'Metas', icon: Target, page: 'Metas' },
+  { name: 'Produtos', icon: Package, page: 'Produtos' },
+  { name: 'Importar', icon: Upload, page: 'Importar' }].
+  filter((item) => {
     if (isAdmin) return true;
     return menusUsuario.includes(item.page);
   });
@@ -254,36 +254,36 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const allMenuItems = [
-    { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
-    ...menuComercial,
-    ...menuApoio,
-    ...(adminMenuItems.length > 0 ? adminMenuItems : []),
-    ...(isAdmin ? [{ name: 'Usuários', icon: Users, page: 'Usuarios' }] : []),
-  ];
+  { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
+  ...menuComercial,
+  ...menuApoio,
+  ...(adminMenuItems.length > 0 ? adminMenuItems : []),
+  ...(isAdmin ? [{ name: 'Usuários', icon: Users, page: 'Usuarios' }] : [])];
 
-  const pageTitle = allMenuItems.find(m => m.page === currentPageName)?.name || currentPageName || 'Menu';
+
+  const pageTitle = allMenuItems.find((m) => m.page === currentPageName)?.name || currentPageName || 'Menu';
 
   return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
-      {showOnboarding && user && (
-        <OnboardingModal
-          user={user}
-          aceite={aceite}
-          onComplete={() => setShowOnboarding(false)}
-        />
-      )}
-      {!showOnboarding && comunicadoPendente && user && (
-        <ComunicadoModal
-          comunicado={comunicadoPendente}
-          user={user}
-          onClose={() => setComunicadoPendente(null)}
-        />
-      )}
+      {showOnboarding && user &&
+      <OnboardingModal
+        user={user}
+        aceite={aceite}
+        onComplete={() => setShowOnboarding(false)} />
+
+      }
+      {!showOnboarding && comunicadoPendente && user &&
+      <ComunicadoModal
+        comunicado={comunicadoPendente}
+        user={user}
+        onClose={() => setComunicadoPendente(null)} />
+
+      }
       {!showOnboarding && user && <GoogleCalendarConectarModal />}
 
       {/* ===== MOBILE TOP BAR ===== */}
-      {isMobile && (
-        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
+      {isMobile &&
+      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
           <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1.5">
             <Menu className="w-6 h-6" />
           </button>
@@ -292,11 +292,11 @@ export default function Layout({ children, currentPageName }) {
             {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
           </div>
         </div>
-      )}
+      }
 
       {/* ===== MOBILE DRAWER OVERLAY ===== */}
-      {isMobile && mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex">
+      {isMobile && mobileMenuOpen &&
+      <div className="fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
           <aside className="relative w-72 h-full flex flex-col shadow-2xl" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
             <div className="p-5 flex items-center justify-between border-b border-white/10">
@@ -311,73 +311,73 @@ export default function Layout({ children, currentPageName }) {
             <nav className="flex-1 overflow-y-auto px-3 py-4">
               {/* Dashboard */}
               {(() => {
-                const isActive = currentPageName === 'Dashboard';
-                return (
-                  <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+              const isActive = currentPageName === 'Dashboard';
+              return (
+                <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
                     <BarChart3 className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">Dashboard</span>
-                  </Link>
-                );
-              })()}
+                  </Link>);
+
+            })()}
 
               {/* Comercial */}
               {menuComercial.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Comercial</p>}
               {menuComercial.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPageName === item.page;
-                return (
-                  <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+              const Icon = item.icon;
+              const isActive = currentPageName === item.page;
+              return (
+                <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
-                  </Link>
-                );
-              })}
+                  </Link>);
+
+            })}
 
               {/* Apoio */}
               {menuApoio.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Apoio</p>}
               {menuApoio.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPageName === item.page;
+              return (
+                <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>);
+
+            })}
+
+              {/* Administrativo */}
+              {adminMenuItems.length > 0 &&
+            <>
+                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Administrativo</p>
+                  {adminMenuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentPageName === item.page;
                 return (
                   <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>
-                );
-              })}
-
-              {/* Administrativo */}
-              {adminMenuItems.length > 0 && (
-                <>
-                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Administrativo</p>
-                  {adminMenuItems.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentPageName === item.page;
-                    return (
-                      <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
                         <Icon className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm font-medium">{item.name}</span>
                         {item.badge > 0 && <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>}
-                      </Link>
-                    );
-                  })}
+                      </Link>);
+
+              })}
                 </>
-              )}
+            }
             </nav>
             <div className="border-t border-white/10 p-3 space-y-1">
-              {isAdmin && (
-                <Link to={createPageUrl('Usuarios')} onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                    currentPageName === 'Usuarios' ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                  }`}>
+              {isAdmin &&
+            <Link to={createPageUrl('Usuarios')} onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+            currentPageName === 'Usuarios' ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+            }>
                   <Users className="w-4 h-4" />
                   <span className="text-sm font-medium">Usuários</span>
                 </Link>
-              )}
+            }
               <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
                 <LogOut className="w-4 h-4" />
                 <span className="text-sm font-medium">Sair</span>
@@ -385,41 +385,41 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </aside>
         </div>
-      )}
+      }
 
       {/* ===== DESKTOP SIDEBAR ===== */}
-      {!isMobile && (
+      {!isMobile &&
       <aside className={`flex shadow-xl flex-col fixed left-0 top-0 h-screen transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`} style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
         <div className={`${sidebarCollapsed ? 'p-3' : 'p-6 pb-4'} flex-shrink-0`}>
           <div className="flex items-center justify-between mb-2">
-            {!sidebarCollapsed && (
-              <div>
+            {!sidebarCollapsed &&
+            <div>
                 <h1 className="text-xl font-bold text-white tracking-wide">Villela Exchange</h1>
                 <p className="text-[11px] text-blue-300/60 mt-0.5 uppercase tracking-widest">Gestão Comercial</p>
               </div>
-            )}
+            }
             <div className={`flex items-center gap-1 ${sidebarCollapsed ? 'flex-col w-full' : ''}`}>
-              {!sidebarCollapsed && (
-                <Button variant="ghost" size="icon" onClick={() => setDarkMode(!darkMode)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
+              {!sidebarCollapsed &&
+              <Button variant="ghost" size="icon" onClick={() => setDarkMode(!darkMode)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
                   {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed(c => !c)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
-                {sidebarCollapsed ? <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>}
+              }
+              <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed((c) => !c)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
+                {sidebarCollapsed ? <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>}
               </Button>
             </div>
           </div>
-          {!sidebarCollapsed && (
-            <div className="mt-2">
+          {!sidebarCollapsed &&
+          <div className="mt-2">
               <input
-                type="text"
-                value={sidebarSearch}
-                onChange={e => setSidebarSearch(e.target.value)}
-                placeholder="Buscar menu..."
-                className="w-full px-3 py-1.5 text-xs bg-white/10 text-white placeholder-blue-300/50 border border-white/10 rounded-lg focus:outline-none focus:border-white/30"
-              />
+              type="text"
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
+              placeholder="Buscar menu..."
+              className="w-full px-3 py-1.5 text-xs bg-white/10 text-white placeholder-blue-300/50 border border-white/10 rounded-lg focus:outline-none focus:border-white/30" />
+            
             </div>
-          )}
+          }
         </div>
         <nav className="px-3 pb-4 flex-1 overflow-y-auto">
           {/* Dashboard sempre no topo */}
@@ -427,175 +427,175 @@ export default function Layout({ children, currentPageName }) {
             const isActive = currentPageName === 'Dashboard';
             return (
               <Link to={createPageUrl('Dashboard')} title={sidebarCollapsed ? 'Dashboard' : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}>
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+              }>
                 <BarChart3 className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
-              </Link>
-            );
+              </Link>);
+
           })()}
 
           {/* BLOCO COMERCIAL */}
-          {menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed && (
-            <button onClick={() => setComercialMenuOpen(prev => !prev)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+          {menuComercial.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
+          <button onClick={() => setComercialMenuOpen((prev) => !prev)}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
               <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Comercial</span>
               <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${comercialMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
-          )}
-          {(comercialMenuOpen || sidebarCollapsed) && menuComercial.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+          }
+          {(comercialMenuOpen || sidebarCollapsed) && menuComercial.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
               <Link key={item.page} to={createPageUrl(item.page)} title={sidebarCollapsed ? item.name : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}>
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative opacity-100 ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+              }>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-              </Link>
-            );
+              </Link>);
+
           })}
 
           {/* BLOCO APOIO */}
-          {menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed && (
-            <button onClick={() => setApoioMenuOpen(prev => !prev)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+          {menuApoio.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
+          <button onClick={() => setApoioMenuOpen((prev) => !prev)}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
               <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Apoio</span>
               <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${apoioMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
-          )}
-          {(apoioMenuOpen || sidebarCollapsed) && menuApoio.filter(item => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
+          }
+          {(apoioMenuOpen || sidebarCollapsed) && menuApoio.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
               <Link key={item.page} to={createPageUrl(item.page)} title={sidebarCollapsed ? item.name : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-                  isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}>
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+              }>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-                {item.page === 'ChatPage' && mensagensNaoLidas > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
-                )}
-              </Link>
-            );
+                {item.page === 'ChatPage' && mensagensNaoLidas > 0 &&
+                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
+                }
+              </Link>);
+
           })}
 
           {/* BLOCO ADMINISTRATIVO */}
-          {adminMenuItems.length > 0 && !sidebarCollapsed && (
-            <>
-              <button onClick={() => setAdminMenuOpen(prev => !prev)}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
+          {adminMenuItems.length > 0 && !sidebarCollapsed &&
+          <>
+              <button onClick={() => setAdminMenuOpen((prev) => !prev)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
                 <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
-                {!adminMenuOpen && totalPendentes > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{totalPendentes}</span>
-                )}
+                {!adminMenuOpen && totalPendentes > 0 &&
+              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{totalPendentes}</span>
+              }
                 <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
               {adminMenuOpen && adminMenuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPageName === item.page;
-                return (
-                  <Link key={item.page} to={createPageUrl(item.page)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
-                      isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                    }`}>
+              const Icon = item.icon;
+              const isActive = currentPageName === item.page;
+              return (
+                <Link key={item.page} to={createPageUrl(item.page)}
+                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
+                isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+                }>
                     <Icon className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{item.name}</span>
-                    {item.badge > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
-                    )}
-                  </Link>
-                );
-              })}
+                    {item.badge > 0 &&
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
+                  }
+                  </Link>);
+
+            })}
             </>
-          )}
+          }
           {/* Administrativo colapsado: ícones com badge */}
           {adminMenuItems.length > 0 && sidebarCollapsed && adminMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPageName === item.page;
             return (
               <Link key={item.page} to={createPageUrl(item.page)} title={item.name}
-                className={`flex items-center justify-center px-2 py-2.5 rounded-xl mb-1 transition-all relative ${
-                  isActive ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}>
+              className={`flex items-center justify-center px-2 py-2.5 rounded-xl mb-1 transition-all relative ${
+              isActive ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+              }>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {item.badge > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
-              </Link>
-            );
+              </Link>);
+
           })}
         </nav>
         <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
-          {isAdmin && (
-            <>
+          {isAdmin &&
+          <>
               <Link to={createPageUrl('Usuarios')} title={sidebarCollapsed ? 'Usuários' : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-                  currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                }`}>
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
+            currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+            }>
                 <Users className="w-4 h-4 flex-shrink-0" />
                 {!sidebarCollapsed && <span className="text-sm font-medium">Usuários</span>}
               </Link>
-              {!sidebarCollapsed && (
-                <div className="relative">
-                  <button onClick={() => setShowImpersonateMenu(p => !p)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-                      impersonating ? 'bg-amber-500/30 text-amber-200' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'
-                    }`}>
+              {!sidebarCollapsed &&
+            <div className="relative">
+                  <button onClick={() => setShowImpersonateMenu((p) => !p)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
+              impersonating ? 'bg-amber-500/30 text-amber-200' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
+              }>
                     <Eye className="w-4 h-4 flex-shrink-0" />
                     <span className="text-sm font-medium">{impersonating ? `Espelhando: ${impersonating.nome.split(' ')[0]}` : 'Espelhar Vendedor'}</span>
                   </button>
-                  {showImpersonateMenu && (
-                    <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-50 max-h-64 overflow-y-auto">
-                      {impersonating && (
-                        <button onClick={() => { clearImpersonation(); setShowImpersonateMenu(false); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 font-semibold">
+                  {showImpersonateMenu &&
+              <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-50 max-h-64 overflow-y-auto">
+                      {impersonating &&
+                <button onClick={() => {clearImpersonation();setShowImpersonateMenu(false);}}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 font-semibold">
                           <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
                         </button>
-                      )}
+                }
                       <div className="my-1 border-t border-gray-100" />
-                      {vendedoresList.map(v => (
-                        <button key={v.id} onClick={() => { setImpersonatedVendedor(v); setShowImpersonateMenu(false); }}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition ${
-                            impersonating?.id === v.id ? 'font-semibold text-[#1a3150] bg-blue-50' : 'text-gray-700'
-                          }`}>
+                      {vendedoresList.map((v) =>
+                <button key={v.id} onClick={() => {setImpersonatedVendedor(v);setShowImpersonateMenu(false);}}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition ${
+                impersonating?.id === v.id ? 'font-semibold text-[#1a3150] bg-blue-50' : 'text-gray-700'}`
+                }>
                           {v.nome}
                         </button>
-                      ))}
+                )}
                     </div>
-                  )}
+              }
                 </div>
-              )}
+            }
             </>
-          )}
+          }
           <button onClick={handleLogout} title={sidebarCollapsed ? 'Sair' : undefined} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all ${sidebarCollapsed ? 'justify-center px-2' : ''}`}>
             <LogOut className="w-4 h-4 flex-shrink-0" />
             {!sidebarCollapsed && <span className="text-sm font-medium">Sair</span>}
           </button>
         </div>
         </aside>
-        )}
+      }
 
       {/* ===== IMPERSONATION BANNER ===== */}
-      {impersonating && (
-        <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between px-4 py-2 text-white text-sm font-semibold" style={{ background: '#b45309' }}>
+      {impersonating &&
+      <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between px-4 py-2 text-white text-sm font-semibold" style={{ background: '#b45309' }}>
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
             <span>Você está vendo como: <strong>{impersonating.nome}</strong></span>
           </div>
-          <button onClick={() => { clearImpersonation(); }} className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs transition">
+          <button onClick={() => {clearImpersonation();}} className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs transition">
             <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
           </button>
         </div>
-      )}
+      }
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${!isMobile ? (sidebarCollapsed ? 'ml-16' : 'ml-64') : 'pt-14'} ${impersonating ? (isMobile ? 'pt-24' : 'pt-10') : ''}`}>
+      <main className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${!isMobile ? sidebarCollapsed ? 'ml-16' : 'ml-64' : 'pt-14'} ${impersonating ? isMobile ? 'pt-24' : 'pt-10' : ''}`}>
         <MarketTicker />
         {children}
         <AssistenteFloating />
       </main>
-    </div>
-  );
+    </div>);
+
 }
