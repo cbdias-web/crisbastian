@@ -353,6 +353,8 @@ export default function ChatPage() {
     const map = {};
     for (const msg of todasMensagens) {
       if (msg.remetente_email === user.email) continue;
+      // DMs: só contar se o usuário atual é o destinatário
+      if (msg.tipo_canal === 'direto' && msg.destinatario_email !== user.email) continue;
       const canal = msg.canal;
       const msgTime = new Date(msg.created_date).getTime();
       const seenTime = lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0;

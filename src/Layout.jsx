@@ -138,47 +138,33 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const isOnChatPage = currentPageName === 'ChatPage';
-  const chatPageEnteredAtRef = useRef(null);
 
-  // Ao entrar na ChatPage, grava imediatamente o timestamp de entrada
-  // Qualquer mensagem anterior a esse momento é considerada lida
+  // Sempre que estiver na ChatPage E os dados chegarem, marca TUDO como lido
   useEffect(() => {
-    if (isOnChatPage) {
-      chatPageEnteredAtRef.current = new Date().toISOString();
-      // Grava last_seen para todos os canais com o timestamp atual
-      const now = chatPageEnteredAtRef.current;
-      let lastSeen = {};
-      try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
-      // Atualiza todos os canais conhecidos nas mensagens já carregadas
-      if (todasMensagensChat.length > 0) {
-        for (const msg of todasMensagensChat) {
-          lastSeen[msg.canal] = now;
-        }
-      }
-      // Garante que os canais fixos também sejam marcados
-      for (const canal of ['geral', 'comercial', 'avisos']) {
-        lastSeen[canal] = now;
-      }
-      localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
-    } else {
-      chatPageEnteredAtRef.current = null;
+    if (!isOnChatPage) return;
+    const now = new Date().toISOString();
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    // Marca todos os canais das mensagens carregadas
+    for (const msg of todasMensagensChat) {
+      lastSeen[msg.canal] = now;
     }
-  }, [isOnChatPage]);
+    // Garante canais fixos
+    for (const canal of ['geral', 'comercial', 'avisos']) {
+      lastSeen[canal] = now;
+    }
+    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+  }, [isOnChatPage, todasMensagensChat]);
 
   const mensagensNaoLidas = (() => {
     if (!user || !todasMensagensChat.length || isOnChatPage) return 0;
     let lastSeen = {};
     try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
-    // Usa o maior valor entre last_seen por canal e o chatPageEnteredAt global
-    const enteredAt = chatPageEnteredAtRef.current ? new Date(chatPageEnteredAtRef.current).getTime() : 0;
     let count = 0;
     for (const msg of todasMensagensChat) {
       const canal = msg.canal;
       const msgTime = new Date(msg.created_date).getTime();
-      const seenTime = Math.max(
-        lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0,
-        enteredAt
-      );
+      const seenTime = lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0;
       if (msgTime > seenTime) count++;
     }
     return count;
