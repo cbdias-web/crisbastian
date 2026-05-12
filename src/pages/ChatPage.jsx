@@ -284,8 +284,9 @@ export default function ChatPage() {
   useEffect(() => {
     if (user) refetchUsuarios();
   }, [user, refetchUsuarios]);
-  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email && u.ativo !== false);
-  const todosUsuariosAtivos = usuarios.filter(u => u.ativo !== false);
+  // Inclui todos os usuários que não sejam o próprio usuário (independente do campo ativo)
+  const outrosUsuarios = usuarios.filter(u => u.email !== user?.email);
+  const todosUsuariosAtivos = usuarios;
 
   // Canais visíveis: fixos + canais do banco onde o usuário é membro (ou admin vê todos)
   const canaisCustom = canaisDB.filter(c => c.ativo !== false && !CANAIS_FIXOS.some(cf => cf.nome.toLowerCase() === c.nome?.toLowerCase())).map(c => ({
@@ -520,6 +521,13 @@ export default function ChatPage() {
     return (Date.now() - new Date(u.ultimo_acesso).getTime()) < 3 * 60 * 1000;
   };
 
+  const abrirDM = (remetenteEmail, remetenteNome) => {
+    if (!remetenteEmail || remetenteEmail === user?.email) return;
+    const u = usuarios.find(u => u.email === remetenteEmail);
+    const nome = u?.nome_tratamento || u?.full_name || remetenteNome || remetenteEmail;
+    setActive({ type: 'dm', id: u?.id || remetenteEmail, email: remetenteEmail, nome });
+  };
+
   const grouped = groupByDate(mensagens);
   const activeCanal = todosCanais.find(c => c.id === active.id);
   const headerSub = active.type === 'canal'
@@ -712,9 +720,25 @@ export default function ChatPage() {
             const isOwn = msg.remetente_email === user?.email;
             return (
               <div key={msg.id} className={`flex gap-3 items-start group py-0.5 ${isOwn ? 'flex-row-reverse' : ''}`}>
-                {!isOwn && <UserAvatar nome={msg.remetente_nome} />}
+                {!isOwn && (
+                  <button
+                    onClick={() => active.type === 'canal' && abrirDM(msg.remetente_email, msg.remetente_nome)}
+                    className={`flex-shrink-0 ${active.type === 'canal' ? 'cursor-pointer hover:opacity-80 transition' : 'cursor-default'}`}
+                    title={active.type === 'canal' ? `Mensagem direta para ${msg.remetente_nome}` : undefined}
+                  >
+                    <UserAvatar nome={msg.remetente_nome} />
+                  </button>
+                )}
                 <div className={`max-w-[70%] flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                {!isOwn && <span className="text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 ml-1">{msg.remetente_nome}</span>}
+                {!isOwn && (
+                  <button
+                    onClick={() => active.type === 'canal' && abrirDM(msg.remetente_email, msg.remetente_nome)}
+                    className={`text-xs text-slate-600 dark:text-slate-400 font-semibold mb-1 ml-1 ${active.type === 'canal' ? 'hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition' : 'cursor-default'}`}
+                    title={active.type === 'canal' ? `Mensagem direta para ${msg.remetente_nome}` : undefined}
+                  >
+                    {msg.remetente_nome}
+                  </button>
+                )}
                 <div className={`rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-blue-600 dark:bg-blue-700 text-white rounded-br-sm' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-bl-sm'}`}>
                     {msg.meet_link ? (
                       <div className="space-y-2">
