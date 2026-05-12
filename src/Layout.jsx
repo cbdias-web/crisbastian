@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import OnboardingModal from '@/components/OnboardingModal';
 import ComunicadoModal from '@/components/ComunicadoModal';
 import { Link } from 'react-router-dom';
@@ -129,21 +129,25 @@ export default function Layout({ children, currentPageName }) {
   });
 
   const isOnChatPage = currentPageName === 'ChatPage';
+  const didMarkReadRef = useRef(false);
 
-  // Quando entra na ChatPage, persiste last_seen para todos os canais
+  // Quando está na ChatPage, marca todos os canais como lidos
+  // Dispara tanto ao entrar quanto quando as mensagens chegam (caso dados ainda não tivessem carregado)
   useEffect(() => {
-    if (!isOnChatPage) return;
+    if (!isOnChatPage) {
+      didMarkReadRef.current = false; // reset para próxima vez que entrar
+      return;
+    }
+    if (todasMensagensChat.length === 0) return;
     const now = new Date().toISOString();
     let lastSeen = {};
     try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
-    // Marca todos os canais conhecidos como lidos agora
-    if (todasMensagensChat.length > 0) {
-      for (const msg of todasMensagensChat) {
-        lastSeen[msg.canal] = now;
-      }
-      localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+    for (const msg of todasMensagensChat) {
+      lastSeen[msg.canal] = now;
     }
-  }, [isOnChatPage]); // só dispara ao entrar/sair da ChatPage
+    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+    didMarkReadRef.current = true;
+  }, [isOnChatPage, todasMensagensChat.length]);
 
   const mensagensNaoLidas = (() => {
     if (!user || !todasMensagensChat.length || isOnChatPage) return 0;

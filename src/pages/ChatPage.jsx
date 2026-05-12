@@ -363,13 +363,17 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!active.id || !user) return;
-    const key = active.type === 'canal' ? active.id : getDmKey(user.email, active.email);
+    const key = active.type === 'canal' ? active.id : getDmKey(user.email, active.email ?? '');
     let lastSeen = {};
     try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
     lastSeen[key] = new Date().toISOString();
     localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
-    setUnreadMap(prev => ({ ...prev, [key]: 0 }));
-  }, [active, mensagens, user]);
+    setUnreadMap(prev => {
+      if ((prev[key] || 0) === 0) return prev; // evita re-render desnecessário
+      return { ...prev, [key]: 0 };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active.id, active.type, active.email, user?.email]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [mensagens]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, [active]);
