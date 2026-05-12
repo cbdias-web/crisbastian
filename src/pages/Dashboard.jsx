@@ -6,14 +6,14 @@ import { createPageUrl } from "@/utils";
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload,
-  Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock
-} from "lucide-react";
+  Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock } from
+"lucide-react";
 import ParcelasVincendasModal from "@/components/parcelas/ParcelasVincendasModal";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const formatCurrency = (v) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
 function toDateStr(d) {
   return d.toISOString().split("T")[0];
@@ -28,22 +28,22 @@ function firstWorkingDay(year, month) {
 function MultiSelect({ label, options, selected, onChange }) {
   const [open, setOpen] = useState(false);
   const lbl =
-    selected.length === 0 || selected.length === options.length
-      ? `Todos ${label}`
-      : `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
-  const toggle = (v) => onChange(selected.includes(v) ? selected.filter(i => i !== v) : [...selected, v]);
-  const toggleAll = () => onChange(selected.length === options.length ? [] : options.map(o => o.value));
+  selected.length === 0 || selected.length === options.length ?
+  `Todos ${label}` :
+  `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
+  const toggle = (v) => onChange(selected.includes(v) ? selected.filter((i) => i !== v) : [...selected, v]);
+  const toggleAll = () => onChange(selected.length === options.length ? [] : options.map((o) => o.value));
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 hover:bg-gray-50 transition justify-between min-w-[150px]"
-      >
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 hover:bg-gray-50 transition justify-between min-w-[150px]">
+        
         <span className="truncate">{lbl}</span>
         <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-      {open && (
-        <>
+      {open &&
+      <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 max-h-56 overflow-y-auto">
             <button onClick={toggleAll} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50">
@@ -52,19 +52,19 @@ function MultiSelect({ label, options, selected, onChange }) {
               </div>
               Todos
             </button>
-            {options.map(o => (
-              <button key={o.value} onClick={() => toggle(o.value)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600">
+            {options.map((o) =>
+          <button key={o.value} onClick={() => toggle(o.value)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600">
                 <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.includes(o.value) ? "bg-[#1a3150] border-[#1a3150]" : "border-gray-300"}`}>
                   {selected.includes(o.value) && <Check className="w-3 h-3 text-white" />}
                 </div>
                 <span className="truncate">{o.label}</span>
               </button>
-            ))}
+          )}
           </div>
         </>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 export default function Dashboard() {
@@ -97,13 +97,13 @@ export default function Dashboard() {
   const sincronizarAgenda = async (vendedorId) => {
     try {
       if (!vendedorId) return;
-      
+
       const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendedorId }, '-data_interacao');
       const hoje = new Date().toISOString().split('T')[0];
-      
+
       const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendedorId });
-      const agendaMap = new Set(agendas.map(a => `${a.lead_id}-${a.data_agendada}`));
-      
+      const agendaMap = new Set(agendas.map((a) => `${a.lead_id}-${a.data_agendada}`));
+
       for (const inter of interacoes) {
         if (inter.proximo_contato && inter.proximo_contato >= hoje) {
           const key = `${inter.cliente_id}-${inter.proximo_contato}`;
@@ -133,21 +133,21 @@ export default function Dashboard() {
   // Buscar usuário do vendedor espelhado para obter avatar
   useEffect(() => {
     const imp = getImpersonatedVendedor();
-    if (!imp?.email) { setImpersonadoUser(null); return; }
-    base44.entities.User.filter({ email: imp.email })
-      .then(users => setImpersonadoUser(users[0] || null))
-      .catch(() => setImpersonadoUser(null));
+    if (!imp?.email) {setImpersonadoUser(null);return;}
+    base44.entities.User.filter({ email: imp.email }).
+    then((users) => setImpersonadoUser(users[0] || null)).
+    catch(() => setImpersonadoUser(null));
   }, [vendedor?.id]);
 
   useEffect(() => {
     Promise.allSettled([
-      base44.entities.Venda.list("-data", 500),
-      base44.entities.Vendedor.list(),
-      base44.entities.Meta.list(),
-      base44.entities.Comissao.list(),
-      base44.auth.me(),
-      base44.entities.ParcelaVenda.filter({ status: 'pendente' }),
-    ]).then(async ([v, vend, m, com, u, parc]) => {
+    base44.entities.Venda.list("-data", 500),
+    base44.entities.Vendedor.list(),
+    base44.entities.Meta.list(),
+    base44.entities.Comissao.list(),
+    base44.auth.me(),
+    base44.entities.ParcelaVenda.filter({ status: 'pendente' })]
+    ).then(async ([v, vend, m, com, u, parc]) => {
       const vendas = v.status === 'fulfilled' ? v.value : [];
       const vends = vend.status === 'fulfilled' ? vend.value : [];
       const mts = m.status === 'fulfilled' ? m.value : [];
@@ -160,28 +160,28 @@ export default function Dashboard() {
       setComissoes(coms);
       setParcelasMes(parcelas);
       setUser(usr);
-      setSelectedVendedores(vends.map(vv => vv.id));
-      const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
+      setSelectedVendedores(vends.map((vv) => vv.id));
+      const prods = [...new Set(vendas.map((vv) => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
-      
+
       // Sincronizar agenda se o usuário tiver vendedor vinculado (ou impersonado)
       if (usr) {
         const isAdm = usr.role === 'admin' || usr.permissao_admin === true;
         const impersonado = isAdm ? getImpersonatedVendedor() : null;
-        const vendedorAtivo = impersonado || vends.find(v => v.email === usr.email) || null;
+        const vendedorAtivo = impersonado || vends.find((v) => v.email === usr.email) || null;
         if (vendedorAtivo) {
           setVendedor(vendedorAtivo);
           setTimeout(() => sincronizarAgenda(vendedorAtivo.id), 500);
           // Verificar agenda pendente de hoje
           const hoje = new Date().toISOString().split('T')[0];
-          base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id })
-            .then(agenda => {
-              const pendentes = agenda.filter(a => a.data_agendada === hoje && a.status === 'pendente').length;
-              if (pendentes > 0) setAgendaPendentes(pendentes);
-            }).catch(() => {});
+          base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id }).
+          then((agenda) => {
+            const pendentes = agenda.filter((a) => a.data_agendada === hoje && a.status === 'pendente').length;
+            if (pendentes > 0) setAgendaPendentes(pendentes);
+          }).catch(() => {});
         }
       }
-      
+
       setLoading(false);
     });
   }, []);
@@ -195,7 +195,7 @@ export default function Dashboard() {
       } else {
         // Voltar para o vendedor do usuário logado
         if (user) {
-          const v = vendedores.find(vv => vv.email === user.email) || null;
+          const v = vendedores.find((vv) => vv.email === user.email) || null;
           setVendedor(v);
         }
       }
@@ -204,14 +204,14 @@ export default function Dashboard() {
     return () => window.removeEventListener('impersonation-change', handleChange);
   }, [user, vendedores]);
 
-  const produtoOptions = [...new Set(vendas.map(v => v.produto).filter(Boolean))].map(p => ({ value: p, label: p }));
-  const vendedorOptions = vendedores.map(v => ({ value: v.id, label: v.nome }));
+  const produtoOptions = [...new Set(vendas.map((v) => v.produto).filter(Boolean))].map((p) => ({ value: p, label: p }));
+  const vendedorOptions = vendedores.map((v) => ({ value: v.id, label: v.nome }));
 
-  const vendasFiltradas = vendas.filter(v => {
+  const vendasFiltradas = vendas.filter((v) => {
     const d = v.data || "";
     const inDate = (!dataInicio || d >= dataInicio) && (!dataFim || d <= dataFim);
     const inVend = selectedVendedores.length === 0 || selectedVendedores.length === vendedores.length ||
-      selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some(id => vendedores.find(vv => vv.id === id)?.nome === v.assessor_comercial);
+    selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some((id) => vendedores.find((vv) => vv.id === id)?.nome === v.assessor_comercial);
     const inProd = selectedProdutos.length === 0 || selectedProdutos.length === produtoOptions.length || selectedProdutos.includes(v.produto);
     return inDate && inVend && inProd;
   });
@@ -220,13 +220,13 @@ export default function Dashboard() {
   const totalVendas = vendasFiltradas.length;
   const valorTotal = vendasFiltradas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
   const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
-  const vendedoresAtivos = new Set(vendasFiltradas.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
+  const vendedoresAtivos = new Set(vendasFiltradas.map((v) => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
 
   // Comissão gerada (somente vendas do período filtrado)
-  const vendasFiltradasIds = new Set(vendasFiltradas.map(v => v.id));
-  const comissaoGerada = comissoes
-    .filter(c => vendasFiltradasIds.has(c.venda_id))
-    .reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+  const vendasFiltradasIds = new Set(vendasFiltradas.map((v) => v.id));
+  const comissaoGerada = comissoes.
+  filter((c) => vendasFiltradasIds.has(c.venda_id)).
+  reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
 
   // Meta do time do mês atual
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -234,90 +234,90 @@ export default function Dashboard() {
   const mesUltDia = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const mesFim = `${mesAtual}-${String(mesUltDia).padStart(2, "0")}`;
 
-  const metaEquipe = metas.find(m => m.mes === mesAtual && m.tipo === "equipe");
+  const metaEquipe = metas.find((m) => m.mes === mesAtual && m.tipo === "equipe");
   const metaTimeSoma = vendedores.reduce((s, v) => {
-    const m = metas.find(m => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === v.id);
+    const m = metas.find((m) => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === v.id);
     return s + (m?.valor_meta || 0);
   }, 0);
   const metaTimeMes = metaEquipe?.valor_meta || metaTimeSoma;
 
-  const producaoTimeMes = vendas
-    .filter(v => v.data && v.data >= mesIni && v.data <= mesFim)
-    .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
+  const producaoTimeMes = vendas.
+  filter((v) => v.data && v.data >= mesIni && v.data <= mesFim).
+  reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
 
-  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round((producaoTimeMes / metaTimeMes) * 100), 100) : null;
+  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(producaoTimeMes / metaTimeMes * 100), 100) : null;
   const metaTimeAtingida = metaTimeMes > 0 && producaoTimeMes >= metaTimeMes;
 
   // Meta individual do usuário logado com bônus
-  const metaIndividual = vendedor
-    ? metas.find(m => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0)
-    : null;
-  const producaoIndividualMes = vendedor
-    ? vendas
-        .filter(v => v.data && v.data >= mesIni && v.data <= mesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome))
-        .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0)
-    : 0;
+  const metaIndividual = vendedor ?
+  metas.find((m) => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0) :
+  null;
+  const producaoIndividualMes = vendedor ?
+  vendas.
+  filter((v) => v.data && v.data >= mesIni && v.data <= mesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome)).
+  reduce((s, v) => s + (parseFloat(v.valor) || 0), 0) :
+  0;
   const faltaParaBonus = metaIndividual ? Math.max(0, metaIndividual.valor_meta - producaoIndividualMes) : 0;
   const bonusAtingido = metaIndividual && producaoIndividualMes >= metaIndividual.valor_meta;
 
   // Gráfico ranking
-  const rankingData = vendedores
-    .map(v => {
-      const vol = vendasFiltradas
-        .filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome)
-        .reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-      const metaRecord = metas.find(m => m.vendedor_id === v.id && m.mes === mesAtual && m.tipo === "individual");
-      
-      // Verifica se tem comissões no mês atual
-      const temComissaoMes = comissoes.some(c => 
-        c.vendedor_id === v.id && 
-        c.data_venda && 
-        c.data_venda >= mesIni && 
-        c.data_venda <= mesFim
-      );
-      
-      return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
-    })
-    .filter(r => r.volume > 0 || r.meta > 0 || r.temComissaoMes)
-    .sort((a, b) => b.volume - a.volume);
+  const rankingData = vendedores.
+  map((v) => {
+    const vol = vendasFiltradas.
+    filter((vd) => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome).
+    reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+    const metaRecord = metas.find((m) => m.vendedor_id === v.id && m.mes === mesAtual && m.tipo === "individual");
+
+    // Verifica se tem comissões no mês atual
+    const temComissaoMes = comissoes.some((c) =>
+    c.vendedor_id === v.id &&
+    c.data_venda &&
+    c.data_venda >= mesIni &&
+    c.data_venda <= mesFim
+    );
+
+    return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
+  }).
+  filter((r) => r.volume > 0 || r.meta > 0 || r.temComissaoMes).
+  sort((a, b) => b.volume - a.volume);
 
   // Últimas vendas
   const recentes = vendasFiltradas.slice(0, 8);
 
   // Parcelas vincendas do mês atual por vendedor
   const parcelasPorVendedor = (vendedorId) =>
-    parcelasMes
-      .filter(p => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim)
-      .reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0);
+  parcelasMes.
+  filter((p) => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).
+  reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0);
 
   // Ranking
-  const ranking = vendedores
-    .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
-    .map(v => {
-      const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
-      const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-      const vincendas = parcelasPorVendedor(v.id);
-      return { ...v, qtd: vs.length, vol, vincendas };
-    })
-    .sort((a, b) => b.vol - a.vol);
+  const ranking = vendedores.
+  filter((v) => v.nome?.toUpperCase() !== 'CONSÓRCIO').
+  map((v) => {
+    const vs = vendasFiltradas.filter((vd) => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
+    const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+    const vincendas = parcelasPorVendedor(v.id);
+    return { ...v, qtd: vs.length, vol, vincendas };
+  }).
+  sort((a, b) => b.vol - a.vol);
 
   const cards = [
-    { label: "Vendas no Período", value: totalVendas, sub: `${vendas.length} total cadastradas`, icon: FileText, light: "bg-blue-50", text: "text-[#1a3150]" },
-    { label: "Comissão Gerada", value: formatCurrency(comissaoGerada), icon: DollarSign, light: "bg-amber-50", text: "text-amber-700" },
-    { label: "Ticket Médio", value: formatCurrency(ticketMedio), icon: DollarSign, light: "bg-orange-50", text: "text-orange-600" },
-    { label: "Vendedores Ativos", value: vendedoresAtivos, icon: Users, light: "bg-violet-50", text: "text-violet-700" },
-  ];
+  { label: "Vendas no Período", value: totalVendas, sub: `${vendas.length} total cadastradas`, icon: FileText, light: "bg-blue-50", text: "text-[#1a3150]" },
+  { label: "Comissão Gerada", value: formatCurrency(comissaoGerada), icon: DollarSign, light: "bg-amber-50", text: "text-amber-700" },
+  { label: "Ticket Médio", value: formatCurrency(ticketMedio), icon: DollarSign, light: "bg-orange-50", text: "text-orange-600" },
+  { label: "Vendedores Ativos", value: vendedoresAtivos, icon: Users, light: "bg-violet-50", text: "text-violet-700" }];
+
 
   const impersonado = getImpersonatedVendedor();
-  const displayName = impersonado ? impersonado.nome : (user?.nome_tratamento || user?.full_name || user?.email || '?');
+  const displayName = impersonado ? impersonado.nome : user?.nome_tratamento || user?.full_name || user?.email || '?';
   const avatarUrl = impersonado ? impersonadoUser?.avatar_url : user?.avatar_url;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   const openProfileModal = () => {
@@ -351,7 +351,7 @@ export default function Dashboard() {
       await base44.auth.updateMe({ avatar_url: file_url });
       const updatedUser = await base44.auth.me();
       setUser(updatedUser);
-      setProfileForm(prev => ({ ...prev }));
+      setProfileForm((prev) => ({ ...prev }));
       toast.success('Avatar atualizado!');
     } catch (error) {
       toast.error('Erro ao atualizar avatar');
@@ -368,38 +368,38 @@ export default function Dashboard() {
           </div>
           
           {/* User Profile */}
-          {user && (
-            <div className="flex flex-col items-end gap-1.5">
+          {user &&
+          <div className="flex flex-col items-end gap-1.5">
               <button
-                onClick={openProfileModal}
-                className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer"
-              >
+              onClick={openProfileModal}
+              className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer">
+              
                 <div className="text-right">
                   <p className="text-[10px] text-gray-400 uppercase tracking-wider">{impersonado ? 'Espelhando' : 'Bem-vindo'}</p>
                   <p className="text-sm font-semibold text-gray-900">{displayName}</p>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <span>{displayName.charAt(0).toUpperCase()}</span>
-                  )}
+                  {avatarUrl ?
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> :
+
+                <span>{displayName.charAt(0).toUpperCase()}</span>
+                }
                 </div>
               </button>
-              {bonusAtingido && (
-                <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
+              {bonusAtingido &&
+            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
                   <span>🎉</span>
                   <span>Parabéns! Você bateu a meta e garantiu o bônus de <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong>!</span>
                 </div>
-              )}
-              {!bonusAtingido && metaIndividual && faltaParaBonus > 0 && (
-                <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
+            }
+              {!bonusAtingido && metaIndividual && faltaParaBonus > 0 &&
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
                   <span>🎯</span>
                   <span>Mais um pouquinho! Faltam <strong>{formatCurrency(faltaParaBonus)}</strong> para você levar <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong> de bônus!</span>
                 </div>
-              )}
+            }
             </div>
-          )}
+          }
         </div>
 
         <div className="flex flex-col gap-3">
@@ -407,16 +407,16 @@ export default function Dashboard() {
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <Calendar className="w-4 h-4 text-gray-400 ml-1" />
-            <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+            <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
             <span className="text-gray-400 text-sm">até</span>
-            <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
+            <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
             <div className="h-4 w-px bg-gray-200" />
             <MultiSelect label="Vendedores" options={vendedorOptions} selected={selectedVendedores} onChange={setSelectedVendedores} />
-            {produtoOptions.length > 0 && (
-              <MultiSelect label="Produtos" options={produtoOptions} selected={selectedProdutos} onChange={setSelectedProdutos} />
-            )}
+            {produtoOptions.length > 0 &&
+            <MultiSelect label="Produtos" options={produtoOptions} selected={selectedProdutos} onChange={setSelectedProdutos} />
+            }
             <span className="ml-auto text-xs text-gray-400">
               {vendasFiltradas.length} venda{vendasFiltradas.length !== 1 ? "s" : ""} no período
               <span className="mx-1 text-gray-300">·</span>
@@ -426,7 +426,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Vendido - Destaque */}
-        <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-6 shadow-lg border border-gray-200">
+        <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-6 shadow-lg border border-gray-200 opacity-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-blue-200/70 font-medium uppercase tracking-wider mb-2">Total Vendido no Período</p>
@@ -443,8 +443,8 @@ export default function Dashboard() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          {cards.map((card) => (
-            <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          {cards.map((card) =>
+          <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{card.label}</p>
@@ -456,12 +456,12 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Meta do Time */}
-        {metaTimeMes > 0 && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        {metaTimeMes > 0 &&
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
@@ -482,41 +482,41 @@ export default function Dashboard() {
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-700 ${metaTimeAtingida ? "bg-emerald-500" : metaTimePct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                    style={{ width: `${metaTimePct}%` }}
-                  />
+                  className={`h-full rounded-full transition-all duration-700 ${metaTimeAtingida ? "bg-emerald-500" : metaTimePct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
+                  style={{ width: `${metaTimePct}%` }} />
+                
                 </div>
               </div>
             </div>
           </div>
-        )}
+        }
 
         {/* Gráfico + Últimas Vendas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
             <h3 className="font-semibold text-gray-900 text-sm mb-4">Volume de Vendas vs Meta</h3>
-            {rankingData.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Nenhuma venda no período</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
+            {rankingData.length === 0 ?
+            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Nenhuma venda no período</div> :
+
+            <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={rankingData} barGap={4} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis dataKey="nome" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                    tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
                   <Tooltip
-                    formatter={(val, name) => [formatCurrency(val), name === "volume" ? "Volume Vendido" : "Meta"]}
-                    contentStyle={{ borderRadius: 12, border: "1px solid #f3f4f6", fontSize: 12 }}
-                  />
+                  formatter={(val, name) => [formatCurrency(val), name === "volume" ? "Volume Vendido" : "Meta"]}
+                  contentStyle={{ borderRadius: 12, border: "1px solid #f3f4f6", fontSize: 12 }} />
+                
                   <Bar dataKey="volume" name="volume" fill="#1a3150" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                    {rankingData.map((entry, i) => (
-                      <Cell key={i} fill={entry.volume >= entry.meta && entry.meta > 0 ? "#10b981" : "#1a3150"} />
-                    ))}
+                    {rankingData.map((entry, i) =>
+                  <Cell key={i} fill={entry.volume >= entry.meta && entry.meta > 0 ? "#10b981" : "#1a3150"} />
+                  )}
                   </Bar>
                   <Bar dataKey="meta" name="meta" fill="#D4AF37" radius={[6, 6, 0, 0]} maxBarSize={40} opacity={0.5} />
                 </BarChart>
               </ResponsiveContainer>
-            )}
+            }
             <div className="flex gap-4 mt-2 justify-center">
               <div className="flex items-center gap-1.5 text-xs text-gray-500"><div className="w-3 h-3 rounded-sm bg-[#1a3150]" />Volume Vendido</div>
               <div className="flex items-center gap-1.5 text-xs text-gray-500"><div className="w-3 h-3 rounded-sm bg-emerald-500" />Meta Atingida</div>
@@ -533,13 +533,13 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="divide-y divide-gray-50 overflow-y-auto max-h-[280px]">
-              {recentes.length === 0 ? (
-                <div className="px-5 py-10 text-center text-gray-400 text-sm">
+              {recentes.length === 0 ?
+              <div className="px-5 py-10 text-center text-gray-400 text-sm">
                   <FileText className="w-8 h-8 mx-auto mb-2 text-gray-200" />
                   Nenhuma venda no período
-                </div>
-              ) : recentes.map((v) => (
-                <div key={v.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50/50 transition">
+                </div> :
+              recentes.map((v) =>
+              <div key={v.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50/50 transition">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{v.cliente || "—"}</p>
                     <p className="text-xs text-gray-400">{v.assessor_comercial || "—"} · {v.data || ""}</p>
@@ -549,7 +549,7 @@ export default function Dashboard() {
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600">{v.produto || "—"}</span>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -559,25 +559,25 @@ export default function Dashboard() {
           <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 text-sm">Ranking de Vendedores</h3>
             <div className="flex items-center gap-3">
-              {parcelasMes.length > 0 && (
-                <button
-                  onClick={() => setShowParcelasModal(true)}
-                  className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:underline"
-                >
+              {parcelasMes.length > 0 &&
+              <button
+                onClick={() => setShowParcelasModal(true)}
+                className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:underline">
+                
                   <CalendarClock className="w-3.5 h-3.5" />
-                  Gerenciar Parcelas ({parcelasMes.filter(p => p.status === 'pendente').length})
+                  Gerenciar Parcelas ({parcelasMes.filter((p) => p.status === 'pendente').length})
                 </button>
-              )}
+              }
               <Link to={createPageUrl("Vendedores")} className="text-xs text-[#1a3150] font-medium flex items-center gap-1 hover:underline">
                 Ver equipe <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
           <div className="p-5">
-            {ranking.filter(v => v.vol > 0 || v.vincendas > 0).length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">Nenhuma venda no período</p>
-            ) : (
-              <div className="space-y-3">
+            {ranking.filter((v) => v.vol > 0 || v.vincendas > 0).length === 0 ?
+            <p className="text-sm text-gray-400 text-center py-4">Nenhuma venda no período</p> :
+
+            <div className="space-y-3">
                 {/* Cabeçalho */}
                 <div className="flex items-center gap-3 pb-1 border-b border-gray-50">
                   <div className="w-8" />
@@ -591,12 +591,12 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-                {ranking.filter(v => v.vol > 0 || v.vincendas > 0).map((v, i) => {
-                  const maxVol = ranking.filter(r => r.vol > 0)[0]?.vol || 1;
-                  const pct = Math.round((v.vol / maxVol) * 100);
-                  const medals = ["🥇", "🥈", "🥉"];
-                  return (
-                    <div key={v.id} className="flex items-center gap-3">
+                {ranking.filter((v) => v.vol > 0 || v.vincendas > 0).map((v, i) => {
+                const maxVol = ranking.filter((r) => r.vol > 0)[0]?.vol || 1;
+                const pct = Math.round(v.vol / maxVol * 100);
+                const medals = ["🥇", "🥈", "🥉"];
+                return (
+                  <div key={v.id} className="flex items-center gap-3">
                       <div className="w-8 text-center text-lg flex-shrink-0">
                         {i < 3 && v.vol > 0 ? medals[i] : <span className="text-sm font-bold text-gray-400">{v.vol > 0 ? i + 1 : '—'}</span>}
                       </div>
@@ -605,11 +605,11 @@ export default function Dashboard() {
                           <span className="font-medium text-gray-900 truncate">{v.nome}</span>
                           <div className="flex gap-4 flex-shrink-0">
                             <span className="font-semibold text-gray-900">{formatCurrency(v.vol)}</span>
-                            {v.vincendas > 0 && (
-                              <span className="font-semibold text-amber-600" title="Parcelas vincendas no mês">
+                            {v.vincendas > 0 &&
+                          <span className="font-semibold text-amber-600" title="Parcelas vincendas no mês">
                                 +{formatCurrency(v.vincendas)}
                               </span>
-                            )}
+                          }
                           </div>
                         </div>
                         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -617,26 +617,26 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-gray-400">{v.qtd} venda{v.qtd !== 1 ? "s" : ""}</p>
-                          {v.vincendas > 0 && (
-                            <p className="text-[10px] text-amber-500">· {parcelasMes.filter(p => p.vendedor_id === v.id && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length} parcela(s) vincendo no mês</p>
-                          )}
+                          {v.vincendas > 0 &&
+                        <p className="text-[10px] text-amber-500">· {parcelasMes.filter((p) => p.vendedor_id === v.id && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length} parcela(s) vincendo no mês</p>
+                        }
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    </div>);
+
+              })}
 
                 {/* Total time — vincendas do mês */}
-                {parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                {parcelasMes.filter((p) => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length > 0 &&
+              <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                     <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Vincendas do Time no Mês</span>
                     <span className="text-sm font-bold text-amber-600">
-                      {formatCurrency(parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0))}
+                      {formatCurrency(parcelasMes.filter((p) => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0))}
                     </span>
                   </div>
-                )}
+              }
               </div>
-            )}
+            }
           </div>
         </div>
 
@@ -645,27 +645,27 @@ export default function Dashboard() {
           <h3 className="font-semibold text-gray-900 text-sm mb-4">Acesso Rápido</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-              { label: 'Agenda do Dia', icon: CalendarClock, page: 'MeusClientes', iconColor: 'text-[#1a3150]', bgColor: 'bg-slate-100', desc: 'Contatos e carteira' },
-              { label: 'Contratos', icon: FileText, page: 'Contratos', iconColor: 'text-indigo-600', bgColor: 'bg-indigo-50', desc: 'Gestão de contratos' },
-              { label: 'Vendas', icon: TrendingUp, page: 'Vendas', iconColor: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: 'Registrar vendas' },
-              { label: 'Clientes', icon: Users, page: 'Clientes', iconColor: 'text-blue-700', bgColor: 'bg-blue-50', desc: 'Base de clientes' },
-              { label: 'Capacitação', icon: BookOpen, page: 'Treinamento', iconColor: 'text-amber-700', bgColor: 'bg-amber-50', desc: 'Treinamentos' },
-            ].map(item => (
-              <Link key={item.page} to={createPageUrl(item.page)}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer group">
+            { label: 'Agenda do Dia', icon: CalendarClock, page: 'MeusClientes', iconColor: 'text-[#1a3150]', bgColor: 'bg-slate-100', desc: 'Contatos e carteira' },
+            { label: 'Contratos', icon: FileText, page: 'Contratos', iconColor: 'text-indigo-600', bgColor: 'bg-indigo-50', desc: 'Gestão de contratos' },
+            { label: 'Vendas', icon: TrendingUp, page: 'Vendas', iconColor: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: 'Registrar vendas' },
+            { label: 'Clientes', icon: Users, page: 'Clientes', iconColor: 'text-blue-700', bgColor: 'bg-blue-50', desc: 'Base de clientes' },
+            { label: 'Capacitação', icon: BookOpen, page: 'Treinamento', iconColor: 'text-amber-700', bgColor: 'bg-amber-50', desc: 'Treinamentos' }].
+            map((item) =>
+            <Link key={item.page} to={createPageUrl(item.page)}
+            className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer group">
                 <div className={`p-3 rounded-xl ${item.bgColor} group-hover:scale-105 transition-transform`}>
                   <item.icon className={`w-5 h-5 ${item.iconColor}`} />
                 </div>
                 <p className="text-xs font-semibold text-gray-800 text-center">{item.label}</p>
                 <p className="text-[10px] text-gray-400 text-center leading-tight">{item.desc}</p>
               </Link>
-            ))}
+            )}
           </div>
         </div>
 
         {/* Popup Agenda do Dia */}
-        {!agendaPopupDismissed && agendaPendentes > 0 && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        {!agendaPopupDismissed && agendaPendentes > 0 &&
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
               <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] px-6 py-5 text-center">
                 <span className="text-4xl">📅</span>
@@ -679,30 +679,30 @@ export default function Dashboard() {
               </div>
               <div className="px-6 pb-6 flex gap-2">
                 <button
-                  onClick={() => setAgendaPopupDismissed(true)}
-                  className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition"
-                >
+                onClick={() => setAgendaPopupDismissed(true)}
+                className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition">
+                
                   Agora não
                 </button>
                 <button
-                  onClick={() => { setAgendaPopupDismissed(true); navigate('/MeusClientes'); }}
-                  className="flex-1 px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] font-semibold transition"
-                >
+                onClick={() => {setAgendaPopupDismissed(true);navigate('/MeusClientes');}}
+                className="flex-1 px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] font-semibold transition">
+                
                   Ver Agenda
                 </button>
               </div>
             </div>
           </div>
-        )}
+        }
 
         {/* Modal Parcelas Vincendas */}
-        {showParcelasModal && (
-          <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />
-        )}
+        {showParcelasModal &&
+        <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />
+        }
 
         {/* Modal de Perfil */}
-        {showProfileModal && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+        {showProfileModal &&
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-semibold text-gray-900">Meu Perfil</h3>
@@ -716,20 +716,20 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center gap-3 pb-4 border-b border-gray-100">
                   <div className="relative">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
-                      {user?.avatar_url ? (
-                        <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : (
-                        <span>{(user?.nome_tratamento || user?.full_name || user?.email || '?').charAt(0).toUpperCase()}</span>
-                      )}
+                      {user?.avatar_url ?
+                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> :
+
+                    <span>{(user?.nome_tratamento || user?.full_name || user?.email || '?').charAt(0).toUpperCase()}</span>
+                    }
                     </div>
                     <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-lg">
                       <Upload className="w-3.5 h-3.5" />
                       <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
-                        className="hidden"
-                      />
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
+                      className="hidden" />
+                    
                     </label>
                   </div>
                   <p className="text-xs text-gray-400">Clique no ícone para alterar o avatar</p>
@@ -739,22 +739,22 @@ export default function Dashboard() {
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">Nome completo</label>
                   <input
-                    type="text"
-                    value={profileForm.full_name}
-                    disabled
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                  />
+                  type="text"
+                  value={profileForm.full_name}
+                  disabled
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
+                
                 </div>
 
                 {/* E-mail (read-only) */}
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">E-mail</label>
                   <input
-                    type="email"
-                    value={profileForm.email}
-                    disabled
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                  />
+                  type="email"
+                  value={profileForm.email}
+                  disabled
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
+                
                 </div>
 
                 {/* Nome de tratamento (editável) */}
@@ -763,34 +763,34 @@ export default function Dashboard() {
                     Nome de tratamento (como aparece no sistema)
                   </label>
                   <input
-                    type="text"
-                    value={profileForm.nome_tratamento}
-                    onChange={(e) => setProfileForm(prev => ({ ...prev, nome_tratamento: e.target.value }))}
-                    placeholder="Ex: João Silva"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
-                  />
+                  type="text"
+                  value={profileForm.nome_tratamento}
+                  onChange={(e) => setProfileForm((prev) => ({ ...prev, nome_tratamento: e.target.value }))}
+                  placeholder="Ex: João Silva"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                
                 </div>
               </div>
 
               <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
                 <button
-                  onClick={() => setShowProfileModal(false)}
-                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                >
+                onClick={() => setShowProfileModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                
                   Cancelar
                 </button>
                 <button
-                  onClick={saveProfile}
-                  disabled={savingProfile}
-                  className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium"
-                >
+                onClick={saveProfile}
+                disabled={savingProfile}
+                className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium">
+                
                   {savingProfile ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
             </div>
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 }
