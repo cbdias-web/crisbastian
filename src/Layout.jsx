@@ -128,8 +128,19 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 5000
   });
 
-  // Zera badge automaticamente quando o usuário está na ChatPage
   const isOnChatPage = currentPageName === 'ChatPage';
+
+  // Quando entra na ChatPage, persiste last_seen para todos os canais com mensagens
+  useEffect(() => {
+    if (!isOnChatPage || !todasMensagensChat.length) return;
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    const now = new Date().toISOString();
+    for (const msg of todasMensagensChat) {
+      lastSeen[msg.canal] = now;
+    }
+    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+  }, [isOnChatPage, todasMensagensChat.length]);
 
   const mensagensNaoLidas = (() => {
     if (!user || !todasMensagensChat.length || isOnChatPage) return 0;

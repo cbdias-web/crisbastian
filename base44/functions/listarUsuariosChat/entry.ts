@@ -11,9 +11,9 @@ Deno.serve(async (req) => {
     // Usa service role para listar todos os usuários (qualquer usuário autenticado pode ver a lista do chat)
     const usuarios = await base44.asServiceRole.entities.User.list();
 
-    // Retorna apenas campos necessários para o chat, excluindo usuários ocultos
+    // Retorna apenas campos necessários para o chat, excluindo usuários inativos
     const usuariosFiltrados = usuarios
-      .filter(u => !u.oculto_chat)
+      .filter(u => u.ativo !== false)
       .map(u => ({
         id: u.id,
         email: u.email,
