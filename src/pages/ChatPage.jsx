@@ -356,6 +356,20 @@ export default function ChatPage() {
     setUnreadMap(map);
   }, [todasMensagens, user]);
 
+  // Ao entrar na ChatPage, marca todos os canais como lidos (zera o badge global)
+  useEffect(() => {
+    if (!user || !todasMensagens.length) return;
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    const now = new Date().toISOString();
+    const canaisComMensagens = [...new Set(todasMensagens.map(m => m.canal))];
+    for (const canal of canaisComMensagens) {
+      lastSeen[canal] = now;
+    }
+    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+    setUnreadMap({});
+  }, [user, todasMensagens.length > 0]);
+
   useEffect(() => {
     if (!active.id || !user) return;
     const key = active.type === 'canal' ? active.id : getDmKey(user.email, active.email);

@@ -11,14 +11,16 @@ Deno.serve(async (req) => {
     // Usa service role para listar todos os usuários (qualquer usuário autenticado pode ver a lista do chat)
     const usuarios = await base44.asServiceRole.entities.User.list();
 
-    // Retorna apenas campos necessários para o chat (sem dados sensíveis)
-    const usuariosFiltrados = usuarios.map(u => ({
-      id: u.id,
-      email: u.email,
-      full_name: u.full_name,
-      nome_tratamento: u.nome_tratamento,
-      ultimo_acesso: u.ultimo_acesso,
-    }));
+    // Retorna apenas campos necessários para o chat, excluindo usuários ocultos
+    const usuariosFiltrados = usuarios
+      .filter(u => !u.oculto_chat)
+      .map(u => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.full_name,
+        nome_tratamento: u.nome_tratamento,
+        ultimo_acesso: u.ultimo_acesso,
+      }));
 
     return Response.json({ usuarios: usuariosFiltrados });
   } catch (error) {
