@@ -433,7 +433,7 @@ export default function ChatPage() {
       const horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const nomeLocal = active.type === 'canal' ? `Chat #${active.id}` : `DM com ${active.nome}`;
       const agendaTemp = await base44.entities.AgendaContato.create({
-        lead_id: user.id, lead_nome: `Reunião — ${nomeLocal}`,
+        lead_id: user.id, lead_nome: `Reunião via Chat — ${nomeLocal}`,
         vendedor_id: user.id, vendedor_nome: user.nome_tratamento || user.full_name || user.email,
         data_agendada: dataHoje, horario: horaAgora, status: 'pendente',
       });
@@ -443,7 +443,8 @@ export default function ChatPage() {
       });
       const link = res.data?.meet_link;
       if (!link) throw new Error('Link não gerado');
-      await base44.entities.AgendaContato.delete(agendaTemp.id);
+      // Atualiza o agendamento com o link e mantém na plataforma
+      await base44.entities.AgendaContato.update(agendaTemp.id, { meet_link: link });
       await enviarMensagem(link);
       setMeetModal(link);
     } catch (e) {
