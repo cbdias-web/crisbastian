@@ -272,12 +272,15 @@ export default function ChatPage() {
     refetchInterval: 30000,
   });
 
-  // Todos os usuários ativos
+  // Todos os usuários — usa backend function para garantir acesso a todos os usuários independente do role
   const { data: usuarios = [], refetch: refetchUsuarios } = useQuery({
     queryKey: ['usuarios-chat'],
-    queryFn: () => base44.entities.User.list(),
+    queryFn: async () => {
+      const res = await base44.functions.invoke('listarUsuariosChat', {});
+      return res.data?.usuarios || [];
+    },
     enabled: !!user,
-    refetchInterval: 3000,
+    refetchInterval: 15000,
     staleTime: 0,
   });
 
