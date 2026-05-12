@@ -130,17 +130,20 @@ export default function Layout({ children, currentPageName }) {
 
   const isOnChatPage = currentPageName === 'ChatPage';
 
-  // Quando entra na ChatPage, persiste last_seen para todos os canais com mensagens
+  // Quando entra na ChatPage, persiste last_seen para todos os canais
   useEffect(() => {
-    if (!isOnChatPage || !todasMensagensChat.length) return;
+    if (!isOnChatPage) return;
+    const now = new Date().toISOString();
     let lastSeen = {};
     try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
-    const now = new Date().toISOString();
-    for (const msg of todasMensagensChat) {
-      lastSeen[msg.canal] = now;
+    // Marca todos os canais conhecidos como lidos agora
+    if (todasMensagensChat.length > 0) {
+      for (const msg of todasMensagensChat) {
+        lastSeen[msg.canal] = now;
+      }
+      localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
     }
-    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
-  }, [isOnChatPage, todasMensagensChat.length]);
+  }, [isOnChatPage]); // só dispara ao entrar/sair da ChatPage
 
   const mensagensNaoLidas = (() => {
     if (!user || !todasMensagensChat.length || isOnChatPage) return 0;

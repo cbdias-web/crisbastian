@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 import {
    MessageSquare, Send, Video, Copy, Hash, Plus,
    X, Check, ExternalLink, Lock, ChevronDown, ChevronRight,
-   Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download
+   Settings, Trash2, UserPlus, UserMinus, Users, Paperclip, FileText, Download,
+   EyeOff, Eye
  } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -254,6 +255,10 @@ export default function ChatPage() {
   const [unreadMap, setUnreadMap] = useState({});
   const [showCanais, setShowCanais] = useState(true);
   const [showDMs, setShowDMs] = useState(true);
+  const [usuariosOcultos, setUsuariosOcultos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('chat_usuarios_ocultos') || '[]'); } catch { return []; }
+  });
+  const [showOcultos, setShowOcultos] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
@@ -524,6 +529,14 @@ export default function ChatPage() {
     return (Date.now() - new Date(u.ultimo_acesso).getTime()) < 3 * 60 * 1000;
   };
 
+  const toggleOcultarUsuario = (email) => {
+    setUsuariosOcultos(prev => {
+      const novos = prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email];
+      localStorage.setItem('chat_usuarios_ocultos', JSON.stringify(novos));
+      return novos;
+    });
+  };
+
   const abrirDM = (remetenteEmail, remetenteNome) => {
     if (!remetenteEmail || remetenteEmail === user?.email) return;
     const u = usuarios.find(u => u.email === remetenteEmail);
@@ -609,30 +622,75 @@ export default function ChatPage() {
             </button>
             {showDMs && (
               <div className="space-y-0.5">
-                {outrosUsuarios.map(u => {
+                {outrosUsuarios.filter(u => !usuariosOcultos.includes(u.email)).map(u => {
                   const dmKey = getDmKey(user?.email, u.email);
                   const isActive = active.type === 'dm' && active.email === u.email;
                   const unread = unreadMap[dmKey] || 0;
                   const online = isOnline(u);
                   const nome = u.nome_tratamento || u.full_name || u.email;
                   return (
-                    <button key={u.email}
-                      onClick={() => setActive({ type: 'dm', id: u.id, email: u.email, nome })}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 shadow-sm font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
-                    >
-                      <div className="relative flex-shrink-0">
-                        <UserAvatar nome={nome} size="sm" />
-                        <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${isActive ? 'border-[#0f1e35]' : 'border-white'} ${online ? 'bg-emerald-400' : 'bg-gray-300'}`} />
-                      </div>
-                      <span className="text-sm font-medium flex-1 truncate">{nome}</span>
-                      {unread > 0 && !isActive && (
-                        <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                          {unread > 9 ? '9+' : unread}
-                        </span>
-                      )}
-                    </button>
+                    <div key={u.email} className="group relative">
+                      <button
+                        onClick={() => setActive({ type: 'dm', id: u.id, email: u.email, nome })}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all ${isActive ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 shadow-sm font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
+                      >
+                        <div className="relative flex-shrink-0">
+                          <UserAvatar nome={nome} size="sm" />
+                          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${isActive ? 'border-[#0f1e35]' : 'border-white'} ${online ? 'bg-emerald-400' : 'bg-gray-300'}`} />
+                        </div>
+                        <span className="text-sm font-medium flex-1 truncate pr-5">{nome}</span>
+                        {unread > 0 && !isActive && (
+                          <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {unread > 9 ? '9+' : unread}
+                          </span>
+                        )}
+                      </button>
+                      {/* Botão ocultar — aparece no hover */}
+                      <button
+                        onClick={() => toggleOcultarUsuario(u.email)}
+                        title="Ocultar da minha lista"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition text-slate-400 hover:text-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600"
+                      >
+                        <EyeOff className="w-3 h-3" />
+                      </button>
+                    </div>
                   );
                 })}
+
+                {/* Seção de ocultos */}
+                {usuariosOcultos.length > 0 && (
+                  <div className="mt-1">
+                    <button
+                      onClick={() => setShowOcultos(p => !p)}
+                      className="w-full flex items-center gap-1.5 px-3 py-1 text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
+                    >
+                      {showOcultos ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                      Ocultos ({usuariosOcultos.filter(e => outrosUsuarios.some(u => u.email === e)).length})
+                    </button>
+                    {showOcultos && outrosUsuarios.filter(u => usuariosOcultos.includes(u.email)).map(u => {
+                      const nome = u.nome_tratamento || u.full_name || u.email;
+                      return (
+                        <div key={u.email} className="group relative">
+                          <button
+                            onClick={() => setActive({ type: 'dm', id: u.id, email: u.email, nome })}
+                            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-left transition-all text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700/50 opacity-60"
+                          >
+                            <UserAvatar nome={nome} size="sm" />
+                            <span className="text-xs font-medium flex-1 truncate pr-5 line-through">{nome}</span>
+                          </button>
+                          <button
+                            onClick={() => toggleOcultarUsuario(u.email)}
+                            title="Mostrar novamente"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition text-slate-400 hover:text-emerald-600 hover:bg-slate-200 dark:hover:bg-slate-600"
+                          >
+                            <Eye className="w-3 h-3" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {outrosUsuarios.length === 0 && <p className="text-xs text-slate-400 dark:text-slate-500 px-3 py-2 italic">Nenhum outro usuário</p>}
               </div>
             )}
