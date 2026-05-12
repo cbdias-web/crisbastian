@@ -122,10 +122,19 @@ export default function Layout({ children, currentPageName }) {
     queryKey: ['chat-unread-global'],
     queryFn: async () => {
       const all = await base44.entities.MensagemChat.list('-created_date', 100);
-      return all.filter(m => m.remetente_email !== user?.email);
+      // Só mensagens de outros usuários
+      return all.filter(m => {
+        if (m.remetente_email === user?.email) return false;
+        // DMs: só contar se o usuário atual é o destinatário
+        if (m.tipo_canal === 'direto') {
+          return m.destinatario_email === user?.email;
+        }
+        // Canais: contar todas
+        return true;
+      });
     },
     enabled: !!user,
-    refetchInterval: 5000
+    refetchInterval: 15000
   });
 
   const isOnChatPage = currentPageName === 'ChatPage';
