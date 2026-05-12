@@ -7,7 +7,6 @@ import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
 import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
-import ChatInterno from '@/components/chat/ChatInterno.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
 import { Button } from '@/components/ui/button';
@@ -129,8 +128,11 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 5000
   });
 
+  // Zera badge automaticamente quando o usuário está na ChatPage
+  const isOnChatPage = currentPageName === 'ChatPage';
+
   const mensagensNaoLidas = (() => {
-    if (!user || !todasMensagensChat.length) return 0;
+    if (!user || !todasMensagensChat.length || isOnChatPage) return 0;
     let lastSeen = {};
     try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
     let count = 0;
@@ -568,7 +570,6 @@ export default function Layout({ children, currentPageName }) {
         <MarketTicker />
         {children}
         <AssistenteFloating />
-        <ChatInterno />
       </main>
     </div>
   );
