@@ -16,6 +16,8 @@ const TIPO_CONFIG = {
   'ROF': { color: 'bg-emerald-700', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: FileText, desc: 'Registro de Operação Financeira para movimentações cambiais regulamentadas' },
   'CANAL BANCÁRIO': { color: 'bg-violet-700', light: 'bg-violet-50 text-violet-700 border-violet-200', icon: Building2, desc: 'Operações via canal bancário para transferências e câmbio direto' },
   'OFFSHORE': { color: 'bg-cyan-700', light: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: Globe, desc: 'Estruturação de empresa e conta bancária offshore no exterior' },
+  'GARANTIAS': { color: 'bg-rose-700', light: 'bg-rose-50 text-rose-700 border-rose-200', icon: FileText, desc: 'Contrato de garantias e seguros patrimoniais e financeiros' },
+  'HORA TÉCNICA': { color: 'bg-teal-700', light: 'bg-teal-50 text-teal-700 border-teal-200', icon: FileText, desc: 'Contrato de prestação de serviços por hora técnica especializada' },
 };
 
 const STATUS_CONFIG = {

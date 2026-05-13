@@ -6,10 +6,12 @@ const PDF_URLS = {
   'CONTA INTERNACIONAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/f9b7f91fb_Contrato-ContaInternacional.pdf',
   'DOLARIZE': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/bd9fb551e_ContratoDolarizeAqui.pdf',
   'DOLARIZE AQUI': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/bd9fb551e_ContratoDolarizeAqui.pdf',
-  // ROF, CANAL BANCÁRIO e OFFSHORE usam geração por texto (sem template PDF externo)
+  // ROF, CANAL BANCÁRIO, OFFSHORE, GARANTIAS e HORA TÉCNICA usam geração por texto (sem template PDF externo)
   'ROF': null,
   'CANAL BANCÁRIO': null,
   'OFFSHORE': null,
+  'GARANTIAS': null,
+  'HORA TÉCNICA': null,
 };
 
 const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -149,7 +151,7 @@ Deno.serve(async (req) => {
 
     const pdfUrl = PDF_URLS[contrato.tipo];
     
-    // ROF e CANAL BANCÁRIO: gerar PDF textual (sem template AcroForm)
+    // ROF, CANAL BANCÁRIO, OFFSHORE, GARANTIAS e HORA TÉCNICA: gerar PDF textual (sem template AcroForm)
     if (pdfUrl === null) {
       const pdfDoc = await PDFDocument.create();
       const page = pdfDoc.addPage([595, 842]); // A4
