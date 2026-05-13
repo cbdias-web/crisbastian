@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { BookOpen, PlayCircle, FileText, Link2, CheckCircle2, Clock, ArrowLeft, ExternalLink, Image, GraduationCap, ChevronRight, RotateCcw, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import EinsteinCoach from '@/components/treinamento/JarvisCoach';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 const TIPO_ICONS = {
   video: PlayCircle,
@@ -43,6 +44,9 @@ export default function Treinamento() {
   const [user, setUser] = useState(null);
   const [moduloAberto, setModuloAberto] = useState(null);
   const [aulaAtiva, setAulaAtiva] = useState(null);
+  const [modulosOrdem, setModulosOrdem] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('capacitacao_ordem') || '[]'); } catch { return []; }
+  });
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -96,6 +100,25 @@ export default function Treinamento() {
   const totalAulas = aulas.length;
   const totalConcluidas = progressos.length;
   const progressoGeral = totalAulas > 0 ? Math.round((totalConcluidas / totalAulas) * 100) : 0;
+
+  // Ordenação personalizada (persistida no localStorage)
+  const modulosOrdenados = (() => {
+    if (!modulosOrdem.length) return modulos;
+    const ordered = [];
+    const map = Object.fromEntries(modulos.map(m => [m.id, m]));
+    for (const id of modulosOrdem) { if (map[id]) { ordered.push(map[id]); delete map[id]; } }
+    return [...ordered, ...Object.values(map)];
+  })();
+
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    const items = Array.from(modulosOrdenados);
+    const [moved] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, moved);
+    const novaOrdem = items.map(m => m.id);
+    setModulosOrdem(novaOrdem);
+    localStorage.setItem('capacitacao_ordem', JSON.stringify(novaOrdem));
+  };
 
   // Última aula acessada / em progresso
   const ultimoModuloEmProgresso = modulos.find(m => {
@@ -364,80 +387,106 @@ export default function Treinamento() {
           )}
         </div>
 
-        {/* Grade de módulos (cards) */}
+        {/* Grade de módulos (cards) — drag & drop */}
         {modulos.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-center text-gray-400">
             <BookOpen className="w-10 h-10 mx-auto mb-2 text-gray-200" />
             <p className="text-sm">Nenhum módulo disponível ainda</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {modulos.map((modulo, idx) => {
-              const aulasModulo = aulas.filter(a => a.modulo_id === modulo.id);
-              const progresso = getProgressoModulo(modulo.id);
-              const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
-              const totalDuracao = aulasModulo.reduce((s, a) => s + (a.duracao_min || 0), 0);
+          <>
+            <p className="text-[11px] text-gray-400 -mt-4">Arraste os cards para reorganizar a ordem dos módulos.</p>
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="modulos-grid" direction="horizontal">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"
+                  >
+                    {modulosOrdenados.map((modulo, idx) => {
+                      const aulasModulo = aulas.filter(a => a.modulo_id === modulo.id);
+                      const progresso = getProgressoModulo(modulo.id);
+                      const gradient = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
+                      const totalDuracao = aulasModulo.reduce((s, a) => s + (a.duracao_min || 0), 0);
 
-              return (
-                <div key={modulo.id} onClick={() => setModuloAberto(modulo.id)} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col transition-all duration-300 group hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200 cursor-pointer">
-                  {/* Cover */}
-                  <div className={`relative h-24 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
-                    {modulo.capa_url ? (
-                      <img src={modulo.capa_url} alt="" className="w-full h-full object-cover absolute inset-0" />
-                    ) : (
-                      <BookOpen className="w-14 h-14 text-white/30" />
-                    )}
-                    {modulo.categoria && (
-                      <span className={`absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-full font-bold text-white ${NIVEL_COLORS[modulo.categoria] || 'bg-gray-600'}`}>
-                        {modulo.categoria}
-                      </span>
-                    )}
+                      return (
+                        <Draggable key={modulo.id} draggableId={modulo.id} index={idx}>
+                          {(drag, snapshot) => (
+                            <div
+                              ref={drag.innerRef}
+                              {...drag.draggableProps}
+                              className={`bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col transition-all duration-200 group ${snapshot.isDragging ? 'shadow-2xl scale-105 border-blue-400 rotate-1 z-50' : 'border-gray-100 hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200'}`}
+                            >
+                              {/* Cover com drag handle */}
+                              <div
+                                {...drag.dragHandleProps}
+                                className={`relative h-24 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing`}
+                                onClick={() => setModuloAberto(modulo.id)}
+                              >
+                                {modulo.capa_url ? (
+                                  <img src={modulo.capa_url} alt="" className="w-full h-full object-cover absolute inset-0" />
+                                ) : (
+                                  <BookOpen className="w-14 h-14 text-white/30" />
+                                )}
+                                {modulo.categoria && (
+                                  <span className={`absolute top-3 right-3 text-[10px] px-2.5 py-1 rounded-full font-bold text-white ${NIVEL_COLORS[modulo.categoria] || 'bg-gray-600'}`}>
+                                    {modulo.categoria}
+                                  </span>
+                                )}
+                                {/* Indicador de drag */}
+                                <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition">
+                                  <div className="flex flex-col gap-0.5">
+                                    {[0,1,2].map(i => <div key={i} className="flex gap-0.5">{[0,1].map(j => <div key={j} className="w-1 h-1 rounded-full bg-white/60" />)}</div>)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Info */}
+                              <div className="p-3 flex-1 flex flex-col cursor-pointer" onClick={() => setModuloAberto(modulo.id)}>
+                                <h3 className="font-bold text-gray-900 text-xs leading-tight">{modulo.titulo}</h3>
+
+                                <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-400">
+                                  <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{aulasModulo.length} aulas</span>
+                                  {totalDuracao > 0 && (
+                                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{totalDuracao >= 60 ? `${Math.round(totalDuracao / 60)}h` : `${totalDuracao}min`}</span>
+                                  )}
+                                </div>
+
+                                <div className="mt-2">
+                                  <div className="flex justify-between items-center mb-0.5">
+                                    <span className="text-[9px] text-gray-400">Progresso</span>
+                                    <span className="text-[9px] font-semibold text-gray-600">{progresso}%</span>
+                                  </div>
+                                  <div className="w-full bg-gray-100 rounded-full h-1">
+                                    <div className={`h-1 rounded-full transition-all ${progresso === 100 ? 'bg-emerald-500' : 'bg-[#1a3150]'}`} style={{ width: `${progresso}%` }} />
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setModuloAberto(modulo.id); }}
+                                  className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-[#0f1e35] hover:bg-[#1a3150] text-white"
+                                >
+                                  {progresso === 100 ? (
+                                    <><RotateCcw className="w-3.5 h-3.5" /> Revisar</>
+                                  ) : progresso > 0 ? (
+                                    <><PlayCircle className="w-3.5 h-3.5" /> Continuar</>
+                                  ) : (
+                                    <><PlayCircle className="w-3.5 h-3.5" /> Começar</>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
                   </div>
-
-                  {/* Info */}
-                  <div className="p-3 flex-1 flex flex-col">
-                    <h3 className="font-bold text-gray-900 text-xs leading-tight">{modulo.titulo}</h3>
-
-                    {/* Meta */}
-                    <div className="flex items-center gap-2 mt-1.5 text-[10px] text-gray-400">
-                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{aulasModulo.length} aulas</span>
-                      {totalDuracao > 0 && (
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{totalDuracao >= 60 ? `${Math.round(totalDuracao / 60)}h` : `${totalDuracao}min`}</span>
-                      )}
-                    </div>
-
-                    {/* Progresso */}
-                    <div className="mt-2">
-                      <div className="flex justify-between items-center mb-0.5">
-                        <span className="text-[9px] text-gray-400">Progresso</span>
-                        <span className="text-[9px] font-semibold text-gray-600">{progresso}%</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1">
-                        <div
-                          className={`h-1 rounded-full transition-all ${progresso === 100 ? 'bg-emerald-500' : 'bg-[#1a3150]'}`}
-                          style={{ width: `${progresso}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Botão */}
-                    <button
-                      onClick={() => setModuloAberto(modulo.id)}
-                      className="mt-2.5 w-full py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-[#0f1e35] hover:bg-[#1a3150] text-white"
-                    >
-                      {progresso === 100 ? (
-                        <><RotateCcw className="w-3.5 h-3.5" /> Revisar</>
-                      ) : progresso > 0 ? (
-                        <><PlayCircle className="w-3.5 h-3.5" /> Continuar</>
-                      ) : (
-                        <><PlayCircle className="w-3.5 h-3.5" /> Começar</>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </>
         )}
       </div>
 
