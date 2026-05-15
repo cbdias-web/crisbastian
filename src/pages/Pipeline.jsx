@@ -1171,7 +1171,8 @@ export default function Pipeline() {
           dataInicial={agendaModal.proximo_contato || ''}
           onClose={() => setAgendaModal(null)}
           onSaved={() => {
-            queryClient.invalidateQueries(['agenda-contatos']);
+            queryClient.invalidateQueries({ queryKey: ['agenda-contatos'], exact: false });
+            queryClient.invalidateQueries(['agenda-contatos-global']);
             setAgendaModal(null);
           }}
         />

@@ -219,7 +219,17 @@ const sections = [
     content: [
       { subtitle: 'Temperaturas', items: ['🧊 **Frio:** prospecção inicial.', '🌤️ **Morno:** interesse demonstrado.', '🔥 **Quente:** alta probabilidade de fechamento.', '✅ **Fechado:** negócio concluído.', '❌ **Perdido:** encerrado sem resultado.'] },
       { subtitle: 'Converter prospecção', items: ['**Produtos sem contrato:** ícone de carrinho (🛒) → cria rascunho de venda.', '**CONTA GLOBAL / CONTA INTERNACIONAL / DOLARIZE AQUI:** ícone de documento (📜) → cria contrato em rascunho e fecha o negócio no Pipeline.'] },
-      { subtitle: 'Integração', items: ['**Pipeline → Contratos:** converter cria contrato pré-preenchido.', '**Contratos → Vendas:** "Enviar para Vendas" gera a venda final.', '**Vendas → Pipeline (parcelas):** venda parcelada cria cards de parcelas automaticamente.'] },
+      { subtitle: '🎥 Agendar reunião com Meet direto pelo Pipeline', items: [
+        'Em cada card do Kanban, passe o mouse para exibir os ícones de ação.',
+        'Clique no ícone de calendário (📅 **CalendarPlus**) para abrir o modal "Agendar Reunião".',
+        'O nome do cliente, dados de contato e a data do próximo contato são preenchidos automaticamente.',
+        'Defina data, horário de início (término calculado +1h automaticamente) e observações.',
+        'Ative o toggle **"Gerar link Google Meet"** para criar um link de videoconferência junto com o evento.',
+        'Clique em "Agendar" — o compromisso é criado na **Agenda do Dia** do gerente responsável pelo negócio.',
+        'Se o Google Calendar estiver conectado, o evento também é salvo automaticamente no calendário do gerente.',
+        '**Condição:** o gerente precisa ter sua conta Google conectada para a geração do Meet funcionar.',
+      ]},
+      { subtitle: 'Integração', items: ['**Pipeline → Contratos:** converter cria contrato pré-preenchido.', '**Contratos → Vendas:** "Enviar para Vendas" gera a venda final.', '**Vendas → Pipeline (parcelas):** venda parcelada cria cards de parcelas automaticamente.', '**Pipeline → Agenda do Dia:** botão CalendarPlus cria agendamento com ou sem Meet para o gerente do negócio.'] },
     ],
   },
   {
