@@ -1203,6 +1203,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
       {showMeetModal && (
         <AgendaMeetModal
           user={user}
+          vendedorId={vendedorEfetivo?.id || vendedorId || ''}
+          vendedorNome={vendedorEfetivo?.nome || vendedor?.nome || ''}
           dataInicial={format(selectedDate, 'yyyy-MM-dd')}
           onClose={() => setShowMeetModal(false)}
           onSaved={() => {
