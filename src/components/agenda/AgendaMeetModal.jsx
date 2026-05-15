@@ -20,6 +20,8 @@ import { ptBR } from 'date-fns/locale';
  */
 export default function AgendaMeetModal({
   user,
+  vendedorId = '',   // ID do registro na entidade Vendedor (preferido sobre user.id)
+  vendedorNome = '', // Nome do vendedor correspondente
   clienteNome = '',
   clienteId = '',
   clienteTelefone = '',
@@ -59,6 +61,10 @@ export default function AgendaMeetModal({
 
     setSalvando(true);
     try {
+      // Usa o ID do registro Vendedor se disponível, senão cai no user.id
+      const vidFinal = vendedorId || user.id;
+      const vnomeFinal = vendedorNome || user.nome_tratamento || user.full_name || user.email;
+
       // 1. Cria registro na AgendaContato
       const agenda = await base44.entities.AgendaContato.create({
         lead_id: clienteId || user.id,
@@ -66,8 +72,8 @@ export default function AgendaMeetModal({
         lead_cpf_cnpj: clienteCpfCnpj || '',
         lead_telefone: clienteTelefone || '',
         cliente_id: clienteId || '',
-        vendedor_id: user.id,
-        vendedor_nome: user.nome_tratamento || user.full_name || user.email,
+        vendedor_id: vidFinal,
+        vendedor_nome: vnomeFinal,
         data_agendada: form.data,
         horario: form.horario,
         posicao_dia: 0,

@@ -178,6 +178,16 @@ export default function Pipeline() {
     enabled: isAdmin,
   });
 
+  // Vendedor do usuário logado (para não-admin saberem o vendedor_id correto)
+  const { data: vendedorAtual = null } = useQuery({
+    queryKey: ['vendedor-atual-pipeline', user?.email],
+    queryFn: async () => {
+      const res = await base44.entities.Vendedor.filter({ email: user.email });
+      return res[0] || null;
+    },
+    enabled: !!user?.email,
+  });
+
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-pipeline'],
     queryFn: () => base44.entities.Cliente.list('nome', 5000),
@@ -1151,6 +1161,8 @@ export default function Pipeline() {
       {agendaModal && (
         <AgendaMeetModal
           user={user}
+          vendedorId={agendaModal.vendedor_id || vendedorAtual?.id || ''}
+          vendedorNome={agendaModal.vendedor_nome || vendedorAtual?.nome || ''}
           clienteNome={agendaModal.cliente_nome || ''}
           clienteId={agendaModal.cliente_id || ''}
           clienteTelefone={agendaModal.cliente_telefone || ''}
