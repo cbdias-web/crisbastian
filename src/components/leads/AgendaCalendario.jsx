@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import {
   Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
   TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus, AlertTriangle
@@ -167,16 +168,20 @@ function MeetButton({ item, onLinkGerado }) {
     );
   }
 
+  // Se o item já tem horário definido, pré-preenche
+  const horarioPreenchido = item.horario || horario;
+
   if (showTimeForm) {
     return (
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        <span className="text-[11px] text-gray-500 font-medium">Início:</span>
-        <input type="time" value={horario} onChange={e => setHorario(e.target.value)}
-          className="text-xs px-2 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a73e8]" />
+      <div className="flex items-center gap-2 mt-2 flex-wrap bg-blue-50 rounded-xl p-2.5 border border-blue-100">
+        <span className="text-[11px] text-gray-600 font-medium">Horário:</span>
+        <input type="time" value={horarioPreenchido} onChange={e => setHorario(e.target.value)}
+          className="text-xs px-2 py-1.5 border border-blue-200 rounded-xl focus:outline-none focus:border-[#1a73e8] bg-white" />
+        <p className="text-[10px] text-blue-500 w-full -mt-1">O Meet será criado neste horário automaticamente.</p>
         <button onClick={handleGenerate} disabled={loading}
           className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
           {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
-          {loading ? 'Gerando...' : 'Gerar Link'}
+          {loading ? 'Gerando...' : 'Gerar Meet'}
         </button>
         <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600">Cancelar</button>
       </div>
@@ -184,7 +189,7 @@ function MeetButton({ item, onLinkGerado }) {
   }
 
   return (
-    <button onClick={() => setShowTimeForm(true)}
+    <button onClick={() => { setShowTimeForm(true); if (item.horario) setHorario(item.horario); }}
       className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 hover:border-[#1a73e8] text-gray-600 hover:text-[#1a73e8] text-[11px] font-semibold rounded-xl transition mt-2">
       <Video className="w-3 h-3" /> Gerar Link Meet
     </button>
@@ -727,6 +732,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [pipelineItem, setPipelineItem] = useState(null);
   const [showPast, setShowPast] = useState(false);
   const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
+  const [showMeetModal, setShowMeetModal] = useState(false);
   const queryClient = useQueryClient();
 
   // ── Filtros globais (admin) ──
@@ -1014,6 +1020,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowMeetModal(true)}
+                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5"
+              >
+                <Video className="w-3.5 h-3.5" /> Agendar c/ Meet
+              </button>
+              <button
                 onClick={() => setShowNovoAgendamento(true)}
                 className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
               >
@@ -1184,6 +1196,19 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           user={user}
           onClose={() => setPipelineItem(null)}
           onSaved={() => setPipelineItem(null)}
+        />
+      )}
+
+      {/* Modal Agendar c/ Meet — disponível para todos */}
+      {showMeetModal && (
+        <AgendaMeetModal
+          user={user}
+          dataInicial={format(selectedDate, 'yyyy-MM-dd')}
+          onClose={() => setShowMeetModal(false)}
+          onSaved={() => {
+            setShowMeetModal(false);
+            invalidateAgenda();
+          }}
         />
       )}
 

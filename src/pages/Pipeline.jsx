@@ -3,8 +3,9 @@ import { todayBrasilia, isoNowBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus } from 'lucide-react';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
+import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -155,6 +156,7 @@ export default function Pipeline() {
   const [sincronizando, setSincronizando] = useState(false);
   const [editandoProduto, setEditandoProduto] = useState(null); // negócio_id que está sendo editado
   const [produtoTemp, setProdutoTemp] = useState('');
+  const [agendaModal, setAgendaModal] = useState(null); // negócio para agendar
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -972,6 +974,9 @@ export default function Pipeline() {
                                              : <ShoppingCart className="w-3 h-3" />}
                                        </button>
                                       )}
+                                      <button onClick={() => setAgendaModal(n)} title="Agendar reunião / Meet" className="p-0.5 text-gray-400 hover:text-indigo-600">
+                                        <CalendarPlus className="w-3 h-3" />
+                                      </button>
                                       <button onClick={() => { setEditandoProduto(n.id); setProdutoTemp(n.produto || ''); }} title="Editar produto" className="p-0.5 text-gray-400 hover:text-amber-600">
                                         <Pencil className="w-3 h-3" />
                                       </button>
@@ -1140,6 +1145,24 @@ export default function Pipeline() {
       {/* Modal Parcelas Vincendas */}
       {showParcelasModal && (
         <ParcelasVincendasModal user={user} onClose={() => { setShowParcelasModal(false); queryClient.invalidateQueries(['parcelas-venda-pipeline']); }} />
+      )}
+
+      {/* Modal Agendar Reunião / Meet */}
+      {agendaModal && (
+        <AgendaMeetModal
+          user={user}
+          clienteNome={agendaModal.cliente_nome || ''}
+          clienteId={agendaModal.cliente_id || ''}
+          clienteTelefone={agendaModal.cliente_telefone || ''}
+          clienteCpfCnpj={agendaModal.cliente_cpf_cnpj || ''}
+          pipelineId={agendaModal.id}
+          dataInicial={agendaModal.proximo_contato || ''}
+          onClose={() => setAgendaModal(null)}
+          onSaved={() => {
+            queryClient.invalidateQueries(['agenda-contatos']);
+            setAgendaModal(null);
+          }}
+        />
       )}
 
       {/* Modal form */}
