@@ -742,6 +742,11 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [filtroStatus, setFiltroStatus] = useState(''); // '' = todos
   const [showFiltros, setShowFiltros] = useState(false);
 
+  // ── Filtro rápido de status (pendentes/realizados por período) ──
+  const [filtroRapidoStatus, setFiltroRapidoStatus] = useState(''); // '' | 'pendente' | 'realizado'
+  const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
+  const [filtroRapidoFim, setFiltroRapidoFim] = useState('');
+
   // Admin: carrega TODOS os agendamentos; gerente/SDR: só os seus
   // Mas para criação de agendamentos para outros, todos precisam da lista global
   const { data: agendaGlobal = [], isLoading } = useQuery({
@@ -777,8 +782,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
     if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
     if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
+    // Filtro rápido de status + período
+    if (filtroRapidoStatus) items = items.filter(a => a.status === filtroRapidoStatus);
+    if (filtroRapidoInicio) items = items.filter(a => a.data_agendada >= filtroRapidoInicio);
+    if (filtroRapidoFim) items = items.filter(a => a.data_agendada <= filtroRapidoFim);
     return items;
-  }, [agendaRaw, filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, isAdmin]);
+  }, [agendaRaw, filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, filtroRapidoStatus, filtroRapidoInicio, filtroRapidoFim, isAdmin]);
 
   const filtroVendedorObj = todosVendedores.find(v => v.id === filtroVendedorId) || null;
   const vendedorEfetivo = isAdmin ? (filtroVendedorObj || vendedor) : vendedor;
@@ -993,6 +1002,36 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
         {/* ── RIGHT: Main Calendar View ── */}
         <div className="flex-1 min-w-0">
+
+          {/* Filtro rápido Pendentes / Realizados */}
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-3 mb-4 flex flex-wrap items-center gap-3">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtro rápido:</span>
+            <div className="flex gap-1.5">
+              {[{ key: '', label: 'Todos' }, { key: 'pendente', label: 'Pendentes' }, { key: 'realizado', label: 'Realizados' }].map(opt => (
+                <button key={opt.key} onClick={() => setFiltroRapidoStatus(opt.key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${filtroRapidoStatus === opt.key ? 'bg-[#0f1e35] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {filtroRapidoStatus && (
+              <div className="flex items-center gap-2 ml-2">
+                <span className="text-[10px] text-gray-400 font-medium">Período:</span>
+                <input type="date" value={filtroRapidoInicio} onChange={e => setFiltroRapidoInicio(e.target.value)}
+                  className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                <span className="text-[10px] text-gray-400">até</span>
+                <input type="date" value={filtroRapidoFim} onChange={e => setFiltroRapidoFim(e.target.value)}
+                  className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                {(filtroRapidoInicio || filtroRapidoFim) && (
+                  <button onClick={() => { setFiltroRapidoInicio(''); setFiltroRapidoFim(''); }}
+                    className="text-xs text-red-400 hover:text-red-600 font-semibold px-1 hover:bg-red-50 rounded transition">✕</button>
+                )}
+              </div>
+            )}
+            {(filtroRapidoStatus || filtroRapidoInicio || filtroRapidoFim) && (
+              <span className="text-xs text-blue-600 font-semibold ml-auto">{agenda.length} registro(s)</span>
+            )}
+          </div>
 
           {/* Header */}
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">

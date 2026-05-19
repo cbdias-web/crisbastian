@@ -265,9 +265,9 @@ export default function Contratos() {
                   const cfg = TIPO_CONFIG[c.tipo];
                   const stCfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.rascunho;
                   return (
-                    <tr key={c.id} className="hover:bg-gray-50 transition">
+                    <tr key={c.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => { setContratoAtivo(c); setView('viewer'); }}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-800">{c.nome || '—'}</p>
+                        <p className="font-medium text-gray-800 hover:text-blue-700 hover:underline">{c.nome || '—'}</p>
                         <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>
                       </td>
                       <td className="px-4 py-3 min-w-[130px]">
@@ -288,7 +288,7 @@ export default function Contratos() {
                         </div>
                       </td>
                       {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}
                             className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">

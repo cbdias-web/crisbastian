@@ -750,7 +750,7 @@ export default function Vendas() {
                 </TableHeader>
                 <TableBody>
                   {filteredVendas.map((venda) => (
-                    <TableRow key={venda.id}>
+                    <TableRow key={venda.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleEdit(venda)}>
                       <TableCell>
                         {venda.data ? format(parseISO(venda.data), 'dd/MM/yyyy') : '-'}
                       </TableCell>
@@ -776,7 +776,7 @@ export default function Vendas() {
                           <Badge variant="outline">{venda.forma_pagamento}</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
                           {venda.bitrix && (
                             <Button

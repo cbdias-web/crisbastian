@@ -7,8 +7,15 @@ Deno.serve(async (req) => {
     const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
       .split('/').reverse().join('-'); // YYYY-MM-DD
 
-    // Buscar todos os vendedores ativos
-    const vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
+    // Buscar todos os vendedores ativos (excluir o administrador Cris Bastian)
+    const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
+    // Excluir administradores/responsáveis que não devem receber leads na agenda
+    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
+    const vendedores = todosVendedores.filter(v => {
+      const nomeMin = (v.nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const emailMin = (v.email || '').toLowerCase();
+      return !NOMES_EXCLUIDOS.some(n => nomeMin.includes(n) || emailMin.includes(n));
+    });
 
     // Buscar todas as agendas de hoje
     const todasAgendas = await base44.asServiceRole.entities.AgendaContato.list();

@@ -954,7 +954,9 @@ export default function Pipeline() {
                                 >
                                   <div className="flex items-start justify-between gap-1">
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-semibold text-gray-800 leading-tight">{n.cliente_nome}</p>
+                                      <button onClick={() => openEdit(n)} className="text-xs font-semibold text-gray-800 leading-tight hover:text-blue-700 hover:underline text-left w-full truncate">
+                                        {n.cliente_nome}
+                                      </button>
                                       {isParcela && <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">💰 PARCELA</span>}
                                     </div>
                                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
