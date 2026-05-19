@@ -34,7 +34,11 @@ Deno.serve(async (req) => {
         ]);
 
         const vendedoresSelecionados = todosVendedores.filter(v => vendedores_ids.includes(v.id));
-        const indicadoresSelecionados = todosIndicadores.filter(i => indicadores_ids.includes(i.id));
+        // Indicadores podem ser Espelhamentos OU Vendedores usados como indicadores
+        const indicadoresSelecionados = [
+            ...todosIndicadores.filter(i => indicadores_ids.includes(i.id)),
+            ...todosVendedores.filter(v => indicadores_ids.includes(v.id) && !vendedores_ids.includes(v.id))
+        ];
 
         // Filtrar vendas do período
         const vendasPeriodo = todasVendas.filter(v => {
@@ -82,17 +86,31 @@ Deno.serve(async (req) => {
             return { tipo: 'vendedor', nome: v.nome, totalVendas, valorVendido, totalComissao, comissoes, bonusAgrupados, vendas };
         });
 
-        // Calcular dados por indicador
+        // Calcular dados por indicador (Espelhamento ou Vendedor usado como indicador)
         const dadosIndicadores = indicadoresSelecionados.map(ind => {
+            // Vendas onde este indicador aparece no array indicadores, espelhamento_id ou espelhamento
             const vendas = vendasPeriodo.filter(v => 
                 v.indicadores?.some(i => i.id === ind.id) || 
                 v.espelhamento_id === ind.id ||
                 v.espelhamento === ind.nome
             );
             
-            const comissoes = todasComissoesEsp.filter(c => 
+            // Comissões em ComissaoEspelhamento (tipo indicador/Espelhamento)
+            const comissoesEsp = todasComissoesEsp.filter(c => 
                 c.vendedor_id === ind.id && vendas.some(v => v.id === c.venda_id)
             );
+            
+            // Comissões em Comissao (quando vendedor foi usado como indicador com tipo='vendedor')
+            const comissoesVend = todasComissoes.filter(c =>
+                c.vendedor_id === ind.id &&
+                c.tipo !== 'bonus' &&
+                vendas.some(v => v.id === c.venda_id)
+            );
+
+            // Evita duplicação: prefere ComissaoEspelhamento; usa Comissao apenas quando não há registro esp
+            const vendasComEsp = new Set(comissoesEsp.map(c => c.venda_id));
+            const comissoesVendExtras = comissoesVend.filter(c => !vendasComEsp.has(c.venda_id));
+            const comissoes = [...comissoesEsp, ...comissoesVendExtras];
             
             const totalVendas = vendas.length;
             const valorVendido = vendas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);

@@ -26,8 +26,13 @@ export default function RelatorioComissoes() {
       base44.entities.Vendedor.list("nome"),
       base44.entities.Espelhamento.list("nome")
     ]).then(([v, e]) => {
-      setVendedores(v.filter(vd => vd.ativo !== false));
-      setIndicadores(e.filter(ind => ind.ativo !== false));
+      const vendAtivos = v.filter(vd => vd.ativo !== false);
+      setVendedores(vendAtivos);
+      // Indicadores = Espelhamentos ativos + Vendedores ativos (podem ser usados como indicadores)
+      const espAtivos = e.filter(ind => ind.ativo !== false);
+      const vendComoInd = vendAtivos.map(vd => ({ ...vd, _tipo: 'vendedor' }));
+      const espComTipo = espAtivos.map(esp => ({ ...esp, _tipo: 'indicador' }));
+      setIndicadores([...espComTipo, ...vendComoInd].sort((a, b) => a.nome.localeCompare(b.nome)));
     });
   }, []);
 
