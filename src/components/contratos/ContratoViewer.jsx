@@ -334,19 +334,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                 </label>
               </div>
             ) : (
-              <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition group ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}>
-                {uploadandoPDF ? (
-                  <>
-                    <Loader2 className="w-7 h-7 text-blue-400 animate-spin" />
-                    <p className="text-xs text-gray-500 font-medium">Enviando PDF...</p>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-7 h-7 text-gray-300 group-hover:text-blue-400 transition" />
-                    <p className="text-sm font-semibold text-gray-500 group-hover:text-blue-600 transition">Clique para enviar o PDF do contrato</p>
-                    <p className="text-[10px] text-gray-400">Envie um PDF assinado externamente para habilitar o link de assinatura</p>
-                  </>
-                )}
+              <label
+                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition group ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}
+                onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+                onDrop={e => { e.preventDefault(); e.stopPropagation(); const file = e.dataTransfer.files?.[0]; if (file) uploadPDFExterno(file, false); }}
+              >
                 <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0])} />
               </label>
             )}
