@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
@@ -89,9 +89,12 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     }
   };
 
-  const uploadPDFExterno = async (file) => {
+  const uploadPDFExterno = async (file, substituindo = false) => {
     if (!file || file.type !== 'application/pdf') {
       toast.error('Por favor, selecione um arquivo PDF.');
+      return;
+    }
+    if (substituindo && !confirm('Substituir o PDF atual por este novo arquivo? O arquivo anterior será removido.')) {
       return;
     }
     setUploadandoPDF(true);
@@ -107,6 +110,18 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error('Erro ao enviar PDF: ' + err.message);
     }
     setUploadandoPDF(false);
+  };
+
+  const excluirPDF = async () => {
+    if (!confirm('Excluir o PDF anexado? Esta ação não pode ser desfeita.')) return;
+    try {
+      await base44.entities.Contrato.update(contrato.id, { pdf_url: null });
+      handleUpdate({ ...contrato, pdf_url: null });
+      queryClient.invalidateQueries(['contratos']);
+      toast.success('PDF removido.');
+    } catch (err) {
+      toast.error('Erro ao remover PDF: ' + err.message);
+    }
   };
 
   const cor = TIPO_COLOR[contrato.tipo] || '#0f1e35';
@@ -308,10 +323,14 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     Visualizar PDF do contrato
                   </a>
                 </div>
+                <button onClick={excluirPDF}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-red-200 rounded-xl cursor-pointer hover:bg-red-50 transition text-red-500">
+                  <Trash2 className="w-3.5 h-3.5" /> Excluir
+                </button>
                 <label className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition text-gray-600 ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}>
                   {uploadandoPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                   Substituir
-                  <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0])} />
+                  <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0], true)} />
                 </label>
               </div>
             ) : (
