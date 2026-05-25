@@ -86,23 +86,26 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-contrato'],
-    queryFn: () => base44.entities.Cliente.list('nome', 5000),
+    queryFn: () => base44.entities.Cliente.list('nome', 500),
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: vendedoresList = [] } = useQuery({
     queryKey: ['vendedores-contrato'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: espelhamentosList = [] } = useQuery({
     queryKey: ['espelhamentos-contrato'],
     queryFn: async () => {
-      const all = await base44.entities.Espelhamento.list('nome', 5000);
+      const all = await base44.entities.Espelhamento.list('nome', 500);
       return all.filter(e => e.ativo !== false);
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000,
   });
 
   const indicadoresDisponiveis = [
