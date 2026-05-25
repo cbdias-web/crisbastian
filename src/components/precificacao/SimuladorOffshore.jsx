@@ -73,16 +73,12 @@ export default function SimuladorOffshore() {
 
   useEffect(() => { setCfg(loadConfig()); }, []);
 
-  const cambio = cfg.ci?.cambio || 5.80;
+  const o = cfg.offshore || {};
+  const cambio = o.cambio || 5.80;
 
   // P1 — Estrutura Simples
-  // Adesão: 1.5% do patrimônio em USD (piso $3000, teto $25000)
-  // Mensalidade: 0.10% AUM/mês (mín $300/mês)
-  // Custódia + abertura de conta internacional básica
-  const p1AdesaoUSD = Math.min(Math.max(patrimonio * 0.015, 3000), 25000);
-  const p1AdesaoPerc = cfg.offshore?.p1AdesaoPerc || 1.5;
-  const p1AdesaoFinal = Math.min(Math.max(patrimonio * p1AdesaoPerc / 100, 3000), 25000);
-  const p1MensalidadeUSD = Math.max(patrimonio * 0.001, 300); // 0.10% AUM mín $300
+  const p1AdesaoFinal = Math.min(Math.max(patrimonio * (o.p1AdesaoPerc || 1.5) / 100, o.p1PisoUSD || 3000), o.p1TetoUSD || 25000);
+  const p1MensalidadeUSD = Math.max(patrimonio * ((o.p1MensalidadePercAUM || 0.10) / 100), o.p1MensalidadeMinUSD || 300);
   const p1AdesaoBRL = Math.round(p1AdesaoFinal * cambio);
   const p1MensalidadeBRL = Math.round(p1MensalidadeUSD * cambio);
   const p1EntradaBRL = Math.round(p1AdesaoBRL * entradaPerc / 100);
@@ -91,13 +87,9 @@ export default function SimuladorOffshore() {
   const p1LTV12 = p1AdesaoBRL + p1MensalidadeBRL * 12;
 
   // P2 — Estrutura Completa
-  // Adesão: 2.5% do patrimônio em USD (piso $5000, teto $50000)
-  // Mensalidade: 0.15% AUM/mês + taxa jurídica fixa
-  // Holding offshore + blindagem patrimonial + gestão ativa
-  const p2AdesaoPerc = cfg.offshore?.p2AdesaoPerc || 2.5;
-  const p2AdesaoUSD = Math.min(Math.max(patrimonio * p2AdesaoPerc / 100, 5000), 50000);
+  const p2AdesaoUSD = Math.min(Math.max(patrimonio * (o.p2AdesaoPerc || 2.5) / 100, o.p2PisoUSD || 5000), o.p2TetoUSD || 50000);
   const p2AdesaoBRL = Math.round(p2AdesaoUSD * cambio);
-  const p2MensalidadeUSD = Math.max(patrimonio * 0.0015, 500) + 300; // 0.15% + $300 jurídico
+  const p2MensalidadeUSD = Math.max(patrimonio * ((o.p2MensalidadePercAUM || 0.15) / 100), o.p2MensalidadeMinUSD || 500) + (o.p2TaxaJuridicaUSD || 300);
   const p2MensalidadeBRL = Math.round(p2MensalidadeUSD * cambio);
   const p2EntradaBRL = Math.round(p2AdesaoBRL * entradaPerc / 100);
   const p2SaldoBRL = p2AdesaoBRL - p2EntradaBRL;

@@ -147,23 +147,44 @@ export default function ConfigPrecificacao() {
         </div>
       </Section>
 
-      <Section title="Parametros Offshore - Proposta 1">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Field label="Mensalidade Estatica (R$)"><NumInput value={cfg.offshore.p1Mensalidade} onChange={v => set('offshore.p1Mensalidade', v)} prefix="R$" /></Field>
-          <Field label="Taxa Rate Padrao (%)"><NumInput value={cfg.offshore.p1Rate} onChange={v => set('offshore.p1Rate', v)} step={0.1} /></Field>
-          <Field label="% Adesao s/ Fat"><NumInput value={cfg.offshore.p1AdesaoPerc} onChange={v => set('offshore.p1AdesaoPerc', v)} step={0.5} /></Field>
-          <Field label="Piso Minimo (R$)"><NumInput value={cfg.offshore.p1Piso} onChange={v => set('offshore.p1Piso', v)} prefix="R$" /></Field>
-          <Field label="Teto Maximo (R$)"><NumInput value={cfg.offshore.p1Teto} onChange={v => set('offshore.p1Teto', v)} prefix="R$" /></Field>
-        </div>
-      </Section>
-
-      <Section title="Parametros Offshore - Proposta 2">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Field label="Taxa Rate Alvo (%)"><NumInput value={cfg.offshore.p2Rate} onChange={v => set('offshore.p2Rate', v)} step={0.1} /></Field>
-          <Field label="% Adesao s/ Fat"><NumInput value={cfg.offshore.p2AdesaoPerc} onChange={v => set('offshore.p2AdesaoPerc', v)} step={0.5} /></Field>
-          <Field label="Ciclo LTV"><NumInput value={cfg.offshore.p2CicloLTV} onChange={v => set('offshore.p2CicloLTV', v)} /></Field>
-          <Field label="Piso Minimo (R$)"><NumInput value={cfg.offshore.p2Piso} onChange={v => set('offshore.p2Piso', v)} prefix="R$" /></Field>
-          <Field label="Teto Maximo (R$)"><NumInput value={cfg.offshore.p2Teto} onChange={v => set('offshore.p2Teto', v)} prefix="R$" /></Field>
+      <Section title="Parametros Offshore">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <Field label="Cambio (1 USD = R$)">
+            <NumInput value={cfg.offshore?.cambio || 5.80} onChange={v => set('offshore.cambio', v)} step={0.01} />
+          </Field>
+          <Field label="P1 % Adesao s/ Patrimonio">
+            <NumInput value={cfg.offshore?.p1AdesaoPerc || 1.5} onChange={v => set('offshore.p1AdesaoPerc', v)} step={0.1} />
+          </Field>
+          <Field label="P1 Piso Adesao (USD)">
+            <NumInput value={cfg.offshore?.p1PisoUSD || 3000} onChange={v => set('offshore.p1PisoUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P1 Teto Adesao (USD)">
+            <NumInput value={cfg.offshore?.p1TetoUSD || 25000} onChange={v => set('offshore.p1TetoUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P1 Mensalidade % AUM/mes">
+            <NumInput value={cfg.offshore?.p1MensalidadePercAUM || 0.10} onChange={v => set('offshore.p1MensalidadePercAUM', v)} step={0.01} />
+          </Field>
+          <Field label="P1 Mensalidade Minima (USD)">
+            <NumInput value={cfg.offshore?.p1MensalidadeMinUSD || 300} onChange={v => set('offshore.p1MensalidadeMinUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P2 % Adesao s/ Patrimonio">
+            <NumInput value={cfg.offshore?.p2AdesaoPerc || 2.5} onChange={v => set('offshore.p2AdesaoPerc', v)} step={0.1} />
+          </Field>
+          <Field label="P2 Piso Adesao (USD)">
+            <NumInput value={cfg.offshore?.p2PisoUSD || 5000} onChange={v => set('offshore.p2PisoUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P2 Teto Adesao (USD)">
+            <NumInput value={cfg.offshore?.p2TetoUSD || 50000} onChange={v => set('offshore.p2TetoUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P2 Mensalidade % AUM/mes">
+            <NumInput value={cfg.offshore?.p2MensalidadePercAUM || 0.15} onChange={v => set('offshore.p2MensalidadePercAUM', v)} step={0.01} />
+          </Field>
+          <Field label="P2 Mensalidade Minima (USD)">
+            <NumInput value={cfg.offshore?.p2MensalidadeMinUSD || 500} onChange={v => set('offshore.p2MensalidadeMinUSD', v)} prefix="US$" />
+          </Field>
+          <Field label="P2 Taxa Juridica Fixa (USD/mes)">
+            <NumInput value={cfg.offshore?.p2TaxaJuridicaUSD || 300} onChange={v => set('offshore.p2TaxaJuridicaUSD', v)} prefix="US$" />
+          </Field>
         </div>
       </Section>
 
