@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { todayBrasilia } from '@/lib/dateUtils';
@@ -34,7 +34,7 @@ const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '�
 
 export default function Contratos() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('lista'); // 'lista' | 'novo' | 'viewer'
+  const [view, setView] = useState('lista');
   const [contratoAtivo, setContratoAtivo] = useState(null);
   const [tipoSelecionado, setTipoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
@@ -45,7 +45,10 @@ export default function Contratos() {
   const [enviandoPipelineId, setEnviandoPipelineId] = useState(null);
   const [clienteArrastado, setClienteArrastado] = useState(null);
   const [dragOverTipo, setDragOverTipo] = useState(null);
-  const [clientePreSelecionado, setClientePreSelecionado] = useState(null); // para pré-preencher o form
+  const [clientePreSelecionado, setClientePreSelecionado] = useState(null);
+  const [filtroVendedores, setFiltroVendedores] = useState([]);
+  const [vendedorDropdownOpen, setVendedorDropdownOpen] = useState(false);
+  const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -53,6 +56,16 @@ export default function Contratos() {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (vendedorDropdownRef.current && !vendedorDropdownRef.current.contains(e.target)) {
+        setVendedorDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const { data: contratos = [] } = useQuery({
     queryKey: ['contratos'],
@@ -101,6 +114,8 @@ export default function Contratos() {
     setEnviandoPipelineId(null);
   };
 
+  const vendedoresDisponiveis = [...new Set(contratos.map(c => c.vendedor_nome).filter(Boolean))].sort();
+
   const contratosFiltrados = contratos.filter(c => {
     const tipoOk = filtroTipo === 'Todos' || c.tipo === filtroTipo;
     const statusOk = filtroStatus === 'Todos' || c.status === filtroStatus;
@@ -108,7 +123,8 @@ export default function Contratos() {
     const dataRef = c.data_contrato || c.created_date?.split('T')[0] || '';
     const dataInicioOk = !filtroDataInicio || dataRef >= filtroDataInicio;
     const dataFimOk = !filtroDataFim || dataRef <= filtroDataFim;
-    return tipoOk && statusOk && buscaOk && dataInicioOk && dataFimOk;
+    const vendedorOk = !isAdmin || filtroVendedores.length === 0 || filtroVendedores.includes(c.vendedor_nome);
+    return tipoOk && statusOk && buscaOk && dataInicioOk && dataFimOk && vendedorOk;
   });
 
   const handleDropCliente = (e, tipo) => {
@@ -171,27 +187,18 @@ export default function Contratos() {
             return (
               <button key={tipo} onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
                 className={`group relative rounded-2xl p-4 text-left text-white overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl active:scale-[0.98] ${cfg.color} shadow-lg border border-white/10`}>
-                {/* Fundo decorativo */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
                 <div className="absolute -right-3 -bottom-3 opacity-[0.08] pointer-events-none">
                   <Icon className="w-20 h-20" />
                 </div>
-
-                {/* Badge novo */}
                 <div className="flex items-center gap-1.5 mb-3">
                   <div className="w-5 h-5 rounded-lg bg-white/15 flex items-center justify-center">
                     <FilePlus className="w-3 h-3" />
                   </div>
                   <span className="text-[9px] font-bold uppercase tracking-[0.18em] opacity-60">Novo</span>
                 </div>
-
-                {/* Nome */}
                 <p className="font-bold text-sm leading-tight mb-1.5 group-hover:opacity-100 opacity-95">{tipo}</p>
-
-                {/* Desc */}
                 <p className="text-[10px] opacity-50 leading-snug mb-3 line-clamp-2">{cfg.desc}</p>
-
-                {/* Contador */}
                 <div className="flex items-center justify-between">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${qtd > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
                     {qtd} contrato{qtd !== 1 ? 's' : ''}
@@ -236,6 +243,44 @@ export default function Contratos() {
                 className="text-xs text-red-400 hover:text-red-600 font-semibold px-1.5 py-1 hover:bg-red-50 rounded-lg transition">✕</button>
             )}
           </div>
+          {/* Filtro por gerente (apenas admin) */}
+          {isAdmin && (
+            <div className="relative" ref={vendedorDropdownRef}>
+              <button
+                onClick={() => setVendedorDropdownOpen(p => !p)}
+                className={`flex items-center gap-2 px-3 py-2 text-xs border rounded-xl focus:outline-none bg-white transition whitespace-nowrap ${
+                  filtroVendedores.length > 0 ? 'border-[#1a3150] text-[#1a3150] font-semibold' : 'border-gray-200 text-gray-500'
+                }`}>
+                Gerente{filtroVendedores.length > 0 ? ` (${filtroVendedores.length})` : ''}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${vendedorDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {vendedorDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto">
+                  {filtroVendedores.length > 0 && (
+                    <button onClick={() => setFiltroVendedores([])}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition">
+                      <X className="w-3 h-3" /> Limpar seleção
+                    </button>
+                  )}
+                  {vendedoresDisponiveis.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-gray-400 italic">Nenhum gerente encontrado</p>
+                  )}
+                  {vendedoresDisponiveis.map(v => {
+                    const sel = filtroVendedores.includes(v);
+                    return (
+                      <button key={v} onClick={() => setFiltroVendedores(prev => sel ? prev.filter(x => x !== v) : [...prev, v])}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-gray-50 transition ${sel ? 'font-semibold text-[#1a3150]' : 'text-gray-700'}`}>
+                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
+                          {sel && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        </span>
+                        {v}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
         </div>
 
@@ -294,7 +339,6 @@ export default function Contratos() {
                             className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition" title="Visualizar / Gerar PDF">
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          {/* Editar: próprio contrato ou admin */}
                           {(isAdmin || c.vendedor_id === user?.id || c.created_by === user?.email) && (
                             <button onClick={() => { setContratoAtivo(c); setTipoSelecionado(c.tipo); setView('novo'); }}
                               className="p-1.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-lg transition" title="Editar">
@@ -307,7 +351,6 @@ export default function Contratos() {
                             className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition disabled:opacity-30" title="Enviar para Vendas">
                             {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                           </button>
-                          {/* Excluir: apenas admin */}
                           {isAdmin && (
                             <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
                               className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
