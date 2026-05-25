@@ -662,7 +662,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                 </div>
 
                 {/* Indicadores */}
-                <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="border border-gray-200 rounded-xl">
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
                     <div>
                       <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Indicadores / Espelhamento</p>
