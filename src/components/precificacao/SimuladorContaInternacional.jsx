@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle } from 'lucide-react';
+import ClienteSelector from './ClienteSelector';
 import { loadConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
 import { toast } from 'sonner';
 
@@ -114,14 +115,8 @@ export default function SimuladorContaInternacional() {
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">2. Formato de Pagamento e Proposta</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-          <Field label="Nome do Cliente / Empresa">
-            <input
-              type="text"
-              value={cliente}
-              onChange={e => setCliente(e.target.value)}
-              placeholder="Ex: Joao Silva"
-              className="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-blue-400"
-            />
+          <Field label="Cliente / Empresa">
+            <ClienteSelector value={cliente} onChange={setCliente} />
           </Field>
           <Field label="Entrada da Adesao (%)">
             <NumInput value={entradaPerc} onChange={setEntradaPerc} step={5} min={0} />

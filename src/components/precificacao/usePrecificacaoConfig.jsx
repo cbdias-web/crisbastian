@@ -20,6 +20,30 @@ export const DEFAULT_CONFIG = {
     p2Piso: 5000,
     p2Teto: 30000,
   },
+  offshore: {
+    p1Mensalidade: 2000,
+    p1Rate: 3.0,
+    p1AdesaoPerc: 10,
+    p1Piso: 8000,
+    p1Teto: 50000,
+    p2Rate: 2.0,
+    p2AdesaoPerc: 10,
+    p2CicloLTV: 24,
+    p2Piso: 8000,
+    p2Teto: 50000,
+  },
+  canalBancario: {
+    p1Mensalidade: 1200,
+    p1Rate: 2.5,
+    p1AdesaoPerc: 6,
+    p1Piso: 3000,
+    p1Teto: 20000,
+    p2Rate: 2.0,
+    p2AdesaoPerc: 6,
+    p2CicloLTV: 24,
+    p2Piso: 3000,
+    p2Teto: 20000,
+  },
   sg: {
     duracao: 60,
     parcelasPagas: 12,
@@ -43,7 +67,15 @@ export const DEFAULT_CONFIG = {
 export function loadConfig() {
   try {
     const saved = localStorage.getItem('precificacao_config');
-    if (saved) return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...DEFAULT_CONFIG,
+        ...parsed,
+        offshore: { ...DEFAULT_CONFIG.offshore, ...(parsed.offshore || {}) },
+        canalBancario: { ...DEFAULT_CONFIG.canalBancario, ...(parsed.canalBancario || {}) },
+      };
+    }
   } catch {}
   return DEFAULT_CONFIG;
 }

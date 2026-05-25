@@ -139,21 +139,51 @@ export default function ConfigPrecificacao() {
 
       <Section title="Parametros Dolarize - Proposta 2">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Field label="Taxa Rate Alvo (%)">
-            <NumInput value={cfg.dolarize.p2Rate} onChange={v => set('dolarize.p2Rate', v)} step={0.1} />
-          </Field>
-          <Field label="% Adesao s/ Fat">
-            <NumInput value={cfg.dolarize.p2AdesaoPerc} onChange={v => set('dolarize.p2AdesaoPerc', v)} step={0.5} />
-          </Field>
-          <Field label="Ciclo LTV p/ Compensacao">
-            <NumInput value={cfg.dolarize.p2CicloLTV} onChange={v => set('dolarize.p2CicloLTV', v)} />
-          </Field>
-          <Field label="Piso Minimo Adesao (R$)">
-            <NumInput value={cfg.dolarize.p2Piso} onChange={v => set('dolarize.p2Piso', v)} prefix="R$" />
-          </Field>
-          <Field label="Teto Maximo Adesao (R$)">
-            <NumInput value={cfg.dolarize.p2Teto} onChange={v => set('dolarize.p2Teto', v)} prefix="R$" />
-          </Field>
+          <Field label="Taxa Rate Alvo (%)"><NumInput value={cfg.dolarize.p2Rate} onChange={v => set('dolarize.p2Rate', v)} step={0.1} /></Field>
+          <Field label="% Adesao s/ Fat"><NumInput value={cfg.dolarize.p2AdesaoPerc} onChange={v => set('dolarize.p2AdesaoPerc', v)} step={0.5} /></Field>
+          <Field label="Ciclo LTV p/ Compensacao"><NumInput value={cfg.dolarize.p2CicloLTV} onChange={v => set('dolarize.p2CicloLTV', v)} /></Field>
+          <Field label="Piso Minimo Adesao (R$)"><NumInput value={cfg.dolarize.p2Piso} onChange={v => set('dolarize.p2Piso', v)} prefix="R$" /></Field>
+          <Field label="Teto Maximo Adesao (R$)"><NumInput value={cfg.dolarize.p2Teto} onChange={v => set('dolarize.p2Teto', v)} prefix="R$" /></Field>
+        </div>
+      </Section>
+
+      <Section title="Parametros Offshore - Proposta 1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Field label="Mensalidade Estatica (R$)"><NumInput value={cfg.offshore.p1Mensalidade} onChange={v => set('offshore.p1Mensalidade', v)} prefix="R$" /></Field>
+          <Field label="Taxa Rate Padrao (%)"><NumInput value={cfg.offshore.p1Rate} onChange={v => set('offshore.p1Rate', v)} step={0.1} /></Field>
+          <Field label="% Adesao s/ Fat"><NumInput value={cfg.offshore.p1AdesaoPerc} onChange={v => set('offshore.p1AdesaoPerc', v)} step={0.5} /></Field>
+          <Field label="Piso Minimo (R$)"><NumInput value={cfg.offshore.p1Piso} onChange={v => set('offshore.p1Piso', v)} prefix="R$" /></Field>
+          <Field label="Teto Maximo (R$)"><NumInput value={cfg.offshore.p1Teto} onChange={v => set('offshore.p1Teto', v)} prefix="R$" /></Field>
+        </div>
+      </Section>
+
+      <Section title="Parametros Offshore - Proposta 2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Field label="Taxa Rate Alvo (%)"><NumInput value={cfg.offshore.p2Rate} onChange={v => set('offshore.p2Rate', v)} step={0.1} /></Field>
+          <Field label="% Adesao s/ Fat"><NumInput value={cfg.offshore.p2AdesaoPerc} onChange={v => set('offshore.p2AdesaoPerc', v)} step={0.5} /></Field>
+          <Field label="Ciclo LTV"><NumInput value={cfg.offshore.p2CicloLTV} onChange={v => set('offshore.p2CicloLTV', v)} /></Field>
+          <Field label="Piso Minimo (R$)"><NumInput value={cfg.offshore.p2Piso} onChange={v => set('offshore.p2Piso', v)} prefix="R$" /></Field>
+          <Field label="Teto Maximo (R$)"><NumInput value={cfg.offshore.p2Teto} onChange={v => set('offshore.p2Teto', v)} prefix="R$" /></Field>
+        </div>
+      </Section>
+
+      <Section title="Parametros Canal Bancario - Proposta 1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Field label="Mensalidade Estatica (R$)"><NumInput value={cfg.canalBancario.p1Mensalidade} onChange={v => set('canalBancario.p1Mensalidade', v)} prefix="R$" /></Field>
+          <Field label="Taxa Rate Padrao (%)"><NumInput value={cfg.canalBancario.p1Rate} onChange={v => set('canalBancario.p1Rate', v)} step={0.1} /></Field>
+          <Field label="% Adesao s/ Fat"><NumInput value={cfg.canalBancario.p1AdesaoPerc} onChange={v => set('canalBancario.p1AdesaoPerc', v)} step={0.5} /></Field>
+          <Field label="Piso Minimo (R$)"><NumInput value={cfg.canalBancario.p1Piso} onChange={v => set('canalBancario.p1Piso', v)} prefix="R$" /></Field>
+          <Field label="Teto Maximo (R$)"><NumInput value={cfg.canalBancario.p1Teto} onChange={v => set('canalBancario.p1Teto', v)} prefix="R$" /></Field>
+        </div>
+      </Section>
+
+      <Section title="Parametros Canal Bancario - Proposta 2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Field label="Taxa Rate Alvo (%)"><NumInput value={cfg.canalBancario.p2Rate} onChange={v => set('canalBancario.p2Rate', v)} step={0.1} /></Field>
+          <Field label="% Adesao s/ Fat"><NumInput value={cfg.canalBancario.p2AdesaoPerc} onChange={v => set('canalBancario.p2AdesaoPerc', v)} step={0.5} /></Field>
+          <Field label="Ciclo LTV"><NumInput value={cfg.canalBancario.p2CicloLTV} onChange={v => set('canalBancario.p2CicloLTV', v)} /></Field>
+          <Field label="Piso Minimo (R$)"><NumInput value={cfg.canalBancario.p2Piso} onChange={v => set('canalBancario.p2Piso', v)} prefix="R$" /></Field>
+          <Field label="Teto Maximo (R$)"><NumInput value={cfg.canalBancario.p2Teto} onChange={v => set('canalBancario.p2Teto', v)} prefix="R$" /></Field>
         </div>
       </Section>
 

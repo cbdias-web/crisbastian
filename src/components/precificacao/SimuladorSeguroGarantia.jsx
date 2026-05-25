@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle, Zap } from 'lucide-react';
+import ClienteSelector from './ClienteSelector';
 import { loadConfig, findTableRow, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import { toast } from 'sonner';
 
@@ -265,14 +266,8 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
       {/* Cliente */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-3 text-sm uppercase tracking-wide">2. Geração de Proposta</h2>
-        <Field label="Nome do Cliente / Empresa">
-          <input
-            type="text"
-            value={cliente}
-            onChange={e => setCliente(e.target.value)}
-            placeholder="Ex: Empresa ABC Ltda"
-            className="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-blue-400 max-w-sm"
-          />
+        <Field label="Cliente / Empresa">
+          <ClienteSelector value={cliente} onChange={setCliente} />
         </Field>
       </div>
     </div>
