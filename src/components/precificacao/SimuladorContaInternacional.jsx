@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Copy, CheckCircle } from 'lucide-react';
 import ClienteSelector from './ClienteSelector';
-import { loadConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
+import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
+import AdminParamsPanel from './AdminParamsPanel';
+import useIsAdmin from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
 
 function Field({ label, children }) {
@@ -17,14 +19,8 @@ function NumInput({ value, onChange, step = 1, min, prefix }) {
   return (
     <div className="relative">
       {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
-      <input
-        type="number"
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        step={step}
-        min={min}
-        className={`w-full border border-gray-200 rounded-lg py-2 text-sm ${prefix ? 'pl-14' : 'pl-3'} pr-3 focus:outline-none focus:border-blue-400`}
-      />
+      <input type="number" value={value} onChange={e => onChange(parseFloat(e.target.value) || 0)} step={step} min={min}
+        className={`w-full border border-gray-200 rounded-lg py-2 text-sm ${prefix ? 'pl-14' : 'pl-3'} pr-3 focus:outline-none focus:border-blue-400`} />
     </div>
   );
 }
@@ -39,7 +35,17 @@ function ResultRow({ label, value, highlight }) {
 }
 
 export default function SimuladorContaInternacional() {
+  const isAdmin = useIsAdmin();
   const [cfg, setCfg] = useState(loadConfig);
+
+  // Parâmetros admin
+  const [cambio, setCambio] = useState(() => loadConfig().ci.cambio);
+  const [mensalidadePadrao, setMensalidadePadrao] = useState(() => loadConfig().ci.mensalidadePadrao);
+  const [pisoAdesao, setPisoAdesao] = useState(() => loadConfig().ci.pisoAdesao);
+  const [adesaoPerc, setAdesaoPerc] = useState(() => loadConfig().ci.adesaoPerc);
+  const [ltvMeses, setLtvMeses] = useState(() => loadConfig().ci.ltvMeses);
+
+  // Dados do contrato
   const [faturamento, setFaturamento] = useState(30000);
   const [adesaoUSD, setAdesaoUSD] = useState(0);
   const [mensalidadeUSD, setMensalidadeUSD] = useState(0);
@@ -49,16 +55,19 @@ export default function SimuladorContaInternacional() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const c = loadConfig();
-    setCfg(c);
+    const c = loadConfig(); setCfg(c);
     const ci = c.ci;
-    const adesao = Math.max(faturamento / ci.cambio * ci.adesaoPerc / 100, ci.pisoAdesao);
-    setAdesaoUSD(Math.round(adesao));
-    setMensalidadeUSD(ci.mensalidadePadrao);
-  }, [faturamento]);
+    setCambio(ci.cambio); setMensalidadePadrao(ci.mensalidadePadrao);
+    setPisoAdesao(ci.pisoAdesao); setAdesaoPerc(ci.adesaoPerc); setLtvMeses(ci.ltvMeses);
+  }, []);
 
-  const cambio = cfg.ci.cambio;
-  const ltvMeses = cfg.ci.ltvMeses;
+  // Recalcula adesão quando faturamento ou parâmetros mudam
+  useEffect(() => {
+    const adesao = Math.max(faturamento / cambio * adesaoPerc / 100, pisoAdesao);
+    setAdesaoUSD(Math.round(adesao));
+    setMensalidadeUSD(mensalidadePadrao);
+  }, [faturamento, cambio, pisoAdesao, adesaoPerc, mensalidadePadrao]);
+
   const totalUSD = adesaoUSD + mensalidadeUSD * ltvMeses;
   const totalBRL = totalUSD * cambio;
   const adesaoBRL = adesaoUSD * cambio;
@@ -66,6 +75,21 @@ export default function SimuladorContaInternacional() {
   const entradaUSD = Math.round(adesaoUSD * entradaPerc / 100);
   const saldoUSD = adesaoUSD - entradaUSD;
   const parcelaUSD = nParcelas > 0 ? Math.round(saldoUSD / nParcelas) : 0;
+
+  const ci = cfg.ci;
+  const adminEdited = cambio !== ci.cambio || mensalidadePadrao !== ci.mensalidadePadrao ||
+    pisoAdesao !== ci.pisoAdesao || adesaoPerc !== ci.adesaoPerc || ltvMeses !== ci.ltvMeses;
+
+  function salvarAdmin() {
+    const nova = { ...cfg, ci: { ...ci, cambio, mensalidadePadrao, pisoAdesao, adesaoPerc, ltvMeses } };
+    saveConfig(nova); setCfg(nova); toast.success('Parâmetros Conta Internacional salvos!');
+  }
+
+  function resetarAdmin() {
+    setCambio(ci.cambio); setMensalidadePadrao(ci.mensalidadePadrao);
+    setPisoAdesao(ci.pisoAdesao); setAdesaoPerc(ci.adesaoPerc); setLtvMeses(ci.ltvMeses);
+    toast.success('Resetado para o padrão salvo.');
+  }
 
   function gerarTexto() {
     const entradaStr = entradaPerc >= 100
@@ -76,8 +100,7 @@ export default function SimuladorContaInternacional() {
 
   async function copiar() {
     await navigator.clipboard.writeText(gerarTexto());
-    setCopied(true);
-    toast.success('Proposta copiada!');
+    setCopied(true); toast.success('Proposta copiada!');
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -89,10 +112,10 @@ export default function SimuladorContaInternacional() {
           <Field label="Faturamento Mensal (R$)">
             <NumInput value={faturamento} onChange={setFaturamento} prefix="R$" />
           </Field>
-          <Field label="Adesao (US$)">
+          <Field label="Adesão (US$)">
             <NumInput value={adesaoUSD} onChange={setAdesaoUSD} prefix="US$" />
           </Field>
-          <Field label="Mensalidade (US$/mes)">
+          <Field label="Mensalidade (US$/mês)">
             <NumInput value={mensalidadeUSD} onChange={setMensalidadeUSD} prefix="US$" />
           </Field>
         </div>
@@ -102,15 +125,36 @@ export default function SimuladorContaInternacional() {
             Resumo da Proposta
           </div>
           <div className="p-2 space-y-1">
-            <ResultRow label="Adesao" value={`${fmtUSD(adesaoUSD)} aprox. ${fmtBRL(adesaoBRL)}`} />
-            <ResultRow label="Mensalidade" value={`${fmtUSD(mensalidadeUSD)} aprox. ${fmtBRL(mensalidadeBRL)}/mes`} />
+            <ResultRow label="Adesão" value={`${fmtUSD(adesaoUSD)} aprox. ${fmtBRL(adesaoBRL)}`} />
+            <ResultRow label="Mensalidade" value={`${fmtUSD(mensalidadeUSD)} aprox. ${fmtBRL(mensalidadeBRL)}/mês`} />
             <ResultRow label={`Total (${ltvMeses} meses)`} value={`${fmtUSD(totalUSD)} aprox. ${fmtBRL(totalBRL)}`} highlight />
           </div>
         </div>
         <p className="text-xs text-gray-400 mt-2">
-          Balanca Financeira baseada em LTV de {ltvMeses} meses. Cambio: 1 USD = {fmtNum(cambio, 2)} BRL
+          LTV de {ltvMeses} meses. Câmbio: 1 USD = {fmtNum(cambio, 2)} BRL
         </p>
       </div>
+
+      {/* Painel Admin */}
+      <AdminParamsPanel isAdmin={isAdmin} edited={adminEdited} onSave={salvarAdmin} onReset={resetarAdmin}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Field label="Câmbio (1 USD = R$)">
+            <NumInput value={cambio} onChange={setCambio} step={0.05} />
+          </Field>
+          <Field label="Mensalidade Padrão (US$)">
+            <NumInput value={mensalidadePadrao} onChange={setMensalidadePadrao} prefix="US$" />
+          </Field>
+          <Field label="Piso Mín. Adesão (US$)">
+            <NumInput value={pisoAdesao} onChange={setPisoAdesao} prefix="US$" />
+          </Field>
+          <Field label="% Adesão s/ Faturamento">
+            <NumInput value={adesaoPerc} onChange={setAdesaoPerc} step={0.5} />
+          </Field>
+          <Field label="LTV (meses)">
+            <NumInput value={ltvMeses} onChange={setLtvMeses} min={1} />
+          </Field>
+        </div>
+      </AdminParamsPanel>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">2. Formato de Pagamento e Proposta</h2>
@@ -118,13 +162,11 @@ export default function SimuladorContaInternacional() {
           <Field label="Cliente / Empresa">
             <ClienteSelector value={cliente} onChange={setCliente} />
           </Field>
-          <Field label="Entrada da Adesao (%)">
+          <Field label="Entrada da Adesão (%)">
             <NumInput value={entradaPerc} onChange={setEntradaPerc} step={5} min={0} />
           </Field>
           <Field label="Entrada (US$)">
-            <div className="w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 font-medium">
-              {fmtUSD(entradaUSD)}
-            </div>
+            <div className="w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 font-medium">{fmtUSD(entradaUSD)}</div>
           </Field>
           <Field label="No de Parcelas (saldo)">
             <NumInput value={nParcelas} onChange={setNParcelas} min={1} />
@@ -132,13 +174,11 @@ export default function SimuladorContaInternacional() {
         </div>
         {entradaPerc >= 100 && (
           <p className="text-xs text-blue-600 mb-4 bg-blue-50 rounded-lg px-3 py-2">
-            Entrada 100% &mdash; proposta gerada como pagamento a vista.
+            Entrada 100% — proposta gerada como pagamento à vista.
           </p>
         )}
-        <button
-          onClick={copiar}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition"
-        >
+        <button onClick={copiar}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
           {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           Gerar e Copiar Proposta
         </button>

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, Zap } from 'lucide-react';
+import { Copy, CheckCircle } from 'lucide-react';
 import ClienteSelector from './ClienteSelector';
-import { loadConfig, findTableRow, fmtBRL, fmtNum } from './usePrecificacaoConfig';
+import { loadConfig, saveConfig, findTableRow, fmtBRL, fmtNum } from './usePrecificacaoConfig';
+import AdminParamsPanel from './AdminParamsPanel';
+import useIsAdmin from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
 
 function Field({ label, children }) {
@@ -17,24 +19,14 @@ function NumInput({ value, onChange, step = 1, min, prefix }) {
   return (
     <div className="relative">
       {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{prefix}</span>}
-      <input
-        type="number"
-        value={value}
-        onChange={e => onChange(parseFloat(e.target.value) || 0)}
-        step={step}
-        min={min}
-        className={`w-full border border-gray-200 rounded-lg py-2 text-sm ${prefix ? 'pl-10' : 'pl-3'} pr-3 focus:outline-none focus:border-blue-400`}
-      />
+      <input type="number" value={value} onChange={e => onChange(parseFloat(e.target.value) || 0)} step={step} min={min}
+        className={`w-full border border-gray-200 rounded-lg py-2 text-sm ${prefix ? 'pl-10' : 'pl-3'} pr-3 focus:outline-none focus:border-blue-400`} />
     </div>
   );
 }
 
 function ResultCard({ label, value, sub, color = 'gray' }) {
-  const colors = {
-    gray: 'bg-gray-50 border-gray-100',
-    blue: 'bg-blue-50 border-blue-100',
-    green: 'bg-green-50 border-green-100',
-  };
+  const colors = { gray: 'bg-gray-50 border-gray-100', blue: 'bg-blue-50 border-blue-100', green: 'bg-green-50 border-green-100' };
   return (
     <div className={`rounded-xl p-3 border ${colors[color]}`}>
       <div className="text-xs text-gray-500 mb-1">{label}</div>
@@ -45,36 +37,37 @@ function ResultCard({ label, value, sub, color = 'gray' }) {
 }
 
 export default function SimuladorSeguroGarantia() {
+  const isAdmin = useIsAdmin();
   const [cfg, setCfg] = useState(loadConfig);
+
+  // Parâmetros admin
+  const [duracao, setDuracao] = useState(() => loadConfig().sg.duracao);
+  const [parcelasPagas, setParcelasPagas] = useState(() => loadConfig().sg.parcelasPagas);
+  const [pisoMensalidadeExito, setPisoMensalidadeExito] = useState(() => loadConfig().sg.pisoMensalidadeExito);
+  const [pisoAceitacaoPerc, setPisoAceitacaoPerc] = useState(() => loadConfig().sg.pisoAceitacaoPerc);
+
   const [divida, setDivida] = useState(200000);
   const [garantia, setGarantia] = useState(200000);
-  const [modalidade, setModalidade] = useState('ambos'); // 'principal', 'exito', 'ambos'
+  const [modalidade, setModalidade] = useState('ambos');
   const [cliente, setCliente] = useState('');
-
-  // Principal
   const [entradaPercP, setEntradaPercP] = useState(50);
   const [nParcelasP, setNParcelasP] = useState(6);
-
-  // Êxito
   const [mensalidadeExito, setMensalidadeExito] = useState(0);
   const [adicionalExitoPerc, setAdicionalExitoPerc] = useState(0);
-
   const [resultado, setResultado] = useState(null);
   const [copiedP, setCopiedP] = useState(false);
   const [copiedE, setCopiedE] = useState(false);
 
   useEffect(() => {
-    setCfg(loadConfig());
+    const c = loadConfig(); setCfg(c);
+    setDuracao(c.sg.duracao); setParcelasPagas(c.sg.parcelasPagas);
+    setPisoMensalidadeExito(c.sg.pisoMensalidadeExito); setPisoAceitacaoPerc(c.sg.pisoAceitacaoPerc);
   }, []);
 
-  useEffect(() => {
-    calcular();
-  }, [divida, garantia, cfg, entradaPercP, nParcelasP, mensalidadeExito, adicionalExitoPerc]);
+  useEffect(() => { calcular(); }, [divida, garantia, cfg, entradaPercP, nParcelasP, mensalidadeExito, adicionalExitoPerc, duracao, parcelasPagas, pisoMensalidadeExito, pisoAceitacaoPerc]);
 
   function calcular() {
     const sg = cfg.sg;
-
-    // Principal
     const rowP = findTableRow(sg.tabelaPrincipal, divida);
     const investPerc = rowP ? rowP.investPerc : 8;
     const txManutencao = rowP ? rowP.txManutencao : 800;
@@ -82,80 +75,60 @@ export default function SimuladorSeguroGarantia() {
     const entradaR = Math.round(investimentoR * entradaPercP / 100);
     const saldoR = investimentoR - entradaR;
     const parcelaR = nParcelasP > 0 ? saldoR / nParcelasP : 0;
-    const totalComManu = investimentoR + txManutencao * sg.duracao;
+    const totalComManu = investimentoR + txManutencao * duracao;
 
-    // Êxito
     const rowE = findTableRow(sg.tabelaExito, divida);
-    const mens = mensalidadeExito > 0 ? mensalidadeExito : (rowE ? rowE.mensalidade : sg.pisoMensalidadeExito);
-    const adicPerc = adicionalExitoPerc > 0 ? adicionalExitoPerc : sg.pisoAceitacaoPerc;
+    const mens = mensalidadeExito > 0 ? mensalidadeExito : (rowE ? rowE.mensalidade : pisoMensalidadeExito);
+    const adicPerc = adicionalExitoPerc > 0 ? adicionalExitoPerc : pisoAceitacaoPerc;
     const adicR = divida * adicPerc / 100;
-    const totalExito = mens * sg.parcelasPagas + adicR;
+    const totalExito = mens * parcelasPagas + adicR;
     const reprDivida = divida > 0 ? (mens * 12 / divida * 100) : 0;
 
     if (mensalidadeExito === 0) setMensalidadeExito(Math.round(mens));
     if (adicionalExitoPerc === 0) setAdicionalExitoPerc(adicPerc);
 
-    setResultado({
-      // principal
-      investPerc, txManutencao, investimentoR, entradaR, saldoR, parcelaR, totalComManu,
-      // exito
-      mensalidadeExito: Math.round(mens), adicPerc, adicR, totalExito, reprDivida,
-    });
+    setResultado({ investPerc, txManutencao, investimentoR, entradaR, saldoR, parcelaR, totalComManu, mensalidadeExito: Math.round(mens), adicPerc, adicR, totalExito, reprDivida });
+  }
+
+  const sg = cfg.sg;
+  const adminEdited = duracao !== sg.duracao || parcelasPagas !== sg.parcelasPagas ||
+    pisoMensalidadeExito !== sg.pisoMensalidadeExito || pisoAceitacaoPerc !== sg.pisoAceitacaoPerc;
+
+  function salvarAdmin() {
+    const nova = { ...cfg, sg: { ...sg, duracao, parcelasPagas, pisoMensalidadeExito, pisoAceitacaoPerc } };
+    saveConfig(nova); setCfg(nova); toast.success('Parâmetros Seguro Garantia salvos!');
+  }
+
+  function resetarAdmin() {
+    setDuracao(sg.duracao); setParcelasPagas(sg.parcelasPagas);
+    setPisoMensalidadeExito(sg.pisoMensalidadeExito); setPisoAceitacaoPerc(sg.pisoAceitacaoPerc);
+    toast.success('Resetado para o padrão salvo.');
   }
 
   function gerarTextoP() {
     if (!resultado) return '';
-    const { investimentoR, entradaR, saldoR, parcelaR, txManutencao, totalComManu, investPerc } = resultado;
-    const sg = cfg.sg;
+    const { investimentoR, entradaR, parcelaR, txManutencao, totalComManu, investPerc } = resultado;
     const entradaStr = entradaPercP >= 100
       ? `Pagamento à vista: ${fmtBRL(investimentoR)}`
       : `Entrada (${entradaPercP}%): ${fmtBRL(entradaR)}\nSaldo em ${nParcelasP}x de ${fmtBRL(parcelaR)}`;
-    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}
-──────────────────────────────
-Produto: Seguro Garantia — Modelo Principal
-Valor da Dívida: ${fmtBRL(divida)}
-Valor da Garantia: ${fmtBRL(garantia)}
-Duração: ${sg.duracao} meses
-
-📌 Condições
-Investimento (${fmtNum(investPerc, 1)}%): ${fmtBRL(investimentoR)}
-${entradaStr}
-Tx. Manutenção: ${fmtBRL(txManutencao)}/mês
-Total c/ Tx. Manutenção: ${fmtBRL(totalComManu)}
-──────────────────────────────
-Proposta gerada via Hub de Precificação — Villela Exchange`;
+    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Seguro Garantia — Modelo Principal\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\nDuração: ${duracao} meses\n\n📌 Condições\nInvestimento (${fmtNum(investPerc, 1)}%): ${fmtBRL(investimentoR)}\n${entradaStr}\nTx. Manutenção: ${fmtBRL(txManutencao)}/mês\nTotal c/ Tx. Manutenção: ${fmtBRL(totalComManu)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
   }
 
   function gerarTextoE() {
     if (!resultado) return '';
     const { mensalidadeExito: mens, adicPerc, adicR, totalExito } = resultado;
-    const sg = cfg.sg;
-    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}
-──────────────────────────────
-Produto: Seguro Garantia — Modelo No Êxito
-Valor da Dívida: ${fmtBRL(divida)}
-Valor da Garantia: ${fmtBRL(garantia)}
-
-✅ Condições No Êxito
-Mensalidade: ${fmtBRL(mens)}/mês
-Parcelas simuladas: ${sg.parcelasPagas}x
-Adicional na Aceitação (${fmtNum(adicPerc, 1)}%): ${fmtBRL(adicR)}
-Total máximo estimado: ${fmtBRL(totalExito)}
-──────────────────────────────
-Proposta gerada via Hub de Precificação — Villela Exchange`;
+    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Seguro Garantia — Modelo No Êxito\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\n\n✅ Condições No Êxito\nMensalidade: ${fmtBRL(mens)}/mês\nParcelas simuladas: ${parcelasPagas}x\nAdicional na Aceitação (${fmtNum(adicPerc, 1)}%): ${fmtBRL(adicR)}\nTotal máximo estimado: ${fmtBRL(totalExito)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
   }
 
   async function copiarP() {
     await navigator.clipboard.writeText(gerarTextoP());
-    setCopiedP(true);
-    toast.success('Proposta Principal copiada!');
+    setCopiedP(true); toast.success('Proposta Principal copiada!');
     setTimeout(() => setCopiedP(false), 2000);
   }
 
   async function copiarE() {
     await navigator.clipboard.writeText(gerarTextoE());
-    setCopiedE(true);
-    toast.success('Proposta No Êxito copiada!');
+    setCopiedE(true); toast.success('Proposta No Êxito copiada!');
     setTimeout(() => setCopiedE(false), 2000);
   }
 
@@ -164,7 +137,6 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
 
   return (
     <div className="space-y-6">
-      {/* Dados */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">1. Dados do Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
@@ -176,27 +148,15 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
           </Field>
           <Field label="Duração do Contrato">
             <div className="w-full border border-gray-100 bg-gray-50 rounded-lg py-2 px-3 text-sm text-gray-600 font-medium">
-              {cfg.sg.duracao} meses
+              {duracao} meses
             </div>
           </Field>
         </div>
-
         <Field label="Modalidade">
           <div className="flex gap-2 mt-1">
-            {[
-              { id: 'principal', label: '📌 Principal' },
-              { id: 'exito', label: '✅ No Êxito' },
-              { id: 'ambos', label: 'Ambos' },
-            ].map(m => (
-              <button
-                key={m.id}
-                onClick={() => setModalidade(m.id)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition ${
-                  modalidade === m.id
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
-                }`}
-              >
+            {[{ id: 'principal', label: '📌 Principal' }, { id: 'exito', label: '✅ No Êxito' }, { id: 'ambos', label: 'Ambos' }].map(m => (
+              <button key={m.id} onClick={() => setModalidade(m.id)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition ${modalidade === m.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'}`}>
                 {m.label}
               </button>
             ))}
@@ -204,9 +164,26 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
         </Field>
       </div>
 
-      {/* Resultados lado a lado */}
+      {/* Painel Admin */}
+      <AdminParamsPanel isAdmin={isAdmin} edited={adminEdited} onSave={salvarAdmin} onReset={resetarAdmin}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Field label="Duração (meses)">
+            <NumInput value={duracao} onChange={setDuracao} min={1} />
+          </Field>
+          <Field label="Parcelas No Êxito">
+            <NumInput value={parcelasPagas} onChange={setParcelasPagas} min={1} />
+          </Field>
+          <Field label="Piso Mensalidade Êxito (R$)">
+            <NumInput value={pisoMensalidadeExito} onChange={setPisoMensalidadeExito} prefix="R$" />
+          </Field>
+          <Field label="Piso % Adicional Aceitação">
+            <NumInput value={pisoAceitacaoPerc} onChange={setPisoAceitacaoPerc} step={0.5} />
+          </Field>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Para editar as tabelas de faixas por valor de dívida, acesse a aba Parâmetros.</p>
+      </AdminParamsPanel>
+
       <div className={`grid gap-4 ${showPrincipal && showExito ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
-        {/* Principal */}
         {showPrincipal && resultado && (
           <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
@@ -234,7 +211,6 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
           </div>
         )}
 
-        {/* Êxito */}
         {showExito && resultado && (
           <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
             <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
@@ -250,7 +226,7 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
             </div>
             <div className="grid grid-cols-2 gap-2 mb-4">
               <ResultCard label="Mensalidade" value={fmtBRL(resultado.mensalidadeExito) + '/mês'} color="green" />
-              <ResultCard label={`Invest. máx. (${cfg.sg.parcelasPagas} meses)`} value={fmtBRL(resultado.mensalidadeExito * cfg.sg.parcelasPagas)} />
+              <ResultCard label={`Invest. máx. (${parcelasPagas} meses)`} value={fmtBRL(resultado.mensalidadeExito * parcelasPagas)} />
               <ResultCard label="Represent. dívida a.a." value={fmtNum(resultado.reprDivida, 2) + '%'} />
               <ResultCard label={`Adicional Aceitação (${fmtNum(resultado.adicPerc, 1)}%)`} value={fmtBRL(resultado.adicR)} />
               <ResultCard label="Total do Êxito (R$)" value={fmtBRL(resultado.totalExito)} color="green" />
@@ -263,7 +239,6 @@ Proposta gerada via Hub de Precificação — Villela Exchange`;
         )}
       </div>
 
-      {/* Cliente */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
         <h2 className="font-semibold text-gray-800 mb-3 text-sm uppercase tracking-wide">2. Geração de Proposta</h2>
         <Field label="Cliente / Empresa">

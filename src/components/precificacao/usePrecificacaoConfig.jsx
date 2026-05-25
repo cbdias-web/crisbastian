@@ -35,16 +35,17 @@ export const DEFAULT_CONFIG = {
     p2TaxaJuridicaUSD: 300,
   },
   canalBancario: {
-    p1Mensalidade: 1200,
-    p1Rate: 2.5,
-    p1AdesaoPerc: 6,
-    p1Piso: 3000,
-    p1Teto: 20000,
-    p2Rate: 2.0,
-    p2AdesaoPerc: 6,
-    p2CicloLTV: 24,
-    p2Piso: 3000,
-    p2Teto: 20000,
+    p1AdesaoPorConta: 1500,
+    p1TetoAdesao: 6000,
+    p1MensalidadePorConta: 800,
+    p1PercVolume: 0.003,
+    p1TetoMensalidade: 4000,
+    p2AdesaoPorConta: 3000,
+    p2SetupFixo: 2000,
+    p2TetoAdesao: 15000,
+    p2MensalidadePorConta: 1500,
+    p2PercVolume: 0.005,
+    p2TetoMensalidade: 8000,
   },
   sg: {
     duracao: 60,
@@ -74,8 +75,11 @@ export function loadConfig() {
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
+        ci: { ...DEFAULT_CONFIG.ci, ...(parsed.ci || {}) },
+        dolarize: { ...DEFAULT_CONFIG.dolarize, ...(parsed.dolarize || {}) },
         offshore: { ...DEFAULT_CONFIG.offshore, ...(parsed.offshore || {}) },
         canalBancario: { ...DEFAULT_CONFIG.canalBancario, ...(parsed.canalBancario || {}) },
+        sg: { ...DEFAULT_CONFIG.sg, ...(parsed.sg || {}) },
       };
     }
   } catch {}
