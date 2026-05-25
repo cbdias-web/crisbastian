@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
@@ -43,7 +44,30 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [linkInput, setLinkInput] = useState(contrato.link_assinatura || '');
   const [salvandoLink, setSalvandoLink] = useState(false);
   const [uploadandoPDF, setUploadandoPDF] = useState(false);
+  const [editandoGerente, setEditandoGerente] = useState(false);
+  const [gerenteInput, setGerenteInput] = useState({ id: contrato.vendedor_id || '', nome: contrato.vendedor_nome || '' });
+  const [salvandoGerente, setSalvandoGerente] = useState(false);
   const queryClient = useQueryClient();
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores-ativos'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    enabled: isAdmin && editandoGerente,
+  });
+
+  const salvarGerente = async () => {
+    if (!gerenteInput.id) { return; }
+    setSalvandoGerente(true);
+    try {
+      await base44.entities.Contrato.update(contrato.id, { vendedor_id: gerenteInput.id, vendedor_nome: gerenteInput.nome });
+      handleUpdate({ ...contrato, vendedor_id: gerenteInput.id, vendedor_nome: gerenteInput.nome });
+      setEditandoGerente(false);
+      toast.success('Gerente atualizado!');
+    } catch (err) {
+      toast.error('Erro ao salvar: ' + err.message);
+    }
+    setSalvandoGerente(false);
+  };
 
   const handleUpdate = (c) => {
     setContrato(c);
@@ -487,7 +511,34 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
             {/* Comissões */}
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Vendedor & Indicadores</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center justify-between">
+                Vendedor & Indicadores
+                {isAdmin && !editandoGerente && (
+                  <button onClick={() => { setEditandoGerente(true); setGerenteInput({ id: contrato.vendedor_id || '', nome: contrato.vendedor_nome || '' }); }}
+                    className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 normal-case transition">
+                    <UserCog className="w-3 h-3" /> Alterar gerente
+                  </button>
+                )}
+              </p>
+              {editandoGerente && isAdmin && (
+                <div className="flex gap-2 mb-3">
+                  <select
+                    value={gerenteInput.id}
+                    onChange={e => {
+                      const v = vendedores.find(x => x.id === e.target.value);
+                      if (v) setGerenteInput({ id: v.id, nome: v.nome });
+                    }}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-blue-400">
+                    <option value="">Selecione o gerente...</option>
+                    {vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+                  </select>
+                  <button onClick={salvarGerente} disabled={salvandoGerente || !gerenteInput.id}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition disabled:opacity-50">
+                    {salvandoGerente ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
+                  </button>
+                  <button onClick={() => setEditandoGerente(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
+                </div>
+              )}
               <div className="space-y-2">
                 <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
                   <div>
