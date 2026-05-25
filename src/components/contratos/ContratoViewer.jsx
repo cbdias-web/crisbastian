@@ -284,13 +284,46 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         </button>
 
         {/* Header */}
-        <div className="rounded-2xl p-5 mb-5 text-white flex items-start justify-between shadow-lg" style={{ background: cor }}>
-          <div>
-            <p className="text-xs opacity-60 uppercase tracking-widest font-semibold mb-1">{contrato.tipo}</p>
-            <h2 className="text-xl font-bold">{contrato.nome}</h2>
-            <p className="text-sm opacity-70 mt-0.5">{contrato.cpf_cnpj}</p>
+        <div className="rounded-2xl p-5 mb-5 text-white shadow-lg" style={{ background: cor }}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs opacity-60 uppercase tracking-widest font-semibold mb-1">{contrato.tipo}</p>
+              <h2 className="text-xl font-bold">{contrato.nome}</h2>
+              <p className="text-sm opacity-70 mt-0.5">{contrato.cpf_cnpj}</p>
+            </div>
+            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
           </div>
-          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
+          {/* Gerente */}
+          <div className="mt-3 pt-3 border-t border-white/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] opacity-50 uppercase tracking-wider font-semibold">Gerente responsável</p>
+                <p className="text-sm font-semibold opacity-90 mt-0.5">{contrato.vendedor_nome || <span className="italic opacity-50">Não informado</span>}</p>
+              </div>
+              {isAdmin && !editandoGerente && (
+                <button onClick={() => { setEditandoGerente(true); setGerenteInput({ id: contrato.vendedor_id || '', nome: contrato.vendedor_nome || '' }); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-xl transition">
+                  <UserCog className="w-3.5 h-3.5" /> Alterar gerente
+                </button>
+              )}
+            </div>
+            {editandoGerente && isAdmin && (
+              <div className="flex gap-2 mt-2">
+                <select
+                  value={gerenteInput.id}
+                  onChange={e => { const v = vendedores.find(x => x.id === e.target.value); if (v) setGerenteInput({ id: v.id, nome: v.nome }); }}
+                  className="flex-1 px-3 py-2 text-sm border-0 rounded-xl focus:outline-none text-gray-800">
+                  <option value="">Selecione o gerente...</option>
+                  {vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+                </select>
+                <button onClick={salvarGerente} disabled={salvandoGerente || !gerenteInput.id}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-white text-gray-800 text-xs font-semibold rounded-xl hover:bg-gray-100 transition disabled:opacity-50">
+                  {salvandoGerente ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
+                </button>
+                <button onClick={() => setEditandoGerente(false)} className="px-3 py-2 text-xs text-white/70 hover:text-white rounded-xl">Cancelar</button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Ações rápidas */}
