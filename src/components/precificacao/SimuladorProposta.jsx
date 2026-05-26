@@ -3,7 +3,8 @@
  * Recebe configKey ('dolarize') e productName.
  */
 import { useState, useEffect } from 'react';
-import { TrendingDown, Wallet, Calendar } from 'lucide-react';
+import { TrendingDown, Wallet, Calendar, FileText } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
 import { loadConfig, clamp, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import ClienteSelector from './ClienteSelector';
 import { toast } from 'sonner';
@@ -73,6 +74,7 @@ export default function SimuladorProposta({ configKey, productName }) {
   const [p2Mensalidade, setP2Mensalidade] = useState(0);
   const [p2Rate, setP2Rate] = useState(0);
   const [cliente, setCliente] = useState('');
+  const [showProposta, setShowProposta] = useState(false);
   const [entradaPerc, setEntradaPerc] = useState(50);
   const [nParcelas, setNParcelas] = useState(3);
 
@@ -195,6 +197,42 @@ export default function SimuladorProposta({ configKey, productName }) {
                        ].filter(Boolean)} />
         </div>
       </div>
+
+      <div className="flex justify-end">
+        <button onClick={() => setShowProposta(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
+          <FileText className="w-4 h-4" />
+          Criar Proposta PDF
+        </button>
+      </div>
+
+      {showProposta && (
+        <CriarPropostaModal
+          produto={productName}
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            { titulo: 'Proposta 1 — Padrão', tag: 'Sem Seguro Garantia', items: [
+              { label: 'Faturamento Mensal', value: fmtBRL(faturamento) },
+              { label: 'Dívida Total', value: fmtBRL(divida) },
+              { label: 'Adesão', value: fmtBRL(p1Adesao), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p1Entrada) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p1Parcela) } : null,
+              { label: 'Mensalidade', value: fmtBRL(p1Mensalidade) + '/mes', highlight: true },
+              { label: 'Total (12 meses)', value: fmtBRL(p1LTV12) },
+            ].filter(Boolean)},
+            { titulo: 'Proposta 2 — Com Seguro', tag: 'Com Seguro Garantia', items: [
+              { label: 'Faturamento Mensal', value: fmtBRL(faturamento) },
+              { label: 'Dívida Total', value: fmtBRL(divida) },
+              { label: 'Adesão', value: fmtBRL(p2Adesao), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p2Entrada) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p2Parcela) } : null,
+              { label: 'Mensalidade', value: fmtBRL(p2Mensalidade) + '/mes', highlight: true },
+              { label: 'Total (12 meses)', value: fmtBRL(p2LTV12) },
+            ].filter(Boolean)},
+          ]}
+        />
+      )}
     </div>
   );
 }
