@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import CriarPropostaModal from './CriarPropostaModal';
 import { loadConfig, saveConfig, clamp, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import AdminParamsPanel from './AdminParamsPanel';
@@ -245,16 +245,7 @@ export default function SimuladorDolarize() {
           <ResultCard label="Mensalidade P2" value={fmtBRL(p2Mensalidade) + '/mês'} sub={`Rate: ${fmtNum(p2Rate)}%`} />
         </div>
         <div className="flex gap-3 flex-wrap">
-          <button onClick={() => copiar(gerarTextoP1(), setCopied1)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
-            {copied1 ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            Copiar Proposta 1
-          </button>
-          <button onClick={() => copiar(gerarTextoP2(), setCopied2)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition">
-            {copied2 ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            Copiar Proposta 2
-          </button>
+
           <button onClick={() => setShowProposta(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
             <FileText className="w-4 h-4" />

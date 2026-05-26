@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from 'react';
 import CriarPropostaModal from './CriarPropostaModal';
-import { Copy, CheckCircle, Info, SlidersHorizontal, Save, RotateCcw, FileText } from 'lucide-react';
+import { Info, SlidersHorizontal, Save, RotateCcw, FileText } from 'lucide-react';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
 import ClienteSelector from './ClienteSelector';
 import { toast } from 'sonner';
@@ -33,7 +33,7 @@ function NumInput({ value, onChange, step = 1, prefix, highlight }) {
   );
 }
 
-function PropostaCard({ titulo, tag, tagColor, items, onCopiar, copied, color }) {
+function PropostaCard({ titulo, tag, tagColor, items, color }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100" style={{ background: `${color}08` }}>
@@ -47,14 +47,6 @@ function PropostaCard({ titulo, tag, tagColor, items, onCopiar, copied, color })
             <span className={`text-sm font-bold ${item.highlight ? 'text-gray-900' : 'text-gray-700'}`}>{item.value}</span>
           </div>
         ))}
-      </div>
-      <div className="px-5 pb-5">
-        <button onClick={onCopiar}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition text-white"
-          style={{ background: color }}>
-          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          {copied ? 'Copiado!' : 'Copiar Proposta'}
-        </button>
       </div>
     </div>
   );
@@ -269,8 +261,6 @@ export default function SimuladorOffshore() {
             { label: 'Mensalidade (BRL aprox.)', value: fmtBRL(p1MensalidadeBRL), highlight: true },
             { label: 'Investimento total (12m)', value: fmtBRL(p1LTV12) },
           ]}
-          onCopiar={() => copiar(gerarP1(), setCopied1)}
-          copied={copied1}
         />
         <PropostaCard
           titulo="Proposta 2 — Estrutura Completa"
@@ -286,8 +276,6 @@ export default function SimuladorOffshore() {
             { label: 'Mensalidade (BRL aprox.)', value: fmtBRL(p2MensalidadeBRL), highlight: true },
             { label: 'Investimento total (12m)', value: fmtBRL(p2LTV12) },
           ]}
-          onCopiar={() => copiar(gerarP2(), setCopied2)}
-          copied={copied2}
         />
       </div>
 

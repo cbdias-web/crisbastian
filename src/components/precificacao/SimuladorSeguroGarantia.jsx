@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import CriarPropostaModal from './CriarPropostaModal';
 import ClienteSelector from './ClienteSelector';
 import { loadConfig, saveConfig, findTableRow, fmtBRL, fmtNum } from './usePrecificacaoConfig';
@@ -206,10 +206,7 @@ export default function SimuladorSeguroGarantia() {
               <ResultCard label="Saldo em Parcelas" value={`${nParcelasP}x ${fmtBRL(resultado.parcelaR)}`} />
               <ResultCard label="Total c/ Tx. Manutenção" value={fmtBRL(resultado.totalComManu)} color="blue" />
             </div>
-            <button onClick={copiarP} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
-              {copiedP ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              Copiar Proposta Principal
-            </button>
+
           </div>
         )}
 
@@ -233,10 +230,7 @@ export default function SimuladorSeguroGarantia() {
               <ResultCard label={`Adicional Aceitação (${fmtNum(resultado.adicPerc, 1)}%)`} value={fmtBRL(resultado.adicR)} />
               <ResultCard label="Total do Êxito (R$)" value={fmtBRL(resultado.totalExito)} color="green" />
             </div>
-            <button onClick={copiarE} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition">
-              {copiedE ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              Copiar Proposta No Êxito
-            </button>
+
           </div>
         )}
       </div>

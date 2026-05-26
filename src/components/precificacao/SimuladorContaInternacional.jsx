@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import CriarPropostaModal from './CriarPropostaModal';
 import ClienteSelector from './ClienteSelector';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
@@ -180,11 +180,7 @@ export default function SimuladorContaInternacional() {
           </p>
         )}
         <div className="flex gap-3 flex-wrap">
-          <button onClick={copiar}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
-            {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            Copiar Proposta
-          </button>
+
           <button onClick={() => setShowProposta(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
             <FileText className="w-4 h-4" />
