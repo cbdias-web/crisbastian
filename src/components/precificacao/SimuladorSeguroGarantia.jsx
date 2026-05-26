@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, FileText } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
 import ClienteSelector from './ClienteSelector';
 import { loadConfig, saveConfig, findTableRow, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import AdminParamsPanel from './AdminParamsPanel';
@@ -57,6 +58,7 @@ export default function SimuladorSeguroGarantia() {
   const [resultado, setResultado] = useState(null);
   const [copiedP, setCopiedP] = useState(false);
   const [copiedE, setCopiedE] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
     const c = loadConfig(); setCfg(c);
@@ -244,7 +246,41 @@ export default function SimuladorSeguroGarantia() {
         <Field label="Cliente / Empresa">
           <ClienteSelector value={cliente} onChange={setCliente} />
         </Field>
+        <div className="mt-4 flex justify-end">
+          <button onClick={() => setShowProposta(true)} disabled={!resultado}
+            className="flex items-center gap-2 px-6 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+            <FileText className="w-4 h-4" />
+            Criar Proposta PDF
+          </button>
+        </div>
       </div>
+
+      {showProposta && resultado && (
+        <CriarPropostaModal
+          produto="Seguro Garantia"
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            showPrincipal ? { titulo: 'Modelo Principal', tag: 'Investimento ' + fmtNum(resultado.investPerc, 1) + '%', items: [
+              { label: 'Valor da Divida', value: fmtBRL(divida) },
+              { label: 'Valor da Garantia', value: fmtBRL(garantia) },
+              { label: 'Duracao do Contrato', value: duracao + ' meses' },
+              { label: 'Investimento (' + fmtNum(resultado.investPerc, 1) + '%)', value: fmtBRL(resultado.investimentoR), highlight: true },
+              entradaPercP < 100 ? { label: 'Entrada (' + entradaPercP + '%)', value: fmtBRL(resultado.entradaR) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPercP < 100 ? { label: nParcelasP + 'x de', value: fmtBRL(resultado.parcelaR) } : null,
+              { label: 'Tx. Manutencao/mes', value: fmtBRL(resultado.txManutencao), highlight: true },
+              { label: 'Total c/ Tx. Manutencao', value: fmtBRL(resultado.totalComManu) },
+            ]} : null,
+            showExito ? { titulo: 'Modelo No Exito', tag: 'Mensalidade pos-aprovacao', items: [
+              { label: 'Valor da Divida', value: fmtBRL(divida) },
+              { label: 'Mensalidade', value: fmtBRL(resultado.mensalidadeExito) + '/mes', highlight: true },
+              { label: 'Parcelas simuladas', value: parcelasPagas + 'x' },
+              { label: 'Adicional na Aceitacao (' + fmtNum(resultado.adicPerc, 1) + '%)', value: fmtBRL(resultado.adicR) },
+              { label: 'Total maximo estimado', value: fmtBRL(resultado.totalExito), highlight: true },
+            ]} : null,
+          ].filter(Boolean)}
+        />
+      )}
     </div>
   );
 }

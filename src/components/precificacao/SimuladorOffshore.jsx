@@ -4,7 +4,8 @@
  * P2: Estrutura Completa (holding + gestão + assessoria jurídica)
  */
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, Info, SlidersHorizontal, Save, RotateCcw } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
+import { Copy, CheckCircle, Info, SlidersHorizontal, Save, RotateCcw, FileText } from 'lucide-react';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
 import ClienteSelector from './ClienteSelector';
 import { toast } from 'sonner';
@@ -77,6 +78,7 @@ export default function SimuladorOffshore() {
   const [nParcelas, setNParcelas] = useState(3);
   const [copied1, setCopied1] = useState(false);
   const [copied2, setCopied2] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
     const c = loadConfig();
@@ -292,6 +294,42 @@ export default function SimuladorOffshore() {
       <div className="bg-cyan-50 border border-cyan-100 rounded-2xl p-4 text-xs text-cyan-700 leading-relaxed">
         <strong>Piso mínimo de adesão: USD 10.000.</strong> Os valores são calculados automaticamente com base no patrimônio. Use o painel de "Ajustes" acima para sobrepor câmbio e adesão para esta simulação — clique em "Salvar câmbio como padrão" para fixar o câmbio.
       </div>
+
+      <div className="flex justify-end">
+        <button onClick={() => setShowProposta(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
+          <FileText className="w-4 h-4" />
+          Criar Proposta PDF
+        </button>
+      </div>
+
+      {showProposta && (
+        <CriarPropostaModal
+          produto="Offshore"
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            { titulo: 'Proposta 1 — Estrutura Simples', tag: 'Conta + Gestao Basica', items: [
+              { label: 'Patrimonio sob Gestao (AUM)', value: fmtUSD(patrimonio) + ' aprox. ' + fmtBRL(patrimonio * cambio) },
+              { label: 'Cambio Base', value: '1 USD = R$ ' + fmtNum(cambio, 2) },
+              { label: 'Adesao', value: fmtUSD(Math.round(p1AdesaoUSD)) + ' aprox. ' + fmtBRL(p1AdesaoBRL), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p1EntradaBRL) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p1ParcelaBRL) } : null,
+              { label: 'Mensalidade (' + fmtNum(o.p1MensalidadePercAUM || 0.10, 2) + '% AUM)', value: fmtUSD(Math.round(p1MensalidadeUSD)) + ' aprox. ' + fmtBRL(p1MensalidadeBRL), highlight: true },
+              { label: 'Investimento Total (12 meses)', value: fmtBRL(p1LTV12) },
+            ]},
+            { titulo: 'Proposta 2 — Estrutura Completa', tag: 'Holding + Blindagem + Gestao Ativa', items: [
+              { label: 'Patrimonio sob Gestao (AUM)', value: fmtUSD(patrimonio) + ' aprox. ' + fmtBRL(patrimonio * cambio) },
+              { label: 'Cambio Base', value: '1 USD = R$ ' + fmtNum(cambio, 2) },
+              { label: 'Adesao', value: fmtUSD(Math.round(p2AdesaoUSD)) + ' aprox. ' + fmtBRL(p2AdesaoBRL), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p2EntradaBRL) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p2ParcelaBRL) } : null,
+              { label: 'Mensalidade (' + fmtNum(o.p2MensalidadePercAUM || 0.15, 2) + '% AUM + assessoria)', value: fmtUSD(Math.round(p2MensalidadeUSD)) + ' aprox. ' + fmtBRL(p2MensalidadeBRL), highlight: true },
+              { label: 'Investimento Total (12 meses)', value: fmtBRL(p2LTV12) },
+            ]},
+          ]}
+        />
+      )}
     </div>
   );
 }

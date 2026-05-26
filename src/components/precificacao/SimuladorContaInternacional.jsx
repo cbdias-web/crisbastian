@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, FileText } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
 import ClienteSelector from './ClienteSelector';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
 import AdminParamsPanel from './AdminParamsPanel';
@@ -53,6 +54,7 @@ export default function SimuladorContaInternacional() {
   const [entradaPerc, setEntradaPerc] = useState(50);
   const [nParcelas, setNParcelas] = useState(3);
   const [copied, setCopied] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
     const c = loadConfig(); setCfg(c);
@@ -177,12 +179,37 @@ export default function SimuladorContaInternacional() {
             Entrada 100% — proposta gerada como pagamento à vista.
           </p>
         )}
-        <button onClick={copiar}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
-          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          Gerar e Copiar Proposta
-        </button>
+        <div className="flex gap-3 flex-wrap">
+          <button onClick={copiar}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition">
+            {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            Copiar Proposta
+          </button>
+          <button onClick={() => setShowProposta(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
+            <FileText className="w-4 h-4" />
+            Criar Proposta PDF
+          </button>
+        </div>
       </div>
+
+      {showProposta && (
+        <CriarPropostaModal
+          produto="Conta Internacional"
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            { titulo: 'Proposta — Conta Internacional', tag: 'Cambio: 1 USD = R$ ' + fmtNum(cambio, 2), items: [
+              { label: 'Faturamento Mensal', value: fmtBRL(faturamento) },
+              { label: 'Adesao', value: fmtUSD(adesaoUSD) + ' aprox. ' + fmtBRL(adesaoBRL), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtUSD(entradaUSD) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtUSD(parcelaUSD) } : null,
+              { label: 'Mensalidade', value: fmtUSD(mensalidadeUSD) + '/mes aprox. ' + fmtBRL(mensalidadeBRL), highlight: true },
+              { label: 'Total do Contrato (' + ltvMeses + ' meses)', value: fmtUSD(totalUSD) + ' aprox. ' + fmtBRL(totalBRL), highlight: true },
+            ]},
+          ]}
+        />
+      )}
     </div>
   );
 }

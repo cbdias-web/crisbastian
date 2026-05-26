@@ -2,7 +2,8 @@
  * Simulador Canal Bancário — baseado em volume de operações cambiais e número de contas
  */
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, Info } from 'lucide-react';
+import { Copy, CheckCircle, Info, FileText } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
 import { loadConfig, saveConfig, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import AdminParamsPanel from './AdminParamsPanel';
 import useIsAdmin from '@/hooks/useIsAdmin';
@@ -97,6 +98,7 @@ export default function SimuladorCanalBancario() {
   const [nParcelas, setNParcelas] = useState(3);
   const [copied1, setCopied1] = useState(false);
   const [copied2, setCopied2] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
     const c = loadConfig(); setCfg(c); const cb = c.canalBancario;
@@ -272,6 +274,44 @@ export default function SimuladorCanalBancario() {
         Mensalidade = R$&nbsp;{fmtNum(p1MensalidadePorConta)}/conta + {fmtNum(p1PercVolume * 100, 2)}% do volume (cap R$&nbsp;{fmtNum(p1TetoMensalidade)}).
         Economia estimada: spread convencional (~2.5%) vs. Villela (~0.7%).
       </div>
+
+      <div className="flex justify-end">
+        <button onClick={() => setShowProposta(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
+          <FileText className="w-4 h-4" />
+          Criar Proposta PDF
+        </button>
+      </div>
+
+      {showProposta && (
+        <CriarPropostaModal
+          produto="Canal Bancario"
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            { titulo: 'Proposta 1 — Canal Padrao', tag: 'Conta + Cambio Reduzido', items: [
+              { label: 'Volume Mensal de Operacoes', value: fmtBRL(volumeMensal) },
+              { label: 'Numero de Contas', value: String(nContas) + ' conta(s) — ' + tipoConta },
+              { label: 'Adesao', value: fmtBRL(p1Adesao), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p1Entrada) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p1Parcela) } : null,
+              { label: 'Mensalidade', value: fmtBRL(p1Mensalidade) + '/mes', highlight: true },
+              { label: 'Investimento Total (12 meses)', value: fmtBRL(p1LTV12) },
+              { label: 'Economia Estimada Anual', value: fmtBRL(economiaAnual) },
+            ]},
+            { titulo: 'Proposta 2 — Canal Dedicado', tag: 'Estrutura Completa + Mesa Exclusiva', items: [
+              { label: 'Volume Mensal de Operacoes', value: fmtBRL(volumeMensal) },
+              { label: 'Numero de Contas', value: String(nContas) + ' conta(s) — ' + tipoConta },
+              { label: 'Adesao (incl. setup)', value: fmtBRL(p2Adesao), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p2Entrada) } : { label: 'Pagamento', value: 'A vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p2Parcela) } : null,
+              { label: 'Mensalidade', value: fmtBRL(p2Mensalidade) + '/mes', highlight: true },
+              { label: 'Investimento Total (12 meses)', value: fmtBRL(p2LTV12) },
+              { label: 'Economia Estimada Anual', value: fmtBRL(economiaAnual) },
+            ]},
+          ]}
+        />
+      )}
     </div>
   );
 }

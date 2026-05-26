@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Copy, CheckCircle, FileText } from 'lucide-react';
+import CriarPropostaModal from './CriarPropostaModal';
 import { loadConfig, saveConfig, clamp, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import AdminParamsPanel from './AdminParamsPanel';
 import useIsAdmin from '@/hooks/useIsAdmin';
@@ -63,6 +64,7 @@ export default function SimuladorDolarize() {
   const [nParcelas, setNParcelas] = useState(3);
   const [copied1, setCopied1] = useState(false);
   const [copied2, setCopied2] = useState(false);
+  const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
     const c = loadConfig();
@@ -253,8 +255,41 @@ export default function SimuladorDolarize() {
             {copied2 ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             Copiar Proposta 2
           </button>
+          <button onClick={() => setShowProposta(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#0a1f35] hover:bg-[#1a3150] text-yellow-400 border border-yellow-400/30 rounded-xl text-sm font-semibold transition">
+            <FileText className="w-4 h-4" />
+            Criar Proposta PDF
+          </button>
         </div>
       </div>
+
+      {showProposta && (
+        <CriarPropostaModal
+          produto="Dolarize"
+          cliente={cliente}
+          onClose={() => setShowProposta(false)}
+          propostas={[
+            { titulo: 'Proposta 1 — Padrão (Sem Seguro)', tag: 'Taxa Rate ' + fmtNum(p1Rate) + '% a.m.', items: [
+              { label: 'Faturamento Mensal', value: fmtBRL(faturamento) },
+              { label: 'Dívida Total', value: fmtBRL(divida) },
+              { label: 'Valor de Adesão', value: fmtBRL(p1Adesao), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p1EntradaR) } : { label: 'Pagamento', value: 'À vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p1ParcelaR) } : null,
+              { label: 'Mensalidade', value: fmtBRL(p1Mensalidade) + '/mês', highlight: true },
+              { label: 'Taxa Rate', value: fmtNum(p1Rate) + '% a.m.' },
+            ]},
+            { titulo: 'Proposta 2 — Com Seguro Garantia', tag: 'Taxa Rate ' + fmtNum(p2Rate) + '% a.m.', items: [
+              { label: 'Faturamento Mensal', value: fmtBRL(faturamento) },
+              { label: 'Dívida Total', value: fmtBRL(divida) },
+              { label: 'Valor de Adesão', value: fmtBRL(p2AdesaoBase), highlight: true },
+              entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p2EntradaR) } : { label: 'Pagamento', value: 'À vista' },
+              entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p2ParcelaR) } : null,
+              { label: 'Mensalidade (Seguro)', value: fmtBRL(p2Mensalidade) + '/mês', highlight: true },
+              { label: 'Taxa Rate Alvo', value: fmtNum(p2Rate) + '% a.m.' },
+            ]},
+          ]}
+        />
+      )}
     </div>
   );
 }
