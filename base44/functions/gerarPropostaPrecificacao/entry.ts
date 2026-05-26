@@ -25,7 +25,8 @@ Deno.serve(async (req) => {
     doc.setFillColor(10, 31, 53); doc.rect(0, 0, W, 38, 'F');
     txt('VILLELA EXCHANGE', M, 14, 18, 'bold', [255, 255, 255]);
     txt('Gestao Patrimonial Internacional', M, 22, 8, 'normal', [160, 200, 240]);
-    txt('PROPOSTA TECNICA COMERCIAL', W - M, 14, 12, 'bold', [255, 210, 50]);
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 210, 50);
+    doc.text('PROPOSTA TECNICA COMERCIAL', W - M, 14, { align: 'right' });
     doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(160, 200, 240);
     doc.text('www.villelaexchange.com.br', W - M, 22, { align: 'right' });
 
