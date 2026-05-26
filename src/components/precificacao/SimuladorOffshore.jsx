@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import CriarPropostaModal from './CriarPropostaModal';
 import { Info, SlidersHorizontal, Save, RotateCcw, FileText } from 'lucide-react';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
+import CambioWidget from './CambioWidget';
 import ClienteSelector from './ClienteSelector';
 import { toast } from 'sonner';
 
@@ -156,7 +157,10 @@ export default function SimuladorOffshore() {
     <div className="space-y-5">
       {/* Dados do cliente */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">1. Patrimônio, Cliente e Destino</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">1. Patrimônio, Cliente e Destino</h2>
+          <CambioWidget value={cambio} onChange={setCambio} />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Field label="Patrimônio sob Gestão (USD)" hint="Total de ativos que serão alocados na estrutura offshore">
             <NumInput value={patrimonio} onChange={setPatrimonio} prefix="USD" step={10000} />

@@ -3,6 +3,7 @@ import { FileText } from 'lucide-react';
 import CriarPropostaModal from './CriarPropostaModal';
 import ClienteSelector from './ClienteSelector';
 import { loadConfig, saveConfig, fmtBRL, fmtUSD, fmtNum } from './usePrecificacaoConfig';
+import CambioWidget from './CambioWidget';
 import AdminParamsPanel from './AdminParamsPanel';
 import useIsAdmin from '@/hooks/useIsAdmin';
 import { toast } from 'sonner';
@@ -109,7 +110,10 @@ export default function SimuladorContaInternacional() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">1. Dados do Cliente</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-800 text-sm uppercase tracking-wide">1. Dados do Cliente</h2>
+          <CambioWidget value={cambio} onChange={setCambio} />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Field label="Faturamento Mensal (R$)">
             <NumInput value={faturamento} onChange={setFaturamento} prefix="R$" />
