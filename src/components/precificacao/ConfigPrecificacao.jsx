@@ -188,23 +188,24 @@ export default function ConfigPrecificacao() {
         </div>
       </Section>
 
-      <Section title="Parametros Canal Bancario - Proposta 1">
+      <Section title="Parametros Canal Bancario - Proposta 1 (Padrao)">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Field label="Mensalidade Estatica (R$)"><NumInput value={cfg.canalBancario.p1Mensalidade} onChange={v => set('canalBancario.p1Mensalidade', v)} prefix="R$" /></Field>
-          <Field label="Taxa Rate Padrao (%)"><NumInput value={cfg.canalBancario.p1Rate} onChange={v => set('canalBancario.p1Rate', v)} step={0.1} /></Field>
-          <Field label="% Adesao s/ Fat"><NumInput value={cfg.canalBancario.p1AdesaoPerc} onChange={v => set('canalBancario.p1AdesaoPerc', v)} step={0.5} /></Field>
-          <Field label="Piso Minimo (R$)"><NumInput value={cfg.canalBancario.p1Piso} onChange={v => set('canalBancario.p1Piso', v)} prefix="R$" /></Field>
-          <Field label="Teto Maximo (R$)"><NumInput value={cfg.canalBancario.p1Teto} onChange={v => set('canalBancario.p1Teto', v)} prefix="R$" /></Field>
+          <Field label="Adesao por Conta (R$)"><NumInput value={cfg.canalBancario.p1AdesaoPorConta} onChange={v => set('canalBancario.p1AdesaoPorConta', v)} prefix="R$" /></Field>
+          <Field label="Teto Adesao (R$)"><NumInput value={cfg.canalBancario.p1TetoAdesao} onChange={v => set('canalBancario.p1TetoAdesao', v)} prefix="R$" /></Field>
+          <Field label="Mensalidade por Conta (R$)"><NumInput value={cfg.canalBancario.p1MensalidadePorConta} onChange={v => set('canalBancario.p1MensalidadePorConta', v)} prefix="R$" /></Field>
+          <Field label="% Volume (ex: 0.3 = 0.3%)"><NumInput value={cfg.canalBancario.p1PercVolume * 100} onChange={v => set('canalBancario.p1PercVolume', v / 100)} step={0.05} /></Field>
+          <Field label="Teto Mensalidade (R$)"><NumInput value={cfg.canalBancario.p1TetoMensalidade} onChange={v => set('canalBancario.p1TetoMensalidade', v)} prefix="R$" /></Field>
         </div>
       </Section>
 
-      <Section title="Parametros Canal Bancario - Proposta 2">
+      <Section title="Parametros Canal Bancario - Proposta 2 (Dedicado)">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Field label="Taxa Rate Alvo (%)"><NumInput value={cfg.canalBancario.p2Rate} onChange={v => set('canalBancario.p2Rate', v)} step={0.1} /></Field>
-          <Field label="% Adesao s/ Fat"><NumInput value={cfg.canalBancario.p2AdesaoPerc} onChange={v => set('canalBancario.p2AdesaoPerc', v)} step={0.5} /></Field>
-          <Field label="Ciclo LTV"><NumInput value={cfg.canalBancario.p2CicloLTV} onChange={v => set('canalBancario.p2CicloLTV', v)} /></Field>
-          <Field label="Piso Minimo (R$)"><NumInput value={cfg.canalBancario.p2Piso} onChange={v => set('canalBancario.p2Piso', v)} prefix="R$" /></Field>
-          <Field label="Teto Maximo (R$)"><NumInput value={cfg.canalBancario.p2Teto} onChange={v => set('canalBancario.p2Teto', v)} prefix="R$" /></Field>
+          <Field label="Adesao por Conta (R$)"><NumInput value={cfg.canalBancario.p2AdesaoPorConta} onChange={v => set('canalBancario.p2AdesaoPorConta', v)} prefix="R$" /></Field>
+          <Field label="Setup Fixo (R$)"><NumInput value={cfg.canalBancario.p2SetupFixo} onChange={v => set('canalBancario.p2SetupFixo', v)} prefix="R$" /></Field>
+          <Field label="Teto Adesao (R$)"><NumInput value={cfg.canalBancario.p2TetoAdesao} onChange={v => set('canalBancario.p2TetoAdesao', v)} prefix="R$" /></Field>
+          <Field label="Mensalidade por Conta (R$)"><NumInput value={cfg.canalBancario.p2MensalidadePorConta} onChange={v => set('canalBancario.p2MensalidadePorConta', v)} prefix="R$" /></Field>
+          <Field label="% Volume (ex: 0.5 = 0.5%)"><NumInput value={cfg.canalBancario.p2PercVolume * 100} onChange={v => set('canalBancario.p2PercVolume', v / 100)} step={0.05} /></Field>
+          <Field label="Teto Mensalidade (R$)"><NumInput value={cfg.canalBancario.p2TetoMensalidade} onChange={v => set('canalBancario.p2TetoMensalidade', v)} prefix="R$" /></Field>
         </div>
       </Section>
 
