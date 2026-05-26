@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Calculator, Globe, Shield, Settings, Anchor, Building2, ChevronRight } from 'lucide-react';
+import { Calculator, Globe, Shield, Settings, Anchor, Building2, ChevronRight, FileText } from 'lucide-react';
+import PropostasGeradas from '@/components/precificacao/PropostasGeradas';
 import SimuladorProposta from '@/components/precificacao/SimuladorProposta';
 import SimuladorContaInternacional from '@/components/precificacao/SimuladorContaInternacional';
 import SimuladorSeguroGarantia from '@/components/precificacao/SimuladorSeguroGarantia';
@@ -58,33 +59,55 @@ const PRODUTOS = [
 export default function Precificacao() {
   const [tab, setTab] = useState('dolarize');
   const [configOpen, setConfigOpen] = useState(false);
+  const [mainTab, setMainTab] = useState('simulador'); // 'simulador' | 'propostas'
 
   const ativo = PRODUTOS.find(p => p.id === tab);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-5 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
-            <span>Comercial</span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-gray-700 dark:text-gray-300 font-medium">Simulador de Propostas</span>
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs text-gray-400 mb-1">
+              <span>Comercial</span>
+              <ChevronRight className="w-3 h-3" />
+              <span className="text-gray-700 dark:text-gray-300 font-medium">Precificação</span>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Precificação</h1>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Simulador</h1>
+          <button
+            onClick={() => setConfigOpen(v => !v)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+              configOpen ? 'bg-gray-900 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Parâmetros
+          </button>
         </div>
-        <button
-          onClick={() => setConfigOpen(v => !v)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
-            configOpen ? 'bg-gray-900 text-white' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          Parâmetros
-        </button>
+        {/* Main tabs */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
+          <button onClick={() => setMainTab('simulador')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              mainTab === 'simulador' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            <Calculator className="w-4 h-4" /> Simulador
+          </button>
+          <button onClick={() => setMainTab('propostas')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              mainTab === 'propostas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            <FileText className="w-4 h-4" /> Propostas Geradas
+          </button>
+        </div>
       </div>
 
-      {configOpen ? (
+      {mainTab === 'propostas' ? (
+        <div className="p-6 max-w-6xl mx-auto">
+          <PropostasGeradas />
+        </div>
+      ) : configOpen ? (
         <div className="p-6 max-w-6xl mx-auto">
           <ConfigPrecificacao />
         </div>

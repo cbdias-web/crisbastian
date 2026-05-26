@@ -1,0 +1,75 @@
+{
+  "name": "PropostaPrecificacao",
+  "type": "object",
+  "properties": {
+    "produto": {
+      "type": "string",
+      "description": "Produto simulado (Dolarize, Offshore, etc.)"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do cliente na base"
+    },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "cpf_cnpj": {
+      "type": "string",
+      "description": "CPF ou CNPJ do cliente"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor que gerou"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "validade_dias": {
+      "type": "number",
+      "default": 15,
+      "description": "Validade em dias"
+    },
+    "data_validade": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de vencimento da proposta"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es da proposta"
+    },
+    "propostas": {
+      "type": "array",
+      "description": "Itens da proposta (JSON)",
+      "items": {
+        "type": "object"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "enviada",
+        "em_negociacao",
+        "aceita",
+        "recusada"
+      ],
+      "default": "rascunho",
+      "description": "Status da proposta"
+    },
+    "pipeline_id": {
+      "type": "string",
+      "description": "ID do Pipeline gerado ao aceitar"
+    },
+    "valor_estimado": {
+      "type": "number",
+      "description": "Valor estimado da proposta"
+    }
+  },
+  "required": [
+    "produto",
+    "cliente_nome"
+  ]
+}
