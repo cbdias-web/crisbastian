@@ -67,6 +67,20 @@ export const DEFAULT_CONFIG = {
       { min: 1000000, mensalidade: 4500 },
     ],
   },
+  destinos: [
+    { nome: 'Sem destino específico', p1AdesaoUSD: null, p2AdesaoUSD: null, manutencaoAnualUSD: 0 },
+    { nome: 'Delaware (EUA)', p1AdesaoUSD: 2500, p2AdesaoUSD: 4500, manutencaoAnualUSD: 1500 },
+    { nome: 'Wyoming (EUA)', p1AdesaoUSD: 2000, p2AdesaoUSD: 4000, manutencaoAnualUSD: 1200 },
+    { nome: 'Paraguai', p1AdesaoUSD: 1800, p2AdesaoUSD: 3200, manutencaoAnualUSD: 800 },
+    { nome: 'Uruguai', p1AdesaoUSD: 3000, p2AdesaoUSD: 5500, manutencaoAnualUSD: 2000 },
+    { nome: 'São Cristóvão e Nevis', p1AdesaoUSD: 4000, p2AdesaoUSD: 7000, manutencaoAnualUSD: 2500 },
+    { nome: 'Bahamas', p1AdesaoUSD: 4500, p2AdesaoUSD: 8000, manutencaoAnualUSD: 3000 },
+    { nome: 'Panamá', p1AdesaoUSD: 2800, p2AdesaoUSD: 5000, manutencaoAnualUSD: 1800 },
+    { nome: 'Suíça', p1AdesaoUSD: 10000, p2AdesaoUSD: 18000, manutencaoAnualUSD: 8000 },
+    { nome: 'Dubai (EAU)', p1AdesaoUSD: 7000, p2AdesaoUSD: 12000, manutencaoAnualUSD: 5000 },
+    { nome: 'Hong Kong', p1AdesaoUSD: 6000, p2AdesaoUSD: 10000, manutencaoAnualUSD: 4000 },
+    { nome: 'Ilhas Virgens Britânicas (BVI)', p1AdesaoUSD: 5000, p2AdesaoUSD: 9000, manutencaoAnualUSD: 3500 },
+  ],
 };
 
 export function loadConfig() {
@@ -82,6 +96,7 @@ export function loadConfig() {
         offshore: { ...DEFAULT_CONFIG.offshore, ...(parsed.offshore || {}) },
         canalBancario: { ...DEFAULT_CONFIG.canalBancario, ...(parsed.canalBancario || {}) },
         sg: { ...DEFAULT_CONFIG.sg, ...(parsed.sg || {}) },
+        destinos: parsed.destinos || DEFAULT_CONFIG.destinos,
       };
     }
   } catch {}

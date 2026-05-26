@@ -90,6 +90,30 @@ export default function ConfigPrecificacao() {
     });
   }
 
+  function updateDestino(idx, field, val) {
+    setCfg(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.destinos[idx][field] = field === 'nome' ? val : (val === '' ? null : parseFloat(val) || 0);
+      return next;
+    });
+  }
+
+  function addDestino() {
+    setCfg(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.destinos.push({ nome: 'Nova Jurisdição', p1AdesaoUSD: 3000, p2AdesaoUSD: 5000, manutencaoAnualUSD: 1500 });
+      return next;
+    });
+  }
+
+  function removeDestino(idx) {
+    setCfg(prev => {
+      const next = JSON.parse(JSON.stringify(prev));
+      next.destinos.splice(idx, 1);
+      return next;
+    });
+  }
+
   function salvar() {
     saveConfig(cfg);
     toast.success('Configuracoes salvas!');
@@ -309,6 +333,58 @@ export default function ConfigPrecificacao() {
             </table>
           </div>
         </div>
+      </Section>
+
+      <Section title="Jurisdições / Destinos Offshore">
+        <p className="text-xs text-gray-500 mb-3">Defina os custos de constituição (P1 e P2) e manutenção anual por jurisdição. Use <strong>null</strong> (campo vazio) para deixar o cálculo automático por AUM.</p>
+        <div className="overflow-x-auto rounded-xl border border-gray-200 mb-3">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-500">
+              <tr>
+                <th className="px-3 py-2 text-left">Jurisdição / Destino</th>
+                <th className="px-3 py-2 text-left">Constituição P1 (US$)</th>
+                <th className="px-3 py-2 text-left">Constituição P2 (US$)</th>
+                <th className="px-3 py-2 text-left">Manutenção/ano (US$)</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {(cfg.destinos || []).map((d, i) => (
+                <tr key={i} className="border-t border-gray-100">
+                  <td className="px-3 py-2">
+                    <input type="text" value={d.nome} onChange={e => updateDestino(i, 'nome', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input type="number" value={d.p1AdesaoUSD ?? ''} placeholder="automático"
+                      onChange={e => updateDestino(i, 'p1AdesaoUSD', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input type="number" value={d.p2AdesaoUSD ?? ''} placeholder="automático"
+                      onChange={e => updateDestino(i, 'p2AdesaoUSD', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input type="number" value={d.manutencaoAnualUSD ?? 0}
+                      onChange={e => updateDestino(i, 'manutencaoAnualUSD', e.target.value)}
+                      className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
+                  </td>
+                  <td className="px-3 py-2">
+                    {i > 0 && (
+                      <button onClick={() => removeDestino(i)} className="text-red-400 hover:text-red-600 transition">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button onClick={addDestino} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+          <Plus className="w-3.5 h-3.5" /> Adicionar jurisdição
+        </button>
       </Section>
 
       <button

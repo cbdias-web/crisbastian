@@ -55,24 +55,10 @@ function PropostaCard({ titulo, tag, tagColor, items, color }) {
 
 const COR = '#0e7490';
 
-const DESTINOS = [
-  { nome: 'Sem destino específico', p1AdesaoUSD: null, p2AdesaoUSD: null, manutencaoAnualUSD: 0 },
-  { nome: 'Delaware (EUA)', p1AdesaoUSD: 2500, p2AdesaoUSD: 4500, manutencaoAnualUSD: 1500 },
-  { nome: 'Wyoming (EUA)', p1AdesaoUSD: 2000, p2AdesaoUSD: 4000, manutencaoAnualUSD: 1200 },
-  { nome: 'Paraguai', p1AdesaoUSD: 1800, p2AdesaoUSD: 3200, manutencaoAnualUSD: 800 },
-  { nome: 'Uruguai', p1AdesaoUSD: 3000, p2AdesaoUSD: 5500, manutencaoAnualUSD: 2000 },
-  { nome: 'São Cristóvão e Nevis', p1AdesaoUSD: 4000, p2AdesaoUSD: 7000, manutencaoAnualUSD: 2500 },
-  { nome: 'Bahamas', p1AdesaoUSD: 4500, p2AdesaoUSD: 8000, manutencaoAnualUSD: 3000 },
-  { nome: 'Panamá', p1AdesaoUSD: 2800, p2AdesaoUSD: 5000, manutencaoAnualUSD: 1800 },
-  { nome: 'Suíça', p1AdesaoUSD: 10000, p2AdesaoUSD: 18000, manutencaoAnualUSD: 8000 },
-  { nome: 'Dubai (EAU)', p1AdesaoUSD: 7000, p2AdesaoUSD: 12000, manutencaoAnualUSD: 5000 },
-  { nome: 'Hong Kong', p1AdesaoUSD: 6000, p2AdesaoUSD: 10000, manutencaoAnualUSD: 4000 },
-  { nome: 'Ilhas Virgens Britânicas (BVI)', p1AdesaoUSD: 5000, p2AdesaoUSD: 9000, manutencaoAnualUSD: 3500 },
-];
-
 export default function SimuladorOffshore() {
   const [cfg, setCfg] = useState(loadConfig);
-  const [destino, setDestino] = useState(DESTINOS[0]);
+  const destinos = cfg.destinos || [];
+  const [destino, setDestino] = useState(() => (loadConfig().destinos || [])[0] || { nome: 'Sem destino específico', p1AdesaoUSD: null, p2AdesaoUSD: null, manutencaoAnualUSD: 0 });
 
   // Parâmetros ajustáveis diretamente no simulador
   const [cambio, setCambio] = useState(() => (loadConfig().offshore?.cambio || 5.80));
@@ -90,6 +76,7 @@ export default function SimuladorOffshore() {
   useEffect(() => {
     const c = loadConfig();
     setCfg(c);
+    setDestino((c.destinos || [])[0] || { nome: 'Sem destino específico', p1AdesaoUSD: null, p2AdesaoUSD: null, manutencaoAnualUSD: 0 });
     setCambio(c.offshore?.cambio || 5.80);
   }, []);
 
@@ -171,10 +158,10 @@ export default function SimuladorOffshore() {
           <Field label="Destino / Jurisdição">
             <select
               value={destino.nome}
-              onChange={e => setDestino(DESTINOS.find(d => d.nome === e.target.value) || DESTINOS[0])}
+              onChange={e => setDestino(destinos.find(d => d.nome === e.target.value) || destinos[0])}
               className="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-cyan-400 bg-white"
             >
-              {DESTINOS.map(d => (
+              {destinos.map(d => (
                 <option key={d.nome} value={d.nome}>
                   {d.nome}{d.p1AdesaoUSD ? ` — US$ ${d.p1AdesaoUSD.toLocaleString('pt-BR')}` : ''}
                 </option>
