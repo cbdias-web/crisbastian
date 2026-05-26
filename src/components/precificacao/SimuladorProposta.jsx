@@ -3,7 +3,7 @@
  * Recebe configKey ('dolarize') e productName.
  */
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle, TrendingDown, Wallet, Calendar } from 'lucide-react';
+import { TrendingDown, Wallet, Calendar } from 'lucide-react';
 import { loadConfig, clamp, fmtBRL, fmtNum } from './usePrecificacaoConfig';
 import ClienteSelector from './ClienteSelector';
 import { toast } from 'sonner';
@@ -42,7 +42,7 @@ function MetricCard({ icon: Icon, label, value, sub, color }) {
   );
 }
 
-function PropostaCard({ titulo, tag, tagColor, items, onCopiar, copied, color }) {
+function PropostaCard({ titulo, tag, tagColor, items, color }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100" style={{ background: `${color}08` }}>
@@ -57,14 +57,7 @@ function PropostaCard({ titulo, tag, tagColor, items, onCopiar, copied, color })
           </div>
         ))}
       </div>
-      <div className="px-5 pb-5">
-        <button onClick={onCopiar}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition text-white"
-          style={{ background: color }}>
-          {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          {copied ? 'Copiado!' : 'Copiar Proposta'}
-        </button>
-      </div>
+
     </div>
   );
 }
@@ -82,8 +75,7 @@ export default function SimuladorProposta({ configKey, productName }) {
   const [cliente, setCliente] = useState('');
   const [entradaPerc, setEntradaPerc] = useState(50);
   const [nParcelas, setNParcelas] = useState(3);
-  const [copied1, setCopied1] = useState(false);
-  const [copied2, setCopied2] = useState(false);
+
 
   useEffect(() => { setCfg(loadConfig()); }, []);
 
@@ -116,19 +108,7 @@ export default function SimuladorProposta({ configKey, productName }) {
     ? `Pagamento à vista: ${fmtBRL(adesao)}`
     : `Entrada (${entradaPerc}%): ${fmtBRL(entrada)}\nSaldo em ${nParcelas}x de ${fmtBRL(parcela)}`;
 
-  function gerarTextoP1() {
-    return `PROPOSTA ${productName.toUpperCase()} — PADRÃO\nCliente: ${cliente || '[Cliente]'}\n${'─'.repeat(40)}\nFaturamento Mensal: ${fmtBRL(faturamento)}\nDívida Total: ${fmtBRL(divida)}\n\nProposta 1 — Sem Seguro Garantia\nAdesão: ${fmtBRL(p1Adesao)}\n${entradaStr(p1Adesao, p1Entrada, p1Parcela)}\nMensalidade: ${fmtBRL(p1Mensalidade)}/mês\nTaxa Rate: ${fmtNum(p1Rate)}% a.m.\n\nInvestimento Total (12 meses): ${fmtBRL(p1LTV12)}\n${'─'.repeat(40)}\nProposta gerada via Simulador — Villela Exchange`;
-  }
 
-  function gerarTextoP2() {
-    return `PROPOSTA ${productName.toUpperCase()} — COM SEGURO GARANTIA\nCliente: ${cliente || '[Cliente]'}\n${'─'.repeat(40)}\nFaturamento Mensal: ${fmtBRL(faturamento)}\nDívida Total: ${fmtBRL(divida)}\n\nProposta 2 — Com Seguro Garantia\nAdesão: ${fmtBRL(p2Adesao)}\n${entradaStr(p2Adesao, p2Entrada, p2Parcela)}\nMensalidade (vinculada ao Seguro): ${fmtBRL(p2Mensalidade)}/mês\nTaxa Rate Alvo: ${fmtNum(p2Rate)}% a.m.\n\nInvestimento Total (12 meses): ${fmtBRL(p2LTV12)}\n${'─'.repeat(40)}\nProposta gerada via Simulador — Villela Exchange`;
-  }
-
-  async function copiar(texto, setC) {
-    await navigator.clipboard.writeText(texto);
-    setC(true); toast.success('Proposta copiada!');
-    setTimeout(() => setC(false), 2000);
-  }
 
   return (
     <div className="space-y-5">
@@ -204,16 +184,15 @@ export default function SimuladorProposta({ configKey, productName }) {
               { label: 'Mensalidade', value: fmtBRL(p1Mensalidade) + '/mês', highlight: true },
               { label: 'Total (12 meses)', value: fmtBRL(p1LTV12) },
             ].filter(Boolean)}
-            onCopiar={() => copiar(gerarTextoP1(), setCopied1)} copied={copied1} />
-          <PropostaCard titulo="Proposta 2 — Com Seguro" tag="Com Seguro Garantia" tagColor="bg-emerald-100 text-emerald-700" color="#047857"
-            items={[
-              { label: 'Adesão', value: fmtBRL(p2Adesao), highlight: true },
-              entradaPerc < 100 ? { label: `Entrada ${entradaPerc}%`, value: fmtBRL(p2Entrada) } : null,
-              entradaPerc < 100 ? { label: `${nParcelas}x de`, value: fmtBRL(p2Parcela) } : null,
-              { label: 'Mensalidade', value: fmtBRL(p2Mensalidade) + '/mês', highlight: true },
-              { label: 'Total (12 meses)', value: fmtBRL(p2LTV12) },
-            ].filter(Boolean)}
-            onCopiar={() => copiar(gerarTextoP2(), setCopied2)} copied={copied2} />
+            />
+                      <PropostaCard titulo="Proposta 2 — Com Seguro" tag="Com Seguro Garantia" tagColor="bg-emerald-100 text-emerald-700" color="#047857"
+                       items={[
+                         { label: 'Adesão', value: fmtBRL(p2Adesao), highlight: true },
+                         entradaPerc < 100 ? { label: `Entrada ${entradaPerc}%`, value: fmtBRL(p2Entrada) } : null,
+                         entradaPerc < 100 ? { label: `${nParcelas}x de`, value: fmtBRL(p2Parcela) } : null,
+                         { label: 'Mensalidade', value: fmtBRL(p2Mensalidade) + '/mês', highlight: true },
+                         { label: 'Total (12 meses)', value: fmtBRL(p2LTV12) },
+                       ].filter(Boolean)} />
         </div>
       </div>
     </div>
