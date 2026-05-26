@@ -163,7 +163,7 @@ export default function SimuladorOffshore() {
             >
               {destinos.map(d => (
                 <option key={d.nome} value={d.nome}>
-                  {d.nome}{d.p1AdesaoUSD ? ` — US$ ${d.p1AdesaoUSD.toLocaleString('pt-BR')}` : ''}
+                  {d.nome}
                 </option>
               ))}
             </select>
