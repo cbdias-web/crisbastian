@@ -54,12 +54,28 @@ function PropostaCard({ titulo, tag, tagColor, items, color }) {
 
 const COR = '#0e7490';
 
+const DESTINOS = [
+  { nome: 'Sem destino específico', p1AdesaoUSD: null, p2AdesaoUSD: null, manutencaoAnualUSD: 0 },
+  { nome: 'Delaware (EUA)', p1AdesaoUSD: 2500, p2AdesaoUSD: 4500, manutencaoAnualUSD: 1500 },
+  { nome: 'Wyoming (EUA)', p1AdesaoUSD: 2000, p2AdesaoUSD: 4000, manutencaoAnualUSD: 1200 },
+  { nome: 'Paraguai', p1AdesaoUSD: 1800, p2AdesaoUSD: 3200, manutencaoAnualUSD: 800 },
+  { nome: 'Uruguai', p1AdesaoUSD: 3000, p2AdesaoUSD: 5500, manutencaoAnualUSD: 2000 },
+  { nome: 'São Cristóvão e Nevis', p1AdesaoUSD: 4000, p2AdesaoUSD: 7000, manutencaoAnualUSD: 2500 },
+  { nome: 'Bahamas', p1AdesaoUSD: 4500, p2AdesaoUSD: 8000, manutencaoAnualUSD: 3000 },
+  { nome: 'Panamá', p1AdesaoUSD: 2800, p2AdesaoUSD: 5000, manutencaoAnualUSD: 1800 },
+  { nome: 'Suíça', p1AdesaoUSD: 10000, p2AdesaoUSD: 18000, manutencaoAnualUSD: 8000 },
+  { nome: 'Dubai (EAU)', p1AdesaoUSD: 7000, p2AdesaoUSD: 12000, manutencaoAnualUSD: 5000 },
+  { nome: 'Hong Kong', p1AdesaoUSD: 6000, p2AdesaoUSD: 10000, manutencaoAnualUSD: 4000 },
+  { nome: 'Ilhas Virgens Britânicas (BVI)', p1AdesaoUSD: 5000, p2AdesaoUSD: 9000, manutencaoAnualUSD: 3500 },
+];
+
 export default function SimuladorOffshore() {
   const [cfg, setCfg] = useState(loadConfig);
+  const [destino, setDestino] = useState(DESTINOS[0]);
 
   // Parâmetros ajustáveis diretamente no simulador
   const [cambio, setCambio] = useState(() => (loadConfig().offshore?.cambio || 5.80));
-  const [p1AdesaoUSDManual, setP1AdesaoUSDManual] = useState(null); // null = usa cálculo automático
+  const [p1AdesaoUSDManual, setP1AdesaoUSDManual] = useState(null);
   const [p2AdesaoUSDManual, setP2AdesaoUSDManual] = useState(null);
   const [showAjustes, setShowAjustes] = useState(false);
 
@@ -68,8 +84,6 @@ export default function SimuladorOffshore() {
   const [cliente, setCliente] = useState('');
   const [entradaPerc, setEntradaPerc] = useState(50);
   const [nParcelas, setNParcelas] = useState(3);
-  const [copied1, setCopied1] = useState(false);
-  const [copied2, setCopied2] = useState(false);
   const [showProposta, setShowProposta] = useState(false);
 
   useEffect(() => {
@@ -78,17 +92,26 @@ export default function SimuladorOffshore() {
     setCambio(c.offshore?.cambio || 5.80);
   }, []);
 
+  // Quando muda o destino, limpa overrides manuais
+  useEffect(() => {
+    setP1AdesaoUSDManual(null);
+    setP2AdesaoUSDManual(null);
+  }, [destino]);
+
   const o = cfg.offshore || {};
 
-  // Cálculos automáticos (respeitam o piso mínimo USD 10.000)
+  // Cálculos automáticos baseados em AUM
   const p1AdesaoCalc = Math.min(Math.max(patrimonio * (o.p1AdesaoPerc || 1.5) / 100, o.p1PisoUSD || 10000), o.p1TetoUSD || 25000);
   const p2AdesaoCalc = Math.min(Math.max(patrimonio * (o.p2AdesaoPerc || 2.5) / 100, o.p2PisoUSD || 10000), o.p2TetoUSD || 50000);
 
-  // Usa manual se definido, senão automático
-  const p1AdesaoUSD = p1AdesaoUSDManual !== null ? p1AdesaoUSDManual : p1AdesaoCalc;
-  const p2AdesaoUSD = p2AdesaoUSDManual !== null ? p2AdesaoUSDManual : p2AdesaoCalc;
+  // Prioridade: manual > destino > automático
+  const p1AdesaoBase = destino.p1AdesaoUSD !== null ? destino.p1AdesaoUSD : p1AdesaoCalc;
+  const p2AdesaoBase = destino.p2AdesaoUSD !== null ? destino.p2AdesaoUSD : p2AdesaoCalc;
+  const p1AdesaoUSD = p1AdesaoUSDManual !== null ? p1AdesaoUSDManual : p1AdesaoBase;
+  const p2AdesaoUSD = p2AdesaoUSDManual !== null ? p2AdesaoUSDManual : p2AdesaoBase;
 
-  const p1MensalidadeUSD = Math.max(patrimonio * ((o.p1MensalidadePercAUM || 0.10) / 100), o.p1MensalidadeMinUSD || 300);
+  const manutencaoMensalUSD = destino.manutencaoAnualUSD / 12;
+  const p1MensalidadeUSD = Math.max(patrimonio * ((o.p1MensalidadePercAUM || 0.10) / 100), o.p1MensalidadeMinUSD || 300) + manutencaoMensalUSD;
   const p1AdesaoBRL = Math.round(p1AdesaoUSD * cambio);
   const p1MensalidadeBRL = Math.round(p1MensalidadeUSD * cambio);
   const p1EntradaBRL = Math.round(p1AdesaoBRL * entradaPerc / 100);
@@ -96,7 +119,7 @@ export default function SimuladorOffshore() {
   const p1ParcelaBRL = nParcelas > 0 ? Math.round(p1SaldoBRL / nParcelas) : 0;
   const p1LTV12 = p1AdesaoBRL + p1MensalidadeBRL * 12;
 
-  const p2MensalidadeUSD = Math.max(patrimonio * ((o.p2MensalidadePercAUM || 0.15) / 100), o.p2MensalidadeMinUSD || 500) + (o.p2TaxaJuridicaUSD || 300);
+  const p2MensalidadeUSD = Math.max(patrimonio * ((o.p2MensalidadePercAUM || 0.15) / 100), o.p2MensalidadeMinUSD || 500) + (o.p2TaxaJuridicaUSD || 300) + manutencaoMensalUSD;
   const p2AdesaoBRL = Math.round(p2AdesaoUSD * cambio);
   const p2MensalidadeBRL = Math.round(p2MensalidadeUSD * cambio);
   const p2EntradaBRL = Math.round(p2AdesaoBRL * entradaPerc / 100);
@@ -125,35 +148,42 @@ export default function SimuladorOffshore() {
     ? `Pagamento à vista: ${fmtBRL(adesao)}`
     : `Entrada (${entradaPerc}%): ${fmtBRL(entrada)}\nSaldo em ${nParcelas}x de ${fmtBRL(parcela)}`;
 
-  function gerarP1() {
-    return `PROPOSTA OFFSHORE — ESTRUTURA SIMPLES\nCliente: ${cliente || '[Cliente]'}\n${'─'.repeat(40)}\nPatrimônio sob Gestão: ${fmtUSD(patrimonio)}\nCâmbio Base: 1 USD = ${fmtNum(cambio, 2)} BRL\n\nESTRUTURA:\n• Conta no exterior (jurisdição internacional)\n• Gestão básica de ativos\n• Relatórios mensais de posição\n\nCONDIÇÕES COMERCIAIS:\nAdesão: ${fmtUSD(Math.round(p1AdesaoUSD))} aprox. ${fmtBRL(p1AdesaoBRL)}\n${entradaStr(p1AdesaoBRL, p1EntradaBRL, p1ParcelaBRL)}\nMensalidade (${fmtNum(o.p1MensalidadePercAUM || 0.10, 2)}% AUM): ${fmtUSD(Math.round(p1MensalidadeUSD))} aprox. ${fmtBRL(p1MensalidadeBRL)}/mês\n\nInvestimento Total (12 meses): ${fmtBRL(p1LTV12)}\n${'─'.repeat(40)}\nProposta gerada via Simulador — Villela Exchange`;
-  }
-
-  function gerarP2() {
-    return `PROPOSTA OFFSHORE — ESTRUTURA COMPLETA\nCliente: ${cliente || '[Cliente]'}\n${'─'.repeat(40)}\nPatrimônio sob Gestão: ${fmtUSD(patrimonio)}\nCâmbio Base: 1 USD = ${fmtNum(cambio, 2)} BRL\n\nESTRUTURA:\n• Holding offshore (Cayman / BVI)\n• Blindagem patrimonial e sucessória\n• Gestão ativa com assessoria dedicada\n• Planejamento tributário internacional\n• Relatórios mensais + reuniões trimestrais\n\nCONDIÇÕES COMERCIAIS:\nAdesão: ${fmtUSD(Math.round(p2AdesaoUSD))} aprox. ${fmtBRL(p2AdesaoBRL)}\n${entradaStr(p2AdesaoBRL, p2EntradaBRL, p2ParcelaBRL)}\nMensalidade (${fmtNum(o.p2MensalidadePercAUM || 0.15, 2)}% AUM + assessoria): ${fmtUSD(Math.round(p2MensalidadeUSD))} aprox. ${fmtBRL(p2MensalidadeBRL)}/mês\n\nInvestimento Total (12 meses): ${fmtBRL(p2LTV12)}\n${'─'.repeat(40)}\nProposta gerada via Simulador — Villela Exchange`;
-  }
-
-  async function copiar(texto, setC) {
-    await navigator.clipboard.writeText(texto);
-    setC(true); toast.success('Proposta copiada!');
-    setTimeout(() => setC(false), 2000);
-  }
-
   const ajusteAtivo = p1AdesaoUSDManual !== null || p2AdesaoUSDManual !== null || cambio !== (o.cambio || 5.80);
+
+  const destinoLabel = destino.p1AdesaoUSD !== null ? destino.nome : 'A Definir';
 
   return (
     <div className="space-y-5">
       {/* Dados do cliente */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">1. Patrimônio e Cliente</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <h2 className="font-semibold text-gray-800 mb-4 text-sm uppercase tracking-wide">1. Patrimônio, Cliente e Destino</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <Field label="Patrimônio sob Gestão (USD)" hint="Total de ativos que serão alocados na estrutura offshore">
             <NumInput value={patrimonio} onChange={setPatrimonio} prefix="USD" step={10000} />
           </Field>
           <Field label="Cliente / Empresa">
             <ClienteSelector value={cliente} onChange={setCliente} />
           </Field>
+          <Field label="Destino / Jurisdição">
+            <select
+              value={destino.nome}
+              onChange={e => setDestino(DESTINOS.find(d => d.nome === e.target.value) || DESTINOS[0])}
+              className="w-full border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-cyan-400 bg-white"
+            >
+              {DESTINOS.map(d => (
+                <option key={d.nome} value={d.nome}>
+                  {d.nome}{d.p1AdesaoUSD ? ` — US$ ${d.p1AdesaoUSD.toLocaleString('pt-BR')}` : ''}
+                </option>
+              ))}
+            </select>
+          </Field>
         </div>
+
+        {destino.p1AdesaoUSD !== null && (
+          <div className="mt-3 bg-cyan-50 border border-cyan-200 rounded-xl p-3 text-xs text-cyan-800">
+            <strong>{destino.nome}</strong> — Constituição P1: {fmtUSD(destino.p1AdesaoUSD)} | Constituição P2: {fmtUSD(destino.p2AdesaoUSD)} | Manutenção: {fmtUSD(destino.manutencaoAnualUSD)}/ano ({fmtUSD(Math.round(manutencaoMensalUSD))}/mês)
+          </div>
+        )}
 
         {/* Métricas rápidas */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
@@ -196,17 +226,17 @@ export default function SimuladorOffshore() {
               <Field label="Câmbio Base (1 USD = R$)" hint="Altera a conversão de todos os valores desta simulação">
                 <NumInput value={cambio} onChange={setCambio} step={0.05} highlight />
               </Field>
-              <Field label="Adesão P1 — override (USD)" hint="Deixe em 0 para calcular automaticamente">
+              <Field label="Adesão P1 — override (USD)" hint="Deixe em 0 para usar o destino/automático">
                 <NumInput
-                  value={p1AdesaoUSDManual !== null ? p1AdesaoUSDManual : Math.round(p1AdesaoCalc)}
+                  value={p1AdesaoUSDManual !== null ? p1AdesaoUSDManual : Math.round(p1AdesaoBase)}
                   onChange={v => setP1AdesaoUSDManual(v > 0 ? v : null)}
                   prefix="US$" step={500}
                   highlight={p1AdesaoUSDManual !== null}
                 />
               </Field>
-              <Field label="Adesão P2 — override (USD)" hint="Deixe em 0 para calcular automaticamente">
+              <Field label="Adesão P2 — override (USD)" hint="Deixe em 0 para usar o destino/automático">
                 <NumInput
-                  value={p2AdesaoUSDManual !== null ? p2AdesaoUSDManual : Math.round(p2AdesaoCalc)}
+                  value={p2AdesaoUSDManual !== null ? p2AdesaoUSDManual : Math.round(p2AdesaoBase)}
                   onChange={v => setP2AdesaoUSDManual(v > 0 ? v : null)}
                   prefix="US$" step={500}
                   highlight={p2AdesaoUSDManual !== null}
@@ -249,7 +279,7 @@ export default function SimuladorOffshore() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <PropostaCard
           titulo="Proposta 1 — Estrutura Simples"
-          tag="Conta + Gestão Básica"
+          tag={destino.p1AdesaoUSD !== null ? destino.nome : 'Conta + Gestão Básica'}
           tagColor="bg-cyan-100 text-cyan-700"
           color={COR}
           items={[
@@ -264,7 +294,7 @@ export default function SimuladorOffshore() {
         />
         <PropostaCard
           titulo="Proposta 2 — Estrutura Completa"
-          tag="Holding + Blindagem + Gestão Ativa"
+          tag={destino.p2AdesaoUSD !== null ? `${destino.nome} — Estrutura Completa` : 'Holding + Blindagem + Gestão Ativa'}
           tagColor="bg-emerald-100 text-emerald-700"
           color="#047857"
           items={[
@@ -280,7 +310,10 @@ export default function SimuladorOffshore() {
       </div>
 
       <div className="bg-cyan-50 border border-cyan-100 rounded-2xl p-4 text-xs text-cyan-700 leading-relaxed">
-        <strong>Piso mínimo de adesão: USD 10.000.</strong> Os valores são calculados automaticamente com base no patrimônio. Use o painel de "Ajustes" acima para sobrepor câmbio e adesão para esta simulação — clique em "Salvar câmbio como padrão" para fixar o câmbio.
+        {destino.p1AdesaoUSD !== null
+          ? <><strong>Destino: {destino.nome}.</strong> Custos de constituição e manutenção incluídos nos valores.</>
+          : <><strong>Piso mínimo de adesão: USD 10.000.</strong> Selecione um destino para pré-configurar os custos de constituição.</>
+        }
       </div>
 
       <div className="flex justify-end">
@@ -297,24 +330,26 @@ export default function SimuladorOffshore() {
           cliente={cliente}
           onClose={() => setShowProposta(false)}
           propostas={[
-            { titulo: 'Proposta 1 — Estrutura Simples', tag: 'Conta + Gestao Basica', items: [
+            { titulo: 'Proposta 1 — Estrutura Simples', tag: destinoLabel, items: [
+              destino.p1AdesaoUSD !== null ? { label: 'Jurisdicao / Destino', value: destino.nome } : null,
               { label: 'Patrimonio sob Gestao (AUM)', value: fmtUSD(patrimonio) + ' aprox. ' + fmtBRL(patrimonio * cambio) },
               { label: 'Cambio Base', value: '1 USD = R$ ' + fmtNum(cambio, 2) },
-              { label: 'Adesao', value: fmtUSD(Math.round(p1AdesaoUSD)) + ' aprox. ' + fmtBRL(p1AdesaoBRL), highlight: true },
+              { label: 'Adesao (Constituicao)', value: fmtUSD(Math.round(p1AdesaoUSD)) + ' aprox. ' + fmtBRL(p1AdesaoBRL), highlight: true },
               entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p1EntradaBRL) } : { label: 'Pagamento', value: 'A vista' },
               entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p1ParcelaBRL) } : null,
-              { label: 'Mensalidade (' + fmtNum(o.p1MensalidadePercAUM || 0.10, 2) + '% AUM)', value: fmtUSD(Math.round(p1MensalidadeUSD)) + ' aprox. ' + fmtBRL(p1MensalidadeBRL), highlight: true },
+              { label: 'Mensalidade (gestao + manutencao)', value: fmtUSD(Math.round(p1MensalidadeUSD)) + ' aprox. ' + fmtBRL(p1MensalidadeBRL), highlight: true },
               { label: 'Investimento Total (12 meses)', value: fmtBRL(p1LTV12) },
-            ]},
-            { titulo: 'Proposta 2 — Estrutura Completa', tag: 'Holding + Blindagem + Gestao Ativa', items: [
+            ].filter(Boolean)},
+            { titulo: 'Proposta 2 — Estrutura Completa', tag: destino.p2AdesaoUSD !== null ? destino.nome : 'Holding + Blindagem + Gestao Ativa', items: [
+              destino.p2AdesaoUSD !== null ? { label: 'Jurisdicao / Destino', value: destino.nome } : null,
               { label: 'Patrimonio sob Gestao (AUM)', value: fmtUSD(patrimonio) + ' aprox. ' + fmtBRL(patrimonio * cambio) },
               { label: 'Cambio Base', value: '1 USD = R$ ' + fmtNum(cambio, 2) },
-              { label: 'Adesao', value: fmtUSD(Math.round(p2AdesaoUSD)) + ' aprox. ' + fmtBRL(p2AdesaoBRL), highlight: true },
+              { label: 'Adesao (Constituicao Holding)', value: fmtUSD(Math.round(p2AdesaoUSD)) + ' aprox. ' + fmtBRL(p2AdesaoBRL), highlight: true },
               entradaPerc < 100 ? { label: 'Entrada (' + entradaPerc + '%)', value: fmtBRL(p2EntradaBRL) } : { label: 'Pagamento', value: 'A vista' },
               entradaPerc < 100 ? { label: nParcelas + 'x de', value: fmtBRL(p2ParcelaBRL) } : null,
-              { label: 'Mensalidade (' + fmtNum(o.p2MensalidadePercAUM || 0.15, 2) + '% AUM + assessoria)', value: fmtUSD(Math.round(p2MensalidadeUSD)) + ' aprox. ' + fmtBRL(p2MensalidadeBRL), highlight: true },
+              { label: 'Mensalidade (gestao + assessoria + manutencao)', value: fmtUSD(Math.round(p2MensalidadeUSD)) + ' aprox. ' + fmtBRL(p2MensalidadeBRL), highlight: true },
               { label: 'Investimento Total (12 meses)', value: fmtBRL(p2LTV12) },
-            ]},
+            ].filter(Boolean)},
           ]}
         />
       )}

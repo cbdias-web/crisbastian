@@ -2,7 +2,7 @@
  * Simulador genérico para produtos do tipo Dolarize, Offshore e Canal Bancário.
  * Recebe configKey ('dolarize') e productName.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TrendingDown, Wallet, Calendar, FileText } from 'lucide-react';
 import CriarPropostaModal from './CriarPropostaModal';
 import { loadConfig, clamp, fmtBRL, fmtNum } from './usePrecificacaoConfig';
@@ -75,6 +75,8 @@ export default function SimuladorProposta({ configKey, productName }) {
   const [p2Rate, setP2Rate] = useState(0);
   const [cliente, setCliente] = useState('');
   const [showProposta, setShowProposta] = useState(false);
+  const p1K = useRef(0); // constante Rate × Adesão para proporção P1
+  const p2K = useRef(0); // constante Rate × Adesão para proporção P2
   const [entradaPerc, setEntradaPerc] = useState(50);
   const [nParcelas, setNParcelas] = useState(3);
 
@@ -84,19 +86,44 @@ export default function SimuladorProposta({ configKey, productName }) {
   useEffect(() => {
     const d = cfg[configKey];
     if (!d) return;
-    setP1Adesao(Math.round(clamp(faturamento * d.p1AdesaoPerc / 100, d.p1Piso, d.p1Teto)));
+    const baseAdesao = Math.round(clamp(faturamento * d.p1AdesaoPerc / 100, d.p1Piso, d.p1Teto));
+    const baseRate = d.p1Rate;
+    p1K.current = baseRate > 0 ? baseRate * baseAdesao : 0;
+    setP1Adesao(baseAdesao);
     setP1Mensalidade(d.p1Mensalidade);
-    setP1Rate(d.p1Rate);
+    setP1Rate(baseRate);
   }, [faturamento, cfg, configKey]);
 
   useEffect(() => {
     const d = cfg[configKey];
     if (!d) return;
     const sgRow = cfg.sg.tabelaExito.filter(r => divida >= r.min).sort((a, b) => b.min - a.min)[0];
-    setP2Adesao(Math.round(clamp(faturamento * d.p2AdesaoPerc / 100, d.p2Piso, d.p2Teto)));
+    const sgRateDisc = (d.sgRateDiscountPerc ?? 15) / 100;
+    const sgAdesaoDisc = (d.sgAdesaoDiscountPerc ?? 10) / 100;
+    const baseAdesao = Math.round(clamp(faturamento * d.p2AdesaoPerc / 100, d.p2Piso, d.p2Teto) * (1 - sgAdesaoDisc));
+    const baseRate = parseFloat(((d.p2Rate ?? d.p1Rate) * (1 - sgRateDisc)).toFixed(2));
+    p2K.current = baseRate > 0 ? baseRate * baseAdesao : 0;
+    setP2Adesao(baseAdesao);
     setP2Mensalidade(Math.round(sgRow ? sgRow.mensalidade : d.p1Mensalidade));
-    setP2Rate(d.p2Rate);
+    setP2Rate(baseRate);
   }, [faturamento, divida, cfg, configKey]);
+
+  function handleP1RateChange(v) {
+    setP1Rate(v);
+    if (v > 0 && p1K.current > 0) setP1Adesao(Math.round(p1K.current / v));
+  }
+  function handleP1AdesaoChange(v) {
+    setP1Adesao(v);
+    if (v > 0 && p1K.current > 0) setP1Rate(parseFloat((p1K.current / v).toFixed(2)));
+  }
+  function handleP2RateChange(v) {
+    setP2Rate(v);
+    if (v > 0 && p2K.current > 0) setP2Adesao(Math.round(p2K.current / v));
+  }
+  function handleP2AdesaoChange(v) {
+    setP2Adesao(v);
+    if (v > 0 && p2K.current > 0) setP2Rate(parseFloat((p2K.current / v).toFixed(2)));
+  }
 
   const p1Entrada = Math.round(p1Adesao * entradaPerc / 100);
   const p1Parcela = nParcelas > 0 ? Math.round((p1Adesao - p1Entrada) / nParcelas) : 0;
@@ -145,18 +172,20 @@ export default function SimuladorProposta({ configKey, productName }) {
             <h3 className="font-bold text-sm text-gray-900">Proposta 1 — Padrão</h3>
             <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">Sem Seguro</span>
           </div>
-          <Field label="Valor de Adesão (R$)"><NumInput value={p1Adesao} onChange={setP1Adesao} prefix="R$" /></Field>
+          <p className="text-[10px] text-gray-400 mb-2">🔗 Rate ↔ Adesão inversamente proporcionais — ajuste um para recalcular o outro</p>
+          <Field label="Valor de Adesão (R$)"><NumInput value={p1Adesao} onChange={handleP1AdesaoChange} prefix="R$" /></Field>
           <Field label="Mensalidade (R$/mês)"><NumInput value={p1Mensalidade} onChange={setP1Mensalidade} prefix="R$" /></Field>
-          <Field label="Taxa Rate (%)"><NumInput value={p1Rate} onChange={setP1Rate} step={0.1} /></Field>
+          <Field label="Taxa Rate (%)"><NumInput value={p1Rate} onChange={handleP1RateChange} step={0.1} /></Field>
         </div>
         <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-bold text-sm text-gray-900">Proposta 2 — Com Seguro Garantia</h3>
             <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">Com Seguro</span>
           </div>
-          <Field label="Valor de Adesão (R$)"><NumInput value={p2Adesao} onChange={setP2Adesao} prefix="R$" /></Field>
+          <p className="text-[10px] text-emerald-600 mb-2">🔗 Desconto do Seguro aplicado — Rate e Adesão reduzidos e proporcionais</p>
+          <Field label="Valor de Adesão (R$)"><NumInput value={p2Adesao} onChange={handleP2AdesaoChange} prefix="R$" /></Field>
           <Field label="Mensalidade vinculada ao Seguro (R$/mês)"><NumInput value={p2Mensalidade} onChange={setP2Mensalidade} prefix="R$" /></Field>
-          <Field label="Taxa Rate Alvo (%)"><NumInput value={p2Rate} onChange={setP2Rate} step={0.1} /></Field>
+          <Field label="Taxa Rate Alvo (%)"><NumInput value={p2Rate} onChange={handleP2RateChange} step={0.1} /></Field>
         </div>
       </div>
 

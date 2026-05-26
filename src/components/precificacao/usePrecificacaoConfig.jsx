@@ -19,6 +19,8 @@ export const DEFAULT_CONFIG = {
     p2CicloLTV: 24,
     p2Piso: 5000,
     p2Teto: 30000,
+    sgRateDiscountPerc: 15,    // % de reducao de Rate na P2 com Seguro
+    sgAdesaoDiscountPerc: 10,  // % de reducao de Adesao na P2 com Seguro
   },
   offshore: {
     cambio: 5.80,
