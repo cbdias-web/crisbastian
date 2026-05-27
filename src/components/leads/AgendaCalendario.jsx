@@ -797,22 +797,16 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
   const [filtroRapidoFim, setFiltroRapidoFim] = useState('');
 
-  const dataInicio = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 60);
-    return d.toISOString().split('T')[0];
-  }, []);
-
   const { data: agendaGlobal = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos-global'],
-    queryFn: () => base44.entities.AgendaContato.filter({ data_agendada: { $gte: dataInicio } }, 'data_agendada', 5000),
+    queryFn: () => base44.entities.AgendaContato.list('-data_agendada', 5000),
     enabled: isAdmin,
     refetchInterval: 30000,
   });
 
   const { data: agendaVendedor = [], isLoading: isLoadingVendedor } = useQuery({
     queryKey: ['agenda-contatos', vendedorId],
-    queryFn: () => base44.entities.AgendaContato.filter({ vendedor_id: vendedorId, data_agendada: { $gte: dataInicio } }, 'data_agendada'),
+    queryFn: () => base44.entities.AgendaContato.filter({ vendedor_id: vendedorId }, '-data_agendada', 2000),
     enabled: !isAdmin && !!vendedorId,
     refetchInterval: 30000,
   });
