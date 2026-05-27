@@ -45,7 +45,6 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 select-none">
-      {/* Nav */}
       <div className="flex items-center justify-between mb-3">
         <button onClick={() => setViewDate(v => subMonths(v, 1))} className="p-1 rounded-lg hover:bg-gray-100 transition">
           <ChevronLeft className="w-4 h-4 text-gray-500" />
@@ -57,15 +56,11 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
           <ChevronRight className="w-4 h-4 text-gray-500" />
         </button>
       </div>
-
-      {/* Weekday labels */}
       <div className="grid grid-cols-7 mb-1">
         {WEEK_DAYS.map(d => (
           <div key={d} className="text-center text-[10px] font-semibold text-gray-400 uppercase">{d[0]}</div>
         ))}
       </div>
-
-      {/* Days */}
       <div className="grid grid-cols-7 gap-y-0.5">
         {days.map((day, i) => {
           if (!day) return <div key={`e-${i}`} />;
@@ -89,8 +84,6 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
           );
         })}
       </div>
-
-      {/* Hoje btn */}
       <button
         onClick={() => { setViewDate(new Date()); onSelect(new Date()); }}
         className="mt-3 w-full text-xs text-center text-[#1a3150] font-semibold hover:underline"
@@ -125,7 +118,7 @@ function MeetButton({ item, onLinkGerado }) {
         lead_nome: item.lead_nome,
         data_agendada: item.data_agendada,
         horario_inicio: horario,
-        com_meet: true, // aqui sim gera o link Meet
+        com_meet: true,
       });
       onLinkGerado(res.data.meet_link);
       toast.success('Link Meet criado!');
@@ -143,7 +136,6 @@ function MeetButton({ item, onLinkGerado }) {
     setLoading(false);
   };
 
-  // Already has a link
   if (item.meet_link) {
     return (
       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -168,7 +160,6 @@ function MeetButton({ item, onLinkGerado }) {
     );
   }
 
-  // Se o item já tem horário definido, pré-preenche
   const horarioPreenchido = item.horario || horario;
 
   if (showTimeForm) {
@@ -215,11 +206,8 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
       ${isTod ? 'border-amber-200 bg-amber-50/40' : 'border-gray-100 bg-white'}
       hover:shadow-md hover:-translate-y-0.5
     `}>
-      {/* Left accent bar */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${sc.dot}`} />
-
       <div className="pl-4 pr-4 py-3.5">
-        {/* Top row */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <button
@@ -263,14 +251,12 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
           </div>
         </div>
 
-        {/* Reagendado info */}
         {item.status === 'reagendado' && item.nova_data && (
           <p className="text-[11px] text-blue-600 mt-1 flex items-center gap-1">
             <RotateCcw className="w-2.5 h-2.5" /> Reagendado para {format(parseISO(item.nova_data), 'dd/MM', { locale: ptBR })}
           </p>
         )}
 
-        {/* Editar agendamento inline */}
         {editando && (
           <div className="mt-2 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
             <span className="text-[11px] text-gray-500 font-medium">Data:</span>
@@ -306,7 +292,6 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
           </div>
         )}
 
-        {/* Reagendar inline */}
         {reagendando && (
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <input
@@ -323,7 +308,6 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
           </div>
         )}
 
-        {/* Actions */}
         {item.status === 'pendente' && (
           <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
             <button
@@ -355,7 +339,6 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
           </div>
         )}
 
-        {/* Google Meet */}
         <MeetButton item={item} onLinkGerado={(link) => setItem(prev => ({ ...prev, meet_link: link }))} />
       </div>
     </div>
@@ -438,9 +421,9 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 // ── Novo Agendamento Modal ────────────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, todosVendedoresCompleto = [], user }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, user }) {
   const [form, setForm] = useState({
-    vendedores_ids: [], // múltiplos gerentes
+    vendedores_ids: [],
     lead_id: '',
     data_agendada: new Date().toISOString().split('T')[0],
     horario: '',
@@ -450,12 +433,38 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
   const [clienteSearch, setClienteSearch] = useState('');
   const [dropdownVendedor, setDropdownVendedor] = useState(false);
   const [searchVendedor, setSearchVendedor] = useState('');
+  const [showNovoContatoForm, setShowNovoContatoForm] = useState(false);
+  const [novoContatoForm, setNovoContatoForm] = useState({ nome: '', cpf_cnpj: '', telefone: '' });
+  const [criandoContato, setCriandoContato] = useState(false);
+  const [clientesLocais, setClientesLocais] = useState(clientes);
 
-  const clientesFiltrados = clientes
-    .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()))
+  const criarNovoContato = async () => {
+    if (!novoContatoForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
+    setCriandoContato(true);
+    try {
+      const novoCliente = await base44.entities.Cliente.create({
+        nome: novoContatoForm.nome.trim(),
+        cpf_cnpj: novoContatoForm.cpf_cnpj.trim(),
+        telefone: novoContatoForm.telefone.trim(),
+        origem: 'nativo',
+      });
+      setClientesLocais(prev => [...prev, novoCliente]);
+      setForm(p => ({ ...p, lead_id: novoCliente.id }));
+      setClienteSearch(novoCliente.nome);
+      setShowNovoContatoForm(false);
+      setNovoContatoForm({ nome: '', cpf_cnpj: '', telefone: '' });
+      toast.success('Contato criado!');
+    } catch (e) {
+      toast.error('Erro ao criar contato');
+    }
+    setCriandoContato(false);
+  };
+
+  const clientesFiltrados = clientesLocais
+    .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) || c.cpf_cnpj?.includes(clienteSearch))
     .slice(0, 20);
 
-  const clienteSelecionado = clientes.find(c => c.id === form.lead_id);
+  const clienteSelecionado = clientesLocais.find(c => c.id === form.lead_id);
   const vendedoresFiltrados = todosVendedores.filter(v =>
     !searchVendedor || v.nome?.toLowerCase().includes(searchVendedor.toLowerCase())
   );
@@ -484,12 +493,10 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
     let criou = 0;
 
     try {
-      // Criar agendamento para cada gerente selecionado
       for (const vid of form.vendedores_ids) {
         const v = todosVendedores.find(vv => vv.id === vid);
         if (!v) continue;
 
-        // Verificar se já existe agendamento para este lead+gerente+data
         const jaExiste = todasAgendas.some(a =>
           a.vendedor_id === vid &&
           a.data_agendada === form.data_agendada &&
@@ -518,7 +525,6 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         });
         criou++;
 
-        // Tentar criar evento no Google Calendar
         if (novoAgendamento?.id) {
           try {
             await base44.functions.invoke('criarMeetAgenda', {
@@ -534,7 +540,6 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
         }
       }
 
-      // Se o criador não está entre os gerentes selecionados, criar cópia para ele também
       if (criadorId && !form.vendedores_ids.includes(criadorId) && criou > 0) {
         const jaExisteCriador = todasAgendas.some(a =>
           a.vendedor_id === criadorId &&
@@ -592,12 +597,11 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
           <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
         <div className="flex-1 overflow-y-auto p-5 space-y-3">
-          {/* Seleção múltipla de gerentes */}
+          {/* Gerentes */}
           <div>
             <label className="text-xs text-gray-500 mb-1 block">
               Gerente(s) * <span className="text-blue-500 font-semibold">({form.vendedores_ids.length} selecionado{form.vendedores_ids.length !== 1 ? 's' : ''})</span>
             </label>
-            {/* Tags dos selecionados */}
             {form.vendedores_ids.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {form.vendedores_ids.map(vid => {
@@ -613,7 +617,6 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
                 })}
               </div>
             )}
-            {/* Dropdown de seleção */}
             <div className="relative">
               <input
                 type="text"
@@ -626,38 +629,40 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
               {dropdownVendedor && (
                 <>
                   <div className="fixed inset-0 z-[9]" onClick={() => setDropdownVendedor(false)} />
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                  {vendedoresFiltrados.map(v => {
-                    const selected = form.vendedores_ids.includes(v.id);
-                    return (
-                      <button key={v.id} onClick={() => { toggleVendedor(v.id); setSearchVendedor(''); }}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${selected ? 'bg-blue-50' : ''}`}>
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
-                          {selected && <svg width="9" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                        </div>
-                        <span className={`font-medium ${selected ? 'text-[#0f1e35]' : 'text-gray-700'}`}>{v.nome}</span>
-                      </button>
-                    );
-                  })}
-                  {vendedoresFiltrados.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-3">Nenhum gerente encontrado</p>
-                  )}
-                  <button onClick={() => setDropdownVendedor(false)}
-                    className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-2 border-t border-gray-100">
-                    Fechar
-                  </button>
-                </div>
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {vendedoresFiltrados.map(v => {
+                      const selected = form.vendedores_ids.includes(v.id);
+                      return (
+                        <button key={v.id} onClick={() => { toggleVendedor(v.id); setSearchVendedor(''); }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${selected ? 'bg-blue-50' : ''}`}>
+                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
+                            {selected && <svg width="9" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                          </div>
+                          <span className={`font-medium ${selected ? 'text-[#0f1e35]' : 'text-gray-700'}`}>{v.nome}</span>
+                        </button>
+                      );
+                    })}
+                    {vendedoresFiltrados.length === 0 && (
+                      <p className="text-xs text-gray-400 text-center py-3">Nenhum gerente encontrado</p>
+                    )}
+                    <button onClick={() => setDropdownVendedor(false)}
+                      className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-2 border-t border-gray-100">
+                      Fechar
+                    </button>
+                  </div>
                 </>
               )}
             </div>
           </div>
+
+          {/* Cliente / Lead */}
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Cliente / Lead *</label>
             <input
               type="text"
               placeholder="Buscar cliente ou lead..."
               value={clienteSearch}
-              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); }}
+              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); setShowNovoContatoForm(false); }}
               className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
             />
             {clienteSelecionado ? (
@@ -666,12 +671,57 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
                 {clienteSelecionado.vendedor_nome && (
                   <span className="text-[10px] text-blue-500">Gerente: {clienteSelecionado.vendedor_nome}</span>
                 )}
-                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600"><X className="w-3.5 h-3.5" /></button>
+                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : clienteSearch.length > 0 && (
-              <div className="border border-gray-200 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+              <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                 {clientesFiltrados.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-3">Nenhum cliente encontrado</p>
+                  <div className="py-2 px-3">
+                    <p className="text-xs text-gray-400 text-center py-2">Nenhum cliente encontrado</p>
+                    {!showNovoContatoForm ? (
+                      <button
+                        onClick={() => { setShowNovoContatoForm(true); setNovoContatoForm(f => ({ ...f, nome: clienteSearch })); }}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition mt-1">
+                        <Plus className="w-3.5 h-3.5" /> Criar novo contato "{clienteSearch}"
+                      </button>
+                    ) : (
+                      <div className="space-y-2 mt-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <p className="text-[11px] font-semibold text-gray-600 mb-2">Novo Contato</p>
+                        <input
+                          type="text"
+                          placeholder="Nome completo *"
+                          value={novoContatoForm.nome}
+                          onChange={e => setNovoContatoForm(f => ({ ...f, nome: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                        />
+                        <input
+                          type="text"
+                          placeholder="CPF / CNPJ"
+                          value={novoContatoForm.cpf_cnpj}
+                          onChange={e => setNovoContatoForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Telefone"
+                          value={novoContatoForm.telefone}
+                          onChange={e => setNovoContatoForm(f => ({ ...f, telefone: e.target.value }))}
+                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={() => setShowNovoContatoForm(false)}
+                            className="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-500">Cancelar</button>
+                          <button onClick={criarNovoContato} disabled={criandoContato || !novoContatoForm.nome.trim()}
+                            className="flex-1 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-1">
+                            {criandoContato ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
+                            Criar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : clientesFiltrados.map(c => (
                   <button key={c.id} onClick={() => { setForm(p => ({ ...p, lead_id: c.id })); setClienteSearch(c.nome); }}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
@@ -683,6 +733,8 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
               </div>
             )}
           </div>
+
+          {/* Data e Horário */}
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
@@ -727,7 +779,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const currentUserEmail = user?.email || '';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
-  const [view, setView] = useState('semana'); // 'semana' | 'dia'
+  const [view, setView] = useState('semana');
   const [updating, setUpdating] = useState(null);
   const [pipelineItem, setPipelineItem] = useState(null);
   const [showPast, setShowPast] = useState(false);
@@ -735,20 +787,16 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [showMeetModal, setShowMeetModal] = useState(false);
   const queryClient = useQueryClient();
 
-  // ── Filtros globais (admin) ──
-  const [filtroVendedorId, setFiltroVendedorId] = useState(''); // '' = todos
+  const [filtroVendedorId, setFiltroVendedorId] = useState('');
   const [filtroPeriodoInicio, setFiltroPeriodoInicio] = useState('');
   const [filtroPeriodoFim, setFiltroPeriodoFim] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState(''); // '' = todos
+  const [filtroStatus, setFiltroStatus] = useState('');
   const [showFiltros, setShowFiltros] = useState(false);
 
-  // ── Filtro rápido de status (pendentes/realizados por período) ──
-  const [filtroRapidoStatus, setFiltroRapidoStatus] = useState(''); // '' | 'pendente' | 'realizado'
+  const [filtroRapidoStatus, setFiltroRapidoStatus] = useState('');
   const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
   const [filtroRapidoFim, setFiltroRapidoFim] = useState('');
 
-  // Admin: carrega TODOS os agendamentos; gerente/SDR: só os seus
-  // Mas para criação de agendamentos para outros, todos precisam da lista global
   const { data: agendaGlobal = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos-global'],
     queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
@@ -763,11 +811,10 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     refetchInterval: 30000,
   });
 
-  // Lista completa de agendamentos (para verificar sobreposição ao criar para outros gerentes)
   const { data: todasAgendas = [] } = useQuery({
     queryKey: ['agenda-contatos-todos'],
     queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
-    enabled: !isAdmin, // admin já tem agendaGlobal
+    enabled: !isAdmin,
     refetchInterval: 60000,
   });
 
@@ -775,14 +822,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const loading = isAdmin ? isLoading : isLoadingVendedor;
   const todasAgendasRef = isAdmin ? agendaGlobal : todasAgendas;
 
-  // Aplica filtros
   const agenda = useMemo(() => {
     let items = agendaRaw;
     if (isAdmin && filtroVendedorId) items = items.filter(a => a.vendedor_id === filtroVendedorId);
     if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
     if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
     if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
-    // Filtro rápido de status + período
     if (filtroRapidoStatus) items = items.filter(a => a.status === filtroRapidoStatus);
     if (filtroRapidoInicio) items = items.filter(a => a.data_agendada >= filtroRapidoInicio);
     if (filtroRapidoFim) items = items.filter(a => a.data_agendada <= filtroRapidoFim);
@@ -827,10 +872,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
   const temFiltroAtivo = !!(filtroVendedorId || filtroPeriodoInicio || filtroPeriodoFim || filtroStatus);
 
-  // Build dot set for mini-cal
   const dotDates = useMemo(() => new Set(agenda.map(a => a.data_agendada)), [agenda]);
 
-  // Group by date
   const grouped = useMemo(() => {
     return agenda.reduce((acc, item) => {
       const d = item.data_agendada;
@@ -840,17 +883,14 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     }, {});
   }, [agenda]);
 
-  // Week range
   const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  // Stats for selected date
   const selStr = format(selectedDate, 'yyyy-MM-dd');
   const selItems = grouped[selStr] || [];
   const pendentes = selItems.filter(i => i.status === 'pendente').length;
   const realizados = selItems.filter(i => i.status === 'realizado').length;
 
-  // All sorted dates for "Próximos" list when view = dia
   const tStr = todayStr();
   const sortedDates = Object.keys(grouped).sort().filter(d => showPast ? true : d >= tStr);
 
@@ -860,12 +900,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     </div>
   );
 
-  // Não ocultar o componente para não-admins sem agenda — eles podem querer criar agendamentos para outros
-  // if (!isAdmin && agendaRaw.length === 0) return null;
-
   return (
     <>
-      {/* ── Barra de filtros (admin) ── */}
+      {/* Filtros (admin) */}
       {isAdmin && (
         <div className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <button
@@ -898,40 +935,26 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 border-t border-gray-100">
               <div>
                 <label className="text-xs text-gray-500 mb-1 block font-medium">Gerente</label>
-                <select
-                  value={filtroVendedorId}
-                  onChange={e => setFiltroVendedorId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
-                >
+                <select value={filtroVendedorId} onChange={e => setFiltroVendedorId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
                   <option value="">Todos os gerentes</option>
                   {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block font-medium">Período — início</label>
-                <input
-                  type="date"
-                  value={filtroPeriodoInicio}
-                  onChange={e => setFiltroPeriodoInicio(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-                />
+                <input type="date" value={filtroPeriodoInicio} onChange={e => setFiltroPeriodoInicio(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block font-medium">Período — fim</label>
-                <input
-                  type="date"
-                  value={filtroPeriodoFim}
-                  onChange={e => setFiltroPeriodoFim(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-                />
+                <input type="date" value={filtroPeriodoFim} onChange={e => setFiltroPeriodoFim(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div>
                 <label className="text-xs text-gray-500 mb-1 block font-medium">Status</label>
-                <select
-                  value={filtroStatus}
-                  onChange={e => setFiltroStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
-                >
+                <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
                   <option value="">Todos</option>
                   {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
@@ -943,15 +966,13 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
       <div className="flex flex-col lg:flex-row gap-5">
 
-        {/* ── LEFT: Mini Calendar + Stats ── */}
+        {/* LEFT */}
         <div className="flex flex-col gap-4 lg:w-56 flex-shrink-0">
           <MiniCalendar
             selected={selectedDate}
             onSelect={(d) => { setSelectedDate(d); setView('dia'); }}
             dotDates={dotDates}
           />
-
-          {/* Stats card */}
           <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-4 text-white shadow-lg">
             <p className="text-[10px] font-semibold text-blue-300/70 uppercase tracking-widest mb-3">
               {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
@@ -972,13 +993,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
             {selItems.length > 0 && (
               <div className="mt-3 bg-white/10 rounded-xl h-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-emerald-400 rounded-xl transition-all"
-                  style={{ width: `${(realizados / selItems.length) * 100}%` }}
-                />
+                <div className="h-full bg-emerald-400 rounded-xl transition-all" style={{ width: `${(realizados / selItems.length) * 100}%` }} />
               </div>
             )}
-            {/* Total global filtrado */}
             {isAdmin && (
               <div className="mt-3 pt-3 border-t border-white/10">
                 <div className="flex items-center justify-between">
@@ -988,8 +1005,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               </div>
             )}
           </div>
-
-          {/* View toggle */}
           <div className="bg-white border border-gray-100 rounded-2xl p-1 flex shadow-sm">
             {[{ key: 'semana', label: 'Semana' }, { key: 'dia', label: 'Dia' }].map(v => (
               <button key={v.key} onClick={() => setView(v.key)}
@@ -1000,10 +1015,10 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           </div>
         </div>
 
-        {/* ── RIGHT: Main Calendar View ── */}
+        {/* RIGHT */}
         <div className="flex-1 min-w-0">
 
-          {/* Filtro rápido Pendentes / Realizados */}
+          {/* Filtro rápido */}
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-3 mb-4 flex flex-wrap items-center gap-3">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtro rápido:</span>
             <div className="flex gap-1.5">
@@ -1079,7 +1094,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
           </div>
 
-          {/* ── SEMANA VIEW ── */}
+          {/* SEMANA VIEW */}
           {view === 'semana' && (
             <div className="grid grid-cols-7 gap-2">
               {weekDays.map(day => {
@@ -1109,7 +1124,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                         </span>
                       )}
                     </div>
-
                     <div className="space-y-1">
                       {items.slice(0, 3).map(item => {
                         const sc = STATUS[item.status] || STATUS.pendente;
@@ -1138,7 +1152,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
           )}
 
-          {/* ── DIA VIEW ── */}
+          {/* DIA VIEW */}
           {view === 'dia' && (
             <div className="space-y-3">
               {selItems.length === 0 ? (
@@ -1149,7 +1163,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 </div>
               ) : (
                 <>
-                  {/* Agrupamento por gerente na visão global */}
                   {isAdmin && !filtroVendedorId ? (
                     (() => {
                       const porGerente = selItems.reduce((acc, it) => {
@@ -1198,7 +1211,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 </>
               )}
 
-              {/* Próximas datas com eventos */}
               {sortedDates.filter(d => d !== selStr && d >= tStr).length > 0 && (
                 <div className="pt-2">
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2 px-1">Outros dias</p>
@@ -1227,7 +1239,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         </div>
       </div>
 
-      {/* Pipeline modal */}
       {pipelineItem && (
         <PipelineModal
           item={pipelineItem}
@@ -1238,7 +1249,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         />
       )}
 
-      {/* Modal Agendar c/ Meet — disponível para todos */}
       {showMeetModal && (
         <AgendaMeetModal
           user={user}
@@ -1253,14 +1263,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         />
       )}
 
-      {/* Novo Agendamento modal (admin) */}
       {showNovoAgendamento && (
         <NovoAgendamentoModal
           todosVendedores={todosVendedores}
           clientes={clientes}
           todasAgendas={todasAgendasRef}
           currentUserEmail={currentUserEmail}
-          todosVendedoresCompleto={todosVendedores}
           user={user}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
