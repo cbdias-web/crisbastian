@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Calendar, Clock, Video, User, CheckCircle2, ExternalLink } from 'lucide-react';
+import { X, Calendar, Clock, Video, User, CheckCircle2, ExternalLink, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -20,14 +20,15 @@ import { ptBR } from 'date-fns/locale';
  */
 export default function AgendaMeetModal({
   user,
-  vendedorId = '',   // ID do registro na entidade Vendedor (preferido sobre user.id)
-  vendedorNome = '', // Nome do vendedor correspondente
+  vendedorId = '',
+  vendedorNome = '',
   clienteNome = '',
   clienteId = '',
   clienteTelefone = '',
   clienteCpfCnpj = '',
   pipelineId = '',
   dataInicial = '',
+  clientes = [],
   onClose,
   onSaved,
 }) {
@@ -43,7 +44,38 @@ export default function AgendaMeetModal({
   });
 
   const [salvando, setSalvando] = useState(false);
-  const [resultado, setResultado] = useState(null); // { meet_link, calendar_link }
+  const [resultado, setResultado] = useState(null);
+  const [clienteSearch, setClienteSearch] = useState(clienteNome);
+  const [selectedCliente, setSelectedCliente] = useState(
+    clienteId ? { id: clienteId, nome: clienteNome, cpf_cnpj: clienteCpfCnpj, telefone: clienteTelefone } : null
+  );
+  const [clientesLocais, setClientesLocais] = useState(clientes);
+  const [showNovoContatoForm, setShowNovoContatoForm] = useState(false);
+  const [novoContatoForm, setNovoContatoForm] = useState({ nome: '', cpf_cnpj: '', telefone: '' });
+  const [criandoContato, setCriandoContato] = useState(false);
+
+  const clientesFiltrados = clientesLocais
+    .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) || c.cpf_cnpj?.includes(clienteSearch))
+    .slice(0, 20);
+
+  const criarNovoContato = async () => {
+    if (!novoContatoForm.nome.trim()) { return; }
+    setCriandoContato(true);
+    try {
+      const novo = await base44.entities.Cliente.create({
+        nome: novoContatoForm.nome.trim(),
+        cpf_cnpj: novoContatoForm.cpf_cnpj.trim(),
+        telefone: novoContatoForm.telefone.trim(),
+        origem: 'nativo',
+      });
+      setClientesLocais(prev => [...prev, novo]);
+      setSelectedCliente(novo);
+      setClienteSearch(novo.nome);
+      setShowNovoContatoForm(false);
+      setNovoContatoForm({ nome: '', cpf_cnpj: '', telefone: '' });
+    } catch (e) {}
+    setCriandoContato(false);
+  };
 
   // Ao mudar horário início → calcula fim automaticamente (+1h)
   const onChangeHorario = (val) => {
@@ -55,7 +87,8 @@ export default function AgendaMeetModal({
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!form.nome.trim()) { toast.error('Informe o nome do cliente'); return; }
+    const nomeCliente = selectedCliente?.nome || clienteSearch.trim();
+    if (!nomeCliente) { toast.error('Informe o cliente'); return; }
     if (!form.data) { toast.error('Informe a data'); return; }
     if (!form.horario) { toast.error('Informe o horário'); return; }
 
@@ -65,13 +98,18 @@ export default function AgendaMeetModal({
       const vidFinal = vendedorId || user.id;
       const vnomeFinal = vendedorNome || user.nome_tratamento || user.full_name || user.email;
 
+      const cId = selectedCliente?.id || clienteId || '';
+      const cNome = selectedCliente?.nome || clienteSearch.trim();
+      const cCpf = selectedCliente?.cpf_cnpj || clienteCpfCnpj || '';
+      const cTel = selectedCliente?.telefone || clienteTelefone || '';
+
       // 1. Cria registro na AgendaContato
       const agenda = await base44.entities.AgendaContato.create({
-        lead_id: clienteId || user.id,
-        lead_nome: form.nome.trim(),
-        lead_cpf_cnpj: clienteCpfCnpj || '',
-        lead_telefone: clienteTelefone || '',
-        cliente_id: clienteId || '',
+        lead_id: cId || user.id,
+        lead_nome: cNome,
+        lead_cpf_cnpj: cCpf,
+        lead_telefone: cTel,
+        cliente_id: cId || '',
         vendedor_id: vidFinal,
         vendedor_nome: vnomeFinal,
         data_agendada: form.data,
@@ -86,7 +124,7 @@ export default function AgendaMeetModal({
         try {
           const res = await base44.functions.invoke('criarMeetAgenda', {
             agenda_id: agenda.id,
-            lead_nome: form.nome.trim(),
+            lead_nome: cNome,
             data_agendada: form.data,
             horario_inicio: form.horario,
             horario_fim: form.horario_fim,
@@ -177,12 +215,65 @@ export default function AgendaMeetModal({
                 <User className="w-3.5 h-3.5" /> Cliente / Participante *
               </label>
               <input
-                value={form.nome}
-                onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-                placeholder="Nome do cliente ou participante"
-                required
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                type="text"
+                placeholder="Buscar cliente ou lead..."
+                value={clienteSearch}
+                onChange={e => { setClienteSearch(e.target.value); setSelectedCliente(null); setShowNovoContatoForm(false); }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
               />
+              {selectedCliente ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
+                  <span className="text-sm font-medium text-[#0f1e35] flex-1">{selectedCliente.nome}</span>
+                  {selectedCliente.cpf_cnpj && <span className="text-[10px] text-gray-400">{selectedCliente.cpf_cnpj}</span>}
+                  <button type="button" onClick={() => { setSelectedCliente(null); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : clienteSearch.length > 0 && (
+                <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {clientesFiltrados.length === 0 ? (
+                    <div className="py-2 px-3">
+                      <p className="text-xs text-gray-400 text-center py-2">Nenhum cliente encontrado</p>
+                      {!showNovoContatoForm ? (
+                        <button type="button"
+                          onClick={() => { setShowNovoContatoForm(true); setNovoContatoForm(f => ({ ...f, nome: clienteSearch })); }}
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition mt-1">
+                          <Plus className="w-3.5 h-3.5" /> Criar novo contato
+                        </button>
+                      ) : (
+                        <div className="space-y-2 mt-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                          <p className="text-[11px] font-semibold text-gray-600 mb-2">Novo Contato</p>
+                          <input type="text" placeholder="Nome completo *" value={novoContatoForm.nome}
+                            onChange={e => setNovoContatoForm(f => ({ ...f, nome: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                          <input type="text" placeholder="CPF / CNPJ" value={novoContatoForm.cpf_cnpj}
+                            onChange={e => setNovoContatoForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                          <input type="text" placeholder="Telefone" value={novoContatoForm.telefone}
+                            onChange={e => setNovoContatoForm(f => ({ ...f, telefone: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => setShowNovoContatoForm(false)}
+                              className="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-500">Cancelar</button>
+                            <button type="button" onClick={criarNovoContato} disabled={criandoContato || !novoContatoForm.nome.trim()}
+                              className="flex-1 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-1">
+                              {criandoContato ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
+                              Criar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : clientesFiltrados.map(c => (
+                    <button type="button" key={c.id} onClick={() => { setSelectedCliente(c); setClienteSearch(c.nome); }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
+                      <span className="font-medium">{c.nome}</span>
+                      {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
+                      {c.vendedor_nome && <span className="text-[10px] text-blue-500 ml-2">· {c.vendedor_nome}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Data */}
