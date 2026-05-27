@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Calculator, Globe, Shield, Settings, Anchor, Building2, ChevronRight, FileText } from 'lucide-react';
+import { Calculator, Globe, Shield, Settings, Anchor, Building2, ChevronRight, FileText, BarChart3 } from 'lucide-react';
 import PropostasGeradas from '@/components/precificacao/PropostasGeradas';
+import RelatorioPrecificacao from '@/components/precificacao/RelatorioPrecificacao';
 import SimuladorProposta from '@/components/precificacao/SimuladorProposta';
 import SimuladorContaInternacional from '@/components/precificacao/SimuladorContaInternacional';
 import SimuladorSeguroGarantia from '@/components/precificacao/SimuladorSeguroGarantia';
@@ -59,7 +60,7 @@ const PRODUTOS = [
 export default function Precificacao() {
   const [tab, setTab] = useState('dolarize');
   const [configOpen, setConfigOpen] = useState(false);
-  const [mainTab, setMainTab] = useState('simulador'); // 'simulador' | 'propostas'
+  const [mainTab, setMainTab] = useState('simulador'); // 'simulador' | 'propostas' | 'relatorios'
 
   const ativo = PRODUTOS.find(p => p.id === tab);
 
@@ -100,10 +101,20 @@ export default function Precificacao() {
             }`}>
             <FileText className="w-4 h-4" /> Propostas Geradas
           </button>
+          <button onClick={() => setMainTab('relatorios')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              mainTab === 'relatorios' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}>
+            <BarChart3 className="w-4 h-4" /> Relatórios
+          </button>
         </div>
       </div>
 
-      {mainTab === 'propostas' ? (
+      {mainTab === 'relatorios' ? (
+        <div className="p-6 max-w-6xl mx-auto">
+          <RelatorioPrecificacao />
+        </div>
+      ) : mainTab === 'propostas' ? (
         <div className="p-6 max-w-6xl mx-auto">
           <PropostasGeradas />
         </div>
