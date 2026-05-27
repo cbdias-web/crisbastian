@@ -838,8 +838,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const vendedorEfetivo = isAdmin ? (filtroVendedorObj || vendedor) : vendedor;
 
   const invalidateAgenda = () => {
-    if (isAdmin) queryClient.invalidateQueries(['agenda-contatos-global']);
-    else queryClient.invalidateQueries(['agenda-contatos', vendedorId]);
+    if (isAdmin) queryClient.invalidateQueries({ queryKey: ['agenda-contatos-global'] });
+    else queryClient.invalidateQueries({ queryKey: ['agenda-contatos', vendedorId] });
   };
 
   const updateMutation = useMutation({
@@ -1275,7 +1275,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           onSaved={() => {
             setShowNovoAgendamento(false);
             invalidateAgenda();
-            if (!isAdmin) queryClient.invalidateQueries(['agenda-contatos-todos']);
+            if (!isAdmin) queryClient.invalidateQueries({ queryKey: ['agenda-contatos-todos'] });
           }}
         />
       )}
