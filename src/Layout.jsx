@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare, Calculator } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare, Calculator, LifeBuoy } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
@@ -196,7 +196,8 @@ export default function Layout({ children, currentPageName }) {
   { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', allowUser: true, alwaysVisible: true },
   { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
-  { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true }].
+  { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
+  { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', allowUser: true, alwaysVisible: true }].
   filter((item) => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
