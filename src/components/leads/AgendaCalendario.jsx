@@ -421,7 +421,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
 // ── Novo Agendamento Modal ────────────────────────────────────────────────────
 
-function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, user }) {
+function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, user, vendedor }) {
   const [form, setForm] = useState({
     vendedores_ids: [],
     lead_id: '',
@@ -488,8 +488,8 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
 
     setSaving(true);
     const c = clienteSelecionado;
-    const criadorId = user?.id;
-    const criadorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+    const criadorId = vendedor?.id || '';
+    const criadorNome = vendedor?.nome || user?.nome_tratamento || user?.full_name || user?.email || '';
     let criou = 0;
 
     try {
@@ -1270,6 +1270,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           todasAgendas={todasAgendasRef}
           currentUserEmail={currentUserEmail}
           user={user}
+          vendedor={vendedorEfetivo}
           onClose={() => setShowNovoAgendamento(false)}
           onSaved={() => {
             setShowNovoAgendamento(false);
