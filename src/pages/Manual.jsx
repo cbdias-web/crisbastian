@@ -4,7 +4,7 @@ import {
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
-  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare
+  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -338,6 +338,59 @@ const sections = [
       { subtitle: 'Criar registro', steps: ['Acesse Administrativo > Notas Fiscais > "Nova NF".', 'Preencha Cliente/Parceiro, Valor, Produto e Data.', 'Salve o registro.'] },
     ],
   },
+  {
+    id: 'suporte', icon: LifeBuoy, title: 'Sistema de Suporte — Chamados',
+    color: 'from-red-500 to-red-600', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Sistema centralizado para abrir tickets de suporte e acompanhar resoluções. Gerenciado pelo time de suporte com histórico de comunicação integrado.' },
+      { subtitle: 'Abrir um novo chamado', steps: ['Acesse **Suporte** no menu > clique na aba **Novo Chamado**.', 'Preencha **Título** (resumo do problema) e **Descrição** (detalhes completos).', 'Escolha a **Categoria** (Acesso, Vendas, Contratos, Precificação, Chat, Capacitação, Sugestão, Bug, Outro).', 'Defina a **Prioridade** (Baixa, Média, Alta, Urgente).', 'Clique em **Enviar Chamado**. O ticket é criado com status "Aberto".'] },
+      { subtitle: 'Acompanhar seus chamados', items: ['Acesse **Suporte** > aba **Meus Chamados**.', 'Veja lista de todos os seus tickets com **status, prioridade e data**.', '**Filtros disponíveis:** Status (Aberto, Em Andamento, Aguardando Você, Resolvido, Fechado) e Categoria.', 'Clique em qualquer chamado para ver o **histórico completo de respostas**.'] },
+      { subtitle: '🔔 Notificação "Aguardando Você"', items: ['Quando o suporte responde seu chamado, o status muda para **"Aguardando resposta do usuário"**.', 'Um **badge âmbar** aparece no menu Suporte mostrando quantos chamados estão aguardando você.', 'Verifique regularmente para não deixar tickets sem resposta.'] },
+      { subtitle: 'Interagir com o suporte', steps: ['Abra um chamado já existente.', 'Na seção **Respostas**, veja o histórico completo com timestamps.', 'No campo **Sua Resposta**, escreva uma mensagem e clique em **Enviar**.', 'Deixe comentários com informações adicionais conforme necessário.'] },
+      { subtitle: 'Avaliar atendimento', items: ['Quando o suporte resolve seu chamado, o status fica **"Resolvido"**.', 'Uma avaliação de 1-5 estrelas é solicitada (opcional).', 'Deixar feedback ajuda a melhorar o serviço.', 'Após avaliar, você pode **fechar** o chamado definitivamente.'] },
+      { subtitle: 'Dicas importantes', items: ['Quanto **mais detalhes** fornecer, mais rápido resolvemos.', 'Use **"Urgente"** apenas para problemas que bloqueiam suas atividades imediatamente.', 'Revise a aba **Início** para ver **FAQs comuns** — sua dúvida pode já estar respondida.', 'Para **bugs críticos**, marque como "Urgente" e descreva os passos para reproduzir.'] },
+    ],
+  },
+  {
+    id: 'precificacao', icon: Calculator, title: 'Precificação — Simuladores de Produtos',
+    color: 'from-amber-600 to-amber-700', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200',
+    content: [
+      { subtitle: 'O que é a Precificação?', text: 'Módulo de cálculo automático de preços e propostas comerciais para 5 produtos principais: Dolarize, Offshore, Canal Bancário, Conta Internacional e Seguro Garantia. Gera propostas em PDF prontas para enviar ao cliente.' },
+      { subtitle: 'Acessar os simuladores', steps: ['Vá para **Precificação** no menu Comercial.', 'Escolha um dos 5 produtos no topo da página (ícones coloridos).', 'Cada simulador abre com campos de entrada específicos do produto.'] },
+      { subtitle: '💰 Os 5 Produtos', items: [
+        '**Dolarize:** Reestruturação de dívidas com proteção cambial — simule valor de dívida e parcelamento.',
+        '**Offshore:** Gestão de patrimônio em estruturas internacionais — baseado em Patrimônio sob Gestão (AUM).',
+        '**Canal Bancário:** Abertura e operação de contas no exterior — simule volume de transações.',
+        '**Conta Internacional:** Conta corrente em USD/EUR — paramétrico por tipo de cliente.',
+        '**Seguro Garantia:** Garantias para operações comerciais — simule valor de dívida ou contrato.'] },
+      { subtitle: 'Usando um simulador (exemplo Offshore)', steps: [
+        'Preencha **Patrimônio sob Gestão (USD)** — valor total que o cliente quer investir.',
+        'Busque ou crie um **Cliente** (campo com autocomplete).',
+        'Selecione um **Destino/Jurisdição** (offshore/country específico) — afeta custos.',
+        'Configure **Câmbio** (USD/BRL) — atualiza todos os cálculos em tempo real.',
+        'Defina **Entrada (%)** e **Parcelamento** (quantas parcelas para o saldo).',
+        'Veja automaticamente as **2 Propostas** (P1 = Estrutura Simples, P2 = Estrutura Completa) com valores em USD e BRL aproximados.',
+        'Clique em **"Criar Proposta PDF"** para gerar um documento formal.'] },
+      { subtitle: '🎯 Ajustes avançados', items: ['Clique em **"Ajustes de Câmbio e Adesão"** para editar valores manualmente nesta simulação.', 'Modifique câmbio, ou override as adesões (P1 e P2) sem alterar o padrão da empresa.', 'Clique **"Salvar como padrão"** para persistir o câmbio novo para futuras simulações.', 'Ou **"Resetar"** para voltar aos valores da configuração global.'] },
+      { subtitle: 'Propostas Geradas', steps: [
+        'Acesse **Precificação** > aba **"Propostas Geradas"** para ver histórico.',
+        'Cada proposta exibe cliente, produtos, datas e status (Rascunho, Enviada, Aceita, Recusada).',
+        'Clique na linha para **expandir e ver detalhes completos**.',
+        'Atualize status conforme evolui a negociação.',
+        'Quando cliente **aceita**, clique **"Converter para Pipeline"** — cria automaticamente a negociação no Pipeline.'] },
+      { subtitle: '⚙️ Parâmetros da Empresa (Admin)', items: [
+        'Apenas **administradores** podem clicar em **"Parâmetros"** para configurar globalmente.',
+        'Ajuste percentuais de **adesão, mensalidades, pisos e tetos** por produto.',
+        'Configure **jurisdições/destinos offshore** com custos específicos (constituição, manutenção).',
+        'As mudanças aqui afetam **todos os novos simuladores** — não retroagem às propostas passadas.',
+        'Salve as alterações e teste em um novo simulador.'] },
+      { subtitle: 'Exportar e usar a proposta', items: [
+        'PDF gerado é **pronto para imprimir ou enviar** — contém logo, assinatura e todos os detalhes.',
+        'Salve o PDF no seu computador ou envie direto ao cliente via e-mail.',
+        'Cada proposta fica registrada no histórico com data de criação e status.',
+        'Cliente recebe um documento **profissional e personalizado** com seus dados.'] },
+    ],
+  },
 ];
 
 // ─── CATEGORY CARDS ──────────────────────────────────────────────────────────
@@ -359,13 +412,13 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno'],
+    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia'],
+    sections: ['introducao', 'dashboard', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao'],
   },
 ];
 
@@ -448,7 +501,7 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'meus-clientes', 'relatorios', 'importar', 'contratos'];
+  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'meus-clientes', 'relatorios', 'importar', 'suporte', 'precificacao'];
   const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
 
   const visibleSections = activeCategory
