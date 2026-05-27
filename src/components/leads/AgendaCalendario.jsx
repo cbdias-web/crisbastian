@@ -783,7 +783,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [updating, setUpdating] = useState(null);
   const [pipelineItem, setPipelineItem] = useState(null);
   const [showPast, setShowPast] = useState(false);
-  const [showNovoAgendamento, setShowNovoAgendamento] = useState(false);
   const [showMeetModal, setShowMeetModal] = useState(false);
   const queryClient = useQueryClient();
 
@@ -1079,12 +1078,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               >
                 <Video className="w-3.5 h-3.5" /> Agendar c/ Meet
               </button>
-              <button
-                onClick={() => setShowNovoAgendamento(true)}
-                className="px-3 py-1.5 text-xs font-semibold bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5" /> Agendar
-              </button>
+
               <button
                 onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('semana'); }}
                 className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"
@@ -1265,22 +1259,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         />
       )}
 
-      {showNovoAgendamento && (
-        <NovoAgendamentoModal
-          todosVendedores={todosVendedores}
-          clientes={clientes}
-          todasAgendas={todasAgendasRef}
-          currentUserEmail={currentUserEmail}
-          user={user}
-          vendedor={vendedorEfetivo}
-          onClose={() => setShowNovoAgendamento(false)}
-          onSaved={() => {
-            setShowNovoAgendamento(false);
-            invalidateAgenda();
-            if (!isAdmin) queryClient.invalidateQueries({ queryKey: ['agenda-contatos-todos'] });
-          }}
-        />
-      )}
+
     </>
   );
 }
