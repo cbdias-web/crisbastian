@@ -1,0 +1,99 @@
+{
+  "name": "ChamadoSuporte",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "Titulo do chamado"
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descricao detalhada do problema ou sugestao"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "Acesso",
+        "Vendas e Comissoes",
+        "Contratos e Pipeline",
+        "Precificacao",
+        "Chat Interno",
+        "Capacitacao",
+        "Sugestao de Melhoria",
+        "Bug / Erro",
+        "Outro"
+      ],
+      "description": "Categoria do chamado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aberto",
+        "em_andamento",
+        "aguardando_usuario",
+        "resolvido",
+        "fechado"
+      ],
+      "default": "aberto",
+      "description": "Status atual do chamado"
+    },
+    "prioridade": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "media",
+        "alta",
+        "urgente"
+      ],
+      "default": "media",
+      "description": "Prioridade do chamado"
+    },
+    "usuario_id": {
+      "type": "string",
+      "description": "ID do usuario que abriu o chamado"
+    },
+    "usuario_nome": {
+      "type": "string",
+      "description": "Nome do usuario"
+    },
+    "usuario_email": {
+      "type": "string",
+      "description": "Email do usuario"
+    },
+    "respostas": {
+      "type": "array",
+      "description": "Thread de respostas do chamado",
+      "items": {
+        "type": "object",
+        "properties": {
+          "autor_nome": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "data_hora": {
+            "type": "string"
+          },
+          "is_suporte": {
+            "type": "boolean"
+          }
+        }
+      },
+      "default": []
+    },
+    "avaliacao": {
+      "type": "number",
+      "description": "Avaliacao do atendimento de 1 a 5 (preenchido ao fechar)"
+    },
+    "numero": {
+      "type": "string",
+      "description": "Numero sequencial do chamado (ex: #0001)"
+    }
+  },
+  "required": [
+    "titulo",
+    "descricao",
+    "categoria"
+  ]
+}

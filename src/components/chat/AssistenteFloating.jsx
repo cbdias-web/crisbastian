@@ -210,7 +210,7 @@ const Message = ({ message }) => {
 const SUGGESTIONS = [
   'Quantas interações fiz este mês?',
   'Quais treinamentos estão disponíveis?',
-  'Quais leads ainda não foram convertidos?',
+  'Preciso de ajuda — abrir chamado de suporte',
   'Qual o volume de vendas deste mês?',
 ];
 

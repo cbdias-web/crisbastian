@@ -1,69 +1,67 @@
-import { useState } from 'react';
-import { MessageCircle, Mail, Phone, ChevronDown, CheckCircle2, Send, Loader2, LifeBuoy, BookOpen, Zap, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import {
+  MessageCircle, Mail, ChevronDown, CheckCircle2, Send, Loader2, LifeBuoy,
+  BookOpen, Zap, AlertCircle, Plus, Clock, Search, X, Star, MessageSquare,
+  ChevronRight, RefreshCw, Filter
+} from 'lucide-react';
 import { toast } from 'sonner';
+import useIsAdmin from '@/hooks/useIsAdmin';
+
+// ─── Constantes ──────────────────────────────────────────────────────────────
+
+const CATEGORIAS = [
+  'Acesso', 'Vendas e Comissoes', 'Contratos e Pipeline',
+  'Precificacao', 'Chat Interno', 'Capacitacao',
+  'Sugestao de Melhoria', 'Bug / Erro', 'Outro',
+];
+
+const STATUS_CFG = {
+  aberto:            { label: 'Aberto',             color: 'bg-blue-100 text-blue-700',   dot: 'bg-blue-500' },
+  em_andamento:      { label: 'Em Andamento',        color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
+  aguardando_usuario:{ label: 'Aguardando Voce',     color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
+  resolvido:         { label: 'Resolvido',           color: 'bg-green-100 text-green-700', dot: 'bg-green-500' },
+  fechado:           { label: 'Fechado',             color: 'bg-gray-100 text-gray-500',   dot: 'bg-gray-400' },
+};
+
+const PRIORIDADE_CFG = {
+  baixa:   { label: 'Baixa',    color: 'bg-gray-100 text-gray-600' },
+  media:   { label: 'Media',    color: 'bg-blue-100 text-blue-700' },
+  alta:    { label: 'Alta',     color: 'bg-orange-100 text-orange-700' },
+  urgente: { label: 'Urgente',  color: 'bg-red-100 text-red-700' },
+};
 
 const FAQS = [
-  {
-    cat: 'Acesso',
-    items: [
-      { q: 'Nao recebi o convite para acessar a plataforma.', a: 'Verifique sua caixa de spam. Caso nao encontre, solicite ao administrador que reenvie o convite em Usuarios > Convidar Usuario.' },
-      { q: 'Esqueci minha senha.', a: 'Na tela de login, clique em "Esqueci minha senha". Um link de redefinicao sera enviado para o seu e-mail cadastrado.' },
-      { q: 'Meu acesso foi bloqueado.', a: 'O administrador pode ter desativado sua conta. Entre em contato pelo WhatsApp do suporte ou solicite reativacao ao administrador da empresa.' },
-    ],
-  },
-  {
-    cat: 'Vendas e Comissoes',
-    items: [
-      { q: 'Registrei uma venda errada. Como corrigir?', a: 'Em Vendas, localize a venda e clique em "Editar". Altere os campos necessarios e salve. As comissoes sao recalculadas automaticamente. Para exclusao, apenas administradores tem essa permissao.' },
-      { q: 'Minha comissao nao aparece.', a: 'A comissao e gerada automaticamente ao salvar a venda. Verifique se a venda foi salva com sucesso em Vendas. Se a venda constar mas a comissao nao aparecer, acione o suporte.' },
-      { q: 'Como altero o percentual de comissao de um vendedor?', a: 'Acesse Vendedores, edite o vendedor desejado e altere o percentual de comissao padrao. O novo percentual vale para as proximas vendas.' },
-    ],
-  },
-  {
-    cat: 'Contratos e Pipeline',
-    items: [
-      { q: 'Criei um contrato mas o admin nao recebeu notificacao.', a: 'Verifique em Notificacoes > Administrativo se a notificacao foi gerada. Se nao, confirme que o status do contrato e "Gerado" (nao "Rascunho").' },
-      { q: 'Nao consigo mover um negocio no Pipeline.', a: 'Clique no card do negocio, edite a temperatura e salve. Ou arraste o card entre colunas no modo Kanban.' },
-      { q: 'Como converto um Pipeline em contrato?', a: 'No card do negocio, clique no icone de documento. O sistema cria um contrato pre-preenchido em rascunho para os produtos que exigem contrato formal.' },
-    ],
-  },
-  {
-    cat: 'Precificacao',
-    items: [
-      { q: 'Os valores do simulador estao incorretos.', a: 'Verifique os parametros em Precificacao > Parametros. Os valores base (piso de adesao, percentuais, cambio) podem ter sido alterados por um administrador.' },
-      { q: 'Como altero os valores de uma jurisdicao no Offshore?', a: 'Acesse Precificacao > Parametros > Jurisdicoes / Destinos Offshore. Edite os valores de constituicao P1, P2 e manutencao e clique em "Salvar Todos os Parametros".' },
-      { q: 'A busca de cambio pelo mercado nao funciona.', a: 'O servico de cotacao depende de disponibilidade de API externa. Nesse caso, insira o valor do cambio manualmente no campo disponivel no simulador.' },
-    ],
-  },
-  {
-    cat: 'Chat e Google Calendar',
-    items: [
-      { q: 'Nao estou recebendo mensagens no chat.', a: 'Verifique se voce e membro do canal. Para canais privados, o criador precisa adicionar voce. Para DMs, verifique sua conexao de internet.' },
-      { q: 'O link do Google Meet nao e gerado.', a: 'Sua conta Google precisa estar conectada. Acesse Agenda do Dia e clique em "Google Calendar" para vincular sua conta. Siga o passo a passo na tela.' },
-      { q: 'O Jarvis nao esta me notificando sobre compromissos.', a: 'Certifique-se de que o agendamento tem o campo "Horario" preenchido. Agendamentos sem horario nao disparam lembretes automaticos.' },
-    ],
-  },
+  { cat: 'Acesso', items: [
+    { q: 'Nao recebi o convite.', a: 'Verifique o spam. Se nao encontrar, solicite ao administrador que reenvie o convite em Usuarios > Convidar Usuario.' },
+    { q: 'Esqueci minha senha.', a: 'Na tela de login, clique em "Esqueci minha senha". Um link sera enviado ao seu e-mail.' },
+  ]},
+  { cat: 'Vendas', items: [
+    { q: 'Registrei uma venda errada. Como corrigir?', a: 'Em Vendas, localize a venda e clique em Editar. As comissoes sao recalculadas automaticamente.' },
+    { q: 'Minha comissao nao aparece.', a: 'A comissao e gerada ao salvar a venda. Verifique se a venda foi salva com sucesso. Se persistir, abra um chamado.' },
+  ]},
+  { cat: 'Precificacao', items: [
+    { q: 'Os valores do simulador estao incorretos.', a: 'Verifique os parametros em Precificacao > Parametros. Um administrador pode ter alterado os valores base.' },
+    { q: 'A busca de cambio nao funciona.', a: 'O servico de cotacao depende de API externa. Nesse caso, insira o valor manualmente no campo do simulador.' },
+  ]},
+  { cat: 'Chat e Meet', items: [
+    { q: 'Nao estou recebendo mensagens no chat.', a: 'Verifique se voce e membro do canal. Para canais privados, o criador precisa adicionar voce.' },
+    { q: 'O link do Google Meet nao e gerado.', a: 'Sua conta Google precisa estar conectada. Acesse Agenda do Dia e clique em "Google Calendar" para vincular.' },
+  ]},
 ];
 
-const CONTATOS = [
-  {
-    icon: MessageCircle,
-    label: 'WhatsApp Suporte',
-    valor: '+55 (11) 99999-0000',
-    desc: 'Atendimento de seg a sex, 9h–18h',
-    cor: 'bg-green-500',
-    href: 'https://wa.me/5511999990000',
-  },
-  {
-    icon: Mail,
-    label: 'E-mail',
-    valor: 'suporte@villelaexchange.com.br',
-    desc: 'Resposta em ate 24h uteis',
-    cor: 'bg-blue-500',
-    href: 'mailto:suporte@villelaexchange.com.br',
-  },
-];
+// ─── Sub-componentes ──────────────────────────────────────────────────────────
+
+function Badge({ status }) {
+  const cfg = STATUS_CFG[status] || STATUS_CFG.aberto;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
 
 function FaqAccordion({ item }) {
   const [open, setOpen] = useState(false);
@@ -83,176 +81,529 @@ function FaqAccordion({ item }) {
   );
 }
 
-export default function Suporte() {
-  const [form, setForm] = useState({ assunto: '', mensagem: '', categoria: '' });
-  const [enviando, setEnviando] = useState(false);
-  const [catAtiva, setCatAtiva] = useState(FAQS[0].cat);
+// ─── Modal de detalhe do chamado ─────────────────────────────────────────────
 
-  async function enviarMensagem(e) {
+function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
+  const [resposta, setResposta] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [avaliacao, setAvaliacao] = useState(chamado.avaliacao || 0);
+
+  const respostas = chamado.respostas || [];
+
+  async function enviarResposta() {
+    if (!resposta.trim()) return;
+    setEnviando(true);
+    const novaResposta = {
+      autor_nome: user?.full_name || user?.nome_tratamento || 'Voce',
+      texto: resposta.trim(),
+      data_hora: new Date().toISOString(),
+      is_suporte: isAdmin,
+    };
+    const atualizadas = [...respostas, novaResposta];
+    const novoStatus = isAdmin ? 'aguardando_usuario' : (chamado.status === 'aguardando_usuario' ? 'em_andamento' : chamado.status);
+    await onUpdate(chamado.id, { respostas: atualizadas, status: novoStatus });
+    // Notificar via Jarvis
+    try {
+      if (isAdmin && chamado.usuario_email) {
+        await base44.entities.JarvisMensagem.create({
+          destinatario_email: chamado.usuario_email,
+          remetente_nome: 'Suporte Villela Exchange',
+          remetente_email: user?.email || '',
+          mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)} — ${chamado.titulo}**\n\n**Nova resposta do suporte:**\n${resposta.trim()}\n\nAcesse a Central de Suporte para visualizar e responder.`,
+        });
+      } else if (!isAdmin && chamado.usuario_email !== user?.email) {
+        await base44.entities.JarvisMensagem.create({
+          destinatario_email: 'suporte@villelaexchange.com.br',
+          remetente_nome: user?.full_name || '',
+          remetente_email: user?.email || '',
+          mensagem: `Nova resposta no chamado #${chamado.numero || chamado.id.slice(-4)} de ${chamado.usuario_nome}: ${resposta.trim()}`,
+        });
+      }
+    } catch (_) {}
+    setResposta('');
+    setEnviando(false);
+    toast.success('Resposta enviada!');
+  }
+
+  async function fecharChamado() {
+    await onUpdate(chamado.id, { status: 'fechado', avaliacao });
+    toast.success('Chamado fechado. Obrigado pelo feedback!');
+    onClose();
+  }
+
+  async function reabrirChamado() {
+    await onUpdate(chamado.id, { status: 'aberto' });
+    toast.success('Chamado reaberto.');
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex-1 min-w-0 mr-3">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <Badge status={chamado.status} />
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PRIORIDADE_CFG[chamado.prioridade]?.color}`}>
+                {PRIORIDADE_CFG[chamado.prioridade]?.label}
+              </span>
+              <span className="text-xs text-gray-400">{chamado.categoria}</span>
+            </div>
+            <h2 className="font-bold text-gray-900 text-sm leading-snug">{chamado.titulo}</h2>
+            {chamado.usuario_nome && isAdmin && (
+              <p className="text-xs text-gray-400 mt-0.5">Aberto por: {chamado.usuario_nome}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+        </div>
+
+        {/* Corpo */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+          {/* Descricao original */}
+          <div className="bg-gray-50 rounded-xl p-4 text-sm text-gray-700 leading-relaxed border border-gray-100">
+            <p className="text-xs font-semibold text-gray-400 mb-1">Descricao</p>
+            {chamado.descricao}
+          </div>
+
+          {/* Thread de respostas */}
+          {respostas.length > 0 && (
+            <div className="space-y-3">
+              {respostas.map((r, i) => (
+                <div key={i} className={`rounded-xl p-3 text-sm ${r.is_suporte ? 'bg-blue-50 border border-blue-100' : 'bg-white border border-gray-200'}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-semibold ${r.is_suporte ? 'text-blue-700' : 'text-gray-700'}`}>
+                      {r.is_suporte ? '🛡️ Suporte' : r.autor_nome}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(r.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{r.texto}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Campo de resposta */}
+          {chamado.status !== 'fechado' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Adicionar resposta</label>
+              <textarea value={resposta} onChange={e => setResposta(e.target.value)} rows={3}
+                placeholder="Digite sua resposta..."
+                className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 resize-none" />
+              <div className="flex gap-2 mt-2">
+                <button onClick={enviarResposta} disabled={!resposta.trim() || enviando}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0a1f35] hover:bg-[#1a3150] text-white rounded-xl text-xs font-semibold transition disabled:opacity-50">
+                  {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  Enviar
+                </button>
+                {isAdmin && (
+                  <select onChange={e => onUpdate(chamado.id, { status: e.target.value })}
+                    defaultValue=""
+                    className="border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-blue-400 bg-white">
+                    <option value="" disabled>Alterar status...</option>
+                    {Object.entries(STATUS_CFG).map(([k, v]) => (
+                      <option key={k} value={k}>{v.label}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Avaliacao + fechar (dono do chamado) */}
+          {!isAdmin && chamado.status === 'resolvido' && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-green-800 mb-2">Seu chamado foi resolvido! Avalie o atendimento:</p>
+              <div className="flex gap-1 mb-3">
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} onClick={() => setAvaliacao(n)}>
+                    <Star className={`w-6 h-6 transition ${n <= avaliacao ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={fecharChamado}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-semibold transition">
+                  Confirmar e Fechar
+                </button>
+                <button onClick={reabrirChamado}
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition hover:bg-gray-50">
+                  Nao foi resolvido — Reabrir
+                </button>
+              </div>
+            </div>
+          )}
+
+          {chamado.status === 'fechado' && chamado.avaliacao > 0 && (
+            <div className="text-xs text-gray-400 flex items-center gap-1">
+              Avaliacao: {[...Array(chamado.avaliacao)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />)}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-3 border-t border-gray-100">
+          <p className="text-[10px] text-gray-400">
+            Aberto em {new Date(chamado.created_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componente Principal ─────────────────────────────────────────────────────
+
+export default function Suporte() {
+  const qc = useQueryClient();
+  const isAdmin = useIsAdmin();
+  const [user, setUser] = useState(null);
+  const [tab, setTab] = useState('inicio'); // inicio | abrir | chamados
+  const [catFaq, setCatFaq] = useState(FAQS[0].cat);
+  const [chamadoAberto, setChamadoAberto] = useState(null);
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [busca, setBusca] = useState('');
+
+  // Formulario novo chamado
+  const [form, setForm] = useState({ titulo: '', descricao: '', categoria: '', prioridade: 'media' });
+  const [enviando, setEnviando] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const { data: chamados = [], isLoading } = useQuery({
+    queryKey: ['chamados-suporte', isAdmin],
+    queryFn: async () => {
+      if (isAdmin) {
+        return base44.entities.ChamadoSuporte.list('-created_date', 200);
+      }
+      const u = await base44.auth.me();
+      return base44.entities.ChamadoSuporte.filter({ usuario_id: u.id }, '-created_date', 100);
+    },
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.ChamadoSuporte.update(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['chamados-suporte'] }),
+  });
+
+  async function abrirChamado(e) {
     e.preventDefault();
-    if (!form.assunto.trim() || !form.mensagem.trim()) {
-      toast.error('Preencha assunto e mensagem.');
+    if (!form.titulo.trim() || !form.descricao.trim() || !form.categoria) {
+      toast.error('Preencha todos os campos obrigatorios.');
       return;
     }
     setEnviando(true);
     try {
-      const user = await base44.auth.me();
-      await base44.integrations.Core.SendEmail({
-        to: 'suporte@villelaexchange.com.br',
-        subject: `[Suporte] ${form.assunto}`,
-        body: `Solicitacao de suporte recebida via plataforma.\n\nUsuario: ${user?.full_name || ''} (${user?.email || ''})\nCategoria: ${form.categoria || 'Nao informada'}\n\nMensagem:\n${form.mensagem}`,
+      const u = await base44.auth.me();
+      const numero = `#${String(Math.floor(Math.random() * 9000) + 1000)}`;
+      const novo = await base44.entities.ChamadoSuporte.create({
+        titulo: form.titulo.trim(),
+        descricao: form.descricao.trim(),
+        categoria: form.categoria,
+        prioridade: form.prioridade,
+        status: 'aberto',
+        usuario_id: u.id,
+        usuario_nome: u.full_name || u.nome_tratamento || u.email,
+        usuario_email: u.email,
+        numero,
+        respostas: [],
       });
-      toast.success('Mensagem enviada! Entraremos em contato em breve.');
-      setForm({ assunto: '', mensagem: '', categoria: '' });
+      // Notificar admin via Jarvis
+      try {
+        await base44.entities.JarvisMensagem.create({
+          destinatario_email: 'suporte@villelaexchange.com.br',
+          remetente_nome: u.full_name || u.email,
+          remetente_email: u.email,
+          mensagem: `🆕 Novo chamado ${numero} aberto por ${u.full_name || u.email}\n**Categoria:** ${form.categoria}\n**Prioridade:** ${form.prioridade}\n**Titulo:** ${form.titulo}\n\nAcesse a Central de Suporte para atender.`,
+        });
+      } catch (_) {}
+      qc.invalidateQueries({ queryKey: ['chamados-suporte'] });
+      setForm({ titulo: '', descricao: '', categoria: '', prioridade: 'media' });
+      toast.success(`Chamado ${numero} aberto com sucesso! Responderemos em breve.`);
+      setTab('chamados');
+      setChamadoAberto(novo);
     } catch (err) {
-      toast.error('Erro ao enviar. Tente novamente ou use o WhatsApp.');
+      toast.error('Erro ao abrir chamado: ' + err.message);
     }
     setEnviando(false);
   }
+
+  const chamadosFiltrados = chamados.filter(c => {
+    if (filtroStatus !== 'todos' && c.status !== filtroStatus) return false;
+    if (busca.trim()) {
+      const q = busca.toLowerCase();
+      return (c.titulo || '').toLowerCase().includes(q) || (c.categoria || '').toLowerCase().includes(q) || (c.usuario_nome || '').toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const abertos = chamados.filter(c => c.status === 'aberto' || c.status === 'em_andamento' || c.status === 'aguardando_usuario').length;
+
+  const CONTATOS = [
+    { icon: MessageCircle, label: 'WhatsApp Suporte', valor: '+55 (11) 99999-0000', desc: 'Seg a sex, 9h–18h', cor: 'bg-green-500', href: 'https://wa.me/5511999990000' },
+    { icon: Mail, label: 'E-mail', valor: 'suporte@villelaexchange.com.br', desc: 'Resposta em ate 24h uteis', cor: 'bg-blue-500', href: 'mailto:suporte@villelaexchange.com.br' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
         <div className="absolute top-0 right-0 w-80 h-80 opacity-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, #4a90d9 0%, transparent 70%)', transform: 'translate(20%, -30%)' }} />
-        <div className="relative px-6 py-8 max-w-5xl mx-auto">
+        <div className="relative px-6 py-6 max-w-5xl mx-auto">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-blue-300/60 text-[10px] uppercase tracking-[0.2em] font-semibold">Villela Exchange</span>
             <span className="w-1 h-1 rounded-full bg-white/20" />
             <span className="text-white/40 text-[10px] uppercase tracking-[0.15em]">Gestao Comercial</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-blue-500">
-              <LifeBuoy className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-blue-500 shadow-lg">
+                <LifeBuoy className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-white tracking-tight">Central de Suporte</h1>
+                <p className="text-white/50 text-xs mt-0.5">Duvidas, chamados, sugestoes e melhorias</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Central de Suporte</h1>
-              <p className="text-white/50 text-xs mt-0.5">Duvidas, problemas e solicitacoes de ajuda</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6">
-
-        {/* Canais de contato */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {CONTATOS.map(c => {
-            const Icon = c.icon;
-            return (
-              <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-4 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition group">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${c.cor} flex-shrink-0`}>
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{c.label}</p>
-                  <p className="font-bold text-gray-900 text-sm mt-0.5 group-hover:text-blue-600 transition">{c.valor}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{c.desc}</p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-300 -rotate-90 flex-shrink-0" />
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Links rapidos */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { icon: BookOpen, label: 'Acessar o Manual', desc: 'Guia completo da plataforma', href: '/Manual', cor: 'text-amber-600 bg-amber-50 border-amber-100' },
-            { icon: Zap, label: 'Treinamentos', desc: 'Capacitacao em video e texto', href: '/Treinamento', cor: 'text-rose-600 bg-rose-50 border-rose-100' },
-            { icon: AlertCircle, label: 'Notificacoes', desc: 'Status de autorizacoes pendentes', href: '/Notificacoes', cor: 'text-red-600 bg-red-50 border-red-100' },
-          ].map(item => {
-            const Icon = item.icon;
-            return (
-              <a key={item.label} href={item.href}
-                className={`flex items-center gap-3 p-4 rounded-2xl border ${item.cor} hover:shadow-sm transition`}>
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold">{item.label}</p>
-                  <p className="text-xs opacity-70">{item.desc}</p>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* FAQ */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900 text-sm">Perguntas Frequentes</h2>
-            </div>
-            {/* Categorias FAQ */}
-            <div className="flex gap-1 px-3 py-2 border-b border-gray-100 flex-wrap">
-              {FAQS.map(f => (
-                <button key={f.cat} onClick={() => setCatAtiva(f.cat)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${catAtiva === f.cat ? 'bg-[#1a3150] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                  {f.cat}
-                </button>
-              ))}
-            </div>
-            <div className="p-4 space-y-2">
-              {FAQS.find(f => f.cat === catAtiva)?.items.map((item, i) => (
-                <FaqAccordion key={i} item={item} />
-              ))}
-            </div>
+            {abertos > 0 && (
+              <div className="bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-2 text-center">
+                <p className="text-amber-200 text-lg font-bold leading-none">{abertos}</p>
+                <p className="text-amber-300/70 text-[10px]">chamado{abertos > 1 ? 's' : ''} aberto{abertos > 1 ? 's' : ''}</p>
+              </div>
+            )}
           </div>
 
-          {/* Formulario de suporte */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h2 className="font-bold text-gray-900 text-sm">Enviar Solicitacao</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Descreva o problema e entraremos em contato</p>
-            </div>
-            <form onSubmit={enviarMensagem} className="p-5 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Categoria</label>
-                <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400">
-                  <option value="">Selecione a categoria</option>
-                  {FAQS.map(f => <option key={f.cat} value={f.cat}>{f.cat}</option>)}
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Assunto *</label>
-                <input type="text" value={form.assunto} onChange={e => setForm(f => ({ ...f, assunto: e.target.value }))}
-                  placeholder="Resumo do problema"
-                  className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Descricao *</label>
-                <textarea value={form.mensagem} onChange={e => setForm(f => ({ ...f, mensagem: e.target.value }))}
-                  rows={5} placeholder="Descreva detalhadamente o problema, incluindo o que estava fazendo quando ocorreu..."
-                  className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 resize-none" />
-              </div>
-              <button type="submit" disabled={enviando}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
-                {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {enviando ? 'Enviando...' : 'Enviar Solicitacao'}
+          {/* Tabs */}
+          <div className="flex gap-1 mt-5 bg-white/10 rounded-xl p-1 w-fit">
+            {[
+              { id: 'inicio', label: 'Inicio' },
+              { id: 'abrir', label: '+ Novo Chamado' },
+              { id: 'chamados', label: `Meus Chamados${chamados.length > 0 ? ` (${chamados.length})` : ''}` },
+            ].map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-white/70 hover:text-white'}`}>
+                {t.label}
               </button>
-            </form>
+            ))}
           </div>
-        </div>
-
-        {/* Horario de atendimento */}
-        <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
-          <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold text-blue-800">Horario de Atendimento</p>
-            <p className="text-xs text-blue-600 mt-0.5">
-              Segunda a Sexta, das 9h as 18h (horario de Brasilia).
-              Urgencias fora do horario: use o WhatsApp. Resposta no proximo dia util para e-mails.
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Central de Suporte · v2026
         </div>
       </div>
+
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+
+        {/* ── INICIO ── */}
+        {tab === 'inicio' && (
+          <div className="space-y-5">
+            {/* Canais de contato */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {CONTATOS.map(c => {
+                const Icon = c.icon;
+                return (
+                  <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-4 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition group">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${c.cor} flex-shrink-0`}>
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{c.label}</p>
+                      <p className="font-bold text-gray-900 text-sm mt-0.5 group-hover:text-blue-600 transition truncate">{c.valor}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{c.desc}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                  </a>
+                );
+              })}
+            </div>
+
+            {/* Links rapidos */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { icon: BookOpen, label: 'Manual da Plataforma', desc: 'Guia completo de uso', href: '/Manual', cor: 'text-amber-700 bg-amber-50 border-amber-100' },
+                { icon: Zap, label: 'Capacitacao', desc: 'Treinamentos em video e texto', href: '/Treinamento', cor: 'text-rose-700 bg-rose-50 border-rose-100' },
+                { icon: MessageSquare, label: 'Abrir Chamado pelo Jarvis', desc: 'Fale com o assistente IA', cor: 'text-blue-700 bg-blue-50 border-blue-100',
+                  onClick: () => document.querySelector('[title*="Jarvis"]')?.click() },
+              ].map(item => {
+                const Icon = item.icon;
+                const el = item.href
+                  ? <a key={item.label} href={item.href} className={`flex items-center gap-3 p-4 rounded-2xl border ${item.cor} hover:shadow-sm transition`}><Icon className="w-5 h-5 flex-shrink-0" /><div><p className="text-sm font-semibold">{item.label}</p><p className="text-xs opacity-70">{item.desc}</p></div></a>
+                  : <button key={item.label} onClick={item.onClick} className={`flex items-center gap-3 p-4 rounded-2xl border w-full text-left ${item.cor} hover:shadow-sm transition`}><Icon className="w-5 h-5 flex-shrink-0" /><div><p className="text-sm font-semibold">{item.label}</p><p className="text-xs opacity-70">{item.desc}</p></div></button>;
+                return el;
+              })}
+            </div>
+
+            {/* FAQ */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h2 className="font-bold text-gray-900 text-sm">Perguntas Frequentes</h2>
+              </div>
+              <div className="flex gap-1 px-3 py-2 border-b border-gray-100 flex-wrap">
+                {FAQS.map(f => (
+                  <button key={f.cat} onClick={() => setCatFaq(f.cat)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${catFaq === f.cat ? 'bg-[#1a3150] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    {f.cat}
+                  </button>
+                ))}
+              </div>
+              <div className="p-4 space-y-2">
+                {FAQS.find(f => f.cat === catFaq)?.items.map((item, i) => (
+                  <FaqAccordion key={i} item={item} />
+                ))}
+                <p className="text-xs text-gray-400 pt-2 text-center">
+                  Nao encontrou o que precisa?{' '}
+                  <button onClick={() => setTab('abrir')} className="text-blue-600 underline">Abra um chamado.</button>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <CheckCircle2 className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-800">
+                <strong>Dica:</strong> Voce tambem pode abrir um chamado diretamente pelo <strong>Jarvis</strong> (assistente no canto inferior direito) digitando "abrir chamado" ou descrevendo o problema.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── ABRIR CHAMADO ── */}
+        {tab === 'abrir' && (
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h2 className="font-bold text-gray-900">Novo Chamado</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Descreva detalhadamente — isso agiliza o atendimento</p>
+              </div>
+              <form onSubmit={abrirChamado} className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Categoria *</label>
+                    <select value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))} required
+                      className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 bg-white">
+                      <option value="">Selecione...</option>
+                      {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">Prioridade</label>
+                    <select value={form.prioridade} onChange={e => setForm(f => ({ ...f, prioridade: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 bg-white">
+                      <option value="baixa">Baixa</option>
+                      <option value="media">Media</option>
+                      <option value="alta">Alta</option>
+                      <option value="urgente">Urgente</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Titulo *</label>
+                  <input type="text" value={form.titulo} onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))} required
+                    placeholder="Resumo do problema ou sugestao"
+                    className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">Descricao detalhada *</label>
+                  <textarea value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} required rows={5}
+                    placeholder="Descreva o que estava fazendo, o que aconteceu e o comportamento esperado..."
+                    className="w-full border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 resize-none" />
+                </div>
+                <button type="submit" disabled={enviando}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-[#0a1f35] hover:bg-[#1a3150] text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
+                  {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  {enviando ? 'Abrindo...' : 'Abrir Chamado'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ── MEUS CHAMADOS ── */}
+        {tab === 'chamados' && (
+          <div className="space-y-4">
+            {/* Filtros */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
+                  placeholder="Buscar chamado..."
+                  className="w-full border border-gray-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-400" />
+              </div>
+              <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+                className="border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 bg-white">
+                <option value="todos">Todos os status</option>
+                {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <button onClick={() => qc.invalidateQueries({ queryKey: ['chamados-suporte'] })}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition bg-white">
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+
+            {isLoading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+            ) : chamadosFiltrados.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
+                <LifeBuoy className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-medium">Nenhum chamado encontrado</p>
+                <button onClick={() => setTab('abrir')}
+                  className="mt-3 px-4 py-2 bg-[#0a1f35] text-white rounded-xl text-sm font-semibold hover:bg-[#1a3150] transition">
+                  Abrir primeiro chamado
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {chamadosFiltrados.map(c => {
+                  const naoPendentes = c.respostas?.filter(r => r.is_suporte)?.length || 0;
+                  return (
+                    <div key={c.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden">
+                      <div className="flex items-center gap-4 p-4">
+                        <div className={`w-2 self-stretch rounded-full flex-shrink-0 ${STATUS_CFG[c.status]?.dot}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-xs text-gray-400 font-mono">{c.numero || `#${c.id.slice(-4)}`}</span>
+                            <Badge status={c.status} />
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${PRIORIDADE_CFG[c.prioridade]?.color}`}>
+                              {PRIORIDADE_CFG[c.prioridade]?.label}
+                            </span>
+                            {isAdmin && c.usuario_nome && (
+                              <span className="text-xs text-gray-400">— {c.usuario_nome}</span>
+                            )}
+                          </div>
+                          <p className="font-semibold text-gray-900 text-sm truncate">{c.titulo}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {c.categoria} · {new Date(c.created_date).toLocaleDateString('pt-BR')}
+                            {naoPendentes > 0 && <span className="ml-2 text-blue-600 font-semibold">· {naoPendentes} resposta{naoPendentes > 1 ? 's' : ''} do suporte</span>}
+                          </p>
+                        </div>
+                        <button onClick={() => setChamadoAberto(c)}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold transition border border-gray-100 flex-shrink-0">
+                          <MessageSquare className="w-3.5 h-3.5" /> Abrir
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {chamadoAberto && (
+        <ChamadoDetalhe
+          chamado={chamadoAberto}
+          user={user}
+          isAdmin={isAdmin}
+          onClose={() => setChamadoAberto(null)}
+          onUpdate={async (id, data) => {
+            await updateMutation.mutateAsync({ id, data });
+            // Atualiza o chamado aberto local
+            setChamadoAberto(prev => prev ? { ...prev, ...data } : null);
+          }}
+        />
+      )}
     </div>
   );
 }
