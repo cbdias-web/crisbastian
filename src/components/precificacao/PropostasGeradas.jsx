@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, CheckCircle, XCircle, TrendingUp, Loader2, Eye, Clock, Send, AlertCircle } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, TrendingUp, Loader2, Eye, Clock, Send, AlertCircle, Search, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { fmtBRL } from './usePrecificacaoConfig';
+import useIsAdmin from '@/hooks/useIsAdmin';
 
 const STATUS_CONFIG = {
   rascunho:      { label: 'Rascunho',       color: 'bg-gray-100 text-gray-600',   icon: FileText },
   enviada:       { label: 'Enviada',         color: 'bg-blue-100 text-blue-700',   icon: Send },
-  em_negociacao: { label: 'Em Negociação',   color: 'bg-amber-100 text-amber-700', icon: AlertCircle },
-  aceita:        { label: 'Aceita ✅',       color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  em_negociacao: { label: 'Em Negociacao',   color: 'bg-amber-100 text-amber-700', icon: AlertCircle },
+  aceita:        { label: 'Aceita',          color: 'bg-green-100 text-green-700', icon: CheckCircle },
   recusada:      { label: 'Recusada',        color: 'bg-red-100 text-red-700',     icon: XCircle },
 };
 
@@ -17,6 +18,8 @@ const PRODUTOS_CORES = {
   'Dolarize': '#b45309', 'Offshore': '#0e7490', 'Canal Bancario': '#6d28d9',
   'Conta Internacional': '#1a3a6b', 'Seguro Garantia': '#be123c',
 };
+
+const TODOS_PRODUTOS = ['Dolarize', 'Offshore', 'Canal Bancario', 'Conta Internacional', 'Seguro Garantia'];
 
 function Badge({ status }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.rascunho;
@@ -28,6 +31,77 @@ function Badge({ status }) {
   );
 }
 
+/* ── Modal de edição (somente admin) ───────────────────────────────────── */
+function EditarModal({ proposta, vendedores, onSave, onClose }) {
+  const [form, setForm] = useState({
+    vendedor_id:   proposta.vendedor_id   || '',
+    vendedor_nome: proposta.vendedor_nome || '',
+    status:        proposta.status        || 'rascunho',
+    observacoes:   proposta.observacoes   || '',
+    validade_dias: proposta.validade_dias || 15,
+  });
+  const [saving, setSaving] = useState(false);
+
+  function setVendedor(id) {
+    const v = vendedores.find(v => v.id === id);
+    setForm(f => ({ ...f, vendedor_id: id, vendedor_nome: v?.nome || '' }));
+  }
+
+  async function salvar() {
+    setSaving(true);
+    await onSave(proposta.id, form);
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="font-bold text-gray-900">Editar Proposta</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Consultor / Gerente</label>
+            <select value={form.vendedor_id} onChange={e => setVendedor(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-blue-400">
+              <option value="">— Selecionar —</option>
+              {vendedores.map(v => (
+                <option key={v.id} value={v.id}>{v.nome}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
+            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
+              className="w-full border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-blue-400">
+              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Observacoes</label>
+            <textarea value={form.observacoes} onChange={e => setForm(f => ({ ...f, observacoes: e.target.value }))} rows={3}
+              className="w-full border border-gray-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-blue-400 resize-none" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={onClose} className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition">
+              Cancelar
+            </button>
+            <button onClick={salvar} disabled={saving}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Salvar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Modal de detalhe ──────────────────────────────────────────────────── */
 function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
   const [aceitando, setAceitando] = useState(false);
 
@@ -65,7 +139,7 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-gray-400">Consultor</p>
-              <p className="font-semibold text-gray-800">{proposta.vendedor_nome}</p>
+              <p className="font-semibold text-gray-800">{proposta.vendedor_nome || '—'}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-gray-400">Validade</p>
@@ -79,7 +153,6 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
             )}
           </div>
 
-          {/* Items das propostas */}
           {(proposta.propostas || []).map((p, i) => (
             <div key={i} className="border border-gray-200 rounded-xl overflow-hidden">
               <div className="px-3 py-2 bg-gray-50 text-xs font-bold text-gray-700">{p.titulo}</div>
@@ -100,7 +173,6 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
             </div>
           )}
 
-          {/* Ações de status */}
           <div className="space-y-2">
             {proposta.status !== 'aceita' && proposta.status !== 'recusada' && (
               <div className="flex gap-2">
@@ -113,7 +185,7 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
                 {proposta.status === 'enviada' && (
                   <button onClick={() => onStatus(proposta.id, 'em_negociacao')}
                     className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-semibold transition">
-                    Em Negociação
+                    Em Negociacao
                   </button>
                 )}
                 <button onClick={() => onStatus(proposta.id, 'recusada')}
@@ -127,14 +199,14 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
               <button onClick={aceitar} disabled={aceitando}
                 className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-bold transition disabled:opacity-60">
                 {aceitando ? <Loader2 className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
-                {aceitando ? 'Criando no Pipeline...' : '✅ Proposta Aceita → Enviar ao Pipeline'}
+                {aceitando ? 'Criando no Pipeline...' : 'Proposta Aceita - Enviar ao Pipeline'}
               </button>
             )}
 
             {proposta.pipeline_id && (
               <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2 text-xs text-green-700 flex items-center gap-2">
                 <TrendingUp className="w-3.5 h-3.5" />
-                Negociação criada no Pipeline com sucesso.
+                Negociacao criada no Pipeline com sucesso.
               </div>
             )}
           </div>
@@ -144,48 +216,55 @@ function DetalheModal({ proposta, onClose, onAceitar, onStatus }) {
   );
 }
 
+/* ── Componente principal ─────────────────────────────────────────────── */
 export default function PropostasGeradas() {
   const qc = useQueryClient();
-  const [filtro, setFiltro] = useState('todos');
+  const isAdmin = useIsAdmin();
+
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroProduto, setFiltroProduto] = useState('todos');
+  const [filtroVendedor, setFiltroVendedor] = useState('');
+  const [busca, setBusca] = useState('');
   const [selecionada, setSelecionada] = useState(null);
+  const [editando, setEditando] = useState(null);
 
   const { data: propostas = [], isLoading } = useQuery({
     queryKey: ['propostas-precificacao'],
-    queryFn: () => base44.entities.PropostaPrecificacao.list('-created_date', 100),
+    queryFn: () => base44.entities.PropostaPrecificacao.list('-created_date', 200),
     refetchInterval: 30000,
+  });
+
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores-ativos'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    enabled: isAdmin,
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.PropostaPrecificacao.update(id, data),
-    onSuccess: () => qc.invalidateQueries(['propostas-precificacao']),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['propostas-precificacao'] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.PropostaPrecificacao.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['propostas-precificacao'] }),
   });
 
   async function handleAceitar(proposta) {
-    try {
-      // Criar no Pipeline
-      const pipeline = await base44.entities.Pipeline.create({
-        cliente_nome: proposta.cliente_nome,
-        cliente_id: proposta.cliente_id || '',
-        produto: proposta.produto,
-        valor_estimado: proposta.valor_estimado || 0,
-        temperatura: 'Quente',
-        origem: 'Carteira',
-        vendedor_id: proposta.vendedor_id || '',
-        vendedor_nome: proposta.vendedor_nome || '',
-        descricao: `Proposta aceita via Simulador de Precificação.\nProduto: ${proposta.produto}\nGerada em: ${new Date(proposta.created_date).toLocaleDateString('pt-BR')}`,
-      });
-
-      // Atualizar proposta
-      await base44.entities.PropostaPrecificacao.update(proposta.id, {
-        status: 'aceita',
-        pipeline_id: pipeline.id,
-      });
-
-      qc.invalidateQueries(['propostas-precificacao']);
-      toast.success('🎉 Negociação criada no Pipeline!');
-    } catch (e) {
-      toast.error('Erro ao criar no Pipeline: ' + e.message);
-    }
+    const pipeline = await base44.entities.Pipeline.create({
+      cliente_nome: proposta.cliente_nome,
+      cliente_id: proposta.cliente_id || '',
+      produto: proposta.produto,
+      valor_estimado: proposta.valor_estimado || 0,
+      temperatura: 'Quente',
+      origem: 'Carteira',
+      vendedor_id: proposta.vendedor_id || '',
+      vendedor_nome: proposta.vendedor_nome || '',
+      descricao: `Proposta aceita via Simulador de Precificacao.\nProduto: ${proposta.produto}\nGerada em: ${new Date(proposta.created_date).toLocaleDateString('pt-BR')}`,
+    });
+    await base44.entities.PropostaPrecificacao.update(proposta.id, { status: 'aceita', pipeline_id: pipeline.id });
+    qc.invalidateQueries({ queryKey: ['propostas-precificacao'] });
+    toast.success('Negociacao criada no Pipeline!');
   }
 
   async function handleStatus(id, status) {
@@ -194,7 +273,36 @@ export default function PropostasGeradas() {
     setSelecionada(prev => prev ? { ...prev, status } : null);
   }
 
-  const filtradas = filtro === 'todos' ? propostas : propostas.filter(p => p.status === filtro);
+  async function handleSalvarEdicao(id, form) {
+    await updateMutation.mutateAsync({ id, data: form });
+    toast.success('Proposta atualizada!');
+  }
+
+  async function handleExcluir(id) {
+    if (!confirm('Excluir esta proposta? Esta acao nao pode ser desfeita.')) return;
+    await deleteMutation.mutateAsync(id);
+    toast.success('Proposta excluida.');
+  }
+
+  // Extrai lista de vendedores únicos das propostas para o filtro
+  const vendedoresNasPropostas = [...new Set(propostas.map(p => p.vendedor_nome).filter(Boolean))].sort();
+
+  // Filtragem
+  const filtradas = propostas.filter(p => {
+    if (filtroStatus !== 'todos' && p.status !== filtroStatus) return false;
+    if (filtroProduto !== 'todos' && p.produto !== filtroProduto) return false;
+    if (filtroVendedor && p.vendedor_nome !== filtroVendedor) return false;
+    if (busca.trim()) {
+      const q = busca.toLowerCase();
+      return (
+        (p.cliente_nome || '').toLowerCase().includes(q) ||
+        (p.cpf_cnpj || '').toLowerCase().includes(q) ||
+        (p.vendedor_nome || '').toLowerCase().includes(q) ||
+        (p.produto || '').toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   const counts = {
     todos: propostas.length,
@@ -207,25 +315,65 @@ export default function PropostasGeradas() {
 
   return (
     <div className="space-y-4">
-      {/* Filtros */}
+
+      {/* Filtros de status */}
       <div className="flex gap-2 flex-wrap">
         {[
           { key: 'todos', label: 'Todas' },
           { key: 'rascunho', label: 'Rascunho' },
           { key: 'enviada', label: 'Enviadas' },
-          { key: 'em_negociacao', label: 'Em Negociação' },
+          { key: 'em_negociacao', label: 'Em Negociacao' },
           { key: 'aceita', label: 'Aceitas' },
           { key: 'recusada', label: 'Recusadas' },
         ].map(f => (
-          <button key={f.key} onClick={() => setFiltro(f.key)}
+          <button key={f.key} onClick={() => setFiltroStatus(f.key)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
-              filtro === f.key ? 'bg-[#0a1f35] text-white border-[#0a1f35]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              filtroStatus === f.key ? 'bg-[#0a1f35] text-white border-[#0a1f35]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
             }`}>
             {f.label}
-            {counts[f.key] > 0 && <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${filtro === f.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{counts[f.key]}</span>}
+            {counts[f.key] > 0 && (
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${filtroStatus === f.key ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                {counts[f.key]}
+              </span>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Barra de busca e filtros adicionais */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar por cliente, CPF/CNPJ, consultor ou produto..."
+            className="w-full border border-gray-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-blue-400"
+          />
+        </div>
+        <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
+          className="border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 bg-white min-w-[160px]">
+          <option value="todos">Todos os produtos</option>
+          {TODOS_PRODUTOS.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
+          className="border border-gray-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-blue-400 bg-white min-w-[180px]">
+          <option value="">Todos os gerentes</option>
+          {vendedoresNasPropostas.map(v => <option key={v} value={v}>{v}</option>)}
+        </select>
+        {(busca || filtroProduto !== 'todos' || filtroVendedor) && (
+          <button onClick={() => { setBusca(''); setFiltroProduto('todos'); setFiltroVendedor(''); }}
+            className="flex items-center gap-1 px-3 py-2.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl bg-white transition">
+            <X className="w-3.5 h-3.5" /> Limpar
+          </button>
+        )}
+      </div>
+
+      {/* Contador de resultados */}
+      {filtradas.length !== propostas.length && (
+        <p className="text-xs text-gray-400">{filtradas.length} proposta{filtradas.length !== 1 ? 's' : ''} encontrada{filtradas.length !== 1 ? 's' : ''}</p>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
@@ -233,7 +381,7 @@ export default function PropostasGeradas() {
         <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
           <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 font-medium">Nenhuma proposta encontrada</p>
-          <p className="text-xs text-gray-400 mt-1">Gere propostas usando os simuladores acima.</p>
+          <p className="text-xs text-gray-400 mt-1">Ajuste os filtros ou gere propostas usando os simuladores.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -245,9 +393,12 @@ export default function PropostasGeradas() {
                 <div className="h-1.5" style={{ background: cor }} />
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-2">
-                    <div>
+                    <div className="flex-1 min-w-0 mr-2">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{p.produto}</p>
-                      <p className="font-bold text-gray-900 text-sm mt-0.5 leading-tight">{p.cliente_nome}</p>
+                      <p className="font-bold text-gray-900 text-sm mt-0.5 leading-tight truncate">{p.cliente_nome}</p>
+                      {p.vendedor_nome && (
+                        <p className="text-[11px] text-gray-400 mt-0.5 truncate">{p.vendedor_nome}</p>
+                      )}
                     </div>
                     <Badge status={p.status} />
                   </div>
@@ -260,10 +411,24 @@ export default function PropostasGeradas() {
                       <Clock className="w-3 h-3" /> Vencida em {new Date(p.data_validade).toLocaleDateString('pt-BR')}
                     </div>
                   )}
-                  <button onClick={() => setSelecionada(p)}
-                    className="w-full flex items-center justify-center gap-2 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold transition border border-gray-100">
-                    <Eye className="w-3.5 h-3.5" /> Ver Detalhes
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={() => setSelecionada(p)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold transition border border-gray-100">
+                      <Eye className="w-3.5 h-3.5" /> Detalhes
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={() => setEditando(p)} title="Editar"
+                          className="flex items-center justify-center w-9 h-9 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl border border-blue-100 transition">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleExcluir(p.id)} title="Excluir"
+                          className="flex items-center justify-center w-9 h-9 bg-red-50 hover:bg-red-100 text-red-500 rounded-xl border border-red-100 transition">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -277,6 +442,15 @@ export default function PropostasGeradas() {
           onClose={() => setSelecionada(null)}
           onAceitar={handleAceitar}
           onStatus={handleStatus}
+        />
+      )}
+
+      {editando && isAdmin && (
+        <EditarModal
+          proposta={editando}
+          vendedores={vendedores}
+          onSave={handleSalvarEdicao}
+          onClose={() => setEditando(null)}
         />
       )}
     </div>
