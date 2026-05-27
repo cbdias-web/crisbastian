@@ -29,6 +29,7 @@ export default function AgendaMeetModal({
   pipelineId = '',
   dataInicial = '',
   clientes = [],
+  todosVendedores = [],
   onClose,
   onSaved,
 }) {
@@ -45,6 +46,20 @@ export default function AgendaMeetModal({
 
   const [salvando, setSalvando] = useState(false);
   const [resultado, setResultado] = useState(null);
+  const [gerentesAdicionais, setGerentesAdicionais] = useState([]);
+  const [searchGerente, setSearchGerente] = useState('');
+  const [dropdownGerente, setDropdownGerente] = useState(false);
+
+  const gerentesFiltrados = todosVendedores.filter(v =>
+    v.id !== vendedorId &&
+    (!searchGerente || v.nome?.toLowerCase().includes(searchGerente.toLowerCase()))
+  );
+
+  const toggleGerente = (v) => {
+    setGerentesAdicionais(prev =>
+      prev.find(g => g.id === v.id) ? prev.filter(g => g.id !== v.id) : [...prev, v]
+    );
+  };
   const [clienteSearch, setClienteSearch] = useState(clienteNome);
   const [selectedCliente, setSelectedCliente] = useState(
     clienteId ? { id: clienteId, nome: clienteNome, cpf_cnpj: clienteCpfCnpj, telefone: clienteTelefone } : null
@@ -103,21 +118,34 @@ export default function AgendaMeetModal({
       const cCpf = selectedCliente?.cpf_cnpj || clienteCpfCnpj || '';
       const cTel = selectedCliente?.telefone || clienteTelefone || '';
 
-      // 1. Cria registro na AgendaContato
-      const agenda = await base44.entities.AgendaContato.create({
+      const agendaBase = {
         lead_id: cId || user.id,
         lead_nome: cNome,
         lead_cpf_cnpj: cCpf,
         lead_telefone: cTel,
         cliente_id: cId || '',
-        vendedor_id: vidFinal,
-        vendedor_nome: vnomeFinal,
         data_agendada: form.data,
         horario: form.horario,
         posicao_dia: 0,
         status: 'pendente',
         resultado: form.observacao || '',
+      };
+
+      // 1. Cria agenda para o gerente principal
+      const agenda = await base44.entities.AgendaContato.create({
+        ...agendaBase,
+        vendedor_id: vidFinal,
+        vendedor_nome: vnomeFinal,
       });
+
+      // 1b. Cria agenda para gerentes adicionais
+      for (const g of gerentesAdicionais) {
+        await base44.entities.AgendaContato.create({
+          ...agendaBase,
+          vendedor_id: g.id,
+          vendedor_nome: g.nome,
+        });
+      }
 
       // 2. Se quer Meet → chama função backend com horário já definido
       if (form.com_meet) {
@@ -275,6 +303,54 @@ export default function AgendaMeetModal({
                 </div>
               )}
             </div>
+
+            {/* Gerentes adicionais */}
+            {todosVendedores.length > 0 && (
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Outros gerentes participantes</label>
+                {gerentesAdicionais.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {gerentesAdicionais.map(g => (
+                      <span key={g.id} className="flex items-center gap-1 px-2 py-1 bg-[#0f1e35] text-white text-xs font-medium rounded-lg">
+                        {g.nome}
+                        <button type="button" onClick={() => toggleGerente(g)} className="text-white/60 hover:text-white ml-0.5"><X className="w-3 h-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar gerente para incluir..."
+                    value={searchGerente}
+                    onFocus={() => setDropdownGerente(true)}
+                    onChange={e => { setSearchGerente(e.target.value); setDropdownGerente(true); }}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
+                  />
+                  {dropdownGerente && (
+                    <>
+                      <div className="fixed inset-0 z-[9]" onClick={() => setDropdownGerente(false)} />
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                        {gerentesFiltrados.map(v => {
+                          const sel = gerentesAdicionais.find(g => g.id === v.id);
+                          return (
+                            <button type="button" key={v.id} onClick={() => { toggleGerente(v); setSearchGerente(''); }}
+                              className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50 border-b border-gray-50 last:border-0 ${sel ? 'bg-blue-50' : ''}`}>
+                              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
+                                {sel && <svg width="9" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                              </div>
+                              <span className={`font-medium ${sel ? 'text-[#0f1e35]' : 'text-gray-700'}`}>{v.nome}</span>
+                            </button>
+                          );
+                        })}
+                        {gerentesFiltrados.length === 0 && <p className="text-xs text-gray-400 text-center py-3">Nenhum gerente</p>}
+                        <button type="button" onClick={() => setDropdownGerente(false)} className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-2 border-t border-gray-100">Fechar</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Data */}
             <div>
