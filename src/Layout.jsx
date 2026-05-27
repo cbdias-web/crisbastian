@@ -118,6 +118,17 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 60000
   });
 
+  const { data: chamadosPendentes = [] } = useQuery({
+    queryKey: ['chamados-pendentes-layout'],
+    queryFn: async () => {
+      if (!user) return [];
+      const todos = await base44.entities.ChamadoSuporte.filter({ usuario_id: user.id });
+      return todos.filter(c => c.status === 'aguardando_usuario' || c.status === 'aberto' || c.status === 'em_andamento');
+    },
+    enabled: !!user,
+    refetchInterval: 30000
+  });
+
   const { data: todasMensagensChat = [] } = useQuery({
     queryKey: ['chat-unread-global'],
     queryFn: async () => {
@@ -197,7 +208,7 @@ export default function Layout({ children, currentPageName }) {
   { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
   { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
   { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-  { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', allowUser: true, alwaysVisible: true }].
+  { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', allowUser: true, alwaysVisible: true, badgeKey: 'suporte' }].
   filter((item) => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
@@ -480,6 +491,9 @@ export default function Layout({ children, currentPageName }) {
                 {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
                 {item.page === 'ChatPage' && mensagensNaoLidas > 0 &&
                 <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
+                }
+                {item.badgeKey === 'suporte' && chamadosPendentes.length > 0 &&
+                <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{chamadosPendentes.length}</span>
                 }
               </Link>);
 
