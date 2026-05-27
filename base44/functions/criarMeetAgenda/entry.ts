@@ -27,26 +27,36 @@ Deno.serve(async (req) => {
     let accessToken;
     let targetEmail = user.email;
 
-    if (target_user_email && target_user_email !== user.email) {
-      try {
-        const allUsers = await base44.asServiceRole.entities.User.list();
-        const targetUser = allUsers.find(u => u.email === target_user_email);
-        if (targetUser) {
-          const targetConnection = await base44.asServiceRole.connectors.getAppUserConnection(CONNECTOR_ID, targetUser.id);
-          accessToken = targetConnection.accessToken;
-          targetEmail = target_user_email;
-        } else {
-          const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
-          accessToken = conn.accessToken;
+    try {
+      if (target_user_email && target_user_email !== user.email) {
+        try {
+          const allUsers = await base44.asServiceRole.entities.User.list();
+          const targetUser = allUsers.find(u => u.email === target_user_email);
+          if (targetUser) {
+            const targetConnection = await base44.asServiceRole.connectors.getAppUserConnection(CONNECTOR_ID, targetUser.id);
+            accessToken = targetConnection.accessToken;
+            targetEmail = target_user_email;
+          } else {
+            const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+            accessToken = conn.accessToken;
+          }
+        } catch (e) {
+          // Gerente alvo não tem Google Calendar: tenta com o criador
+          try {
+            const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
+            accessToken = conn.accessToken;
+          } catch (e2) {
+            // Nenhum dos dois tem Google Calendar conectado — encerra silenciosamente
+            return Response.json({ skipped: true, reason: 'no_google_calendar_connection' });
+          }
         }
-      } catch (e) {
-        // Gerente alvo não tem Google Calendar vinculado: usa token do criador
+      } else {
         const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
         accessToken = conn.accessToken;
       }
-    } else {
-      const conn = await base44.asServiceRole.connectors.getCurrentAppUserConnection(CONNECTOR_ID);
-      accessToken = conn.accessToken;
+    } catch (e) {
+      // Usuário não tem Google Calendar conectado — encerra silenciosamente
+      return Response.json({ skipped: true, reason: 'no_google_calendar_connection' });
     }
 
     // Build event times (default 1h from horario_inicio)
