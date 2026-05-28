@@ -190,91 +190,187 @@ Deno.serve(async (req) => {
     // ROF, CANAL BANCÁRIO, OFFSHORE, GARANTIAS e HORA TÉCNICA: gerar PDF textual (sem template AcroForm)
     if (pdfUrl === null) {
 
-      // ── GARANTIAS: carrega template e sobrepõe dados diretamente no PDF original ──
+      // ── GARANTIAS: geração completa do zero com logo Village e todo o conteúdo ──
       if (contrato.tipo === 'GARANTIAS') {
-        const templateUrl = 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/832d0ade7_Contrato_Garantia_Village_Final_Proporcional.pdf';
-        const templateRes = await fetch(templateUrl);
-        if (!templateRes.ok) throw new Error('Erro ao baixar template GARANTIAS');
-        const templateBytes = await templateRes.arrayBuffer();
-
-        // Carregar o template diretamente — preserva layout e todos os recursos
-        const gDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
+        const gDoc = await PDFDocument.create();
         const font     = await gDoc.embedFont('Helvetica');
         const fontBold = await gDoc.embedFont('Helvetica-Bold');
-        const BLACK = { type: 'RGB', red: 0, green: 0, blue: 0 };
-        const WHITE = { type: 'RGB', red: 1, green: 1, blue: 1 };
+        const fontBoldObl = await gDoc.embedFont('Helvetica-BoldOblique');
+        const BLACK  = { type: 'RGB', red: 0,    green: 0,    blue: 0 };
+        const WHITE  = { type: 'RGB', red: 1,    green: 1,    blue: 1 };
+        const GRAY   = { type: 'RGB', red: 0.45, green: 0.45, blue: 0.45 };
+        const DKGRAY = { type: 'RGB', red: 0.25, green: 0.25, blue: 0.25 };
+        const RED2   = { type: 'RGB', red: 0.73, green: 0.25, blue: 0.22 };
 
-        const p1 = gDoc.getPage(0);
-        const p2 = gDoc.getPageCount() >= 2 ? gDoc.getPage(1) : null;
-        const { width: pageW } = p1.getSize();
+        const PW = 595, PH = 842, ML = 65, MR = 530, TW = MR - ML;
+        const FS = 10, LH = 14.5;
 
-        // ── LOGO Village Negócios (desenhado no topo da página) ──
-        // Fundo branco para garantir visibilidade sobre qualquer conteúdo existente
-        p1.drawRectangle({ x: 0, y: 790, width: pageW, height: 52, color: WHITE });
-
-        // Cálculo de centralização
-        const vText   = 'VILLAGE';
-        const nText   = 'NEGÓCIOS';
-        const vSize   = 20;
-        const nSize   = 8;
-        const iconW   = 14;
-        const iconH   = 16;
-        const gap     = 5;
-        const vW      = fontBold.widthOfTextAtSize(vText, vSize);
-        const nW      = font.widthOfTextAtSize(nText, nSize);
-        const blockW  = iconW + gap + vW;
-        const startX  = (pageW - blockW) / 2;
-        const logoY   = 816;
-
-        // Ícone estilizado (retângulo externo + quadrado interno)
-        p1.drawRectangle({ x: startX, y: logoY - iconH + 4, width: iconW, height: iconH,
-          borderColor: BLACK, borderWidth: 1.5, color: WHITE });
-        p1.drawRectangle({ x: startX + 3, y: logoY - iconH + 7, width: 6, height: 6, color: BLACK });
-
-        // Texto "VILLAGE" em negrito
-        p1.drawText(vText, { x: startX + iconW + gap, y: logoY - 2, size: vSize, font: fontBold, color: BLACK });
-
-        // Texto "NEGÓCIOS" centralizado abaixo
-        p1.drawText(nText, { x: (pageW - nW) / 2, y: logoY - 13, size: nSize, font, color: BLACK });
-
-        // Linha decorativa abaixo do logo
-        p1.drawLine({ start: { x: 50, y: 792 }, end: { x: pageW - 50, y: 792 }, thickness: 0.5, color: BLACK });
+        let page = gDoc.addPage([PW, PH]);
+        let y = PH - 48;
 
         const d = contrato;
-        const dataCtrt = d.data_contrato ? new Date(d.data_contrato+'T00:00:00') : new Date();
-        const diaFmt = `${String(dataCtrt.getDate()).padStart(2,'0')} de ${MESES_PT[dataCtrt.getMonth()]} de ${dataCtrt.getFullYear()}`;
-        const tipos   = (d.administracao_debitos||[]).join(', ');
-        const valDiv  = fmtVal(d.valor_divida);
-        const valDivExt = numeroParaExtenso(d.valor_divida);
-        const mens    = fmtVal(d.mensalidade);
-        const diaV    = String(d.dia_vencimento || '');
-        const pct     = String(d.percentual_montante || '');
+        const dataCtrt = d.data_contrato ? new Date(d.data_contrato + 'T00:00:00') : new Date();
+        const diaFmt   = `${String(dataCtrt.getDate()).padStart(2,'0')} de ${MESES_PT[dataCtrt.getMonth()]} de ${dataCtrt.getFullYear()}`;
+        const tipos    = (d.administracao_debitos || []).join(', ') || '________________';
+        const valDiv   = fmtVal(d.valor_divida);
+        const valDivExt= numeroParaExtenso(d.valor_divida);
+        const mens     = fmtVal(d.mensalidade);
+        const diaV     = String(d.dia_vencimento || '____');
+        const pct      = String(d.percentual_montante || '____');
 
-        function ov(pg, text, x, y, size) {
-          if (!text) return;
-          pg.drawText(String(text), { x, y, size: size || 9, font, color: BLACK });
+        // Helper: próxima linha, com quebra de página automática
+        function nextLine(extra = 0) {
+          y -= LH + extra;
+          if (y < 60) { page = gDoc.addPage([PW, PH]); y = PH - 60; }
         }
 
-        // ── PÁGINA 1: sobrepor campos nas áreas em branco do template ──
-        ov(p1, d.nome || '',       117, 710);
-        ov(p1, d.cpf_cnpj || '',    54, 694);
-        ov(p1, tipos,               54, 566);
-        ov(p1, valDiv,             230, 566);
-        ov(p1, valDivExt,          340, 566);
-        ov(p1, `R$ ${mens}`,        90, 399);
-        ov(p1, diaV,               278, 399);
-        ov(p1, pct,                252, 381);
-
-        // ── PÁGINA 2: data de assinatura ──
-        if (p2) ov(p2, diaFmt, 155, 175);
-
-        const pdfPreenchidoG = await gDoc.save();
-        const uint8G = new Uint8Array(pdfPreenchidoG);
-        let base64G = '';
-        for (let i = 0; i < uint8G.length; i += 8192) {
-          base64G += String.fromCharCode(...uint8G.slice(i, i + 8192));
+        // Desenha texto simples em y atual
+        function dt(text, x, sz, f, col = BLACK) {
+          if (y < 60) { page = gDoc.addPage([PW, PH]); y = PH - 60; }
+          page.drawText(String(text || ''), { x, y, size: sz, font: f, color: col });
         }
-        return Response.json({ pdf_base64: btoa(base64G), filename: 'contrato_GARANTIAS.pdf', tipo: 'GARANTIAS' });
+
+        // Padrão para parágrafo: label negrito + texto normal em sequência, com wrap
+        function para(label, text, gapAfter = 8) {
+          const bW   = label ? fontBold.widthOfTextAtSize(label, FS) : 0;
+          const words = (text || '').split(' ');
+          let firstLine = '';
+          let firstMaxW = TW - bW;
+          let splitIdx  = 0;
+
+          for (let i = 0; i < words.length; i++) {
+            const test = firstLine ? firstLine + ' ' + words[i] : words[i];
+            if (font.widthOfTextAtSize(test, FS) > firstMaxW && firstLine) {
+              splitIdx = i; break;
+            }
+            firstLine = test;
+            splitIdx  = i + 1;
+          }
+
+          if (label) dt(label, ML, FS, fontBold);
+          if (firstLine) dt(firstLine, ML + bW, FS, font);
+          nextLine();
+
+          const rest = words.slice(splitIdx).join(' ');
+          if (rest) {
+            const moreLines = wrapText(rest, font, FS, TW);
+            for (const ln of moreLines) { dt(ln, ML, FS, font); nextLine(); }
+          }
+          y -= gapAfter;
+        }
+
+        // Parágrafo inteiramente em negrito
+        function paraBold(text, gapAfter = 8) {
+          const lines = wrapText(text, fontBold, FS, TW);
+          for (const ln of lines) { dt(ln, ML, FS, fontBold); nextLine(); }
+          y -= gapAfter;
+        }
+
+        // Texto puro com wrap
+        function paraText(text, sz = FS, gapAfter = 8) {
+          const lines = wrapText(text, font, sz, TW);
+          for (const ln of lines) { dt(ln, ML, sz, font); nextLine(); }
+          y -= gapAfter;
+        }
+
+        // ── LOGO Village Negócios ──
+        // Ícone: dois quadrados sobrepostos em vermelho/salmão
+        const iconX = ML, iconY = y;
+        page.drawRectangle({ x: iconX,    y: iconY-24, width: 22, height: 22, color: RED2 });
+        page.drawRectangle({ x: iconX+12, y: iconY-36, width: 16, height: 16, color: WHITE, borderColor: RED2, borderWidth: 1.5 });
+        // Texto VILLAGE em escuro
+        page.drawText('VILLAGE',  { x: iconX+32, y: iconY-6,  size: 16, font: fontBold, color: DKGRAY });
+        page.drawText('NEGÓCIOS', { x: iconX+34, y: iconY-20, size: 8,  font,          color: GRAY   });
+        y -= 60;
+
+        // ── TÍTULO ──
+        const titulo = 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS';
+        const tW = fontBold.widthOfTextAtSize(titulo, 12);
+        dt(titulo, (PW - tW) / 2, 12, fontBold);
+        // Sublinhado
+        page.drawLine({ start: { x: (PW-tW)/2, y: y-1 }, end: { x: (PW-tW)/2+tW, y: y-1 }, thickness: 0.8, color: BLACK });
+        y -= 30;
+
+        // ── CONTRATANTE ──
+        para('CONTRATANTE: ', (d.nome || '') + (d.cpf_cnpj ? ', inscrito(a) sob CPF/CNPJ nº ' + d.cpf_cnpj : ''), 12);
+
+        // ── CONTRATADA ──
+        para('CONTRATADA: ', 'VILLAGE NEGOCIOS IMOBILIARIOS, pessoa jurídica de direito privado, devidamente inscrita no CNPJ nº 30.719.023/0001-11, com sede na Rua Itália, 732, Capão da Canoa/RS.', 18);
+
+        // ── CLÁUSULA PRIMEIRA ──
+        para('CLÁUSULA PRIMEIRA: ',
+          `O presente contrato tem o único e específico fim de disponibilizar bem imóvel para fins de oferta como garantia e/ou penhora, o que tem a finalidade de gerar proteção patrimonial e/ou possibilitar a composição e administração de débitos (${tipos}) de até R$ (${valDiv}) (${valDivExt}) detidos pela Contratante.`, 10);
+
+        para('Parágrafo primeiro: ',
+          'A referida garantia a ser ofertada é de responsabilidade da Contratada, devendo ser por esta substituída sempre que necessário ao bom deslinde do feito e sempre de acordo com os interesses do Contratante.', 10);
+
+        para('Parágrafo segundo: ',
+          'Após a notificação, a Contratada emitirá, no prazo máximo de 5 dias úteis, a Certidão de Disponibilização de Garantia, acompanhada da matrícula atualizada do imóvel, laudo de avaliação e demais documentos necessários para a instrução da defesa ou requerimento administrativo.', 10);
+
+        para('Parágrafo terceiro: ',
+          'A operacionalidade da garantia inclui o fornecimento de subsídios técnicos para que o corpo jurídico do Contratante possa sustentar a idoneidade do bem oferecido, não incluindo, todavia, a atuação em juízo por advogados da Contratada, salvo contratação específica.', 18);
+
+        // ── CLÁUSULA SEGUNDA ──
+        para('CLÁUSULA SEGUNDA – DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO: ',
+          `As partes fixam uma mensalidade de R$ (${mens}), a ser paga todo dia (${diaV}) a partir da assinatura deste contrato.`, 10);
+
+        para('Parágrafo primeiro: ',
+          `será devida uma parcela adicional de (${pct})% sobre o montante da dívida apontada no OBJETO do presente instrumento quando da efetiva aceitação da garantia em execução judicial, minuta de acordo com o credor, ou qualquer outro procedimento administrativo, o que deverá ser pago em até 5 dias úteis a partir da efetiva aceitação.`, 10);
+
+        para('Parágrafo segundo: ',
+          'Entende-se por aceitação de acordo com o parágrafo anterior: o despacho judicial que determine a penhora ou suspensão do feito após oferta do bem, a petição do credor informando aceitação ou pedido de suspensão do feito, e a inclusão da garantia em minutas de acordo entre as partes.', 18);
+
+        // ── CLÁUSULA TERCEIRA ──
+        para('CLÁUSULA TERCEIRA – DO PRAZO: ',
+          'O presente contrato vigorará pelo prazo indeterminado, a contar da data de sua assinatura, podendo ser rescindido por qualquer das partes mediante notificação prévia de 30 (trinta) dias.', 18);
+
+        // ── CLÁUSULA QUARTA ──
+        paraBold('CLÁUSULA QUARTA – DAS OBRIGAÇÕES DA CONTRATADA:', 6);
+        paraText('I – Disponibilizar o bem imóvel como garantia nas condições acordadas;', FS, 4);
+        paraText('II – Emitir Certidão de Disponibilização de Garantia no prazo estipulado;', FS, 4);
+        paraText('III – Manter o imóvel livre de ônus e pendências que comprometam sua utilização como garantia;', FS, 4);
+        paraText('IV – Prestar os subsídios técnicos necessários ao corpo jurídico do Contratante.', FS, 18);
+
+        // ── CLÁUSULA QUINTA ──
+        paraBold('CLÁUSULA QUINTA – DAS OBRIGAÇÕES DO CONTRATANTE:', 6);
+        paraText('I – Efetuar o pagamento da mensalidade na data acordada;', FS, 4);
+        paraText('II – Fornecer todos os documentos necessários para a instrução dos procedimentos;', FS, 4);
+        paraText('III – Comunicar imediatamente a Contratada sobre quaisquer alterações nos processos relacionados ao objeto deste contrato.', FS, 18);
+
+        // ── CLÁUSULA SEXTA ──
+        para('CLÁUSULA SEXTA – DA RESCISÃO: ',
+          'O presente contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia e por escrito, com antecedência mínima de 30 (trinta) dias, sem ônus para a parte notificante, desde que não haja pendências financeiras ou processuais em aberto.', 10);
+
+        para('Parágrafo único: ',
+          'O inadimplemento de qualquer das cláusulas do presente contrato dará direito à parte prejudicada de rescindi-lo imediatamente, com direito a perdas e danos.', 18);
+
+        // ── CLÁUSULA SÉTIMA ──
+        para('CLÁUSULA SÉTIMA – DO FORO: ',
+          'As partes elegem o foro da Comarca de Capão da Canoa/RS para dirimir quaisquer controvérsias oriundas do presente contrato, com renúncia a qualquer outro, por mais privilegiado que seja.', 18);
+
+        // ── DATA E ASSINATURA ──
+        if (y < 200) { page = gDoc.addPage([PW, PH]); y = PH - 60; }
+        para('', `Capão da Canoa/RS, ${diaFmt}.`, 30);
+
+        // Assinaturas
+        const sigY = y;
+        page.drawLine({ start: { x: ML, y: sigY }, end: { x: ML + 180, y: sigY }, thickness: 0.8, color: BLACK });
+        page.drawLine({ start: { x: MR - 180, y: sigY }, end: { x: MR, y: sigY }, thickness: 0.8, color: BLACK });
+        y -= 14;
+        dt('Contratante', ML + 60, 9, font);
+        dt('Contratada', MR - 130, 9, font);
+        y -= 18;
+        const nomeContratante = wrapText(d.nome || '', font, 9, 180);
+        if (nomeContratante.length > 0) dt(nomeContratante[0], ML, 9, font, GRAY);
+        dt('Village Negócios Imobiliários', MR - 200, 9, font, GRAY);
+
+        const pdfG = await gDoc.save();
+        const u8G  = new Uint8Array(pdfG);
+        let b64G   = '';
+        for (let i = 0; i < u8G.length; i += 8192) {
+          b64G += String.fromCharCode(...u8G.slice(i, i + 8192));
+        }
+        return Response.json({ pdf_base64: btoa(b64G), filename: 'contrato_GARANTIAS.pdf', tipo: 'GARANTIAS' });
       }
 
       // Generic fallback for ROF, CANAL BANCÁRIO, OFFSHORE, HORA TÉCNICA
