@@ -257,6 +257,26 @@
       "type": "string",
       "format": "date",
       "description": "Data do contrato"
+    },
+    "mensalidade": {
+      "type": "number",
+      "description": "Mensalidade (espec\u00edfico para GARANTIAS)"
+    },
+    "valor_divida": {
+      "type": "number",
+      "description": "Valor da d\u00edvida (espec\u00edfico para GARANTIAS)"
+    },
+    "percentual_montante": {
+      "type": "number",
+      "description": "Percentual sobre o montante da d\u00edvida (espec\u00edfico para GARANTIAS)"
+    },
+    "administracao_debitos": {
+      "type": "array",
+      "description": "Tipos de d\u00e9bitos administrados (espec\u00edfico para GARANTIAS)",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [

@@ -17,6 +17,7 @@ const EMPTY = {
   forma_pagamento: '', data_primeiro_pagamento: '', dia_vencimento: '',
   banco: '', agencia: '', conta: '', moeda: 'USD', cotacao: '', valor_em_moeda: '',
   prazo_meses: '', observacoes: '', data_contrato: todayBrasilia(),
+  mensalidade: '', valor_divida: '', percentual_montante: '', administracao_debitos: [],
 };
 
 const FORMAS = ['PIX', 'TED/DOC', 'DÉBITO EM CONTA', 'BOLETO', 'CARTÃO DE CRÉDITO'];
@@ -600,69 +601,101 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {/* VALOR DE ADESÃO = valor total do contrato */}
-                  <div className="group">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
-                      Valor de Adesão (R$) <span className="text-red-400 ml-0.5">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={form.valor_total || ''}
-                      onChange={e => set('valor_total', e.target.value)}
-                      placeholder="Valor total do contrato"
-                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
-                    />
+                {tipo === 'GARANTIAS' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Mensalidade (R$) <span className="text-red-400 ml-0.5">*</span>
+                      </label>
+                      <input type="number" value={form.mensalidade || ''} onChange={e => set('mensalidade', e.target.value)}
+                        placeholder="Ex: 500,00"
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
+                    </div>
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Valor da Dívida (R$)
+                      </label>
+                      <input type="number" value={form.valor_divida || ''} onChange={e => set('valor_divida', e.target.value)}
+                        placeholder="Ex: 50000,00"
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
+                    </div>
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Percentual sobre o Montante da Dívida (%)
+                      </label>
+                      <input type="number" step="0.01" value={form.percentual_montante || ''} onChange={e => set('percentual_montante', e.target.value)}
+                        placeholder="Ex: 5,00"
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
+                    </div>
+                    {selectField('Forma de Pagamento', 'forma_pagamento', FORMAS)}
+                    {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
+                    {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
                   </div>
-                  {/* VALOR DE ENTRADA = adesão/entrada efetiva */}
-                  <div className="group">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
-                      Valor de Entrada (R$)
-                      {parseInt(form.num_parcelas) === 0 && <span className="ml-1 text-[9px] text-emerald-500 normal-case font-normal">(igual ao total)</span>}
-                    </label>
-                    <input
-                      type="number"
-                      value={form.valor_adesao || ''}
-                      onChange={e => set('valor_adesao', e.target.value)}
-                      placeholder={parseInt(form.num_parcelas) === 0 ? 'Igual ao valor total' : 'Ex: 5000,00'}
-                      disabled={parseInt(form.num_parcelas) === 0}
-                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
-                    />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    {/* VALOR DE ADESÃO = valor total do contrato */}
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Valor de Adesão (R$) <span className="text-red-400 ml-0.5">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={form.valor_total || ''}
+                        onChange={e => set('valor_total', e.target.value)}
+                        placeholder="Valor total do contrato"
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
+                      />
+                    </div>
+                    {/* VALOR DE ENTRADA = adesão/entrada efetiva */}
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Valor de Entrada (R$)
+                        {parseInt(form.num_parcelas) === 0 && <span className="ml-1 text-[9px] text-emerald-500 normal-case font-normal">(igual ao total)</span>}
+                      </label>
+                      <input
+                        type="number"
+                        value={form.valor_adesao || ''}
+                        onChange={e => set('valor_adesao', e.target.value)}
+                        placeholder={parseInt(form.num_parcelas) === 0 ? 'Igual ao valor total' : 'Ex: 5000,00'}
+                        disabled={parseInt(form.num_parcelas) === 0}
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
+                      />
+                    </div>
+                    {/* VALOR DA PARCELA = calculado automaticamente */}
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={form.valor_parcela || ''}
+                        onChange={e => setForm(f => ({ ...f, valor_parcela: e.target.value }))}
+                        placeholder="Calculado automaticamente"
+                        className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all placeholder:text-blue-300"
+                      />
+                    </div>
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Número de Parcelas</label>
+                      <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all cursor-pointer">
+                        <option value={0}>Sem parcelas (só entrada)</option>
+                        {[1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => (
+                          <option key={n} value={n}>{n}x</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectField('Forma de Pagamento', 'forma_pagamento', FORMAS)}
+                    {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
+                    {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
+                    {campo('Prazo (meses)', 'prazo_meses', 'number')}
+                    {campo('Banco', 'banco')}
+                    {campo('Agência', 'agencia')}
+                    {campo('Conta', 'conta')}
+                    {campo('Moeda', 'moeda', 'text', { placeholder: 'USD, EUR...' })}
+                    {campo('Cotação (R$ por unidade)', 'cotacao', 'number', { placeholder: 'Ex: 5.7850' })}
+                    {campo('Valor em Moeda Estrangeira', 'valor_em_moeda', 'number')}
                   </div>
-                  {/* VALOR DA PARCELA = calculado automaticamente */}
-                  <div className="group">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
-                      Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
-                    </label>
-                    <input
-                      type="number"
-                      value={form.valor_parcela || ''}
-                      onChange={e => setForm(f => ({ ...f, valor_parcela: e.target.value }))}
-                      placeholder="Calculado automaticamente"
-                      className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all placeholder:text-blue-300"
-                    />
-                  </div>
-                  <div className="group">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Número de Parcelas</label>
-                    <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all cursor-pointer">
-                      <option value={0}>Sem parcelas (só entrada)</option>
-                      {[1,2,3,4,5,6,7,8,9,10,11,12,18,24,36,48,60].map(n => (
-                        <option key={n} value={n}>{n}x</option>
-                      ))}
-                    </select>
-                  </div>
-                  {selectField('Forma de Pagamento', 'forma_pagamento', FORMAS)}
-                  {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
-                  {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
-                  {campo('Prazo (meses)', 'prazo_meses', 'number')}
-                  {campo('Banco', 'banco')}
-                  {campo('Agência', 'agencia')}
-                  {campo('Conta', 'conta')}
-                  {campo('Moeda', 'moeda', 'text', { placeholder: 'USD, EUR...' })}
-                  {campo('Cotação (R$ por unidade)', 'cotacao', 'number', { placeholder: 'Ex: 5.7850' })}
-                  {campo('Valor em Moeda Estrangeira', 'valor_em_moeda', 'number')}
-                </div>
+                )}
 
                 {/* Indicadores */}
                 <div className="border border-gray-200 rounded-xl">
@@ -864,6 +897,29 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     </div>
                   )}
                 </div>
+                {tipo === 'GARANTIAS' && (
+                  <div className="group">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5" style={{ color: '#be123c' }}>
+                      Administração de Débitos
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-rose-200 rounded-xl bg-rose-50/40">
+                      {['Financeiros', 'Trabalhistas', 'Previdenciários', 'Tributários', 'Outras Dívidas'].map(opt => (
+                        <label key={opt} className="flex items-center gap-2 cursor-pointer group/cb">
+                          <input
+                            type="checkbox"
+                            checked={(form.administracao_debitos || []).includes(opt)}
+                            onChange={e => {
+                              const current = form.administracao_debitos || [];
+                              set('administracao_debitos', e.target.checked ? [...current, opt] : current.filter(x => x !== opt));
+                            }}
+                            className="w-4 h-4 rounded border-rose-300 text-rose-700 focus:ring-rose-400 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 group-hover/cb:text-rose-700 transition-colors">{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="group">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">Observações</label>
                   <textarea
