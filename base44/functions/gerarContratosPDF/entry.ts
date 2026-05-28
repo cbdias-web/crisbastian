@@ -190,29 +190,55 @@ Deno.serve(async (req) => {
     // ROF, CANAL BANCÁRIO, OFFSHORE, GARANTIAS e HORA TÉCNICA: gerar PDF textual (sem template AcroForm)
     if (pdfUrl === null) {
 
-      // ── GARANTIAS: usa template original e sobrepõe dados dinâmicos ─────────
+      // ── GARANTIAS: carrega template e sobrepõe dados diretamente no PDF original ──
       if (contrato.tipo === 'GARANTIAS') {
-        const templateUrl = 'https://media.base44.com/files/public/698a1739c50002e4d14fa547/c3a551ce8_Contrato_Garantia_Village_Final_Proporcional.pdf';
+        const templateUrl = 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/832d0ade7_Contrato_Garantia_Village_Final_Proporcional.pdf';
         const templateRes = await fetch(templateUrl);
         if (!templateRes.ok) throw new Error('Erro ao baixar template GARANTIAS');
         const templateBytes = await templateRes.arrayBuffer();
-        const templatePdf = await PDFDocument.load(templateBytes);
 
-        const gDoc = await PDFDocument.create();
-        const font = await gDoc.embedFont('Helvetica');
+        // Carregar o template diretamente — preserva layout e todos os recursos
+        const gDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });
+        const font     = await gDoc.embedFont('Helvetica');
+        const fontBold = await gDoc.embedFont('Helvetica-Bold');
         const BLACK = { type: 'RGB', red: 0, green: 0, blue: 0 };
+        const WHITE = { type: 'RGB', red: 1, green: 1, blue: 1 };
 
-        // Embutir páginas do template como XObjects e desenhar como fundo (preserva logo e todo conteúdo)
-        const tPage0 = templatePdf.getPage(0);
-        const tPage1 = templatePdf.getPageCount() >= 2 ? templatePdf.getPage(1) : null;
-        const embP1 = await gDoc.embedPage(tPage0);
-        const embP2 = tPage1 ? await gDoc.embedPage(tPage1) : null;
-        const { width: pw, height: ph } = tPage0.getSize();
+        const p1 = gDoc.getPage(0);
+        const p2 = gDoc.getPageCount() >= 2 ? gDoc.getPage(1) : null;
+        const { width: pageW } = p1.getSize();
 
-        const p1 = gDoc.addPage([pw, ph]);
-        p1.drawPage(embP1);
-        const p2 = embP2 ? gDoc.addPage([pw, ph]) : null;
-        if (p2 && embP2) p2.drawPage(embP2);
+        // ── LOGO Village Negócios (desenhado no topo da página) ──
+        // Fundo branco para garantir visibilidade sobre qualquer conteúdo existente
+        p1.drawRectangle({ x: 0, y: 790, width: pageW, height: 52, color: WHITE });
+
+        // Cálculo de centralização
+        const vText   = 'VILLAGE';
+        const nText   = 'NEGÓCIOS';
+        const vSize   = 20;
+        const nSize   = 8;
+        const iconW   = 14;
+        const iconH   = 16;
+        const gap     = 5;
+        const vW      = fontBold.widthOfTextAtSize(vText, vSize);
+        const nW      = font.widthOfTextAtSize(nText, nSize);
+        const blockW  = iconW + gap + vW;
+        const startX  = (pageW - blockW) / 2;
+        const logoY   = 816;
+
+        // Ícone estilizado (retângulo externo + quadrado interno)
+        p1.drawRectangle({ x: startX, y: logoY - iconH + 4, width: iconW, height: iconH,
+          borderColor: BLACK, borderWidth: 1.5, color: WHITE });
+        p1.drawRectangle({ x: startX + 3, y: logoY - iconH + 7, width: 6, height: 6, color: BLACK });
+
+        // Texto "VILLAGE" em negrito
+        p1.drawText(vText, { x: startX + iconW + gap, y: logoY - 2, size: vSize, font: fontBold, color: BLACK });
+
+        // Texto "NEGÓCIOS" centralizado abaixo
+        p1.drawText(nText, { x: (pageW - nW) / 2, y: logoY - 13, size: nSize, font, color: BLACK });
+
+        // Linha decorativa abaixo do logo
+        p1.drawLine({ start: { x: 50, y: 792 }, end: { x: pageW - 50, y: 792 }, thickness: 0.5, color: BLACK });
 
         const d = contrato;
         const dataCtrt = d.data_contrato ? new Date(d.data_contrato+'T00:00:00') : new Date();
@@ -229,23 +255,15 @@ Deno.serve(async (req) => {
           pg.drawText(String(text), { x, y, size: size || 9, font, color: BLACK });
         }
 
-        // ── PÁGINA 1: sobrepor campos dinâmicos nas áreas em branco do template ──
-        // CONTRATANTE (caixa do nome)
-        ov(p1, d.nome || '', 117, 710);
-        // CPF/CNPJ (segunda caixa)
-        ov(p1, d.cpf_cnpj || '', 54, 694);
-
-        // Cláusula 1 — linha com tipos de débitos | até R$ | (extenso)
-        ov(p1, tipos,      54,  566);
-        ov(p1, valDiv,    230,  566);
-        ov(p1, valDivExt, 340,  566);
-
-        // Cláusula 2 — Valor / Dia
-        ov(p1, `R$ ${mens}`, 90,  399);
-        ov(p1, diaV,        278,  399);
-
-        // Cláusula 2 — percentual adicional
-        ov(p1, pct,         252,  381);
+        // ── PÁGINA 1: sobrepor campos nas áreas em branco do template ──
+        ov(p1, d.nome || '',       117, 710);
+        ov(p1, d.cpf_cnpj || '',    54, 694);
+        ov(p1, tipos,               54, 566);
+        ov(p1, valDiv,             230, 566);
+        ov(p1, valDivExt,          340, 566);
+        ov(p1, `R$ ${mens}`,        90, 399);
+        ov(p1, diaV,               278, 399);
+        ov(p1, pct,                252, 381);
 
         // ── PÁGINA 2: data de assinatura ──
         if (p2) ov(p2, diaFmt, 155, 175);
