@@ -273,15 +273,24 @@ Deno.serve(async (req) => {
           y -= gapAfter;
         }
 
-        // ── LOGO Village Negócios ──
-        // Ícone: dois quadrados sobrepostos em vermelho/salmão
-        const iconX = ML, iconY = y;
-        page.drawRectangle({ x: iconX,    y: iconY-24, width: 22, height: 22, color: RED2 });
-        page.drawRectangle({ x: iconX+12, y: iconY-36, width: 16, height: 16, color: WHITE, borderColor: RED2, borderWidth: 1.5 });
-        // Texto VILLAGE em escuro
-        page.drawText('VILLAGE',  { x: iconX+32, y: iconY-6,  size: 16, font: fontBold, color: DKGRAY });
-        page.drawText('NEGÓCIOS', { x: iconX+34, y: iconY-20, size: 8,  font,          color: GRAY   });
-        y -= 60;
+        // ── LOGO Village Negócios (topo da página) ──
+        // Área de fundo leve para o logo
+        page.drawRectangle({ x: 0, y: PH - 75, width: PW, height: 75, color: WHITE });
+
+        // Ícone: dois quadrados sobrepostos em vermelho/salmão (maior)
+        const iconX = ML;
+        const iconY = PH - 20; // 20pt do topo
+        page.drawRectangle({ x: iconX,      y: iconY - 38, width: 30, height: 30, color: RED2 });
+        page.drawRectangle({ x: iconX + 16, y: iconY - 54, width: 22, height: 22, color: WHITE, borderColor: RED2, borderWidth: 2 });
+
+        // Texto VILLAGE grande e NEGÓCIOS menor
+        page.drawText('VILLAGE',  { x: iconX + 44, y: iconY - 12, size: 22, font: fontBold, color: DKGRAY });
+        page.drawText('NEGÓCIOS', { x: iconX + 46, y: iconY - 32, size: 10, font, color: GRAY });
+
+        // Linha separadora abaixo do logo
+        page.drawLine({ start: { x: ML, y: PH - 80 }, end: { x: MR, y: PH - 80 }, thickness: 0.5, color: GRAY });
+
+        y = PH - 100; // conteúdo começa 100pt abaixo do topo
 
         // ── TÍTULO ──
         const titulo = 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS';
