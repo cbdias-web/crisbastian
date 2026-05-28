@@ -222,6 +222,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         vendedorId = user?.id || '';
         vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
       }
+      const toNum = (v) => { const n = parseFloat(v); return isNaN(n) ? undefined : n; };
       const payload = {
         ...data,
         tipo: data._tipoOverride || tipo,
@@ -235,6 +236,9 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         valor_em_moeda: parseFloat(data.valor_em_moeda) || 0,
         prazo_meses: parseInt(data.prazo_meses) || 0,
         dia_vencimento: parseInt(data.dia_vencimento) || 0,
+        mensalidade: toNum(data.mensalidade),
+        valor_divida: toNum(data.valor_divida),
+        percentual_montante: toNum(data.percentual_montante),
       };
 
       const payloadFinal = { ...payload, indicadores };
