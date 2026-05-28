@@ -281,6 +281,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       return contrato;
     },
     onSuccess: (c) => { toast.success('Contrato salvo!'); onSaved(c); },
+    onError: (err) => { toast.error('Erro ao salvar contrato: ' + (err?.message || 'Verifique os campos obrigatórios')); },
   });
 
   const clientesFiltrados = clientes.filter(c =>
