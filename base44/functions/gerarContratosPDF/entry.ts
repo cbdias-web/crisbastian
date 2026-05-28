@@ -190,15 +190,26 @@ Deno.serve(async (req) => {
     // ROF, CANAL BANCÁRIO, OFFSHORE, GARANTIAS e HORA TÉCNICA: gerar PDF textual (sem template AcroForm)
     if (pdfUrl === null) {
 
-      // ── GARANTIAS: contrato completo com cláusulas ──────────────────────────
+      // ── GARANTIAS: usa template original e sobrepõe dados dinâmicos ─────────
       if (contrato.tipo === 'GARANTIAS') {
+        const templateUrl = 'https://media.base44.com/files/public/698a1739c50002e4d14fa547/c3a551ce8_Contrato_Garantia_Village_Final_Proporcional.pdf';
+        const templateRes = await fetch(templateUrl);
+        if (!templateRes.ok) throw new Error('Erro ao baixar template GARANTIAS');
+        const templateBytes = await templateRes.arrayBuffer();
+        const templatePdf = await PDFDocument.load(templateBytes);
+
         const gDoc = await PDFDocument.create();
-        const font     = await gDoc.embedFont('Helvetica');
-        const fontBold = await gDoc.embedFont('Helvetica-Bold');
-        const W = 595, H = 842, ML = 50, MR = 545, TW = 495;
-        const NAVY  = { type: 'RGB', red: 0.067, green: 0.118, blue: 0.208 };
-        const BLACK = { type: 'RGB', red: 0,     green: 0,     blue: 0     };
-        const WHITE = { type: 'RGB', red: 1,     green: 1,     blue: 1     };
+        const font = await gDoc.embedFont('Helvetica');
+        const BLACK = { type: 'RGB', red: 0, green: 0, blue: 0 };
+
+        // Copiar as 2 páginas do template (preserva logo, layout, texto fixo)
+        const pageCount = templatePdf.getPageCount();
+        const indices = pageCount >= 2 ? [0, 1] : [0];
+        const copied = await gDoc.copyPages(templatePdf, indices);
+        const p1 = copied[0];
+        const p2 = copied.length >= 2 ? copied[1] : null;
+        gDoc.addPage(p1);
+        if (p2) gDoc.addPage(p2);
 
         const d = contrato;
         const dataCtrt = d.data_contrato ? new Date(d.data_contrato+'T00:00:00') : new Date();
@@ -206,122 +217,35 @@ Deno.serve(async (req) => {
         const tipos   = (d.administracao_debitos||[]).join(', ');
         const valDiv  = fmtVal(d.valor_divida);
         const valDivExt = numeroParaExtenso(d.valor_divida);
-        const mens   = fmtVal(d.mensalidade);
-        const diaV   = String(d.dia_vencimento || '');
-        const pct    = String(d.percentual_montante || '');
+        const mens    = fmtVal(d.mensalidade);
+        const diaV    = String(d.dia_vencimento || '');
+        const pct     = String(d.percentual_montante || '');
 
-        function dt(pg, text, x, y, size, bold) {
-          pg.drawText(String(text||''), { x, y, size, font: bold ? fontBold : font, color: BLACK });
-        }
-        function dtNav(pg, text, x, y, size) {
-          pg.drawText(String(text||''), { x, y, size, font: fontBold, color: NAVY });
-        }
-        function paraBK(pg, text, x, y, size, lineH) {
-          const maxW = MR - x;
-          for (const ln of wrapText(text, font, size, maxW)) {
-            pg.drawText(ln, { x, y, size, font, color: BLACK });
-            y -= lineH;
-          }
-          return y;
-        }
-        function box(pg, x, y, w) {
-          pg.drawRectangle({ x, y: y-3, width: w, height: 14, borderColor: BLACK, borderWidth: 0.3, color: WHITE });
-        }
-        function hline(pg, yPos) {
-          pg.drawRectangle({ x: ML, y: yPos, width: TW, height: 0.5, color: NAVY });
+        function ov(pg, text, x, y, size) {
+          if (!text) return;
+          pg.drawText(String(text), { x, y, size: size || 9, font, color: BLACK });
         }
 
-        // ── PAGE 1 ──────────────────────────────────────────────────────────
-        const p1 = gDoc.addPage([W, H]);
-        let y = H - 55;
+        // ── PÁGINA 1: sobrepor campos dinâmicos nas áreas em branco do template ──
+        // CONTRATANTE (caixa do nome)
+        ov(p1, d.nome || '', 117, 710);
+        // CPF/CNPJ (segunda caixa)
+        ov(p1, d.cpf_cnpj || '', 54, 694);
 
-        hline(p1, y + 5);
-        const titleText = 'CONTRATO DE PRESTA\u00c7\u00c3O DE SERVI\u00c7OS';
-        const titleW = fontBold.widthOfTextAtSize(titleText, 13);
-        dtNav(p1, titleText, (W - titleW) / 2, y, 13);
-        y -= 7;
-        hline(p1, y);
-        y -= 20;
+        // Cláusula 1 — linha com tipos de débitos | até R$ | (extenso)
+        ov(p1, tipos,      54,  566);
+        ov(p1, valDiv,    230,  566);
+        ov(p1, valDivExt, 340,  566);
 
-        // CONTRATANTE box
-        dtNav(p1, 'CONTRATANTE:', ML, y, 9);
-        const lW = fontBold.widthOfTextAtSize('CONTRATANTE:', 9);
-        box(p1, ML + lW + 5, y, TW - lW - 5);
-        dt(p1, d.nome || '', ML + lW + 8, y, 9, false);
-        y -= 18;
-        box(p1, ML, y, TW);
-        dt(p1, d.cpf_cnpj ? `CPF/CNPJ: ${d.cpf_cnpj}` : '', ML + 4, y, 9, false);
-        y -= 24;
+        // Cláusula 2 — Valor / Dia
+        ov(p1, `R$ ${mens}`, 90,  399);
+        ov(p1, diaV,        278,  399);
 
-        // CONTRATADA
-        y = paraBK(p1, 'CONTRATADA: VILLAGE NEGOCIOS IMOBILIARIOS , pessoa jur\u00eddica de direito privado, devidamente inscrita no CNPJ n\u00b0 30.719.023/0001-11, com sede na Rua It\u00e1lia, 732, Cap\u00e3o da Canoa/RS.', ML, y, 9, 13);
-        y -= 12;
+        // Cláusula 2 — percentual adicional
+        ov(p1, pct,         252,  381);
 
-        // CLÁUSULA PRIMEIRA
-        dtNav(p1, 'CL\u00c1USULA PRIMEIRA:', ML, y, 9); y -= 14;
-        y = paraBK(p1, `O presente contrato tem o \u00fanico e espec\u00edfico fim de disponibilizar bem im\u00f3vel para fins de oferta como garantia e/ou penhora, o que tem a finalidade de gerar prote\u00e7\u00e3o patrimonial e/ou possibilitar a composi\u00e7\u00e3o e administra\u00e7\u00e3o de d\u00e9bitos${tipos ? ' '+tipos : ''} at\u00e9 R$ ${valDiv} (${valDivExt}) detidos pela Contratante.`, ML, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo primeiro: A referida garantia a ser ofertada \u00e9 de responsabilidade da Contratada, devendo ser por esta substitu\u00edda sempre que necess\u00e1rio ao bom deslinde do feito e sempre de acordo com os interesses do Contratante.', ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo segundo: Ap\u00f3s a notifica\u00e7\u00e3o, a Contratada emitir\u00e1, no prazo m\u00e1ximo de 5 dias \u00fateis, a Certid\u00e3o de Disponibiliza\u00e7\u00e3o de Garantia, acompanhada da matr\u00edcula atualizada do im\u00f3vel, laudo de avalia\u00e7\u00e3o e demais documentos necess\u00e1rios para a instru\u00e7\u00e3o da defesa ou requerimento administrativo.', ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo terceiro: A operacionalidade da garantia inclui o fornecimento de subs\u00eddios t\u00e9cnicos para que o corpo jur\u00eddico do Contratante possa sustentar a idoneidade do bem oferecido, n\u00e3o incluindo, todavia, a atua\u00e7\u00e3o em ju\u00edzo por advogados da Contratada, salvo contrata\u00e7\u00e3o espec\u00edfica.', ML+15, y, 9, 13); y -= 12;
-
-        // CLÁUSULA SEGUNDA
-        dtNav(p1, 'CL\u00c1USULA SEGUNDA \u2013 DO PRE\u00c7O E DAS CONDI\u00c7\u00d5ES DE PAGAMENTO:', ML, y, 9); y -= 14;
-        y = paraBK(p1, 'As partes fixam uma mensalidade, a partir da assinatura deste contrato, conforme indicadores abaixo:', ML, y, 9, 13); y -= 8;
-
-        dt(p1, 'Valor:', ML, y, 9, false);
-        box(p1, ML+33, y, 110); dt(p1, `R$ ${mens}`, ML+36, y, 9, false);
-        dt(p1, 'Dia:', ML+152, y, 9, false);
-        box(p1, ML+170, y, 50); dt(p1, diaV, ML+173, y, 9, false);
-        dt(p1, 'dos meses subsequentes.', ML+228, y, 9, false);
-        y -= 18;
-
-        y = paraBK(p1, `Par\u00e1grafo primeiro: ser\u00e1 devida uma parcela adicional de ${pct}% sobre o montante da d\u00edvida apontada no OBJETO do presente instrumento quando da efetiva aceita\u00e7\u00e3o da garantia em execu\u00e7\u00e3o judicial, minuta de acordo com o credor, ou qualquer outro procedimento administrativo, o que dever\u00e1 ser pago em at\u00e9 5 dias \u00fateis a partir da efetiva aceita\u00e7\u00e3o.`, ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo segundo: Entende-se por aceita\u00e7\u00e3o de acordo com o par\u00e1grafo anterior: o despacho judicial que determine a penhora ou suspens\u00e3o do feito ap\u00f3s oferta do bem, a peti\u00e7\u00e3o do credor informando aceita\u00e7\u00e3o ou pedido de suspens\u00e3o do feito, e a inclus\u00e3o da garantia em minutas de acordo entre as partes.', ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo terceiro: Os pagamentos ser\u00e3o realizados mediante PIX, TED ou boleto banc\u00e1rio emitido pela pr\u00f3pria Contratada.', ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p1, 'Par\u00e1grafo quarto: as partes convencionam que sobre as parcelas em atraso incidir\u00e1 multa de 2% (dois por cento), mais juros legais de 1% (um por cento) ao m\u00eas, capitalizados mensalmente.', ML+15, y, 9, 13); y -= 12;
-
-        // CLÁUSULA TERCEIRA
-        dtNav(p1, 'CL\u00c1USULA TERCEIRA \u2013 DO PRAZO:', ML, y, 9); y -= 14;
-        paraBK(p1, 'O presente contrato perdurar\u00e1 por prazo de 5 anos, per\u00edodo no qual a Contratante estar\u00e1 fazendo uso e gozo dos im\u00f3veis ofertados.', ML, y, 9, 13);
-
-        const pg1Txt = 'P\u00e1gina 1 de 2';
-        dt(p1, pg1Txt, (W - font.widthOfTextAtSize(pg1Txt, 8)) / 2, 30, 8, false);
-
-        // ── PAGE 2 ──────────────────────────────────────────────────────────
-        const p2 = gDoc.addPage([W, H]);
-        y = H - 55;
-
-        y = paraBK(p2, 'Par\u00e1grafo \u00fanico: Poder\u00e1 a Contratante rescindir o presente contrato a qualquer momento, sem multa ou qualquer outro \u00f4nus, desde que notificada a Contratada com 30 (trinta) dias de anteced\u00eancia.', ML+15, y, 9, 13); y -= 12;
-
-        dtNav(p2, 'CL\u00c1USULA QUARTA \u2013 DO COMPROMISSO:', ML, y, 9); y -= 14;
-        y = paraBK(p2, 'A Contratada se compromete a empreender com todo o zelo e cuidado poss\u00edvel a execu\u00e7\u00e3o dos servi\u00e7os, lan\u00e7ando m\u00e3o da melhor t\u00e9cnica e tecnologia profissional necess\u00e1ria, sempre visando obter, respeitados os limites legais, o melhor resultado \u00e0 Contratante.', ML, y, 9, 13); y -= 12;
-
-        dtNav(p2, 'CL\u00c1USULA QUINTA \u2013 DA CONFIDENCIALIDADE:', ML, y, 9); y -= 14;
-        y = paraBK(p2, 'As Partes obrigam-se a manter absoluto sigilo sobre todas as informa\u00e7\u00f5es, documentos, dados, materiais, negocia\u00e7\u00f5es, tratativas comerciais, estrat\u00e9gicas, financeiras, jur\u00eddicas, operacionais ou t\u00e9cnicas a que tiverem acesso em raz\u00e3o da rela\u00e7\u00e3o mantida entre si, sejam tais informa\u00e7\u00f5es fornecidas por escrito, verbalmente, por meio eletr\u00f4nico ou por qualquer outra forma, desde que identificadas como confidenciais ou que, pela sua natureza, devam razoavelmente ser tratadas como sigilosas.', ML, y, 9, 13); y -= 6;
-        y = paraBK(p2, 'Par\u00e1grafo primeiro: As informa\u00e7\u00f5es confidenciais somente poder\u00e3o ser compartilhadas com s\u00f3cios, administradores, empregados, colaboradores, consultores, assessores, subcontratados ou representantes que necessitem conhec\u00ea-las para os fins aqui previstos, ficando a Parte receptora respons\u00e1vel por assegurar que tais pessoas observem o mesmo dever de confidencialidade, inclusive quanto \u00e0 prote\u00e7\u00e3o de dados pessoais, nos termos da Lei n\u00ba 13.709/2018 \u2014 Lei Geral de Prote\u00e7\u00e3o de Dados.', ML+15, y, 9, 13); y -= 6;
-        y = paraBK(p2, 'Par\u00e1grafo segundo: N\u00e3o ser\u00e3o consideradas confidenciais as informa\u00e7\u00f5es que sejam ou venham a se tornar p\u00fablicas sem viola\u00e7\u00e3o deste instrumento, que j\u00e1 fossem legitimamente conhecidas pela Parte receptora antes de sua divulga\u00e7\u00e3o, ou que sejam obtidas de terceiro sem obriga\u00e7\u00e3o de sigilo.', ML+15, y, 9, 13); y -= 12;
-
-        dtNav(p2, 'CL\u00c1USULA SEXTA \u2013 DO FORO:', ML, y, 9); y -= 14;
-        y = paraBK(p2, 'Fica eleito o Foro da Comarca de S\u00e3o Paulo/SP, para qualquer a\u00e7\u00e3o ou procedimento judicial resultante de obriga\u00e7\u00f5es ou direitos decorrentes do presente Contrato.', ML, y, 9, 13); y -= 18;
-
-        dt(p2, `S\u00e3o Paulo/SP, ${diaFmt}.`, ML, y, 9, false); y -= 22;
-        y = paraBK(p2, 'Por terem como justas as cl\u00e1usulas supra, assinam o presente instrumento contratual, em duas (02) vias, na presen\u00e7a de testemunhas.', ML, y, 9, 13); y -= 40;
-
-        // Signatures
-        const sigW = 185;
-        p2.drawLine({ start: { x: ML, y }, end: { x: ML+sigW, y }, thickness: 0.5, color: BLACK });
-        p2.drawLine({ start: { x: W-ML-sigW, y }, end: { x: W-ML, y }, thickness: 0.5, color: BLACK });
-        y -= 14;
-        const cs = 'CONTRATANTE', cd = 'CONTRATADA';
-        dt(p2, cs, ML + (sigW - fontBold.widthOfTextAtSize(cs, 9)) / 2, y, 9, true);
-        dt(p2, cd, W-ML-sigW + (sigW - fontBold.widthOfTextAtSize(cd, 9)) / 2, y, 9, true);
-
-        const f1 = 'Acesse nossos canais e saiba mais:';
-        const f2 = 'grupovillela.com.br | villagenegocios.com.br | Instagram: @grupo.villela';
-        dt(p2, f1, (W - font.widthOfTextAtSize(f1, 7)) / 2, 65, 7, false);
-        dt(p2, f2, (W - font.widthOfTextAtSize(f2, 7)) / 2, 54, 7, false);
-        const pg2Txt = 'P\u00e1gina 2 de 2';
-        dt(p2, pg2Txt, (W - font.widthOfTextAtSize(pg2Txt, 8)) / 2, 30, 8, false);
+        // ── PÁGINA 2: data de assinatura ──
+        if (p2) ov(p2, diaFmt, 155, 175);
 
         const pdfPreenchidoG = await gDoc.save();
         const uint8G = new Uint8Array(pdfPreenchidoG);
