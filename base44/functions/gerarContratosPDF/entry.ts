@@ -202,14 +202,17 @@ Deno.serve(async (req) => {
         const font = await gDoc.embedFont('Helvetica');
         const BLACK = { type: 'RGB', red: 0, green: 0, blue: 0 };
 
-        // Copiar as 2 páginas do template (preserva logo, layout, texto fixo)
-        const pageCount = templatePdf.getPageCount();
-        const indices = pageCount >= 2 ? [0, 1] : [0];
-        const copied = await gDoc.copyPages(templatePdf, indices);
-        const p1 = copied[0];
-        const p2 = copied.length >= 2 ? copied[1] : null;
-        gDoc.addPage(p1);
-        if (p2) gDoc.addPage(p2);
+        // Embutir páginas do template como XObjects e desenhar como fundo (preserva logo e todo conteúdo)
+        const tPage0 = templatePdf.getPage(0);
+        const tPage1 = templatePdf.getPageCount() >= 2 ? templatePdf.getPage(1) : null;
+        const embP1 = await gDoc.embedPage(tPage0);
+        const embP2 = tPage1 ? await gDoc.embedPage(tPage1) : null;
+        const { width: pw, height: ph } = tPage0.getSize();
+
+        const p1 = gDoc.addPage([pw, ph]);
+        p1.drawPage(embP1);
+        const p2 = embP2 ? gDoc.addPage([pw, ph]) : null;
+        if (p2 && embP2) p2.drawPage(embP2);
 
         const d = contrato;
         const dataCtrt = d.data_contrato ? new Date(d.data_contrato+'T00:00:00') : new Date();
