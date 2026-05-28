@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -45,12 +45,11 @@ const TIPO_GRADIENT = {
   'HORA TÉCNICA': 'from-teal-700 to-teal-600',
 };
 
-// Calcula quantos campos obrigatórios/relevantes estão preenchidos por aba
 function calcProgress(form, aba) {
   const checks = {
     dados: ['nome', 'cpf_cnpj', 'email', 'telefone', 'nascimento', 'profissao', 'estado_civil', 'nacionalidade'],
     endereco: ['cep', 'endereco', 'bairro', 'cidade', 'estado'],
-    financeiro: ['valor_total', 'valor_adesao', 'forma_pagamento'],
+    financeiro: ['valor_total', 'forma_pagamento'],
     obs: ['data_contrato'],
   };
   const fields = checks[aba] || [];
@@ -151,11 +150,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         percentual_comissao: novoIndicadorPercentual || 10,
         ativo: true,
       });
-      // Recarregar lista de espelhamentos
       await queryClient.invalidateQueries(['espelhamentos-contrato']);
-      // Adicionar automaticamente à lista do contrato
       setIndicadores(prev => [...prev, { id: novo.id, nome: novo.nome, percentual: novoIndicadorPercentual || 10, tipo: 'indicador' }]);
-      // Limpar form
       setNovoIndicadorNome('');
       setNovoIndicadorEmail('');
       setNovoIndicadorTelefone('');
@@ -174,7 +170,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     setShowDropIndicador(prev => ({ ...prev, [idx]: false }));
   };
 
-  // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handler = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) setShowBusca(false);
@@ -183,7 +178,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Busca CEP automaticamente
   const buscarCep = async (cep) => {
     const cepLimpo = cep.replace(/\D/g, '');
     if (cepLimpo.length !== 8) return;
@@ -207,13 +201,11 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
-  // Estado para edição do vendedor (admin editando contrato existente)
   const [vendedorEditId, setVendedorEditId] = useState(contratoExistente?.vendedor_id || '');
   const [vendedorEditNome, setVendedorEditNome] = useState(contratoExistente?.vendedor_nome || '');
 
   const saveMutation = useMutation({
     mutationFn: async (data) => {
-      // Ao criar: usa o usuário logado. Ao editar: preserva o vendedor original (ou o alterado pelo admin)
       let vendedorId, vendedorNome;
       if (contratoExistente) {
         vendedorId = vendedorEditId || contratoExistente.vendedor_id || user?.id || '';
@@ -273,7 +265,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             contrato = { ...contrato, cliente_id: novoCliente.id };
             toast.success(`Cliente "${data.nome}" salvo na carteira!`);
           } else {
-            // Atualiza cadastro do cliente com dados completos do contrato
             await base44.entities.Cliente.update(existentes[0].id, dadosCliente);
             if (!contrato.cliente_id) {
               await base44.entities.Contrato.update(contrato.id, { cliente_id: existentes[0].id });
@@ -309,18 +300,14 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const set = (k, v) => setForm(f => {
     const updated = { ...f, [k]: v };
-    // Recalcula campos financeiros automaticamente
     if (['valor_total', 'valor_adesao', 'num_parcelas'].includes(k)) {
       const total = parseFloat(k === 'valor_total' ? v : updated.valor_total) || 0;
       const nParcelas = parseInt(k === 'num_parcelas' ? v : updated.num_parcelas) || 0;
       const entrada = parseFloat(k === 'valor_adesao' ? v : updated.valor_adesao) || 0;
-
       if (nParcelas === 0) {
-        // Sem parcelas: entrada = total, valor_parcela = 0
         updated.valor_adesao = total > 0 ? String(total) : updated.valor_adesao;
         updated.valor_parcela = '0';
       } else {
-        // Com parcelas: parcela = (total - entrada) / num_parcelas
         const restante = Math.max(0, total - entrada);
         updated.valor_parcela = restante > 0 ? String((restante / nParcelas).toFixed(2)) : '0';
       }
@@ -358,7 +345,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     </div>
   );
 
-  // Campos obrigatórios por aba — para validação de bloqueio
   const dadosPessoaisCompletos =
     form.nome?.trim() && form.cpf_cnpj?.trim() && form.email?.trim() &&
     form.telefone?.trim() && form.nascimento && form.profissao?.trim() &&
@@ -468,10 +454,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         {/* Card principal com abas */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
 
-          {/* Navegação de abas com progresso */}
+          {/* Navegação de abas */}
           <div className="border-b border-gray-100">
             <div className="flex">
-              {abas.map((a, i) => {
+              {abas.map((a) => {
                 const Icon = a.icon;
                 const progress = calcProgress(form, a.id);
                 const isActive = aba === a.id;
@@ -503,7 +489,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       }
                       <span className="hidden sm:inline">{a.label}</span>
                     </div>
-                    {/* Mini progress bar */}
                     {!isBloqueada && (
                       <div className="w-8 h-0.5 rounded-full bg-current opacity-20 overflow-hidden">
                         <div className="h-full rounded-full bg-current opacity-100 transition-all"
@@ -565,7 +550,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   {campo('Estado (UF)', 'estado', 'text', { placeholder: 'SP' })}
                 </div>
 
-                {/* Preview do endereço */}
                 {(form.cidade || form.estado) && (
                   <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-center gap-3">
                     <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
@@ -584,23 +568,31 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                 {(form.valor_total || form.valor_adesao) && (
                   <div className="grid grid-cols-3 gap-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
                     <div className="text-center">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Valor de Adesão</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Valor do Contrato</p>
                       <p className="text-lg font-bold text-[#1a3150] mt-0.5">
                         {form.valor_total ? `R$ ${Number(form.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
                     </div>
                     <div className="text-center border-x border-gray-200">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Entrada</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        {tipo === 'GARANTIAS' ? 'Mensalidade' : 'Entrada'}
+                      </p>
                       <p className="text-lg font-bold text-emerald-600 mt-0.5">
-                        {form.valor_adesao ? `R$ ${Number(form.valor_adesao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                        {tipo === 'GARANTIAS'
+                          ? (form.mensalidade ? `R$ ${Number(form.mensalidade).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—')
+                          : (form.valor_adesao ? `R$ ${Number(form.valor_adesao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—')}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parcelas</p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        {tipo === 'GARANTIAS' ? 'Valor da Dívida' : 'Parcelas'}
+                      </p>
                       <p className="text-base font-bold text-gray-600 mt-0.5">
-                        {form.valor_parcela && parseInt(form.num_parcelas) > 0
-                          ? `${form.num_parcelas}× R$ ${Number(form.valor_parcela).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                          : parseInt(form.num_parcelas) === 0 ? 'Só entrada' : '—'}
+                        {tipo === 'GARANTIAS'
+                          ? (form.valor_divida ? `R$ ${Number(form.valor_divida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—')
+                          : (form.valor_parcela && parseInt(form.num_parcelas) > 0
+                              ? `${form.num_parcelas}× R$ ${Number(form.valor_parcela).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                              : parseInt(form.num_parcelas) === 0 ? 'Só entrada' : '—')}
                       </p>
                     </div>
                   </div>
@@ -608,6 +600,14 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
                 {tipo === 'GARANTIAS' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="group">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
+                        Valor do Contrato (R$) <span className="text-red-400 ml-0.5">*</span>
+                      </label>
+                      <input type="number" value={form.valor_total || ''} onChange={e => set('valor_total', e.target.value)}
+                        placeholder="Ex: 5500,00"
+                        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
+                    </div>
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Mensalidade (R$) <span className="text-red-400 ml-0.5">*</span>
@@ -626,7 +626,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     </div>
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
-                        Percentual sobre o Montante da Dívida (%)
+                        Percentual sobre o Montante (%)
                       </label>
                       <input type="number" step="0.01" value={form.percentual_montante || ''} onChange={e => set('percentual_montante', e.target.value)}
                         placeholder="Ex: 5,00"
@@ -638,7 +638,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {/* VALOR DE ADESÃO = valor total do contrato */}
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor de Adesão (R$) <span className="text-red-400 ml-0.5">*</span>
@@ -651,7 +650,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
                       />
                     </div>
-                    {/* VALOR DE ENTRADA = adesão/entrada efetiva */}
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor de Entrada (R$)
@@ -666,7 +664,6 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
                       />
                     </div>
-                    {/* VALOR DA PARCELA = calculado automaticamente */}
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
@@ -784,72 +781,70 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                           const opcoesFiltradas = indicadoresDisponiveis.filter(x =>
                             termoBusca.length === 0 || x.nome.toLowerCase().includes(termoBusca.toLowerCase())
                           );
-                          const naoEncontrado = termoBusca.length >= 2 && opcoesFiltradas.length === 0;
                           return (
-                          <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
-                            {/* Campo de busca do indicador */}
-                            <div className="flex-1 relative">
-                              <div className="relative">
-                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-                                <input
-                                  type="text"
-                                  value={termoBusca}
-                                  onChange={e => {
-                                    setBuscaIndicador(prev => ({ ...prev, [idx]: e.target.value }));
-                                    setShowDropIndicador(prev => ({ ...prev, [idx]: true }));
-                                    if (!e.target.value) updateIndicador(idx, 'id', '');
-                                  }}
-                                  onFocus={() => setShowDropIndicador(prev => ({ ...prev, [idx]: true }))}
-                                  placeholder="Buscar indicador ou vendedor..."
-                                  className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white"
-                                />
-                                {ind.id && (
-                                  <span className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                )}
-                              </div>
-                              {showDrop && (
-                                <div className="absolute z-40 left-0 right-0 mt-0.5 bg-white border border-gray-200 rounded-xl shadow-xl max-h-44 overflow-y-auto">
-                                  {opcoesFiltradas.length > 0 ? (
-                                    opcoesFiltradas.map(x => (
-                                      <button key={x.id} type="button"
-                                        onMouseDown={() => selectIndicadorPessoa(idx, x)}
-                                        className="w-full text-left px-3 py-2 hover:bg-blue-50 transition flex items-center gap-2 border-b border-gray-50 last:border-0">
-                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${x.tipo === 'vendedor' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                                          {x.tipo === 'vendedor' ? 'Vend.' : 'Ind.'}
-                                        </span>
-                                        <span className="text-xs text-gray-800 font-medium">{x.nome}</span>
-                                        <span className="ml-auto text-[10px] text-gray-400">{x.percentual_comissao}%</span>
-                                      </button>
-                                    ))
-                                  ) : termoBusca.length >= 2 ? (
-                                    <div className="px-3 py-3 text-center">
-                                      <p className="text-xs text-gray-500 mb-2">Nenhum resultado para "<strong>{termoBusca}</strong>"</p>
-                                      <button type="button"
-                                        onMouseDown={() => {
-                                          setNovoIndicadorNome(termoBusca);
-                                          setShowNovoIndicador(true);
-                                          setShowDropIndicador(prev => ({ ...prev, [idx]: false }));
-                                        }}
-                                        className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 mx-auto">
-                                        <Plus className="w-3 h-3" /> Cadastrar "{termoBusca}" como novo indicador
-                                      </button>
-                                    </div>
-                                  ) : (
-                                    <div className="px-3 py-2 text-xs text-gray-400">Digite para buscar...</div>
+                            <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl border border-gray-100">
+                              <div className="flex-1 relative">
+                                <div className="relative">
+                                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                  <input
+                                    type="text"
+                                    value={termoBusca}
+                                    onChange={e => {
+                                      setBuscaIndicador(prev => ({ ...prev, [idx]: e.target.value }));
+                                      setShowDropIndicador(prev => ({ ...prev, [idx]: true }));
+                                      if (!e.target.value) updateIndicador(idx, 'id', '');
+                                    }}
+                                    onFocus={() => setShowDropIndicador(prev => ({ ...prev, [idx]: true }))}
+                                    placeholder="Buscar indicador ou vendedor..."
+                                    className="w-full pl-7 pr-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white"
+                                  />
+                                  {ind.id && (
+                                    <span className="absolute right-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                   )}
                                 </div>
-                              )}
+                                {showDrop && (
+                                  <div className="absolute z-40 left-0 right-0 mt-0.5 bg-white border border-gray-200 rounded-xl shadow-xl max-h-44 overflow-y-auto">
+                                    {opcoesFiltradas.length > 0 ? (
+                                      opcoesFiltradas.map(x => (
+                                        <button key={x.id} type="button"
+                                          onMouseDown={() => selectIndicadorPessoa(idx, x)}
+                                          className="w-full text-left px-3 py-2 hover:bg-blue-50 transition flex items-center gap-2 border-b border-gray-50 last:border-0">
+                                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${x.tipo === 'vendedor' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            {x.tipo === 'vendedor' ? 'Vend.' : 'Ind.'}
+                                          </span>
+                                          <span className="text-xs text-gray-800 font-medium">{x.nome}</span>
+                                          <span className="ml-auto text-[10px] text-gray-400">{x.percentual_comissao}%</span>
+                                        </button>
+                                      ))
+                                    ) : termoBusca.length >= 2 ? (
+                                      <div className="px-3 py-3 text-center">
+                                        <p className="text-xs text-gray-500 mb-2">Nenhum resultado para "<strong>{termoBusca}</strong>"</p>
+                                        <button type="button"
+                                          onMouseDown={() => {
+                                            setNovoIndicadorNome(termoBusca);
+                                            setShowNovoIndicador(true);
+                                            setShowDropIndicador(prev => ({ ...prev, [idx]: false }));
+                                          }}
+                                          className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 mx-auto">
+                                          <Plus className="w-3 h-3" /> Cadastrar "{termoBusca}" como novo indicador
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="px-3 py-2 text-xs text-gray-400">Digite para buscar...</div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
+                                  onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
+                                  className="w-14 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] text-center font-semibold" />
+                                <span className="text-xs text-gray-400 font-medium">%</span>
+                              </div>
+                              <button type="button" onClick={() => removeIndicador(idx)} className="p-1.5 hover:bg-red-100 rounded-lg text-red-400 hover:text-red-600 transition">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <input type="number" step="0.1" min="0" max="50" value={ind.percentual}
-                                onChange={e => updateIndicador(idx, 'percentual', parseFloat(e.target.value) || 0)}
-                                className="w-14 px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] text-center font-semibold" />
-                              <span className="text-xs text-gray-400 font-medium">%</span>
-                            </div>
-                            <button type="button" onClick={() => removeIndicador(idx)} className="p-1.5 hover:bg-red-100 rounded-lg text-red-400 hover:text-red-600 transition">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
                           );
                         })}
                       </div>
@@ -956,7 +951,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             </div>
 
             <div className="flex items-center gap-1.5">
-              {abas.map((a, i) => {
+              {abas.map((a) => {
                 const prog = calcProgress(form, a.id);
                 return (
                   <button key={a.id} onClick={() => setAba(a.id)}

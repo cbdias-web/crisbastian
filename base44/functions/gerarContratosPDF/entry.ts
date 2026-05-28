@@ -196,20 +196,35 @@ Deno.serve(async (req) => {
       line('CEP', data.cep, y); y -= 24;
       
       drawText('DADOS FINANCEIROS', 50, y, 11, true); y -= 18;
-      line('Valor Total', `R$ ${fmtVal(data.valor_total)}`, y); y -= 16;
-      line('Valor de Entrada', `R$ ${fmtVal(data.valor_adesao || data.valor_total)}`, y); y -= 16;
-      if ((data.num_parcelas || 0) > 0) {
-        line('Nº de Parcelas', `${data.num_parcelas}x`, y); y -= 16;
-        line('Valor da Parcela', `R$ ${fmtVal(data.valor_parcela)}`, y); y -= 16;
-      }
-      line('Forma de Pagamento', data.forma_pagamento, y); y -= 16;
-      if (data.dia_vencimento) { line('Dia de Vencimento', `Dia ${data.dia_vencimento}`, y); y -= 16; }
-      if (data.data_primeiro_pagamento) { line('1º Pagamento', new Date(data.data_primeiro_pagamento + 'T00:00:00').toLocaleDateString('pt-BR'), y); y -= 16; }
-      if (data.prazo_meses) { line('Prazo', `${data.prazo_meses} meses`, y); y -= 16; }
-      if (data.moeda && data.valor_em_moeda) {
-        line('Moeda', data.moeda, y); y -= 16;
-        line('Cotação', data.cotacao ? `R$ ${Number(data.cotacao).toFixed(4)}` : '', y); y -= 16;
-        line(`Valor em ${data.moeda}`, `${data.moeda} ${Number(data.valor_em_moeda).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, y); y -= 16;
+      if (data.tipo === 'GARANTIAS') {
+        line('Valor do Contrato', `R$ ${fmtVal(data.valor_total)}`, y); y -= 16;
+        if (data.valor_divida) { line('Valor da Dívida', `R$ ${fmtVal(data.valor_divida)}`, y); y -= 16; }
+        if (data.mensalidade) { line('Mensalidade', `R$ ${fmtVal(data.mensalidade)}`, y); y -= 16; }
+        if (data.percentual_montante) { line('Percentual sobre o Montante', `${data.percentual_montante}%`, y); y -= 16; }
+        line('Forma de Pagamento', data.forma_pagamento, y); y -= 16;
+        if (data.dia_vencimento) { line('Dia de Vencimento', `Dia ${data.dia_vencimento}`, y); y -= 16; }
+        if (data.data_primeiro_pagamento) { line('1º Pagamento', new Date(data.data_primeiro_pagamento + 'T00:00:00').toLocaleDateString('pt-BR'), y); y -= 16; }
+        if (data.administracao_debitos && data.administracao_debitos.length > 0) {
+          y -= 4;
+          drawText('DÉBITOS ADMINISTRADOS', 50, y, 11, true); y -= 16;
+          drawText(data.administracao_debitos.join(', '), 50, y, 9); y -= 16;
+        }
+      } else {
+        line('Valor Total', `R$ ${fmtVal(data.valor_total)}`, y); y -= 16;
+        line('Valor de Entrada', `R$ ${fmtVal(data.valor_adesao || data.valor_total)}`, y); y -= 16;
+        if ((data.num_parcelas || 0) > 0) {
+          line('Nº de Parcelas', `${data.num_parcelas}x`, y); y -= 16;
+          line('Valor da Parcela', `R$ ${fmtVal(data.valor_parcela)}`, y); y -= 16;
+        }
+        line('Forma de Pagamento', data.forma_pagamento, y); y -= 16;
+        if (data.dia_vencimento) { line('Dia de Vencimento', `Dia ${data.dia_vencimento}`, y); y -= 16; }
+        if (data.data_primeiro_pagamento) { line('1º Pagamento', new Date(data.data_primeiro_pagamento + 'T00:00:00').toLocaleDateString('pt-BR'), y); y -= 16; }
+        if (data.prazo_meses) { line('Prazo', `${data.prazo_meses} meses`, y); y -= 16; }
+        if (data.moeda && data.valor_em_moeda) {
+          line('Moeda', data.moeda, y); y -= 16;
+          line('Cotação', data.cotacao ? `R$ ${Number(data.cotacao).toFixed(4)}` : '', y); y -= 16;
+          line(`Valor em ${data.moeda}`, `${data.moeda} ${Number(data.valor_em_moeda).toLocaleString('en-US', { minimumFractionDigits: 2 })}`, y); y -= 16;
+        }
       }
       
       if (data.observacoes) {
