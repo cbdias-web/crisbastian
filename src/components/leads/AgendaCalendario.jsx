@@ -799,7 +799,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const { data: agendaGlobal = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos-global'],
     queryFn: () => base44.entities.AgendaContato.list('-data_agendada', 5000),
-    enabled: isAdmin,
+    enabled: !!user,
     refetchInterval: 30000,
   });
 
@@ -813,17 +813,18 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const { data: todasAgendas = [] } = useQuery({
     queryKey: ['agenda-contatos-todos'],
     queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
-    enabled: !isAdmin,
+    enabled: false, // agendaGlobal substitui
     refetchInterval: 60000,
   });
 
-  const agendaRaw = isAdmin ? agendaGlobal : agendaVendedor;
-  const loading = isAdmin ? isLoading : isLoadingVendedor;
-  const todasAgendasRef = isAdmin ? agendaGlobal : todasAgendas;
+  const useGlobal = isAdmin || !!filtroVendedorId;
+  const agendaRaw = useGlobal ? agendaGlobal : agendaVendedor;
+  const loading = useGlobal ? isLoading : isLoadingVendedor;
+  const todasAgendasRef = agendaGlobal;
 
   const agenda = useMemo(() => {
     let items = agendaRaw;
-    if (isAdmin && filtroVendedorId) items = items.filter(a => a.vendedor_id === filtroVendedorId);
+    if (filtroVendedorId && filtroVendedorId !== '__todos__') items = items.filter(a => a.vendedor_id === filtroVendedorId);
     if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
     if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
     if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
@@ -833,12 +834,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     return items;
   }, [agendaRaw, filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, filtroRapidoStatus, filtroRapidoInicio, filtroRapidoFim, isAdmin]);
 
-  const filtroVendedorObj = todosVendedores.find(v => v.id === filtroVendedorId) || null;
-  const vendedorEfetivo = isAdmin ? (filtroVendedorObj || vendedor) : vendedor;
+  const filtroVendedorObj = (filtroVendedorId && filtroVendedorId !== '__todos__') ? (todosVendedores.find(v => v.id === filtroVendedorId) || null) : null;
+  const vendedorEfetivo = filtroVendedorObj || vendedor;
 
   const invalidateAgenda = () => {
-    if (isAdmin) queryClient.invalidateQueries({ queryKey: ['agenda-contatos-global'] });
-    else queryClient.invalidateQueries({ queryKey: ['agenda-contatos', vendedorId] });
+    queryClient.invalidateQueries({ queryKey: ['agenda-contatos-global'] });
+    if (vendedorId) queryClient.invalidateQueries({ queryKey: ['agenda-contatos', vendedorId] });
   };
 
   const updateMutation = useMutation({
@@ -1017,6 +1018,29 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
         {/* RIGHT */}
         <div className="flex-1 min-w-0">
 
+          {/* Seletor de agenda — todos os gerentes podem ver agendas dos demais */}
+          {!isAdmin && todosVendedores.length > 0 && (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">Visualizando:</span>
+              <select
+                value={filtroVendedorId || ''}
+                onChange={e => setFiltroVendedorId(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
+              >
+                <option value="">Minha agenda</option>
+                <option value="__todos__">📋 Todos os gerentes</option>
+                {todosVendedores.map(v => (
+                  <option key={v.id} value={v.id}>{v.nome}</option>
+                ))}
+              </select>
+              {filtroVendedorId && (
+                <button onClick={() => setFiltroVendedorId('')}
+                  className="text-xs text-red-500 hover:underline font-semibold flex-shrink-0">
+                  ✕ Minha agenda
+                </button>
+              )}
+            </div>
+          )}
           {/* Filtro rápido */}
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-3 mb-4 flex flex-wrap items-center gap-3">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtro rápido:</span>
@@ -1061,9 +1085,11 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                     : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                 </h2>
                 <p className="text-xs text-gray-400">
-                  {isAdmin
-                    ? filtroVendedorObj ? `Agenda de ${filtroVendedorObj.nome}` : 'Agenda Global — todos os gerentes'
-                    : `Agenda de Contatos · ${vendedor?.nome || 'Vendedor'}`}
+                  {filtroVendedorObj
+                    ? `Agenda de ${filtroVendedorObj.nome}`
+                    : (isAdmin || filtroVendedorId === '__todos__')
+                      ? 'Agenda Global — todos os gerentes'
+                      : `Agenda de Contatos · ${vendedor?.nome || 'Minha agenda'}`}
                 </p>
               </div>
               <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
@@ -1157,7 +1183,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 </div>
               ) : (
                 <>
-                  {isAdmin && !filtroVendedorId ? (
+                  {((isAdmin || filtroVendedorId === '__todos__') && !filtroVendedorObj) ? (
                     (() => {
                       const porGerente = selItems.reduce((acc, it) => {
                         const key = it.vendedor_id || '_sem_gerente';

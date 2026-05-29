@@ -131,6 +131,32 @@ export default function AgendaMeetModal({
         resultado: form.observacao || '',
       };
 
+      // Verificar sobreposição de horário antes de criar
+      if (form.horario && form.data) {
+        try {
+          const agendasDia = await base44.entities.AgendaContato.filter({ vendedor_id: vidFinal, data_agendada: form.data });
+          const conflito = agendasDia.find(a =>
+            a.horario === form.horario &&
+            a.lead_id !== (cId || '') &&
+            a.status === 'pendente'
+          );
+          if (conflito) {
+            toast.warning(
+              `⚠️ Sobrepøsição: já há um compromisso às ${form.horario} com "${conflito.lead_nome}". O agendamento será criado mesmo assim.`,
+              { duration: 6000 }
+            );
+          }
+          // Verificar para gerentes adicionais
+          for (const g of gerentesAdicionais) {
+            const agDia = await base44.entities.AgendaContato.filter({ vendedor_id: g.id, data_agendada: form.data });
+            const conflG = agDia.find(a => a.horario === form.horario && a.lead_id !== (cId || '') && a.status === 'pendente');
+            if (conflG) {
+              toast.warning(`⚠️ ${g.nome} já tem compromisso às ${form.horario} com "${conflG.lead_nome}".`, { duration: 5000 });
+            }
+          }
+        } catch {}
+      }
+
       // 1. Cria agenda para o gerente principal
       const agenda = await base44.entities.AgendaContato.create({
         ...agendaBase,
