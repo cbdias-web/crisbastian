@@ -48,7 +48,7 @@ const PRODUTOS = [
   },
   {
     id: 'seguro-garantia',
-    label: 'Seguro Garantia',
+    label: 'Garantia',
     icon: Shield,
     cor: '#be123c',
     gradient: 'from-rose-700 to-rose-500',

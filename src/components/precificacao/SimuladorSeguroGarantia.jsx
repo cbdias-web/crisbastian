@@ -98,7 +98,7 @@ export default function SimuladorSeguroGarantia() {
 
   function salvarAdmin() {
     const nova = { ...cfg, sg: { ...sg, duracao, parcelasPagas, pisoMensalidadeExito, pisoAceitacaoPerc } };
-    saveConfig(nova); setCfg(nova); toast.success('Parâmetros Seguro Garantia salvos!');
+    saveConfig(nova); setCfg(nova); toast.success('Parâmetros Garantia salvos!');
   }
 
   function resetarAdmin() {
@@ -113,13 +113,13 @@ export default function SimuladorSeguroGarantia() {
     const entradaStr = entradaPercP >= 100
       ? `Pagamento à vista: ${fmtBRL(investimentoR)}`
       : `Entrada (${entradaPercP}%): ${fmtBRL(entradaR)}\nSaldo em ${nParcelasP}x de ${fmtBRL(parcelaR)}`;
-    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Seguro Garantia — Modelo Principal\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\nDuração: ${duracao} meses\n\n📌 Condições\nInvestimento (${fmtNum(investPerc, 1)}%): ${fmtBRL(investimentoR)}\n${entradaStr}\nTx. Manutenção: ${fmtBRL(txManutencao)}/mês\nTotal c/ Tx. Manutenção: ${fmtBRL(totalComManu)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
+    return `📋 Proposta Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Garantia — Modelo Principal\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\nDuração: ${duracao} meses\n\n📌 Condições\nInvestimento (${fmtNum(investPerc, 1)}%): ${fmtBRL(investimentoR)}\n${entradaStr}\nTx. Manutenção: ${fmtBRL(txManutencao)}/mês\nTotal c/ Tx. Manutenção: ${fmtBRL(totalComManu)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
   }
 
   function gerarTextoE() {
     if (!resultado) return '';
     const { mensalidadeExito: mens, adicPerc, adicR, totalExito } = resultado;
-    return `📋 Proposta Seguro Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Seguro Garantia — Modelo No Êxito\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\n\n✅ Condições No Êxito\nMensalidade: ${fmtBRL(mens)}/mês\nParcelas simuladas: ${parcelasPagas}x\nAdicional na Aceitação (${fmtNum(adicPerc, 1)}%): ${fmtBRL(adicR)}\nTotal máximo estimado: ${fmtBRL(totalExito)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
+    return `📋 Proposta Garantia — ${cliente || '[Cliente]'}\n──────────────────────────────\nProduto: Garantia — Modelo No Êxito\nValor da Dívida: ${fmtBRL(divida)}\nValor da Garantia: ${fmtBRL(garantia)}\n\n✅ Condições No Êxito\nMensalidade: ${fmtBRL(mens)}/mês\nParcelas simuladas: ${parcelasPagas}x\nAdicional na Aceitação (${fmtNum(adicPerc, 1)}%): ${fmtBRL(adicR)}\nTotal máximo estimado: ${fmtBRL(totalExito)}\n──────────────────────────────\nProposta gerada via Hub de Precificação — Villela Exchange`;
   }
 
   async function copiarP() {
@@ -251,7 +251,7 @@ export default function SimuladorSeguroGarantia() {
 
       {showProposta && resultado && (
         <CriarPropostaModal
-          produto="Seguro Garantia"
+          produto="Garantia"
           cliente={cliente}
           onClose={() => setShowProposta(false)}
           propostas={[
