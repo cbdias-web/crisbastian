@@ -277,6 +277,100 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
           x += colWidths[i];
         });
 
+        // Página de Gráfico — Desempenho por Vendedor
+        if (rows.length > 0) {
+          doc.addPage();
+          let chartY = 0;
+          const nameCol = 50;
+          const pctCol = 16;
+          const barColX = margin + nameCol + pctCol + 2;
+          const barMaxW = W - margin * 2 - nameCol - pctCol - 36;
+          const volColX = barColX + barMaxW + 3;
+          const rowH = 13;
+          const maxVol = Math.max(...rows.map(r => r.volume), 1);
+
+          doc.setFillColor(15, 30, 53);
+          doc.rect(0, 0, W, 20, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(12);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DESEMPENHO POR VENDEDOR', margin, 13);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(180, 200, 230);
+          doc.text(`Periodo: ${fmtDate(dataInicio)} a ${fmtDate(dataFim)}`, W - margin, 13, { align: 'right' });
+
+          chartY = 26;
+
+          // Header da tabela
+          doc.setFillColor(240, 244, 250);
+          doc.rect(margin, chartY, W - margin * 2, 7, 'F');
+          doc.setTextColor(100, 116, 139);
+          doc.setFontSize(6.5);
+          doc.setFont('helvetica', 'bold');
+          doc.text('VENDEDOR', margin + 2, chartY + 5);
+          doc.text('% META', margin + nameCol + pctCol - 2, chartY + 5, { align: 'right' });
+          doc.text('VOLUME (ENTRADA)', barColX, chartY + 5);
+          doc.text('VALOR', W - margin - 2, chartY + 5, { align: 'right' });
+          chartY += 7;
+
+          rows.forEach((r, i) => {
+            if (chartY + rowH > H - 14) { doc.addPage(); chartY = 14; }
+
+            const bg = i % 2 === 0 ? [255, 255, 255] : [250, 251, 253];
+            doc.setFillColor(...bg);
+            doc.rect(margin, chartY, W - margin * 2, rowH, 'F');
+
+            // Nome
+            const nameTrunc = (r.nome || '').length > 20 ? r.nome.substring(0, 20) + '…' : (r.nome || '');
+            doc.setTextColor(15, 30, 53);
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', i === 0 ? 'bold' : 'normal');
+            doc.text(nameTrunc, margin + 2, chartY + rowH / 2 + 2.5);
+
+            // % Meta
+            if (r.pctMeta != null) {
+              const mc = r.pctMeta >= 100 ? [161, 116, 0] : r.pctMeta >= 70 ? [37, 99, 235] : [220, 38, 38];
+              doc.setTextColor(...mc);
+              doc.setFont('helvetica', 'bold');
+              doc.text(`${r.pctMeta > 100 ? '🏆' : ''}${r.pctMeta.toFixed(0)}%`, margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
+            } else {
+              doc.setTextColor(190, 190, 190);
+              doc.setFont('helvetica', 'normal');
+              doc.text('—', margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
+            }
+
+            // Barra de volume
+            const barW = (r.volume / maxVol) * barMaxW;
+            const barYpos = chartY + rowH / 2 - 3;
+            doc.setFillColor(224, 231, 243);
+            doc.roundedRect(barColX, barYpos, barMaxW, 6, 2, 2, 'F');
+            if (r.pctMeta >= 100) doc.setFillColor(251, 191, 36);
+            else if (r.pctMeta != null && r.pctMeta >= 70) doc.setFillColor(59, 130, 246);
+            else doc.setFillColor(26, 49, 80);
+            if (barW > 0.5) doc.roundedRect(barColX, barYpos, barW, 6, 2, 2, 'F');
+
+            // Volume label
+            doc.setTextColor(30, 41, 59);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.text(fmtPDF(r.volume), W - margin - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
+
+            chartY += rowH;
+          });
+
+          // Linha de total
+          if (chartY + 10 <= H - 14) {
+            doc.setFillColor(15, 30, 53);
+            doc.rect(margin, chartY + 2, W - margin * 2, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7.5);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`TOTAL (${rows.length} vendedores)`, margin + 2, chartY + 8.5);
+            doc.text(fmtPDF(totais.volume), W - margin - 2, chartY + 8.5, { align: 'right' });
+          }
+        }
+
         // Rodapé
         const totalPages = doc.internal.getNumberOfPages();
         for (let p = 1; p <= totalPages; p++) {

@@ -114,6 +114,40 @@ Deno.serve(async (req) => {
         console.log('Vendas encontradas:', totalVendas);
         console.log('Comissoes encontradas:', comissoes.length);
 
+        // Buscar metas do período
+        const todasMetasData = await base44.asServiceRole.entities.Meta.list();
+        const mesPeriodo = dataInicio ? dataInicio.substring(0, 7) : null;
+        const metaVendedor = mesPeriodo && tipo === 'vendedor'
+            ? todasMetasData.find(m => m.mes === mesPeriodo && m.tipo === 'individual' && m.vendedor_id === vendedor_id)
+            : null;
+
+        // Tendência dos últimos 6 meses (usa todasVendas já carregadas)
+        const PT_MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const trendEndDate = dataFim ? new Date(dataFim + 'T00:00:00') : new Date();
+        const trendMonths = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date(trendEndDate);
+            d.setDate(1);
+            d.setMonth(d.getMonth() - (5 - i));
+            const mes = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const ini = `${mes}-01`;
+            const fim = `${mes}-${String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
+            const vs = todasVendas.filter(v =>
+                (v.vendedor_id ? v.vendedor_id === vendedor_id : v.assessor_comercial === (perfil.nome || '')) &&
+                v.data && v.data >= ini && v.data <= fim
+            );
+            return { label: PT_MONTHS[d.getMonth()], volume: vs.reduce((s, v2) => s + (parseFloat(v2.valor) || 0), 0) };
+        });
+
+        // Breakdown por produto
+        const byProduto = {};
+        vendas.forEach(v => {
+            const prod = cleanText((v.produto || 'Outros').split(',')[0].trim().substring(0, 25));
+            if (!byProduto[prod]) byProduto[prod] = { qtd: 0, valor: 0 };
+            byProduto[prod].qtd++;
+            byProduto[prod].valor += parseFloat(v.valor) || 0;
+        });
+        const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
+
         // Gerar PDF
         const doc = new jsPDF();
         
@@ -254,6 +288,117 @@ Deno.serve(async (req) => {
         doc.text('a receber', cardX, y + 20);
 
         y += 40;
+
+        // ── META DO PERÍODO ───────────────────────────────────────────────────────
+        if (metaVendedor) {
+            if (y > 240) { doc.addPage(); y = 20; }
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('META DO PERIODO', 14, y);
+            y += 8;
+            const pctMeta = metaVendedor.valor_meta > 0 ? (valorTotalVendido / metaVendedor.valor_meta) * 100 : 0;
+            doc.setFillColor(245, 247, 250);
+            doc.rect(14, y, pageWidth - 28, 22, 'F');
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Meta:', 18, y + 6);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text(formatCurrency(metaVendedor.valor_meta), 36, y + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Realizado:', 80, y + 6);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text(formatCurrency(valorTotalVendido), 104, y + 6);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 100, 100);
+            doc.text('Atingimento:', 148, y + 6);
+            if (pctMeta >= 100) doc.setTextColor(180, 130, 0);
+            else if (pctMeta >= 70) doc.setTextColor(37, 99, 235);
+            else doc.setTextColor(220, 38, 38);
+            doc.setFont('helvetica', 'bold');
+            doc.text(pctMeta.toFixed(1) + '%', 180, y + 6);
+            // Barra de progresso
+            doc.setFillColor(220, 220, 220);
+            doc.roundedRect(18, y + 13, pageWidth - 36, 4, 2, 2, 'F');
+            const clampedPct = Math.min(pctMeta, 100);
+            if (pctMeta >= 100) doc.setFillColor(251, 191, 36);
+            else if (pctMeta >= 70) doc.setFillColor(59, 130, 246);
+            else doc.setFillColor(239, 68, 68);
+            if (clampedPct > 0) doc.roundedRect(18, y + 13, (clampedPct / 100) * (pageWidth - 36), 4, 2, 2, 'F');
+            y += 30;
+        }
+
+        // ── TENDÊNCIA DE VENDAS (6 MESES) ─────────────────────────────────────────
+        if (y > 240) { doc.addPage(); y = 20; }
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('TENDENCIA DE VENDAS - ULTIMOS 6 MESES', 14, y);
+        y += 8;
+        const trendMaxVol = Math.max(...trendMonths.map(m => m.volume), 1);
+        const trendChartH = 32;
+        const trendBarW = (pageWidth - 28 - 14) / 6 - 3;
+        trendMonths.forEach((m, i) => {
+            const bx = 14 + 7 + i * (trendBarW + 3);
+            const bh = m.volume > 0 ? Math.max((m.volume / trendMaxVol) * (trendChartH - 10), 2) : 2;
+            const bTopY = y + (trendChartH - 10) - bh;
+            doc.setFillColor(26, 49, 80);
+            doc.roundedRect(bx, bTopY, trendBarW, bh, 1, 1, 'F');
+            doc.setFontSize(6);
+            doc.setTextColor(100, 100, 100);
+            doc.text(m.label, bx + trendBarW / 2, y + trendChartH - 1, { align: 'center' });
+            if (m.volume > 0) {
+                const vLabel = m.volume >= 100000 ? (m.volume / 1000).toFixed(0) + 'k' : (m.volume / 1000).toFixed(1) + 'k';
+                doc.setFontSize(5);
+                doc.setTextColor(50, 50, 50);
+                doc.text(vLabel, bx + trendBarW / 2, bTopY - 1, { align: 'center' });
+            }
+        });
+        y += trendChartH + 10;
+
+        // ── VENDAS POR PRODUTO ────────────────────────────────────────────────────
+        if (produtosList.length > 0) {
+            if (y > 240) { doc.addPage(); y = 20; }
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(0, 0, 0);
+            doc.text('VENDAS POR PRODUTO', 14, y);
+            y += 8;
+            doc.setFillColor(26, 49, 80);
+            doc.rect(14, y, pageWidth - 28, 7, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PRODUTO', 18, y + 5);
+            doc.text('QTD', 122, y + 5, { align: 'right' });
+            doc.text('VOLUME', 155, y + 5, { align: 'right' });
+            doc.text('PART.', pageWidth - 16, y + 5, { align: 'right' });
+            y += 7;
+            produtosList.forEach(([prod, info], idx) => {
+                if (y > 275) { doc.addPage(); y = 20; }
+                const bgRow = idx % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+                doc.setFillColor(...bgRow);
+                doc.rect(14, y, pageWidth - 28, 7, 'F');
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(7.5);
+                doc.setFont('helvetica', 'normal');
+                doc.text(prod, 18, y + 5);
+                doc.text(String(info.qtd), 122, y + 5, { align: 'right' });
+                doc.setTextColor(5, 150, 105);
+                doc.text(formatCurrency(info.valor), 155, y + 5, { align: 'right' });
+                doc.setTextColor(100, 116, 139);
+                const part = valorTotalVendido > 0 ? ((info.valor / valorTotalVendido) * 100).toFixed(1) + '%' : '0%';
+                doc.text(part, pageWidth - 16, y + 5, { align: 'right' });
+                doc.setDrawColor(230, 232, 236);
+                doc.line(14, y + 7, pageWidth - 14, y + 7);
+                y += 7;
+            });
+            y += 10;
+        }
 
         // Detalhamento por Venda
         doc.setFontSize(12);

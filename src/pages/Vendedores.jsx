@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import VendedorPerformancePopup from "@/components/vendedores/VendedorPerformancePopup";
 import { base44 } from "@/api/base44Client";
 import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +30,9 @@ export default function Vendedores() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
+  const [hoveredVendedor, setHoveredVendedor] = useState(null);
+  const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
+  const hoverTimeoutRef = useRef(null);
   const [modalBonus, setModalBonus] = useState(null);
   const [valorBonus, setValorBonus] = useState("");
   const [sendingEmail, setSendingEmail] = useState(null);
@@ -413,7 +417,20 @@ export default function Vendedores() {
                     const cor = progresso > 100 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" : progresso >= 100 ? "bg-emerald-500" : progresso >= 70 ? "bg-blue-500" : progresso >= 40 ? "bg-yellow-400" : "bg-red-400";
 
                     return (
-                      <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition">
+                      <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition cursor-default"
+                        onMouseEnter={(e) => {
+                          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const pw = 320;
+                          const x = rect.right + 16 + pw > window.innerWidth ? rect.left - pw - 8 : rect.right + 8;
+                          const y = Math.max(8, Math.min(rect.top, window.innerHeight - 500));
+                          setPopupPos({ x, y });
+                          setHoveredVendedor(v);
+                        }}
+                        onMouseLeave={() => {
+                          hoverTimeoutRef.current = setTimeout(() => setHoveredVendedor(null), 200);
+                        }}
+                      >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -598,6 +615,19 @@ export default function Vendedores() {
               </>
             )}
           </>
+        )}
+
+        {/* Performance Popup */}
+        {hoveredVendedor && (
+          <VendedorPerformancePopup
+            vendedor={hoveredVendedor}
+            vendas={vendas}
+            metas={metas}
+            mesFiltro={mesFiltro}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            style={{ left: popupPos.x, top: popupPos.y }}
+          />
         )}
 
         {/* Modal create/edit */}
