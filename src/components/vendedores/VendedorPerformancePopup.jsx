@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
+import { FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const fmtFull = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const fmtK = (v) => v >= 1000000 ? `R$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : fmtFull(v);
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesFiltro, dateFrom, dateTo, style, className }) {
+export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesFiltro, dateFrom, dateTo, style, className, onGerarRelatorio, geratingPDF }) {
   const data = useMemo(() => {
     // Últimos 6 meses
     const months = Array.from({ length: 6 }, (_, i) => {
@@ -63,7 +64,7 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
     : '#ef4444';
 
   return (
-    <div style={style} className={className || "fixed z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 pointer-events-none overflow-hidden"}>
+    <div style={style} className={className || "fixed z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 w-[420px] pointer-events-none overflow-hidden"}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -176,6 +177,23 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
           </div>
         )}
       </div>
+
+      {/* Botão gerar relatório */}
+      {onGerarRelatorio && (
+        <div className="px-4 pb-4">
+          <button
+            onClick={() => onGerarRelatorio(vendedor)}
+            disabled={geratingPDF === vendedor.id}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition disabled:opacity-50"
+          >
+            {geratingPDF === vendedor.id ? (
+              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Gerando PDF...</>
+            ) : (
+              <><FileText className="w-4 h-4" /> Gerar Relatório PDF</>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

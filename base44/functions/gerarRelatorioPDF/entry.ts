@@ -400,7 +400,10 @@ Deno.serve(async (req) => {
             y += 10;
         }
 
-        // Detalhamento por Venda
+        // Detalhamento por Venda — sempre inicia em nova pagina
+        doc.addPage();
+        y = 20;
+
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
