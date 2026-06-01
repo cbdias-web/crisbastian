@@ -487,7 +487,7 @@ export default function Vendedores() {
                               </div>
                             )}
                           </div>
-                          <div className="flex gap-1">
+                          <div className="flex gap-1" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => gerarRelatorio(v)}
                               disabled={geratingPDF === v.id}
