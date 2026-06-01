@@ -9,6 +9,7 @@ import {
   Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock } from
 "lucide-react";
 import ParcelasVincendasModal from "@/components/parcelas/ParcelasVincendasModal";
+import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
@@ -86,6 +87,7 @@ export default function Dashboard() {
   const [impersonadoUser, setImpersonadoUser] = useState(null);
   const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
   const [agendaPendentes, setAgendaPendentes] = useState(0);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const navigate = useNavigate();
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
@@ -354,14 +356,26 @@ export default function Dashboard() {
     setSavingProfile(false);
   };
 
+  // Aplica avatar no User e sincroniza com o Vendedor vinculado (por e-mail)
+  const applyAvatar = async (url) => {
+    await base44.auth.updateMe({ avatar_url: url });
+    const updatedUser = await base44.auth.me();
+    setUser(updatedUser);
+    // Sincronizar com o registro Vendedor vinculado pelo e-mail
+    if (updatedUser?.email) {
+      const vendedoresVinculados = await base44.entities.Vendedor.filter({ email: updatedUser.email });
+      if (vendedoresVinculados.length > 0) {
+        await base44.entities.Vendedor.update(vendedoresVinculados[0].id, { avatar_url: url });
+        setVendedores(prev => prev.map(v => v.id === vendedoresVinculados[0].id ? { ...v, avatar_url: url } : v));
+      }
+    }
+    toast.success('Avatar atualizado!');
+  };
+
   const uploadAvatar = async (file) => {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.auth.updateMe({ avatar_url: file_url });
-      const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
-      setProfileForm((prev) => ({ ...prev }));
-      toast.success('Avatar atualizado!');
+      await applyAvatar(file_url);
     } catch (error) {
       toast.error('Erro ao atualizar avatar');
     }
@@ -709,6 +723,14 @@ export default function Dashboard() {
         <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />
         }
 
+        {/* Avatar Picker */}
+        {showAvatarPicker && (
+          <AvatarPickerModal
+            onSelect={(url) => { applyAvatar(url); setShowAvatarPicker(false); }}
+            onClose={() => setShowAvatarPicker(false)}
+          />
+        )}
+
         {/* Modal de Perfil */}
         {showProfileModal &&
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -741,7 +763,18 @@ export default function Dashboard() {
                     
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400">Clique no ícone para alterar o avatar</p>
+                  <p className="text-xs text-gray-400">Clique no ícone para enviar sua foto</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarPicker(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs border border-blue-200 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                    🎭 Escolher Personagem
+                  </button>
+                  {user?.avatar_url && (
+                    <button type="button" onClick={() => applyAvatar('')} className="text-xs text-red-400 hover:text-red-600">
+                      Remover foto
+                    </button>
+                  )}
                 </div>
 
                 {/* Nome completo (read-only) */}
