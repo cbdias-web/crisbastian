@@ -148,37 +148,26 @@ Deno.serve(async (req) => {
         });
         const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
 
-        // Buscar avatar do vendedor (se existir)
+        // Buscar avatar do vendedor e converter para JPEG via sharp (suporta WEBP, PNG, JPEG)
         let avatarDataUrl = null;
         if (perfil.avatar_url) {
             try {
+                const sharp = (await import('npm:sharp@0.33.5')).default;
                 const imgResp = await fetch(perfil.avatar_url);
                 if (imgResp.ok) {
                     const imgBuffer = await imgResp.arrayBuffer();
-                    const bytes = new Uint8Array(imgBuffer);
-
-                    // Detectar formato pelos magic bytes
-                    let mimeType = 'image/jpeg';
-                    if (bytes[0] === 0x89 && bytes[1] === 0x50) mimeType = 'image/png';   // PNG
-                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg'; // JPEG
-                    else if (bytes[0] === 0x52 && bytes[1] === 0x49) mimeType = 'image/webp'; // RIFF (WEBP)
-                    else {
-                        const ct = imgResp.headers.get('content-type') || '';
-                        if (ct.includes('png')) mimeType = 'image/png';
-                        else if (ct.includes('webp')) mimeType = 'image/webp';
+                    // Converter qualquer formato para JPEG (garante compatibilidade com jsPDF)
+                    const jpegBuffer = await sharp(Buffer.from(imgBuffer))
+                        .resize(120, 120, { fit: 'cover' })
+                        .jpeg({ quality: 85 })
+                        .toBuffer();
+                    const CHUNK = 8192;
+                    let binary = '';
+                    const bytes = new Uint8Array(jpegBuffer);
+                    for (let i = 0; i < bytes.length; i += CHUNK) {
+                        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
                     }
-
-                    // jsPDF não suporta WEBP — pular sem imagem
-                    if (mimeType !== 'image/webp') {
-                        // Conversão segura para base64 em chunks
-                        const CHUNK = 8192;
-                        let binary = '';
-                        for (let i = 0; i < bytes.length; i += CHUNK) {
-                            binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-                        }
-                        const fmt = mimeType === 'image/png' ? 'PNG' : 'JPEG';
-                        avatarDataUrl = { data: 'data:' + mimeType + ';base64,' + btoa(binary), format: fmt };
-                    }
+                    avatarDataUrl = { data: 'data:image/jpeg;base64,' + btoa(binary), format: 'JPEG' };
                 }
             } catch (e) { /* sem avatar */ }
         }
