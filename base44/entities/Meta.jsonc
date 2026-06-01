@@ -1,0 +1,46 @@
+{
+  "name": "Meta",
+  "type": "object",
+  "properties": {
+    "mes": {
+      "type": "string",
+      "description": "M\u00eas da meta (formato: YYYY-MM)"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor (vazio para meta da equipe ou time)"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "time": {
+      "type": "string",
+      "description": "Nome do time (para metas de time)"
+    },
+    "valor_meta": {
+      "type": "number",
+      "description": "Valor da meta"
+    },
+    "valor_bonus": {
+      "type": "number",
+      "description": "Valor do b\u00f4nus por atingir 100% da meta",
+      "default": 0
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "individual",
+        "equipe",
+        "time"
+      ],
+      "default": "individual",
+      "description": "Tipo da meta"
+    }
+  },
+  "required": [
+    "mes",
+    "valor_meta",
+    "tipo"
+  ]
+}

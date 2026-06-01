@@ -1,0 +1,60 @@
+{
+  "name": "Comissao",
+  "type": "object",
+  "properties": {
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor"
+    },
+    "valor_venda": {
+      "type": "number",
+      "description": "Valor da venda"
+    },
+    "percentual": {
+      "type": "number",
+      "description": "Percentual de comiss\u00e3o aplicado"
+    },
+    "valor_comissao": {
+      "type": "number",
+      "description": "Valor da comiss\u00e3o calculado"
+    },
+    "data_venda": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    },
+    "pago": {
+      "type": "boolean",
+      "default": false,
+      "description": "Comiss\u00e3o j\u00e1 paga"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "comissao",
+        "bonus"
+      ],
+      "default": "comissao",
+      "description": "Tipo de comiss\u00e3o (comiss\u00e3o normal ou b\u00f4nus por meta)"
+    },
+    "mes_referencia": {
+      "type": "string",
+      "description": "M\u00eas de refer\u00eancia (formato: YYYY-MM) para b\u00f4nus"
+    }
+  },
+  "required": [
+    "venda_id",
+    "vendedor_id",
+    "valor_venda",
+    "percentual",
+    "valor_comissao"
+  ]
+}

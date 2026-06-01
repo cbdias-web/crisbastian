@@ -25,11 +25,5 @@
   },
   "required": [
     "nome"
-  ],
-  "rls": {
-    "create": "any_user",
-    "read": "public",
-    "update": "admin_only",
-    "delete": "admin_only"
-  }
+  ]
 }

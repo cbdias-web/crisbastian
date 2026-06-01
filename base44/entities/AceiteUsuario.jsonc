@@ -1,0 +1,42 @@
+{
+  "name": "AceiteUsuario",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-mail do usu\u00e1rio"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio"
+    },
+    "termo_aceito": {
+      "type": "boolean",
+      "default": false,
+      "description": "Aceitou o termo de uso da plataforma"
+    },
+    "termo_aceito_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do aceite do termo"
+    },
+    "leitura_gestao_vendas": {
+      "type": "boolean",
+      "default": false,
+      "description": "Confirmou leitura da se\u00e7\u00e3o Gest\u00e3o de Vendas"
+    },
+    "leitura_gestao_vendas_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da confirma\u00e7\u00e3o de leitura"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_email"
+  ]
+}

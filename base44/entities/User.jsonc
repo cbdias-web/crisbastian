@@ -41,5 +41,11 @@
       "type": "string",
       "description": "URL do avatar do usu\u00e1rio"
     }
-  }
+  },
+  "required": [
+    "nome_tratamento",
+    "menus_acesso",
+    "ultimo_acesso",
+    "avatar_url"
+  ]
 }

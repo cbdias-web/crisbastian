@@ -1,0 +1,22 @@
+{
+  "name": "Produto",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do produto"
+    },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria do produto"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Produto ativo"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

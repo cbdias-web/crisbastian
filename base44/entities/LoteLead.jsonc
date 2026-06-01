@@ -1,0 +1,36 @@
+{
+  "name": "LoteLead",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome identificador do lote"
+    },
+    "total": {
+      "type": "number",
+      "description": "Total de leads no lote"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "distribuido"
+      ],
+      "default": "pendente",
+      "description": "Status do lote"
+    },
+    "distribuido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da distribui\u00e7\u00e3o"
+    },
+    "distribuido_por": {
+      "type": "string",
+      "description": "Email do admin que distribuiu"
+    }
+  },
+  "required": [
+    "nome",
+    "total"
+  ]
+}

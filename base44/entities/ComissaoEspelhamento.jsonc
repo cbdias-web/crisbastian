@@ -1,0 +1,47 @@
+{
+  "name": "ComissaoEspelhamento",
+  "type": "object",
+  "properties": {
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor espelhamento"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor espelhamento"
+    },
+    "valor_venda": {
+      "type": "number",
+      "description": "Valor da venda"
+    },
+    "percentual": {
+      "type": "number",
+      "description": "Percentual de comiss\u00e3o aplicado"
+    },
+    "valor_comissao": {
+      "type": "number",
+      "description": "Valor da comiss\u00e3o calculado"
+    },
+    "data_venda": {
+      "type": "string",
+      "format": "date",
+      "description": "Data da venda"
+    },
+    "pago": {
+      "type": "boolean",
+      "default": false,
+      "description": "Comiss\u00e3o j\u00e1 paga"
+    }
+  },
+  "required": [
+    "venda_id",
+    "vendedor_id",
+    "valor_venda",
+    "percentual",
+    "valor_comissao"
+  ]
+}

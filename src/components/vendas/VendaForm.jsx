@@ -730,32 +730,29 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 {indicadores.map((ind, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <div className="w-32">
-                      <Select value={ind.tipo} onValueChange={tipo => updateIndicadorTipo(idx, tipo)}>
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="Tipo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="indicador">Indicador</SelectItem>
-                          <SelectItem value="vendedor">Vendedor</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <select
+                        value={ind.tipo}
+                        onChange={e => updateIndicadorTipo(idx, e.target.value)}
+                        className="w-full h-9 px-2 border border-input rounded-md text-sm bg-background focus:outline-none"
+                      >
+                        <option value="indicador">Indicador</option>
+                        <option value="vendedor">Vendedor</option>
+                      </select>
                     </div>
                     <div className="flex-1">
-                      <Select value={ind.id} onValueChange={selectedId => updateIndicadorEsp(idx, selectedId)}>
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder="Selecionar...">
-                            {ind.nome || 'Selecionar...'}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
-                            <SelectItem key={item.id} value={item.id}>{item.nome}</SelectItem>
-                          ))}
-                          <SelectItem value={ind.tipo === 'indicador' ? '__novo_indicador__' : '__novo_vendedor__'} className="text-blue-600 font-medium">
-                            + Cadastrar novo {ind.tipo}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <select
+                        value={ind.id}
+                        onChange={e => updateIndicadorEsp(idx, e.target.value)}
+                        className="w-full h-9 px-2 border border-input rounded-md text-sm bg-background focus:outline-none"
+                      >
+                        <option value="">Selecionar {ind.tipo === 'indicador' ? 'indicador' : 'vendedor'}...</option>
+                        {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
+                          <option key={item.id} value={item.id}>{item.nome}</option>
+                        ))}
+                        <option value={ind.tipo === 'indicador' ? '__novo_indicador__' : '__novo_vendedor__'}>
+                          + Cadastrar novo {ind.tipo}
+                        </option>
+                      </select>
                     </div>
                     <div className="w-24">
                       <Input type="number" step="0.1" min="0" max="50" value={ind.percentual}
