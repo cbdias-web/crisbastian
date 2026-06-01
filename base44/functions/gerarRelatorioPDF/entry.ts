@@ -148,26 +148,31 @@ Deno.serve(async (req) => {
         });
         const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
 
-        // Buscar avatar do vendedor e converter para JPEG via sharp (suporta WEBP, PNG, JPEG)
+        // Buscar avatar do vendedor
         let avatarDataUrl = null;
         if (perfil.avatar_url) {
             try {
-                const sharp = (await import('npm:sharp@0.33.5')).default;
                 const imgResp = await fetch(perfil.avatar_url);
                 if (imgResp.ok) {
                     const imgBuffer = await imgResp.arrayBuffer();
-                    // Converter qualquer formato para JPEG (garante compatibilidade com jsPDF)
-                    const jpegBuffer = await sharp(Buffer.from(imgBuffer))
-                        .resize(120, 120, { fit: 'cover' })
-                        .jpeg({ quality: 85 })
-                        .toBuffer();
-                    const CHUNK = 8192;
-                    let binary = '';
-                    const bytes = new Uint8Array(jpegBuffer);
-                    for (let i = 0; i < bytes.length; i += CHUNK) {
-                        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+                    const bytes = new Uint8Array(imgBuffer);
+
+                    // Detectar WEBP: magic bytes RIFF....WEBP (12 bytes)
+                    const isWebp = bytes[0]===0x52 && bytes[1]===0x49 && bytes[2]===0x46 && bytes[3]===0x46
+                                && bytes[8]===0x57 && bytes[9]===0x45 && bytes[10]===0x42 && bytes[11]===0x50;
+                    const isPng = bytes[0]===0x89 && bytes[1]===0x50 && bytes[2]===0x4E && bytes[3]===0x47;
+                    const isJpeg = bytes[0]===0xFF && bytes[1]===0xD8;
+
+                    if (!isWebp && (isPng || isJpeg)) {
+                        const fmt = isPng ? 'PNG' : 'JPEG';
+                        const mimeType = isPng ? 'image/png' : 'image/jpeg';
+                        const CHUNK = 8192;
+                        let binary = '';
+                        for (let i = 0; i < bytes.length; i += CHUNK) {
+                            binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+                        }
+                        avatarDataUrl = { data: 'data:' + mimeType + ';base64,' + btoa(binary), format: fmt };
                     }
-                    avatarDataUrl = { data: 'data:image/jpeg;base64,' + btoa(binary), format: 'JPEG' };
                 }
             } catch (e) { /* sem avatar */ }
         }
