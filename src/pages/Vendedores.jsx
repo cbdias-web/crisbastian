@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import VendedorPerformancePopup from "@/components/vendedores/VendedorPerformancePopup";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3 } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
@@ -30,6 +30,14 @@ export default function Vendedores() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (file) => {
+    setUploadingAvatar(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(p => ({ ...p, avatar_url: file_url }));
+    setUploadingAvatar(false);
+  };
 
   const [pinnedVendedor, setPinnedVendedor] = useState(null);
   const [modalBonus, setModalBonus] = useState(null);
@@ -421,9 +429,13 @@ export default function Vendedores() {
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                              {v.nome?.charAt(0).toUpperCase()}
-                            </div>
+                            {v.avatar_url ? (
+                              <img src={v.avatar_url} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {v.nome?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
                               <p className="text-xs text-gray-400">{v.email || "—"}</p>
@@ -547,9 +559,13 @@ export default function Vendedores() {
                       <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                              {v.nome?.charAt(0).toUpperCase()}
-                            </div>
+                            {v.avatar_url ? (
+                              <img src={v.avatar_url} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                {v.nome?.charAt(0).toUpperCase()}
+                              </div>
+                            )}
                             <div>
                               <p className="font-semibold text-gray-900 text-sm">{v.nome}</p>
                               <p className="text-xs text-gray-400">{v.email || "—"}</p>
@@ -644,6 +660,30 @@ export default function Vendedores() {
                 </button>
               </div>
               <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Avatar */}
+                <div className="sm:col-span-2 flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+                    {form.avatar_url ? (
+                      <img src={form.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-gray-400 text-xl font-bold">{(form.nome || '?').charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-gray-500 mb-1 block">Foto / Avatar</label>
+                    <label className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition w-fit">
+                      {uploadingAvatar ? (
+                        <><div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Enviando...</>
+                      ) : (
+                        <><Upload className="w-3.5 h-3.5 text-gray-400" /> Escolher foto</>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleAvatarUpload(e.target.files[0])} disabled={uploadingAvatar} />
+                    </label>
+                    {form.avatar_url && (
+                      <button onClick={() => setForm(p => ({ ...p, avatar_url: '' }))} className="mt-1 text-xs text-red-400 hover:text-red-600">Remover foto</button>
+                    )}
+                  </div>
+                </div>
                 <div className="sm:col-span-2">
                   <label className="text-xs font-medium text-gray-500 mb-1 block">Nome completo *</label>
                   <input value={form.nome || ""} onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}

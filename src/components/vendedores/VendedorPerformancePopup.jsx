@@ -67,9 +67,13 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
     <div style={style} className={className || "fixed z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 w-[420px] pointer-events-none overflow-hidden"}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
-        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-          {vendedor.nome?.charAt(0).toUpperCase()}
-        </div>
+        {vendedor.avatar_url ? (
+          <img src={vendedor.avatar_url} alt={vendedor.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-white/30" />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+            {vendedor.nome?.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <p className="text-white font-bold text-sm truncate">{vendedor.nome}</p>
           <p className="text-blue-200/60 text-[10px]">{vendedor.time || 'Sem time'} · {vendedor.percentual_comissao || 0}% comissão</p>

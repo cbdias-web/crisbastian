@@ -148,6 +148,23 @@ Deno.serve(async (req) => {
         });
         const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
 
+        // Buscar avatar do vendedor (se existir)
+        let avatarBase64 = null;
+        let avatarMimeType = 'JPEG';
+        if (perfil.avatar_url) {
+            try {
+                const imgResp = await fetch(perfil.avatar_url);
+                if (imgResp.ok) {
+                    const imgBuffer = await imgResp.arrayBuffer();
+                    const bytes = new Uint8Array(imgBuffer);
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                    avatarBase64 = btoa(binary);
+                    if (perfil.avatar_url.toLowerCase().includes('.png')) avatarMimeType = 'PNG';
+                }
+            } catch (e) { /* sem avatar */ }
+        }
+
         // Gerar PDF
         const doc = new jsPDF();
         
@@ -166,6 +183,22 @@ Deno.serve(async (req) => {
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
         doc.text('Relatorio de Comissoes', 14, 30);
+
+        // Avatar no cabeçalho
+        if (avatarBase64) {
+            try {
+                doc.addImage('data:image/' + avatarMimeType.toLowerCase() + ';base64,' + avatarBase64, avatarMimeType, pageWidth - 46, 5, 30, 30);
+            } catch (e) { /* ignora erro de imagem */ }
+        } else {
+            // Círculo com inicial
+            doc.setFillColor(255, 255, 255, 0.2);
+            doc.circle(pageWidth - 31, 20, 14, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            const inicial = cleanText((perfil.nome || '?').charAt(0).toUpperCase());
+            doc.text(inicial, pageWidth - 31, 24, { align: 'center' });
+        }
 
         y = 55;
 

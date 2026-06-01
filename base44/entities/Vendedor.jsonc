@@ -23,6 +23,10 @@
       "type": "boolean",
       "default": true,
       "description": "Vendedor ativo"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL da foto/avatar do colaborador"
     }
   },
   "required": [
