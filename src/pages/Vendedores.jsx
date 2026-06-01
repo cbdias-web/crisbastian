@@ -33,6 +33,7 @@ export default function Vendedores() {
   const [hoveredVendedor, setHoveredVendedor] = useState(null);
   const [popupPos, setPopupPos] = useState({ x: 0, y: 0 });
   const hoverTimeoutRef = useRef(null);
+  const [pinnedVendedor, setPinnedVendedor] = useState(null);
   const [modalBonus, setModalBonus] = useState(null);
   const [valorBonus, setValorBonus] = useState("");
   const [sendingEmail, setSendingEmail] = useState(null);
@@ -430,6 +431,11 @@ export default function Vendedores() {
                         onMouseLeave={() => {
                           hoverTimeoutRef.current = setTimeout(() => setHoveredVendedor(null), 200);
                         }}
+                        onClick={() => {
+                          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                          setHoveredVendedor(null);
+                          setPinnedVendedor(v);
+                        }}
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
@@ -617,8 +623,32 @@ export default function Vendedores() {
           </>
         )}
 
-        {/* Performance Popup */}
-        {hoveredVendedor && (
+        {/* Performance Popup — clicado (modal fixo) */}
+        {pinnedVendedor && (
+          <div className="fixed inset-0 z-[190] flex items-center justify-center" onClick={() => setPinnedVendedor(null)}>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <div className="relative z-10" onClick={e => e.stopPropagation()}>
+              <button
+                onClick={() => setPinnedVendedor(null)}
+                className="absolute top-2 right-2 z-20 w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-md text-gray-500 hover:text-gray-800 text-lg leading-none transition"
+              >
+                &times;
+              </button>
+              <VendedorPerformancePopup
+                vendedor={pinnedVendedor}
+                vendas={vendas}
+                metas={metas}
+                mesFiltro={mesFiltro}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                className="relative bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 pointer-events-auto overflow-hidden"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Performance Popup — hover */}
+        {hoveredVendedor && !pinnedVendedor && (
           <VendedorPerformancePopup
             vendedor={hoveredVendedor}
             vendas={vendas}

@@ -5,7 +5,7 @@ const fmtFull = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', curre
 const fmtK = (v) => v >= 1000000 ? `R$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : fmtFull(v);
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
-export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesFiltro, dateFrom, dateTo, style }) {
+export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesFiltro, dateFrom, dateTo, style, className }) {
   const data = useMemo(() => {
     // Últimos 6 meses
     const months = Array.from({ length: 6 }, (_, i) => {
@@ -63,7 +63,7 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
     : '#ef4444';
 
   return (
-    <div style={style} className="fixed z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 pointer-events-none overflow-hidden">
+    <div style={style} className={className || "fixed z-[200] bg-white rounded-2xl shadow-2xl border border-gray-100 w-80 pointer-events-none overflow-hidden"}>
       {/* Header */}
       <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
         <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">

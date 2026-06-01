@@ -322,7 +322,7 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
             doc.rect(margin, chartY, W - margin * 2, rowH, 'F');
 
             // Nome
-            const nameTrunc = (r.nome || '').length > 20 ? r.nome.substring(0, 20) + '…' : (r.nome || '');
+            const nameTrunc = (r.nome || '').length > 20 ? r.nome.substring(0, 20) + '...' : (r.nome || '');
             doc.setTextColor(15, 30, 53);
             doc.setFontSize(7.5);
             doc.setFont('helvetica', i === 0 ? 'bold' : 'normal');
@@ -333,11 +333,11 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
               const mc = r.pctMeta >= 100 ? [161, 116, 0] : r.pctMeta >= 70 ? [37, 99, 235] : [220, 38, 38];
               doc.setTextColor(...mc);
               doc.setFont('helvetica', 'bold');
-              doc.text(`${r.pctMeta > 100 ? '🏆' : ''}${r.pctMeta.toFixed(0)}%`, margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
+              doc.text(`${r.pctMeta.toFixed(0)}%`, margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
             } else {
               doc.setTextColor(190, 190, 190);
               doc.setFont('helvetica', 'normal');
-              doc.text('—', margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
+              doc.text('-', margin + nameCol + pctCol - 2, chartY + rowH / 2 + 2.5, { align: 'right' });
             }
 
             // Barra de volume
