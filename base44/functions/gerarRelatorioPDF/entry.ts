@@ -176,7 +176,8 @@ Deno.serve(async (req) => {
                         for (let i = 0; i < bytes.length; i += CHUNK) {
                             binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
                         }
-                        avatarDataUrl = 'data:' + mimeType + ';base64,' + btoa(binary);
+                        const fmt = mimeType === 'image/png' ? 'PNG' : 'JPEG';
+                        avatarDataUrl = { data: 'data:' + mimeType + ';base64,' + btoa(binary), format: fmt };
                     }
                 }
             } catch (e) { /* sem avatar */ }
@@ -204,7 +205,8 @@ Deno.serve(async (req) => {
         // Avatar no cabeçalho
         if (avatarDataUrl) {
             try {
-                doc.addImage(avatarDataUrl, pageWidth - 46, 5, 30, 30);
+                // jsPDF 4.x: addImage(data, format, x, y, w, h)
+                doc.addImage(avatarDataUrl.data, avatarDataUrl.format, pageWidth - 46, 5, 30, 30);
             } catch (e) { /* ignora erro de imagem */ }
         } else {
             // Círculo com inicial
