@@ -372,12 +372,11 @@ export default function Dashboard() {
       if (vinculados.length > 0) {
         await base44.entities.Vendedor.update(vinculados[0].id, { avatar_url: url });
         setVendedores(prev => prev.map(v => v.id === vinculados[0].id ? { ...v, avatar_url: url } : v));
-        // Espelha no campo do user para exibir no header imediatamente
-        setUser(prev => prev ? { ...prev, avatar_url: url } : prev);
-        toast.success('Avatar atualizado!');
-      } else {
-        toast.error('Nenhum vendedor vinculado ao seu e-mail');
       }
+      // Sempre atualiza o User também (garante exibição mesmo sem Vendedor vinculado)
+      await base44.auth.updateMe({ avatar_url: url });
+      setUser(prev => prev ? { ...prev, avatar_url: url } : prev);
+      toast.success('Avatar atualizado!');
     }
   };
 
