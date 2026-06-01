@@ -356,20 +356,32 @@ export default function Dashboard() {
     setSavingProfile(false);
   };
 
-  // Aplica avatar no User e sincroniza com o Vendedor vinculado (por e-mail)
+  // Aplica avatar: se estiver espelhando, atualiza só o Vendedor espelhado;
+  // caso contrário, atualiza o User logado e sincroniza com seu Vendedor vinculado.
   const applyAvatar = async (url) => {
-    await base44.auth.updateMe({ avatar_url: url });
-    const updatedUser = await base44.auth.me();
-    setUser(updatedUser);
-    // Sincronizar com o registro Vendedor vinculado pelo e-mail
-    if (updatedUser?.email) {
-      const vendedoresVinculados = await base44.entities.Vendedor.filter({ email: updatedUser.email });
-      if (vendedoresVinculados.length > 0) {
-        await base44.entities.Vendedor.update(vendedoresVinculados[0].id, { avatar_url: url });
-        setVendedores(prev => prev.map(v => v.id === vendedoresVinculados[0].id ? { ...v, avatar_url: url } : v));
+    const impersonado = getImpersonatedVendedor();
+    if (impersonado) {
+      // Modo espelhamento: atualiza apenas o Vendedor espelhado
+      await base44.entities.Vendedor.update(impersonado.id, { avatar_url: url });
+      setVendedores(prev => prev.map(v => v.id === impersonado.id ? { ...v, avatar_url: url } : v));
+      // Atualiza o objeto do user impersonado para refletir no avatar do header
+      setImpersonadoUser(prev => prev ? { ...prev, avatar_url: url } : prev);
+      toast.success('Avatar do vendedor atualizado!');
+    } else {
+      // Modo normal: atualiza o User logado
+      await base44.auth.updateMe({ avatar_url: url });
+      const updatedUser = await base44.auth.me();
+      setUser(updatedUser);
+      // Sincronizar com o registro Vendedor vinculado pelo e-mail
+      if (updatedUser?.email) {
+        const vendedoresVinculados = await base44.entities.Vendedor.filter({ email: updatedUser.email });
+        if (vendedoresVinculados.length > 0) {
+          await base44.entities.Vendedor.update(vendedoresVinculados[0].id, { avatar_url: url });
+          setVendedores(prev => prev.map(v => v.id === vendedoresVinculados[0].id ? { ...v, avatar_url: url } : v));
+        }
       }
+      toast.success('Avatar atualizado!');
     }
-    toast.success('Avatar atualizado!');
   };
 
   const uploadAvatar = async (file) => {
@@ -747,10 +759,10 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center gap-3 pb-4 border-b border-gray-100">
                   <div className="relative">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
-                      {user?.avatar_url ?
-                    <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" /> :
+                      {avatarUrl ?
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> :
 
-                    <span>{(user?.nome_tratamento || user?.full_name || user?.email || '?').charAt(0).toUpperCase()}</span>
+                    <span>{displayName.charAt(0).toUpperCase()}</span>
                     }
                     </div>
                     <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-lg">
