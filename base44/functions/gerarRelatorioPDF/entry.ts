@@ -155,12 +155,23 @@ Deno.serve(async (req) => {
             try {
                 const imgResp = await fetch(perfil.avatar_url);
                 if (imgResp.ok) {
+                    // Detectar tipo pela resposta HTTP (mais confiável que verificar a URL)
+                    const contentType = imgResp.headers.get('content-type') || '';
+                    if (contentType.includes('png')) avatarMimeType = 'PNG';
+                    else if (contentType.includes('webp')) avatarMimeType = 'WEBP';
+                    else if (contentType.includes('jpeg') || contentType.includes('jpg')) avatarMimeType = 'JPEG';
+                    else if (perfil.avatar_url.toLowerCase().includes('.png')) avatarMimeType = 'PNG';
+                    else if (perfil.avatar_url.toLowerCase().includes('.webp')) avatarMimeType = 'WEBP';
+
                     const imgBuffer = await imgResp.arrayBuffer();
                     const bytes = new Uint8Array(imgBuffer);
+                    // Detectar também pelos magic bytes do arquivo
+                    if (bytes[0] === 0x89 && bytes[1] === 0x50) avatarMimeType = 'PNG'; // PNG magic bytes
+                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) avatarMimeType = 'JPEG'; // JPEG magic bytes
+
                     let binary = '';
                     for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
                     avatarBase64 = btoa(binary);
-                    if (perfil.avatar_url.toLowerCase().includes('.png')) avatarMimeType = 'PNG';
                 }
             } catch (e) { /* sem avatar */ }
         }
