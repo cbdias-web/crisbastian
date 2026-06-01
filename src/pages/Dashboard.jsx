@@ -228,25 +228,28 @@ export default function Dashboard() {
   filter((c) => vendasFiltradasIds.has(c.venda_id)).
   reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
 
-  // Meta do time do mês atual
+  // Meta do time — referência derivada do período filtrado
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const mesIni = `${mesAtual}-01`;
   const mesUltDia = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const mesFim = `${mesAtual}-${String(mesUltDia).padStart(2, "0")}`;
 
-  const metaEquipe = metas.find((m) => m.mes === mesAtual && m.tipo === "equipe");
+  // Mês de referência para metas: usa o mês do início do filtro (ex: filtro maio → metas de maio)
+  const periodoMes = dataInicio ? dataInicio.substring(0, 7) : mesAtual;
+  const periodoMesLabel = new Date(`${periodoMes}-15`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  const metaEquipe = metas.find((m) => m.mes === periodoMes && m.tipo === "equipe");
   const metaTimeSoma = vendedores.reduce((s, v) => {
-    const m = metas.find((m) => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === v.id);
+    const m = metas.find((m) => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === v.id);
     return s + (m?.valor_meta || 0);
   }, 0);
   const metaTimeMes = metaEquipe?.valor_meta || metaTimeSoma;
 
-  const producaoTimeMes = vendas.
-  filter((v) => v.data && v.data >= mesIni && v.data <= mesFim).
-  reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
+  // Produção no período filtrado (já usa vendasFiltradas via valorTotal)
+  const producaoTimePeriodo = valorTotal;
 
-  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(producaoTimeMes / metaTimeMes * 100), 100) : null;
-  const metaTimeAtingida = metaTimeMes > 0 && producaoTimeMes >= metaTimeMes;
+  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(producaoTimePeriodo / metaTimeMes * 100), 100) : null;
+  const metaTimeAtingida = metaTimeMes > 0 && producaoTimePeriodo >= metaTimeMes;
 
   // Meta individual do usuário logado com bônus
   const metaIndividual = vendedor ?
@@ -266,7 +269,7 @@ export default function Dashboard() {
     const vol = vendasFiltradas.
     filter((vd) => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome).
     reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-    const metaRecord = metas.find((m) => m.vendedor_id === v.id && m.mes === mesAtual && m.tipo === "individual");
+    const metaRecord = metas.find((m) => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
 
     // Verifica se tem comissões no mês atual
     const temComissaoMes = comissoes.some((c) =>
@@ -465,14 +468,14 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
-                  Meta do Time — {new Date(`${mesAtual}-15`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+                  Meta do Time — {periodoMesLabel}
                 </p>
                 <div className="flex items-end gap-3">
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(producaoTimeMes)}</p>
+                  <p className="text-xl font-bold text-gray-900">{formatCurrency(producaoTimePeriodo)}</p>
                   <p className="text-sm text-gray-400 mb-0.5">de {formatCurrency(metaTimeMes)}</p>
                 </div>
                 <p className={`text-xs mt-1 font-medium ${metaTimeAtingida ? "text-emerald-600" : "text-amber-600"}`}>
-                  {metaTimeAtingida ? "✓ Meta do time atingida!" : `Faltando ${formatCurrency(metaTimeMes - producaoTimeMes)}`}
+                  {metaTimeAtingida ? "✓ Meta do time atingida!" : `Faltando ${formatCurrency(metaTimeMes - producaoTimePeriodo)}`}
                 </p>
               </div>
               <div className="sm:w-72">
