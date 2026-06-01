@@ -1,3 +1,7 @@
+import { useState, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Upload } from 'lucide-react';
+
 const CATEGORIAS = [
   {
     label: '🏰 Disney & Aventura',
@@ -36,6 +40,30 @@ const CATEGORIAS = [
 ];
 
 export default function AvatarPickerModal({ onSelect, onClose }) {
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFile = async (file) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      onSelect(file_url);
+      onClose();
+    } catch (e) {
+      alert('Erro ao fazer upload da imagem.');
+    }
+    setUploading(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
@@ -45,6 +73,29 @@ export default function AvatarPickerModal({ onSelect, onClose }) {
             <p className="text-xs text-gray-400 mt-0.5">Selecione um personagem como avatar</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition">✕</button>
+        </div>
+        {/* Zona de drag-and-drop */}
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={`mx-5 mt-4 rounded-xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center gap-2 py-5 ${
+            dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+          }`}
+        >
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleFile(e.target.files[0])} />
+          {uploading ? (
+            <div className="flex items-center gap-2 text-blue-600">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm">Enviando...</span>
+            </div>
+          ) : (
+            <>
+              <Upload className="w-6 h-6 text-gray-400" />
+              <p className="text-sm text-gray-500">Arraste uma foto aqui ou <span className="text-blue-500 font-medium">clique para escolher</span></p>
+            </>
+          )}
         </div>
         <div className="overflow-y-auto flex-1 p-5 space-y-6">
           {CATEGORIAS.map((cat) => (
@@ -67,9 +118,7 @@ export default function AvatarPickerModal({ onSelect, onClose }) {
             </div>
           ))}
         </div>
-        <div className="px-6 py-3 border-t border-gray-100 text-center flex-shrink-0">
-          <p className="text-[11px] text-gray-400">Ou use o botão "Escolher foto" para enviar uma imagem própria</p>
-        </div>
+
       </div>
     </div>
   );
