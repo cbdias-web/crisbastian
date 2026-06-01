@@ -148,33 +148,24 @@ Deno.serve(async (req) => {
         });
         const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
 
-        // Buscar avatar do vendedor
+        // Buscar avatar do vendedor — redimensiona para 120x120 JPEG via jimp
         let avatarDataUrl = null;
         if (perfil.avatar_url) {
             try {
-                const imgResp = await fetch(perfil.avatar_url);
-                if (imgResp.ok) {
-                    const imgBuffer = await imgResp.arrayBuffer();
-                    const bytes = new Uint8Array(imgBuffer);
-
-                    // Detectar WEBP: magic bytes RIFF....WEBP (12 bytes)
-                    const isWebp = bytes[0]===0x52 && bytes[1]===0x49 && bytes[2]===0x46 && bytes[3]===0x46
-                                && bytes[8]===0x57 && bytes[9]===0x45 && bytes[10]===0x42 && bytes[11]===0x50;
-                    const isPng = bytes[0]===0x89 && bytes[1]===0x50 && bytes[2]===0x4E && bytes[3]===0x47;
-                    const isJpeg = bytes[0]===0xFF && bytes[1]===0xD8;
-
-                    if (!isWebp && (isPng || isJpeg)) {
-                        const fmt = isPng ? 'PNG' : 'JPEG';
-                        const mimeType = isPng ? 'image/png' : 'image/jpeg';
-                        const CHUNK = 8192;
-                        let binary = '';
-                        for (let i = 0; i < bytes.length; i += CHUNK) {
-                            binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-                        }
-                        avatarDataUrl = { data: 'data:' + mimeType + ';base64,' + btoa(binary), format: fmt };
-                    }
+                const { Jimp } = await import('npm:jimp@1.6.0');
+                const image = await Jimp.read(perfil.avatar_url);
+                image.resize({ w: 120, h: 120 });
+                const jpegBuffer = await image.getBuffer('image/jpeg', { quality: 85 });
+                const bytes = new Uint8Array(jpegBuffer);
+                const CHUNK = 8192;
+                let binary = '';
+                for (let i = 0; i < bytes.length; i += CHUNK) {
+                    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
                 }
-            } catch (e) { /* sem avatar */ }
+                avatarDataUrl = { data: 'data:image/jpeg;base64,' + btoa(binary), format: 'JPEG' };
+            } catch (e) {
+                console.log('Avatar error:', e.message);
+            }
         }
 
         // Gerar PDF
