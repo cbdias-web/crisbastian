@@ -149,29 +149,31 @@ Deno.serve(async (req) => {
         const produtosList = Object.entries(byProduto).sort((a, b) => b[1].valor - a[1].valor);
 
         // Buscar avatar do vendedor (se existir)
-        let avatarBase64 = null;
-        let avatarMimeType = 'JPEG';
+        let avatarDataUrl = null;
         if (perfil.avatar_url) {
             try {
                 const imgResp = await fetch(perfil.avatar_url);
                 if (imgResp.ok) {
-                    // Detectar tipo pela resposta HTTP (mais confiável que verificar a URL)
-                    const contentType = imgResp.headers.get('content-type') || '';
-                    if (contentType.includes('png')) avatarMimeType = 'PNG';
-                    else if (contentType.includes('webp')) avatarMimeType = 'WEBP';
-                    else if (contentType.includes('jpeg') || contentType.includes('jpg')) avatarMimeType = 'JPEG';
-                    else if (perfil.avatar_url.toLowerCase().includes('.png')) avatarMimeType = 'PNG';
-                    else if (perfil.avatar_url.toLowerCase().includes('.webp')) avatarMimeType = 'WEBP';
-
                     const imgBuffer = await imgResp.arrayBuffer();
                     const bytes = new Uint8Array(imgBuffer);
-                    // Detectar também pelos magic bytes do arquivo
-                    if (bytes[0] === 0x89 && bytes[1] === 0x50) avatarMimeType = 'PNG'; // PNG magic bytes
-                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) avatarMimeType = 'JPEG'; // JPEG magic bytes
 
+                    // Detectar tipo pelos magic bytes (mais confiável)
+                    let mimeType = 'image/jpeg';
+                    if (bytes[0] === 0x89 && bytes[1] === 0x50) mimeType = 'image/png';
+                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg';
+                    else {
+                        const ct = imgResp.headers.get('content-type') || '';
+                        if (ct.includes('png')) mimeType = 'image/png';
+                        else if (ct.includes('webp')) mimeType = 'image/webp';
+                    }
+
+                    // Conversão segura para base64 em chunks (evita stack overflow)
+                    const CHUNK = 8192;
                     let binary = '';
-                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-                    avatarBase64 = btoa(binary);
+                    for (let i = 0; i < bytes.length; i += CHUNK) {
+                        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+                    }
+                    avatarDataUrl = 'data:' + mimeType + ';base64,' + btoa(binary);
                 }
             } catch (e) { /* sem avatar */ }
         }
@@ -196,9 +198,9 @@ Deno.serve(async (req) => {
         doc.text('Relatorio de Comissoes', 14, 30);
 
         // Avatar no cabeçalho
-        if (avatarBase64) {
+        if (avatarDataUrl) {
             try {
-                doc.addImage('data:image/' + avatarMimeType.toLowerCase() + ';base64,' + avatarBase64, avatarMimeType, pageWidth - 46, 5, 30, 30);
+                doc.addImage(avatarDataUrl, pageWidth - 46, 5, 30, 30);
             } catch (e) { /* ignora erro de imagem */ }
         } else {
             // Círculo com inicial
