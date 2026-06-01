@@ -271,12 +271,15 @@ export default function Dashboard() {
     reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
     const metaRecord = metas.find((m) => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
 
-    // Verifica se tem comissões no mês atual
+    // Verifica se tem comissões no período filtrado (usa periodoMes, não mês atual)
+    const periodoMesIni = `${periodoMes}-01`;
+    const periodoMesFimDia = new Date(parseInt(periodoMes.split('-')[0]), parseInt(periodoMes.split('-')[1]), 0).getDate();
+    const periodoMesFim = `${periodoMes}-${String(periodoMesFimDia).padStart(2, '0')}`;
     const temComissaoMes = comissoes.some((c) =>
     c.vendedor_id === v.id &&
     c.data_venda &&
-    c.data_venda >= mesIni &&
-    c.data_venda <= mesFim
+    c.data_venda >= periodoMesIni &&
+    c.data_venda <= periodoMesFim
     );
 
     return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
