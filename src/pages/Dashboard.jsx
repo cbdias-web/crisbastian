@@ -356,31 +356,28 @@ export default function Dashboard() {
     setSavingProfile(false);
   };
 
-  // Aplica avatar: se estiver espelhando, atualiza só o Vendedor espelhado;
-  // caso contrário, atualiza o User logado e sincroniza com seu Vendedor vinculado.
+  // Aplica avatar SOMENTE no Vendedor (nunca altera o User entity).
+  // Se estiver espelhando: atualiza o Vendedor espelhado.
+  // Se não: busca o Vendedor vinculado pelo e-mail do usuário logado.
   const applyAvatar = async (url) => {
     const impersonado = getImpersonatedVendedor();
     if (impersonado) {
-      // Modo espelhamento: atualiza apenas o Vendedor espelhado
       await base44.entities.Vendedor.update(impersonado.id, { avatar_url: url });
       setVendedores(prev => prev.map(v => v.id === impersonado.id ? { ...v, avatar_url: url } : v));
-      // Atualiza o objeto do user impersonado para refletir no avatar do header
       setImpersonadoUser(prev => prev ? { ...prev, avatar_url: url } : prev);
-      toast.success('Avatar do vendedor atualizado!');
+      toast.success('Avatar de ' + impersonado.nome.split(' ')[0] + ' atualizado!');
     } else {
-      // Modo normal: atualiza o User logado
-      await base44.auth.updateMe({ avatar_url: url });
-      const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
-      // Sincronizar com o registro Vendedor vinculado pelo e-mail
-      if (updatedUser?.email) {
-        const vendedoresVinculados = await base44.entities.Vendedor.filter({ email: updatedUser.email });
-        if (vendedoresVinculados.length > 0) {
-          await base44.entities.Vendedor.update(vendedoresVinculados[0].id, { avatar_url: url });
-          setVendedores(prev => prev.map(v => v.id === vendedoresVinculados[0].id ? { ...v, avatar_url: url } : v));
-        }
+      if (!user?.email) { toast.error('Usuário sem e-mail vinculado'); return; }
+      const vinculados = await base44.entities.Vendedor.filter({ email: user.email });
+      if (vinculados.length > 0) {
+        await base44.entities.Vendedor.update(vinculados[0].id, { avatar_url: url });
+        setVendedores(prev => prev.map(v => v.id === vinculados[0].id ? { ...v, avatar_url: url } : v));
+        // Espelha no campo do user para exibir no header imediatamente
+        setUser(prev => prev ? { ...prev, avatar_url: url } : prev);
+        toast.success('Avatar atualizado!');
+      } else {
+        toast.error('Nenhum vendedor vinculado ao seu e-mail');
       }
-      toast.success('Avatar atualizado!');
     }
   };
 

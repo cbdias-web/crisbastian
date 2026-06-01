@@ -157,23 +157,27 @@ Deno.serve(async (req) => {
                     const imgBuffer = await imgResp.arrayBuffer();
                     const bytes = new Uint8Array(imgBuffer);
 
-                    // Detectar tipo pelos magic bytes (mais confiável)
+                    // Detectar formato pelos magic bytes
                     let mimeType = 'image/jpeg';
-                    if (bytes[0] === 0x89 && bytes[1] === 0x50) mimeType = 'image/png';
-                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg';
+                    if (bytes[0] === 0x89 && bytes[1] === 0x50) mimeType = 'image/png';   // PNG
+                    else if (bytes[0] === 0xFF && bytes[1] === 0xD8) mimeType = 'image/jpeg'; // JPEG
+                    else if (bytes[0] === 0x52 && bytes[1] === 0x49) mimeType = 'image/webp'; // RIFF (WEBP)
                     else {
                         const ct = imgResp.headers.get('content-type') || '';
                         if (ct.includes('png')) mimeType = 'image/png';
                         else if (ct.includes('webp')) mimeType = 'image/webp';
                     }
 
-                    // Conversão segura para base64 em chunks (evita stack overflow)
-                    const CHUNK = 8192;
-                    let binary = '';
-                    for (let i = 0; i < bytes.length; i += CHUNK) {
-                        binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+                    // jsPDF não suporta WEBP — pular sem imagem
+                    if (mimeType !== 'image/webp') {
+                        // Conversão segura para base64 em chunks
+                        const CHUNK = 8192;
+                        let binary = '';
+                        for (let i = 0; i < bytes.length; i += CHUNK) {
+                            binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+                        }
+                        avatarDataUrl = 'data:' + mimeType + ';base64,' + btoa(binary);
                     }
-                    avatarDataUrl = 'data:' + mimeType + ';base64,' + btoa(binary);
                 }
             } catch (e) { /* sem avatar */ }
         }
