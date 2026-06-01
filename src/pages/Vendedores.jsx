@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import VendedorPerformancePopup from "@/components/vendedores/VendedorPerformancePopup";
 import { base44 } from "@/api/base44Client";
 import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload } from "lucide-react";
@@ -31,6 +32,7 @@ export default function Vendedores() {
   });
   const [geratingPDF, setGeratingPDF] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   const handleAvatarUpload = async (file) => {
     setUploadingAvatar(true);
@@ -649,6 +651,14 @@ export default function Vendedores() {
 
 
 
+        {/* Avatar Picker */}
+        {showAvatarPicker && (
+          <AvatarPickerModal
+            onSelect={(url) => setForm(p => ({ ...p, avatar_url: url }))}
+            onClose={() => setShowAvatarPicker(false)}
+          />
+        )}
+
         {/* Modal create/edit */}
         {modal !== null && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
@@ -671,14 +681,23 @@ export default function Vendedores() {
                   </div>
                   <div className="flex-1">
                     <label className="text-xs font-medium text-gray-500 mb-1 block">Foto / Avatar</label>
-                    <label className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition w-fit">
-                      {uploadingAvatar ? (
-                        <><div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Enviando...</>
-                      ) : (
-                        <><Upload className="w-3.5 h-3.5 text-gray-400" /> Escolher foto</>
-                      )}
-                      <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleAvatarUpload(e.target.files[0])} disabled={uploadingAvatar} />
-                    </label>
+                    <div className="flex items-center gap-2">
+                      <label className="cursor-pointer flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        {uploadingAvatar ? (
+                          <><div className="w-3.5 h-3.5 border border-gray-400 border-t-transparent rounded-full animate-spin" /> Enviando...</>
+                        ) : (
+                          <><Upload className="w-3.5 h-3.5 text-gray-400" /> Minha foto</>
+                        )}
+                        <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files[0] && handleAvatarUpload(e.target.files[0])} disabled={uploadingAvatar} />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvatarPicker(true)}
+                        className="flex items-center gap-2 px-3 py-2 text-sm border border-blue-200 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
+                      >
+                        🎭 Personagens
+                      </button>
+                    </div>
                     {form.avatar_url && (
                       <button onClick={() => setForm(p => ({ ...p, avatar_url: '' }))} className="mt-1 text-xs text-red-400 hover:text-red-600">Remover foto</button>
                     )}
