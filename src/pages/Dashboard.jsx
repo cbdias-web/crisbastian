@@ -237,6 +237,9 @@ export default function Dashboard() {
   // Mês de referência para metas: usa o mês do início do filtro (ex: filtro maio → metas de maio)
   const periodoMes = dataInicio ? dataInicio.substring(0, 7) : mesAtual;
   const periodoMesLabel = new Date(`${periodoMes}-15`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  const periodoMesIni = `${periodoMes}-01`;
+  const periodoMesFimDia = new Date(parseInt(periodoMes.split('-')[0]), parseInt(periodoMes.split('-')[1]), 0).getDate();
+  const periodoMesFim = `${periodoMes}-${String(periodoMesFimDia).padStart(2, '0')}`;
 
   const metaEquipe = metas.find((m) => m.mes === periodoMes && m.tipo === "equipe");
   const metaTimeSoma = vendedores.reduce((s, v) => {
@@ -251,13 +254,13 @@ export default function Dashboard() {
   const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(producaoTimePeriodo / metaTimeMes * 100), 100) : null;
   const metaTimeAtingida = metaTimeMes > 0 && producaoTimePeriodo >= metaTimeMes;
 
-  // Meta individual do usuário logado com bônus
+  // Meta individual do usuário logado (usa período filtrado)
   const metaIndividual = vendedor ?
-  metas.find((m) => m.mes === mesAtual && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0) :
+  metas.find((m) => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0) :
   null;
   const producaoIndividualMes = vendedor ?
   vendas.
-  filter((v) => v.data && v.data >= mesIni && v.data <= mesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome)).
+  filter((v) => v.data && v.data >= periodoMesIni && v.data <= periodoMesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome)).
   reduce((s, v) => s + (parseFloat(v.valor) || 0), 0) :
   0;
   const faltaParaBonus = metaIndividual ? Math.max(0, metaIndividual.valor_meta - producaoIndividualMes) : 0;
