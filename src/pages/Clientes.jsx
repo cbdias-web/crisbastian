@@ -363,25 +363,32 @@ export default function Clientes() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto space-y-5">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4">
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Clientes</h2>
-            <p className="text-gray-400 text-sm mt-0.5">{clientes.length} clientes cadastrados</p>
+            <p className="text-gray-400 text-sm mt-0.5">
+              {filtered.length} de {clientes.length} clientes
+            </p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" onClick={handleImportar} disabled={importing} className="text-sm">
-              <RefreshCw className={`w-4 h-4 mr-2 ${importing ? "animate-spin" : ""}`} />
-              {importing ? "Importando..." : "Importar das Vendas"}
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={handleImportar} disabled={importing} className="text-sm">
+                <RefreshCw className={`w-4 h-4 mr-2 ${importing ? "animate-spin" : ""}`} />
+                {importing ? "Importando..." : "Importar"}
+              </Button>
+            )}
             <Button variant="outline" onClick={exportCSV} className="text-sm">
-              <Download className="w-4 h-4 mr-2" /> Exportar CSV
+              <Download className="w-4 h-4 mr-2" /> CSV
             </Button>
-            <Button onClick={() => setModal("new")} className="bg-[#1a3150] hover:bg-[#0f1e35] text-sm">
-              <Plus className="w-4 h-4 mr-2" /> Novo Cliente
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setModal("new")} className="bg-[#1a3150] hover:bg-[#0f1e35] text-sm">
+                <Plus className="w-4 h-4 mr-2" /> Novo Cliente
+              </Button>
+            )}
           </div>
         </div>
 
@@ -400,99 +407,132 @@ export default function Clientes() {
           <select
             value={filterVendedor}
             onChange={e => setFilterVendedor(e.target.value)}
-            className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white min-w-[180px]"
+            className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150] bg-white min-w-[160px]"
           >
-            <option value="">Todos os vendedores</option>
+            <option value="">Todos os gerentes</option>
             {vendedores.map(v => (
               <option key={v.id} value={v.id}>{v.nome}</option>
             ))}
           </select>
         </div>
 
-        {/* Tabela */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-              <Users className="w-10 h-10 mb-2 text-gray-200" />
-              <p className="text-sm">{search || filterVendedor ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}</p>
-              {!search && !filterVendedor && clientes.length === 0 && (
-                <p className="text-xs mt-1 text-gray-300">Clique em "Importar das Vendas" para carregar os clientes existentes</p>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-50 bg-gray-50/50">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Nome</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">CPF/CNPJ</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Telefone</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Cidade/UF</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Vendedor</th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filtered.map(c => (
-                    <tr
-                      key={c.id}
-                      className="hover:bg-blue-50/30 transition cursor-pointer"
+        {/* Grid de Cards */}
+        {isLoading ? (
+          <div className="flex items-center justify-center h-48">
+            <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+            <Users className="w-10 h-10 mb-2 text-gray-200" />
+            <p className="text-sm">{search || filterVendedor ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {filtered.map(c => {
+              const initials = c.nome?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setInteracaoClienteId(c.id)}
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group p-4 flex flex-col gap-3"
+                >
+                  {/* Topo: avatar + nome + gerente */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#1a3150] to-[#2d5a9e] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                      {initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm leading-tight truncate">{c.nome}</p>
+                      {c.vendedor_nome ? (
+                        <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">
+                          {c.vendedor_nome}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-gray-300 mt-1 block">Sem gerente</span>
+                      )}
+                    </div>
+                    {c.subcarteira && (
+                      <span className="text-[9px] bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 max-w-[70px] truncate">
+                        📁 {c.subcarteira}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Infos */}
+                  <div className="space-y-1 text-xs text-gray-500">
+                    {c.cpf_cnpj && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-300 font-mono">CPF</span>
+                        <span className="font-medium text-gray-700 truncate">{c.cpf_cnpj}</span>
+                      </div>
+                    )}
+                    {c.telefone && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-300">📱</span>
+                        <span className="truncate">{c.telefone}</span>
+                      </div>
+                    )}
+                    {c.email && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-300">✉️</span>
+                        <span className="truncate">{c.email}</span>
+                      </div>
+                    )}
+                    {(c.cidade || c.estado) && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-300">📍</span>
+                        <span className="truncate">{[c.cidade, c.estado].filter(Boolean).join(' / ')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ações — sempre visíveis */}
+                  <div className="flex items-center gap-1 pt-2 border-t border-gray-50" onClick={e => e.stopPropagation()}>
+                    <button
                       onClick={() => setInteracaoClienteId(c.id)}
+                      title="Interações"
+                      className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition"
                     >
-                      <td className="px-5 py-3 font-medium text-gray-900">{c.nome}</td>
-                      <td className="px-5 py-3 text-gray-600">{c.cpf_cnpj || "—"}</td>
-                      <td className="px-5 py-3 text-gray-600">{c.telefone || "—"}</td>
-                      <td className="px-5 py-3 text-gray-600">{c.email || "—"}</td>
-                      <td className="px-5 py-3 text-gray-600">
-                        {[c.cidade, c.estado].filter(Boolean).join(" / ") || "—"}
-                      </td>
-                      <td className="px-5 py-3">
-                        {c.vendedor_nome ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                            {c.vendedor_nome}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => setInteracaoClienteId(c.id)}
-                            className="p-1.5 hover:bg-purple-50 rounded-lg transition" title="Ver interações">
-                            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                          </button>
-                          <button onClick={() => setAgendaCliente(c)}
-                            className="p-1.5 hover:bg-emerald-50 rounded-lg transition" title="Agendar contato">
-                            <CalendarPlus className="w-3.5 h-3.5 text-emerald-500" />
-                          </button>
-                          <button onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })}
-                            className="p-1.5 hover:bg-blue-50 rounded-lg transition" title="Criar contrato">
-                            <FileText className="w-3.5 h-3.5 text-blue-400" />
-                          </button>
-                          {isAdmin && (
-                            <>
-                              <button onClick={() => setModal(c)} className="p-1.5 hover:bg-gray-100 rounded-lg transition" title="Editar">
-                                <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                              </button>
-                              <button onClick={() => setConfirmDelete(c)} className="p-1.5 hover:bg-red-50 rounded-lg transition" title="Excluir">
-                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                      <MessageSquare className="w-3.5 h-3.5" /> Interações
+                    </button>
+                    <button
+                      onClick={() => setAgendaCliente(c)}
+                      title="Agendar"
+                      className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })}
+                      title="Contrato"
+                      className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                    {isAdmin && (
+                      <>
+                        <button
+                          onClick={() => setModal(c)}
+                          title="Editar"
+                          className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(c)}
+                          title="Excluir"
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Modal cadastro/edição */}
