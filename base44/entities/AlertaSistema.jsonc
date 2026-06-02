@@ -1,0 +1,28 @@
+{
+  "name": "AlertaSistema",
+  "type": "object",
+  "properties": {
+    "mensagem": {
+      "type": "string",
+      "description": "Mensagem do alerta exibida aos usu\u00e1rios"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": false,
+      "description": "Alerta vis\u00edvel para todos os usu\u00e1rios"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "aviso",
+        "erro",
+        "info"
+      ],
+      "default": "aviso",
+      "description": "Tipo visual do alerta"
+    }
+  },
+  "required": [
+    "mensagem"
+  ]
+}
