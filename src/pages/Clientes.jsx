@@ -9,7 +9,7 @@ import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, File
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
-import ClienteInteracaoModal from "@/components/leads/ClienteInteracaoModal";
+import ClienteDetalheModal from "@/components/clientes/ClienteDetalheModal";
 
 function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
@@ -244,7 +244,7 @@ export default function Clientes() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [importing, setImporting] = useState(false);
   const [agendaCliente, setAgendaCliente] = useState(null);
-  const [interacaoClienteId, setInteracaoClienteId] = useState(null);
+  const [detalheCliente, setDetalheCliente] = useState(null); // { id, tab }
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -433,7 +433,7 @@ export default function Clientes() {
               return (
                 <div
                   key={c.id}
-                  onClick={() => setInteracaoClienteId(c.id)}
+                  onClick={() => setDetalheCliente({ id: c.id, tab: 'dados' })}
                   className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group p-4 flex flex-col gap-3"
                 >
                   {/* Topo: avatar + nome + gerente */}
@@ -489,7 +489,7 @@ export default function Clientes() {
                   {/* Ações — sempre visíveis */}
                   <div className="flex items-center gap-1 pt-2 border-t border-gray-50" onClick={e => e.stopPropagation()}>
                     <button
-                      onClick={() => setInteracaoClienteId(c.id)}
+                      onClick={() => setDetalheCliente({ id: c.id, tab: 'interacoes' })}
                       title="Interações"
                       className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 transition"
                     >
@@ -510,22 +510,13 @@ export default function Clientes() {
                       <FileText className="w-4 h-4" />
                     </button>
                     {isAdmin && (
-                      <>
-                        <button
-                          onClick={() => setModal(c)}
-                          title="Editar"
-                          className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(c)}
-                          title="Excluir"
-                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
+                      <button
+                        onClick={() => setConfirmDelete(c)}
+                        title="Excluir"
+                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -556,13 +547,17 @@ export default function Clientes() {
         />
       )}
 
-      {/* Modal Interações */}
-      {interacaoClienteId && (
-        <ClienteInteracaoModal
-          clienteId={interacaoClienteId}
+      {/* Modal Detalhe Cliente (Dados + Interações) */}
+      {detalheCliente && (
+        <ClienteDetalheModal
+          clienteId={detalheCliente.id}
+          initialTab={detalheCliente.tab}
+          vendedores={vendedores}
+          clientes={clientes}
+          isAdmin={isAdmin}
           vendedor={vendedores.find(v => v.email === user?.email) || null}
           user={user}
-          onClose={() => setInteracaoClienteId(null)}
+          onClose={() => setDetalheCliente(null)}
         />
       )}
 
