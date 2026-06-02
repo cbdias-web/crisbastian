@@ -189,6 +189,16 @@ function MeetButton({ item, onLinkGerado }) {
 
 // ── Event Card ────────────────────────────────────────────────────────────────
 
+const AVATAR_COLORS = [
+  'bg-[#0f1e35]', 'bg-blue-600', 'bg-indigo-600', 'bg-emerald-600',
+  'bg-amber-600', 'bg-purple-600', 'bg-rose-600', 'bg-teal-600',
+];
+function avatarColor(name = '') {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
 function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipeline, onClienteClick, updating }) {
   const [item, setItem] = useState(itemProp);
   const [reagendando, setReagendando] = useState(false);
@@ -198,142 +208,133 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
   const [editHorario, setEditHorario] = useState(itemProp.horario || '');
   const sc = STATUS[item.status] || STATUS.pendente;
   const Icon = sc.icon;
+  const inicial = (item.lead_nome || '?').charAt(0).toUpperCase();
+  const bgAvatar = avatarColor(item.lead_nome || '');
 
   React.useEffect(() => { setItem(itemProp); setEditData(itemProp.data_agendada); setEditHorario(itemProp.horario || ''); }, [itemProp]);
 
+  // Border left color by status
+  const borderAccent = {
+    pendente: 'border-l-amber-400',
+    realizado: 'border-l-emerald-400',
+    nao_atendeu: 'border-l-red-400',
+    reagendado: 'border-l-blue-400',
+  }[item.status] || 'border-l-amber-400';
+
   return (
-    <div className={`group relative rounded-2xl border transition-all duration-200 overflow-hidden
-      ${isTod ? 'border-amber-200 bg-amber-50/40' : 'border-gray-100 bg-white'}
-      hover:shadow-md hover:-translate-y-0.5
-    `}>
-      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl ${sc.dot}`} />
-      <div className="pl-4 pr-4 py-3.5">
-        <div className="flex items-start justify-between gap-2">
+    <div className={`group relative bg-white rounded-2xl border border-gray-100 border-l-4 ${borderAccent} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}>
+      <div className="p-4">
+        {/* TOP ROW: avatar + info + status + actions */}
+        <div className="flex items-start gap-3">
+          {/* Avatar */}
+          <div className={`w-10 h-10 rounded-xl ${bgAvatar} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm`}>
+            {inicial}
+          </div>
+
+          {/* Info block */}
           <div className="flex-1 min-w-0">
             <button
               onClick={() => onClienteClick && onClienteClick(item.lead_id)}
-              className="text-sm font-semibold text-[#0f1e35] hover:text-blue-700 hover:underline transition truncate block text-left"
+              className="text-sm font-bold text-[#0f1e35] hover:text-blue-700 hover:underline transition text-left leading-tight block truncate w-full"
             >
               {item.lead_nome}
             </button>
-            {item.horario && (
-              <p className="text-[11px] text-blue-600 font-semibold flex items-center gap-1 mt-0.5">
-                <Clock className="w-3 h-3" /> {item.horario}
-              </p>
-            )}
-            {item.lead_telefone && (
-              <p className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
-                <Phone className="w-3 h-3" /> {item.lead_telefone}
-              </p>
-            )}
-            {item.lead_cpf_cnpj && (
-              <p className="text-[10px] text-gray-400 mt-0.5">{item.lead_cpf_cnpj}</p>
-            )}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {item.horario && (
+                <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-0.5">
+                  <Clock className="w-3 h-3" /> {item.horario}
+                </span>
+              )}
+              {item.lead_telefone && (
+                <span className="text-[11px] text-gray-500 flex items-center gap-0.5">
+                  <Phone className="w-3 h-3" /> {item.lead_telefone}
+                </span>
+              )}
+              {item.lead_cpf_cnpj && (
+                <span className="text-[10px] text-gray-400">{item.lead_cpf_cnpj}</span>
+              )}
+            </div>
           </div>
+
+          {/* Status pill + edit + delete */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${sc.pill}`}>
+            <span className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full ${sc.pill}`}>
               <Icon className="w-2.5 h-2.5" /> {sc.label}
             </span>
             <button
               onClick={() => { setEditando(e => !e); setReagendando(false); setEditData(item.data_agendada); }}
-              title="Alterar data"
-              className="p-1 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-[#1a3150] transition"
+              title="Alterar data/horário"
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-300 hover:text-[#1a3150] transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             </button>
             <button
               onClick={() => { if (confirm(`Excluir agendamento de "${item.lead_nome}"?`)) onDelete(item); }}
               title="Excluir agendamento"
-              className="p-1 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition"
+              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </button>
           </div>
         </div>
 
+        {/* Reagendado info */}
         {item.status === 'reagendado' && item.nova_data && (
-          <p className="text-[11px] text-blue-600 mt-1 flex items-center gap-1">
+          <p className="text-[11px] text-blue-600 mt-2 flex items-center gap-1 ml-13">
             <RotateCcw className="w-2.5 h-2.5" /> Reagendado para {format(parseISO(item.nova_data), 'dd/MM', { locale: ptBR })}
           </p>
         )}
 
+        {/* Edit inline */}
         {editando && (
-          <div className="mt-2 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
+          <div className="mt-3 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
             <span className="text-[11px] text-gray-500 font-medium">Data:</span>
-            <input
-              type="date"
-              value={editData}
-              onChange={e => setEditData(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-            />
+            <input type="date" value={editData} onChange={e => setEditData(e.target.value)}
+              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
             <span className="text-[11px] text-gray-500 font-medium">Horário:</span>
-            <input
-              type="time"
-              value={editHorario}
-              onChange={e => setEditHorario(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-            />
+            <input type="time" value={editHorario} onChange={e => setEditHorario(e.target.value)}
+              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
             {mensagemNaoDiaUtil(editData) && (
               <p className="text-[11px] text-red-500 flex items-center gap-1 w-full">
                 <AlertTriangle className="w-3 h-3 flex-shrink-0" /> {mensagemNaoDiaUtil(editData)}
               </p>
             )}
-            <button
-              onClick={() => {
-                const aviso = mensagemNaoDiaUtil(editData);
-                if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
-                onAction(item, item.status, undefined, editData, editHorario);
-                setEditando(false);
-              }}
+            <button onClick={() => { const aviso = mensagemNaoDiaUtil(editData); if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; } onAction(item, item.status, undefined, editData, editHorario); setEditando(false); }}
               disabled={!editData}
-              className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition"
-            >Salvar</button>
+              className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition">Salvar</button>
             <button onClick={() => setEditando(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
           </div>
         )}
 
+        {/* Reagendar form */}
         {reagendando && (
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <input
-              type="date"
-              value={novaData}
-              onChange={e => setNovaData(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-            />
-            <button
-              onClick={() => { onAction(item, 'reagendado', novaData); setReagendando(false); }}
-              className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-xl hover:bg-blue-700 transition"
-            >Confirmar</button>
+          <div className="mt-3 flex items-center gap-2 flex-wrap bg-blue-50 rounded-xl p-2.5 border border-blue-100">
+            <span className="text-[11px] text-blue-600 font-medium">Nova data:</span>
+            <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
+              className="text-xs px-2.5 py-1.5 border border-blue-200 rounded-xl focus:outline-none focus:border-[#1a73e8] bg-white" />
+            <button onClick={() => { onAction(item, 'reagendado', novaData); setReagendando(false); }}
+              className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-xl hover:bg-blue-700 transition">Confirmar</button>
             <button onClick={() => setReagendando(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
           </div>
         )}
 
+        {/* Action buttons — always visible for pending */}
         {item.status === 'pendente' && (
-          <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-            <button
-              onClick={() => onAction(item, 'realizado')}
-              disabled={updating === item.id}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold rounded-xl transition shadow-sm"
-            >
+          <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+            <button onClick={() => onAction(item, 'realizado')} disabled={updating === item.id}
+              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold rounded-xl transition shadow-sm">
               <CheckCircle2 className="w-3 h-3" /> Realizado
             </button>
-            <button
-              onClick={() => onAction(item, 'nao_atendeu')}
-              disabled={updating === item.id}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-semibold rounded-xl border border-red-100 transition"
-            >
+            <button onClick={() => onAction(item, 'nao_atendeu')} disabled={updating === item.id}
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-semibold rounded-xl border border-red-200 transition">
               <XCircle className="w-3 h-3" /> Não atendeu
             </button>
-            <button
-              onClick={() => { setReagendando(true); setNovaData(''); }}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold rounded-xl border border-blue-100 transition"
-            >
+            <button onClick={() => { setReagendando(true); setNovaData(''); setEditando(false); }}
+              className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold rounded-xl border border-blue-200 transition">
               <RotateCcw className="w-3 h-3" /> Reagendar
             </button>
-            <button
-              onClick={() => onPipeline(item)}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-semibold rounded-xl border border-indigo-100 transition"
-            >
+            <button onClick={() => onPipeline(item)}
+              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-semibold rounded-xl border border-indigo-200 transition">
               <TrendingUp className="w-3 h-3" /> Pipeline
             </button>
           </div>
@@ -779,7 +780,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const currentUserEmail = user?.email || '';
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0);
-  const [view, setView] = useState('semana');
+  const [view, setView] = useState('dia');
   const [updating, setUpdating] = useState(null);
   const [pipelineItem, setPipelineItem] = useState(null);
   const [showPast, setShowPast] = useState(false);
@@ -973,6 +974,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             onSelect={(d) => { setSelectedDate(d); setView('dia'); }}
             dotDates={dotDates}
           />
+          
           <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-4 text-white shadow-lg">
             <p className="text-[10px] font-semibold text-blue-300/70 uppercase tracking-widest mb-3">
               {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
@@ -1006,12 +1008,14 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             )}
           </div>
           <div className="bg-white border border-gray-100 rounded-2xl p-1 flex shadow-sm">
-            {[{ key: 'semana', label: 'Semana' }, { key: 'dia', label: 'Dia' }].map(v => (
-              <button key={v.key} onClick={() => setView(v.key)}
-                className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${view === v.key ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                {v.label}
-              </button>
-            ))}
+            <button onClick={() => { setView('semana'); setWeekOffset(0); }}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${view === 'semana' ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Semana
+            </button>
+            <button onClick={() => { setView('dia'); setSelectedDate(new Date()); }}
+              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${view === 'dia' ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+              Dia
+            </button>
           </div>
         </div>
 
@@ -1106,7 +1110,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               </button>
 
               <button
-                onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('semana'); }}
+                onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('dia'); }}
                 className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"
               >
                 Hoje
