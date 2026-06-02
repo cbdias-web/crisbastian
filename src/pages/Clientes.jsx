@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, FileText, CalendarPlus, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Search, Users, Download, RefreshCw, FileText, CalendarPlus, AlertTriangle, MessageSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
+import ClienteInteracaoModal from "@/components/leads/ClienteInteracaoModal";
 
 function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
@@ -243,6 +244,14 @@ export default function Clientes() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [importing, setImporting] = useState(false);
   const [agendaCliente, setAgendaCliente] = useState(null);
+  const [interacaoClienteId, setInteracaoClienteId] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes"],
@@ -430,7 +439,11 @@ export default function Clientes() {
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filtered.map(c => (
-                    <tr key={c.id} className="hover:bg-gray-50/50 transition">
+                    <tr
+                      key={c.id}
+                      className="hover:bg-blue-50/30 transition cursor-pointer"
+                      onClick={() => setInteracaoClienteId(c.id)}
+                    >
                       <td className="px-5 py-3 font-medium text-gray-900">{c.nome}</td>
                       <td className="px-5 py-3 text-gray-600">{c.cpf_cnpj || "—"}</td>
                       <td className="px-5 py-3 text-gray-600">{c.telefone || "—"}</td>
@@ -447,22 +460,30 @@ export default function Clientes() {
                           <span className="text-gray-300 text-xs">—</span>
                         )}
                       </td>
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end gap-1">
+                          <button onClick={() => setInteracaoClienteId(c.id)}
+                            className="p-1.5 hover:bg-purple-50 rounded-lg transition" title="Ver interações">
+                            <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
+                          </button>
                           <button onClick={() => setAgendaCliente(c)}
                             className="p-1.5 hover:bg-emerald-50 rounded-lg transition" title="Agendar contato">
                             <CalendarPlus className="w-3.5 h-3.5 text-emerald-500" />
                           </button>
-                          <button onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })} 
+                          <button onClick={() => navigate('/Contratos', { state: { clientePreSelecionado: c } })}
                             className="p-1.5 hover:bg-blue-50 rounded-lg transition" title="Criar contrato">
                             <FileText className="w-3.5 h-3.5 text-blue-400" />
                           </button>
-                          <button onClick={() => setModal(c)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                            <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                          </button>
-                          <button onClick={() => setConfirmDelete(c)} className="p-1.5 hover:bg-red-50 rounded-lg transition">
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => setModal(c)} className="p-1.5 hover:bg-gray-100 rounded-lg transition" title="Editar">
+                                <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                              </button>
+                              <button onClick={() => setConfirmDelete(c)} className="p-1.5 hover:bg-red-50 rounded-lg transition" title="Excluir">
+                                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -492,6 +513,16 @@ export default function Clientes() {
           cliente={agendaCliente}
           vendedores={vendedores}
           onClose={() => setAgendaCliente(null)}
+        />
+      )}
+
+      {/* Modal Interações */}
+      {interacaoClienteId && (
+        <ClienteInteracaoModal
+          clienteId={interacaoClienteId}
+          vendedor={vendedores.find(v => v.email === user?.email) || null}
+          user={user}
+          onClose={() => setInteracaoClienteId(null)}
         />
       )}
 
