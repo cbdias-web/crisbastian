@@ -352,6 +352,72 @@ const sections = [
     ],
   },
   {
+    id: 'clientes', icon: UserCheck, title: 'Clientes — Carteira Unificada',
+    color: 'from-emerald-600 to-emerald-700', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-100',
+    content: [
+      { subtitle: 'O que é a aba Clientes?', text: 'Visão consolidada de todos os clientes cadastrados na plataforma, exibidos em cards visuais com informações completas visíveis de imediato. Admins têm acesso total; usuários padrão visualizam os clientes do seu gerente.' },
+      { subtitle: '🃏 Novo layout em Cards', items: [
+        'Cada cliente aparece como um **card com avatar de iniciais** em gradiente azul.',
+        'O card exibe: **nome, gerente responsável, subcarteira (📁), CPF, telefone, e-mail e cidade/UF** — sem necessidade de abrir qualquer tela.',
+        'Grid responsivo: 1 coluna (mobile), 2 colunas (tablet), 3–4 colunas (desktop).',
+        'Passe o mouse sobre o card para destacar a borda azul.',
+      ]},
+      { subtitle: '🖱️ Abrir ficha do cliente (clique no card)', items: [
+        'Clique em **qualquer parte do card** para abrir o **Modal de Detalhes do Cliente**.',
+        'O modal abre na **aba "Dados do Cliente"** com todas as informações para visualização.',
+        '**Admins:** campos editáveis diretamente no modal — altere e clique em "Salvar Alterações".',
+        '**Usuários:** visualização somente leitura dos dados cadastrais.',
+      ]},
+      { subtitle: '💬 Registrar Interação (pelo card ou dentro do modal)', items: [
+        '**Opção 1 — pelo botão do card:** clique no botão roxo **"Interações"** no rodapé do card. Abre o modal diretamente na aba de Interações.',
+        '**Opção 2 — dentro do modal:** abra o card, clique na aba **"Interações"** (ícone de balão).',
+        'Na aba de interações, o formulário de nova interação é exibido automaticamente.',
+        'Preencha: **Tipo** (Ligação, WhatsApp, E-mail, Reunião, Visita), **Resultado**, **Data**, **Próximo contato** e **Descrição**.',
+        'Clique em **"Salvar"** — a interação é registrada e o histórico atualizado imediatamente.',
+      ]},
+      { subtitle: '📌 Ações rápidas no rodapé do card', items: [
+        '**💬 Interações (roxo):** abre modal na aba de interações.',
+        '**📅 Agendar (verde):** cria agendamento de contato para este cliente.',
+        '**📄 Contrato (azul):** redireciona para criação de contrato pré-vinculado a este cliente.',
+        '**🗑️ Excluir (vermelho):** apenas para administradores.',
+      ]},
+      { subtitle: 'Filtros e busca', items: [
+        '**Campo de busca:** filtre por nome, CPF/CNPJ, e-mail ou telefone em tempo real.',
+        '**Filtro por gerente:** selecione um gerente para ver apenas sua carteira.',
+        '**Contador dinâmico:** o header exibe "X de Y clientes" conforme os filtros aplicados.',
+      ]},
+      { subtitle: 'Permissões', items: [
+        '**Admins:** podem criar, editar, excluir clientes e alterar o gerente responsável.',
+        '**Usuários padrão:** visualizam e registram interações; **não** podem editar dados nem excluir.',
+        'Os botões "Importar das Vendas" e "Novo Cliente" são exibidos **somente para admins**.',
+      ]},
+    ],
+  },
+  {
+    id: 'alertas-sistema', icon: Bell, title: 'Alertas do Sistema',
+    color: 'from-red-500 to-red-600', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100',
+    content: [
+      { subtitle: 'O que são?', text: 'Banners de aviso global exibidos no topo da plataforma para todos os usuários conectados. Úteis para comunicar instabilidades, manutenções programadas ou avisos urgentes em tempo real.' },
+      { subtitle: 'Tipos de alerta', items: [
+        '⚠️ **Aviso (amarelo):** para comunicados de atenção geral.',
+        '🚨 **Erro (vermelho):** para indicar instabilidade ou falha em andamento.',
+        'ℹ️ **Info (azul):** para informações neutras como manutenções programadas.',
+      ]},
+      { subtitle: 'Como publicar um alerta (admin)', steps: [
+        'O banner aparece **no topo de qualquer página** — clique no botão **"+ Criar Alerta"** à direita.',
+        'Escolha o **tipo** (Aviso, Erro, Info), escreva a **mensagem** e clique em "Publicar".',
+        'O alerta é exibido instantaneamente para **todos os usuários logados** sem recarregar a página.',
+        'Para desativar, clique no botão **"Desativar"** no próprio banner.',
+        'Apenas **um alerta pode estar ativo** por vez — publicar um novo desativa o anterior automaticamente.',
+      ]},
+      { subtitle: 'Visibilidade para usuários', items: [
+        'O banner aparece **acima do conteúdo** em todas as páginas enquanto estiver ativo.',
+        'Usuários **não podem dispensar** o banner — ele fica visível até o admin desativar.',
+        'Ideal para comunicar: sistemas externos fora do ar, atualizações do sistema, prazos urgentes.',
+      ]},
+    ],
+  },
+  {
     id: 'precificacao', icon: Calculator, title: 'Precificação — Simuladores de Produtos',
     color: 'from-amber-600 to-amber-700', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200',
     content: [
@@ -412,7 +478,7 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte'],
+    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
@@ -501,7 +567,7 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'meus-clientes', 'relatorios', 'importar', 'suporte', 'precificacao'];
+  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'meus-clientes', 'clientes', 'relatorios', 'importar', 'suporte', 'precificacao', 'alertas-sistema'];
   const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
 
   const visibleSections = activeCategory
@@ -538,7 +604,7 @@ export default function Manual() {
                 </h1>
                 <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Mai/2026
+                  Guia completo de utilização — atualizado Jun/2026
                 </p>
               </div>
             </div>
