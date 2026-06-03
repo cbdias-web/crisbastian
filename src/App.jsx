@@ -26,6 +26,7 @@ import Contratos from './pages/Contratos';
 import ChatPage from './pages/ChatPage';
 import Precificacao from './pages/Precificacao';
 import Suporte from './pages/Suporte';
+import Desempenho from './pages/Desempenho';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -227,6 +228,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Suporte">
             <Suporte />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Desempenho"
+        element={
+          <LayoutWrapper currentPageName="Desempenho">
+            <Desempenho />
           </LayoutWrapper>
         }
       />

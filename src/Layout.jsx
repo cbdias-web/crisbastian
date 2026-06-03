@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare, Calculator, LifeBuoy } from 'lucide-react';
+import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare, Calculator, LifeBuoy, Activity } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
@@ -192,7 +192,8 @@ export default function Layout({ children, currentPageName }) {
   { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
   { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
   { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
-  { name: 'Precificação', icon: Calculator, page: 'Precificacao', allowUser: true, alwaysVisible: true }].
+  { name: 'Precificação', icon: Calculator, page: 'Precificacao', allowUser: true, alwaysVisible: true },
+  { name: 'Desempenho', icon: Activity, page: 'Desempenho', allowUser: true, alwaysVisible: true }].
   filter((item) => {
     if (isAdmin) return true;
     if (item.alwaysVisible) return true;
@@ -244,6 +245,123 @@ export default function Layout({ children, currentPageName }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ── Drag-and-drop state ─────────────────────────────────────────────────
+  const [dragSrc, setDragSrc] = useState(null); // { block: 'comercial'|'apoio', index }
+  const [dragOver, setDragOver] = useState(null);
+  const [comercialOrder, setComercialOrder] = useState(null);
+  const [apoioOrder, setApoioOrder] = useState(null);
+
+  // Load saved order once user is known
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem(`menu_order_${user.id}`) || '{}');
+      if (saved.comercial) setComercialOrder(saved.comercial);
+      if (saved.apoio) setApoioOrder(saved.apoio);
+    } catch {}
+  }, [user?.id]);
+
+  const saveOrder = (comercial, apoio) => {
+    try {
+      localStorage.setItem(`menu_order_${user?.id}`, JSON.stringify({ comercial, apoio }));
+    } catch {}
+  };
+
+  const applyOrder = (items, order) => {
+    if (!order) return items;
+    const map = new Map(items.map(i => [i.page, i]));
+    const ordered = order.map(k => map.get(k)).filter(Boolean);
+    items.forEach(i => { if (!order.includes(i.page)) ordered.push(i); });
+    return ordered;
+  };
+
+  const handleDragStart = (block, index) => setDragSrc({ block, index });
+  const handleDragOver = (block, index) => { if (dragSrc) setDragOver({ block, index }); };
+
+  const handleDrop = (targetBlock, targetIndex) => {
+    if (!dragSrc) return;
+    const srcBlock = dragSrc.block;
+    const srcIndex = dragSrc.index;
+
+    // Compute ordered lists
+    const orderedComercial = applyOrder(menuComercial, comercialOrder);
+    const orderedApoio = applyOrder(menuApoio, apoioOrder);
+
+    if (srcBlock === targetBlock) {
+      // Same block reorder
+      const list = srcBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
+      const [moved] = list.splice(srcIndex, 1);
+      list.splice(targetIndex, 0, moved);
+      const newOrder = list.map(i => i.page);
+      if (srcBlock === 'comercial') {
+        setComercialOrder(newOrder);
+        saveOrder(newOrder, apoioOrder || orderedApoio.map(i => i.page));
+      } else {
+        setApoioOrder(newOrder);
+        saveOrder(comercialOrder || orderedComercial.map(i => i.page), newOrder);
+      }
+    } else {
+      // Cross-block: move item to target block at targetIndex
+      const srcList = srcBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
+      const tgtList = targetBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
+      const [moved] = srcList.splice(srcIndex, 1);
+      tgtList.splice(targetIndex, 0, moved);
+      const newComercial = srcBlock === 'comercial'
+        ? srcList.map(i => i.page)
+        : tgtList.map(i => i.page);
+      const newApoio = srcBlock === 'apoio'
+        ? srcList.map(i => i.page)
+        : tgtList.map(i => i.page);
+      setComercialOrder(newComercial);
+      setApoioOrder(newApoio);
+      saveOrder(newComercial, newApoio);
+    }
+    setDragSrc(null);
+    setDragOver(null);
+  };
+
+  const handleDragEnd = () => { setDragSrc(null); setDragOver(null); };
+
+  // Renders a draggable menu item link
+  const renderDraggableItem = (item, index, block) => {
+    const Icon = item.icon;
+    const isActive = currentPageName === item.page;
+    const isDragging = dragSrc?.block === block && dragSrc?.index === index;
+    const isOver = dragOver?.block === block && dragOver?.index === index && dragSrc?.index !== index;
+    return (
+      <div
+        key={item.page}
+        draggable
+        onDragStart={() => handleDragStart(block, index)}
+        onDragOver={(e) => { e.preventDefault(); handleDragOver(block, index); }}
+        onDrop={(e) => { e.preventDefault(); handleDrop(block, index); }}
+        onDragEnd={handleDragEnd}
+        style={{ opacity: isDragging ? 0.4 : 1, cursor: 'grab' }}
+        className={`relative rounded-xl mb-1 ${isOver ? 'ring-1 ring-blue-300/40' : ''}`}
+        title={sidebarCollapsed ? item.name : undefined}
+      >
+        {isOver && <div className="absolute -top-0.5 left-2 right-2 h-0.5 bg-blue-400 rounded-full pointer-events-none z-10" />}
+        <Link
+          to={createPageUrl(item.page)}
+          draggable={false}
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all
+            ${sidebarCollapsed ? 'justify-center px-2' : ''}
+            ${isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}
+          `}
+        >
+          <Icon className="w-4 h-4 flex-shrink-0" />
+          {!sidebarCollapsed && <span className="text-sm font-medium flex-1">{item.name}</span>}
+          {!sidebarCollapsed && item.page === 'ChatPage' && mensagensNaoLidas > 0 && (
+            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
+          )}
+          {!sidebarCollapsed && item.badgeKey === 'suporte' && chamadosPendentes.length > 0 && (
+            <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{chamadosPendentes.length}</span>
+          )}
+        </Link>
+      </div>
+    );
+  };
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [impersonating, setImpersonating] = useState(() => getImpersonatedVendedor());
   const [vendedoresList, setVendedoresList] = useState([]);
@@ -451,54 +569,30 @@ export default function Layout({ children, currentPageName }) {
           })()}
 
           {/* BLOCO COMERCIAL */}
-          {menuComercial.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
+          {applyOrder(menuComercial, comercialOrder).filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
           <button onClick={() => setComercialMenuOpen((prev) => !prev)}
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
               <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Comercial</span>
               <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${comercialMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
           }
-          {(comercialMenuOpen || sidebarCollapsed) && menuComercial.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPageName === item.page;
-            return (
-              <Link key={item.page} to={createPageUrl(item.page)} title={sidebarCollapsed ? item.name : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative opacity-100 ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-              }>
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-              </Link>);
-
-          })}
+          {(comercialMenuOpen || sidebarCollapsed) && applyOrder(menuComercial, comercialOrder)
+            .filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
+            .map((item, index) => renderDraggableItem(item, index, 'comercial'))
+          }
 
           {/* BLOCO APOIO */}
-          {menuApoio.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
+          {applyOrder(menuApoio, apoioOrder).filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
           <button onClick={() => setApoioMenuOpen((prev) => !prev)}
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
               <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Apoio</span>
               <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${apoioMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
           }
-          {(apoioMenuOpen || sidebarCollapsed) && menuApoio.filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPageName === item.page;
-            return (
-              <Link key={item.page} to={createPageUrl(item.page)} title={sidebarCollapsed ? item.name : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-              }>
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">{item.name}</span>}
-                {item.page === 'ChatPage' && mensagensNaoLidas > 0 &&
-                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
-                }
-                {item.badgeKey === 'suporte' && chamadosPendentes.length > 0 &&
-                <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{chamadosPendentes.length}</span>
-                }
-              </Link>);
-
-          })}
+          {(apoioMenuOpen || sidebarCollapsed) && applyOrder(menuApoio, apoioOrder)
+            .filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
+            .map((item, index) => renderDraggableItem(item, index, 'apoio'))
+          }
 
           {/* BLOCO ADMINISTRATIVO */}
           {adminMenuItems.length > 0 && !sidebarCollapsed &&

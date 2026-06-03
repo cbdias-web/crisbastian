@@ -1,0 +1,29 @@
+{
+  "name": "Desempenho",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio (para persistir layout dos gr\u00e1ficos)"
+    },
+    "menu_order": {
+      "type": "array",
+      "description": "Ordem customizada dos menus laterais (array de page keys)",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "graficos_ocultos": {
+      "type": "array",
+      "description": "Gr\u00e1ficos ocultados pelo usu\u00e1rio",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}
