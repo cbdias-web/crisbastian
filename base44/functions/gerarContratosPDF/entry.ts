@@ -110,7 +110,7 @@ function mapearCampos(contrato) {
       'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
       'VALOR DA ENTRADA': fmtVal(entradaInt),
       'VALOR PARCELAS': valorParcela,
-      'VALOR DA MENSALIDADE': valorParcela,
+      'VALOR DA MENSALIDADE': '',
       'TOD DIA': diaVenc,
     };
   }
