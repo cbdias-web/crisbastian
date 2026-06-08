@@ -31,7 +31,18 @@ Deno.serve(async (req) => {
         const fields = form.getFields();
         resultado[nome] = {
           total_campos: fields.length,
-          campos: fields.map(f => f.getName()),
+          campos: fields.map(f => {
+            const info = { nome: f.getName() };
+            try {
+              const widgets = f.acroField.getWidgets();
+              info.widgets = widgets.map(w => {
+                try { return w.getRectangle(); } catch (e) { return { err: e.message }; }
+              });
+            } catch (e) {
+              info.widget_err = e.message;
+            }
+            return info;
+          }),
         };
       } catch (e) {
         resultado[nome] = { erro: e.message };

@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { PDFDocument } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, PDFName, PDFString } from 'npm:pdf-lib@1.17.1';
 
 const PDF_URLS = {
   'CONTA GLOBAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/440bfe20e_Contrato-ContaGlobal.pdf',
@@ -112,7 +112,6 @@ function mapearCampos(contrato) {
       'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
       'VALOR DA ENTRADA': fmtVal(entradaInt),
       'VALOR PARCELAS': valorParcela,
-      'VALOR DA MENSALIDADE': ' ',
       'TOD DIA': diaVenc,
     };
   }
@@ -490,15 +489,6 @@ Deno.serve(async (req) => {
       preencherCampo(form, nome, valor);
     }
 
-    // Para CONTA INTERNACIONAL: garantir que VALOR DA MENSALIDADE fique vazio
-    if (contrato.tipo === 'CONTA INTERNACIONAL') {
-      try {
-        const fMens = form.getTextField('VALOR DA MENSALIDADE');
-        fMens.setText(' ');
-        fMens.setDefaultValue('');
-      } catch (_) {}
-    }
-
     // Salvar cliente na carteira vinculado ao gerente (se ainda não existir)
     if (contrato.nome && contrato.cpf_cnpj) {
       try {
@@ -525,8 +515,37 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Para CONTA INTERNACIONAL: limpar campo VALOR DA MENSALIDADE antes do flatten
+    if (contrato.tipo === 'CONTA INTERNACIONAL') {
+      try {
+        const fMens = form.getTextField('VALOR DA MENSALIDADE');
+        fMens.setText('');
+        fMens.setDefaultValue('');
+        fMens.acroField.dict.set(PDFName.of('V'), PDFString.of(''));
+        fMens.acroField.dict.set(PDFName.of('DV'), PDFString.of(''));
+        const widgets = fMens.acroField.getWidgets();
+        for (const widget of widgets) {
+          widget.dict.delete(PDFName.of('AP'));
+        }
+      } catch (_) {}
+    }
+
     // Achatar o formulário para não ser editável
     form.flatten();
+
+    // Para CONTA INTERNACIONAL: cobrir VALOR DA MENSALIDADE com retângulo branco (coordenadas fixas confirmadas via diagnóstico)
+    if (contrato.tipo === 'CONTA INTERNACIONAL') {
+      const pg = pdfDoc.getPages()[0];
+      // Coordenadas confirmadas: x=300.486, y=638.277, w=77.511, h=14.028
+      pg.drawRectangle({
+        x: 298,
+        y: 636,
+        width: 82,
+        height: 18,
+        color: { type: 'RGB', red: 1, green: 1, blue: 1 },
+        borderWidth: 0,
+      });
+    }
 
     const pdfPreenchido = await pdfDoc.save();
     
