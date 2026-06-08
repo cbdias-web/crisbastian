@@ -40,12 +40,14 @@ function extrairTelefone(telefone) {
 }
 
 function preencherCampo(form, nome, valor) {
-  // Pula apenas undefined/null — zero e string vazia são válidos
+  // Pula apenas undefined/null — zero e string vazia são válidos (string vazia limpa o campo)
   if (valor === undefined || valor === null) return;
   const str = String(valor);
   try {
     const field = form.getTextField(nome);
+    // setText('') pode ser ignorado por alguns PDFs; usar setDefaultValue também
     field.setText(str);
+    if (str === '') field.setDefaultValue('');
   } catch (_) {
     // campo não existe ou tipo incompatível, ignorar silenciosamente
   }
@@ -110,7 +112,7 @@ function mapearCampos(contrato) {
       'VALOR TOTAL DA ADESAO': fmtVal(contrato.valor_total || 0),
       'VALOR DA ENTRADA': fmtVal(entradaInt),
       'VALOR PARCELAS': valorParcela,
-      'VALOR DA MENSALIDADE': '',
+      'VALOR DA MENSALIDADE': ' ',
       'TOD DIA': diaVenc,
     };
   }
@@ -481,11 +483,20 @@ Deno.serve(async (req) => {
 
     // Log dos campos disponíveis neste PDF para debug
     const camposDisponiveis = listarCampos(form);
-    console.log(`[PDF ${contrato.tipo}] Campos disponíveis:`, JSON.stringify(camposDisponiveis));
+    console.log(`[CAMPOS_PDF] ${contrato.tipo}: ${JSON.stringify(camposDisponiveis)}`);
 
     const campos = mapearCampos(contrato);
     for (const [nome, valor] of Object.entries(campos)) {
       preencherCampo(form, nome, valor);
+    }
+
+    // Para CONTA INTERNACIONAL: garantir que VALOR DA MENSALIDADE fique vazio
+    if (contrato.tipo === 'CONTA INTERNACIONAL') {
+      try {
+        const fMens = form.getTextField('VALOR DA MENSALIDADE');
+        fMens.setText(' ');
+        fMens.setDefaultValue('');
+      } catch (_) {}
     }
 
     // Salvar cliente na carteira vinculado ao gerente (se ainda não existir)
