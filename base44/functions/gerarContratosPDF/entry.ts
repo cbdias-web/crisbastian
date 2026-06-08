@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { PDFDocument, PDFName, PDFString } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, PDFName, PDFString, PDFArray, PDFDict } from 'npm:pdf-lib@1.17.1';
 
 const PDF_URLS = {
   'CONTA GLOBAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/440bfe20e_Contrato-ContaGlobal.pdf',
@@ -515,35 +515,58 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Para CONTA INTERNACIONAL: limpar campo VALOR DA MENSALIDADE antes do flatten
+    // Para CONTA INTERNACIONAL: remover completamente o campo VALOR DA MENSALIDADE do AcroForm
+    // antes do flatten para que nenhum valor hardcoded do template seja renderizado
     if (contrato.tipo === 'CONTA INTERNACIONAL') {
       try {
         const fMens = form.getTextField('VALOR DA MENSALIDADE');
+        // Zera todos os valores possíveis
         fMens.setText('');
         fMens.setDefaultValue('');
         fMens.acroField.dict.set(PDFName.of('V'), PDFString.of(''));
         fMens.acroField.dict.set(PDFName.of('DV'), PDFString.of(''));
+        // Remove appearance streams de todos os widgets para forçar aparência vazia
         const widgets = fMens.acroField.getWidgets();
         for (const widget of widgets) {
           widget.dict.delete(PDFName.of('AP'));
+          // Força DA (default appearance) para fonte invisível/zero
+          widget.dict.set(PDFName.of('DA'), PDFString.of('/Helv 0 Tf 0 g'));
         }
-      } catch (_) {}
+        // Remove o campo do array Fields do AcroForm para que o flatten ignore-o
+        const acroForm = pdfDoc.catalog.lookup(PDFName.of('AcroForm'), PDFDict);
+        if (acroForm) {
+          const fieldsArray = acroForm.lookup(PDFName.of('Fields'), PDFArray);
+          if (fieldsArray) {
+            const ref = fMens.acroField.ref;
+            const newFields = [];
+            for (let i = 0; i < fieldsArray.size(); i++) {
+              const item = fieldsArray.get(i);
+              if (item !== ref) newFields.push(item);
+            }
+            acroForm.set(PDFName.of('Fields'), pdfDoc.context.obj(newFields));
+          }
+        }
+      } catch (e) {
+        console.log('[MENS] Erro ao remover campo:', e.message);
+      }
     }
 
     // Achatar o formulário para não ser editável
     form.flatten();
 
-    // Para CONTA INTERNACIONAL: cobrir VALOR DA MENSALIDADE com retângulo branco (coordenadas fixas confirmadas via diagnóstico)
+    // Para CONTA INTERNACIONAL: cobrir VALOR DA MENSALIDADE com retângulo branco
+    // Campo confirmado via diagnóstico na PÁGINA 1 (índice 1): x=300.486, y=638.277, w=77.511, h=14.028
     if (contrato.tipo === 'CONTA INTERNACIONAL') {
-      const pg = pdfDoc.getPages()[0];
-      // Coordenadas confirmadas: x=300.486, y=638.277, w=77.511, h=14.028
+      const pages = pdfDoc.getPages();
+      const pg = pages[1] ?? pages[0]; // campo está na página de índice 1
       pg.drawRectangle({
         x: 298,
-        y: 636,
-        width: 82,
-        height: 18,
+        y: 635,
+        width: 83,
+        height: 20,
         color: { type: 'RGB', red: 1, green: 1, blue: 1 },
         borderWidth: 0,
+        opacity: 1,
       });
     }
 

@@ -29,14 +29,32 @@ Deno.serve(async (req) => {
         const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
         const form = pdfDoc.getForm();
         const fields = form.getFields();
+        const pages = pdfDoc.getPages();
+        const pageInfo = pages.map(p => ({ width: p.getWidth(), height: p.getHeight() }));
+        // Mapear ref de página -> índice
+        const pageRefToIndex = new Map();
+        pages.forEach((pg, idx) => {
+          pageRefToIndex.set(pg.ref.toString(), idx);
+        });
+
         resultado[nome] = {
           total_campos: fields.length,
+          page_sizes: pageInfo,
           campos: fields.map(f => {
             const info = { nome: f.getName() };
             try {
               const widgets = f.acroField.getWidgets();
               info.widgets = widgets.map(w => {
-                try { return w.getRectangle(); } catch (e) { return { err: e.message }; }
+                try {
+                  const rect = w.getRectangle();
+                  // Tentar determinar a página do widget
+                  let pageIndex = '?';
+                  try {
+                    const pRef = w.P();
+                    if (pRef) pageIndex = pageRefToIndex.get(pRef.toString()) ?? '?';
+                  } catch (_) {}
+                  return { ...rect, pageIndex };
+                } catch (e) { return { err: e.message }; }
               });
             } catch (e) {
               info.widget_err = e.message;
