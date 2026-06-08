@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
 import { Calculator, Globe, Shield, Settings, Anchor, Building2, ChevronRight, FileText, BarChart3 } from 'lucide-react';
 import PropostasGeradas from '@/components/precificacao/PropostasGeradas';
 import RelatorioPrecificacao from '@/components/precificacao/RelatorioPrecificacao';
@@ -8,6 +9,7 @@ import SimuladorSeguroGarantia from '@/components/precificacao/SimuladorSeguroGa
 import SimuladorOffshore from '@/components/precificacao/SimuladorOffshore';
 import SimuladorCanalBancario from '@/components/precificacao/SimuladorCanalBancario';
 import ConfigPrecificacao from '@/components/precificacao/ConfigPrecificacao';
+import PrecificacaoBloqueada from '@/components/precificacao/PrecificacaoBloqueada';
 
 const PRODUTOS = [
   {
@@ -61,6 +63,39 @@ export default function Precificacao() {
   const [tab, setTab] = useState('dolarize');
   const [configOpen, setConfigOpen] = useState(false);
   const [mainTab, setMainTab] = useState('simulador'); // 'simulador' | 'propostas' | 'relatorios'
+  const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [acesso, setAcesso] = useState(null); // null=loading, true=tem acesso, false=bloqueado
+
+  useEffect(() => {
+    base44.auth.me().then(async (u) => {
+      setUser(u);
+      const isAdmin = u?.role === 'admin' || u?.permissao_admin === true;
+      if (isAdmin) { setAcesso(true); setLoadingUser(false); return; }
+      // Verifica se tem solicitação aprovada
+      try {
+        const solic = await base44.entities.NotificacaoAutorizacao.filter({
+          tipo: 'solicitacao_precificacao',
+          user_id: u.id,
+          status: 'aprovado',
+        });
+        setAcesso(solic.length > 0);
+      } catch { setAcesso(false); }
+      setLoadingUser(false);
+    }).catch(() => { setLoadingUser(false); setAcesso(false); });
+  }, []);
+
+  if (loadingUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!acesso) {
+    return <PrecificacaoBloqueada user={user} />;
+  }
 
   const ativo = PRODUTOS.find(p => p.id === tab);
 

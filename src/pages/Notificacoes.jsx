@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bell, Check, X, Clock, CheckCircle2, XCircle, AlertTriangle,
-  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2
+  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2, Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -289,6 +289,44 @@ export default function Notificacoes() {
                 <p className="text-gray-400 text-sm mt-1">{pendentes.length === 0 ? 'Todas as solicitações foram tratadas.' : 'Tente outro termo de busca.'}</p>
               </div>
             ) : pendentesFiltrados.map(notif => {
+              // Card para solicitação de precificação
+              if (notif.tipo === 'solicitacao_precificacao') {
+                return (
+                  <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-violet-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 px-5 py-3 border-b border-violet-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calculator className="w-5 h-5 text-violet-600" />
+                        <span className="font-semibold text-violet-900">Solicitação de Acesso — Precificação</span>
+                      </div>
+                      <span className="text-xs text-violet-500 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatDateTime(notif.created_date)}
+                      </span>
+                    </div>
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div><p className="text-xs text-gray-500 mb-1">Usuário</p><p className="font-semibold text-gray-900 text-sm">{notif.vendedor_nome}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">E-mail</p><p className="font-semibold text-gray-900 text-sm">{notif.user_email || '—'}</p></div>
+                      </div>
+                      <div className="bg-violet-50 rounded-xl p-3 mb-4 flex items-start gap-2">
+                        <Calculator className="w-4 h-4 text-violet-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-violet-700">O usuário está solicitando acesso à aba de <strong>Precificação</strong>. Aprove para liberar o acesso ou rejeite para negar.</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-medium text-sm disabled:opacity-50">
+                          <Check className="w-4 h-4" /> Aprovar acesso
+                        </button>
+                        <button onClick={() => rejeitarMutation.mutate(notif.id)} disabled={rejeitarMutation.isPending}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-medium text-sm disabled:opacity-50">
+                          <X className="w-4 h-4" /> Rejeitar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               // Card para novo contrato
               if (notif.tipo === 'novo_contrato') {
                 return (
@@ -410,6 +448,9 @@ export default function Notificacoes() {
                     <span className={`font-semibold text-sm ${notif.status === 'aprovado' ? 'text-green-800' : 'text-red-800'}`}>
                       {notif.status === 'aprovado' ? 'Aprovado' : 'Rejeitado'}
                     </span>
+                    {notif.tipo === 'solicitacao_precificacao' && (
+                      <span className="text-[10px] px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full font-bold flex items-center gap-1"><Calculator className="w-2.5 h-2.5" /> Precificação</span>
+                    )}
                     {!notif.lida && (
                       <span className="text-[10px] px-2 py-0.5 bg-blue-500 text-white rounded-full font-bold">NOVO</span>
                     )}
@@ -417,12 +458,19 @@ export default function Notificacoes() {
                   <span className="text-xs text-gray-400">{formatDateTime(notif.data_aprovacao || notif.created_date)}</span>
                 </div>
                 <div className="px-5 py-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                    <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Vendedor</p><p className="text-sm font-medium text-gray-800">{notif.vendedor_nome}</p></div>
-                    <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Cliente</p><p className="text-sm font-medium text-gray-800">{notif.cliente || '—'}</p></div>
-                    <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Valor</p><p className="text-sm font-medium text-gray-800">{formatCurrency(notif.valor_venda)}</p></div>
-                    <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Espelhamento</p><p className="text-sm font-medium text-gray-800">{notif.total_espelhamento?.toFixed(1)}%</p></div>
-                  </div>
+                  {notif.tipo === 'solicitacao_precificacao' ? (
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Usuário</p><p className="text-sm font-medium text-gray-800">{notif.vendedor_nome}</p></div>
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">E-mail</p><p className="text-sm font-medium text-gray-800">{notif.user_email || '—'}</p></div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Vendedor</p><p className="text-sm font-medium text-gray-800">{notif.vendedor_nome}</p></div>
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Cliente</p><p className="text-sm font-medium text-gray-800">{notif.cliente || '—'}</p></div>
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Valor</p><p className="text-sm font-medium text-gray-800">{formatCurrency(notif.valor_venda)}</p></div>
+                      <div><p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">Espelhamento</p><p className="text-sm font-medium text-gray-800">{notif.total_espelhamento?.toFixed(1)}%</p></div>
+                    </div>
+                  )}
                   {notif.aprovado_por && (
                     <p className="text-xs text-gray-400">Tratado por <span className="font-medium text-gray-600">{notif.aprovado_por}</span></p>
                   )}
