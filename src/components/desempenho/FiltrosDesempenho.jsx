@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { SlidersHorizontal, RotateCcw, ChevronDown, Calendar, Thermometer, FileCheck, Users, Package, Building2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { SlidersHorizontal, RotateCcw, ChevronDown, Calendar, Check } from 'lucide-react';
 import { format, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 const PERIODOS_PRESET = [
@@ -12,11 +12,11 @@ const PERIODOS_PRESET = [
 ];
 
 const TEMPERATURAS = [
-  { label: 'Frio', value: 'Frio', color: '#93c5fd', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', activeBg: 'bg-blue-500' },
-  { label: 'Morno', value: 'Morno', color: '#fbbf24', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', activeBg: 'bg-amber-500' },
-  { label: 'Quente', value: 'Quente', color: '#f97316', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', activeBg: 'bg-orange-500' },
-  { label: 'Fechado', value: 'Fechado', color: '#10b981', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', activeBg: 'bg-emerald-500' },
-  { label: 'Perdido', value: 'Perdido', color: '#ef4444', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', activeBg: 'bg-red-500' },
+  { label: 'Frio', value: 'Frio', dot: 'bg-blue-400' },
+  { label: 'Morno', value: 'Morno', dot: 'bg-amber-400' },
+  { label: 'Quente', value: 'Quente', dot: 'bg-orange-500' },
+  { label: 'Fechado', value: 'Fechado', dot: 'bg-emerald-500' },
+  { label: 'Perdido', value: 'Perdido', dot: 'bg-red-400' },
 ];
 
 const STATUS_CONTRATOS = [
@@ -50,46 +50,96 @@ export function buildDateRange(periodo, dataInicio, dataFim) {
   }
 }
 
-function FilterSection({ icon: Icon, label, children }) {
+// Dropdown genérico reutilizável
+function Dropdown({ label, count, children, minWidth = 220 }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const active = count > 0;
+
   return (
-    <div className="space-y-2.5">
-      <div className="flex items-center gap-1.5">
-        <Icon className="w-3.5 h-3.5 text-gray-400" />
-        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.15em]">{label}</span>
-      </div>
-      {children}
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-sm font-medium transition-all ${
+          active
+            ? 'bg-[#0f1e35] text-white border-[#0f1e35] shadow-sm'
+            : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:text-gray-800'
+        }`}
+      >
+        <span>{label}</span>
+        {active && (
+          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-white/20 text-white text-[9px] font-bold">
+            {count}
+          </span>
+        )}
+        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-150 ${open ? 'rotate-180' : ''} ${active ? 'text-white/70' : 'text-gray-400'}`} />
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full mt-1.5 left-0 z-50 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 overflow-hidden"
+          style={{ minWidth }}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
-function PillButton({ active, onClick, children, activeClass = 'bg-[#0f1e35] text-white border-[#0f1e35]' }) {
+// Item simples (radio-like)
+function DropdownItem({ label, selected, onClick, dot }) {
   return (
     <button
       onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-lg border transition-all font-medium whitespace-nowrap ${
-        active
-          ? activeClass
-          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400 hover:text-gray-700'
-      }`}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
     >
-      {children}
+      {dot && <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`} />}
+      <span className="flex-1">{label}</span>
+      {selected && <Check className="w-3.5 h-3.5 text-[#0f1e35]" />}
+    </button>
+  );
+}
+
+// Item com checkbox (multi-select)
+function DropdownCheckItem({ label, selected, onClick, avatar }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+    >
+      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition ${selected ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
+        {selected && <Check className="w-2.5 h-2.5 text-white" />}
+      </span>
+      {avatar && (
+        avatar.url
+          ? <img src={avatar.url} className="w-5 h-5 rounded-full object-cover flex-shrink-0" alt="" />
+          : <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-[9px] font-bold text-gray-500 flex-shrink-0">{avatar.inicial}</span>
+      )}
+      <span className="flex-1 truncate">{label}</span>
     </button>
   );
 }
 
 export default function FiltrosDesempenho({ vendedores, produtos, filtros, onChange, isAdmin }) {
-  const [expanded, setExpanded] = useState(true);
-
   const handleChange = (key, value) => onChange({ ...filtros, [key]: value });
 
-  const totalAtivos = [
-    filtros.vendedores_sel?.length > 0,
-    filtros.produtos_sel?.length > 0,
-    filtros.periodo !== '6_meses',
-    !!filtros.temperatura,
-    !!filtros.status_contrato,
-    !!filtros.time,
-  ].filter(Boolean).length;
+  const toggleVendedor = (id) => {
+    const atual = filtros.vendedores_sel || [];
+    handleChange('vendedores_sel', atual.includes(id) ? atual.filter(v => v !== id) : [...atual, id]);
+  };
+
+  const toggleProduto = (p) => {
+    const atual = filtros.produtos_sel || [];
+    handleChange('produtos_sel', atual.includes(p) ? atual.filter(x => x !== p) : [...atual, p]);
+  };
 
   const resetar = () => onChange({
     periodo: '6_meses',
@@ -103,204 +153,179 @@ export default function FiltrosDesempenho({ vendedores, produtos, filtros, onCha
     time: '',
   });
 
-  const toggleVendedor = (id) => {
-    const atual = filtros.vendedores_sel || [];
-    handleChange('vendedores_sel', atual.includes(id) ? atual.filter(v => v !== id) : [...atual, id]);
-  };
-
-  const toggleProduto = (p) => {
-    const atual = filtros.produtos_sel || [];
-    handleChange('produtos_sel', atual.includes(p) ? atual.filter(x => x !== p) : [...atual, p]);
-  };
-
   const times = [...new Set(vendedores.map(v => v.time).filter(Boolean))].sort();
-
-  const vendedoresFiltrados = filtros.time
-    ? vendedores.filter(v => v.time === filtros.time)
-    : vendedores;
-
-  // Deduplica produtos (case-insensitive)
+  const vendedoresFiltrados = filtros.time ? vendedores.filter(v => v.time === filtros.time) : vendedores;
   const produtosDedup = [...new Map(produtos.map(p => [p.toLowerCase().trim(), p])).values()].sort();
 
+  const periodoLabel = PERIODOS_PRESET.find(p => p.value === filtros.periodo)?.label || 'Período';
+
+  const totalAtivos = [
+    filtros.vendedores_sel?.length > 0,
+    filtros.produtos_sel?.length > 0,
+    filtros.periodo !== '6_meses',
+    !!filtros.temperatura,
+    !!filtros.status_contrato,
+    !!filtros.time,
+  ].filter(Boolean).length;
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3.5">
-        <button onClick={() => setExpanded(e => !e)} className="flex items-center gap-2.5 flex-1 text-left">
-          <div className="w-7 h-7 rounded-lg bg-[#0f1e35]/5 flex items-center justify-center">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-[#0f1e35]" />
-          </div>
-          <span className="text-sm font-semibold text-gray-800">Filtros</span>
-          {totalAtivos > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#0f1e35] text-white text-[10px] font-bold">
-              {totalAtivos}
-            </span>
-          )}
-        </button>
-        <div className="flex items-center gap-2">
-          {totalAtivos > 0 && (
-            <button
-              onClick={resetar}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-2 py-1 rounded-lg hover:bg-red-50"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Limpar filtros
-            </button>
-          )}
-          <button onClick={() => setExpanded(e => !e)}>
-            <ChevronDown className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
-          </button>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+      <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Ícone */}
+        <div className="flex items-center gap-2 mr-1">
+          <SlidersHorizontal className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-semibold text-gray-700">Filtros</span>
         </div>
-      </div>
 
-      {expanded && (
-        <div className="border-t border-gray-50 px-5 py-5 space-y-6">
+        <div className="w-px h-5 bg-gray-200 mx-1" />
 
-          {/* Linha 1: Período + seletores */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Período */}
-            <FilterSection icon={Calendar} label="Período">
-              <div className="relative">
-                <select
-                  value={filtros.periodo}
-                  onChange={e => handleChange('periodo', e.target.value)}
-                  className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 bg-white focus:outline-none focus:border-[#0f1e35] appearance-none pr-8 text-gray-700 font-medium"
-                >
-                  {PERIODOS_PRESET.map(p => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+        {/* Período */}
+        <Dropdown label={periodoLabel} count={filtros.periodo !== '6_meses' ? 1 : 0} minWidth={200}>
+          {PERIODOS_PRESET.map(p => (
+            <DropdownItem
+              key={p.value}
+              label={p.label}
+              selected={filtros.periodo === p.value}
+              onClick={() => handleChange('periodo', p.value)}
+            />
+          ))}
+          {filtros.periodo === 'custom' && (
+            <div className="px-4 pb-3 pt-1 space-y-2 border-t border-gray-50 mt-1">
+              <div>
+                <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">De</label>
+                <input type="date" value={filtros.dataInicio}
+                  onChange={e => handleChange('dataInicio', e.target.value)}
+                  className="w-full mt-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0f1e35]" />
               </div>
-              {filtros.periodo === 'custom' && (
-                <div className="flex gap-2 mt-2">
-                  <input type="date" value={filtros.dataInicio}
-                    onChange={e => handleChange('dataInicio', e.target.value)}
-                    className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-[#0f1e35]" />
-                  <span className="text-gray-300 self-center">→</span>
-                  <input type="date" value={filtros.dataFim}
-                    onChange={e => handleChange('dataFim', e.target.value)}
-                    className="flex-1 text-xs border border-gray-200 rounded-xl px-3 py-2 bg-white focus:outline-none focus:border-[#0f1e35]" />
-                </div>
+              <div>
+                <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Até</label>
+                <input type="date" value={filtros.dataFim}
+                  onChange={e => handleChange('dataFim', e.target.value)}
+                  className="w-full mt-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0f1e35]" />
+              </div>
+            </div>
+          )}
+        </Dropdown>
+
+        {/* Pipeline */}
+        <Dropdown label={filtros.temperatura || 'Pipeline'} count={filtros.temperatura ? 1 : 0} minWidth={180}>
+          <DropdownItem label="Todas" selected={!filtros.temperatura} onClick={() => handleChange('temperatura', '')} />
+          <div className="border-t border-gray-50 my-1" />
+          {TEMPERATURAS.map(t => (
+            <DropdownItem
+              key={t.value}
+              label={t.label}
+              dot={t.dot}
+              selected={filtros.temperatura === t.value}
+              onClick={() => handleChange('temperatura', filtros.temperatura === t.value ? '' : t.value)}
+            />
+          ))}
+        </Dropdown>
+
+        {/* Status Contrato */}
+        <Dropdown
+          label={filtros.status_contrato ? STATUS_CONTRATOS.find(s => s.value === filtros.status_contrato)?.label : 'Contrato'}
+          count={filtros.status_contrato ? 1 : 0}
+          minWidth={210}
+        >
+          <DropdownItem label="Todos os status" selected={!filtros.status_contrato} onClick={() => handleChange('status_contrato', '')} />
+          <div className="border-t border-gray-50 my-1" />
+          {STATUS_CONTRATOS.map(s => (
+            <DropdownItem
+              key={s.value}
+              label={s.label}
+              selected={filtros.status_contrato === s.value}
+              onClick={() => handleChange('status_contrato', filtros.status_contrato === s.value ? '' : s.value)}
+            />
+          ))}
+        </Dropdown>
+
+        {/* Admin filters */}
+        {isAdmin && (
+          <>
+            {/* Time */}
+            {times.length > 0 && (
+              <Dropdown label={filtros.time || 'Time'} count={filtros.time ? 1 : 0} minWidth={180}>
+                <DropdownItem label="Todos os times" selected={!filtros.time} onClick={() => handleChange('time', '')} />
+                <div className="border-t border-gray-50 my-1" />
+                {times.map(t => (
+                  <DropdownItem key={t} label={t} selected={filtros.time === t} onClick={() => handleChange('time', filtros.time === t ? '' : t)} />
+                ))}
+              </Dropdown>
+            )}
+
+            {/* Gerentes */}
+            <Dropdown
+              label="Gerentes"
+              count={filtros.vendedores_sel?.length || 0}
+              minWidth={230}
+            >
+              {filtros.vendedores_sel?.length > 0 && (
+                <>
+                  <button onClick={() => handleChange('vendedores_sel', [])} className="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-50 transition font-medium">
+                    Limpar seleção
+                  </button>
+                  <div className="border-t border-gray-50" />
+                </>
               )}
-            </FilterSection>
-
-            {/* Temperatura Pipeline */}
-            <FilterSection icon={Thermometer} label="Temperatura Pipeline">
-              <div className="flex flex-wrap gap-1.5">
-                {TEMPERATURAS.map(t => {
-                  const active = filtros.temperatura === t.value;
-                  return (
-                    <button
-                      key={t.value}
-                      onClick={() => handleChange('temperatura', active ? '' : t.value)}
-                      className={`text-xs px-3 py-1.5 rounded-lg border transition-all font-medium ${
-                        active
-                          ? `${t.activeBg} text-white border-transparent`
-                          : `${t.bg} ${t.text} ${t.border} hover:opacity-80`
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
+              <div className="max-h-56 overflow-y-auto">
+                {vendedoresFiltrados.map(v => (
+                  <DropdownCheckItem
+                    key={v.id}
+                    label={v.nome}
+                    selected={filtros.vendedores_sel?.includes(v.id)}
+                    onClick={() => toggleVendedor(v.id)}
+                    avatar={{ url: v.avatar_url, inicial: v.nome?.charAt(0) }}
+                  />
+                ))}
+                {vendedoresFiltrados.length === 0 && (
+                  <p className="px-4 py-3 text-xs text-gray-400 italic">Nenhum gerente neste time</p>
+                )}
               </div>
-            </FilterSection>
+            </Dropdown>
 
-            {/* Status Contrato */}
-            <FilterSection icon={FileCheck} label="Status do Contrato">
-              <div className="flex flex-wrap gap-1.5">
-                {STATUS_CONTRATOS.map(s => (
-                  <PillButton
-                    key={s.value}
-                    active={filtros.status_contrato === s.value}
-                    onClick={() => handleChange('status_contrato', filtros.status_contrato === s.value ? '' : s.value)}
-                    activeClass="bg-[#0f1e35] text-white border-[#0f1e35]"
-                  >
-                    {s.label}
-                  </PillButton>
+            {/* Produtos */}
+            <Dropdown
+              label="Produtos"
+              count={filtros.produtos_sel?.length || 0}
+              minWidth={220}
+            >
+              {filtros.produtos_sel?.length > 0 && (
+                <>
+                  <button onClick={() => handleChange('produtos_sel', [])} className="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-50 transition font-medium">
+                    Limpar seleção
+                  </button>
+                  <div className="border-t border-gray-50" />
+                </>
+              )}
+              <div className="max-h-56 overflow-y-auto">
+                {produtosDedup.map(p => (
+                  <DropdownCheckItem
+                    key={p}
+                    label={p}
+                    selected={filtros.produtos_sel?.includes(p)}
+                    onClick={() => toggleProduto(p)}
+                  />
                 ))}
               </div>
-            </FilterSection>
-          </div>
+            </Dropdown>
+          </>
+        )}
 
-          {/* Seções admin */}
-          {isAdmin && (
-            <>
-              <div className="border-t border-gray-50" />
-
-              {/* Times */}
-              {times.length > 0 && (
-                <FilterSection icon={Building2} label="Time">
-                  <div className="flex flex-wrap gap-1.5">
-                    {times.map(t => (
-                      <PillButton
-                        key={t}
-                        active={filtros.time === t}
-                        onClick={() => handleChange('time', filtros.time === t ? '' : t)}
-                        activeClass="bg-indigo-600 text-white border-indigo-600"
-                      >
-                        {t}
-                      </PillButton>
-                    ))}
-                  </div>
-                </FilterSection>
-              )}
-
-              {/* Gerentes */}
-              <FilterSection icon={Users} label={`Gerentes${filtros.vendedores_sel?.length > 0 ? ` · ${filtros.vendedores_sel.length} selecionado${filtros.vendedores_sel.length > 1 ? 's' : ''}` : ''}`}>
-                <div className="flex flex-wrap gap-2">
-                  {vendedoresFiltrados.map(v => {
-                    const selected = filtros.vendedores_sel?.includes(v.id);
-                    return (
-                      <button
-                        key={v.id}
-                        onClick={() => toggleVendedor(v.id)}
-                        className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-xl border transition-all font-medium ${
-                          selected
-                            ? 'bg-[#0f1e35] text-white border-[#0f1e35] shadow-sm'
-                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-white'
-                        }`}
-                      >
-                        {v.avatar_url ? (
-                          <img src={v.avatar_url} className="w-4 h-4 rounded-full object-cover flex-shrink-0" alt="" />
-                        ) : (
-                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold flex-shrink-0 ${selected ? 'bg-white/20 text-white' : 'bg-gray-300 text-white'}`}>
-                            {v.nome?.charAt(0)}
-                          </span>
-                        )}
-                        <span className="truncate max-w-[100px]">{v.nome?.split(' ')[0]}</span>
-                      </button>
-                    );
-                  })}
-                  {vendedoresFiltrados.length === 0 && (
-                    <span className="text-xs text-gray-400 italic">Nenhum gerente neste time</span>
-                  )}
-                </div>
-              </FilterSection>
-
-              {/* Produtos */}
-              <FilterSection icon={Package} label={`Produtos${filtros.produtos_sel?.length > 0 ? ` · ${filtros.produtos_sel.length} selecionado${filtros.produtos_sel.length > 1 ? 's' : ''}` : ''}`}>
-                <div className="flex flex-wrap gap-1.5">
-                  {produtosDedup.map(p => (
-                    <PillButton
-                      key={p}
-                      active={filtros.produtos_sel?.includes(p)}
-                      onClick={() => toggleProduto(p)}
-                      activeClass="bg-emerald-600 text-white border-emerald-600"
-                    >
-                      {p}
-                    </PillButton>
-                  ))}
-                  {produtosDedup.length === 0 && (
-                    <span className="text-xs text-gray-400 italic">Nenhum produto registrado</span>
-                  )}
-                </div>
-              </FilterSection>
-            </>
-          )}
-        </div>
-      )}
+        {/* Limpar tudo */}
+        {totalAtivos > 0 && (
+          <>
+            <div className="w-px h-5 bg-gray-200 mx-1" />
+            <button
+              onClick={resetar}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-red-500 transition px-2 py-1.5 rounded-lg hover:bg-red-50"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Limpar tudo
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
