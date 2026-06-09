@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +47,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [editandoGerente, setEditandoGerente] = useState(false);
   const [gerenteInput, setGerenteInput] = useState({ id: contrato.vendedor_id || '', nome: contrato.vendedor_nome || '' });
   const [salvandoGerente, setSalvandoGerente] = useState(false);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: vendedores = [] } = useQuery({
@@ -54,6 +56,21 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
     enabled: isAdmin && editandoGerente,
   });
+
+  const alterarStatus = async (novoStatus) => {
+    if (!confirm(`Alterar status para "${STATUS_CONFIG[novoStatus]?.label}"?`)) return;
+    setAlterandoStatus(true);
+    setStatusDropdownOpen(false);
+    try {
+      await base44.entities.Contrato.update(contrato.id, { status: novoStatus });
+      handleUpdate({ ...contrato, status: novoStatus });
+      queryClient.invalidateQueries(['contratos']);
+      toast.success(`Status alterado para "${STATUS_CONFIG[novoStatus]?.label}"!`);
+    } catch (err) {
+      toast.error('Erro ao alterar status: ' + err.message);
+    }
+    setAlterandoStatus(false);
+  };
 
   const salvarGerente = async () => {
     if (!gerenteInput.id) { return; }
@@ -291,7 +308,35 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
               <h2 className="text-xl font-bold">{contrato.nome}</h2>
               <p className="text-sm opacity-70 mt-0.5">{contrato.cpf_cnpj}</p>
             </div>
-            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
+            <div className="flex flex-col items-end gap-1.5">
+              <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${stCfg.cls}`}>{stCfg.label}</span>
+              {isAdmin && (
+                <div className="relative">
+                  <button
+                    onClick={() => setStatusDropdownOpen(p => !p)}
+                    disabled={alterandoStatus}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-white/20 hover:bg-white/30 text-white text-[10px] font-semibold rounded-xl transition">
+                    {alterandoStatus ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                    Alterar status
+                    <ChevronDown className={`w-3 h-3 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {statusDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 py-1 overflow-hidden">
+                      {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                        <button
+                          key={key}
+                          onClick={() => alterarStatus(key)}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-gray-50 transition ${contrato.status === key ? 'font-bold text-[#1a3150] bg-blue-50' : 'text-gray-700'}`}>
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.cls.includes('gray') ? 'bg-gray-400' : cfg.cls.includes('blue') ? 'bg-blue-500' : cfg.cls.includes('emerald') ? 'bg-emerald-500' : cfg.cls.includes('amber') ? 'bg-amber-500' : cfg.cls.includes('violet') ? 'bg-violet-500' : 'bg-purple-500'}`} />
+                          {cfg.label}
+                          {contrato.status === key && <span className="ml-auto text-[9px] text-[#1a3150]">atual</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {/* Gerente */}
           <div className="mt-3 pt-3 border-t border-white/20">
