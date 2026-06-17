@@ -1,11 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import OnboardingModal from '@/components/OnboardingModal';
 import ComunicadoModal from '@/components/ComunicadoModal';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
-import { BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun, UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X, Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText, MessageSquare, Calculator, LifeBuoy, Activity } from 'lucide-react';
+import {
+  BarChart3, Table2, Users, Package, DollarSign, Upload, Target, Moon, Sun,
+  UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
+  Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
+  MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
+  Search
+} from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
@@ -14,36 +20,53 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
+// Aurora Borealis color tokens
+const AURORA = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  surface2: '#1c2333',
+  border: 'rgba(0,212,170,0.15)',
+  accent: '#00D4AA',
+  accentDim: 'rgba(0,212,170,0.12)',
+  accentGlow: 'rgba(0,212,170,0.25)',
+  navBg: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%)',
+  text: '#e6edf3',
+  textMuted: 'rgba(230,237,243,0.55)',
+  cardBg: 'rgba(28,35,51,0.85)',
+  cardBorder: 'rgba(0,212,170,0.18)',
+};
+
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('darkMode');
-    return saved === 'true';
-  });
-  const [editingName, setEditingName] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  const [comercialMenuOpen, setComercialMenuOpen] = useState(true);
-  const [apoioMenuOpen, setApoioMenuOpen] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [aceite, setAceite] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [comunicadoPendente, setComunicadoPendente] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [impersonating, setImpersonating] = useState(() => getImpersonatedVendedor());
+  const [vendedoresList, setVendedoresList] = useState([]);
+  const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const dropdownRef = useRef(null);
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    // Force dark mode always
+    document.documentElement.classList.add('dark');
+    document.body.style.background = AURORA.bg;
+  }, []);
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      setDisplayName(u?.nome_tratamento || u?.full_name || u?.email || '');
-      // Verificar aceite do usuário
       try {
         const aceites = await base44.entities.AceiteUsuario.filter({ user_id: u.id });
         const a = aceites[0] || null;
         setAceite(a);
-        if (!a || !a.termo_aceito || !a.leitura_gestao_vendas) {
-          setShowOnboarding(true);
-        }
+        if (!a || !a.termo_aceito || !a.leitura_gestao_vendas) setShowOnboarding(true);
       } catch (e) {}
-      // Verificar comunicados pendentes
       try {
         const comunicados = await base44.entities.Comunicado.filter({ ativo: true });
         if (comunicados.length > 0) {
@@ -53,319 +76,16 @@ export default function Layout({ children, currentPageName }) {
           if (pendente) setComunicadoPendente(pendente);
         }
       } catch (e) {}
-      // Registrar presença online
-      try {
-        await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() });
-      } catch (e) {}
+      try { await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() }); } catch (e) {}
     }).catch(() => {});
   }, []);
 
-  // Heartbeat: atualiza ultimo_acesso a cada 2 minutos enquanto o usuário está na página
   useEffect(() => {
     const interval = setInterval(async () => {
-      try {
-        await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() });
-      } catch (e) {}
+      try { await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() }); } catch (e) {}
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', darkMode);
-  }, [darkMode]);
-
-  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
-
-  const saveDisplayName = async () => {
-    if (!displayName.trim()) {
-      toast.error('Nome não pode estar vazio');
-      return;
-    }
-    setSaving(true);
-    try {
-      await base44.auth.updateMe({ nome_tratamento: displayName.trim() });
-      const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
-      setEditingName(false);
-      toast.success('Nome atualizado!');
-    } catch (error) {
-      toast.error('Erro ao salvar nome');
-    }
-    setSaving(false);
-  };
-
-  const { data: notificacoesPendentes = [] } = useQuery({
-    queryKey: ['notificacoes-pendentes'],
-    queryFn: async () => {
-      const all = await base44.entities.NotificacaoAutorizacao.list();
-      return all.filter((n) => n.status === 'pendente');
-    },
-    enabled: isAdmin,
-    refetchInterval: 30000
-  });
-
-  const { data: aceitesPendentes = [] } = useQuery({
-    queryKey: ['aceites-pendentes'],
-    queryFn: async () => {
-      const all = await base44.entities.AceiteUsuario.list();
-      return all.filter((a) => !a.leitura_gestao_vendas);
-    },
-    enabled: isAdmin,
-    refetchInterval: 60000
-  });
-
-  const { data: chamadosPendentes = [] } = useQuery({
-    queryKey: ['chamados-pendentes-layout'],
-    queryFn: async () => {
-      if (!user) return [];
-      const todos = await base44.entities.ChamadoSuporte.filter({ usuario_id: user.id });
-      return todos.filter(c => c.status === 'aguardando_usuario' || c.status === 'aberto' || c.status === 'em_andamento');
-    },
-    enabled: !!user,
-    refetchInterval: 30000
-  });
-
-  const { data: todasMensagensChat = [] } = useQuery({
-    queryKey: ['chat-unread-global'],
-    queryFn: async () => {
-      const all = await base44.entities.MensagemChat.list('-created_date', 100);
-      // Só mensagens de outros usuários
-      return all.filter((m) => {
-        if (m.remetente_email === user?.email) return false;
-        // DMs: só contar se o usuário atual é o destinatário
-        if (m.tipo_canal === 'direto') {
-          return m.destinatario_email === user?.email;
-        }
-        // Canais: contar todas
-        return true;
-      });
-    },
-    enabled: !!user,
-    refetchInterval: 15000
-  });
-
-  const isOnChatPage = currentPageName === 'ChatPage';
-
-  // Sempre que estiver na ChatPage E os dados chegarem, marca TUDO como lido
-  useEffect(() => {
-    if (!isOnChatPage) return;
-    const now = new Date().toISOString();
-    let lastSeen = {};
-    try {lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}');} catch {}
-    // Marca todos os canais das mensagens carregadas
-    for (const msg of todasMensagensChat) {
-      lastSeen[msg.canal] = now;
-    }
-    // Garante canais fixos
-    for (const canal of ['geral', 'comercial', 'avisos']) {
-      lastSeen[canal] = now;
-    }
-    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
-  }, [isOnChatPage, todasMensagensChat]);
-
-  const mensagensNaoLidas = (() => {
-    if (!user || !todasMensagensChat.length || isOnChatPage) return 0;
-    let lastSeen = {};
-    try {lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}');} catch {}
-    let count = 0;
-    for (const msg of todasMensagensChat) {
-      const canal = msg.canal;
-      const msgTime = new Date(msg.created_date).getTime();
-      const seenTime = lastSeen[canal] ? new Date(lastSeen[canal]).getTime() : 0;
-      if (msgTime > seenTime) count++;
-    }
-    return count;
-  })();
-
-  const totalPendentes = notificacoesPendentes.length + aceitesPendentes.length;
-
-  const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
-
-  // BLOCO COMERCIAL
-  const menuComercial = [
-  { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
-  { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', allowUser: true, alwaysVisible: true },
-  { name: 'Contratos', icon: ScrollText, page: 'Contratos', allowUser: true, alwaysVisible: true },
-  { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', allowUser: true, alwaysVisible: true },
-  { name: 'Precificação', icon: Calculator, page: 'Precificacao', allowUser: true, alwaysVisible: true },
-  { name: 'Desempenho', icon: Activity, page: 'Desempenho', allowUser: true, alwaysVisible: true }].
-  filter((item) => {
-    if (isAdmin) return true;
-    if (item.alwaysVisible) return true;
-    if (!item.allowUser) return false;
-    return menusUsuario.includes(item.page);
-  });
-
-  // BLOCO APOIO
-  const menuApoio = [
-  { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
-  { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
-  { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
-  { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', allowUser: true, alwaysVisible: true },
-  { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', allowUser: true, alwaysVisible: true },
-  { name: 'Manual', icon: BookOpen, page: 'Manual', allowUser: true, alwaysVisible: true },
-  { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', allowUser: true, alwaysVisible: true },
-  { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', allowUser: true, alwaysVisible: true, badgeKey: 'suporte' }].
-  filter((item) => {
-    if (isAdmin) return true;
-    if (item.alwaysVisible) return true;
-    return menusUsuario.includes(item.page);
-  });
-
-  // BLOCO ADMINISTRATIVO
-  const menuItems = []; // mantido vazio, substituído pelos blocos acima
-
-  const adminMenuItems = [
-  { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
-  { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
-  { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
-  { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
-  { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
-  { name: 'Relatório Comissões', icon: FileText, page: 'RelatorioComissoes' },
-  { name: 'Prospecção', icon: Users, page: 'Leads' },
-  { name: 'Metas', icon: Target, page: 'Metas' },
-  { name: 'Produtos', icon: Package, page: 'Produtos' },
-  { name: 'Importar', icon: Upload, page: 'Importar' }].
-  filter((item) => {
-    if (isAdmin) return true;
-    return menusUsuario.includes(item.page);
-  });
-
-  const handleLogout = () => {
-    if (confirm('Deseja realmente sair?')) {
-      base44.auth.logout();
-    }
-  };
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarSearch, setSidebarSearch] = useState('');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // ── Drag-and-drop state ─────────────────────────────────────────────────
-  const [dragSrc, setDragSrc] = useState(null); // { block: 'comercial'|'apoio', index }
-  const [dragOver, setDragOver] = useState(null);
-  const [comercialOrder, setComercialOrder] = useState(null);
-  const [apoioOrder, setApoioOrder] = useState(null);
-
-  // Load saved order once user is known
-  useEffect(() => {
-    if (!user) return;
-    try {
-      const saved = JSON.parse(localStorage.getItem(`menu_order_${user.id}`) || '{}');
-      if (saved.comercial) setComercialOrder(saved.comercial);
-      if (saved.apoio) setApoioOrder(saved.apoio);
-    } catch {}
-  }, [user?.id]);
-
-  const saveOrder = (comercial, apoio) => {
-    try {
-      localStorage.setItem(`menu_order_${user?.id}`, JSON.stringify({ comercial, apoio }));
-    } catch {}
-  };
-
-  const applyOrder = (items, order) => {
-    if (!order) return items;
-    const map = new Map(items.map(i => [i.page, i]));
-    const ordered = order.map(k => map.get(k)).filter(Boolean);
-    items.forEach(i => { if (!order.includes(i.page)) ordered.push(i); });
-    return ordered;
-  };
-
-  const handleDragStart = (block, index) => setDragSrc({ block, index });
-  const handleDragOver = (block, index) => { if (dragSrc) setDragOver({ block, index }); };
-
-  const handleDrop = (targetBlock, targetIndex) => {
-    if (!dragSrc) return;
-    const srcBlock = dragSrc.block;
-    const srcIndex = dragSrc.index;
-
-    // Compute ordered lists
-    const orderedComercial = applyOrder(menuComercial, comercialOrder);
-    const orderedApoio = applyOrder(menuApoio, apoioOrder);
-
-    if (srcBlock === targetBlock) {
-      // Same block reorder
-      const list = srcBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
-      const [moved] = list.splice(srcIndex, 1);
-      list.splice(targetIndex, 0, moved);
-      const newOrder = list.map(i => i.page);
-      if (srcBlock === 'comercial') {
-        setComercialOrder(newOrder);
-        saveOrder(newOrder, apoioOrder || orderedApoio.map(i => i.page));
-      } else {
-        setApoioOrder(newOrder);
-        saveOrder(comercialOrder || orderedComercial.map(i => i.page), newOrder);
-      }
-    } else {
-      // Cross-block: move item to target block at targetIndex
-      const srcList = srcBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
-      const tgtList = targetBlock === 'comercial' ? [...orderedComercial] : [...orderedApoio];
-      const [moved] = srcList.splice(srcIndex, 1);
-      tgtList.splice(targetIndex, 0, moved);
-      const newComercial = srcBlock === 'comercial'
-        ? srcList.map(i => i.page)
-        : tgtList.map(i => i.page);
-      const newApoio = srcBlock === 'apoio'
-        ? srcList.map(i => i.page)
-        : tgtList.map(i => i.page);
-      setComercialOrder(newComercial);
-      setApoioOrder(newApoio);
-      saveOrder(newComercial, newApoio);
-    }
-    setDragSrc(null);
-    setDragOver(null);
-  };
-
-  const handleDragEnd = () => { setDragSrc(null); setDragOver(null); };
-
-  // Renders a draggable menu item link
-  const renderDraggableItem = (item, index, block) => {
-    const Icon = item.icon;
-    const isActive = currentPageName === item.page;
-    const isDragging = dragSrc?.block === block && dragSrc?.index === index;
-    const isOver = dragOver?.block === block && dragOver?.index === index && dragSrc?.index !== index;
-    return (
-      <div
-        key={item.page}
-        draggable
-        onDragStart={() => handleDragStart(block, index)}
-        onDragOver={(e) => { e.preventDefault(); handleDragOver(block, index); }}
-        onDrop={(e) => { e.preventDefault(); handleDrop(block, index); }}
-        onDragEnd={handleDragEnd}
-        style={{ opacity: isDragging ? 0.4 : 1, cursor: 'grab' }}
-        className={`relative rounded-xl mb-1 ${isOver ? 'ring-1 ring-blue-300/40' : ''}`}
-        title={sidebarCollapsed ? item.name : undefined}
-      >
-        {isOver && <div className="absolute -top-0.5 left-2 right-2 h-0.5 bg-blue-400 rounded-full pointer-events-none z-10" />}
-        <Link
-          to={createPageUrl(item.page)}
-          draggable={false}
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all
-            ${sidebarCollapsed ? 'justify-center px-2' : ''}
-            ${isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}
-          `}
-        >
-          <Icon className="w-4 h-4 flex-shrink-0" />
-          {!sidebarCollapsed && <span className="text-sm font-medium flex-1">{item.name}</span>}
-          {!sidebarCollapsed && item.page === 'ChatPage' && mensagensNaoLidas > 0 && (
-            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{mensagensNaoLidas > 9 ? '9+' : mensagensNaoLidas}</span>
-          )}
-          {!sidebarCollapsed && item.badgeKey === 'suporte' && chamadosPendentes.length > 0 && (
-            <span className="ml-auto bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{chamadosPendentes.length}</span>
-          )}
-        </Link>
-      </div>
-    );
-  };
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [impersonating, setImpersonating] = useState(() => getImpersonatedVendedor());
-  const [vendedoresList, setVendedoresList] = useState([]);
-  const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
 
   useEffect(() => {
     const handleChange = () => setImpersonating(getImpersonatedVendedor());
@@ -377,7 +97,7 @@ export default function Layout({ children, currentPageName }) {
     if (isAdmin) {
       base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedoresList).catch(() => {});
     }
-  }, [isAdmin]);
+  }, [user]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -385,329 +105,433 @@ export default function Layout({ children, currentPageName }) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const allMenuItems = [
-  { name: 'Dashboard', icon: BarChart3, page: 'Dashboard' },
-  ...menuComercial,
-  ...menuApoio,
-  ...(adminMenuItems.length > 0 ? adminMenuItems : []),
-  ...(isAdmin ? [{ name: 'Usuários', icon: Users, page: 'Usuarios' }] : [])];
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpenDropdown(null);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
-  const pageTitle = allMenuItems.find((m) => m.page === currentPageName)?.name || currentPageName || 'Menu';
+  const { data: notificacoesPendentes = [] } = useQuery({
+    queryKey: ['notificacoes-pendentes'],
+    queryFn: async () => {
+      const all = await base44.entities.NotificacaoAutorizacao.list();
+      return all.filter((n) => n.status === 'pendente');
+    },
+    enabled: isAdmin,
+    refetchInterval: 30000
+  });
+
+  const { data: chamadosPendentes = [] } = useQuery({
+    queryKey: ['chamados-pendentes-layout'],
+    queryFn: async () => {
+      if (!user) return [];
+      const todos = await base44.entities.ChamadoSuporte.filter({ usuario_id: user.id });
+      return todos.filter(c => ['aguardando_usuario','aberto','em_andamento'].includes(c.status));
+    },
+    enabled: !!user,
+    refetchInterval: 30000
+  });
+
+  const { data: todasMensagensChat = [] } = useQuery({
+    queryKey: ['chat-unread-global'],
+    queryFn: async () => {
+      const all = await base44.entities.MensagemChat.list('-created_date', 100);
+      return all.filter((m) => {
+        if (m.remetente_email === user?.email) return false;
+        if (m.tipo_canal === 'direto') return m.destinatario_email === user?.email;
+        return true;
+      });
+    },
+    enabled: !!user,
+    refetchInterval: 15000
+  });
+
+  const isOnChatPage = currentPageName === 'ChatPage';
+  useEffect(() => {
+    if (!isOnChatPage) return;
+    const now = new Date().toISOString();
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    for (const msg of todasMensagensChat) lastSeen[msg.canal] = now;
+    for (const canal of ['geral', 'comercial', 'avisos']) lastSeen[canal] = now;
+    localStorage.setItem('chat_last_seen', JSON.stringify(lastSeen));
+  }, [isOnChatPage, todasMensagensChat]);
+
+  const mensagensNaoLidas = (() => {
+    if (!user || !todasMensagensChat.length || isOnChatPage) return 0;
+    let lastSeen = {};
+    try { lastSeen = JSON.parse(localStorage.getItem('chat_last_seen') || '{}'); } catch {}
+    let count = 0;
+    for (const msg of todasMensagensChat) {
+      const msgTime = new Date(msg.created_date).getTime();
+      const seenTime = lastSeen[msg.canal] ? new Date(lastSeen[msg.canal]).getTime() : 0;
+      if (msgTime > seenTime) count++;
+    }
+    return count;
+  })();
+
+  const totalPendentes = notificacoesPendentes.length;
+
+  const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
+
+  // ─── Navigation groups ────────────────────────────────────────────────
+  const navGroups = [
+    {
+      label: 'Comercial',
+      items: [
+        { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', alwaysVisible: true },
+        { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
+        { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', alwaysVisible: true },
+        { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
+        { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
+        { name: 'Precificação', icon: Calculator, page: 'Precificacao', alwaysVisible: true },
+        { name: 'Desempenho', icon: Activity, page: 'Desempenho', alwaysVisible: true },
+      ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
+    },
+    {
+      label: 'Apoio',
+      items: [
+        { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
+        { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
+        { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
+        { name: 'Chat Interno', icon: MessageSquare, page: 'ChatPage', alwaysVisible: true, badge: mensagensNaoLidas },
+        { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', alwaysVisible: true },
+        { name: 'Manual', icon: BookOpen, page: 'Manual', alwaysVisible: true },
+        { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', alwaysVisible: true },
+        { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', alwaysVisible: true, badge: chamadosPendentes.length },
+      ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
+    },
+    ...(isAdmin ? [{
+      label: 'Admin',
+      items: [
+        { name: 'Comissões', icon: DollarSign, page: 'Comissoes' },
+        { name: 'Notificações', icon: AlertTriangle, page: 'Notificacoes', badge: totalPendentes },
+        { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
+        { name: 'Notas Fiscais', icon: Receipt, page: 'NotasFiscais' },
+        { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
+        { name: 'Rel. Comissões', icon: FileText, page: 'RelatorioComissoes' },
+        { name: 'Prospecção', icon: Users, page: 'Leads' },
+        { name: 'Metas', icon: Target, page: 'Metas' },
+        { name: 'Produtos', icon: Package, page: 'Produtos' },
+        { name: 'Importar', icon: Upload, page: 'Importar' },
+        { name: 'Usuários', icon: Users, page: 'Usuarios' },
+      ]
+    }] : [])
+  ];
+
+  const handleLogout = () => {
+    if (confirm('Deseja realmente sair?')) base44.auth.logout();
+  };
+
+  const NavLink = ({ item }) => {
+    const isActive = currentPageName === item.page;
+    const Icon = item.icon;
+    return (
+      <Link
+        to={createPageUrl(item.page)}
+        onClick={() => { setOpenDropdown(null); setMobileMenuOpen(false); }}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all relative group"
+        style={{
+          color: isActive ? AURORA.accent : AURORA.text,
+          background: isActive ? AURORA.accentDim : 'transparent',
+          border: isActive ? `1px solid ${AURORA.border}` : '1px solid transparent',
+        }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(0,212,170,0.07)'; }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+      >
+        <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+        <span>{item.name}</span>
+        {item.badge > 0 && (
+          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+            style={{ background: '#ef4444', color: '#fff' }}>
+            {item.badge > 9 ? '9+' : item.badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   return (
-    <div className="flex min-h-screen bg-gray-100 dark:bg-gray-800">
-      {showOnboarding && user &&
-      <OnboardingModal
-        user={user}
-        aceite={aceite}
-        onComplete={() => setShowOnboarding(false)} />
-
-      }
-      {!showOnboarding && comunicadoPendente && user &&
-      <ComunicadoModal
-        comunicado={comunicadoPendente}
-        user={user}
-        onClose={() => setComunicadoPendente(null)} />
-
-      }
+    <div style={{ minHeight: '100vh', background: AURORA.bg, color: AURORA.text }}>
+      {showOnboarding && user && (
+        <OnboardingModal user={user} aceite={aceite} onComplete={() => setShowOnboarding(false)} />
+      )}
+      {!showOnboarding && comunicadoPendente && user && (
+        <ComunicadoModal comunicado={comunicadoPendente} user={user} onClose={() => setComunicadoPendente(null)} />
+      )}
       {!showOnboarding && user && <GoogleCalendarConectarModal />}
 
-      {/* ===== MOBILE TOP BAR ===== */}
-      {isMobile &&
-      <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-3 shadow-lg" style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}>
-          <button onClick={() => setMobileMenuOpen(true)} className="text-white p-1.5">
-            <Menu className="w-6 h-6" />
-          </button>
-          <span className="text-white font-semibold text-base">{pageTitle}</span>
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
-            {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
-          </div>
-        </div>
-      }
-
-      {/* ===== MOBILE DRAWER OVERLAY ===== */}
-      {isMobile && mobileMenuOpen &&
-      <div className="fixed inset-0 z-50 flex">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <aside className="relative w-72 h-full flex flex-col shadow-2xl" style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
-            <div className="p-5 flex items-center justify-between border-b border-white/10">
-              <div>
-                <h1 className="text-lg font-bold text-white">Villela Exchange</h1>
-                <p className="text-[10px] text-blue-300/60 uppercase tracking-widest">Gestão Comercial</p>
-              </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="text-white/60 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <nav className="flex-1 overflow-y-auto px-3 py-4">
-              {/* Dashboard */}
-              {(() => {
-              const isActive = currentPageName === 'Dashboard';
-              return (
-                <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-                    <BarChart3 className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">Dashboard</span>
-                  </Link>);
-
-            })()}
-
-              {/* Comercial */}
-              {menuComercial.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Comercial</p>}
-              {menuComercial.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPageName === item.page;
-              return (
-                <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>);
-
-            })}
-
-              {/* Apoio */}
-              {menuApoio.length > 0 && <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Apoio</p>}
-              {menuApoio.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPageName === item.page;
-              return (
-                <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                  </Link>);
-
-            })}
-
-              {/* Administrativo */}
-              {adminMenuItems.length > 0 &&
-            <>
-                  <p className="text-[10px] font-semibold text-blue-300/40 uppercase tracking-[0.2em] px-2 mt-3 mb-1">Administrativo</p>
-                  {adminMenuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = currentPageName === item.page;
-                return (
-                  <Link key={item.page} to={createPageUrl(item.page)} onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${isActive ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-                        <Icon className="w-4 h-4 flex-shrink-0" />
-                        <span className="text-sm font-medium">{item.name}</span>
-                        {item.badge > 0 && <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>}
-                      </Link>);
-
-              })}
-                </>
-            }
-            </nav>
-            <div className="border-t border-white/10 p-3 space-y-1">
-              {isAdmin &&
-            <Link to={createPageUrl('Usuarios')} onClick={() => setMobileMenuOpen(false)}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-            currentPageName === 'Usuarios' ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-            }>
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm font-medium">Usuários</span>
-                </Link>
-            }
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all">
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-medium">Sair</span>
-              </button>
-            </div>
-          </aside>
-        </div>
-      }
-
-      {/* ===== DESKTOP SIDEBAR ===== */}
-      {!isMobile &&
-      <aside className={`flex shadow-xl flex-col fixed left-0 top-0 h-screen transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-64'}`} style={{ background: 'linear-gradient(180deg, #0f1e35 0%, #1a3150 60%, #1e3a5f 100%)' }}>
-        <div className={`${sidebarCollapsed ? 'p-3' : 'p-6 pb-4'} flex-shrink-0`}>
-          <div className="flex items-center justify-between mb-2">
-            {!sidebarCollapsed &&
-            <div>
-                <h1 className="text-xl font-bold text-white tracking-wide">Villela Exchange</h1>
-                <p className="text-[11px] text-blue-300/60 mt-0.5 uppercase tracking-widest">Gestão Comercial</p>
-              </div>
-            }
-            <div className={`flex items-center gap-1 ${sidebarCollapsed ? 'flex-col w-full' : ''}`}>
-              {!sidebarCollapsed &&
-              <Button variant="ghost" size="icon" onClick={() => setDarkMode(!darkMode)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
-                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-              }
-              <Button variant="ghost" size="icon" onClick={() => setSidebarCollapsed((c) => !c)} className="text-blue-200/70 hover:text-white hover:bg-white/10">
-                {sidebarCollapsed ? <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>}
-              </Button>
-            </div>
-          </div>
-          {!sidebarCollapsed &&
-          <div className="mt-2">
-              <input
-              type="text"
-              value={sidebarSearch}
-              onChange={(e) => setSidebarSearch(e.target.value)}
-              placeholder="Buscar menu..."
-              className="w-full px-3 py-1.5 text-xs bg-white/10 text-white placeholder-blue-300/50 border border-white/10 rounded-lg focus:outline-none focus:border-white/30" />
-            
-            </div>
-          }
-        </div>
-        <nav className="px-3 pb-4 flex-1 overflow-y-auto">
-          {/* Dashboard sempre no topo */}
-          {(() => {
-            const isActive = currentPageName === 'Dashboard';
-            return (
-              <Link to={createPageUrl('Dashboard')} title={sidebarCollapsed ? 'Dashboard' : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-              isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-              }>
-                <BarChart3 className="w-4 h-4 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">Dashboard</span>}
-              </Link>);
-
-          })()}
-
-          {/* BLOCO COMERCIAL */}
-          {applyOrder(menuComercial, comercialOrder).filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
-          <button onClick={() => setComercialMenuOpen((prev) => !prev)}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
-              <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Comercial</span>
-              <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${comercialMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </button>
-          }
-          {(comercialMenuOpen || sidebarCollapsed) && applyOrder(menuComercial, comercialOrder)
-            .filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
-            .map((item, index) => renderDraggableItem(item, index, 'comercial'))
-          }
-
-          {/* BLOCO APOIO */}
-          {applyOrder(menuApoio, apoioOrder).filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase())).length > 0 && !sidebarCollapsed &&
-          <button onClick={() => setApoioMenuOpen((prev) => !prev)}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
-              <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Apoio</span>
-              <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${apoioMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-            </button>
-          }
-          {(apoioMenuOpen || sidebarCollapsed) && applyOrder(menuApoio, apoioOrder)
-            .filter((item) => !sidebarSearch || item.name.toLowerCase().includes(sidebarSearch.toLowerCase()))
-            .map((item, index) => renderDraggableItem(item, index, 'apoio'))
-          }
-
-          {/* BLOCO ADMINISTRATIVO */}
-          {adminMenuItems.length > 0 && !sidebarCollapsed &&
-          <>
-              <button onClick={() => setAdminMenuOpen((prev) => !prev)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 mt-3 transition-all text-blue-100/70 hover:bg-white/10 hover:text-white">
-                <span className="text-[10px] font-semibold text-blue-300/60 uppercase tracking-[0.2em] flex-1 text-left">Administrativo</span>
-                {!adminMenuOpen && totalPendentes > 0 &&
-              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{totalPendentes}</span>
-              }
-                <svg className={`w-3.5 h-3.5 text-blue-300/50 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              {adminMenuOpen && adminMenuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPageName === item.page;
-              return (
-                <Link key={item.page} to={createPageUrl(item.page)}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl mb-1 transition-all relative ${
-                isActive ? 'bg-white/15 text-white font-semibold shadow-sm' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-                }>
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">{item.name}</span>
-                    {item.badge > 0 &&
-                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">{item.badge}</span>
-                  }
-                  </Link>);
-
-            })}
-            </>
-          }
-          {/* Administrativo colapsado: ícones com badge */}
-          {adminMenuItems.length > 0 && sidebarCollapsed && adminMenuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPageName === item.page;
-            return (
-              <Link key={item.page} to={createPageUrl(item.page)} title={item.name}
-              className={`flex items-center justify-center px-2 py-2.5 rounded-xl mb-1 transition-all relative ${
-              isActive ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-              }>
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {item.badge > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />}
-              </Link>);
-
-          })}
-        </nav>
-        <div className="border-t border-white/10 p-3 space-y-1 flex-shrink-0">
-          {isAdmin &&
-          <>
-              <Link to={createPageUrl('Usuarios')} title={sidebarCollapsed ? 'Usuários' : undefined}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${sidebarCollapsed ? 'justify-center px-2' : ''} ${
-            currentPageName === 'Usuarios' ? 'bg-white/15 text-white font-semibold' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-            }>
-                <Users className="w-4 h-4 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="text-sm font-medium">Usuários</span>}
-              </Link>
-              {!sidebarCollapsed &&
-            <div className="relative">
-                  <button onClick={() => setShowImpersonateMenu((p) => !p)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all ${
-              impersonating ? 'bg-amber-500/30 text-amber-200' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`
-              }>
-                    <Eye className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">{impersonating ? `Espelhando: ${impersonating.nome.split(' ')[0]}` : 'Espelhar Vendedor'}</span>
-                  </button>
-                  {showImpersonateMenu &&
-              <div className="absolute bottom-full left-0 mb-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-50 max-h-64 overflow-y-auto">
-                      {impersonating &&
-                <button onClick={() => {clearImpersonation();setShowImpersonateMenu(false);}}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50 font-semibold">
-                          <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
-                        </button>
-                }
-                      <div className="my-1 border-t border-gray-100" />
-                      {vendedoresList.map((v) =>
-                <button key={v.id} onClick={() => {setImpersonatedVendedor(v);setShowImpersonateMenu(false);}}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition ${
-                impersonating?.id === v.id ? 'font-semibold text-[#1a3150] bg-blue-50' : 'text-gray-700'}`
-                }>
-                          {v.nome}
-                        </button>
-                )}
-                    </div>
-              }
-                </div>
-            }
-            </>
-          }
-          <button onClick={handleLogout} title={sidebarCollapsed ? 'Sair' : undefined} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-blue-100/70 hover:bg-white/10 hover:text-white transition-all ${sidebarCollapsed ? 'justify-center px-2' : ''}`}>
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            {!sidebarCollapsed && <span className="text-sm font-medium">Sair</span>}
-          </button>
-        </div>
-        </aside>
-      }
-
-      {/* ===== IMPERSONATION BANNER ===== */}
-      {impersonating &&
-      <div className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between px-4 py-2 text-white text-sm font-semibold" style={{ background: '#b45309' }}>
+      {/* ═══ IMPERSONATION BANNER ═══ */}
+      {impersonating && (
+        <div className="fixed top-0 left-0 right-0 z-[70] flex items-center justify-between px-4 py-2 text-sm font-semibold"
+          style={{ background: 'linear-gradient(90deg, #b45309, #d97706)', color: '#fff' }}>
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4" />
-            <span>Você está vendo como: <strong>{impersonating.nome}</strong></span>
+            <span>Espelhando: <strong>{impersonating.nome}</strong></span>
           </div>
-          <button onClick={() => {clearImpersonation();}} className="flex items-center gap-1.5 px-3 py-1 bg-white/20 hover:bg-white/30 rounded-lg text-xs transition">
-            <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
+          <button onClick={() => clearImpersonation()}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs transition"
+            style={{ background: 'rgba(255,255,255,0.2)' }}>
+            <EyeOff className="w-3.5 h-3.5" /> Sair
           </button>
         </div>
-      }
+      )}
 
-      {/* ===== MAIN CONTENT ===== */}
-      <main className={`flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ${!isMobile ? sidebarCollapsed ? 'ml-16' : 'ml-64' : 'pt-14'} ${impersonating ? isMobile ? 'pt-24' : 'pt-10' : ''}`}>
+      {/* ═══ TOP NAVIGATION BAR ═══ */}
+      <header
+        className="fixed left-0 right-0 z-50 flex flex-col"
+        style={{
+          top: impersonating ? '36px' : '0',
+          background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
+          borderBottom: `1px solid ${AURORA.border}`,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        }}
+      >
+        {/* Row 1: Brand + actions */}
+        <div className="flex items-center justify-between px-6 py-3">
+          <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+              VX
+            </div>
+            <div>
+              <div className="font-bold text-sm" style={{ color: AURORA.text }}>Villela Exchange</div>
+              <div className="text-[10px] uppercase tracking-widest" style={{ color: AURORA.textMuted }}>Gestão Comercial</div>
+            </div>
+          </Link>
+
+          {/* Right side actions */}
+          <div className="flex items-center gap-2">
+            {/* Notifications bell */}
+            {isAdmin && totalPendentes > 0 && (
+              <Link to={createPageUrl('Notificacoes')} className="relative p-2 rounded-lg transition"
+                style={{ color: AURORA.textMuted }}
+                onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+              </Link>
+            )}
+
+            {/* Impersonate (admin) */}
+            {isAdmin && (
+              <div className="relative" ref={null}>
+                <button onClick={() => setShowImpersonateMenu(p => !p)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition"
+                  style={{
+                    background: impersonating ? 'rgba(180,83,9,0.3)' : AURORA.accentDim,
+                    color: impersonating ? '#fbbf24' : AURORA.accent,
+                    border: `1px solid ${impersonating ? 'rgba(180,83,9,0.5)' : AURORA.border}`,
+                  }}>
+                  <Eye className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{impersonating ? impersonating.nome.split(' ')[0] : 'Espelhar'}</span>
+                </button>
+                {showImpersonateMenu && (
+                  <div className="absolute top-full right-0 mt-1 w-52 rounded-xl shadow-2xl py-1 z-50 max-h-64 overflow-y-auto"
+                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                    {impersonating && (
+                      <button onClick={() => { clearImpersonation(); setShowImpersonateMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold"
+                        style={{ color: '#fbbf24' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(251,191,36,0.1)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <EyeOff className="w-3.5 h-3.5" /> Sair do Espelhamento
+                      </button>
+                    )}
+                    <div style={{ borderTop: `1px solid ${AURORA.border}`, margin: '4px 0' }} />
+                    {vendedoresList.map(v => (
+                      <button key={v.id} onClick={() => { setImpersonatedVendedor(v); setShowImpersonateMenu(false); }}
+                        className="w-full text-left px-3 py-2 text-sm transition"
+                        style={{ color: impersonating?.id === v.id ? AURORA.accent : AURORA.text }}
+                        onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        {v.nome}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* User avatar menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button onClick={() => setShowUserMenu(p => !p)}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-lg transition"
+                style={{ color: AURORA.textMuted }}
+                onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
+                onMouseLeave={e => { if (!showUserMenu) e.currentTarget.style.background = 'transparent'; }}>
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                  style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+                  {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden md:inline text-sm" style={{ color: AURORA.text }}>
+                  {(user?.nome_tratamento || user?.full_name || '').split(' ')[0]}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-1 w-44 rounded-xl shadow-2xl py-1 z-50"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                  <div className="px-3 py-2 text-xs" style={{ color: AURORA.textMuted, borderBottom: `1px solid ${AURORA.border}` }}>
+                    {user?.email}
+                  </div>
+                  <button onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition"
+                    style={{ color: '#f87171' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <LogOut className="w-4 h-4" /> Sair
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile menu toggle */}
+            {isMobile && (
+              <button onClick={() => setMobileMenuOpen(p => !p)} className="p-2 rounded-lg"
+                style={{ color: AURORA.text }}>
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Row 2: Navigation tabs (desktop) */}
+        {!isMobile && (
+          <div className="flex items-center px-6 pb-2 gap-1" ref={dropdownRef}>
+            {/* Dashboard quick link */}
+            <Link to={createPageUrl('Dashboard')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition"
+              style={{
+                color: currentPageName === 'Dashboard' ? AURORA.accent : AURORA.textMuted,
+                background: currentPageName === 'Dashboard' ? AURORA.accentDim : 'transparent',
+                border: currentPageName === 'Dashboard' ? `1px solid ${AURORA.border}` : '1px solid transparent',
+              }}>
+              <BarChart3 className="w-3.5 h-3.5" />
+              Dashboard
+            </Link>
+
+            {navGroups.map((group) => {
+              const isOpen = openDropdown === group.label;
+              const hasActive = group.items.some(i => i.page === currentPageName);
+              const groupBadge = group.items.reduce((sum, i) => sum + (i.badge || 0), 0);
+
+              return (
+                <div key={group.label} className="relative">
+                  <button
+                    onClick={() => setOpenDropdown(isOpen ? null : group.label)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition relative"
+                    style={{
+                      color: hasActive || isOpen ? AURORA.accent : AURORA.textMuted,
+                      background: hasActive || isOpen ? AURORA.accentDim : 'transparent',
+                      border: hasActive || isOpen ? `1px solid ${AURORA.border}` : '1px solid transparent',
+                    }}>
+                    {group.label}
+                    {groupBadge > 0 && (
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+                    )}
+                    <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isOpen && (
+                    <div className="absolute top-full left-0 mt-2 rounded-xl shadow-2xl py-2 z-50 min-w-[200px]"
+                      style={{
+                        background: AURORA.surface2,
+                        border: `1px solid ${AURORA.border}`,
+                        boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${AURORA.border}`,
+                      }}>
+                      {group.items.map(item => (
+                        <NavLink key={item.page} item={item} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </header>
+
+      {/* ═══ MOBILE FULL-SCREEN MENU ═══ */}
+      {isMobile && mobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] flex flex-col"
+          style={{ background: 'rgba(13,17,23,0.98)', paddingTop: '60px' }}>
+          <nav className="flex-1 overflow-y-auto px-4 py-4">
+            <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl mb-2 text-sm font-medium"
+              style={{
+                color: currentPageName === 'Dashboard' ? AURORA.accent : AURORA.text,
+                background: currentPageName === 'Dashboard' ? AURORA.accentDim : AURORA.surface,
+                border: `1px solid ${AURORA.border}`,
+              }}>
+              <BarChart3 className="w-4 h-4" />
+              Dashboard
+            </Link>
+            {navGroups.map(group => (
+              <div key={group.label} className="mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-widest px-2 mb-1"
+                  style={{ color: AURORA.accent, opacity: 0.7 }}>
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map(item => {
+                    const Icon = item.icon;
+                    const isActive = currentPageName === item.page;
+                    return (
+                      <Link key={item.page} to={createPageUrl(item.page)}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium"
+                        style={{
+                          color: isActive ? AURORA.accent : AURORA.text,
+                          background: isActive ? AURORA.accentDim : 'transparent',
+                          border: isActive ? `1px solid ${AURORA.border}` : '1px solid transparent',
+                        }}>
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{item.name}</span>
+                        {item.badge > 0 && (
+                          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ background: '#ef4444', color: '#fff' }}>
+                            {item.badge > 9 ? '9+' : item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+          <div className="p-4 border-t" style={{ borderColor: AURORA.border }}>
+            <button onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+              style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>
+              <LogOut className="w-4 h-4" /> Sair
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MAIN CONTENT ═══ */}
+      <main
+        style={{
+          paddingTop: impersonating
+            ? (isMobile ? '150px' : '116px')
+            : (isMobile ? '110px' : '116px'),
+          minHeight: '100vh',
+          background: AURORA.bg,
+        }}
+      >
         <MarketTicker />
         <BannerAlertaSistema user={user} />
         {children}
         <AssistenteFloating />
       </main>
-    </div>);
-
+    </div>
+  );
 }
