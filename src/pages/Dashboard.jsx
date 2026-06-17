@@ -183,9 +183,17 @@ function RelogioMeta({ producao, meta, periodoMesLabel, periodoMes }) {
 
 // ─── KPI Card ───────────────────────────────────────────────────────────────
 function KpiCard({ label, value, sub, icon: Icon, accentColor = A.accent }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-3 transition"
-      style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+    <div className="rounded-2xl p-5 flex flex-col gap-3 transition-all duration-200 cursor-default"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? A.surface2 : A.surface,
+        border: `1px solid ${hovered ? accentColor + '55' : A.border}`,
+        boxShadow: hovered ? `0 0 20px ${accentColor}22, 0 4px 16px rgba(0,0,0,0.4)` : 'none',
+        transform: hovered ? 'translateY(-2px)' : 'none',
+      }}>
       <div className="flex items-start justify-between">
         <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: A.textMuted }}>{label}</p>
         <div className="p-2 rounded-xl" style={{ background: `${accentColor}18` }}>
@@ -441,11 +449,20 @@ export default function Dashboard() {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-xl px-3 py-2 text-xs shadow-2xl"
-        style={{ background: A.surface2, border: `1px solid ${A.border}`, color: A.text }}>
-        <p className="font-semibold mb-1">{label}</p>
+      <div className="rounded-xl px-4 py-3 text-xs shadow-2xl"
+        style={{
+          background: '#0d1117',
+          border: `1px solid ${A.accent}55`,
+          color: A.text,
+          boxShadow: `0 0 24px rgba(0,212,170,0.2), 0 8px 32px rgba(0,0,0,0.6)`,
+        }}>
+        <p className="font-bold mb-2" style={{ color: A.accent }}>{label}</p>
         {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color }}>{p.name === 'volume' ? 'Volume' : 'Meta'}: {formatCurrency(p.value)}</p>
+          <div key={i} className="flex items-center gap-2 mb-0.5">
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.fill || p.color }} />
+            <span style={{ color: A.textMuted }}>{p.name === 'volume' ? 'Volume' : 'Meta'}:</span>
+            <span className="font-semibold ml-auto pl-3" style={{ color: A.text }}>{formatCurrency(p.value)}</span>
+          </div>
         ))}
       </div>
     );
@@ -517,7 +534,9 @@ export default function Dashboard() {
         {/* ─── Hero + KPIs ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Hero card */}
-          <div className="lg:col-span-1 rounded-2xl p-6 flex flex-col justify-between"
+          <div className="lg:col-span-1 rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 cursor-default"
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 32px rgba(0,212,170,0.35), 0 8px 32px rgba(0,0,0,0.5)`; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = A.accentGlow; e.currentTarget.style.transform = 'none'; }}
             style={{ background: 'linear-gradient(135deg, #0d2137 0%, #0a3d2e 100%)', border: `1px solid ${A.border}`, boxShadow: A.accentGlow }}>
             <div>
               <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: 'rgba(0,212,170,0.7)' }}>Total Vendido no Período</p>
@@ -546,7 +565,10 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Meta barra */}
           {metaTimeMes > 0 && (
-            <div className="rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+            <div className="rounded-2xl p-5 transition-all duration-200 cursor-default"
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(0,212,170,0.18), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${A.accent}55`; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = A.border; }}
+              style={{ background: A.surface, border: `1px solid ${A.border}` }}>
               <p className="text-[10px] uppercase tracking-wider font-semibold mb-3" style={{ color: A.accent }}>
                 Meta do Time — {periodoMesLabel}
               </p>
@@ -581,7 +603,10 @@ export default function Dashboard() {
 
         {/* ─── Chart + Recentes ─────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+          <div className="lg:col-span-2 rounded-2xl p-5 transition-all duration-200"
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(0,212,170,0.15), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.borderColor = `${A.accent}55`; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = A.border; }}
+          style={{ background: A.surface, border: `1px solid ${A.border}` }}>
             <h3 className="font-semibold text-sm mb-4" style={{ color: A.text }}>Volume de Vendas vs Meta</h3>
             {rankingData.length === 0
               ? <div className="flex items-center justify-center h-48 text-sm" style={{ color: A.textMuted }}>Nenhuma venda no período</div>
@@ -615,7 +640,10 @@ export default function Dashboard() {
           </div>
 
           {/* Últimas Vendas */}
-          <div className="rounded-2xl overflow-hidden" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+          <div className="rounded-2xl overflow-hidden transition-all duration-200"
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(0,212,170,0.15), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.borderColor = `${A.accent}55`; }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = A.border; }}
+            style={{ background: A.surface, border: `1px solid ${A.border}` }}>
             <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${A.border}` }}>
               <h3 className="font-semibold text-sm" style={{ color: A.text }}>Últimas Vendas</h3>
               <Link to={createPageUrl("Vendas")} className="text-xs flex items-center gap-1 transition"
@@ -652,7 +680,10 @@ export default function Dashboard() {
         </div>
 
         {/* ─── Ranking ──────────────────────────────────────────────────── */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+        <div className="rounded-2xl overflow-hidden transition-all duration-200"
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(212,175,55,0.15), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.borderColor = `${A.gold}55`; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = A.border; }}
+          style={{ background: A.surface, border: `1px solid ${A.border}` }}>
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${A.border}` }}>
             <div className="flex items-center gap-2">
               <Award className="w-4 h-4" style={{ color: A.gold }} />
