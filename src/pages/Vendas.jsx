@@ -180,7 +180,11 @@ export default function Vendas() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       const { _parcelasPreview, ...vendaData } = data;
-      const venda = await base44.entities.Venda.update(id, vendaData);
+      // Garante que o produto e demais campos são explicitamente enviados
+      const venda = await base44.entities.Venda.update(id, {
+        ...vendaData,
+        produto: data.produto,
+      });
 
       // Atualiza comissão do vendedor
       const comissoesVend = await base44.entities.Comissao.filter({ venda_id: id });
@@ -315,8 +319,9 @@ export default function Vendas() {
 
       return venda;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(['vendas']);
+    onSuccess: async (updatedVenda) => {
+      await queryClient.invalidateQueries(['vendas']);
+      await queryClient.refetchQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
       queryClient.invalidateQueries(['comissoesEspelhamento']);
       queryClient.invalidateQueries(['pipeline']);
