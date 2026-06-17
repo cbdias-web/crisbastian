@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,68 +6,199 @@ import { createPageUrl } from "@/utils";
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload,
-  Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock } from
-"lucide-react";
+  Briefcase, BarChart2, Target, BookOpen, MessageSquare, CalendarClock,
+  Clock, Zap, Award
+} from "lucide-react";
 import ParcelasVincendasModal from "@/components/parcelas/ParcelasVincendasModal";
 import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import { toast } from "sonner";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
+import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
+
+// ─── Aurora tokens ──────────────────────────────────────────────────────────
+const A = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  surface2: '#1c2333',
+  border: 'rgba(0,212,170,0.15)',
+  accent: '#00D4AA',
+  accentDim: 'rgba(0,212,170,0.10)',
+  accentGlow: '0 0 20px rgba(0,212,170,0.2)',
+  text: '#e6edf3',
+  textMuted: 'rgba(230,237,243,0.5)',
+  gold: '#D4AF37',
+};
 
 const formatCurrency = (v) =>
-new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 
-function toDateStr(d) {
-  return d.toISOString().split("T")[0];
-}
+function toDateStr(d) { return d.toISOString().split("T")[0]; }
 
-function firstWorkingDay(year, month) {
-  let d = new Date(year, month, 1);
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-  return d;
-}
-
+// ─── Multi-select Aurora ────────────────────────────────────────────────────
 function MultiSelect({ label, options, selected, onChange }) {
   const [open, setOpen] = useState(false);
-  const lbl =
-  selected.length === 0 || selected.length === options.length ?
-  `Todos ${label}` :
-  `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
-  const toggle = (v) => onChange(selected.includes(v) ? selected.filter((i) => i !== v) : [...selected, v]);
-  const toggleAll = () => onChange(selected.length === options.length ? [] : options.map((o) => o.value));
+  const lbl = selected.length === 0 || selected.length === options.length
+    ? `Todos ${label}`
+    : `${selected.length} selecionado${selected.length > 1 ? "s" : ""}`;
+  const toggle = (v) => onChange(selected.includes(v) ? selected.filter(i => i !== v) : [...selected, v]);
+  const toggleAll = () => onChange(selected.length === options.length ? [] : options.map(o => o.value));
+
   return (
     <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-xl bg-white text-sm text-gray-700 hover:bg-gray-50 transition justify-between min-w-[150px]">
-        
+      <button onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition justify-between min-w-[140px]"
+        style={{
+          background: A.accentDim,
+          border: `1px solid ${A.border}`,
+          color: A.text,
+        }}>
         <span className="truncate">{lbl}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+          style={{ color: A.accent }} />
       </button>
-      {open &&
-      <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 max-h-56 overflow-y-auto">
-            <button onClick={toggleAll} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-50">
-              <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.length === options.length ? "bg-[#1a3150] border-[#1a3150]" : "border-gray-300"}`}>
-                {selected.length === options.length && <Check className="w-3 h-3 text-white" />}
+      {open && <>
+        <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+        <div className="absolute left-0 mt-1 w-56 rounded-xl shadow-2xl z-20 py-1 max-h-56 overflow-y-auto"
+          style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+          <button onClick={toggleAll}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition"
+            style={{ color: A.text, borderBottom: `1px solid ${A.border}` }}
+            onMouseEnter={e => e.currentTarget.style.background = A.accentDim}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+            <div className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+              style={{ background: selected.length === options.length ? A.accent : 'transparent', borderColor: A.accent }}>
+              {selected.length === options.length && <Check className="w-3 h-3" style={{ color: A.bg }} />}
+            </div>
+            Todos
+          </button>
+          {options.map(o => (
+            <button key={o.value} onClick={() => toggle(o.value)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition"
+              style={{ color: A.textMuted }}
+              onMouseEnter={e => e.currentTarget.style.background = A.accentDim}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+              <div className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                style={{ background: selected.includes(o.value) ? A.accent : 'transparent', borderColor: selected.includes(o.value) ? A.accent : 'rgba(0,212,170,0.4)' }}>
+                {selected.includes(o.value) && <Check className="w-3 h-3" style={{ color: A.bg }} />}
               </div>
-              Todos
+              <span className="truncate">{o.label}</span>
             </button>
-            {options.map((o) =>
-          <button key={o.value} onClick={() => toggle(o.value)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-sm text-gray-600">
-                <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.includes(o.value) ? "bg-[#1a3150] border-[#1a3150]" : "border-gray-300"}`}>
-                  {selected.includes(o.value) && <Check className="w-3 h-3 text-white" />}
-                </div>
-                <span className="truncate">{o.label}</span>
-              </button>
-          )}
-          </div>
-        </>
-      }
-    </div>);
-
+          ))}
+        </div>
+      </>}
+    </div>
+  );
 }
 
+// ─── Relógio de Meta (inline, aurora style) ─────────────────────────────────
+function RelogioMeta({ producao, meta, periodoMesLabel, periodoMes }) {
+  if (!meta || meta <= 0) return null;
+
+  const now = new Date();
+  const inicioMes = startOfMonth(new Date(`${periodoMes}-15`));
+  const fimMes = endOfMonth(new Date(`${periodoMes}-15`));
+  const diasTotais = differenceInDays(fimMes, inicioMes) + 1;
+  const diasDecorridos = Math.min(differenceInDays(now, inicioMes) + 1, diasTotais);
+  const diasRestantes = diasTotais - diasDecorridos;
+
+  const pctRealizado = Math.min((producao / meta) * 100, 100);
+  const metaEsperada = (meta * diasDecorridos) / diasTotais;
+  const pctEsperado = Math.min((metaEsperada / meta) * 100, 100);
+  const diferenca = producao - metaEsperada;
+  const adiantado = diferenca >= 0;
+  const atingida = producao >= meta;
+
+  // Circular gauge
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  const dashRealizado = (pctRealizado / 100) * circumference;
+  const dashEsperado = (pctEsperado / 100) * circumference;
+
+  return (
+    <div className="rounded-2xl p-5 flex flex-col gap-4"
+      style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+      <div className="flex items-center gap-2">
+        <Clock className="w-4 h-4" style={{ color: A.accent }} />
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: A.accent }}>
+          Relógio da Meta — {periodoMesLabel}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-5">
+        {/* Circular gauge */}
+        <div className="relative flex-shrink-0 w-32 h-32">
+          <svg width="128" height="128" viewBox="0 0 128 128">
+            {/* Track */}
+            <circle cx="64" cy="64" r={radius} fill="none" stroke="rgba(0,212,170,0.08)" strokeWidth="10" />
+            {/* Expected (dim) */}
+            <circle cx="64" cy="64" r={radius} fill="none" stroke="rgba(0,212,170,0.25)" strokeWidth="10"
+              strokeDasharray={`${dashEsperado} ${circumference - dashEsperado}`}
+              strokeLinecap="round"
+              transform="rotate(-90 64 64)" />
+            {/* Realizado */}
+            <circle cx="64" cy="64" r={radius} fill="none"
+              stroke={atingida ? '#10b981' : adiantado ? A.accent : '#f59e0b'}
+              strokeWidth="10"
+              strokeDasharray={`${dashRealizado} ${circumference - dashRealizado}`}
+              strokeLinecap="round"
+              transform="rotate(-90 64 64)" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold" style={{ color: atingida ? '#10b981' : A.text }}>
+              {Math.round(pctRealizado)}%
+            </span>
+            <span className="text-[9px] uppercase tracking-wider" style={{ color: A.textMuted }}>da meta</span>
+          </div>
+        </div>
+
+        {/* Details */}
+        <div className="flex-1 space-y-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: A.textMuted }}>Realizado</p>
+            <p className="text-lg font-bold" style={{ color: A.text }}>{formatCurrency(producao)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-wider mb-0.5" style={{ color: A.textMuted }}>Meta Total</p>
+            <p className="text-sm font-semibold" style={{ color: A.textMuted }}>{formatCurrency(meta)}</p>
+          </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium"
+            style={{
+              background: adiantado ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+              color: adiantado ? '#10b981' : '#f59e0b',
+              border: `1px solid ${adiantado ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}`,
+            }}>
+            {adiantado ? '▲' : '▼'} {adiantado ? '+' : ''}{formatCurrency(diferenca)} vs esperado
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between text-xs pt-2" style={{ borderTop: `1px solid ${A.border}`, color: A.textMuted }}>
+        <span>📅 {diasDecorridos}/{diasTotais} dias</span>
+        <span>⏳ {diasRestantes} dias restantes</span>
+        <span>🎯 Falta {formatCurrency(Math.max(0, meta - producao))}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── KPI Card ───────────────────────────────────────────────────────────────
+function KpiCard({ label, value, sub, icon: Icon, accentColor = A.accent }) {
+  return (
+    <div className="rounded-2xl p-5 flex flex-col gap-3 transition"
+      style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+      <div className="flex items-start justify-between">
+        <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: A.textMuted }}>{label}</p>
+        <div className="p-2 rounded-xl" style={{ background: `${accentColor}18` }}>
+          <Icon className="w-4 h-4" style={{ color: accentColor }} />
+        </div>
+      </div>
+      <p className="text-2xl font-bold" style={{ color: A.text }}>{value}</p>
+      {sub && <p className="text-xs" style={{ color: A.textMuted }}>{sub}</p>}
+    </div>
+  );
+}
+
+// ─── Main Dashboard ──────────────────────────────────────────────────────────
 export default function Dashboard() {
   const now = new Date();
 
@@ -82,7 +213,6 @@ export default function Dashboard() {
   const [profileForm, setProfileForm] = useState({ full_name: "", email: "", nome_tratamento: "" });
   const [savingProfile, setSavingProfile] = useState(false);
   const [vendedor, setVendedor] = useState(null);
-
   const [showParcelasModal, setShowParcelasModal] = useState(false);
   const [impersonadoUser, setImpersonadoUser] = useState(null);
   const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
@@ -95,277 +225,190 @@ export default function Dashboard() {
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [selectedProdutos, setSelectedProdutos] = useState([]);
 
-  // Sincronizar agenda ao entrar na página
   const sincronizarAgenda = async (vendedorId) => {
     try {
       if (!vendedorId) return;
-
       const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendedorId }, '-data_interacao');
       const hoje = new Date().toISOString().split('T')[0];
-
       const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendedorId });
-      const agendaMap = new Set(agendas.map((a) => `${a.lead_id}-${a.data_agendada}`));
-
+      const agendaMap = new Set(agendas.map(a => `${a.lead_id}-${a.data_agendada}`));
       for (const inter of interacoes) {
         if (inter.proximo_contato && inter.proximo_contato >= hoje) {
           const key = `${inter.cliente_id}-${inter.proximo_contato}`;
           if (!agendaMap.has(key)) {
             await base44.entities.AgendaContato.create({
-              lead_id: inter.cliente_id,
-              lead_nome: inter.cliente_nome,
-              lead_cpf_cnpj: inter.cliente_nome || '',
-              lead_telefone: '',
-              cliente_id: '',
-              vendedor_id: vendedorId,
-              vendedor_nome: inter.vendedor_nome,
-              data_agendada: inter.proximo_contato,
-              posicao_dia: 0,
-              lote_id: '',
-              status: 'pendente',
-              resultado: ''
+              lead_id: inter.cliente_id, lead_nome: inter.cliente_nome,
+              lead_cpf_cnpj: inter.cliente_nome || '', lead_telefone: '',
+              cliente_id: '', vendedor_id: vendedorId, vendedor_nome: inter.vendedor_nome,
+              data_agendada: inter.proximo_contato, posicao_dia: 0, lote_id: '',
+              status: 'pendente', resultado: ''
             });
           }
         }
       }
-    } catch (e) {
-      console.error('Erro ao sincronizar agenda:', e);
-    }
+    } catch (e) {}
   };
 
-  // Buscar usuário do vendedor espelhado para obter avatar
   useEffect(() => {
     const imp = getImpersonatedVendedor();
-    if (!imp?.email) {setImpersonadoUser(null);return;}
-    base44.entities.User.filter({ email: imp.email }).
-    then((users) => setImpersonadoUser(users[0] || null)).
-    catch(() => setImpersonadoUser(null));
+    if (!imp?.email) { setImpersonadoUser(null); return; }
+    base44.entities.User.filter({ email: imp.email })
+      .then(users => setImpersonadoUser(users[0] || null))
+      .catch(() => setImpersonadoUser(null));
   }, [vendedor?.id]);
 
   useEffect(() => {
     Promise.allSettled([
-    base44.entities.Venda.list("-data", 500),
-    base44.entities.Vendedor.list(),
-    base44.entities.Meta.list(),
-    base44.entities.Comissao.list(),
-    base44.auth.me(),
-    base44.entities.ParcelaVenda.filter({ status: 'pendente' })]
-    ).then(async ([v, vend, m, com, u, parc]) => {
+      base44.entities.Venda.list("-data", 500),
+      base44.entities.Vendedor.list(),
+      base44.entities.Meta.list(),
+      base44.entities.Comissao.list(),
+      base44.auth.me(),
+      base44.entities.ParcelaVenda.filter({ status: 'pendente' })
+    ]).then(async ([v, vend, m, com, u, parc]) => {
       const vendas = v.status === 'fulfilled' ? v.value : [];
       const vends = vend.status === 'fulfilled' ? vend.value : [];
       const mts = m.status === 'fulfilled' ? m.value : [];
       const coms = com.status === 'fulfilled' ? com.value : [];
       const usr = u.status === 'fulfilled' ? u.value : null;
       const parcelas = parc.status === 'fulfilled' ? parc.value : [];
-      setVendas(vendas);
-      setVendedores(vends);
-      setMetas(mts);
-      setComissoes(coms);
-      setParcelasMes(parcelas);
-      setUser(usr);
-      setSelectedVendedores(vends.map((vv) => vv.id));
-      const prods = [...new Set(vendas.map((vv) => vv.produto).filter(Boolean))];
+      setVendas(vendas); setVendedores(vends); setMetas(mts);
+      setComissoes(coms); setParcelasMes(parcelas); setUser(usr);
+      setSelectedVendedores(vends.map(vv => vv.id));
+      const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
-
-      // Sincronizar agenda se o usuário tiver vendedor vinculado (ou impersonado)
       if (usr) {
         const isAdm = usr.role === 'admin' || usr.permissao_admin === true;
         const impersonado = isAdm ? getImpersonatedVendedor() : null;
-        const vendedorAtivo = impersonado || vends.find((v) => v.email === usr.email) || null;
+        const vendedorAtivo = impersonado || vends.find(v => v.email === usr.email) || null;
         if (vendedorAtivo) {
           setVendedor(vendedorAtivo);
           setTimeout(() => sincronizarAgenda(vendedorAtivo.id), 500);
-          // Verificar agenda pendente de hoje
           const hoje = new Date().toISOString().split('T')[0];
-          base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id }).
-          then((agenda) => {
-            const pendentes = agenda.filter((a) => a.data_agendada === hoje && a.status === 'pendente').length;
-            if (pendentes > 0) setAgendaPendentes(pendentes);
-          }).catch(() => {});
+          base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id })
+            .then(agenda => {
+              const pendentes = agenda.filter(a => a.data_agendada === hoje && a.status === 'pendente').length;
+              if (pendentes > 0) setAgendaPendentes(pendentes);
+            }).catch(() => {});
         }
       }
-
       setLoading(false);
     });
   }, []);
 
-  // Reagir a mudanças de impersonação
   useEffect(() => {
     const handleChange = () => {
       const impersonado = getImpersonatedVendedor();
-      if (impersonado) {
-        setVendedor(impersonado);
-      } else {
-        // Voltar para o vendedor do usuário logado
-        if (user) {
-          const v = vendedores.find((vv) => vv.email === user.email) || null;
-          setVendedor(v);
-        }
-      }
+      if (impersonado) { setVendedor(impersonado); }
+      else if (user) { setVendedor(vendedores.find(vv => vv.email === user.email) || null); }
     };
     window.addEventListener('impersonation-change', handleChange);
     return () => window.removeEventListener('impersonation-change', handleChange);
   }, [user, vendedores]);
 
-  const produtoOptions = [...new Set(vendas.map((v) => v.produto).filter(Boolean))].map((p) => ({ value: p, label: p }));
-  const vendedorOptions = vendedores.map((v) => ({ value: v.id, label: v.nome }));
+  const produtoOptions = [...new Set(vendas.map(v => v.produto).filter(Boolean))].map(p => ({ value: p, label: p }));
+  const vendedorOptions = vendedores.map(v => ({ value: v.id, label: v.nome }));
 
-  const vendasFiltradas = vendas.filter((v) => {
+  const vendasFiltradas = vendas.filter(v => {
     const d = v.data || "";
     const inDate = (!dataInicio || d >= dataInicio) && (!dataFim || d <= dataFim);
     const inVend = selectedVendedores.length === 0 || selectedVendedores.length === vendedores.length ||
-    selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some((id) => vendedores.find((vv) => vv.id === id)?.nome === v.assessor_comercial);
+      selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some(id => vendedores.find(vv => vv.id === id)?.nome === v.assessor_comercial);
     const inProd = selectedProdutos.length === 0 || selectedProdutos.length === produtoOptions.length || selectedProdutos.includes(v.produto);
     return inDate && inVend && inProd;
   });
 
-  // KPIs
   const totalVendas = vendasFiltradas.length;
   const valorTotal = vendasFiltradas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
   const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
-  const vendedoresAtivos = new Set(vendasFiltradas.map((v) => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
+  const vendedoresAtivos = new Set(vendasFiltradas.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
 
-  // Comissão gerada (somente vendas do período filtrado)
-  const vendasFiltradasIds = new Set(vendasFiltradas.map((v) => v.id));
-  const comissaoGerada = comissoes.
-  filter((c) => vendasFiltradasIds.has(c.venda_id)).
-  reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
+  const vendasFiltradasIds = new Set(vendasFiltradas.map(v => v.id));
+  const comissaoGerada = comissoes
+    .filter(c => vendasFiltradasIds.has(c.venda_id))
+    .reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);
 
-  // Meta do time — referência derivada do período filtrado
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const mesIni = `${mesAtual}-01`;
-  const mesUltDia = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const mesFim = `${mesAtual}-${String(mesUltDia).padStart(2, "0")}`;
-
-  // Mês de referência para metas: usa o mês do início do filtro (ex: filtro maio → metas de maio)
   const periodoMes = dataInicio ? dataInicio.substring(0, 7) : mesAtual;
   const periodoMesLabel = new Date(`${periodoMes}-15`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   const periodoMesIni = `${periodoMes}-01`;
   const periodoMesFimDia = new Date(parseInt(periodoMes.split('-')[0]), parseInt(periodoMes.split('-')[1]), 0).getDate();
   const periodoMesFim = `${periodoMes}-${String(periodoMesFimDia).padStart(2, '0')}`;
+  const mesIni = `${mesAtual}-01`;
+  const mesUltDia = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const mesFim = `${mesAtual}-${String(mesUltDia).padStart(2, "0")}`;
 
-  const metaEquipe = metas.find((m) => m.mes === periodoMes && m.tipo === "equipe");
+  const metaEquipe = metas.find(m => m.mes === periodoMes && m.tipo === "equipe");
   const metaTimeSoma = vendedores.reduce((s, v) => {
-    const m = metas.find((m) => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === v.id);
+    const m = metas.find(m => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === v.id);
     return s + (m?.valor_meta || 0);
   }, 0);
   const metaTimeMes = metaEquipe?.valor_meta || metaTimeSoma;
+  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(valorTotal / metaTimeMes * 100), 100) : null;
+  const metaTimeAtingida = metaTimeMes > 0 && valorTotal >= metaTimeMes;
 
-  // Produção no período filtrado (já usa vendasFiltradas via valorTotal)
-  const producaoTimePeriodo = valorTotal;
-
-  const metaTimePct = metaTimeMes > 0 ? Math.min(Math.round(producaoTimePeriodo / metaTimeMes * 100), 100) : null;
-  const metaTimeAtingida = metaTimeMes > 0 && producaoTimePeriodo >= metaTimeMes;
-
-  // Meta individual do usuário logado (usa período filtrado)
-  const metaIndividual = vendedor ?
-  metas.find((m) => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0) :
-  null;
-  const producaoIndividualMes = vendedor ?
-  vendas.
-  filter((v) => v.data && v.data >= periodoMesIni && v.data <= periodoMesFim && (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome)).
-  reduce((s, v) => s + (parseFloat(v.valor) || 0), 0) :
-  0;
+  const metaIndividual = vendedor
+    ? metas.find(m => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === vendedor.id && (m.valor_bonus || 0) > 0)
+    : null;
+  const producaoIndividualMes = vendedor
+    ? vendas.filter(v => v.data && v.data >= periodoMesIni && v.data <= periodoMesFim &&
+        (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome))
+        .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0)
+    : 0;
   const faltaParaBonus = metaIndividual ? Math.max(0, metaIndividual.valor_meta - producaoIndividualMes) : 0;
   const bonusAtingido = metaIndividual && producaoIndividualMes >= metaIndividual.valor_meta;
 
-  // Gráfico ranking
-  const rankingData = vendedores.
-  map((v) => {
-    const vol = vendasFiltradas.
-    filter((vd) => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome).
-    reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-    const metaRecord = metas.find((m) => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
-
-    // Verifica se tem comissões no período filtrado (usa periodoMes, não mês atual)
-    const periodoMesIni = `${periodoMes}-01`;
-    const periodoMesFimDia = new Date(parseInt(periodoMes.split('-')[0]), parseInt(periodoMes.split('-')[1]), 0).getDate();
-    const periodoMesFim = `${periodoMes}-${String(periodoMesFimDia).padStart(2, '0')}`;
-    const temComissaoMes = comissoes.some((c) =>
-    c.vendedor_id === v.id &&
-    c.data_venda &&
-    c.data_venda >= periodoMesIni &&
-    c.data_venda <= periodoMesFim
-    );
-
+  const rankingData = vendedores.map(v => {
+    const vol = vendasFiltradas
+      .filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome)
+      .reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+    const metaRecord = metas.find(m => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
+    const temComissaoMes = comissoes.some(c => c.vendedor_id === v.id && c.data_venda && c.data_venda >= periodoMesIni && c.data_venda <= periodoMesFim);
     return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
-  }).
-  filter((r) => r.volume > 0 || r.meta > 0 || r.temComissaoMes).
-  sort((a, b) => b.volume - a.volume);
+  }).filter(r => r.volume > 0 || r.meta > 0 || r.temComissaoMes).sort((a, b) => b.volume - a.volume);
 
-  // Últimas vendas
   const recentes = vendasFiltradas.slice(0, 8);
 
-  // Parcelas vincendas do mês atual por vendedor
   const parcelasPorVendedor = (vendedorId) =>
-  parcelasMes.
-  filter((p) => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).
-  reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0);
+    parcelasMes.filter(p => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim)
+      .reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0);
 
-  // Ranking
-  const ranking = vendedores.
-  filter((v) => v.nome?.toUpperCase() !== 'CONSÓRCIO').
-  map((v) => {
-    const vs = vendasFiltradas.filter((vd) => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
-    const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
-    const vincendas = parcelasPorVendedor(v.id);
-    return { ...v, qtd: vs.length, vol, vincendas };
-  }).
-  sort((a, b) => b.vol - a.vol);
-
-  const cards = [
-  { label: "Vendas no Período", value: totalVendas, sub: `${vendas.length} total cadastradas`, icon: FileText, light: "bg-blue-50", text: "text-[#1a3150]" },
-  { label: "Comissão Gerada", value: formatCurrency(comissaoGerada), icon: DollarSign, light: "bg-amber-50", text: "text-amber-700" },
-  { label: "Ticket Médio", value: formatCurrency(ticketMedio), icon: DollarSign, light: "bg-orange-50", text: "text-orange-600" },
-  { label: "Vendedores Ativos", value: vendedoresAtivos, icon: Users, light: "bg-violet-50", text: "text-violet-700" }];
-
+  const ranking = vendedores
+    .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
+    .map(v => {
+      const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
+      const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
+      const vincendas = parcelasPorVendedor(v.id);
+      return { ...v, qtd: vs.length, vol, vincendas };
+    }).sort((a, b) => b.vol - a.vol);
 
   const impersonado = getImpersonatedVendedor();
   const displayName = impersonado ? impersonado.nome : user?.nome_tratamento || user?.full_name || user?.email || '?';
   const avatarUrl = impersonado ? impersonadoUser?.avatar_url : user?.avatar_url;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
-      </div>);
-
-  }
-
   const openProfileModal = () => {
-    setProfileForm({
-      full_name: user?.full_name || "",
-      email: user?.email || "",
-      nome_tratamento: user?.nome_tratamento || ""
-    });
+    setProfileForm({ full_name: user?.full_name || "", email: user?.email || "", nome_tratamento: user?.nome_tratamento || "" });
     setShowProfileModal(true);
   };
 
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
-      await base44.auth.updateMe({
-        nome_tratamento: profileForm.nome_tratamento
-      });
+      await base44.auth.updateMe({ nome_tratamento: profileForm.nome_tratamento });
       const updatedUser = await base44.auth.me();
-      setUser(updatedUser);
-      setShowProfileModal(false);
+      setUser(updatedUser); setShowProfileModal(false);
       toast.success('Perfil atualizado!');
-    } catch (error) {
-      toast.error('Erro ao atualizar perfil');
-    }
+    } catch { toast.error('Erro ao atualizar perfil'); }
     setSavingProfile(false);
   };
 
-  // Aplica avatar SOMENTE no Vendedor (nunca altera o User entity).
-  // Se estiver espelhando: atualiza o Vendedor espelhado.
-  // Se não: busca o Vendedor vinculado pelo e-mail do usuário logado.
   const applyAvatar = async (url) => {
-    const impersonado = getImpersonatedVendedor();
-    if (impersonado) {
-      await base44.entities.Vendedor.update(impersonado.id, { avatar_url: url });
-      setVendedores(prev => prev.map(v => v.id === impersonado.id ? { ...v, avatar_url: url } : v));
+    const imp = getImpersonatedVendedor();
+    if (imp) {
+      await base44.entities.Vendedor.update(imp.id, { avatar_url: url });
+      setVendedores(prev => prev.map(v => v.id === imp.id ? { ...v, avatar_url: url } : v));
       setImpersonadoUser(prev => prev ? { ...prev, avatar_url: url } : prev);
-      toast.success('Avatar de ' + impersonado.nome.split(' ')[0] + ' atualizado!');
+      toast.success('Avatar de ' + imp.nome.split(' ')[0] + ' atualizado!');
     } else {
       if (!user?.email) { toast.error('Usuário sem e-mail vinculado'); return; }
       const vinculados = await base44.entities.Vendedor.filter({ email: user.email });
@@ -373,7 +416,6 @@ export default function Dashboard() {
         await base44.entities.Vendedor.update(vinculados[0].id, { avatar_url: url });
         setVendedores(prev => prev.map(v => v.id === vinculados[0].id ? { ...v, avatar_url: url } : v));
       }
-      // Sempre atualiza o User também (garante exibição mesmo sem Vendedor vinculado)
       await base44.auth.updateMe({ avatar_url: url });
       setUser(prev => prev ? { ...prev, avatar_url: url } : prev);
       toast.success('Avatar atualizado!');
@@ -384,463 +426,449 @@ export default function Dashboard() {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       await applyAvatar(file_url);
-    } catch (error) {
-      toast.error('Erro ao atualizar avatar');
-    }
+    } catch { toast.error('Erro ao atualizar avatar'); }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: A.accent, borderTopColor: 'transparent' }} />
+      </div>
+    );
+  }
+
+  // Custom tooltip for charts
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-xl px-3 py-2 text-xs shadow-2xl"
+        style={{ background: A.surface2, border: `1px solid ${A.border}`, color: A.text }}>
+        <p className="font-semibold mb-1">{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ color: p.color }}>{p.name === 'volume' ? 'Volume' : 'Meta'}: {formatCurrency(p.value)}</p>
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="space-y-5 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between gap-3">
+    <div style={{ minHeight: '100vh', background: A.bg, color: A.text }} className="p-4 sm:p-6">
+      <div className="space-y-5 max-w-[1400px] mx-auto">
+
+        {/* ─── Header row ──────────────────────────────────────────────── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Visão Geral</h2>
-            <p className="text-gray-400 text-sm mt-0.5">Acompanhe o desempenho da sua operação</p>
+            <h2 className="text-2xl font-bold" style={{ color: A.text }}>Visão Geral</h2>
+            <p className="text-sm mt-0.5" style={{ color: A.textMuted }}>Acompanhe o desempenho da sua operação</p>
           </div>
-          
-          {/* User Profile */}
-          {user &&
-          <div className="flex flex-col items-end gap-1.5">
-              <button
-              onClick={openProfileModal}
-              className="flex items-center gap-3 bg-white rounded-xl px-4 py-2.5 border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer">
-              
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-400 uppercase tracking-wider">{impersonado ? 'Espelhando' : 'Bem-vindo'}</p>
-                  <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm overflow-hidden">
-                  {avatarUrl ?
-                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> :
-
-                <span>{displayName.charAt(0).toUpperCase()}</span>
-                }
-                </div>
-              </button>
-              {bonusAtingido &&
-            <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
-                  <span>🎉</span>
-                  <span>Parabéns! Você bateu a meta e garantiu o bônus de <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong>!</span>
-                </div>
-            }
-              {!bonusAtingido && metaIndividual && faltaParaBonus > 0 &&
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-xl text-xs font-medium max-w-xs text-right">
-                  <span>🎯</span>
-                  <span>Mais um pouquinho! Faltam <strong>{formatCurrency(faltaParaBonus)}</strong> para você levar <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong> de bônus!</span>
-                </div>
-            }
-            </div>
-          }
-        </div>
-
-        <div className="flex flex-col gap-3">
-
-          {/* Filtros */}
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
-            <Calendar className="w-4 h-4 text-gray-400 ml-1" />
-            <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
-            <span className="text-gray-400 text-sm">até</span>
-            <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />
-            <div className="h-4 w-px bg-gray-200" />
-            <MultiSelect label="Vendedores" options={vendedorOptions} selected={selectedVendedores} onChange={setSelectedVendedores} />
-            {produtoOptions.length > 0 &&
-            <MultiSelect label="Produtos" options={produtoOptions} selected={selectedProdutos} onChange={setSelectedProdutos} />
-            }
-            <span className="ml-auto text-xs text-gray-400">
-              {vendasFiltradas.length} venda{vendasFiltradas.length !== 1 ? "s" : ""} no período
-              <span className="mx-1 text-gray-300">·</span>
-              <span className="font-semibold text-gray-500">{vendas.length} total cadastradas</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Total Vendido - Destaque */}
-        <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-6 shadow-lg border border-gray-200 opacity-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-blue-200/70 font-medium uppercase tracking-wider mb-2">Total Vendido no Período</p>
-              <p className="text-4xl font-bold text-white">{formatCurrency(valorTotal)}</p>
-              <p className="text-sm text-blue-200/60 mt-2">
-                {totalVendas} venda{totalVendas !== 1 ? "s" : ""} · Ticket médio de {formatCurrency(ticketMedio)}
-              </p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-              <TrendingUp className="w-8 h-8 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          {cards.map((card) =>
-          <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">{card.label}</p>
-                  <p className="text-xl font-bold text-gray-900 mt-1">{card.value}</p>
-                  {card.sub && <p className="text-xs text-gray-400 mt-0.5">{card.sub}</p>}
-                </div>
-                <div className={`p-2.5 rounded-xl ${card.light}`}>
-                  <card.icon className={`w-5 h-5 ${card.text}`} />
-                </div>
+          {user && (
+            <button onClick={openProfileModal}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition self-start sm:self-auto"
+              style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>{impersonado ? 'Espelhando' : 'Bem-vindo'}</p>
+                <p className="text-sm font-semibold" style={{ color: A.text }}>{displayName}</p>
               </div>
-            </div>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0"
+                style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: A.bg }}>
+                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : displayName.charAt(0).toUpperCase()}
+              </div>
+            </button>
           )}
         </div>
 
-        {/* Meta do Time */}
-        {metaTimeMes > 0 &&
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
-                  Meta do Time — {periodoMesLabel}
-                </p>
-                <div className="flex items-end gap-3">
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(producaoTimePeriodo)}</p>
-                  <p className="text-sm text-gray-400 mb-0.5">de {formatCurrency(metaTimeMes)}</p>
-                </div>
-                <p className={`text-xs mt-1 font-medium ${metaTimeAtingida ? "text-emerald-600" : "text-amber-600"}`}>
-                  {metaTimeAtingida ? "✓ Meta do time atingida!" : `Faltando ${formatCurrency(metaTimeMes - producaoTimePeriodo)}`}
-                </p>
-              </div>
-              <div className="sm:w-72">
-                <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-                  <span>Progresso do mês</span>
-                  <span className="font-semibold">{metaTimePct}%</span>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                  className={`h-full rounded-full transition-all duration-700 ${metaTimeAtingida ? "bg-emerald-500" : metaTimePct >= 60 ? "bg-amber-400" : "bg-red-400"}`}
-                  style={{ width: `${metaTimePct}%` }} />
-                
-                </div>
-              </div>
+        {/* ─── Bonus banner ─────────────────────────────────────────────── */}
+        {bonusAtingido && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
+            style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
+            🎉 Parabéns! Você bateu a meta e garantiu o bônus de <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong>!
+          </div>
+        )}
+        {!bonusAtingido && metaIndividual && faltaParaBonus > 0 && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
+            style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
+            🎯 Faltam <strong>{formatCurrency(faltaParaBonus)}</strong> para você levar <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong> de bônus!
+          </div>
+        )}
+
+        {/* ─── Filtros ──────────────────────────────────────────────────── */}
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl"
+          style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+          <Calendar className="w-4 h-4 ml-1 flex-shrink-0" style={{ color: A.accent }} />
+          <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl focus:outline-none"
+            style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.text }} />
+          <span className="text-sm" style={{ color: A.textMuted }}>até</span>
+          <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl focus:outline-none"
+            style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.text }} />
+          <div className="w-px h-4" style={{ background: A.border }} />
+          <MultiSelect label="Vendedores" options={vendedorOptions} selected={selectedVendedores} onChange={setSelectedVendedores} />
+          {produtoOptions.length > 0 && (
+            <MultiSelect label="Produtos" options={produtoOptions} selected={selectedProdutos} onChange={setSelectedProdutos} />
+          )}
+          <span className="ml-auto text-xs" style={{ color: A.textMuted }}>
+            <span style={{ color: A.accent }}>{vendasFiltradas.length}</span> venda{vendasFiltradas.length !== 1 ? "s" : ""} no período
+            <span className="mx-1" style={{ color: A.border }}>·</span>
+            {vendas.length} total
+          </span>
+        </div>
+
+        {/* ─── Hero + KPIs ──────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* Hero card */}
+          <div className="lg:col-span-1 rounded-2xl p-6 flex flex-col justify-between"
+            style={{ background: 'linear-gradient(135deg, #0d2137 0%, #0a3d2e 100%)', border: `1px solid ${A.border}`, boxShadow: A.accentGlow }}>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: 'rgba(0,212,170,0.7)' }}>Total Vendido no Período</p>
+              <p className="text-3xl font-bold" style={{ color: A.text }}>{formatCurrency(valorTotal)}</p>
+              <p className="text-sm mt-1" style={{ color: A.textMuted }}>
+                {totalVendas} venda{totalVendas !== 1 ? "s" : ""} · ticket {formatCurrency(ticketMedio)}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mt-4 px-3 py-2 rounded-xl"
+              style={{ background: 'rgba(0,212,170,0.1)', border: `1px solid ${A.border}` }}>
+              <TrendingUp className="w-4 h-4" style={{ color: A.accent }} />
+              <span className="text-xs font-medium" style={{ color: A.accent }}>Período selecionado</span>
             </div>
           </div>
-        }
 
-        {/* Gráfico + Últimas Vendas */}
+          {/* KPI grid 2x2 */}
+          <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <KpiCard label="Vendas no Período" value={totalVendas} sub={`${vendas.length} total`} icon={FileText} accentColor="#60a5fa" />
+            <KpiCard label="Comissão Gerada" value={formatCurrency(comissaoGerada)} icon={DollarSign} accentColor={A.gold} />
+            <KpiCard label="Ticket Médio" value={formatCurrency(ticketMedio)} icon={BarChart2} accentColor="#a78bfa" />
+            <KpiCard label="Vendedores Ativos" value={vendedoresAtivos} icon={Users} accentColor={A.accent} />
+          </div>
+        </div>
+
+        {/* ─── Meta do Time + Relógio ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Meta barra */}
+          {metaTimeMes > 0 && (
+            <div className="rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+              <p className="text-[10px] uppercase tracking-wider font-semibold mb-3" style={{ color: A.accent }}>
+                Meta do Time — {periodoMesLabel}
+              </p>
+              <div className="flex items-end gap-3 mb-3">
+                <p className="text-2xl font-bold" style={{ color: A.text }}>{formatCurrency(valorTotal)}</p>
+                <p className="text-sm mb-0.5" style={{ color: A.textMuted }}>de {formatCurrency(metaTimeMes)}</p>
+                <span className="ml-auto text-lg font-bold" style={{ color: metaTimeAtingida ? '#10b981' : A.accent }}>
+                  {metaTimePct}%
+                </span>
+              </div>
+              {/* Double bar */}
+              <div className="space-y-2">
+                <div>
+                  <div className="flex justify-between text-[10px] mb-1" style={{ color: A.textMuted }}>
+                    <span>Realizado</span><span style={{ color: A.text }}>{formatCurrency(valorTotal)}</span>
+                  </div>
+                  <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(0,212,170,0.1)' }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${metaTimePct}%`, background: metaTimeAtingida ? '#10b981' : `linear-gradient(90deg, ${A.accent}, #0066cc)` }} />
+                  </div>
+                </div>
+              </div>
+              <p className="text-xs mt-2 font-medium" style={{ color: metaTimeAtingida ? '#10b981' : '#f59e0b' }}>
+                {metaTimeAtingida ? '✓ Meta do time atingida!' : `Faltando ${formatCurrency(metaTimeMes - valorTotal)}`}
+              </p>
+            </div>
+          )}
+
+          {/* Relógio de Meta */}
+          <RelogioMeta producao={valorTotal} meta={metaTimeMes} periodoMesLabel={periodoMesLabel} periodoMes={periodoMes} />
+        </div>
+
+        {/* ─── Chart + Recentes ─────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-900 text-sm mb-4">Volume de Vendas vs Meta</h3>
-            {rankingData.length === 0 ?
-            <div className="flex items-center justify-center h-48 text-gray-400 text-sm">Nenhuma venda no período</div> :
-
-            <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={rankingData} barGap={4} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                  <XAxis dataKey="nome" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false}
-                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                  <Tooltip
-                  formatter={(val, name) => [formatCurrency(val), name === "volume" ? "Volume Vendido" : "Meta"]}
-                  contentStyle={{ borderRadius: 12, border: "1px solid #f3f4f6", fontSize: 12 }} />
-                
-                  <Bar dataKey="volume" name="volume" fill="#1a3150" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                    {rankingData.map((entry, i) =>
-                  <Cell key={i} fill={entry.volume >= entry.meta && entry.meta > 0 ? "#10b981" : "#1a3150"} />
-                  )}
-                  </Bar>
-                  <Bar dataKey="meta" name="meta" fill="#D4AF37" radius={[6, 6, 0, 0]} maxBarSize={40} opacity={0.5} />
-                </BarChart>
-              </ResponsiveContainer>
+          <div className="lg:col-span-2 rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+            <h3 className="font-semibold text-sm mb-4" style={{ color: A.text }}>Volume de Vendas vs Meta</h3>
+            {rankingData.length === 0
+              ? <div className="flex items-center justify-center h-48 text-sm" style={{ color: A.textMuted }}>Nenhuma venda no período</div>
+              : <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={rankingData} barGap={4} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,212,170,0.08)" vertical={false} />
+                    <XAxis dataKey="nome" tick={{ fontSize: 11, fill: A.textMuted }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: A.textMuted }} axisLine={false} tickLine={false}
+                      tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="volume" name="volume" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                      {rankingData.map((entry, i) => (
+                        <Cell key={i} fill={entry.volume >= entry.meta && entry.meta > 0 ? '#10b981' : A.accent} />
+                      ))}
+                    </Bar>
+                    <Bar dataKey="meta" name="meta" fill={A.gold} radius={[6, 6, 0, 0]} maxBarSize={40} opacity={0.4} />
+                  </BarChart>
+                </ResponsiveContainer>
             }
             <div className="flex gap-4 mt-2 justify-center">
-              <div className="flex items-center gap-1.5 text-xs text-gray-500"><div className="w-3 h-3 rounded-sm bg-[#1a3150]" />Volume Vendido</div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500"><div className="w-3 h-3 rounded-sm bg-emerald-500" />Meta Atingida</div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500"><div className="w-3 h-3 rounded-sm bg-[#D4AF37] opacity-70" />Meta</div>
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: A.textMuted }}>
+                <div className="w-3 h-3 rounded-sm" style={{ background: A.accent }} />Volume
+              </div>
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: A.textMuted }}>
+                <div className="w-3 h-3 rounded-sm bg-emerald-500" />Meta Atingida
+              </div>
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: A.textMuted }}>
+                <div className="w-3 h-3 rounded-sm" style={{ background: A.gold, opacity: 0.7 }} />Meta
+              </div>
             </div>
           </div>
 
           {/* Últimas Vendas */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900 text-sm">Últimas Vendas</h3>
-              <Link to={createPageUrl("Vendas")} className="text-xs text-[#1a3150] font-medium flex items-center gap-1 hover:underline">
+          <div className="rounded-2xl overflow-hidden" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+            <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${A.border}` }}>
+              <h3 className="font-semibold text-sm" style={{ color: A.text }}>Últimas Vendas</h3>
+              <Link to={createPageUrl("Vendas")} className="text-xs flex items-center gap-1 transition"
+                style={{ color: A.accent }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                 Ver todas <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
-            <div className="divide-y divide-gray-50 overflow-y-auto max-h-[280px]">
-              {recentes.length === 0 ?
-              <div className="px-5 py-10 text-center text-gray-400 text-sm">
-                  <FileText className="w-8 h-8 mx-auto mb-2 text-gray-200" />
-                  Nenhuma venda no período
-                </div> :
-              recentes.map((v) =>
-              <div key={v.id} className="px-5 py-3 flex items-center justify-between hover:bg-gray-50/50 transition">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{v.cliente || "—"}</p>
-                    <p className="text-xs text-gray-400">{v.assessor_comercial || "—"} · {v.data || ""}</p>
+            <div className="overflow-y-auto max-h-[270px]">
+              {recentes.length === 0
+                ? <div className="px-5 py-10 text-center text-sm" style={{ color: A.textMuted }}>Nenhuma venda no período</div>
+                : recentes.map(v => (
+                  <div key={v.id} className="px-5 py-3 flex items-center justify-between transition"
+                    style={{ borderBottom: `1px solid ${A.border}` }}
+                    onMouseEnter={e => e.currentTarget.style.background = A.accentDim}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: A.text }}>{v.cliente || "—"}</p>
+                      <p className="text-xs" style={{ color: A.textMuted }}>{v.assessor_comercial || "—"} · {v.data || ""}</p>
+                    </div>
+                    <div className="text-right ml-2 flex-shrink-0">
+                      <p className="text-sm font-semibold" style={{ color: A.text }}>{formatCurrency(v.valor)}</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+                        style={{ background: A.accentDim, color: A.accent }}>
+                        {v.produto || "—"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right ml-2 flex-shrink-0">
-                    <p className="text-sm font-semibold text-gray-900">{formatCurrency(v.valor)}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600">{v.produto || "—"}</span>
-                  </div>
-                </div>
-              )}
+                ))
+              }
             </div>
           </div>
         </div>
 
-        {/* Ranking Vendedores */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 text-sm">Ranking de Vendedores</h3>
+        {/* ─── Ranking ──────────────────────────────────────────────────── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+          <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${A.border}` }}>
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4" style={{ color: A.gold }} />
+              <h3 className="font-semibold text-sm" style={{ color: A.text }}>Ranking de Vendedores</h3>
+            </div>
             <div className="flex items-center gap-3">
-              {parcelasMes.length > 0 &&
-              <button
-                onClick={() => setShowParcelasModal(true)}
-                className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:underline">
-                
+              {parcelasMes.length > 0 && (
+                <button onClick={() => setShowParcelasModal(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium transition"
+                  style={{ color: A.gold }}>
                   <CalendarClock className="w-3.5 h-3.5" />
-                  Gerenciar Parcelas ({parcelasMes.filter((p) => p.status === 'pendente').length})
+                  Gerenciar Parcelas ({parcelasMes.filter(p => p.status === 'pendente').length})
                 </button>
-              }
-              <Link to={createPageUrl("Vendedores")} className="text-xs text-[#1a3150] font-medium flex items-center gap-1 hover:underline">
+              )}
+              <Link to={createPageUrl("Vendedores")} className="text-xs flex items-center gap-1"
+                style={{ color: A.accent }}>
                 Ver equipe <ArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
           </div>
           <div className="p-5">
-            {ranking.filter((v) => v.vol > 0 || v.vincendas > 0).length === 0 ?
-            <p className="text-sm text-gray-400 text-center py-4">Nenhuma venda no período</p> :
-
-            <div className="space-y-3">
-                {/* Cabeçalho */}
-                <div className="flex items-center gap-3 pb-1 border-b border-gray-50">
-                  <div className="w-8" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between text-[10px] text-gray-400 uppercase tracking-wider">
+            {ranking.filter(v => v.vol > 0 || v.vincendas > 0).length === 0
+              ? <p className="text-sm text-center py-4" style={{ color: A.textMuted }}>Nenhuma venda no período</p>
+              : <div className="space-y-3">
+                  {/* Header */}
+                  <div className="flex items-center gap-3 pb-2" style={{ borderBottom: `1px solid ${A.border}` }}>
+                    <div className="w-8" />
+                    <div className="flex-1 flex justify-between text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>
                       <span>Gerente</span>
-                      <div className="flex gap-4">
+                      <div className="flex gap-6">
                         <span>Realizado</span>
-                        <span className="text-amber-500">Vincendas/mês</span>
+                        <span style={{ color: A.gold }}>Vincendas/mês</span>
                       </div>
                     </div>
                   </div>
-                </div>
-                {ranking.filter((v) => v.vol > 0 || v.vincendas > 0).map((v, i) => {
-                const maxVol = ranking.filter((r) => r.vol > 0)[0]?.vol || 1;
-                const pct = Math.round(v.vol / maxVol * 100);
-                const medals = ["🥇", "🥈", "🥉"];
-                return (
-                  <div key={v.id} className="flex items-center gap-3">
-                      <div className="w-8 text-center text-lg flex-shrink-0">
-                        {i < 3 && v.vol > 0 ? medals[i] : <span className="text-sm font-bold text-gray-400">{v.vol > 0 ? i + 1 : '—'}</span>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between text-sm mb-1 gap-2">
-                          <span className="font-medium text-gray-900 truncate">{v.nome}</span>
-                          <div className="flex gap-4 flex-shrink-0">
-                            <span className="font-semibold text-gray-900">{formatCurrency(v.vol)}</span>
-                            {v.vincendas > 0 &&
-                          <span className="font-semibold text-amber-600" title="Parcelas vincendas no mês">
-                                +{formatCurrency(v.vincendas)}
-                              </span>
-                          }
+                  {ranking.filter(v => v.vol > 0 || v.vincendas > 0).map((v, i) => {
+                    const maxVol = ranking.filter(r => r.vol > 0)[0]?.vol || 1;
+                    const pct = Math.round(v.vol / maxVol * 100);
+                    const medals = ["🥇", "🥈", "🥉"];
+                    return (
+                      <div key={v.id} className="flex items-center gap-3">
+                        <div className="w-8 text-center text-lg flex-shrink-0">
+                          {i < 3 && v.vol > 0 ? medals[i] : <span className="text-sm font-bold" style={{ color: A.textMuted }}>{v.vol > 0 ? i + 1 : '—'}</span>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between text-sm mb-1.5 gap-2">
+                            <span className="font-medium truncate" style={{ color: A.text }}>{v.nome}</span>
+                            <div className="flex gap-4 flex-shrink-0">
+                              <span className="font-semibold" style={{ color: A.text }}>{formatCurrency(v.vol)}</span>
+                              {v.vincendas > 0 && (
+                                <span className="font-semibold" style={{ color: A.gold }}>+{formatCurrency(v.vincendas)}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(0,212,170,0.08)' }}>
+                            <div className="h-full rounded-full transition-all duration-700"
+                              style={{ width: `${pct}%`, background: i === 0 ? A.gold : `linear-gradient(90deg, ${A.accent}, #0066cc)` }} />
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-xs" style={{ color: A.textMuted }}>{v.qtd} venda{v.qtd !== 1 ? "s" : ""}</p>
+                            {v.vincendas > 0 && (
+                              <p className="text-[10px]" style={{ color: A.gold }}>
+                                · {parcelasMes.filter(p => p.vendedor_id === v.id && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length} parcela(s) vincendo
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${i === 0 ? "bg-[#D4AF37]" : "bg-[#1a3150]"}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-xs text-gray-400">{v.qtd} venda{v.qtd !== 1 ? "s" : ""}</p>
-                          {v.vincendas > 0 &&
-                        <p className="text-[10px] text-amber-500">· {parcelasMes.filter((p) => p.vendedor_id === v.id && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length} parcela(s) vincendo no mês</p>
-                        }
-                        </div>
                       </div>
-                    </div>);
-
-              })}
-
-                {/* Total time — vincendas do mês */}
-                {parcelasMes.filter((p) => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length > 0 &&
-              <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Vincendas do Time no Mês</span>
-                    <span className="text-sm font-bold text-amber-600">
-                      {formatCurrency(parcelasMes.filter((p) => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0))}
-                    </span>
-                  </div>
-              }
-              </div>
+                    );
+                  })}
+                  {parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).length > 0 && (
+                    <div className="flex justify-between items-center mt-3 pt-3" style={{ borderTop: `1px solid ${A.border}` }}>
+                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>Total Vincendas do Time</span>
+                      <span className="text-sm font-bold" style={{ color: A.gold }}>
+                        {formatCurrency(parcelasMes.filter(p => p.data_vencimento >= mesIni && p.data_vencimento <= mesFim).reduce((s, p) => s + (parseFloat(p.valor_parcela) || 0), 0))}
+                      </span>
+                    </div>
+                  )}
+                </div>
             }
           </div>
         </div>
 
-        {/* Navegação Rápida */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-          <h3 className="font-semibold text-gray-900 text-sm mb-4">Acesso Rápido</h3>
+        {/* ─── Acesso Rápido ────────────────────────────────────────────── */}
+        <div className="rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+          <h3 className="font-semibold text-sm mb-4" style={{ color: A.text }}>Acesso Rápido</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
-            { label: 'Agenda do Dia', icon: CalendarClock, page: 'MeusClientes', iconColor: 'text-[#1a3150]', bgColor: 'bg-slate-100', desc: 'Contatos e carteira' },
-            { label: 'Contratos', icon: FileText, page: 'Contratos', iconColor: 'text-indigo-600', bgColor: 'bg-indigo-50', desc: 'Gestão de contratos' },
-            { label: 'Vendas', icon: TrendingUp, page: 'Vendas', iconColor: 'text-emerald-700', bgColor: 'bg-emerald-50', desc: 'Registrar vendas' },
-            { label: 'Clientes', icon: Users, page: 'Clientes', iconColor: 'text-blue-700', bgColor: 'bg-blue-50', desc: 'Base de clientes' },
-            { label: 'Capacitação', icon: BookOpen, page: 'Treinamento', iconColor: 'text-amber-700', bgColor: 'bg-amber-50', desc: 'Treinamentos' }].
-            map((item) =>
-            <Link key={item.page} to={createPageUrl(item.page)}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-100 hover:border-gray-300 hover:shadow-sm transition cursor-pointer group">
-                <div className={`p-3 rounded-xl ${item.bgColor} group-hover:scale-105 transition-transform`}>
-                  <item.icon className={`w-5 h-5 ${item.iconColor}`} />
+              { label: 'Agenda do Dia', icon: CalendarClock, page: 'MeusClientes', color: '#60a5fa', desc: 'Contatos e carteira' },
+              { label: 'Contratos', icon: FileText, page: 'Contratos', color: '#a78bfa', desc: 'Gestão de contratos' },
+              { label: 'Vendas', icon: TrendingUp, page: 'Vendas', color: A.accent, desc: 'Registrar vendas' },
+              { label: 'Clientes', icon: Users, page: 'Clientes', color: '#34d399', desc: 'Base de clientes' },
+              { label: 'Capacitação', icon: BookOpen, page: 'Treinamento', color: A.gold, desc: 'Treinamentos' },
+            ].map(item => (
+              <Link key={item.page} to={createPageUrl(item.page)}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl transition cursor-pointer group"
+                style={{ background: A.surface2, border: `1px solid ${A.border}` }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = item.color; e.currentTarget.style.background = `${item.color}10`; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = A.border; e.currentTarget.style.background = A.surface2; }}>
+                <div className="p-3 rounded-xl transition-transform group-hover:scale-105"
+                  style={{ background: `${item.color}18` }}>
+                  <item.icon className="w-5 h-5" style={{ color: item.color }} />
                 </div>
-                <p className="text-xs font-semibold text-gray-800 text-center">{item.label}</p>
-                <p className="text-[10px] text-gray-400 text-center leading-tight">{item.desc}</p>
+                <p className="text-xs font-semibold text-center" style={{ color: A.text }}>{item.label}</p>
+                <p className="text-[10px] text-center leading-tight" style={{ color: A.textMuted }}>{item.desc}</p>
               </Link>
-            )}
+            ))}
           </div>
         </div>
 
-        {/* Popup Agenda do Dia */}
-        {!agendaPopupDismissed && agendaPendentes > 0 &&
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-              <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] px-6 py-5 text-center">
+        {/* ─── Modals & Popups ──────────────────────────────────────────── */}
+        {!agendaPopupDismissed && agendaPendentes > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+            <div className="rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+              style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+              <div className="px-6 py-5 text-center"
+                style={{ background: 'linear-gradient(135deg, #0d2137, #0a3d2e)', borderBottom: `1px solid ${A.border}` }}>
                 <span className="text-4xl">📅</span>
-                <h3 className="text-lg font-bold text-white mt-2">Agenda do Dia</h3>
+                <h3 className="text-lg font-bold mt-2" style={{ color: A.text }}>Agenda do Dia</h3>
               </div>
               <div className="p-6 text-center space-y-3">
-                <p className="text-gray-700 font-medium">
-                  Você tem <strong className="text-amber-600">{agendaPendentes} contato{agendaPendentes > 1 ? 's' : ''} pendente{agendaPendentes > 1 ? 's' : ''}</strong> para hoje!
+                <p className="font-medium" style={{ color: A.text }}>
+                  Você tem <strong style={{ color: '#f59e0b' }}>{agendaPendentes} contato{agendaPendentes > 1 ? 's' : ''} pendente{agendaPendentes > 1 ? 's' : ''}</strong> para hoje!
                 </p>
-                <p className="text-sm text-gray-500">Acesse <strong>Meus Clientes</strong> para ver e registrar seus contatos do dia.</p>
+                <p className="text-sm" style={{ color: A.textMuted }}>Acesse <strong>Meus Clientes</strong> para ver e registrar seus contatos do dia.</p>
               </div>
               <div className="px-6 pb-6 flex gap-2">
-                <button
-                onClick={() => setAgendaPopupDismissed(true)}
-                className="flex-1 px-4 py-2 text-sm border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition">
-                
+                <button onClick={() => setAgendaPopupDismissed(true)}
+                  className="flex-1 px-4 py-2 text-sm rounded-xl transition"
+                  style={{ border: `1px solid ${A.border}`, color: A.textMuted, background: 'transparent' }}>
                   Agora não
                 </button>
-                <button
-                onClick={() => {setAgendaPopupDismissed(true);navigate('/MeusClientes');}}
-                className="flex-1 px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] font-semibold transition">
-                
+                <button onClick={() => { setAgendaPopupDismissed(true); navigate('/MeusClientes'); }}
+                  className="flex-1 px-4 py-2 text-sm rounded-xl font-semibold transition"
+                  style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: A.bg }}>
                   Ver Agenda
                 </button>
               </div>
             </div>
           </div>
-        }
-
-        {/* Modal Parcelas Vincendas */}
-        {showParcelasModal &&
-        <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />
-        }
-
-        {/* Avatar Picker */}
-        {showAvatarPicker && (
-          <AvatarPickerModal
-            onSelect={(url) => { applyAvatar(url); setShowAvatarPicker(false); }}
-            onClose={() => setShowAvatarPicker(false)}
-          />
         )}
 
-        {/* Modal de Perfil */}
-        {showProfileModal &&
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900">Meu Perfil</h3>
-                <button onClick={() => setShowProfileModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+        {showParcelasModal && <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />}
+
+        {showAvatarPicker && (
+          <AvatarPickerModal
+            onSelect={url => { applyAvatar(url); setShowAvatarPicker(false); }}
+            onClose={() => setShowAvatarPicker(false)} />
+        )}
+
+        {showProfileModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
+            <div className="rounded-2xl shadow-2xl w-full max-w-md" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${A.border}` }}>
+                <h3 className="font-semibold" style={{ color: A.text }}>Meu Perfil</h3>
+                <button onClick={() => setShowProfileModal(false)}
+                  className="p-1.5 rounded-lg transition"
+                  style={{ color: A.textMuted }}
+                  onMouseEnter={e => e.currentTarget.style.background = A.accentDim}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              
               <div className="p-6 space-y-4">
-                {/* Avatar */}
-                <div className="flex flex-col items-center gap-3 pb-4 border-b border-gray-100">
+                <div className="flex flex-col items-center gap-3 pb-4" style={{ borderBottom: `1px solid ${A.border}` }}>
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
-                      {avatarUrl ?
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> :
-
-                    <span>{displayName.charAt(0).toUpperCase()}</span>
-                    }
+                    <div className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-2xl overflow-hidden"
+                      style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: A.bg }}>
+                      {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : displayName.charAt(0).toUpperCase()}
                     </div>
-                    <label className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-lg">
+                    <label className="absolute bottom-0 right-0 p-1.5 rounded-full cursor-pointer shadow-lg"
+                      style={{ background: A.accent, color: A.bg }}>
                       <Upload className="w-3.5 h-3.5" />
-                      <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files[0] && uploadAvatar(e.target.files[0])}
-                      className="hidden" />
-                    
+                      <input type="file" accept="image/*" onChange={e => e.target.files[0] && uploadAvatar(e.target.files[0])} className="hidden" />
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400">Clique no ícone para enviar sua foto</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowAvatarPicker(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs border border-blue-200 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                  <p className="text-xs" style={{ color: A.textMuted }}>Clique no ícone para enviar sua foto</p>
+                  <button type="button" onClick={() => setShowAvatarPicker(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs rounded-lg transition"
+                    style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.accent }}>
                     🎭 Escolher Personagem
                   </button>
                   {user?.avatar_url && (
-                    <button type="button" onClick={() => applyAvatar('')} className="text-xs text-red-400 hover:text-red-600">
-                      Remover foto
-                    </button>
+                    <button type="button" onClick={() => applyAvatar('')} className="text-xs" style={{ color: '#f87171' }}>Remover foto</button>
                   )}
                 </div>
-
-                {/* Nome completo (read-only) */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Nome completo</label>
-                  <input
-                  type="text"
-                  value={profileForm.full_name}
-                  disabled
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
-                
-                </div>
-
-                {/* E-mail (read-only) */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">E-mail</label>
-                  <input
-                  type="email"
-                  value={profileForm.email}
-                  disabled
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
-                
-                </div>
-
-                {/* Nome de tratamento (editável) */}
-                <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">
-                    Nome de tratamento (como aparece no sistema)
-                  </label>
-                  <input
-                  type="text"
-                  value={profileForm.nome_tratamento}
-                  onChange={(e) => setProfileForm((prev) => ({ ...prev, nome_tratamento: e.target.value }))}
-                  placeholder="Ex: João Silva"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                
-                </div>
+                {[
+                  { label: 'Nome completo', key: 'full_name', disabled: true },
+                  { label: 'E-mail', key: 'email', disabled: true, type: 'email' },
+                  { label: 'Nome de tratamento (como aparece no sistema)', key: 'nome_tratamento', disabled: false },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="text-xs font-medium mb-1 block" style={{ color: A.textMuted }}>{f.label}</label>
+                    <input type={f.type || 'text'} value={profileForm[f.key]} disabled={f.disabled}
+                      onChange={e => setProfileForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+                      style={{ background: f.disabled ? 'rgba(0,0,0,0.2)' : A.accentDim, border: `1px solid ${A.border}`, color: f.disabled ? A.textMuted : A.text, cursor: f.disabled ? 'not-allowed' : 'text' }} />
+                  </div>
+                ))}
               </div>
-
-              <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-                <button
-                onClick={() => setShowProfileModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                
+              <div className="px-6 py-4 flex justify-end gap-2" style={{ borderTop: `1px solid ${A.border}` }}>
+                <button onClick={() => setShowProfileModal(false)}
+                  className="px-4 py-2 text-sm rounded-lg transition"
+                  style={{ color: A.textMuted, border: `1px solid ${A.border}` }}>
                   Cancelar
                 </button>
-                <button
-                onClick={saveProfile}
-                disabled={savingProfile}
-                className="px-5 py-2 text-sm bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white rounded-lg hover:opacity-90 transition disabled:opacity-50 font-medium">
-                
+                <button onClick={saveProfile} disabled={savingProfile}
+                  className="px-5 py-2 text-sm rounded-lg font-medium transition disabled:opacity-50"
+                  style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: A.bg }}>
                   {savingProfile ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
             </div>
           </div>
-        }
+        )}
       </div>
-    </div>);
-
+    </div>
+  );
 }
