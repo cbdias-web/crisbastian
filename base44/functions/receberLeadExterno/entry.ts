@@ -23,10 +23,12 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'nome e telefone são obrigatórios' }, { status: 400 });
   }
 
-  // Buscar vendedores ativos
-  const vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
+  // Buscar vendedores ativos e habilitados na esteira de leads
+  const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
+  const vendedores = todosVendedores.filter(v => v.ativo_central_leads !== false);
+
   if (!vendedores.length) {
-    return Response.json({ error: 'Nenhum vendedor ativo encontrado' }, { status: 500 });
+    return Response.json({ error: 'Nenhum vendedor habilitado na esteira de leads' }, { status: 500 });
   }
 
   // Filtrar gerentes disponíveis (sem agenda bloqueada)
@@ -45,7 +47,7 @@ Deno.serve(async (req) => {
     return true;
   });
 
-  // Se nenhum disponível, usar todos (fallback)
+  // Se nenhum disponível, usar todos da esteira (fallback)
   const pool = disponiveis.length > 0 ? disponiveis : vendedores;
 
   // Round-robin pelo total de conversas
