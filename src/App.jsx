@@ -27,6 +27,7 @@ import ChatPage from './pages/ChatPage';
 import Precificacao from './pages/Precificacao';
 import Suporte from './pages/Suporte';
 import Desempenho from './pages/Desempenho';
+import CentralLeads from './pages/CentralLeads';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -236,6 +237,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Desempenho">
             <Desempenho />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/CentralLeads"
+        element={
+          <LayoutWrapper currentPageName="CentralLeads">
+            <CentralLeads />
           </LayoutWrapper>
         }
       />
