@@ -36,6 +36,9 @@ export default function CentralLeads() {
   const [vendedorLogado, setVendedorLogado] = useState(null);
   const [conversaSelecionada, setConversaSelecionada] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroGerente, setFiltroGerente] = useState('todos');
+  const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
+  const [filtroHorario, setFiltroHorario] = useState('todos');
   const [busca, setBusca] = useState('');
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('leads');
@@ -85,7 +88,25 @@ export default function CentralLeads() {
   const conversasFiltradas = conversas.filter(c => {
     const matchStatus = filtroStatus === 'todos' || c.status === filtroStatus;
     const matchBusca = !busca || c.lead_nome?.toLowerCase().includes(busca.toLowerCase()) || c.telefone?.includes(busca);
-    return matchStatus && matchBusca;
+    const matchGerente = filtroGerente === 'todos' || c.vendedor_id === filtroGerente;
+
+    let matchPeriodo = true;
+    if (filtroPeriodo !== 'todos') {
+      const dias = parseInt(filtroPeriodo);
+      const cutoff = new Date(Date.now() - dias * 24 * 60 * 60 * 1000);
+      matchPeriodo = new Date(c.created_date) >= cutoff;
+    }
+
+    let matchHorario = true;
+    if (filtroHorario !== 'todos' && c.created_date) {
+      const h = new Date(c.created_date).getHours();
+      if (filtroHorario === 'manha') matchHorario = h >= 6 && h < 12;
+      else if (filtroHorario === 'tarde') matchHorario = h >= 12 && h < 18;
+      else if (filtroHorario === 'noite') matchHorario = h >= 18 || h < 6;
+      else if (filtroHorario === 'comercial') matchHorario = h >= 8 && h < 18;
+    }
+
+    return matchStatus && matchBusca && matchGerente && matchPeriodo && matchHorario;
   });
 
   // Dados gerentes
@@ -270,21 +291,68 @@ export default function CentralLeads() {
           <div className="flex gap-4">
             {/* Lista */}
             <div className="flex flex-col gap-3" style={{ width: conversaSelecionada ? '380px' : '100%', flexShrink: 0 }}>
-              <div className="flex gap-2">
-                <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <Search className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
-                  <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar lead..."
-                    className="flex-1 bg-transparent text-sm focus:outline-none" style={{ color: AURORA.text }} />
-                </div>
+              {/* Barra de busca */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: AURORA.textMuted }} />
+                <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar lead ou telefone..."
+                  className="flex-1 bg-transparent text-sm focus:outline-none" style={{ color: AURORA.text }} />
+              </div>
+
+              {/* Filtros */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-                  className="px-3 py-2 rounded-xl text-sm focus:outline-none"
+                  className="px-3 py-2 rounded-xl text-xs focus:outline-none"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-                  <option value="todos">Todos</option>
+                  <option value="todos">🟢 Todos status</option>
                   <option value="ativa">Ativas</option>
                   <option value="qualificado">Qualificados</option>
                   <option value="encerrada">Encerradas</option>
                 </select>
+
+                {isAdmin && (
+                  <select value={filtroGerente} onChange={e => setFiltroGerente(e.target.value)}
+                    className="px-3 py-2 rounded-xl text-xs focus:outline-none"
+                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                    <option value="todos">👤 Todos gerentes</option>
+                    {vendedores.map(v => (
+                      <option key={v.id} value={v.id}>{v.nome}</option>
+                    ))}
+                  </select>
+                )}
+
+                <select value={filtroPeriodo} onChange={e => setFiltroPeriodo(e.target.value)}
+                  className="px-3 py-2 rounded-xl text-xs focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <option value="todos">📅 Todo período</option>
+                  <option value="1">Hoje</option>
+                  <option value="7">Últimos 7 dias</option>
+                  <option value="14">Últimos 14 dias</option>
+                  <option value="30">Últimos 30 dias</option>
+                </select>
+
+                <select value={filtroHorario} onChange={e => setFiltroHorario(e.target.value)}
+                  className="px-3 py-2 rounded-xl text-xs focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <option value="todos">🕐 Qualquer horário</option>
+                  <option value="comercial">Comercial (08h–18h)</option>
+                  <option value="manha">Manhã (06h–12h)</option>
+                  <option value="tarde">Tarde (12h–18h)</option>
+                  <option value="noite">Noite/madrugada</option>
+                </select>
               </div>
+
+              {/* Contador de resultados */}
+              {(filtroStatus !== 'todos' || filtroGerente !== 'todos' || filtroPeriodo !== 'todos' || filtroHorario !== 'todos' || busca) && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs" style={{ color: AURORA.textMuted }}>
+                    {conversasFiltradas.length} conversa{conversasFiltradas.length !== 1 ? 's' : ''} encontrada{conversasFiltradas.length !== 1 ? 's' : ''}
+                  </span>
+                  <button onClick={() => { setFiltroStatus('todos'); setFiltroGerente('todos'); setFiltroPeriodo('todos'); setFiltroHorario('todos'); setBusca(''); }}
+                    className="text-xs underline" style={{ color: AURORA.accent }}>
+                    Limpar filtros
+                  </button>
+                </div>
+              )}
 
               {isLoading ? (
                 <div className="text-center py-12" style={{ color: AURORA.textMuted }}>Carregando...</div>
