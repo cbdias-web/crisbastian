@@ -10,23 +10,23 @@ import ContratoViewer from '@/components/contratos/ContratoViewer';
 import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSidebar';
 
 const TIPO_CONFIG = {
-  'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-50 text-[#0f1e35] border-blue-200', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
-  'CONTA INTERNACIONAL': { color: 'bg-[#1a3a6b]', light: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: Globe, desc: 'Abertura de conta internacional com transações em múltiplas moedas' },
-  'DOLARIZE': { color: 'bg-amber-700', light: 'bg-amber-50 text-amber-700 border-amber-200', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
-  'ROF': { color: 'bg-emerald-700', light: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: FileText, desc: 'Registro de Operação Financeira para movimentações cambiais regulamentadas' },
-  'CANAL BANCÁRIO': { color: 'bg-violet-700', light: 'bg-violet-50 text-violet-700 border-violet-200', icon: Building2, desc: 'Operações via canal bancário para transferências e câmbio direto' },
-  'OFFSHORE': { color: 'bg-cyan-700', light: 'bg-cyan-50 text-cyan-700 border-cyan-200', icon: Globe, desc: 'Estruturação de empresa e conta bancária offshore no exterior' },
-  'GARANTIAS': { color: 'bg-rose-700', light: 'bg-rose-50 text-rose-700 border-rose-200', icon: FileText, desc: 'Contrato de garantias e seguros patrimoniais e financeiros' },
-  'HORA TÉCNICA': { color: 'bg-teal-700', light: 'bg-teal-50 text-teal-700 border-teal-200', icon: FileText, desc: 'Contrato de prestação de serviços por hora técnica especializada' },
+  'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
+  'CONTA INTERNACIONAL': { color: 'bg-[#1a3a6b]', light: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30', icon: Globe, desc: 'Abertura de conta internacional com transações em múltiplas moedas' },
+  'DOLARIZE': { color: 'bg-amber-700', light: 'bg-amber-500/15 text-amber-300 border-amber-500/30', icon: DollarSign, desc: 'Dolarização de ativos e proteção patrimonial em dólar americano' },
+  'ROF': { color: 'bg-emerald-700', light: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', icon: FileText, desc: 'Registro de Operação Financeira para movimentações cambiais regulamentadas' },
+  'CANAL BANCÁRIO': { color: 'bg-violet-700', light: 'bg-violet-500/15 text-violet-300 border-violet-500/30', icon: Building2, desc: 'Operações via canal bancário para transferências e câmbio direto' },
+  'OFFSHORE': { color: 'bg-cyan-700', light: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30', icon: Globe, desc: 'Estruturação de empresa e conta bancária offshore no exterior' },
+  'GARANTIAS': { color: 'bg-rose-700', light: 'bg-rose-500/15 text-rose-300 border-rose-500/30', icon: FileText, desc: 'Contrato de garantias e seguros patrimoniais e financeiros' },
+  'HORA TÉCNICA': { color: 'bg-teal-700', light: 'bg-teal-500/15 text-teal-300 border-teal-500/30', icon: FileText, desc: 'Contrato de prestação de serviços por hora técnica especializada' },
 };
 
 const STATUS_CONFIG = {
-  rascunho: { label: 'Rascunho', cls: 'bg-gray-100 text-gray-500' },
-  gerado: { label: 'PDF Gerado', cls: 'bg-blue-100 text-blue-700' },
-  assinado: { label: 'Assinado', cls: 'bg-emerald-100 text-emerald-700' },
-  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-100 text-amber-700' },
-  pago: { label: 'Pago', cls: 'bg-violet-100 text-violet-700' },
-  no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-100 text-purple-700' },
+  rascunho: { label: 'Rascunho', cls: 'bg-gray-500/20 text-gray-300' },
+  gerado: { label: 'PDF Gerado', cls: 'bg-blue-500/20 text-blue-300' },
+  assinado: { label: 'Assinado', cls: 'bg-emerald-500/20 text-emerald-300' },
+  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-500/20 text-amber-300' },
+  pago: { label: 'Pago', cls: 'bg-violet-500/20 text-violet-300' },
+  no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-500/20 text-purple-300' },
 };
 
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
@@ -166,16 +166,18 @@ export default function Contratos() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ background: '#0d1117' }}>
       <div className="max-w-6xl mx-auto space-y-5">
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Header — indicação da entidade */}
+        <div className="flex items-center gap-3 rounded-2xl px-5 py-4" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,212,170,0.12)' }}>
+            <FileText className="w-6 h-6" style={{ color: '#00D4AA' }} />
+          </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-[#1a3150]" /> Contratos
-            </h1>
-            <p className="text-sm text-gray-400 mt-0.5">Gere, gerencie e acompanhe contratos de clientes</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: '#00D4AA' }}>Comercial</p>
+            <h1 className="text-2xl font-bold" style={{ color: '#e6edf3' }}>Contratos</h1>
+            <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
           </div>
         </div>
 
@@ -215,29 +217,29 @@ export default function Contratos() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-wrap gap-3 items-center">
+        <div className="rounded-2xl shadow-sm p-4 flex flex-wrap gap-3 items-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou CPF/CNPJ..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
           </div>
           <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-            className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
             <option value="Todos">Todos os tipos</option>
             {Object.keys(TIPO_CONFIG).map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-            className="px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white">
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
             <option value="Todos">Todos os status</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 font-medium">Período:</span>
             <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
-              className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
             <span className="text-xs text-gray-400">até</span>
             <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
-              className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
             {(filtroDataInicio || filtroDataFim) && (
               <button onClick={() => { setFiltroDataInicio(''); setFiltroDataFim(''); }}
                 className="text-xs text-red-400 hover:text-red-600 font-semibold px-1.5 py-1 hover:bg-red-50 rounded-lg transition">✕</button>
@@ -248,14 +250,15 @@ export default function Contratos() {
             <div className="relative" ref={vendedorDropdownRef}>
               <button
                 onClick={() => setVendedorDropdownOpen(p => !p)}
-                className={`flex items-center gap-2 px-3 py-2 text-xs border rounded-xl focus:outline-none bg-white transition whitespace-nowrap ${
-                  filtroVendedores.length > 0 ? 'border-[#1a3150] text-[#1a3150] font-semibold' : 'border-gray-200 text-gray-500'
-                }`}>
+                className={`flex items-center gap-2 px-3 py-2 text-xs rounded-xl focus:outline-none transition whitespace-nowrap ${
+                  filtroVendedores.length > 0 ? 'font-semibold' : ''
+                }`}
+                style={{ background: '#1c2333', border: `1px solid ${filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(0,212,170,0.15)'}`, color: filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(230,237,243,0.55)' }}>
                 Gerente{filtroVendedores.length > 0 ? ` (${filtroVendedores.length})` : ''}
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${vendedorDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {vendedorDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 mt-1 w-56 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
                   {filtroVendedores.length > 0 && (
                     <button onClick={() => setFiltroVendedores([])}
                       className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition">
@@ -269,9 +272,10 @@ export default function Contratos() {
                     const sel = filtroVendedores.includes(v);
                     return (
                       <button key={v} onClick={() => setFiltroVendedores(prev => sel ? prev.filter(x => x !== v) : [...prev, v])}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-gray-50 transition ${sel ? 'font-semibold text-[#1a3150]' : 'text-gray-700'}`}>
-                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#1a3150] border-[#1a3150]' : 'border-gray-300'}`}>
-                          {sel && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition"
+                        style={{ color: sel ? '#00D4AA' : '#e6edf3', fontWeight: sel ? 600 : 400 }}>
+                        <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#00D4AA] border-[#00D4AA]' : 'border-gray-500'}`}>
+                          {sel && <svg className="w-2.5 h-2.5" style={{ color: '#0d1117' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </span>
                         {v}
                       </button>
@@ -286,16 +290,16 @@ export default function Contratos() {
 
         {/* Lista */}
         {contratosFiltrados.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-center">
-            <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">Nenhum contrato encontrado</p>
-            <p className="text-xs text-gray-300 mt-1">Clique em um dos tipos acima para criar seu primeiro contrato</p>
+          <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
+            <p className="text-sm" style={{ color: 'rgba(230,237,243,0.55)' }}>Nenhum contrato encontrado</p>
+            <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Clique em um dos tipos acima para criar seu primeiro contrato</p>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                <tr className="text-xs uppercase tracking-wider" style={{ background: '#1c2333', color: 'rgba(230,237,243,0.55)' }}>
                   <th className="px-4 py-3 text-left font-semibold">Cliente</th>
                   <th className="px-4 py-3 text-left font-semibold">Tipo</th>
                   <th className="px-4 py-3 text-left font-semibold">Valor Total</th>
@@ -305,23 +309,26 @@ export default function Contratos() {
                   <th className="px-4 py-3 text-center font-semibold">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody style={{ borderColor: 'rgba(0,212,170,0.1)' }}>
                 {contratosFiltrados.map(c => {
                   const cfg = TIPO_CONFIG[c.tipo];
                   const stCfg = STATUS_CONFIG[c.status] || STATUS_CONFIG.rascunho;
                   return (
-                    <tr key={c.id} className="hover:bg-gray-50 transition cursor-pointer" onClick={() => { setContratoAtivo(c); setView('viewer'); }}>
+                    <tr key={c.id} className="transition cursor-pointer" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.05)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => { setContratoAtivo(c); setView('viewer'); }}>
                       <td className="px-4 py-3">
-                        <p className="font-medium text-gray-800 hover:text-blue-700 hover:underline">{c.nome || '—'}</p>
-                        <p className="text-[10px] text-gray-400">{c.cpf_cnpj}</p>
+                        <p className="font-medium hover:underline" style={{ color: '#e6edf3' }}>{c.nome || '—'}</p>
+                        <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{c.cpf_cnpj}</p>
                       </td>
                       <td className="px-4 py-3 min-w-[130px]">
-                        <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${cfg?.light || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                        <span className={`inline-block text-[10px] font-bold px-2 py-1 rounded-full border whitespace-nowrap ${cfg?.light || 'bg-gray-500/15 text-gray-300 border-gray-500/30'}`}>
                           {c.tipo}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-semibold text-[#1a3150]">{fmtVal(c.valor_total)}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
+                      <td className="px-4 py-3 font-semibold" style={{ color: '#00D4AA' }}>{fmtVal(c.valor_total)}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'rgba(230,237,243,0.5)' }}>{fmtDate(c.data_contrato || c.created_date?.split('T')[0])}</td>
                       <td className="px-4 py-3 min-w-[110px]">
                         <div className="flex flex-col gap-1">
                           <span className={`inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap ${stCfg.cls}`}>{stCfg.label}</span>
@@ -332,7 +339,7 @@ export default function Contratos() {
                           )}
                         </div>
                       </td>
-                      {isAdmin && <td className="px-4 py-3 text-xs text-gray-500">{c.vendedor_nome || '—'}</td>}
+                      {isAdmin && <td className="px-4 py-3 text-xs" style={{ color: 'rgba(230,237,243,0.5)' }}>{c.vendedor_nome || '—'}</td>}
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           <button onClick={() => { setContratoAtivo(c); setView('viewer'); }}

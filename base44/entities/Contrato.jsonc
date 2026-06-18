@@ -77,6 +77,29 @@
       "type": "string",
       "description": "Nome do arquivo do boleto"
     },
+    "boletos_parcelas": {
+      "type": "array",
+      "description": "Boletos das parcelas vincendas anexados pelo gerente/admin para cobran\u00e7a do cliente",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "vencimento": {
+            "type": "string",
+            "format": "date"
+          },
+          "descricao": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
     "comprovante_url": {
       "type": "string",
       "description": "URL do comprovante de pagamento (anexado pelo gerente)"

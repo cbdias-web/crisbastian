@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
 import FluxoContrato from './FluxoContrato';
+import BoletosParcelas from './BoletosParcelas';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -21,12 +22,12 @@ const TIPO_COLOR = {
 };
 
 const STATUS_CONFIG = {
-  rascunho: { label: 'Rascunho', cls: 'bg-gray-100 text-gray-500' },
-  gerado: { label: 'PDF Gerado', cls: 'bg-blue-100 text-blue-700' },
-  assinado: { label: 'Assinado', cls: 'bg-emerald-100 text-emerald-700' },
-  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-100 text-amber-700' },
-  pago: { label: 'Pago', cls: 'bg-violet-100 text-violet-700' },
-  no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-100 text-purple-700' },
+  rascunho: { label: 'Rascunho', cls: 'bg-gray-500/25 text-gray-200' },
+  gerado: { label: 'PDF Gerado', cls: 'bg-blue-500/25 text-blue-200' },
+  assinado: { label: 'Assinado', cls: 'bg-emerald-500/25 text-emerald-200' },
+  aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-500/25 text-amber-200' },
+  pago: { label: 'Pago', cls: 'bg-violet-500/25 text-violet-200' },
+  no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-500/25 text-purple-200' },
 };
 
 const STATUS_ORDER = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
@@ -294,9 +295,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6" style={{ background: '#0d1117' }}>
       <div className="max-w-3xl mx-auto">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-4 transition">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm mb-4 transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
           <ArrowLeft className="w-4 h-4" /> Voltar para Contratos
         </button>
 
@@ -410,10 +411,10 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         </div>
 
         {/* Upload de PDF externo */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-5">
-          <div className="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
-            <FileUp className="w-4 h-4 text-gray-500" />
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">Arquivo do Contrato (PDF)</p>
+        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#1c2333' }}>
+            <FileUp className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.6)' }} />
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.6)' }}>Arquivo do Contrato (PDF)</p>
           </div>
           <div className="p-5">
             {contrato.pdf_url ? (
@@ -437,10 +438,13 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
               </div>
             ) : (
               <label
-                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 rounded-xl py-6 cursor-pointer hover:border-blue-300 hover:bg-blue-50/30 transition group ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-xl py-6 cursor-pointer transition group ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}
+                style={{ borderColor: 'rgba(0,212,170,0.25)' }}
                 onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
                 onDrop={e => { e.preventDefault(); e.stopPropagation(); const file = e.dataTransfer.files?.[0]; if (file) uploadPDFExterno(file, false); }}
               >
+                {uploadandoPDF ? <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#00D4AA' }} /> : <Upload className="w-5 h-5" style={{ color: '#00D4AA' }} />}
+                <span className="text-xs font-medium" style={{ color: 'rgba(230,237,243,0.6)' }}>Clique ou arraste um PDF para anexar</span>
                 <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0])} />
               </label>
             )}
@@ -535,6 +539,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           </div>
         </div>
 
+        {/* Boletos das parcelas vincendas */}
+        <BoletosParcelas contrato={contrato} onUpdate={handleUpdate} />
+
         {/* Fluxo de etapas */}
         <FluxoContrato contrato={contrato} isAdmin={isAdmin} onUpdate={handleUpdate} />
 
@@ -618,23 +625,23 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                 </div>
               )}
               <div className="space-y-2">
-                <div className="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5">
+                <div className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)' }}>
                   <div>
-                    <p className="text-sm font-semibold text-gray-800">{contrato.vendedor_nome || <span className="text-gray-400 italic font-normal">Não informado</span>}</p>
-                    <p className="text-[10px] text-gray-400">Vendedor responsável</p>
+                    <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>{contrato.vendedor_nome || <span className="italic font-normal" style={{ color: 'rgba(230,237,243,0.4)' }}>Não informado</span>}</p>
+                    <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>Vendedor responsável</p>
                   </div>
                 </div>
                 {contrato.indicadores?.length > 0 ? contrato.indicadores.map((ind, i) => (
-                  <div key={i} className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5">
+                  <div key={i} className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">{ind.nome}</p>
-                      <p className="text-[10px] text-gray-400 capitalize">{ind.tipo || 'indicador'}</p>
+                      <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>{ind.nome}</p>
+                      <p className="text-[10px] capitalize" style={{ color: 'rgba(230,237,243,0.4)' }}>{ind.tipo || 'indicador'}</p>
                     </div>
-                    <span className="text-sm font-bold text-amber-700">{ind.percentual}%</span>
+                    <span className="text-sm font-bold" style={{ color: '#fbbf24' }}>{ind.percentual}%</span>
                   </div>
                 )) : (
-                  <div className="px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl">
-                    <p className="text-xs text-gray-400 italic">Nenhum indicador/espelhamento cadastrado</p>
+                  <div className="px-4 py-2.5 rounded-xl" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.12)' }}>
+                    <p className="text-xs italic" style={{ color: 'rgba(230,237,243,0.4)' }}>Nenhum indicador/espelhamento cadastrado</p>
                   </div>
                 )}
               </div>
@@ -654,9 +661,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
 function Section({ title, children }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-50 bg-gray-50/50">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{title}</p>
+    <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#1c2333' }}>
+        <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>{title}</p>
       </div>
       <div className="p-5">{children}</div>
     </div>
@@ -671,8 +678,8 @@ function Item({ label, value, highlight, span }) {
   if (!value) return null;
   return (
     <div className={span ? 'col-span-2 sm:col-span-3' : ''}>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
-      <p className={`text-sm mt-0.5 ${highlight ? 'text-lg font-bold text-[#1a3150]' : 'text-gray-800 font-medium'}`}>{value}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.4)' }}>{label}</p>
+      <p className="text-sm mt-0.5 font-medium" style={{ color: highlight ? '#00D4AA' : '#e6edf3', fontSize: highlight ? '1.125rem' : undefined, fontWeight: highlight ? 700 : 500 }}>{value}</p>
     </div>
   );
 }
