@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown, ScrollText } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -297,9 +297,15 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ background: '#0d1117' }}>
       <div className="max-w-3xl mx-auto">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm mb-4 transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
-          <ArrowLeft className="w-4 h-4" /> Voltar para Contratos
-        </button>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={onBack} className="flex items-center gap-2 text-sm transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
+            <ArrowLeft className="w-4 h-4" /> Voltar para Contratos
+          </button>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgba(0,212,170,0.1)', border: '1px solid rgba(0,212,170,0.2)' }}>
+            <ScrollText className="w-3.5 h-3.5" style={{ color: '#00D4AA' }} />
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#00D4AA' }}>Contratos</span>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="rounded-2xl p-5 mb-5 text-white shadow-lg" style={{ background: cor }}>
@@ -389,7 +395,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
             )}
           </div>
           <button onClick={() => setEditando(true)}
-            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl bg-white border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 transition shadow-sm">
+            className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-xs font-semibold transition shadow-sm"
+            style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.85)' }}>
             <Edit2 className="w-5 h-5" />
             Editar
           </button>
@@ -419,18 +426,20 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           <div className="p-5">
             {contrato.pdf_url ? (
               <div className="flex items-center gap-3">
-                <div className="flex-1 flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
-                  <FileUp className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <div className="flex-1 flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                  <FileUp className="w-4 h-4 flex-shrink-0" style={{ color: '#00D4AA' }} />
                   <a href={contrato.pdf_url} target="_blank" rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 underline truncate">
+                    className="text-sm underline truncate" style={{ color: '#00D4AA' }}>
                     Visualizar PDF do contrato
                   </a>
                 </div>
                 <button onClick={excluirPDF}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-red-200 rounded-xl cursor-pointer hover:bg-red-50 transition text-red-500">
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl cursor-pointer transition"
+                  style={{ border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
                   <Trash2 className="w-3.5 h-3.5" /> Excluir
                 </button>
-                <label className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition text-gray-600 ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}>
+                <label className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl cursor-pointer transition ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}
+                  style={{ border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.7)', background: '#1c2333' }}>
                   {uploadandoPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                   Substituir
                   <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0], true)} />
@@ -452,19 +461,19 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         </div>
 
         {/* Links de Assinatura (admin) */}
-        <div className="bg-white rounded-2xl border border-amber-200 shadow-sm overflow-hidden mb-5">
-          <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex items-center gap-2">
-            <Link2 className="w-4 h-4 text-amber-600" />
-            <p className="text-xs font-bold text-amber-700 uppercase tracking-wider">Links de Assinatura Online</p>
+        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#161b22', border: '1px solid rgba(245,158,11,0.3)' }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.1)' }}>
+            <Link2 className="w-4 h-4" style={{ color: '#fbbf24' }} />
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>Links de Assinatura Online</p>
           </div>
           <div className="p-5 space-y-4">
             {/* Link Contrato */}
             <div>
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between" style={{ color: 'rgba(230,237,243,0.5)' }}>
                 Contrato
                 {(isAdmin || !contrato.link_assinatura) && !editandoLink && (
                   <button onClick={() => { setEditandoLink(true); setLinkInput(contrato.link_assinatura || ''); }}
-                    className="text-[10px] text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition normal-case">
+                    className="text-[10px] font-semibold flex items-center gap-1 transition normal-case" style={{ color: '#fbbf24' }}>
                     <Edit2 className="w-2.5 h-2.5" /> {contrato.link_assinatura ? 'Editar' : 'Adicionar link'}
                   </button>
                 )}
@@ -487,25 +496,26 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura}
                   </a>
                   <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
+                    style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
                     <Copy className="w-3 h-3" /> Copiar
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-amber-600 font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse inline-block" />
+                <p className="text-sm font-medium flex items-center gap-2" style={{ color: '#fbbf24' }}>
+                  <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: '#fbbf24' }} />
                   Aguardando administrador adicionar o link de assinatura online.
                 </p>
               )}
             </div>
 
             {/* Link Aditivo */}
-            <div className="border-t border-amber-100 pt-4">
-              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                Aditivo de Contrato <span className="text-[9px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full font-semibold normal-case">opcional</span>
+            <div className="pt-4" style={{ borderTop: '1px solid rgba(245,158,11,0.2)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 flex items-center justify-between" style={{ color: 'rgba(230,237,243,0.5)' }}>
+                Aditivo de Contrato <span className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold normal-case" style={{ background: 'rgba(245,158,11,0.2)', color: '#fbbf24' }}>opcional</span>
                 {isAdmin && !editandoLinkAditivo && (
                   <button onClick={() => { setEditandoLinkAditivo(true); setLinkAditivoInput(contrato.link_assinatura_aditivo || ''); }}
-                    className="text-[10px] text-amber-600 hover:text-amber-800 font-semibold flex items-center gap-1 transition normal-case">
+                    className="text-[10px] font-semibold flex items-center gap-1 transition normal-case" style={{ color: '#fbbf24' }}>
                     <Edit2 className="w-2.5 h-2.5" /> {contrato.link_assinatura_aditivo ? 'Editar' : 'Adicionar link'}
                   </button>
                 )}
@@ -528,12 +538,13 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura_aditivo}
                   </a>
                   <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura_aditivo); toast.success('Link copiado!'); }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition">
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
+                    style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
                     <Copy className="w-3 h-3" /> Copiar
                   </button>
                 </div>
               ) : (
-                <p className="text-xs text-gray-400 italic">Nenhum link de aditivo adicionado</p>
+                <p className="text-xs italic" style={{ color: 'rgba(230,237,243,0.4)' }}>Nenhum link de aditivo adicionado</p>
               )}
             </div>
           </div>
