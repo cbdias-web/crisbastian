@@ -1,0 +1,41 @@
+{
+  "name": "StatusGerente",
+  "type": "object",
+  "properties": {
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do gerente"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do gerente"
+    },
+    "disponivel": {
+      "type": "boolean",
+      "default": true,
+      "description": "Est\u00e1 dispon\u00edvel para receber leads?"
+    },
+    "motivo_bloqueio": {
+      "type": "string",
+      "enum": [
+        "almo\u00e7o",
+        "reuni\u00e3o",
+        "fora do expediente",
+        "outro"
+      ],
+      "description": "Motivo do bloqueio"
+    },
+    "bloqueado_ate": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Bloqueado at\u00e9 quando (null = indefinido)"
+    },
+    "atualizado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "vendedor_id"
+  ]
+}

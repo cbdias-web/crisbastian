@@ -1,0 +1,49 @@
+{
+  "name": "LogMigracaoLead",
+  "type": "object",
+  "properties": {
+    "conversa_id": {
+      "type": "string",
+      "description": "ID da conversa migrada"
+    },
+    "lead_nome": {
+      "type": "string"
+    },
+    "telefone": {
+      "type": "string"
+    },
+    "vendedor_origem_id": {
+      "type": "string"
+    },
+    "vendedor_origem_nome": {
+      "type": "string"
+    },
+    "vendedor_destino_id": {
+      "type": "string"
+    },
+    "vendedor_destino_nome": {
+      "type": "string"
+    },
+    "motivo": {
+      "type": "string",
+      "enum": [
+        "timeout_30min",
+        "manual_admin"
+      ],
+      "default": "timeout_30min"
+    },
+    "tempo_espera_min": {
+      "type": "number",
+      "description": "Minutos aguardando sem resposta"
+    },
+    "migrado_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "conversa_id",
+    "vendedor_origem_id",
+    "vendedor_destino_id"
+  ]
+}

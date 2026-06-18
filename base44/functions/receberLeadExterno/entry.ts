@@ -1,14 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// Período comercial: 08:00 às 18:00 horário de Brasília (UTC-3), seg-sex
+function isHorarioComercial() {
+  const now = new Date();
+  const horaBrasilia = now.getUTCHours() - 3;
+  const diaSemana = now.getUTCDay();
+  if (diaSemana === 0 || diaSemana === 6) return false;
+  return horaBrasilia >= 8 && horaBrasilia < 18;
+}
+
 Deno.serve(async (req) => {
-  // Validar token secreto
   const token = req.headers.get('x-webhook-token');
   if (token !== Deno.env.get('WEBHOOK_SECRET_TOKEN')) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const base44 = createClientFromRequest(req);
-
   const body = await req.json();
   const { nome, telefone, email, cpf_cnpj, produto_interesse, observacao_ia, origem } = body;
 
@@ -16,20 +23,35 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'nome e telefone são obrigatórios' }, { status: 400 });
   }
 
-  // Round-robin: buscar vendedores ativos e o índice atual
+  // Buscar vendedores ativos
   const vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
   if (!vendedores.length) {
     return Response.json({ error: 'Nenhum vendedor ativo encontrado' }, { status: 500 });
   }
 
-  // Índice round-robin: conta quantos leads já existem para calcular o próximo
-  const totalLeads = await base44.asServiceRole.entities.Lead.list('-created_date', 1);
-  const totalCount = totalLeads.length;
-  
-  // Buscar todos os leads para contar (limitado a contagem simples)
-  const allLeads = await base44.asServiceRole.entities.Lead.list('-created_date', 9999);
-  const indice = allLeads.length % vendedores.length;
-  const vendedor = vendedores[indice];
+  // Filtrar gerentes disponíveis (sem agenda bloqueada)
+  const agora = new Date();
+  const statusGerentes = await base44.asServiceRole.entities.StatusGerente.list();
+  const statusMap = {};
+  for (const s of statusGerentes) statusMap[s.vendedor_id] = s;
+
+  const disponiveis = vendedores.filter(v => {
+    const st = statusMap[v.id];
+    if (!st) return true;
+    if (!st.disponivel) {
+      if (st.bloqueado_ate && new Date(st.bloqueado_ate) < agora) return true;
+      return false;
+    }
+    return true;
+  });
+
+  // Se nenhum disponível, usar todos (fallback)
+  const pool = disponiveis.length > 0 ? disponiveis : vendedores;
+
+  // Round-robin pelo total de conversas
+  const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 9999);
+  const indice = todasConversas.length % pool.length;
+  const vendedor = pool[indice];
 
   // Criar o lead
   const lead = await base44.asServiceRole.entities.Lead.create({
@@ -45,7 +67,19 @@ Deno.serve(async (req) => {
     produto_interesse: produto_interesse || '',
   });
 
-  // Criar conversa WhatsApp vinculada
+  // Mensagens iniciais
+  const mensagensIniciais = [];
+
+  // Se fora do horário comercial, adicionar aviso de sistema
+  if (!isHorarioComercial()) {
+    mensagensIniciais.push({
+      de: 'Sistema',
+      texto: '🕐 Atendimento humano disponível no horário comercial: seg-sex, 08h às 18h (Brasília). As mensagens recebidas serão respondidas assim que o expediente reiniciar.',
+      timestamp: agora.toISOString(),
+      tipo: 'sistema',
+    });
+  }
+
   const conversa = await base44.asServiceRole.entities.ConversaWhatsapp.create({
     lead_id: lead.id,
     lead_nome: nome,
@@ -56,19 +90,12 @@ Deno.serve(async (req) => {
     origem: origem || 'campanha_externa',
     produto_interesse: produto_interesse || '',
     observacao_ia: observacao_ia || '',
-    mensagens: [],
+    mensagens: mensagensIniciais,
     nao_lidas: 0,
-    ultima_mensagem_em: new Date().toISOString(),
-  });
-
-  // Criar notificação para o gerente
-  await base44.asServiceRole.entities.NotificacaoAutorizacao.create({
-    tipo: 'novo_contrato',
-    vendedor_nome: vendedor.nome,
-    cliente: nome,
-    contrato_tipo: produto_interesse || 'Lead externo',
-    status: 'pendente',
-    lida: false,
+    ultima_mensagem_em: agora.toISOString(),
+    primeira_mensagem_lead_em: agora.toISOString(),
+    migracoes: [],
+    alerta_sem_resposta: false,
   });
 
   return Response.json({
@@ -76,6 +103,7 @@ Deno.serve(async (req) => {
     lead_id: lead.id,
     conversa_id: conversa.id,
     vendedor_atribuido: vendedor.nome,
+    horario_comercial: isHorarioComercial(),
     indice_roleta: indice,
   });
 });

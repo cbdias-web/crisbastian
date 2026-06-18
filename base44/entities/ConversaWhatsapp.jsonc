@@ -34,7 +34,7 @@
     },
     "origem": {
       "type": "string",
-      "description": "Origem da campanha (ex: campanha_junho, base_clientes)"
+      "description": "Origem da campanha"
     },
     "mensagens": {
       "type": "array",
@@ -55,7 +55,8 @@
             "type": "string",
             "enum": [
               "enviada",
-              "recebida"
+              "recebida",
+              "sistema"
             ]
           }
         }
@@ -71,6 +72,16 @@
       "format": "date-time",
       "description": "Data/hora da \u00faltima mensagem"
     },
+    "ultima_resposta_gerente_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima vez que o gerente respondeu"
+    },
+    "primeira_mensagem_lead_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando o lead enviou a primeira msg recebida"
+    },
     "nao_lidas": {
       "type": "number",
       "default": 0,
@@ -83,6 +94,33 @@
     "observacao_ia": {
       "type": "string",
       "description": "Resumo/contexto gerado pela IA sobre o lead"
+    },
+    "migracoes": {
+      "type": "array",
+      "description": "Hist\u00f3rico de migra\u00e7\u00f5es entre gerentes",
+      "items": {
+        "type": "object",
+        "properties": {
+          "de_nome": {
+            "type": "string"
+          },
+          "para_nome": {
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "em": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "alerta_sem_resposta": {
+      "type": "boolean",
+      "default": false,
+      "description": "Est\u00e1 em alerta por falta de resposta"
     }
   },
   "required": [
