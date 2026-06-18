@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus, ChevronDown, Check } from "lucide-react";
 import { toast } from "sonner";
+import ComprovantesUpload from "./ComprovantesUpload";
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -112,6 +113,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: '',
+    comprovantes: [],
   });
 
   // ── FINANCEIRO ─────────────────────────────────────────────────────────────
@@ -685,6 +687,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
             <div>
               <Label>Link Bitrix</Label>
               <Input value={formData.bitrix || ''} onChange={e => setFormData({ ...formData, bitrix: e.target.value })} />
+            </div>
+            <div>
+              <ComprovantesUpload
+                comprovantes={formData.comprovantes || []}
+                onChange={(arr) => setFormData({ ...formData, comprovantes: arr })}
+              />
             </div>
           </div>
 

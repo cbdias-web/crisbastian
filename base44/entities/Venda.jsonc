@@ -94,6 +94,22 @@
       "type": "string",
       "description": "Link do Bitrix"
     },
+    "comprovantes": {
+      "type": "array",
+      "description": "Comprovantes de pagamento anexados",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
     "observacao": {
       "type": "string",
       "description": "Observa\u00e7\u00f5es sobre a venda"
