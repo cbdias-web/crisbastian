@@ -9,10 +9,10 @@ import { format, parseISO } from 'date-fns';
 const today = () => new Date().toISOString().split('T')[0];
 
 const resultadoConfig = {
-  'Positivo': { color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 },
-  'Neutro': { color: 'text-blue-600 bg-blue-50', icon: MinusCircle },
-  'Negativo': { color: 'text-red-600 bg-red-50', icon: XCircle },
-  'Sem resposta': { color: 'text-gray-500 bg-gray-100', icon: Clock },
+  'Positivo': { style: { background: 'rgba(16,185,129,0.15)', color: '#10b981' }, icon: CheckCircle2 },
+  'Neutro': { style: { background: 'rgba(59,130,246,0.15)', color: '#60a5fa' }, icon: MinusCircle },
+  'Negativo': { style: { background: 'rgba(239,68,68,0.15)', color: '#f87171' }, icon: XCircle },
+  'Sem resposta': { style: { background: 'rgba(100,116,139,0.15)', color: '#94a3b8' }, icon: Clock },
 };
 
 export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClose }) {
@@ -119,12 +119,12 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between flex-shrink-0">
+        <div className="px-6 py-4 flex items-start justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-gray-900 text-lg">{isLoading ? 'Carregando...' : cliente?.nome}</h3>
+              <h3 className="font-bold text-lg" style={{ color: '#e6edf3' }}>{isLoading ? 'Carregando...' : cliente?.nome}</h3>
               {cliente?.origem === 'lead' && (
                 <span className="text-[10px] bg-amber-100 text-amber-700 font-semibold px-2 py-0.5 rounded-full">🎯 Lead</span>
               )}
@@ -134,10 +134,10 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                 </span>
               )}
             </div>
-            <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-3 text-xs" style={{ color: 'rgba(230,237,243,0.55)' }}>
               {cliente?.telefone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{cliente.telefone}</span>}
               {cliente?.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{cliente.email}</span>}
-              {cliente?.cpf_cnpj && <span className="text-gray-400">{cliente.cpf_cnpj}</span>}
+              {cliente?.cpf_cnpj && <span style={{ color: 'rgba(230,237,243,0.4)' }}>{cliente.cpf_cnpj}</span>}
               {(cliente?.cidade || cliente?.estado) && (
                 <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{[cliente.cidade, cliente.estado].filter(Boolean).join(', ')}</span>
               )}
@@ -217,7 +217,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
 
           {/* Formulário de interação */}
           {showForm && (
-            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 space-y-3">
+            <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,212,170,0.05)', border: '1px solid rgba(0,212,170,0.2)' }}>
               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Nova Interação</p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -286,20 +286,20 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                   const res = resultadoConfig[inter.resultado] || resultadoConfig['Neutro'];
                   const ResIcon = res.icon;
                   return (
-                    <div key={inter.id} className="flex gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <div key={inter.id} className="flex gap-3 p-3 rounded-xl" style={{ background: 'rgba(0,212,170,0.05)', border: '1px solid rgba(0,212,170,0.1)' }}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                          <span className="text-xs font-semibold text-gray-700">{inter.tipo}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${res.color}`}>
+                          <span className="text-xs font-semibold" style={{ color: '#e6edf3' }}>{inter.tipo}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={res.style}>
                             <ResIcon className="w-2.5 h-2.5" />{inter.resultado}
                           </span>
-                          <span className="text-[10px] text-gray-400 ml-auto">
+                          <span className="text-[10px] ml-auto" style={{ color: 'rgba(230,237,243,0.4)' }}>
                             {inter.data_interacao ? format(parseISO(inter.data_interacao), 'dd/MM/yyyy') : ''}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-600">{inter.descricao}</p>
+                        <p className="text-xs" style={{ color: 'rgba(230,237,243,0.65)' }}>{inter.descricao}</p>
                         {inter.proximo_contato && (
-                          <p className="text-[10px] text-blue-500 mt-1 flex items-center gap-1">
+                          <p className="text-[10px] mt-1 flex items-center gap-1" style={{ color: '#00D4AA' }}>
                             <Clock className="w-2.5 h-2.5" />
                             Próximo: {format(parseISO(inter.proximo_contato), 'dd/MM/yyyy')}
                           </p>

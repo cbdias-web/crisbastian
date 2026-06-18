@@ -20,10 +20,10 @@ const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const STATUS = {
-  pendente:    { label: 'Pendente',    dot: 'bg-amber-400',   pill: 'bg-amber-100 text-amber-700',   icon: Clock },
-  realizado:   { label: 'Realizado',   dot: 'bg-emerald-400', pill: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
-  nao_atendeu: { label: 'Não atendeu', dot: 'bg-red-400',     pill: 'bg-red-100 text-red-600',       icon: XCircle },
-  reagendado:  { label: 'Reagendado',  dot: 'bg-blue-400',    pill: 'bg-blue-100 text-blue-600',     icon: RotateCcw },
+  pendente:    { label: 'Pendente',    dot: 'bg-amber-400',   pillStyle: { background: 'rgba(245,158,11,0.15)', color: '#d97706' },   icon: Clock },
+  realizado:   { label: 'Realizado',   dot: 'bg-emerald-400', pillStyle: { background: 'rgba(16,185,129,0.15)', color: '#059669' }, icon: CheckCircle2 },
+  nao_atendeu: { label: 'Não atendeu', dot: 'bg-red-400',     pillStyle: { background: 'rgba(239,68,68,0.15)',  color: '#dc2626' },       icon: XCircle },
+  reagendado:  { label: 'Reagendado',  dot: 'bg-blue-400',    pillStyle: { background: 'rgba(59,130,246,0.15)', color: '#2563eb' },     icon: RotateCcw },
 };
 
 const WEEK_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -44,12 +44,12 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
   for (let d = start; d <= end; d = addDays(d, 1)) days.push(new Date(d));
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 select-none">
+    <div className="rounded-2xl p-4 select-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
       <div className="flex items-center justify-between mb-3">
         <button onClick={() => setViewDate(v => subMonths(v, 1))} className="p-1 rounded-lg hover:bg-gray-100 transition">
           <ChevronLeft className="w-4 h-4 text-gray-500" />
         </button>
-        <span className="text-sm font-semibold text-gray-800 capitalize">
+        <span className="text-sm font-semibold capitalize" style={{ color: '#e6edf3' }}>
           {format(viewDate, 'MMMM yyyy', { locale: ptBR })}
         </span>
         <button onClick={() => setViewDate(v => addMonths(v, 1))} className="p-1 rounded-lg hover:bg-gray-100 transition">
@@ -72,9 +72,14 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
             <button
               key={ds}
               onClick={() => onSelect(day)}
-              className={`relative flex flex-col items-center justify-center w-full aspect-square rounded-xl text-xs font-medium transition-all
-                ${isSelected ? 'bg-[#0f1e35] text-white shadow-sm' : isTod ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700 hover:bg-gray-100'}
-              `}
+              className="relative flex flex-col items-center justify-center w-full aspect-square rounded-xl text-xs font-medium transition-all"
+              style={
+                isSelected
+                  ? { background: '#00D4AA', color: '#0d1117', fontWeight: 700 }
+                  : isTod
+                  ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA', fontWeight: 700 }
+                  : { color: 'rgba(230,237,243,0.7)' }
+              }
             >
               {format(day, 'd')}
               {hasDot && (
@@ -181,7 +186,8 @@ function MeetButton({ item, onLinkGerado }) {
 
   return (
     <button onClick={() => { setShowTimeForm(true); if (item.horario) setHorario(item.horario); }}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-200 hover:border-[#1a73e8] text-gray-600 hover:text-[#1a73e8] text-[11px] font-semibold rounded-xl transition mt-2">
+      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-xl transition mt-2"
+      style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.25)', color: '#00D4AA' }}>
       <Video className="w-3 h-3" /> Gerar Link Meet
     </button>
   );
@@ -222,7 +228,8 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
   }[item.status] || 'border-l-amber-400';
 
   return (
-    <div className={`group relative bg-white rounded-2xl border border-gray-100 border-l-4 ${borderAccent} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}>
+    <div className={`group relative rounded-2xl border border-l-4 ${borderAccent} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}
+      style={{ background: '#1c2333', borderColor: 'rgba(0,212,170,0.15)' }}>
       <div className="p-4">
         {/* TOP ROW: avatar + info + status + actions */}
         <div className="flex items-start gap-3">
@@ -235,30 +242,31 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
           <div className="flex-1 min-w-0">
             <button
               onClick={() => onClienteClick && onClienteClick(item.lead_id)}
-              className="text-sm font-bold text-[#0f1e35] hover:text-blue-700 hover:underline transition text-left leading-tight block truncate w-full"
+              className="text-sm font-bold hover:underline transition text-left leading-tight block truncate w-full"
+              style={{ color: '#e6edf3' }}
             >
               {item.lead_nome}
             </button>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               {item.horario && (
-                <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-0.5">
+                <span className="text-[11px] font-semibold flex items-center gap-0.5" style={{ color: '#00D4AA' }}>
                   <Clock className="w-3 h-3" /> {item.horario}
                 </span>
               )}
               {item.lead_telefone && (
-                <span className="text-[11px] text-gray-500 flex items-center gap-0.5">
+                <span className="text-[11px] flex items-center gap-0.5" style={{ color: 'rgba(230,237,243,0.6)' }}>
                   <Phone className="w-3 h-3" /> {item.lead_telefone}
                 </span>
               )}
               {item.lead_cpf_cnpj && (
-                <span className="text-[10px] text-gray-400">{item.lead_cpf_cnpj}</span>
+                <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{item.lead_cpf_cnpj}</span>
               )}
             </div>
           </div>
 
           {/* Status pill + edit + delete */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full ${sc.pill}`}>
+            <span className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full" style={sc.pillStyle}>
               <Icon className="w-2.5 h-2.5" /> {sc.label}
             </span>
             <button
@@ -280,14 +288,15 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
 
         {/* Reagendado info */}
         {item.status === 'reagendado' && item.nova_data && (
-          <p className="text-[11px] text-blue-600 mt-2 flex items-center gap-1 ml-13">
+          <p className="text-[11px] mt-2 flex items-center gap-1 ml-13" style={{ color: '#60a5fa' }}>
             <RotateCcw className="w-2.5 h-2.5" /> Reagendado para {format(parseISO(item.nova_data), 'dd/MM', { locale: ptBR })}
           </p>
         )}
 
         {/* Edit inline */}
         {editando && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap bg-gray-50 rounded-xl p-2.5 border border-gray-200">
+          <div className="mt-3 flex items-center gap-2 flex-wrap rounded-xl p-2.5"
+            style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)' }}>
             <span className="text-[11px] text-gray-500 font-medium">Data:</span>
             <input type="date" value={editData} onChange={e => setEditData(e.target.value)}
               className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
@@ -308,8 +317,9 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
 
         {/* Reagendar form */}
         {reagendando && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap bg-blue-50 rounded-xl p-2.5 border border-blue-100">
-            <span className="text-[11px] text-blue-600 font-medium">Nova data:</span>
+          <div className="mt-3 flex items-center gap-2 flex-wrap rounded-xl p-2.5"
+            style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)' }}>
+            <span className="text-[11px] font-medium" style={{ color: '#60a5fa' }}>Nova data:</span>
             <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
               className="text-xs px-2.5 py-1.5 border border-blue-200 rounded-xl focus:outline-none focus:border-[#1a73e8] bg-white" />
             <button onClick={() => { onAction(item, 'reagendado', novaData); setReagendando(false); }}
@@ -326,11 +336,13 @@ function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipel
               <CheckCircle2 className="w-3 h-3" /> Realizado
             </button>
             <button onClick={() => onAction(item, 'nao_atendeu')} disabled={updating === item.id}
-              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-[11px] font-semibold rounded-xl border border-red-200 transition">
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-xl transition"
+              style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
               <XCircle className="w-3 h-3" /> Não atendeu
             </button>
             <button onClick={() => { setReagendando(true); setNovaData(''); setEditando(false); }}
-              className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-[11px] font-semibold rounded-xl border border-blue-200 transition">
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-xl transition"
+              style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
               <RotateCcw className="w-3 h-3" /> Reagendar
             </button>
             <button onClick={() => onPipeline(item)}
@@ -670,7 +682,7 @@ function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], on
               <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
                 <span className="text-sm font-medium text-[#0f1e35] flex-1">{clienteSelecionado.nome}</span>
                 {clienteSelecionado.vendedor_nome && (
-                  <span className="text-[10px] text-blue-500">Gerente: {clienteSelecionado.vendedor_nome}</span>
+                  <span className="text-[10px]" style={{ color: '#00D4AA' }}>Gerente: {clienteSelecionado.vendedor_nome}</span>
                 )}
                 <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600">
                   <X className="w-3.5 h-3.5" />
@@ -1024,7 +1036,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
           {/* Seletor de agenda — todos os gerentes podem ver agendas dos demais */}
           {!isAdmin && todosVendedores.length > 0 && (
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-4 py-3 mb-4 flex items-center gap-3 flex-wrap">
+            <div className="rounded-2xl px-4 py-3 mb-4 flex items-center gap-3 flex-wrap" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">Visualizando:</span>
               <select
                 value={filtroVendedorId || ''}
@@ -1046,7 +1058,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
           )}
           {/* Filtro rápido */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-3 mb-4 flex flex-wrap items-center gap-3">
+          <div className="rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-3" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtro rápido:</span>
             <div className="flex gap-1.5">
               {[{ key: '', label: 'Todos' }, { key: 'pendente', label: 'Pendentes' }, { key: 'realizado', label: 'Realizados' }].map(opt => (
@@ -1131,14 +1143,16 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 return (
                   <div key={ds}
                     onClick={() => { setSelectedDate(day); setView('dia'); }}
-                    className={`group cursor-pointer rounded-2xl border p-2 min-h-[120px] transition-all hover:shadow-md
-                      ${isTod ? 'border-amber-300 bg-amber-50/30' : isSelected ? 'border-[#1a3150]/30 bg-blue-50/20' : 'border-gray-100 bg-white hover:border-gray-200'}
-                    `}
+                    className="group cursor-pointer rounded-2xl p-2 min-h-[120px] transition-all hover:shadow-md"
+                    style={{
+                      background: isTod ? 'rgba(245,158,11,0.08)' : isSelected ? 'rgba(0,212,170,0.08)' : '#1c2333',
+                      border: `1px solid ${isTod ? 'rgba(245,158,11,0.4)' : isSelected ? 'rgba(0,212,170,0.3)' : 'rgba(0,212,170,0.12)'}`,
+                    }}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-[10px] font-semibold text-gray-400 uppercase">{WEEK_DAYS[getDay(day)]}</p>
-                        <p className={`text-lg font-bold leading-none ${isTod ? 'text-amber-600' : 'text-gray-800'}`}>
+                        <p className="text-lg font-bold leading-none" style={{ color: isTod ? '#f59e0b' : '#e6edf3' }}>
                           {format(day, 'd')}
                         </p>
                       </div>
@@ -1153,7 +1167,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                         const sc = STATUS[item.status] || STATUS.pendente;
                         return (
                           <div key={item.id}
-                            className={`flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] font-medium truncate ${sc.pill}`}
+                            className="flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] font-medium truncate"
+                            style={sc.pillStyle}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
                             <span className="truncate">
@@ -1180,8 +1195,8 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           {view === 'dia' && (
             <div className="space-y-3">
               {selItems.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-14 text-center">
-                  <Calendar className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                <div className="rounded-2xl py-14 text-center" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.12)' }}>
+                  <Calendar className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(0,212,170,0.3)' }} />
                   <p className="text-gray-400 text-sm">Nenhum contato para este dia</p>
                   <p className="text-gray-300 text-xs mt-1">Selecione outro dia no calendário</p>
                 </div>
