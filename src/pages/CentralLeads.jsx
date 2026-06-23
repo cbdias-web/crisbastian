@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock } from 'lucide-react';
+import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatConversa from '@/components/central/ChatConversa';
 import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
 import RelatorioLeads from '@/components/central/RelatorioLeads';
+import GerenciarConversaModal from '@/components/central/GerenciarConversaModal';
 
 const AURORA = {
   bg: '#0d1117',
@@ -42,6 +43,7 @@ export default function CentralLeads() {
   const [busca, setBusca] = useState('');
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('leads');
+  const [conversaGerenciar, setConversaGerenciar] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -439,13 +441,23 @@ export default function CentralLeads() {
                                   </span>
                                 )}
                               </div>
-                              {conv.status === 'ativa' && (
-                                <button onClick={(e) => marcarQualificado(conv, e)}
-                                  className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg transition"
-                                  style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
-                                  <CheckCircle2 className="w-3 h-3" /> Qualificado
-                                </button>
-                              )}
+                              <div className="flex items-center gap-1">
+                                {conv.status === 'ativa' && (
+                                  <button onClick={(e) => marcarQualificado(conv, e)}
+                                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg transition"
+                                    style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>
+                                    <CheckCircle2 className="w-3 h-3" /> Qualificado
+                                  </button>
+                                )}
+                                {isAdmin && (
+                                  <button onClick={(e) => { e.stopPropagation(); setConversaGerenciar(conv); }}
+                                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg transition"
+                                    style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}
+                                    title="Gerenciar: excluir, mover/mesclar, transferir gerente">
+                                    <Settings className="w-3 h-3" /> Gerenciar
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             {isAdmin && conv.vendedor_nome && (
                               <p className="text-[10px] mt-1" style={{ color: 'rgba(230,237,243,0.3)' }}>👤 {conv.vendedor_nome}</p>
@@ -476,6 +488,16 @@ export default function CentralLeads() {
       </div>
 
       {showRelatorio && <RelatorioLeads onClose={() => setShowRelatorio(false)} />}
+
+      {conversaGerenciar && (
+        <GerenciarConversaModal
+          conversa={conversaGerenciar}
+          conversas={conversas}
+          vendedores={vendedores}
+          onClose={() => setConversaGerenciar(null)}
+          onConcluido={() => { setConversaSelecionada(null); refetch(); }}
+        />
+      )}
     </div>
   );
 }
