@@ -140,7 +140,7 @@ export default function CentralLeads() {
 
   const totalNaoLidas = conversas.reduce((sum, c) => sum + (c.nao_lidas || 0), 0);
   const totalAtivas = conversas.filter(c => c.status === 'ativa').length;
-  const totalAlerta = conversas.filter(c => c.alerta_sem_resposta).length;
+  const totalAlerta = conversas.filter(c => c.alerta_sem_resposta || c.status === 'aguardando').length;
   const totalQualificados = conversas.filter(c => c.status === 'qualificado').length;
 
   const marcarQualificado = async (conv, e) => {
