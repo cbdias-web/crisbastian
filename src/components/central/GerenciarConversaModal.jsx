@@ -62,45 +62,15 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
     if (!destino) return;
     setSalvando(true);
     try {
-      const msgsOrigem = conversa.mensagens || [];
-      const msgsDestino = destino.mensagens || [];
-
-      // Marca de sistema indicando a mesclagem
-      const marcaSistema = {
-        de: 'Sistema',
-        texto: `📎 Conversa de "${conversa.lead_nome}" mesclada em ${new Date().toLocaleString('pt-BR')}`,
-        timestamp: new Date().toISOString(),
-        tipo: 'sistema',
-      };
-
-      const msgsCombinadas = [...msgsDestino, marcaSistema, ...msgsOrigem];
-
-      // Atualiza a conversa de destino com as mensagens combinadas
-      const updateData = {
-        mensagens: msgsCombinadas,
-        ultima_mensagem: msgsOrigem.length > 0 ? msgsOrigem[msgsOrigem.length - 1].texto : destino.ultima_mensagem,
-        ultima_mensagem_em: new Date().toISOString(),
-      };
-
-      // Se a origem tinha observação IA ou produto de interesse e o destino não, preservar
-      if (conversa.observacao_ia && !destino.observacao_ia) updateData.observacao_ia = conversa.observacao_ia;
-      if (conversa.produto_interesse && !destino.produto_interesse) updateData.produto_interesse = conversa.produto_interesse;
-
-      // Preservar histórico de migrações da origem
-      if (conversa.migracoes?.length > 0) {
-        updateData.migracoes = [...(destino.migracoes || []), ...conversa.migracoes];
-      }
-
-      await base44.entities.ConversaWhatsapp.update(destino.id, updateData);
-
-      // Excluir a conversa de origem
-      await base44.entities.ConversaWhatsapp.delete(conversa.id);
-
-      toast.success(`Conversa mesclada em "${destino.lead_nome}"`);
+      const res = await base44.functions.invoke('mesclarConversas', {
+        conversa_origem_id: conversa.id,
+        conversa_destino_id: destino.id,
+      });
+      toast.success(`Conversa mesclada em "${destino.lead_nome}" (${res.data?.mensagens_combinadas || 0} mensagens)`);
       onConcluido();
       onClose();
     } catch (err) {
-      toast.error('Erro ao mesclar: ' + err.message);
+      toast.error('Erro ao mesclar: ' + (err.response?.data?.error || err.message));
     }
     setSalvando(false);
   };

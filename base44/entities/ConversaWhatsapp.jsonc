@@ -26,11 +26,14 @@
       "type": "string",
       "enum": [
         "ativa",
+        "aguardando",
         "qualificado",
+        "desqualificado",
+        "convertido",
         "encerrada"
       ],
       "default": "ativa",
-      "description": "Status da conversa"
+      "description": "Status da conversa no funil de leads"
     },
     "origem": {
       "type": "string",

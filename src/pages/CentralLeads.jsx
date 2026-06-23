@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings } from 'lucide-react';
+import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatConversa from '@/components/central/ChatConversa';
 import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
 import RelatorioLeads from '@/components/central/RelatorioLeads';
 import GerenciarConversaModal from '@/components/central/GerenciarConversaModal';
+import KanbanLeads from '@/components/central/KanbanLeads';
 
 const AURORA = {
   bg: '#0d1117',
@@ -20,8 +21,11 @@ const AURORA = {
 };
 
 const STATUS_COLORS = {
-  ativa: { bg: 'rgba(0,212,170,0.15)', color: '#00D4AA', label: 'Ativa' },
+  ativa: { bg: 'rgba(0,212,170,0.15)', color: '#00D4AA', label: 'Ativo' },
+  aguardando: { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24', label: 'Aguardando' },
   qualificado: { bg: 'rgba(139,92,246,0.2)', color: '#a78bfa', label: 'Qualificado' },
+  desqualificado: { bg: 'rgba(239,68,68,0.15)', color: '#f87171', label: 'Desqualificado' },
+  convertido: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', label: 'Convertido' },
   encerrada: { bg: 'rgba(100,100,100,0.2)', color: '#9ca3af', label: 'Encerrada' },
 };
 
@@ -44,6 +48,7 @@ export default function CentralLeads() {
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('leads');
   const [conversaGerenciar, setConversaGerenciar] = useState(null);
+  const [modoVisualizacao, setModoVisualizacao] = useState('lista');
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -311,7 +316,50 @@ export default function CentralLeads() {
 
         {/* ─── ABA LEADS ─── */}
         {abaAtiva === 'leads' && (
-          <div className="flex gap-4">
+          <div>
+            {/* Toggle de visualização */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex gap-1 p-1 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                <button onClick={() => setModoVisualizacao('lista')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  style={{
+                    background: modoVisualizacao === 'lista' ? AURORA.accent : 'transparent',
+                    color: modoVisualizacao === 'lista' ? '#0d1117' : AURORA.textMuted,
+                  }}>
+                  <List className="w-3.5 h-3.5" /> Lista
+                </button>
+                <button onClick={() => setModoVisualizacao('kanban')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                  style={{
+                    background: modoVisualizacao === 'kanban' ? AURORA.accent : 'transparent',
+                    color: modoVisualizacao === 'kanban' ? '#0d1117' : AURORA.textMuted,
+                  }}>
+                  <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+                </button>
+              </div>
+            </div>
+
+            {/* Modo Kanban */}
+            {modoVisualizacao === 'kanban' ? (
+              <>
+                {conversaSelecionada && (
+                  <div className="rounded-2xl overflow-hidden mb-4" style={{ border: `1px solid ${AURORA.border}`, height: '400px' }}>
+                    <ChatConversa
+                      conversa={conversaSelecionada}
+                      isAdmin={isAdmin}
+                      onClose={() => setConversaSelecionada(null)}
+                      onUpdate={(updated) => { setConversaSelecionada(updated); refetch(); }}
+                    />
+                  </div>
+                )}
+                <KanbanLeads
+                  conversas={conversasFiltradas}
+                  onSelectConversa={setConversaSelecionada}
+                  onRefresh={refetch}
+                />
+              </>
+            ) : (
+              <div className="flex gap-4">
             {/* Lista */}
             <div className="flex flex-col gap-3" style={{ width: conversaSelecionada ? '380px' : '100%', flexShrink: 0 }}>
               {/* Barra de busca */}
@@ -327,8 +375,11 @@ export default function CentralLeads() {
                   className="px-3 py-2 rounded-xl text-xs focus:outline-none"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
                   <option value="todos">🟢 Todos status</option>
-                  <option value="ativa">Ativas</option>
+                  <option value="ativa">Ativos</option>
+                  <option value="aguardando">Aguardando</option>
                   <option value="qualificado">Qualificados</option>
+                  <option value="desqualificado">Desqualificados</option>
+                  <option value="convertido">Convertidos</option>
                   <option value="encerrada">Encerradas</option>
                 </select>
 
@@ -481,6 +532,8 @@ export default function CentralLeads() {
                   onUpdate={(updated) => { setConversaSelecionada(updated); refetch(); }}
                 />
               </div>
+            )}
+          </div>
             )}
           </div>
         )}
