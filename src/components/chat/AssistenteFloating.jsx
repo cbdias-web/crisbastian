@@ -13,7 +13,7 @@ const Avatar = ({ size = 'md', pulse = false }) => {
   return (
     <div className={`relative ${s} flex-shrink-0`}>
       {pulse && (
-        <span className="absolute inset-0 rounded-full bg-blue-400 opacity-30 animate-ping" />
+        <span className="absolute inset-0 rounded-full opacity-30 animate-ping" style={{ background: '#00D4AA' }} />
       )}
       <svg width={dim} height={dim} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 drop-shadow-lg">
         <ellipse cx="7" cy="30" rx="6" ry="8" fill="#e8e8e8" />
@@ -37,7 +37,7 @@ const Avatar = ({ size = 'md', pulse = false }) => {
           </linearGradient>
         </defs>
       </svg>
-      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full z-20" />
+      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full z-20" style={{ background: '#00D4AA', border: '2px solid #0d1117' }} />
     </div>
   );
 };
@@ -45,7 +45,7 @@ const Avatar = ({ size = 'md', pulse = false }) => {
 const TypingIndicator = () => (
   <div className="flex gap-3 items-end">
     <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>
-    <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
+    <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
           <div key={d} className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />
@@ -89,7 +89,7 @@ const PdfButton = ({ toolCalls, content }) => {
   };
   return (
     <button onClick={handleDownload}
-      className="flex items-center gap-2 mt-2 px-4 py-2.5 bg-[#0f1e35] text-white rounded-xl text-xs font-semibold hover:bg-[#1a3150] transition shadow-md">
+      className="flex items-center gap-2 mt-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition shadow-md" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' }}>
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
         <polyline points="14 2 14 8 20 8"/>
@@ -143,7 +143,7 @@ const GlobalPdfButton = ({ messages, onDownloaded }) => {
   return (
     <div className="flex justify-start pl-10">
       <button onClick={handleDownload}
-        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 text-white rounded-xl text-xs font-semibold hover:bg-emerald-800 transition shadow-md">
+        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition shadow-md" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' }}>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
           <polyline points="14 2 14 8 20 8"/>
@@ -162,40 +162,40 @@ const Message = ({ message }) => {
   return (
     <div className={`flex gap-2 items-end ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>}
-      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
+      <div style={isUser ? { background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' } : { background: '#161b22', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
-          ? 'bg-[#0f1e35] text-white rounded-br-sm'
-          : 'bg-white border border-slate-200 text-gray-800 rounded-bl-sm'
+          ? 'rounded-br-sm'
+          : 'rounded-bl-sm'
       }`}>
         {isUser ? (
           <p className="leading-relaxed">{message.content}</p>
         ) : (
           <ReactMarkdown
-            className="prose prose-sm prose-slate max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+            className="prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0" style={{ color: '#e6edf3' }}
             components={{
               a: ({ href, children }) => (
                 <a href={href} target="_blank" rel="noopener noreferrer"
-                  className="text-blue-600 underline hover:text-blue-800 inline-flex items-center gap-0.5">
+                  className="underline inline-flex items-center gap-0.5" style={{ color: '#00D4AA' }}>
                   {children}<Globe className="w-2.5 h-2.5 inline ml-0.5" />
                 </a>
               ),
               table: ({ children }) => (
-                <div className="overflow-x-auto my-2 rounded-lg border border-slate-200 text-xs">
+                <div className="overflow-x-auto my-2 rounded-lg text-xs" style={{ border: '1px solid rgba(0,212,170,0.15)' }}>
                   <table className="w-full border-collapse">{children}</table>
                 </div>
               ),
-              thead: ({ children }) => <thead className="bg-[#0f1e35] text-white">{children}</thead>,
+              thead: ({ children }) => <thead style={{ background: '#1c2333', color: '#00D4AA' }}>{children}</thead>,
               th: ({ children }) => <th className="px-2.5 py-1.5 text-left font-semibold whitespace-nowrap">{children}</th>,
-              td: ({ children }) => <td className="px-2.5 py-1.5 border-t border-slate-100">{children}</td>,
-              tr: ({ children }) => <tr className="even:bg-slate-50">{children}</tr>,
+              td: ({ children }) => <td className="px-2.5 py-1.5" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>{children}</td>,
+              tr: ({ children }) => <tr>{children}</tr>,
               p: ({ children }) => <p className="my-1 leading-relaxed">{children}</p>,
               ul: ({ children }) => <ul className="my-1 ml-3 list-disc">{children}</ul>,
               ol: ({ children }) => <ol className="my-1 ml-3 list-decimal">{children}</ol>,
               li: ({ children }) => <li className="my-0.5">{children}</li>,
               strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
               code: ({ inline, children }) => inline
-                ? <code className="px-1 py-0.5 rounded bg-slate-100 text-xs">{children}</code>
-                : <pre className="bg-slate-900 text-slate-100 rounded p-2 overflow-x-auto text-xs my-1"><code>{children}</code></pre>,
+                ? <code className="px-1 py-0.5 rounded text-xs" style={{ background: '#1c2333', color: '#00D4AA' }}>{children}</code>
+                : <pre className="rounded p-2 overflow-x-auto text-xs my-1" style={{ background: '#0d1117', color: '#e6edf3' }}><code>{children}</code></pre>,
             }}
           >
             {message.content}
@@ -589,7 +589,7 @@ export default function AssistenteFloating() {
       <div ref={btnContainerRef} style={btnStyle} className="flex flex-col items-end gap-2 select-none">
         {!open && (
           <div className="flex items-center gap-2" style={{ pointerEvents: 'none' }}>
-            <div className="bg-white text-gray-700 text-xs font-medium px-3 py-1.5 rounded-full shadow-lg border border-gray-100 whitespace-nowrap">
+            <div className="text-xs font-medium px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap" style={{ background: '#1c2333', color: '#e6edf3', border: '1px solid rgba(0,212,170,0.15)' }}>
               Posso te ajudar? 👋
             </div>
           </div>
@@ -616,7 +616,7 @@ export default function AssistenteFloating() {
             <Avatar size="lg" pulse={!open} />
           )}
           {open && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-gray-800 rounded-full flex items-center justify-center z-20">
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center z-20" style={{ background: '#1c2333' }}>
               <ChevronDown className="w-3 h-3 text-white" />
             </span>
           )}
@@ -625,14 +625,14 @@ export default function AssistenteFloating() {
 
       {/* Chat panel */}
       {open && (
-        <div style={{ ...chatStyle, width: '360px', maxWidth: 'calc(100vw - 24px)', height: '520px' }} className="bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden">
+        <div style={{ ...chatStyle, width: '360px', maxWidth: 'calc(100vw - 24px)', height: '520px', background: '#0d1117', border: '1px solid rgba(0,212,170,0.18)' }} className="rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#0f1e35] to-[#1a3150] px-4 py-3 flex items-center gap-3">
+          <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
             <Avatar size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm">Jarvis</p>
-              <p className="text-blue-300 text-[10px] flex items-center gap-1">
+              <p className="text-[10px] flex items-center gap-1" style={{ color: 'rgba(0,212,170,0.7)' }}>
                 <Globe className="w-2.5 h-2.5" /> Acesso à plataforma + web
               </p>
             </div>
@@ -645,7 +645,7 @@ export default function AssistenteFloating() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50">
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ background: '#0d1117' }}>
             {/* Mensagens pendentes do admin */}
             {mensagensPendentes.length > 0 && (
               <div className="space-y-2">
@@ -653,13 +653,13 @@ export default function AssistenteFloating() {
                   const temComando = /\[(NAVEGAR|IR|ABRIR|GOTO)[:/]/i.test(msg.mensagem) ||
                     /(?:acesse|abra|vá para|navegue para|ir para)\s+/i.test(msg.mensagem);
                   return (
-                    <div key={msg.id} className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                      <p className="text-[10px] font-semibold text-blue-600 mb-1">📢 Mensagem de {msg.remetente_nome || 'Administrador'}</p>
-                      <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{msg.mensagem}</p>
+                    <div key={msg.id} className="rounded-xl p-3" style={{ background: 'rgba(0,102,204,0.1)', border: '1px solid rgba(0,102,204,0.3)' }}>
+                      <p className="text-[10px] font-semibold mb-1" style={{ color: '#5b9bd5' }}>📢 Mensagem de {msg.remetente_nome || 'Administrador'}</p>
+                      <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: '#e6edf3' }}>{msg.mensagem}</p>
                       {temComando && (
                         <button
                           onClick={() => executarComandoMensagem(msg.mensagem, navigate)}
-                          className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-white bg-[#0f1e35] px-2.5 py-1 rounded-lg hover:bg-[#1a3150] transition"
+                          className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-white px-2.5 py-1 rounded-lg transition" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)' }}
                         >
                           ▶ Executar comando
                         </button>
@@ -669,19 +669,19 @@ export default function AssistenteFloating() {
                 })}
                 <button
                   onClick={() => { marcarMensagensComoLidas(mensagensPendentes); setMensagensPendentes([]); }}
-                  className="w-full text-xs text-blue-600 hover:text-blue-800 py-1 underline"
+                  className="w-full text-xs py-1 underline" style={{ color: '#00D4AA' }}
                 >Marcar como lida</button>
               </div>
             )}
 
             {messages.length === 0 && !sending && mensagensPendentes.length === 0 && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
-                <p className="text-sm font-semibold text-gray-800">Olá! Sou o Jarvis 👋</p>
-                <p className="text-xs text-gray-500 mt-1 mb-4">Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
+                <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>Olá! Sou o Jarvis 👋</p>
+                <p className="text-xs mt-1 mb-4" style={{ color: 'rgba(230,237,243,0.55)' }}>Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
                 <div className="flex flex-col gap-1.5 w-full">
                   {SUGGESTIONS.map(s => (
                     <button key={s} onClick={() => send(s)}
-                      className="text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
+                      className="text-left text-xs px-3 py-2 rounded-xl transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.75)' }}>
                       {s}
                     </button>
                   ))}
@@ -703,11 +703,11 @@ export default function AssistenteFloating() {
             {isTyping && <TypingIndicator />}
             {/* Post-response suggestions: só aparecem após 5 min de inatividade */}
             {showPostSuggestions && !isTyping && (
-              <div className="mt-3 border-t border-gray-100 pt-3 space-y-1.5">
-                <p className="text-xs text-gray-500 font-medium px-1 leading-relaxed">
+              <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
+                <p className="text-xs font-medium px-1 leading-relaxed" style={{ color: 'rgba(230,237,243,0.55)' }}>
                   {userName ? `${userName.split(' ')[0]}, precisa de mais alguma informação sobre o assunto que estamos tratando?` : 'Precisa de mais alguma informação sobre o assunto que estamos tratando?'}
                 </p>
-                <p className="text-[10px] text-gray-400 px-1 mb-1">Ou quer explorar outro assunto?</p>
+                <p className="text-[10px] px-1 mb-1" style={{ color: 'rgba(230,237,243,0.4)' }}>Ou quer explorar outro assunto?</p>
                 {postSuggestions.map(s => (
                   <button key={s} onClick={() => send(s)}
                     className="w-full text-left text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#1a3150] hover:bg-blue-50 transition text-gray-600">
@@ -715,7 +715,7 @@ export default function AssistenteFloating() {
                   </button>
                 ))}
                 <button onClick={newChat}
-                  className="w-full text-center text-[11px] py-1.5 text-gray-400 hover:text-gray-600 transition">
+                  className="w-full text-center text-[11px] py-1.5 transition" style={{ color: 'rgba(230,237,243,0.4)' }}>
                   ou encerrar esta conversa e começar uma nova
                 </button>
               </div>
@@ -724,8 +724,8 @@ export default function AssistenteFloating() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3 border-t border-gray-100 bg-white">
-            <div className="flex items-end gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-[#1a3150] transition">
+          <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#0d1117' }}>
+            <div className="flex items-end gap-2 rounded-xl px-3 py-2 transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)' }}>
               <textarea
                 ref={inputRef}
                 value={input}
@@ -733,11 +733,11 @@ export default function AssistenteFloating() {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Pergunte qualquer coisa..."
                 rows={1}
-                className="flex-1 text-sm bg-transparent resize-none focus:outline-none text-gray-800 placeholder-gray-400 max-h-24"
+                className="flex-1 text-sm bg-transparent resize-none focus:outline-none max-h-24" style={{ color: '#e6edf3' }}
                 style={{ minHeight: '22px' }}
               />
               <button onClick={() => send()} disabled={!input.trim() || sending}
-                className="p-1.5 bg-[#0f1e35] text-white rounded-lg hover:bg-[#1a3150] disabled:opacity-40 transition flex-shrink-0">
+                className="p-1.5 text-white rounded-lg disabled:opacity-40 transition flex-shrink-0" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)' }}>
                 {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               </button>
             </div>
