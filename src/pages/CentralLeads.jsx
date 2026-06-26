@@ -62,6 +62,7 @@ export default function CentralLeads() {
   }, []);
 
   const isAdmin = user?.role === 'admin';
+  const temPermissaoCentralLeads = isAdmin || (user?.menus_acesso || []).includes('CentralLeads');
 
   const { data: conversas = [], isLoading, refetch } = useQuery({
     queryKey: ['conversas-whatsapp', user?.id, vendedorLogado?.id],
@@ -155,6 +156,21 @@ export default function CentralLeads() {
     navigator.clipboard.writeText(url);
     toast.success('URL do webhook copiada!');
   };
+
+  if (user && !temPermissaoCentralLeads) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
+        <div className="text-center max-w-sm">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <Lock className="w-8 h-8" style={{ color: '#f87171' }} />
+          </div>
+          <h2 className="text-lg font-bold mb-2" style={{ color: AURORA.text }}>Acesso Restrito</h2>
+          <p className="text-sm mb-1" style={{ color: AURORA.textMuted }}>A Central de Leads está bloqueada para o seu perfil.</p>
+          <p className="text-xs" style={{ color: AURORA.textMuted }}>Solicite liberação ao administrador.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ background: AURORA.bg, color: AURORA.text }}>

@@ -9,6 +9,7 @@ const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
   { id: 'Vendas', nome: 'Vendas', descricao: 'Gestão de vendas' },
   { id: 'Vendedores', nome: 'Vendedores', descricao: 'Perfil do vendedor' },
+  { id: 'CentralLeads', nome: 'Central de Leads', descricao: 'Gestão de leads e conversas WhatsApp' },
   { id: 'Comissoes', nome: 'Comissões', descricao: 'Gestão de comissões' },
   { id: 'RelatorioComissoes', nome: 'Relatório', descricao: 'Relatórios de comissões' },
   { id: 'Metas', nome: 'Metas', descricao: 'Gestão de metas' },

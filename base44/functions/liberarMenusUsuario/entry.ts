@@ -13,6 +13,7 @@ const TODOS_OS_MENUS = [
   'RelatorioInteracoes',
   'RelatorioComissoes',
   'Leads',
+  'CentralLeads',
   'Metas',
   'Produtos',
   'Importar',

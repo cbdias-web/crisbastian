@@ -188,7 +188,7 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', alwaysVisible: true },
         { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
         { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', alwaysVisible: true },
-        { name: 'Central de Leads', icon: Zap, page: 'CentralLeads', alwaysVisible: true },
+        { name: 'Central de Leads', icon: Zap, page: 'CentralLeads' },
         { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
         { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
         { name: 'Precificação', icon: Calculator, page: 'Precificacao', alwaysVisible: true },
