@@ -955,10 +955,10 @@ export default function Pipeline() {
                                 >
                                   <div className="flex items-start justify-between gap-1">
                                     <div className="flex-1 min-w-0">
-                                      <button onClick={() => openEdit(n)} className="text-xs font-semibold text-gray-800 leading-tight hover:text-blue-700 hover:underline text-left w-full truncate">
+                                      <button onClick={() => openEdit(n)} className="text-xs font-semibold leading-tight hover:underline text-left w-full truncate" style={{ color: '#e6edf3' }}>
                                         {n.cliente_nome}
                                       </button>
-                                      {isParcela && <span className="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded-full font-bold">💰 PARCELA</span>}
+                                      {isParcela && <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24' }}>💰 PARCELA</span>}
                                     </div>
                                     <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition">
                                       {isParcela && (
@@ -1029,11 +1029,11 @@ export default function Pipeline() {
                                       </button>
                                     </div>
                                   ) : (
-                                    <p className="text-[10px] text-gray-500 mt-0.5">{n.produto}</p>
+                                    <p className="text-[10px] mt-0.5" style={{ color: '#9da7b3' }}>{n.produto}</p>
                                   )}
-                                  {n.valor_estimado > 0 && <p className="text-[10px] font-bold text-[#1a3150] mt-1">{fmtVal(n.valor_estimado)}</p>}
-                                  {n.data_prevista && <p className={`text-[10px] mt-0.5 ${isParcela ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>Venc: {fmtDate(n.data_prevista)}</p>}
-                                  {isAdmin && n.vendedor_nome && <p className="text-[10px] text-blue-500 mt-0.5">{n.vendedor_nome}</p>}
+                                  {n.valor_estimado > 0 && <p className="text-[10px] font-bold mt-1" style={{ color: '#00D4AA' }}>{fmtVal(n.valor_estimado)}</p>}
+                                  {n.data_prevista && <p className="text-[10px] mt-0.5" style={{ color: isParcela ? '#fbbf24' : '#8b96a3', fontWeight: isParcela ? 600 : 400 }}>Venc: {fmtDate(n.data_prevista)}</p>}
+                                  {isAdmin && n.vendedor_nome && <p className="text-[10px] mt-0.5" style={{ color: '#60a5fa' }}>{n.vendedor_nome}</p>}
                                 </div>
                               )}
                             </Draggable>
