@@ -124,7 +124,7 @@ export default function Layout({ children, currentPageName }) {
       return all.filter((n) => n.status === 'pendente');
     },
     enabled: isAdmin,
-    refetchInterval: 30000
+    refetchInterval: 60000
   });
 
   const { data: chamadosPendentes = [] } = useQuery({
@@ -135,7 +135,7 @@ export default function Layout({ children, currentPageName }) {
       return todos.filter(c => ['aguardando_usuario','aberto','em_andamento'].includes(c.status));
     },
     enabled: !!user,
-    refetchInterval: 30000
+    refetchInterval: 60000
   });
 
   const { data: todasMensagensChat = [] } = useQuery({
@@ -149,7 +149,7 @@ export default function Layout({ children, currentPageName }) {
       });
     },
     enabled: !!user,
-    refetchInterval: 15000
+    refetchInterval: 30000
   });
 
   const isOnChatPage = currentPageName === 'ChatPage';
