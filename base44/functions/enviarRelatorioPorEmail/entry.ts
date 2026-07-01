@@ -365,12 +365,6 @@ Deno.serve(async (req) => {
         // Upload do PDF para obter URL
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: pdfFile });
 
-        // Enviar e-mail via Resend (suporta destinatários externos)
-        const resendApiKey = Deno.env.get("RESEND_API_KEY");
-        if (!resendApiKey) {
-            return Response.json({ error: 'RESEND_API_KEY não configurada. Acesse as configurações do app para definir.' }, { status: 500 });
-        }
-
         const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #0f1e35, #1a3150); padding: 20px 24px; border-radius: 12px 12px 0 0;">
@@ -394,24 +388,12 @@ Deno.serve(async (req) => {
             </div>
         `;
 
-        const resendResponse = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                from: 'Villela Exchange <onboarding@resend.dev>',
-                to: [vendedor_email],
-                subject: `Relatório de Comissões - ${periodoTexto}`,
-                html: emailHtml
-            })
+        await base44.asServiceRole.integrations.Core.SendEmail({
+            to: vendedor_email,
+            subject: `Relatório de Comissões - ${periodoTexto}`,
+            body: emailHtml,
+            from_name: 'Villela Exchange'
         });
-
-        if (!resendResponse.ok) {
-            const errorData = await resendResponse.text();
-            return Response.json({ error: `Erro ao enviar e-mail via Resend: ${errorData}` }, { status: 500 });
-        }
 
         return Response.json({ 
             success: true,
