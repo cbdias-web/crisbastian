@@ -388,12 +388,25 @@ Deno.serve(async (req) => {
             </div>
         `;
 
-        await base44.asServiceRole.integrations.Core.SendEmail({
-            to: vendedor_email,
-            subject: `Relatório de Comissões - ${periodoTexto}`,
-            body: emailHtml,
-            from_name: 'Villela Exchange'
+        // Envio via Resend API — permite enviar para qualquer endereço (vendedores e indicadores externos)
+        const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'Villela Exchange <relatorios@villelaexchange.com.br>',
+                to: [vendedor_email],
+                subject: `Relatório de Comissões - ${periodoTexto}`,
+                html: emailHtml
+            })
         });
+
+        if (!resendResponse.ok) {
+            const resendError = await resendResponse.text();
+            throw new Error(`Falha no envio via Resend: ${resendError}`);
+        }
 
         return Response.json({ 
             success: true,
