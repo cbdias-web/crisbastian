@@ -101,7 +101,7 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
         {COLUNAS.map(col => {
           const items = porStatus(col.key);
           return (
-            <div key={col.key} className="flex flex-col rounded-2xl flex-shrink-0" style={{ width: '252px', background: col.bg, border: `1px solid ${col.color}33` }}>
+            <div key={col.key} className="flex flex-col rounded-2xl flex-shrink-0" style={{ width: '224px', background: col.bg, border: `1px solid ${col.color}33` }}>
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2.5 rounded-t-2xl flex-shrink-0" style={{ borderBottom: `1px solid ${col.color}33` }}>
                 <div className="flex items-center gap-2">
