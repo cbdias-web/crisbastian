@@ -97,11 +97,11 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
 
   return (
     <DragDropContext onDragStart={(start) => setDraggingId(start.draggableId)} onDragEnd={onDragEnd}>
-      <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 'calc(100vh - 360px)' }}>
+      <div className="flex gap-3 overflow-x-auto pb-3" style={{ minHeight: 'calc(100vh - 360px)', scrollbarWidth: 'thin', scrollbarColor: 'rgba(0,212,170,0.4) transparent' }}>
         {COLUNAS.map(col => {
           const items = porStatus(col.key);
           return (
-            <div key={col.key} className="flex flex-col rounded-2xl flex-shrink-0" style={{ width: '290px', background: col.bg, border: `1px solid ${col.color}33` }}>
+            <div key={col.key} className="flex flex-col rounded-2xl flex-shrink-0" style={{ width: '252px', background: col.bg, border: `1px solid ${col.color}33` }}>
               {/* Header */}
               <div className="flex items-center justify-between px-3 py-2.5 rounded-t-2xl flex-shrink-0" style={{ borderBottom: `1px solid ${col.color}33` }}>
                 <div className="flex items-center gap-2">
