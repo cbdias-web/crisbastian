@@ -4,7 +4,8 @@ import {
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
-  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator
+  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
+  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ const sections = [
       { subtitle: 'Dois caminhos para registrar uma venda', items: ['**Caminho A — Venda direta:** para produtos sem contrato formal. Acesse Vendas > Nova Venda.', '**Caminho B — Via Contrato:** obrigatório para CONTA GLOBAL, CONTA INTERNACIONAL e DOLARIZE AQUI.'] },
       { subtitle: 'Registrar uma nova venda (Caminho A)', steps: ['Acesse "Vendas" > clique em "Nova Venda".', 'Selecione o(s) Produto(s) na lista de ativos.', 'Selecione o Vendedor — o percentual de comissão é carregado automaticamente.', 'Informe o Valor Total do Contrato e a estrutura de pagamento.', 'Defina o Valor de Entrada (conta para a meta do mês imediatamente).', 'Busque o cliente pelo nome ou CPF/CNPJ.', 'Adicione Indicadores se houver.', 'Ajuste datas e valores de cada parcela individualmente.', 'Clique em "Salvar".'] },
       { subtitle: 'Estrutura de pagamento', items: ['**Sem parcelas (à vista):** valor total conta 100% para a meta.', '**Entrada + Nx parcelas:** entrada conta imediatamente; saldo vai para "Parcelas Vincendas".', '**Comissão zerada (0%):** aceito e persiste corretamente.'] },
-      { subtitle: 'O que acontece automaticamente ao salvar', items: ['**Comissão do vendedor** gerada sobre o valor de entrada.', '**Comissões dos indicadores** geradas proporcionalmente.', '**Cliente vinculado** — criado automaticamente se não existia.', '**Parcelas criadas** no módulo "Parcelas Vincendas".', '**Meta e Dashboard atualizados** em tempo real.'] },
+      { subtitle: 'O que acontece automaticamente ao salvar', items: ['**Comissão do vendedor** gerada sobre o valor de entrada.', '**Comissões dos indicadores** geradas proporcionalmente.', '**Cliente vinculado** — criado automaticamente se não existia.', '**Parcelas criadas** no módulo "Parcelas Vincendas".', '**Meta e Dashboard atualizados** em tempo real.', '**Implantação criada automaticamente** — o sistema busca o contrato relacionado e cria o registro de implantação com checklist de fases. Se o contrato não for encontrado, sinaliza para anexamento manual.'] },
       { subtitle: 'Exportar dados', items: ['**Vendas CSV:** exporta para Excel.', '**Clientes CSV:** lista de clientes únicos do período.', '**Relatório PDF:** documento de todas as transações.'] },
     ],
   },
@@ -113,7 +114,7 @@ const sections = [
     id: 'notificacoes', icon: AlertTriangle, title: 'Notificações e Autorizações',
     color: 'from-red-500 to-red-600', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-100',
     content: [
-      { subtitle: 'Tipos de notificação', items: ['**Espelhamento acima de 30%:** requer aprovação do administrador.', '**Novo contrato criado:** solicita que o admin adicione link de assinatura.'] },
+      { subtitle: 'Tipos de notificação', items: ['**Espelhamento acima de 30%:** requer aprovação do administrador.', '**Novo contrato criado:** solicita que o admin adicione link de assinatura.', '**Solicitação de precificação:** solicita autorização para proposta comercial.', '**Implantação:** notifica sobre novas implantações e mudanças de status (via Jarvis e e-mail).'] },
       { subtitle: 'Fluxo — espelhamento', steps: ['Vendedor registra venda com espelhamento entre 30% e 50%.', 'Admin recebe notificação por e-mail e Jarvis.', 'Admin aprova ou rejeita em "Notificações".'] },
       { subtitle: 'Fluxo — novo contrato', steps: ['Gerente salva contrato.', 'Admin recebe alerta no Jarvis, Notificações e e-mail.', 'Admin adiciona link de assinatura online.', 'Gerente encaminha ao cliente.'] },
     ],
@@ -181,6 +182,77 @@ const sections = [
     ],
   },
   {
+    id: 'desempenho', icon: Activity, title: 'Desempenho — Dashboard Personalizável',
+    color: 'from-indigo-500 to-indigo-700', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Página de desempenho personalizada onde cada usuário pode reorganizar os menus laterais e ocultar gráficos que não utiliza, criando um dashboard sob medida para sua rotina.' },
+      { subtitle: 'Reorganizar menus', steps: ['Acesse "Desempenho" no menu Comercial.', 'Clique e arraste os itens do menu lateral para reordená-los.', 'A nova ordem é salva automaticamente no seu perfil.'] },
+      { subtitle: 'Ocultar gráficos', items: ['Cada gráfico possui um botão de ocultar/mostrar.', 'Gráficos ocultos não aparecem no seu dashboard.', 'Você pode reativar a qualquer momento.'] },
+      { subtitle: 'Visão por usuário', text: 'As configurações são individuais — cada usuário tem seu próprio layout. Administradores continuam vendo todos os dados e gráficos disponíveis.' },
+    ],
+  },
+  {
+    id: 'central-leads', icon: Zap, title: 'Central de Leads — WhatsApp & Kanban',
+    color: 'from-cyan-500 to-cyan-700', bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Central de gestão de leads e conversas de WhatsApp em tempo real. Integra captação automática de leads via webhook, distribuição round-robin entre gerentes, chat direto pelo WhatsApp, controle de SLA de resposta e Kanban de funil.' },
+      { subtitle: 'Captação automática de leads (Webhook)', items: [
+        '**Levia externa (Make/Zapier):** a integração recebe leads automaticamente de campanhas e formulários externos.',
+        'Cada lead é criado com nome, telefone e origem da campanha.',
+        'O sistema cria automaticamente uma conversa de WhatsApp associada ao lead.',
+        '**Segurança:** o webhook é autenticado por token secreto (header x-webhook-token).',
+      ]},
+      { subtitle: 'Distribuição Round-Robin', items: [
+        'Os leads são distribuídos **automaticamente** entre os gerentes ativos na esteira.',
+        'A distribuição respeita a **disponibilidade** de cada gerente (status de bloqueio/desbloqueio).',
+        'Gerentes bloqueados (almoço, reunião, fora do expediente) **não recebem** novos leads.',
+        'Configure quais gerentes participam da esteira no cadastro de Vendedores (campo "Participa da Central de Leads").',
+      ]},
+      { subtitle: 'Chat WhatsApp integrado (Umbler Talk)', items: [
+        'Converse diretamente com o lead pelo WhatsApp **dentro da plataforma** — sem precisar abrir o celular.',
+        'As mensagens enviadas e recebidas ficam registradas no histórico da conversa.',
+        'O sistema identifica automaticamente a última mensagem e quem enviou.',
+        '**Atendimento humano:** disponível apenas em horário comercial (08h–18h, seg–sex). Fora deste horário, o sistema sinaliza que o atendimento é automatico.',
+      ]},
+      { subtitle: 'Kanban de Funil', items: [
+        'Arraste e solte leads entre as colunas: **Ativa, Aguardando, Qualificado, Desqualificado, Convertido, Encerrada**.',
+        'Cada mudança de status é persistida automaticamente.',
+        'Visualize alertas de SLA e tempo de espera diretamente nos cards.',
+      ]},
+      { subtitle: '⏱️ Controle de SLA (30 minutos)', items: [
+        'O sistema monitora o **tempo de resposta** de cada gerente aos leads recebidos.',
+        '**SLA de 30 minutos:** se o gerente não responder em 30 minutos, o lead é **migrado automaticamente** para outro gerente disponível.',
+        'A migração é registrada no histórico da conversa e no log de migrações.',
+        'Verificação automática a cada 5 minutos via rotina agendada.',
+      ]},
+      { subtitle: '👥 Status do Gerente', items: [
+        'Cada gerente controla sua disponibilidade para receber leads.',
+        'Pode bloquear temporariamente por: **almoço, reunião, fora do expediente, outro**.',
+        'Defina até quando o bloqueio dura (ou indefinido).',
+        'Gerentes bloqueados **não entram** na distribuição até serem desbloqueados.',
+      ]},
+      { subtitle: '📊 KPIs e Relatórios', items: [
+        '**Leads Ativos:** conversas em andamento.',
+        '**Aguardando Resposta:** leads aguardando resposta do gerente (inclui alertas de SLA).',
+        '**Tempo médio de resposta:** performance da equipe.',
+        '**Relatório de migrações:** quantos leads foram redistribuídos por timeout.',
+        'Filtros por gerente, período e horário disponíveis.',
+      ]},
+      { subtitle: '🔧 Gestão de conversas (Admin)', items: [
+        '**Transferir:** reatribuir uma conversa para outro gerente manualmente.',
+        '**Mesclar:** combinar conversas duplicadas do mesmo lead.',
+        '**Excluir:** remover conversas inválidas (com confirmação dupla).',
+        'Acesse via ícone de engrenagem em cada conversa.',
+      ]},
+      { subtitle: 'Permissões de acesso', items: [
+        'O acesso à Central de Leads é **controlado por permissão** — configurado no cadastro de usuário.',
+        'Administradores têm acesso total a todos os leads e conversas.',
+        'Usuários padrão veem apenas leads direcionados ao seu perfil.',
+        'Gerentes sem permissão não visualizam o menu "Central de Leads".',
+      ]},
+    ],
+  },
+  {
     id: 'prospecccao', icon: Search, title: 'Prospecção — Novos Leads',
     color: 'from-purple-500 to-purple-600', bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100',
     content: [
@@ -240,6 +312,61 @@ const sections = [
       { subtitle: 'Criar contrato', steps: ['Acesse "Contratos" > selecione o tipo.', 'Busque cliente existente ou preencha manualmente.', 'Preencha Dados Pessoais, Endereço, Financeiro e Obs.', 'Clique em "Salvar". Admins são notificados automaticamente.'] },
       { subtitle: 'Fluxo de etapas', items: ['**Rascunho → PDF Gerado → Assinado → Aguardando Pagamento → Pago → No Pipeline.**'] },
       { subtitle: 'Enviar para Vendas', text: 'Após assinatura + pagamento confirmado, clique em "Enviar para Vendas". Cria venda pré-preenchida.' },
+      { subtitle: '📎 Anexos de contrato e boletos', items: [
+        '**Contrato assinado:** o gerente pode anexar o PDF do contrato assinado pelo cliente.',
+        '**Link de assinatura:** o administrador preenche o link de assinatura online (contrato e aditivo).',
+        '**Boletos de parcelas:** anexe boletos das parcelas vincendas individualmente, com vencimento e descrição.',
+        '**Comprovante de pagamento:** anexe o comprovante quando o pagamento for confirmado.',
+        '**Origem do pagamento:** selecione entre Boleto, Link de Pagamento, PIX, TED ou Outros.',
+      ]},
+      { subtitle: '🔄 Gestão manual de status', text: 'Administradores podem alterar manualmente o status do contrato em qualquer etapa do fluxo, permitindo correções e ajustes quando necessário.' },
+    ],
+  },
+  {
+    id: 'implantacoes', icon: Rocket, title: 'Implantações — Pós-Venda',
+    color: 'from-emerald-600 to-teal-700', bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Módulo de acompanhamento de implantação de produtos e contratos vendidos. Garante que cada venda seja efetivamente entregue ao cliente através de um checklist estruturado de fases, com notificações automáticas e controle de prazos.' },
+      { subtitle: 'Criação automática ao finalizar venda', items: [
+        'Ao registrar uma venda, o sistema **busca automaticamente** o contrato relacionado (por CPF/CNPJ ou nome do cliente).',
+        'Se encontrado, o contrato é **vinculado automaticamente** à implantação.',
+        'Se não encontrado (vendas antigas ou erro), o sistema **sinaliza** para o responsável anexar o contrato manualmente.',
+        'O registro de implantação é criado com as fases padrão de melhores práticas.',
+      ]},
+      { subtitle: '📋 Fases de Implantação (Melhores Práticas)', items: [
+        '**1. Contratos & Compliance:** revisão do contrato assinado, KYC (Know Your Customer), due diligence e checagem em listas restritivas (PLD/FT), aprovação de compliance e risco.',
+        '**2. Documentação:** coleta de documentos pessoais/empresariais, comprovante de residência e renda, validação e organização.',
+        '**3. Onboarding:** abertura de conta/cadastro, setup técnico e parametrização do produto, configuração de credenciais e acessos.',
+        '**4. Configuração & Liberação:** testes de funcionamento, ativação e liberação de acesso ao cliente, confirmação de operação ativa.',
+        '**5. Treinamento & Handover:** treinamento do cliente, entrega de manuais e credenciais, apresentação do suporte pós-venda.',
+      ]},
+      { subtitle: '🔗 Contrato não encontrado — anexamento manual', items: [
+        'Quando o sistema não localiza o contrato, aparece um **alerta amarelo** no card da implantação (ícone de aviso).',
+        'No modal de detalhes, o responsável pode **anexar o contrato manualmente** (upload de PDF, DOC ou imagem).',
+        'Também é possível especificar **condições especiais de implantação** (prazos, exigências técnicas, dependências externas).',
+        'Após anexar, o status de "contrato não encontrado" é atualizado automaticamente.',
+      ]},
+      { subtitle: 'Status e prioridade', items: [
+        '**Status:** Aguardando Documentação → Em Andamento → Aguardando Cliente → Concluído / Cancelado.',
+        '**Prioridade:** Baixa, Média, Alta ou Urgente — exibida como indicador colorido na lista.',
+        '**Prazo:** defina a data prevista de conclusão. Implantações atrasadas aparecem destacadas em vermelho.',
+      ]},
+      { subtitle: 'Checklist interativo', text: 'Cada fase possui etapas que podem ser marcadas como concluídas individualmente. A barra de progresso mostra o percentual geral. Ao concluir todas as etapas, o status pode ser atualizado para "Concluído".' },
+      { subtitle: '🔔 Notificações automáticas', items: [
+        '**Nova implantação:** administradores e o vendedor da venda recebem notificação via Jarvis e e-mail.',
+        '**Mudança de status:** a cada alteração de status, os envolvidos são notificados.',
+        'As notificações incluem: cliente, produto, vendedor, responsável, valor e observação da alteração.',
+      ]},
+      { subtitle: '📊 KPIs e Relatório PDF', items: [
+        'KPIs na página: Total de Processos, Em Andamento, Concluídos e Atrasados.',
+        'Filtros por produto, status e período.',
+        'Administradores podem gerar um **Relatório PDF** consolidado com resumo e tabela detalhada.',
+      ]},
+      { subtitle: 'Permissões', items: [
+        '**Todos os usuários** podem visualizar implantações e acompanhar o progresso.',
+        '**Apenas administradores** podem editar status, prioridade, responsável, etapas e condições.',
+        'O menu "Implantações" está disponível para todos no bloco Comercial.',
+      ]},
     ],
   },
   {
@@ -466,7 +593,7 @@ const categories = [
     id: 'vendas', label: 'Vendas', icon: BarChart2,
     gradFrom: '#00b09b', gradTo: '#007b6e',
     color: 'from-[#00b09b] to-[#007b6e]',
-    sections: ['vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao'],
+    sections: ['vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'implantacoes'],
   },
   {
     id: 'financas', label: 'Finanças', icon: DollarSign,
@@ -478,13 +605,13 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema'],
+    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao'],
+    sections: ['introducao', 'dashboard', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho'],
   },
 ];
 
@@ -567,7 +694,7 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'meus-clientes', 'clientes', 'relatorios', 'importar', 'suporte', 'precificacao', 'alertas-sistema'];
+  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'clientes', 'relatorios', 'importar', 'suporte', 'precificacao', 'alertas-sistema', 'desempenho'];
   const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
 
   const visibleSections = activeCategory
@@ -604,7 +731,7 @@ export default function Manual() {
                 </h1>
                 <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Jun/2026
+                  Guia completo de utilização — atualizado Jul/2026
                 </p>
               </div>
             </div>
@@ -614,7 +741,7 @@ export default function Manual() {
               {[
                 { v: sections.length, l: 'Seções', icon: '📋' },
                 { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
-                { v: 'Mai/2026', l: 'Atualizado', icon: '🗓' },
+                { v: 'Jul/2026', l: 'Atualizado', icon: '🗓' },
               ].map((k, i) => (
                 <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
                   <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
@@ -736,7 +863,7 @@ export default function Manual() {
 
         {/* ── FOOTER ── */}
         <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Gestão Comercial · Manual da Plataforma · Mai/2026
+          Villela Exchange · Gestão Comercial · Manual da Plataforma · Jul/2026
         </div>
       </div>
     </div>
