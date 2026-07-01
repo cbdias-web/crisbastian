@@ -8,7 +8,24 @@
     },
     "contrato_id": {
       "type": "string",
-      "description": "ID do contrato vinculado"
+      "description": "ID do contrato vinculado (auto-vinculado ou manual)"
+    },
+    "contrato_encontrado": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o contrato foi encontrado automaticamente no sistema"
+    },
+    "contrato_url_manual": {
+      "type": "string",
+      "description": "URL do contrato anexado manualmente (quando n\u00e3o encontrado)"
+    },
+    "contrato_nome_manual": {
+      "type": "string",
+      "description": "Nome do arquivo do contrato anexado manualmente"
+    },
+    "condicoes_implantacao": {
+      "type": "string",
+      "description": "Condi\u00e7\u00f5es especiais de implanta\u00e7\u00e3o especificadas manualmente"
     },
     "cliente_nome": {
       "type": "string",
@@ -74,10 +91,14 @@
     },
     "etapas": {
       "type": "array",
-      "description": "Checklist de etapas da implanta\u00e7\u00e3o",
+      "description": "Checklist de etapas da implanta\u00e7\u00e3o organizadas por fase",
       "items": {
         "type": "object",
         "properties": {
+          "fase": {
+            "type": "string",
+            "description": "Nome da fase (ex: Contratos & Compliance, Documenta\u00e7\u00e3o, Onboarding)"
+          },
           "descricao": {
             "type": "string"
           },

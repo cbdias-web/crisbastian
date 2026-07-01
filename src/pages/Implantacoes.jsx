@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
+import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, Link2, FileWarning } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ImplantacaoModal from '@/components/implantacoes/ImplantacaoModal';
@@ -233,7 +233,15 @@ export default function Implantacoes() {
                         <div className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priCfg.color }} title={`Prioridade: ${imp.prioridade}`} />
                           <div>
-                            <p className="font-medium" style={{ color: AURORA.text }}>{imp.cliente_nome || '—'}</p>
+                            <p className="font-medium flex items-center gap-1.5" style={{ color: AURORA.text }}>
+                              {imp.cliente_nome || '—'}
+                              {imp.contrato_encontrado === false && (
+                                <span title="Contrato não localizado — anexar manualmente" className="inline-flex"><FileWarning className="w-3 h-3" style={{ color: '#fbbf24' }} /></span>
+                              )}
+                              {imp.contrato_encontrado === true && (imp.contrato_id || imp.contrato_url_manual) && (
+                                <span title="Contrato vinculado" className="inline-flex"><Link2 className="w-3 h-3" style={{ color: '#22c55e' }} /></span>
+                              )}
+                            </p>
                             {imp.cpf_cnpj && <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{imp.cpf_cnpj}</p>}
                           </div>
                         </div>

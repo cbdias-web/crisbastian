@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -38,8 +38,23 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(implantacao);
   const [novaEtapa, setNovaEtapa] = useState('');
+  const [novaFaseEtapa, setNovaFaseEtapa] = useState('');
   const [novaObservacao, setNovaObservacao] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [uploadingContrato, setUploadingContrato] = useState(false);
+
+  const handleUploadContrato = async (file) => {
+    if (!file) return;
+    setUploadingContrato(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setForm(f => ({ ...f, contrato_url_manual: file_url, contrato_nome_manual: file.name, contrato_encontrado: true }));
+      toast.success('Contrato anexado!');
+    } catch (e) {
+      toast.error('Erro ao anexar: ' + e.message);
+    }
+    setUploadingContrato(false);
+  };
 
   const statusCfg = STATUS_OPTIONS.find(s => s.value === form.status) || STATUS_OPTIONS[0];
   const prioridadeCfg = PRIORIDADE_OPTIONS.find(p => p.value === form.prioridade) || PRIORIDADE_OPTIONS[1];
@@ -76,6 +91,10 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
         data_conclusao: dataConclusao,
         etapas: etapas,
         observacoes: form.observacoes || '',
+        condicoes_implantacao: form.condicoes_implantacao || '',
+        contrato_url_manual: form.contrato_url_manual || '',
+        contrato_nome_manual: form.contrato_nome_manual || '',
+        contrato_encontrado: form.contrato_encontrado,
         historico: [...(implantacao.historico || []), historicoEntry],
       };
 
@@ -120,9 +139,10 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
 
   const addEtapa = () => {
     if (!novaEtapa.trim()) return;
-    const etapas = [...(form.etapas || []), { descricao: novaEtapa.trim(), concluida: false, concluida_em: '' }];
+    const etapas = [...(form.etapas || []), { fase: novaFaseEtapa.trim() || 'Personalizada', descricao: novaEtapa.trim(), concluida: false, concluida_em: '' }];
     setForm(f => ({ ...f, etapas }));
     setNovaEtapa('');
+    setNovaFaseEtapa('');
   };
 
   const removeEtapa = (idx) => {
@@ -166,6 +186,81 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
         </div>
 
         <div className="p-6 space-y-5">
+          {/* Contrato vinculado */}
+          <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <FileCheck2 className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Contrato</p>
+            </div>
+            {form.contrato_encontrado ? (
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(34,197,94,0.15)' }}>
+                  <Link2 className="w-4 h-4" style={{ color: '#22c55e' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold" style={{ color: AURORA.text }}>
+                    {form.contrato_nome_manual ? form.contrato_nome_manual : (form.contrato_id ? 'Contrato vinculado automaticamente' : 'Contrato anexado')}
+                  </p>
+                  <p className="text-xs" style={{ color: AURORA.textMuted }}>
+                    {form.contrato_nome_manual ? 'Anexado manualmente' : form.contrato_id ? `ID: ${form.contrato_id.substring(0, 8)}...` : '—'}
+                  </p>
+                </div>
+                {form.contrato_url_manual && (
+                  <a href={form.contrato_url_manual} target="_blank" rel="noreferrer"
+                    className="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition flex-shrink-0"
+                    style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+                    Ver arquivo
+                  </a>
+                )}
+                {form.contrato_id && !form.contrato_url_manual && (
+                  <a href={`/Contratos`} className="text-xs font-semibold px-2.5 py-1.5 rounded-lg transition flex-shrink-0"
+                    style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+                    Ver contrato
+                  </a>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.15)' }}>
+                    <AlertTriangle className="w-4 h-4" style={{ color: '#fbbf24' }} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold" style={{ color: '#fbbf24' }}>Contrato não localizado no sistema</p>
+                    <p className="text-xs" style={{ color: AURORA.textMuted }}>
+                      {editing ? 'Anexe o contrato manualmente abaixo e especifique as condições de implantação' : 'Aguardando anexamento manual pelo responsável'}
+                    </p>
+                  </div>
+                </div>
+                {editing && (
+                  <div className="space-y-3">
+                    <label className="flex flex-col items-center justify-center gap-2 py-4 rounded-lg cursor-pointer transition border-2 border-dashed"
+                      style={{ borderColor: AURORA.border, background: AURORA.bg }}>
+                      {uploadingContrato ? (
+                        <span className="text-xs" style={{ color: AURORA.accent }}>Enviando...</span>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-5 h-5" style={{ color: AURORA.textMuted }} />
+                          <span className="text-xs" style={{ color: AURORA.textMuted }}>Clique para anexar o contrato (PDF)</span>
+                        </>
+                      )}
+                      <input type="file" accept=".pdf,.doc,.docx,.jpg,.png" className="hidden"
+                        onChange={e => e.target.files[0] && handleUploadContrato(e.target.files[0])} />
+                    </label>
+                    {form.contrato_url_manual && (
+                      <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg" style={{ background: 'rgba(34,197,94,0.1)' }}>
+                        <FileText className="w-3.5 h-3.5" style={{ color: '#22c55e' }} />
+                        <span style={{ color: AURORA.text }} className="flex-1 truncate">{form.contrato_nome_manual}</span>
+                        <button onClick={() => setForm(f => ({ ...f, contrato_url_manual: '', contrato_nome_manual: '', contrato_encontrado: false }))}
+                          className="p-0.5" style={{ color: '#f87171' }}><X className="w-3 h-3" /></button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Status e Prioridade */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
@@ -219,12 +314,13 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
             </div>
           )}
 
-          {/* Etapas */}
+          {/* Etapas por fase */}
           <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Checklist de Etapas</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Checklist de Implantação</p>
               {editing && (
                 <div className="flex items-center gap-1">
+                  <input value={novaFaseEtapa} onChange={e => setNovaFaseEtapa(e.target.value)} placeholder="Fase (opcional)" className="text-xs px-2 py-1 rounded-lg focus:outline-none w-24" style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
                   <input value={novaEtapa} onChange={e => setNovaEtapa(e.target.value)} onKeyDown={e => e.key === 'Enter' && addEtapa()} placeholder="Nova etapa..." className="text-xs px-2 py-1 rounded-lg focus:outline-none w-32" style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
                   <button onClick={addEtapa} className="p-1 rounded-lg transition" style={{ background: AURORA.accentDim, color: AURORA.accent }}><Plus className="w-3.5 h-3.5" /></button>
                 </div>
@@ -233,17 +329,38 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
             {(form.etapas || []).length === 0 ? (
               <p className="text-xs text-center py-3" style={{ color: AURORA.textMuted }}>Nenhuma etapa cadastrada</p>
             ) : (
-              <div className="space-y-1.5">
-                {(form.etapas || []).map((etapa, idx) => (
-                  <div key={idx} className="flex items-center gap-2 group">
-                    <button onClick={() => toggleEtapa(idx)} disabled={!editing} className="flex-shrink-0">
-                      {etapa.concluida ? <CheckCircle2 className="w-4 h-4" style={{ color: '#22c55e' }} /> : <Circle className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
-                    </button>
-                    <span className={`flex-1 text-sm ${etapa.concluida ? 'line-through' : ''}`} style={{ color: etapa.concluida ? AURORA.textMuted : AURORA.text }}>{etapa.descricao}</span>
-                    {etapa.concluida_em && <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{fmtDateTime(etapa.concluida_em)}</span>}
-                    {editing && <button onClick={() => removeEtapa(idx)} className="opacity-0 group-hover:opacity-100 transition p-0.5" style={{ color: '#f87171' }}><Trash2 className="w-3 h-3" /></button>}
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {Object.entries(
+                  (form.etapas || []).reduce((acc, etapa, idx) => {
+                    const fase = etapa.fase || 'Geral';
+                    if (!acc[fase]) acc[fase] = [];
+                    acc[fase].push({ ...etapa, _idx: idx });
+                    return acc;
+                  }, {})
+                ).map(([fase, etapasFase]) => {
+                  const concluidasFase = etapasFase.filter(e => e.concluida).length;
+                  return (
+                    <div key={fase}>
+                      <div className="flex items-center gap-2 mb-1.5 px-1">
+                        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.accent, opacity: 0.8 }}>{fase}</span>
+                        <div className="flex-1 h-px" style={{ background: AURORA.border }} />
+                        <span className="text-[10px] font-semibold" style={{ color: AURORA.textMuted }}>{concluidasFase}/{etapasFase.length}</span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {etapasFase.map((etapa) => (
+                          <div key={etapa._idx} className="flex items-center gap-2 group">
+                            <button onClick={() => toggleEtapa(etapa._idx)} disabled={!editing} className="flex-shrink-0">
+                              {etapa.concluida ? <CheckCircle2 className="w-4 h-4" style={{ color: '#22c55e' }} /> : <Circle className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
+                            </button>
+                            <span className={`flex-1 text-sm ${etapa.concluida ? 'line-through' : ''}`} style={{ color: etapa.concluida ? AURORA.textMuted : AURORA.text }}>{etapa.descricao}</span>
+                            {etapa.concluida_em && <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{fmtDateTime(etapa.concluida_em)}</span>}
+                            {editing && <button onClick={() => removeEtapa(etapa._idx)} className="opacity-0 group-hover:opacity-100 transition p-0.5" style={{ color: '#f87171' }}><Trash2 className="w-3 h-3" /></button>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -256,6 +373,16 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
               <p className="text-[10px] mt-1" style={{ color: AURORA.textMuted }}>Será registrada no histórico e enviada na notificação</p>
             </div>
           )}
+
+          {/* Condições de implantação */}
+          <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+            <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: AURORA.accent }}>Condições de Implantação</p>
+            {editing ? (
+              <textarea value={form.condicoes_implantacao || ''} onChange={e => setForm(f => ({ ...f, condicoes_implantacao: e.target.value }))} placeholder="Especifique condições especiais: prazos, exigências técnicas, dependências externas, etc..." rows={3} className="w-full text-sm rounded-lg px-3 py-2 focus:outline-none resize-none" style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+            ) : (
+              <p className="text-sm" style={{ color: form.condicoes_implantacao ? AURORA.text : AURORA.textMuted }}>{form.condicoes_implantacao || 'Sem condições especiais'}</p>
+            )}
+          </div>
 
           {/* Observações gerais */}
           <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>

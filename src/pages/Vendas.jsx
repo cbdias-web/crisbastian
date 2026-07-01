@@ -165,8 +165,62 @@ export default function Vendas() {
       // Criar registro de implantação automaticamente
       try {
         await sleep(300);
+
+        // Buscar contrato relacionado automaticamente (por CPF/CNPJ ou nome)
+        let contratoVinculado = null;
+        let contratoEncontrado = false;
+        try {
+          if (data.cpf_cnpj) {
+            const contratos = await base44.entities.Contrato.filter({ cpf_cnpj: data.cpf_cnpj });
+            if (contratos.length > 0) {
+              contratoVinculado = contratos[0];
+              contratoEncontrado = true;
+            }
+          }
+          if (!contratoVinculado && data.cliente) {
+            const contratosPorNome = await base44.entities.Contrato.filter({ nome: data.cliente.trim() });
+            if (contratosPorNome.length > 0) {
+              contratoVinculado = contratosPorNome[0];
+              contratoEncontrado = true;
+            }
+          }
+        } catch (e) {
+          console.log('Erro ao buscar contrato:', e.message);
+        }
+
+        // Fases de implantação baseadas em melhores práticas de mercado
+        const etapasImplantacao = [
+          // Fase 1: Contratos & Compliance
+          { fase: 'Contratos & Compliance', descricao: 'Revisão e validação do contrato assinado', concluida: false, concluida_em: '' },
+          { fase: 'Contratos & Compliance', descricao: 'KYC (Know Your Customer) — verificação de identidade', concluida: false, concluida_em: '' },
+          { fase: 'Contratos & Compliance', descricao: 'Due diligence e checagem em listas restritivas (PLD/FT)', concluida: false, concluida_em: '' },
+          { fase: 'Contratos & Compliance', descricao: 'Aprovação de compliance e risco', concluida: false, concluida_em: '' },
+          // Fase 2: Documentação
+          { fase: 'Documentação', descricao: 'Coleta de documentos pessoais/empresariais (RG, CNH, contrato social)', concluida: false, concluida_em: '' },
+          { fase: 'Documentação', descricao: 'Comprovante de residência e renda', concluida: false, concluida_em: '' },
+          { fase: 'Documentação', descricao: 'Validação e organização da documentação', concluida: false, concluida_em: '' },
+          // Fase 3: Onboarding
+          { fase: 'Onboarding', descricao: 'Abertura de conta / cadastro em plataformas', concluida: false, concluida_em: '' },
+          { fase: 'Onboarding', descricao: 'Setup técnico e parametrização do produto', concluida: false, concluida_em: '' },
+          { fase: 'Onboarding', descricao: 'Configuração de credenciais e acessos', concluida: false, concluida_em: '' },
+          // Fase 4: Configuração & Liberação
+          { fase: 'Configuração & Liberação', descricao: 'Testes de funcionamento e conectividade', concluida: false, concluida_em: '' },
+          { fase: 'Configuração & Liberação', descricao: 'Ativação e liberação de acesso ao cliente', concluida: false, concluida_em: '' },
+          { fase: 'Configuração & Liberação', descricao: 'Confirmação de operação ativa', concluida: false, concluida_em: '' },
+          // Fase 5: Treinamento & Handover
+          { fase: 'Treinamento & Handover', descricao: 'Treinamento do cliente sobre uso do produto', concluida: false, concluida_em: '' },
+          { fase: 'Treinamento & Handover', descricao: 'Entrega de manuais e credenciais', concluida: false, concluida_em: '' },
+          { fase: 'Treinamento & Handover', descricao: 'Apresentação do suporte pós-venda', concluida: false, concluida_em: '' },
+        ];
+
+        const observacaoHistorico = contratoEncontrado
+          ? `Implantação criada automaticamente via formalização de venda. Contrato vinculado: ${contratoVinculado.tipo || '—'}`
+          : 'Implantação criada automaticamente via formalização de venda. Contrato não localizado no sistema — aguardando anexamento manual.';
+
         const implantacao = await base44.entities.Implantacao.create({
           venda_id: venda.id,
+          contrato_id: contratoVinculado?.id || '',
+          contrato_encontrado: contratoEncontrado,
           cliente_nome: data.cliente || '',
           cpf_cnpj: data.cpf_cnpj || '',
           produto: data.produto || '',
@@ -176,17 +230,11 @@ export default function Vendas() {
           data_entrada: data.data,
           status: 'aguardando_documentacao',
           prioridade: 'media',
-          etapas: [
-            { descricao: 'Documentação do cliente', concluida: false, concluida_em: '' },
-            { descricao: 'Abertura de conta / Setup técnico', concluida: false, concluida_em: '' },
-            { descricao: 'Validação de compliance', concluida: false, concluida_em: '' },
-            { descricao: 'Liberação de acesso', concluida: false, concluida_em: '' },
-            { descricao: 'Treinamento do cliente', concluida: false, concluida_em: '' },
-          ],
+          etapas: etapasImplantacao,
           historico: [{
             status_anterior: '',
             status_novo: 'aguardando_documentacao',
-            observacao: 'Implantação criada automaticamente via formalização de venda',
+            observacao: observacaoHistorico,
             atualizado_por: data.assessor_comercial || 'Sistema',
             data: new Date().toISOString(),
           }],
