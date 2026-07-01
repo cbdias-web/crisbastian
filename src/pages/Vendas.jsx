@@ -162,7 +162,8 @@ export default function Vendas() {
         });
       }
 
-      // Criar registro de implantação automaticamente
+      // Criar registro de implantação automaticamente (apenas para vendas novas — recorrência = parcela)
+      if (data.tipo_venda !== 'recorrencia') {
       try {
         await sleep(300);
 
@@ -249,6 +250,7 @@ export default function Vendas() {
       } catch (e) {
         console.log('Erro ao criar implantação:', e.message);
       }
+      } // fim do if tipo_venda !== 'recorrencia'
 
       return venda;
     },
@@ -839,6 +841,7 @@ export default function Vendas() {
                     <TableHead>Time</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Forma Pgto</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -869,6 +872,11 @@ export default function Vendas() {
                         {venda.forma_pagamento && (
                           <Badge variant="outline">{venda.forma_pagamento}</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {venda.tipo_venda === 'nova' && <Badge className="bg-emerald-100 text-emerald-700">Nova</Badge>}
+                        {venda.tipo_venda === 'recorrencia' && <Badge className="bg-amber-100 text-amber-700">Recorrência</Badge>}
+                        {!venda.tipo_venda && <Badge className="bg-red-100 text-red-700">⚠ Sem tipo</Badge>}
                       </TableCell>
                       <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
@@ -915,7 +923,7 @@ export default function Vendas() {
                   ))}
                   {filteredVendas.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                         Nenhuma venda encontrada
                       </TableCell>
                     </TableRow>

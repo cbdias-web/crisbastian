@@ -18,6 +18,14 @@
       "type": "string",
       "description": "Time do vendedor"
     },
+    "tipo_venda": {
+      "type": "string",
+      "enum": [
+        "nova",
+        "recorrencia"
+      ],
+      "description": "Tipo da venda: 'nova' (venda nova \u2014 direcionada para implanta\u00e7\u00e3o) ou 'recorrencia' (pagamento de parcela \u2014 n\u00e3o gera implanta\u00e7\u00e3o)"
+    },
     "espelhamento": {
       "type": "string",
       "description": "Nome do primeiro indicador (backward compat)"
@@ -130,6 +138,7 @@
     "produto",
     "assessor_comercial",
     "valor",
-    "data"
+    "data",
+    "tipo_venda"
   ]
 }

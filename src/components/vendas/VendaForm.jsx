@@ -113,7 +113,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: '',
-    comprovantes: [],
+    comprovantes: [], tipo_venda: '',
   });
 
   // ── FINANCEIRO ─────────────────────────────────────────────────────────────
@@ -345,6 +345,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     if (limiteExcedido) return;
     if (selectedProdutos.length === 0) { toast.error('Selecione ao menos um produto'); return; }
     if (selectedVendedores.length === 0) { toast.error('Selecione ao menos um vendedor'); return; }
+    if (!formData.tipo_venda) { toast.error('Selecione o tipo de venda (Nova ou Recorrência)'); return; }
 
     const primaryVendedor = selectedVendedores[0];
     const entradaFinal = parseFloat(valorEntradaCustom) || 0;
@@ -474,6 +475,20 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                   </div>
                 )}
               </div>
+            </div>
+
+            <div>
+              <Label>Tipo de Venda *</Label>
+              <Select value={formData.tipo_venda || ''} onValueChange={v => setFormData({ ...formData, tipo_venda: v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nova">Nova (gera implantação)</SelectItem>
+                  <SelectItem value="recorrencia">Recorrência (parcela)</SelectItem>
+                </SelectContent>
+              </Select>
+              {!formData.tipo_venda && (
+                <p className="text-[10px] text-red-500 mt-0.5">Obrigatório — a venda não pode ser finalizada sem este campo</p>
+              )}
             </div>
 
             <div>

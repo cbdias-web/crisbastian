@@ -122,6 +122,7 @@ export default function ParcelasVincendasModal({ onClose, user }) {
         observacao: `Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} recebida`,
         num_parcelas: 1,
         valor_total_contrato: parcela.valor_parcela,
+        tipo_venda: 'recorrencia',
       });
       if (parcela.vendedor_id && parcela.percentual_comissao) {
         await base44.entities.Comissao.create({
