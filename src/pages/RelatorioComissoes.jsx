@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { FileText, Download, Calendar, Users, Mail, X, Send } from "lucide-react";
+import { FileText, Download, Calendar, Users, Mail, X, Send, Eye } from "lucide-react";
+import PreRelatorioModal from '@/components/comissoes/PreRelatorioModal';
 import { toast } from "sonner";
 
 export default function RelatorioComissoes() {
@@ -20,6 +21,7 @@ export default function RelatorioComissoes() {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [selectedForEmail, setSelectedForEmail] = useState([]);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [preRelatorio, setPreRelatorio] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -244,26 +246,28 @@ export default function RelatorioComissoes() {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {vendedores.map(v => (
-              <div key={v.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${selectedForEmail.includes(`vendedor_${v.id}`) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
-                <input
-                  type="checkbox"
-                  checked={selectedVendedores.includes(v.id)}
-                  onChange={() => toggleVendedor(v.id)}
-                  className="w-4 h-4 accent-[#1a3150] cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 truncate flex-1">{v.nome}</span>
-                {v.email && (
-                  <input
-                    type="checkbox"
-                    checked={selectedForEmail.includes(`vendedor_${v.id}`)}
-                    onChange={() => toggleSelectForEmail('vendedor', v.id)}
-                    className="w-4 h-4 accent-green-600 cursor-pointer"
-                    title="Enviar por e-mail"
-                  />
-                )}
-              </div>
-            ))}
+            {vendedores.map(v => {
+              const sel = selectedVendedores.includes(v.id);
+              const selEmail = selectedForEmail.includes(`vendedor_${v.id}`);
+              return (
+                <div key={v.id} onClick={() => setPreRelatorio({ pessoa: v, role: 'vendedor' })}
+                  className="flex items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer group"
+                  style={{
+                    borderColor: sel || selEmail ? 'rgba(0,212,170,0.4)' : 'rgba(255,255,255,0.06)',
+                    background: sel ? 'rgba(0,212,170,0.06)' : (selEmail ? 'rgba(34,197,94,0.06)' : 'transparent'),
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.4)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.12)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = sel || selEmail ? 'rgba(0,212,170,0.4)' : 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <input type="checkbox" checked={sel} onChange={() => toggleVendedor(v.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-[#1a3150] cursor-pointer" />
+                  <span className="text-sm text-gray-700 truncate flex-1">{v.nome}</span>
+                  {v.email && (
+                    <input type="checkbox" checked={selEmail} onChange={() => toggleSelectForEmail('vendedor', v.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-green-600 cursor-pointer" title="Enviar por e-mail" />
+                  )}
+                  <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0" style={{ color: '#00D4AA' }} />
+                </div>
+              );
+            })}
           </div>
           {vendedores.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">Nenhum vendedor ativo encontrado</p>
@@ -286,26 +290,28 @@ export default function RelatorioComissoes() {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-            {indicadores.map(i => (
-              <div key={i.id} className={`flex items-center gap-2 p-3 rounded-xl border transition ${selectedForEmail.includes(`indicador_${i.id}`) ? 'border-green-400 bg-green-50/30' : 'border-gray-100'}`}>
-                <input
-                  type="checkbox"
-                  checked={selectedIndicadores.includes(i.id)}
-                  onChange={() => toggleIndicador(i.id)}
-                  className="w-4 h-4 accent-[#1a3150] cursor-pointer"
-                />
-                <span className="text-sm text-gray-700 truncate flex-1">{i.nome}</span>
-                {i.email && (
-                  <input
-                    type="checkbox"
-                    checked={selectedForEmail.includes(`indicador_${i.id}`)}
-                    onChange={() => toggleSelectForEmail('indicador', i.id)}
-                    className="w-4 h-4 accent-green-600 cursor-pointer"
-                    title="Enviar por e-mail"
-                  />
-                )}
-              </div>
-            ))}
+            {indicadores.map(i => {
+              const sel = selectedIndicadores.includes(i.id);
+              const selEmail = selectedForEmail.includes(`indicador_${i.id}`);
+              return (
+                <div key={i.id} onClick={() => setPreRelatorio({ pessoa: i, role: 'indicador' })}
+                  className="flex items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer group"
+                  style={{
+                    borderColor: sel || selEmail ? 'rgba(0,212,170,0.4)' : 'rgba(255,255,255,0.06)',
+                    background: sel ? 'rgba(0,212,170,0.06)' : (selEmail ? 'rgba(34,197,94,0.06)' : 'transparent'),
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.4)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.12)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = sel || selEmail ? 'rgba(0,212,170,0.4)' : 'rgba(255,255,255,0.06)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  <input type="checkbox" checked={sel} onChange={() => toggleIndicador(i.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-[#1a3150] cursor-pointer" />
+                  <span className="text-sm text-gray-700 truncate flex-1">{i.nome}</span>
+                  {i.email && (
+                    <input type="checkbox" checked={selEmail} onChange={() => toggleSelectForEmail('indicador', i.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 accent-green-600 cursor-pointer" title="Enviar por e-mail" />
+                  )}
+                  <Eye className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition flex-shrink-0" style={{ color: '#00D4AA' }} />
+                </div>
+              );
+            })}
           </div>
           {indicadores.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">Nenhum indicador ativo encontrado</p>
@@ -462,6 +468,16 @@ export default function RelatorioComissoes() {
               </div>
             </div>
           </div>
+        )}
+
+        {preRelatorio && (
+          <PreRelatorioModal
+            pessoa={preRelatorio.pessoa}
+            role={preRelatorio.role}
+            dataInicio={dataInicio}
+            dataFim={dataFim}
+            onClose={() => setPreRelatorio(null)}
+          />
         )}
       </div>
     </div>
