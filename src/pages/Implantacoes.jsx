@@ -5,6 +5,7 @@ import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircl
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ImplantacaoModal from '@/components/implantacoes/ImplantacaoModal';
+import KanbanImplantacoes from '@/components/implantacoes/KanbanImplantacoes';
 
 const AURORA = {
   bg: '#0d1117',
@@ -193,7 +194,7 @@ export default function Implantacoes() {
           </button>
         </div>
 
-        {/* Lista */}
+        {/* Kanban */}
         {filtradas.length === 0 ? (
           <div className="rounded-2xl py-16 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <Rocket className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
@@ -201,77 +202,12 @@ export default function Implantacoes() {
             <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Os processos são criados automaticamente ao formalizar vendas</p>
           </div>
         ) : (
-          <div className="rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs uppercase tracking-wider" style={{ background: AURORA.surface2, color: AURORA.textMuted }}>
-                  <th className="px-4 py-3 text-left font-semibold">Cliente</th>
-                  <th className="px-4 py-3 text-left font-semibold">Produto</th>
-                  <th className="px-4 py-3 text-left font-semibold">Responsável</th>
-                  <th className="px-4 py-3 text-left font-semibold">Entrada</th>
-                  <th className="px-4 py-3 text-left font-semibold">Prev. Conclusão</th>
-                  <th className="px-4 py-3 text-left font-semibold">Progresso</th>
-                  <th className="px-4 py-3 text-left font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtradas.map(imp => {
-                  const stCfg = STATUS_CONFIG[imp.status] || STATUS_CONFIG.aguardando_documentacao;
-                  const priCfg = PRIORIDADE_CONFIG[imp.prioridade] || PRIORIDADE_CONFIG.media;
-                  const etapas = imp.etapas || [];
-                  const concluidas = etapas.filter(e => e.concluida).length;
-                  const progresso = etapas.length > 0 ? Math.round((concluidas / etapas.length) * 100) : 0;
-                  const atrasada = imp.status !== 'concluido' && imp.status !== 'cancelado' && imp.data_prevista_conclusao && new Date(imp.data_prevista_conclusao) < new Date();
-
-                  return (
-                    <tr key={imp.id} className="cursor-pointer transition"
-                      style={{ borderTop: `1px solid ${AURORA.border}` }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.05)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      onClick={() => setImplantacaoAtiva(imp)}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priCfg.color }} title={`Prioridade: ${imp.prioridade}`} />
-                          <div>
-                            <p className="font-medium flex items-center gap-1.5" style={{ color: AURORA.text }}>
-                              {imp.cliente_nome || '—'}
-                              {imp.contrato_encontrado === false && (
-                                <span title="Contrato não localizado — anexar manualmente" className="inline-flex"><FileWarning className="w-3 h-3" style={{ color: '#fbbf24' }} /></span>
-                              )}
-                              {imp.contrato_encontrado === true && (imp.contrato_id || imp.contrato_url_manual) && (
-                                <span title="Contrato vinculado" className="inline-flex"><Link2 className="w-3 h-3" style={{ color: '#22c55e' }} /></span>
-                              )}
-                            </p>
-                            {imp.cpf_cnpj && <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{imp.cpf_cnpj}</p>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: AURORA.text }}>{imp.produto || '—'}</td>
-                      <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{imp.responsavel_implantacao || '—'}</td>
-                      <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{fmtDate(imp.data_entrada)}</td>
-                      <td className="px-4 py-3 text-xs">
-                        <span style={{ color: atrasada ? '#f87171' : AURORA.textMuted }}>{fmtDate(imp.data_prevista_conclusao)}</span>
-                        {atrasada && <span className="block text-[9px] font-bold" style={{ color: '#f87171' }}>ATRASADA</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {etapas.length > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: AURORA.surface2 }}>
-                              <div className="h-full rounded-full" style={{ width: `${progresso}%`, background: 'linear-gradient(90deg, #00D4AA, #0066cc)' }} />
-                            </div>
-                            <span className="text-[10px] font-semibold" style={{ color: AURORA.accent }}>{concluidas}/{etapas.length}</span>
-                          </div>
-                        ) : <span className="text-[10px]" style={{ color: AURORA.textMuted }}>—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-block text-[10px] font-semibold px-2 py-1 rounded-full whitespace-nowrap" style={{ background: stCfg.bg, color: stCfg.color }}>{stCfg.label}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <KanbanImplantacoes
+            implantacoes={filtradas}
+            onSelectImplantacao={setImplantacaoAtiva}
+            isAdmin={isAdmin}
+            onRefresh={() => queryClient.invalidateQueries(['implantacoes'])}
+          />
         )}
       </div>
 
