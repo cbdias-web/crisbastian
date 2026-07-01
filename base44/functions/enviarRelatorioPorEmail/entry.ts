@@ -365,26 +365,53 @@ Deno.serve(async (req) => {
         // Upload do PDF para obter URL
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file: pdfFile });
 
-        // Enviar e-mail com link para download
-        await base44.asServiceRole.integrations.Core.SendEmail({
-            to: vendedor_email,
-            subject: `Relatório de Comissões - ${periodoTexto}`,
-            body: `
-                <h2>Olá ${vendedor_nome},</h2>
-                <p>Relatório para conferência e acompanhamento da comissão gerada no período especificado.</p>
-                <p>Caso haja alguma divergência ou necessidade de ajuste, falar com a gestão do produto.</p>
-                <p><strong>Resumo do Período (${periodoTexto}):</strong></p>
-                <ul>
-                    <li>Total de vendas: ${totalVendas}</li>
-                    <li>Valor total vendido: ${formatCurrency(valorTotalVendido)}</li>
-                    <li>Comissão total: ${formatCurrency(totalComissao)}</li>
-                    <li>Comissão pendente: ${formatCurrency(comissaoPendente)}</li>
-                </ul>
-                <p><strong><a href="${file_url}" style="display: inline-block; padding: 12px 24px; background-color: #1a3150; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 16px 0;">📄 Baixar Relatório Completo (PDF)</a></strong></p>
-                <p>Atenciosamente!</p>
-                <p><strong>VILLELA EXCHANGE</strong></p>
-            `
+        // Enviar e-mail via Resend (suporta destinatários externos)
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        if (!resendApiKey) {
+            return Response.json({ error: 'RESEND_API_KEY não configurada. Acesse as configurações do app para definir.' }, { status: 500 });
+        }
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: linear-gradient(135deg, #0f1e35, #1a3150); padding: 20px 24px; border-radius: 12px 12px 0 0;">
+                    <h2 style="color: white; margin: 0; font-size: 18px;">Villela Exchange</h2>
+                    <p style="color: #93c5fd; margin: 4px 0 0; font-size: 12px;">Relatório de Comissões</p>
+                </div>
+                <div style="background: #f9fafb; padding: 24px; border-radius: 0 0 12px 12px; border: 1px solid #e5e7eb; border-top: none;">
+                    <p style="color: #374151;">Olá, <strong>${vendedor_nome}</strong>!</p>
+                    <p style="color: #374151;">Relatório para conferência e acompanhamento da comissão gerada no período especificado. Caso haja alguma divergência ou necessidade de ajuste, falar com a gestão do produto.</p>
+                    <p style="color: #374151;"><strong>Resumo do Período (${periodoTexto}):</strong></p>
+                    <ul style="color: #374151;">
+                        <li>Total de vendas: ${totalVendas}</li>
+                        <li>Valor total vendido: ${formatCurrency(valorTotalVendido)}</li>
+                        <li>Comissão total: ${formatCurrency(totalComissao)}</li>
+                        <li>Comissão pendente: ${formatCurrency(comissaoPendente)}</li>
+                    </ul>
+                    <a href="${file_url}" style="display: inline-block; padding: 12px 24px; background-color: #1a3150; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 16px 0;">📄 Baixar Relatório Completo (PDF)</a>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+                    <p style="color: #9ca3af; font-size: 11px;">Atenciosamente!<br><strong>VILLELA EXCHANGE</strong></p>
+                </div>
+            </div>
+        `;
+
+        const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'Villela Exchange <onboarding@resend.dev>',
+                to: [vendedor_email],
+                subject: `Relatório de Comissões - ${periodoTexto}`,
+                html: emailHtml
+            })
         });
+
+        if (!resendResponse.ok) {
+            const errorData = await resendResponse.text();
+            return Response.json({ error: `Erro ao enviar e-mail via Resend: ${errorData}` }, { status: 500 });
+        }
 
         return Response.json({ 
             success: true,
