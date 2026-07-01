@@ -1,0 +1,134 @@
+{
+  "name": "Implantacao",
+  "type": "object",
+  "properties": {
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda de origem"
+    },
+    "contrato_id": {
+      "type": "string",
+      "description": "ID do contrato vinculado"
+    },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Nome do cliente"
+    },
+    "cpf_cnpj": {
+      "type": "string",
+      "description": "CPF/CNPJ do cliente"
+    },
+    "produto": {
+      "type": "string",
+      "description": "Produto/contrato vendido"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do vendedor respons\u00e1vel pela venda"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do vendedor respons\u00e1vel pela venda"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aguardando_documentacao",
+        "em_andamento",
+        "aguardando_cliente",
+        "concluido",
+        "cancelado"
+      ],
+      "default": "aguardando_documentacao",
+      "description": "Status da implanta\u00e7\u00e3o"
+    },
+    "prioridade": {
+      "type": "string",
+      "enum": [
+        "baixa",
+        "media",
+        "alta",
+        "urgente"
+      ],
+      "default": "media",
+      "description": "Prioridade da implanta\u00e7\u00e3o"
+    },
+    "responsavel_implantacao": {
+      "type": "string",
+      "description": "Nome do respons\u00e1vel por conduzir a implanta\u00e7\u00e3o"
+    },
+    "data_entrada": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de entrada do processo de implanta\u00e7\u00e3o"
+    },
+    "data_prevista_conclusao": {
+      "type": "string",
+      "format": "date",
+      "description": "Data prevista para conclus\u00e3o"
+    },
+    "data_conclusao": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de conclus\u00e3o efetiva"
+    },
+    "etapas": {
+      "type": "array",
+      "description": "Checklist de etapas da implanta\u00e7\u00e3o",
+      "items": {
+        "type": "object",
+        "properties": {
+          "descricao": {
+            "type": "string"
+          },
+          "concluida": {
+            "type": "boolean"
+          },
+          "concluida_em": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": []
+    },
+    "historico": {
+      "type": "array",
+      "description": "Timeline de atualiza\u00e7\u00f5es de status e observa\u00e7\u00f5es",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status_anterior": {
+            "type": "string"
+          },
+          "status_novo": {
+            "type": "string"
+          },
+          "observacao": {
+            "type": "string"
+          },
+          "atualizado_por": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": []
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es gerais sobre a implanta\u00e7\u00e3o"
+    },
+    "valor_contrato": {
+      "type": "number",
+      "description": "Valor do contrato/produto vendido"
+    }
+  },
+  "required": [
+    "cliente_nome",
+    "produto"
+  ]
+}

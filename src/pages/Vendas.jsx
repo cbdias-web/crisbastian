@@ -162,6 +162,46 @@ export default function Vendas() {
         });
       }
 
+      // Criar registro de implantação automaticamente
+      try {
+        await sleep(300);
+        const implantacao = await base44.entities.Implantacao.create({
+          venda_id: venda.id,
+          cliente_nome: data.cliente || '',
+          cpf_cnpj: data.cpf_cnpj || '',
+          produto: data.produto || '',
+          vendedor_id: data.vendedor_id || '',
+          vendedor_nome: data.assessor_comercial || '',
+          valor_contrato: data.valor_total_contrato || data.valor || 0,
+          data_entrada: data.data,
+          status: 'aguardando_documentacao',
+          prioridade: 'media',
+          etapas: [
+            { descricao: 'Documentação do cliente', concluida: false, concluida_em: '' },
+            { descricao: 'Abertura de conta / Setup técnico', concluida: false, concluida_em: '' },
+            { descricao: 'Validação de compliance', concluida: false, concluida_em: '' },
+            { descricao: 'Liberação de acesso', concluida: false, concluida_em: '' },
+            { descricao: 'Treinamento do cliente', concluida: false, concluida_em: '' },
+          ],
+          historico: [{
+            status_anterior: '',
+            status_novo: 'aguardando_documentacao',
+            observacao: 'Implantação criada automaticamente via formalização de venda',
+            atualizado_por: data.assessor_comercial || 'Sistema',
+            data: new Date().toISOString(),
+          }],
+        });
+        // Notificar envolvidos
+        try {
+          await base44.functions.invoke('notificarImplantacao', {
+            tipo: 'novo',
+            implantacao_id: implantacao.id,
+          });
+        } catch (e) {}
+      } catch (e) {
+        console.log('Erro ao criar implantação:', e.message);
+      }
+
       return venda;
     },
     onSuccess: (_, data) => {
@@ -171,6 +211,7 @@ export default function Vendas() {
       queryClient.invalidateQueries(['clientes']);
       queryClient.invalidateQueries(['pipeline']);
       queryClient.invalidateQueries(['agenda-contatos']);
+      queryClient.invalidateQueries(['implantacoes']);
       setShowForm(false);
       const np = data.num_parcelas || 1;
       toast.success(np > 1 ? `Venda criada! ${np - 1} parcela(s) adicionada(s) ao Pipeline.` : 'Venda criada com sucesso!');

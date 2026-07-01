@@ -28,6 +28,7 @@ import Precificacao from './pages/Precificacao';
 import Suporte from './pages/Suporte';
 import Desempenho from './pages/Desempenho';
 import CentralLeads from './pages/CentralLeads';
+import Implantacoes from './pages/Implantacoes';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -245,6 +246,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="CentralLeads">
             <CentralLeads />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/Implantacoes"
+        element={
+          <LayoutWrapper currentPageName="Implantacoes">
+            <Implantacoes />
           </LayoutWrapper>
         }
       />

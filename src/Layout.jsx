@@ -10,7 +10,7 @@ import {
   UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
   Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
   MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
-  Search, Zap
+  Search, Zap, Rocket
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
@@ -190,6 +190,7 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Agenda do Dia', icon: Briefcase, page: 'MeusClientes', alwaysVisible: true },
         { name: 'Central de Leads', icon: Zap, page: 'CentralLeads' },
         { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
+        { name: 'Implantações', icon: Rocket, page: 'Implantacoes', alwaysVisible: true },
         { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
         { name: 'Precificação', icon: Calculator, page: 'Precificacao', alwaysVisible: true },
         { name: 'Desempenho', icon: Activity, page: 'Desempenho', alwaysVisible: true },
