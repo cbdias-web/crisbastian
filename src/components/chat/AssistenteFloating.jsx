@@ -3,48 +3,16 @@ import { base44 } from '@/api/base44Client';
 import { Send, X, Loader2, Plus, ChevronDown, Globe } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
+import JarvisAvatar from '@/components/chat/JarvisAvatar.jsx';
 
 const INACTIVITY_MS = 30 * 60 * 1000;
 const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
 
-const Avatar = ({ size = 'md', pulse = false }) => {
-  const dim = size === 'lg' ? 56 : size === 'sm' ? 32 : 40;
-  const s = size === 'lg' ? 'w-14 h-14' : size === 'sm' ? 'w-8 h-8' : 'w-10 h-10';
-  return (
-    <div className={`relative ${s} flex-shrink-0`}>
-      {pulse && (
-        <span className="absolute inset-0 rounded-full opacity-30 animate-ping" style={{ background: '#00D4AA' }} />
-      )}
-      <svg width={dim} height={dim} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative z-10 drop-shadow-lg">
-        <ellipse cx="7" cy="30" rx="6" ry="8" fill="#e8e8e8" />
-        <ellipse cx="49" cy="30" rx="6" ry="8" fill="#e8e8e8" />
-        <rect x="10" y="10" width="36" height="36" rx="14" fill="white" />
-        <rect x="10" y="10" width="36" height="36" rx="14" fill="url(#grad)" opacity="0.15" />
-        <rect x="15" y="16" width="26" height="20" rx="6" fill="#1a1a1a" />
-        <rect x="19" y="21" width="7" height="7" rx="3.5" fill="white" />
-        <path d="M31 24.5 Q34 21.5 37 24.5" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <path d="M20 31 Q28 36 36 31" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <ellipse cx="7" cy="30" rx="3" ry="5" fill="#d0d0d0" />
-        <ellipse cx="49" cy="30" rx="3" ry="5" fill="#d0d0d0" />
-        <polygon points="18,12 14,4 22,10" fill="white" />
-        <polygon points="38,12 42,4 34,10" fill="white" />
-        <polygon points="18,11 15.5,6 21,10" fill="#e0e0e0" />
-        <polygon points="38,11 40.5,6 35,10" fill="#e0e0e0" />
-        <defs>
-          <linearGradient id="grad" x1="10" y1="10" x2="46" y2="46" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#a0c4ff" />
-            <stop offset="100%" stopColor="#ffffff" />
-          </linearGradient>
-        </defs>
-      </svg>
-      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full z-20" style={{ background: '#00D4AA', border: '2px solid #0d1117' }} />
-    </div>
-  );
-};
+
 
 const TypingIndicator = () => (
   <div className="flex gap-3 items-end">
-    <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>
+    <div className="flex-shrink-0 mb-1"><JarvisAvatar size="sm" /></div>
     <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
@@ -161,7 +129,7 @@ const Message = ({ message }) => {
   if (!message.content && !message.tool_calls?.length) return null;
   return (
     <div className={`flex gap-2 items-end ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && <div className="flex-shrink-0 mb-1"><Avatar size="sm" /></div>}
+      {!isUser && <div className="flex-shrink-0 mb-1"><JarvisAvatar size="sm" /></div>}
       <div style={isUser ? { background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' } : { background: '#161b22', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
           ? 'rounded-br-sm'
@@ -606,14 +574,14 @@ export default function AssistenteFloating() {
               <span className="absolute inset-0 rounded-full bg-red-500 opacity-40 animate-ping" />
               <span className="absolute inset-0 rounded-full bg-red-500 opacity-20 animate-ping" style={{ animationDelay: '0.3s' }} />
               <div className="relative z-10">
-                <Avatar size="lg" />
+                <JarvisAvatar size="lg" />
               </div>
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center z-20 shadow-lg">
                 <span className="text-white text-[10px] font-bold">{mensagensPendentes.length}</span>
               </span>
             </div>
           ) : (
-            <Avatar size="lg" pulse={!open} />
+            <JarvisAvatar size="lg" pulse={!open} />
           )}
           {open && (
             <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center z-20" style={{ background: '#1c2333' }}>
@@ -629,7 +597,7 @@ export default function AssistenteFloating() {
 
           {/* Header */}
           <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
-            <Avatar size="sm" />
+            <JarvisAvatar size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm">Jarvis</p>
               <p className="text-[10px] flex items-center gap-1" style={{ color: 'rgba(0,212,170,0.7)' }}>
