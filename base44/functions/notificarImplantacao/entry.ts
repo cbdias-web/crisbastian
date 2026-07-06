@@ -72,18 +72,12 @@ Deno.serve(async (req) => {
     }
     mensagemJarvis += `\n📌 Acompanhe o processo na página de *Implantações* na plataforma.`;
 
-    // Criar notificação na entidade específica
-    await base44.asServiceRole.entities.NotificacaoAutorizacao.create({
-      tipo: 'implantacao',
-      vendedor_nome: vendedor,
-      cliente: nomeCliente,
-      valor_venda: implantacao.valor_contrato || 0,
-      total_espelhamento: 0,
-      contrato_id: implantacao.contrato_id || implantacao.venda_id || '',
-      contrato_tipo: produto,
-      status: 'pendente',
-      lida: false,
-    });
+    // NOTIFICAÇÃO DE AUTORIZAÇÃO REMOVIDA:
+    // A notificação na entidade NotificacaoAutorizacao (status: pendente) era criada
+    // para TODA venda nova, poluindo a fila de aprovações dos administradores.
+    // Implantações são informativas (Jarvis + e-mail), não requerem autorização.
+    // NotificacaoAutorizacao deve ser reservada para casos que exigem aprovação
+    // (ex: espelhamento acima de 30%, novo contrato para link de assinatura).
 
     // Enviar via Jarvis + e-mail para cada destinatário
     let enviados = 0;

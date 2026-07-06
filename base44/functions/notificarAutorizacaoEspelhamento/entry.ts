@@ -11,6 +11,27 @@ Deno.serve(async (req) => {
 
         const { vendedor_nome, cliente, valor, total_espelhamento, indicadores, data_venda } = await req.json();
 
+        // ── Validação de alçada: só notifica se realmente ultrapassar 30% ──
+        const totalEsp = parseFloat(total_espelhamento) || 0;
+
+        // Admin não precisa de autorização — tem alçada total
+        if (user.role === 'admin' || user.permissao_admin === true) {
+            return Response.json({ 
+                success: true, 
+                message: 'Usuário é administrador — notificação não necessária',
+                skipped: true 
+            });
+        }
+
+        // Só cria notificação se o espelhamento ultrapassar 30%
+        if (totalEsp <= 30) {
+            return Response.json({ 
+                success: true, 
+                message: `Espelhamento de ${totalEsp.toFixed(1)}% dentro da alçada — notificação não necessária`,
+                skipped: true 
+            });
+        }
+
         // Criar notificação na plataforma
         await base44.asServiceRole.entities.NotificacaoAutorizacao.create({
             tipo: 'espelhamento_acima_30',
