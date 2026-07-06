@@ -11,8 +11,7 @@ const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
 
 
 const TypingIndicator = () => (
-  <div className="flex gap-3 items-end">
-    <div className="flex-shrink-0 mb-1"><JarvisAvatar size="sm" /></div>
+  <div className="flex flex-col items-center gap-1">
     <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
@@ -20,6 +19,7 @@ const TypingIndicator = () => (
         ))}
       </div>
     </div>
+    <JarvisAvatar size="sm" />
   </div>
 );
 
@@ -128,8 +128,7 @@ const Message = ({ message }) => {
   const isUser = message.role === 'user';
   if (!message.content && !message.tool_calls?.length) return null;
   return (
-    <div className={`flex gap-2 items-end ${isUser ? 'justify-end' : 'justify-start'}`}>
-      {!isUser && <div className="flex-shrink-0 mb-1"><JarvisAvatar size="sm" /></div>}
+    <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-center'}`}>
       <div style={isUser ? { background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' } : { background: '#161b22', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
           ? 'rounded-br-sm'
@@ -171,6 +170,7 @@ const Message = ({ message }) => {
         )}
         <PdfButton toolCalls={message.tool_calls} content={message.content} />
       </div>
+      {!isUser && <JarvisAvatar size="sm" />}
     </div>
   );
 };

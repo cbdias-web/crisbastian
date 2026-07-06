@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const JARVIS_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/270241d13_CapturadeTela2026-07-06as092119.png';
+const JARVIS_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/c1a4d42d6_CapturadeTela2026-07-06as093349.png';
 
 const SIZE_MAP = {
   sm: { dim: 32, cls: 'w-8 h-8' },
@@ -90,7 +90,7 @@ export default function JarvisAvatar({ size = 'md', pulse = false, glow = true }
           alt="Jarvis AI"
           className="w-full h-full object-cover"
           style={{
-            objectPosition: '50% 25%',
+            objectPosition: '50% 30%',
             transform: `scale(${glow ? 1.05 + Math.sin(t) * 0.02 : 1})`,
             transition: 'transform 0.3s ease-out',
           }}
