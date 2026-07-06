@@ -554,14 +554,7 @@ export default function AssistenteFloating() {
   return (
     <>
       {/* Floating button */}
-      <div ref={btnContainerRef} style={btnStyle} className="flex flex-col items-end gap-2 select-none">
-        {!open && (
-          <div className="flex items-center gap-2" style={{ pointerEvents: 'none' }}>
-            <div className="text-xs font-medium px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap" style={{ background: '#1c2333', color: '#e6edf3', border: '1px solid rgba(0,212,170,0.15)' }}>
-              Posso te ajudar? 👋
-            </div>
-          </div>
-        )}
+      <div ref={btnContainerRef} style={btnStyle} className="flex flex-col items-center gap-2 select-none">
         <button
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
@@ -589,6 +582,11 @@ export default function AssistenteFloating() {
             </span>
           )}
         </button>
+        {!open && (
+          <div className="text-xs font-medium px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap" style={{ background: '#1c2333', color: '#e6edf3', border: '1px solid rgba(0,212,170,0.15)', pointerEvents: 'none' }}>
+            Posso te ajudar? 👋
+          </div>
+        )}
       </div>
 
       {/* Chat panel */}
