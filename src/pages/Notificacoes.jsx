@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bell, Check, X, Clock, CheckCircle2, XCircle, AlertTriangle,
-  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2, Calculator
+  BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2, Calculator, Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -355,6 +355,46 @@ export default function Notificacoes() {
                       <div className="flex gap-3">
                         <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium text-sm disabled:opacity-50">
+                          <Check className="w-4 h-4" /> Marcar como resolvido
+                        </button>
+                        <button onClick={() => { if (confirm('Remover esta notificação?')) excluirMutation.mutate(notif.id); }}
+                          className="px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition text-sm">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Card para implantação
+              if (notif.tipo === 'implantacao') {
+                return (
+                  <div key={notif.id} className="bg-white rounded-2xl shadow-sm border border-emerald-200 overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-5 py-3 border-b border-emerald-200 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Rocket className="w-5 h-5 text-emerald-600" />
+                        <span className="font-semibold text-emerald-900">Nova Implantação Iniciada</span>
+                      </div>
+                      <span className="text-xs text-emerald-600 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {formatDateTime(notif.created_date)}
+                      </span>
+                    </div>
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                        <div><p className="text-xs text-gray-500 mb-1">Cliente</p><p className="font-semibold text-gray-900 text-sm">{notif.cliente || '—'}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">Gerente</p><p className="font-semibold text-gray-900 text-sm">{notif.vendedor_nome || '—'}</p></div>
+                        <div><p className="text-xs text-gray-500 mb-1">Valor do Contrato</p><p className="font-semibold text-gray-900 text-sm">{formatCurrency(notif.valor_venda)}</p></div>
+                      </div>
+                      {notif.observacoes && (
+                        <div className="bg-emerald-50 rounded-xl p-3 mb-4">
+                          <p className="text-xs text-emerald-700">{notif.observacoes}</p>
+                        </div>
+                      )}
+                      <div className="flex gap-3">
+                        <button onClick={() => aprovarMutation.mutate(notif.id)} disabled={aprovarMutation.isPending}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50">
                           <Check className="w-4 h-4" /> Marcar como resolvido
                         </button>
                         <button onClick={() => { if (confirm('Remover esta notificação?')) excluirMutation.mutate(notif.id); }}
