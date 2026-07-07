@@ -13,6 +13,7 @@ Deno.serve(async (req) => {
 
         // ── Validação de alçada: só notifica se realmente ultrapassar 30% ──
         const totalEsp = parseFloat(total_espelhamento) || 0;
+        const valorNum = parseFloat(valor) || 0;
 
         // Admin não precisa de autorização — tem alçada total
         if (user.role === 'admin' || user.permissao_admin === true) {
@@ -23,23 +24,36 @@ Deno.serve(async (req) => {
             });
         }
 
-        // Só cria notificação se o espelhamento ultrapassar 30%
-        if (totalEsp <= 30) {
+        // Rejeita notificações com dados incompletos (valor zero ou data vazia)
+        if (valorNum <= 0 || !data_venda) {
             return Response.json({ 
                 success: true, 
-                message: `Espelhamento de ${totalEsp.toFixed(1)}% dentro da alçada — notificação não necessária`,
+                message: 'Dados da venda incompletos — notificação não gerada',
                 skipped: true 
             });
         }
 
-        // Criar notificação na plataforma
+        // Filtra apenas indicadores válidos (com nome e percentual > 0)
+        const indicadoresValidos = (indicadores || []).filter(i => i.nome && i.percentual > 0);
+        const totalValido = indicadoresValidos.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
+
+        // Só cria notificação se o espelhamento válido ultrapassar 30%
+        if (totalValido <= 30) {
+            return Response.json({ 
+                success: true, 
+                message: `Espelhamento de ${totalValido.toFixed(1)}% dentro da alçada — notificação não necessária`,
+                skipped: true 
+            });
+        }
+
+        // Criar notificação na plataforma com dados validados
         await base44.asServiceRole.entities.NotificacaoAutorizacao.create({
             tipo: 'espelhamento_acima_30',
             vendedor_nome,
             cliente: cliente || '',
-            valor_venda: parseFloat(valor) || 0,
-            total_espelhamento: parseFloat(total_espelhamento) || 0,
-            indicadores: indicadores || [],
+            valor_venda: valorNum,
+            total_espelhamento: totalValido,
+            indicadores: indicadoresValidos,
             data_venda: data_venda || new Date().toISOString().split('T')[0],
             status: 'pendente',
             lida: false
@@ -54,7 +68,7 @@ Deno.serve(async (req) => {
         }
 
         // Formatar lista de indicadores
-        const listaIndicadores = indicadores.map(i => 
+        const listaIndicadores = indicadoresValidos.map(i => 
             `- ${i.nome}: ${i.percentual}%`
         ).join('\n');
 
@@ -107,7 +121,7 @@ Deno.serve(async (req) => {
                                         </tr>
                                         <tr style="background: #fef3c7;">
                                             <td style="padding: 12px; border: 1px solid #f59e0b; font-weight: bold; color: #92400e;">Total Espelhamento:</td>
-                                            <td style="padding: 12px; border: 1px solid #f59e0b; color: #92400e; font-weight: bold; font-size: 16px;">${total_espelhamento.toFixed(1)}%</td>
+                                            <td style="padding: 12px; border: 1px solid #f59e0b; color: #92400e; font-weight: bold; font-size: 16px;">${totalValido.toFixed(1)}%</td>
                                         </tr>
                                     </table>
                                     

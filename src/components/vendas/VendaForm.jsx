@@ -253,7 +253,10 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [criandoIndicador, setCriandoIndicador] = useState(false);
   const [indicadorEmEdicao, setIndicadorEmEdicao] = useState(null);
 
-  const totalPctIndicadores = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
+  // Soma apenas indicadores válidos (com id e nome preenchidos)
+  const totalPctIndicadores = indicadores
+    .filter(i => i.id && i.nome)
+    .reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteExcedido = totalPctIndicadores > 50;
   const requerAutorizacao = !isAdmin && totalPctIndicadores > 30 && totalPctIndicadores <= 50;
 
@@ -393,14 +396,18 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
     console.log('[VendaForm] Submit — parcelas geradas:', parcelasFinais.length, parcelasFinais);
 
-    if (requerAutorizacao) {
+    // Só dispara notificação se houver valor e data preenchidos, e indicadores válidos acima de 30%
+    const indicadoresValidos = indicadores.filter(i => i.id && i.nome && i.percentual > 0);
+    const totalValido = indicadoresValidos.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
+
+    if (!isAdmin && totalValido > 30 && totalValido <= 50 && entradaFinal > 0 && formData.data) {
       try {
         await base44.functions.invoke('notificarAutorizacaoEspelhamento', {
           vendedor_nome: dataToSave.assessor_comercial,
           cliente: formData.cliente,
-          valor: formData.valor,
-          total_espelhamento: totalPctIndicadores,
-          indicadores: indicadores.map(i => ({ nome: i.nome, percentual: i.percentual })),
+          valor: entradaFinal,
+          total_espelhamento: totalValido,
+          indicadores: indicadoresValidos.map(i => ({ nome: i.nome, percentual: i.percentual })),
           data_venda: formData.data
         });
       } catch (error) {
@@ -502,7 +509,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <Input type="number" step="0.01" value={valorTotalContrato}
                 onChange={e => {
                   setValorTotalContrato(e.target.value);
-                  if (numParcelas === 1) setValorEntradaCustom(e.target.value);
+                  if (semParcelas || numParcelas === 1) setValorEntradaCustom(e.target.value);
                 }} required placeholder="Ex: 150000,00" />
             </div>
 
