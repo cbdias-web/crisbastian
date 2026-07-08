@@ -394,6 +394,7 @@ export default function Pipeline() {
         cpf_cnpj: n.cliente_cpf_cnpj || parcela?.cliente_cpf_cnpj || '',
         valor: n.valor_estimado || 0,
         data: hoje,
+        tipo_venda: 'recorrencia',
         forma_pagamento: parcela?.forma_pagamento || '',
         percentual_comissao: parcela?.percentual_comissao || 0,
         indicadores: parcela?.indicadores || [],
@@ -525,6 +526,7 @@ export default function Pipeline() {
         cpf_cnpj: n.cliente_cpf_cnpj || '',
         valor: n.valor_estimado || 0,
         data: new Date().toISOString().split('T')[0],
+        tipo_venda: 'nova',
         observacao: `Originado do Pipeline. ${n.descricao || ''}`.trim(),
       });
       await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
@@ -1106,6 +1108,7 @@ export default function Pipeline() {
                       cpf_cnpj: p.cliente_cpf_cnpj || '',
                       valor: valorReceb,
                       data: dataReceb,
+                      tipo_venda: 'recorrencia',
                       forma_pagamento: p.forma_pagamento || '',
                       percentual_comissao: p.percentual_comissao || 0,
                       indicadores: p.indicadores || [],
