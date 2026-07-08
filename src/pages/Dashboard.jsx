@@ -323,16 +323,18 @@ export default function Dashboard() {
     const inVend = selectedVendedores.length === 0 || selectedVendedores.length === vendedores.length ||
       selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some(id => vendedores.find(vv => vv.id === id)?.nome === v.assessor_comercial);
     const inProd = selectedProdutos.length === 0 || selectedProdutos.length === produtoOptions.length || selectedProdutos.includes(v.produto);
-    const noAcumulado = v.considerar_acumulado !== false;
-    return inDate && inVend && inProd && noAcumulado;
+    return inDate && inVend && inProd;
   });
 
-  const totalVendas = vendasFiltradas.length;
-  const valorTotal = vendasFiltradas.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
-  const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
-  const vendedoresAtivos = new Set(vendasFiltradas.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
+  // Vendas que contam no acumulado do time (flag considerar_acumulado)
+  const vendasAcumulado = vendasFiltradas.filter(v => v.considerar_acumulado !== false);
 
-  const vendasFiltradasIds = new Set(vendasFiltradas.map(v => v.id));
+  const totalVendas = vendasAcumulado.length;
+  const valorTotal = vendasAcumulado.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
+  const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+  const vendedoresAtivos = new Set(vendasAcumulado.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
+
+  const vendasFiltradasIds = new Set(vendasAcumulado.map(v => v.id));
   const comissaoGerada = comissoes
     .filter(c => vendasFiltradasIds.has(c.venda_id))
     .reduce((s, c) => s + (parseFloat(c.valor_comissao) || 0), 0);

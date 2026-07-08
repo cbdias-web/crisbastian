@@ -113,7 +113,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,
     forma_pagamento: '', parcelamento: '', cpf_cnpj: '', cliente: '',
     bitrix: '', observacao: '', vendedor_id: '', percentual_comissao: '',
-    comprovantes: [], tipo_venda: '',
+    comprovantes: [], tipo_venda: '', considerar_acumulado: true,
   });
 
   // ── FINANCEIRO ─────────────────────────────────────────────────────────────
