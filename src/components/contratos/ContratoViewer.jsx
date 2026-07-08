@@ -200,6 +200,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         valor: c.valor_adesao || c.valor_total || 0,
         valor_total_contrato: c.valor_total || 0,
         data: todayBrasilia(),
+        tipo_venda: 'nova',
         forma_pagamento: c.origem_pagamento || '',
         observacao: `Originado do Contrato ${c.tipo}. Comprovante de pagamento anexado.`,
       };
