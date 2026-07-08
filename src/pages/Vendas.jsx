@@ -506,9 +506,8 @@ export default function Vendas() {
     return matchSearch && matchData && matchProduto && matchVendedor;
   });
 
-  const VENDEDORES_EXCLUIR_ACUMULADO = ['EDUARDO CUNHA', 'KAUANA FERREIRA NARDES'];
   const totalAcumulado = filteredVendas
-    .filter(v => !VENDEDORES_EXCLUIR_ACUMULADO.includes(v.assessor_comercial?.toUpperCase()))
+    .filter(v => v.considerar_acumulado !== false)
     .reduce((sum, v) => sum + (v.valor || 0), 0);
 
   const exportarVendas = () => {

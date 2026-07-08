@@ -132,6 +132,11 @@
       "items": {
         "type": "object"
       }
+    },
+    "considerar_acumulado": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se true, a venda \u00e9 considerada no acumulado de vendas do Dashboard e relat\u00f3rios"
     }
   },
   "required": [
