@@ -370,7 +370,7 @@ export default function Dashboard() {
   const bonusAtingido = metaIndividual && producaoIndividualMes >= metaIndividual.valor_meta;
 
   const rankingData = vendedores.map(v => {
-    const vol = vendasFiltradas
+    const vol = vendasAcumulado
       .filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome)
       .reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
     const metaRecord = metas.find(m => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
@@ -387,7 +387,7 @@ export default function Dashboard() {
   const ranking = vendedores
     .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
     .map(v => {
-      const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
+      const vs = vendasAcumulado.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
       const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
       const vincendas = parcelasPorVendedor(v.id);
       return { ...v, qtd: vs.length, vol, vincendas };

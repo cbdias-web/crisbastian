@@ -391,6 +391,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
+      considerar_acumulado: formData.considerar_acumulado !== false,
       _parcelasPreview: parcelasFinais,
     };
 
@@ -804,6 +805,30 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
             <Label>Observação</Label>
             <Textarea value={formData.observacao || ''} onChange={e => setFormData({ ...formData, observacao: e.target.value })} rows={3} />
           </div>
+
+          {isAdmin && (
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)' }}>
+              <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                <input
+                  type="checkbox"
+                  checked={formData.considerar_acumulado !== false}
+                  onChange={e => setFormData({ ...formData, considerar_acumulado: e.target.checked })}
+                  className="sr-only peer"
+                />
+                <div className="w-10 h-5 rounded-full transition" style={{ background: formData.considerar_acumulado !== false ? '#00D4AA' : '#4b5563' }}>
+                  <div className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform" style={{ transform: formData.considerar_acumulado !== false ? 'translateX(20px)' : 'translateX(0)' }} />
+                </div>
+              </label>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#e6edf3' }}>Considerar no acumulado do time</p>
+                <p className="text-xs" style={{ color: 'rgba(230,237,243,0.5)' }}>
+                  {formData.considerar_acumulado !== false
+                    ? 'Esta venda soma na meta geral do time (desmarque para vendas duplicadas entre assessores)'
+                    : 'Esta venda NÃO soma na meta geral do time, mas continua valendo para a meta individual do vendedor'}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
