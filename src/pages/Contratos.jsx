@@ -93,6 +93,7 @@ export default function Contratos() {
         valor: ct.valor_adesao || ct.valor_total || 0,
         valor_total_contrato: ct.valor_total || 0,
         data: todayBrasilia(),
+        tipo_venda: 'nova',
         forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
         observacao: `Originado do Contrato ${ct.tipo}. Comprovante de pagamento anexado.`,
       };
