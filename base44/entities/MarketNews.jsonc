@@ -1,0 +1,121 @@
+{
+  "name": "MarketNews",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo da not\u00edcia/insight de mercado"
+    },
+    "resumo": {
+      "type": "string",
+      "description": "Resumo curto para preview"
+    },
+    "conteudo": {
+      "type": "string",
+      "description": "Conte\u00fado detalhado (markdown) com an\u00e1lise e contexto"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "commodities",
+        "forex",
+        "acoes",
+        "cripto",
+        "economia",
+        "renda_fixa"
+      ],
+      "description": "Categoria do ativo/tema"
+    },
+    "ativo_nome": {
+      "type": "string",
+      "description": "Nome do ativo (ex: Petr\u00f3leo Brent, Ouro, D\u00f3lar)"
+    },
+    "ativo_simbolo": {
+      "type": "string",
+      "description": "S\u00edmbolo/ticker do ativo (ex: BZ=F, GC=F, USDBRL=X)"
+    },
+    "preco_atual": {
+      "type": "number",
+      "description": "Pre\u00e7o/cota\u00e7\u00e3o atual do ativo"
+    },
+    "variacao_pct": {
+      "type": "number",
+      "description": "Varia\u00e7\u00e3o percentual do dia"
+    },
+    "moeda": {
+      "type": "string",
+      "description": "Moeda do pre\u00e7o (BRL, USD, etc.)"
+    },
+    "sparkline": {
+      "type": "array",
+      "description": "Dados hist\u00f3ricos para mini-gr\u00e1fico (sparkline)",
+      "items": {
+        "type": "number"
+      },
+      "default": []
+    },
+    "tendencia": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "baixa",
+        "lateral"
+      ],
+      "description": "Tend\u00eancia identificada"
+    },
+    "impacto": {
+      "type": "string",
+      "enum": [
+        "positivo",
+        "negativo",
+        "neutro"
+      ],
+      "description": "Impacto no mercado brasileiro / c\u00e2mbio"
+    },
+    "relevancia": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baixa"
+      ],
+      "default": "media",
+      "description": "N\u00edvel de relev\u00e2ncia para decis\u00f5es di\u00e1rias"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags para filtragem",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "fonte": {
+      "type": "string",
+      "description": "Nome da fonte (ex: Bloomberg, Reuters, Investing)"
+    },
+    "fonte_url": {
+      "type": "string",
+      "description": "URL da fonte original"
+    },
+    "imagem_url": {
+      "type": "string",
+      "description": "URL de imagem/ilustra\u00e7\u00e3o"
+    },
+    "publicado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora de publica\u00e7\u00e3o"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Not\u00edcia vis\u00edvel na plataforma"
+    }
+  },
+  "required": [
+    "titulo",
+    "categoria",
+    "resumo"
+  ]
+}

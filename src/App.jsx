@@ -29,6 +29,7 @@ import Suporte from './pages/Suporte';
 import Desempenho from './pages/Desempenho';
 import CentralLeads from './pages/CentralLeads';
 import Implantacoes from './pages/Implantacoes';
+import MarketNews from './pages/MarketNews';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -254,6 +255,14 @@ const AuthenticatedApp = () => {
         element={
           <LayoutWrapper currentPageName="Implantacoes">
             <Implantacoes />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/MarketNews"
+        element={
+          <LayoutWrapper currentPageName="MarketNews">
+            <MarketNews />
           </LayoutWrapper>
         }
       />
