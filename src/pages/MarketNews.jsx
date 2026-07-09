@@ -4,6 +4,7 @@ import { RefreshCw, Newspaper, Filter, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import NewsCard from '@/components/market/NewsCard';
+import MarketDashboard from '@/components/market/MarketDashboard';
 
 const A = {
   bg: '#0d1117',
@@ -97,6 +98,9 @@ export default function MarketNews() {
             </button>
           )}
         </div>
+
+        {/* Dashboard gráfico de cotações em tempo real */}
+        <MarketDashboard />
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
