@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, RefreshCw, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const A = {
@@ -16,6 +16,33 @@ const A = {
 function fmt(value, prefix) {
   if (value === undefined || value === null) return '—';
   return `${prefix ? prefix + ' ' : ''}${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const RANGES = [
+  { key: '1d', label: '1D' },
+  { key: '5d', label: '5D' },
+  { key: '1m', label: '1M' },
+  { key: '3m', label: '3M' },
+  { key: '6m', label: '6M' },
+  { key: '1a', label: '1A' },
+];
+
+// Format chart X-axis labels based on range
+function formatAxisLabel(ts, rangeKey) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000);
+  if (rangeKey === '1d') return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (rangeKey === '5d') return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+}
+
+// Format tooltip label with full date/time
+function formatTooltipLabel(ts, rangeKey) {
+  if (!ts) return '';
+  const d = new Date(ts * 1000);
+  if (rangeKey === '1d') return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  if (rangeKey === '5d') return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 // Mini sparkline com SVG puro
@@ -44,14 +71,23 @@ export default function MarketDashboard() {
   const [selected, setSelected] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [tab, setTab] = useState('Destaque');
+  const [range, setRange] = useState('5d');
   const timerRef = useRef(null);
 
-  const fetchData = async () => {
+  const fetchData = async (rangeKey = range) => {
+    setLoading(true);
     try {
-      const res = await base44.functions.invoke('buscarDadosMercado', {});
+      const res = await base44.functions.invoke('buscarDadosMercado', { range: rangeKey });
       if (res.data?.quotes) {
-        setQuotes(res.data.quotes);
-        if (!selected && res.data.quotes.length > 0) setSelected(res.data.quotes[0]);
+        const newQuotes = res.data.quotes;
+        setQuotes(newQuotes);
+        // Keep selected key when changing range, update with new series
+        if (selected) {
+          const updated = newQuotes.find(q => q.key === selected.key);
+          if (updated) setSelected(updated);
+        } else if (newQuotes.length > 0) {
+          setSelected(newQuotes[0]);
+        }
         setLastUpdate(new Date());
       }
     } catch (e) {}
@@ -59,10 +95,15 @@ export default function MarketDashboard() {
   };
 
   useEffect(() => {
-    fetchData();
-    timerRef.current = setInterval(fetchData, 5 * 60 * 1000); // 5 min
+    fetchData(range);
+    timerRef.current = setInterval(() => fetchData(range), 5 * 60 * 1000);
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [range]);
+
+  const handleRangeChange = (newRange) => {
+    if (newRange === range) return;
+    setRange(newRange);
+  };
 
   const destaques = ['dolar', 'brent', 'ouro', 'minerio', 'ibovespa', 'petr4', 'vale3', 'euro'];
   const filterByGroup = (g) => {
@@ -72,16 +113,22 @@ export default function MarketDashboard() {
 
   const visibleQuotes = filterByGroup(tab);
 
-  const chartData = selected?.sparkline?.map((v, i) => ({ idx: i, value: v })) || [];
+  // Build chart data from selected's series (includes timestamps)
+  const chartData = selected?.series?.map(pt => ({ ts: pt.timestamp, value: pt.value })).filter(pt => pt.value != null) || [];
 
   const CustomChartTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
+    const ts = payload[0]?.payload?.ts;
     return (
       <div className="rounded-lg px-3 py-2 text-xs shadow-2xl" style={{ background: '#0d1117', border: `1px solid ${A.accent}55`, color: A.text }}>
-        {fmt(payload[0].value, selected?.prefix)}
+        <p className="text-[10px] mb-1" style={{ color: A.textMuted }}>{formatTooltipLabel(ts, range)}</p>
+        <p className="font-bold">{fmt(payload[0].value, selected?.prefix)}</p>
       </div>
     );
   };
+
+  // Determine x-axis tick interval to avoid clutter
+  const tickInterval = chartData.length > 20 ? Math.floor(chartData.length / 6) - 1 : 0;
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
@@ -94,10 +141,10 @@ export default function MarketDashboard() {
         <div className="flex items-center gap-3">
           {lastUpdate && (
             <span className="text-[10px] flex items-center gap-1" style={{ color: A.textMuted }}>
-              <RefreshCw className="w-2.5 h-2.5" /> {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              <Clock className="w-2.5 h-2.5" /> {lastUpdate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </span>
           )}
-          <button onClick={fetchData} disabled={loading}
+          <button onClick={() => fetchData(range)} disabled={loading}
             className="p-1.5 rounded-lg transition disabled:opacity-50"
             style={{ background: A.surface2, border: `1px solid ${A.border}`, color: A.accent }}>
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
@@ -108,7 +155,7 @@ export default function MarketDashboard() {
       {/* Main chart */}
       {selected && (
         <div className="px-5 py-4" style={{ borderBottom: `1px solid ${A.border}` }}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
             <div>
               <p className="text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>{selected.group}</p>
               <div className="flex items-baseline gap-2">
@@ -121,24 +168,51 @@ export default function MarketDashboard() {
                 </span>
               </div>
             </div>
+            {/* Period selector */}
+            <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: A.bg, border: `1px solid ${A.border}` }}>
+              {RANGES.map(r => {
+                const isActive = range === r.key;
+                return (
+                  <button key={r.key} onClick={() => handleRangeChange(r.key)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-bold transition"
+                    style={{
+                      background: isActive ? A.accent : 'transparent',
+                      color: isActive ? A.bg : A.textMuted,
+                    }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = A.text; }}
+                    onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = A.textMuted; }}>
+                    {r.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
           {chartData.length > 1 ? (
-            <ResponsiveContainer width="100%" height={140}>
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                 <defs>
                   <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={selected.changePct >= 0 ? '#34d399' : '#f87171'} stopOpacity="0.25" />
                     <stop offset="100%" stopColor={selected.changePct >= 0 ? '#34d399' : '#f87171'} stopOpacity="0" />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="idx" hide />
-                <YAxis domain={['dataMin', 'dataMax']} hide />
+                <XAxis dataKey="ts"
+                  tickFormatter={(ts) => formatAxisLabel(ts, range)}
+                  tick={{ fontSize: 9, fill: 'rgba(230,237,243,0.4)' }}
+                  axisLine={false} tickLine={false}
+                  interval={tickInterval}
+                  minTickGap={20} />
+                <YAxis domain={['dataMin', 'dataMax']}
+                  tick={{ fontSize: 9, fill: 'rgba(230,237,243,0.4)' }}
+                  axisLine={false} tickLine={false}
+                  tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toFixed(2)}
+                  width={50} orientation="right" />
                 <Tooltip content={<CustomChartTooltip />} />
                 <Area type="monotone" dataKey="value" stroke={selected.changePct >= 0 ? '#34d399' : '#f87171'} strokeWidth={2} fill="url(#chart-grad)" />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[140px] flex items-center justify-center text-xs" style={{ color: A.textMuted }}>Sem dados de histórico</div>
+            <div className="h-[160px] flex items-center justify-center text-xs" style={{ color: A.textMuted }}>Sem dados de histórico</div>
           )}
         </div>
       )}
@@ -166,6 +240,7 @@ export default function MarketDashboard() {
         {visibleQuotes.map(q => {
           const up = q.changePct >= 0;
           const isSel = selected?.key === q.key;
+          const sparkData = q.series?.map(pt => pt.value).filter(v => v != null) || [];
           return (
             <button key={q.key} onClick={() => setSelected(q)}
               className="rounded-xl p-3 text-left transition-all duration-150"
@@ -184,7 +259,7 @@ export default function MarketDashboard() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-sm font-bold" style={{ color: A.text }}>{fmt(q.price, q.prefix)}</span>
-                {q.sparkline?.length > 1 && <MiniSpark data={q.sparkline} color={up ? '#34d399' : '#f87171'} />}
+                {sparkData.length > 1 && <MiniSpark data={sparkData} color={up ? '#34d399' : '#f87171'} />}
               </div>
             </button>
           );
