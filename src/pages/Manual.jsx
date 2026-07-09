@@ -5,7 +5,7 @@ import {
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
   TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
-  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck
+  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -18,7 +18,43 @@ const sections = [
       { subtitle: 'O que é o Villela Exchange – Gestão Comercial?', text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial. Integra Contratos, Pipeline, Prospecção, Treinamentos e IA em um único ambiente.' },
       { subtitle: 'Acesso e Login', text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.' },
       { subtitle: 'Perfil do Usuário', text: 'Clique no seu nome no canto superior do Dashboard para acessar seu perfil. Você pode alterar seu nome de tratamento (como aparece no sistema).' },
-      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Vendas, Agenda do Dia, Contratos, Pipeline.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Rel. Interações, Manual, Capacitação.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação Admin, Relatório Comissões, Prospecção, Metas, Produtos, Importar.'] },
+      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Dashboard, Mercado, Vendas, Agenda do Dia, Central de Leads, Contratos, Implantações, Pipeline, Precificação, Desempenho.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Chat Interno, Rel. Interações, Manual, Capacitação, Suporte.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação (Admin), Rel. Comissões, Prospecção, Metas, Produtos, Importar, Usuários.'] },
+    ],
+  },
+  {
+    id: 'mercado', icon: Newspaper, title: 'Mercado — Inteligência & Cotações',
+    color: 'from-cyan-500 to-teal-600', bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Página de inteligência de mercado que reúne cotações financeiras em tempo real e notícias/análises de ativos da B3, câmbio, commodities e bolsas internacionais. Disponível para todos os usuários no menu Comercial.' },
+      { subtitle: '📊 Dashboard de Cotações em Tempo Real', items: [
+        'Box interativo no topo da página com cotações ao vivo de **Ibovespa, Dólar, Euro, Dow Jones, Nasdaq, S&P 500, Brent, WTI, Ouro, Minério, PETR4, VALE3, ITUB4, BBDC4 e WEGE3**.',
+        '**Gráfico de área** exibe a variação do ativo selecionado nos últimos 5 dias.',
+        '**Mini sparklines** em cada card mostram a tendência visual do preço.',
+        'Abas de filtro: **Destaque, B3, Commodities, Câmbio, Bolsas**.',
+        'Clique em qualquer ativo para selecioná-lo e ver o gráfico detalhado.',
+        '**Atualização automática a cada 5 minutos** durante o horário de mercado.',
+        'Botão de atualização manual (🔄) no canto superior direito.',
+      ]},
+      { subtitle: '📰 Notícias e Análises de Mercado', items: [
+        'Cards de notícias com **cotação, variação percentual, mini-gráfico e análise** de cada ativo.',
+        'Filtros por categoria: **Commodities, Câmbio, Bolsas, Cripto, Economia, Renda Fixa**.',
+        'Cada notícia exibe: **título, resumo, preço atual, variação, impacto (positivo/negativo/neutro), tendência e tags**.',
+        'Clique em **"Ver análise"** para expandir o conteúdo detalhado da notícia.',
+        'Link direto para a **fonte original** quando disponível.',
+        'Indicadores de **relevância** (alta/média/baixa) e **impacto no mercado brasileiro**.',
+      ]},
+      { subtitle: '⚡ Atualização automática (Admin)', items: [
+        'Administradores podem clicar em **"Atualizar Notícias"** para gerar novas análises de mercado sob demanda.',
+        'O sistema busca cotações em tempo real via **Yahoo Finance** e gera análises via **IA com contexto da web**.',
+        '**Automação agendada:** notícias são atualizadas automaticamente a cada 2 horas em horário comercial (seg–sex, 8h–18h).',
+        'Cada atualização cria até 6 novas notícias/análises de mercado.',
+      ]},
+      { subtitle: '🎯 Como usar na rotina comercial', items: [
+        '**Antes de uma reunião:** verifique cotações de dólar, ouro e Brent para embasar conversas com clientes.',
+        '**Acompanhamento diário:** use o ticker de mercado (topo do sistema) para ter uma visão rápida dos principais ativos.',
+        '**Análises de impacto:** verifique se as notícias têm impacto positivo ou negativo no mercado brasileiro/câmbio.',
+        '**Insights para clientes:** use as análises como argumento comercial em propostas e negociações.',
+      ]},
     ],
   },
   {
@@ -593,7 +629,7 @@ const categories = [
     id: 'vendas', label: 'Vendas', icon: BarChart2,
     gradFrom: '#00b09b', gradTo: '#007b6e',
     color: 'from-[#00b09b] to-[#007b6e]',
-    sections: ['vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'implantacoes'],
+    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'implantacoes'],
   },
   {
     id: 'financas', label: 'Finanças', icon: DollarSign,
@@ -611,7 +647,7 @@ const categories = [
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho'],
+    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho'],
   },
 ];
 
@@ -694,7 +730,7 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'clientes', 'relatorios', 'importar', 'suporte', 'precificacao', 'alertas-sistema', 'desempenho'];
+  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'clientes'];
   const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
 
   const visibleSections = activeCategory
