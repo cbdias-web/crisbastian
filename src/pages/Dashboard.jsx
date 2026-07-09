@@ -349,8 +349,18 @@ export default function Dashboard() {
   const mesUltDia = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const mesFim = `${mesAtual}-${String(mesUltDia).padStart(2, "0")}`;
 
+  // Vendedores excluídos da meta do time
+  const EXCLUIDOS_META_TIME = ['Eduardo Cunha', 'Kauana Ferreira Nardes'];
+  const isExcluidoMeta = (nome) => {
+    if (!nome) return false;
+    const n = nome.toUpperCase().trim();
+    return EXCLUIDOS_META_TIME.some(ex => n.includes(ex.toUpperCase()));
+  };
+
   const metaEquipe = metas.find(m => m.mes === periodoMes && m.tipo === "equipe");
-  const metaTimeSoma = vendedores.reduce((s, v) => {
+  const metaTimeSoma = vendedores
+    .filter(v => !isExcluidoMeta(v.nome))
+    .reduce((s, v) => {
     const m = metas.find(m => m.mes === periodoMes && m.tipo === "individual" && m.vendedor_id === v.id);
     return s + (m?.valor_meta || 0);
   }, 0);
