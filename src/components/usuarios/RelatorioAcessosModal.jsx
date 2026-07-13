@@ -274,12 +274,9 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
     setGerandoPDF(true);
     try {
       const response = await base44.functions.invoke('gerarRelatorioAcessosPDF', {
-        usuario_id: usuariosSelecionados.length === 1 ? usuariosSelecionados[0] : null,
-        usuarios_ids: usuariosSelecionados.length > 1 ? usuariosSelecionados : null,
+        usuarios_ids: usuariosFiltrados.map(u => u.id),
         data_inicio: dataInicio || null,
         data_fim: dataFim || null,
-        filtro_status: filtroStatus,
-        search_term: searchTerm || null,
       });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
