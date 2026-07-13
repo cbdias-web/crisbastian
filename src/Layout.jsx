@@ -77,29 +77,70 @@ export default function Layout({ children, currentPageName }) {
         }
       } catch (e) {}
       const agora = new Date().toISOString();
-      try { await base44.auth.updateMe({ ultimo_acesso: agora, acesso_inicio: agora }); } catch (e) {}
+      try {
+        await base44.auth.updateMe({ ultimo_acesso: agora, acesso_inicio: agora });
+
+        // Fechar sessoes antigas que ficaram abertas (cleanup)
+        try {
+          await base44.functions.invoke('registrarFimSessao', { user_id: u.id, close_all: true });
+        } catch (e) {}
+
+        // Criar nova sessao individual
+        try {
+          const sessao = await base44.entities.SessaoUsuario.create({
+            user_id: u.id,
+            user_email: u.email,
+            user_name: u.full_name || u.nome_tratamento || '',
+            inicio: agora,
+            ativa: true,
+            ultimo_heartbeat: agora,
+            duracao_min: 0,
+          });
+          localStorage.setItem('current_session_id', sessao.id);
+        } catch (e) {}
+      } catch (e) {}
     }).catch(() => {});
   }, []);
 
   useEffect(() => {
     const interval = setInterval(async () => {
-      try { await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() }); } catch (e) {}
+      try {
+        const agora = new Date().toISOString();
+        await base44.auth.updateMe({ ultimo_acesso: agora });
+        const sessionId = localStorage.getItem('current_session_id');
+        if (sessionId) {
+          await base44.entities.SessaoUsuario.update(sessionId, { ultimo_heartbeat: agora });
+        }
+      } catch (e) {}
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   // Registrar fim da sessão ao fechar/abandonar a página
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const closeSession = () => {
+      const sessionId = localStorage.getItem('current_session_id');
+      if (!sessionId) return;
       try {
-        const payload = JSON.stringify({ acesso_fim: new Date().toISOString() });
-        const blob = new Blob([payload], { type: 'application/json' });
-        // sendBeacon envia de forma não-bloqueante mesmo durante o unload
-        navigator.sendBeacon('/api/auth/me', blob);
+        // Fire and forget - tenta fechar a sessao via SDK
+        base44.functions.invoke('registrarFimSessao', { session_id: sessionId }).catch(() => {});
+        localStorage.removeItem('current_session_id');
       } catch (e) {}
     };
+
+    // pagehide é mais confiavel que beforeunload em navegadores modernos
+    const handlePageHide = (e) => {
+      // Só fecha se a página estiver sendo realmente descarregada
+      if (!e.persisted) closeSession();
+    };
+    const handleBeforeUnload = () => closeSession();
+
+    window.addEventListener('pagehide', handlePageHide);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, []);
 
   useEffect(() => {

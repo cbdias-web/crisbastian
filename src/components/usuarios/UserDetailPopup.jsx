@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Mail, Shield, Clock, Wifi, Activity, TrendingUp, Calendar, Users } from 'lucide-react';
+import { X, Mail, Shield, Clock, Wifi, Activity, TrendingUp, Calendar, Users, LogIn, LogOut } from 'lucide-react';
 
 const AURORA = {
   bg: '#0d1117',
@@ -100,24 +100,70 @@ export default function UserDetailPopup({ usuario, onClose }) {
           </div>
         </div>
 
-        {/* Sessao: inicio, fim, duracao */}
+        {/* Sessao resumo: inicio, fim, duracao total */}
         <div className="px-5 py-3 grid grid-cols-3 gap-2" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
-            <Clock className="w-3 h-3 mx-auto mb-1" style={{ color: AURORA.accent }} />
-            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Inicio</p>
+            <LogIn className="w-3 h-3 mx-auto mb-1" style={{ color: AURORA.accent }} />
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Primeiro Acesso</p>
             <p className="text-xs font-bold" style={{ color: AURORA.text }}>{usuario.sessao?.inicio || '—'}</p>
           </div>
           <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
-            <Wifi className="w-3 h-3 mx-auto mb-1" style={{ color: usuario.sessao?.fim === 'Em sessao' ? '#34d399' : AURORA.textMuted }} />
-            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Fim</p>
-            <p className="text-xs font-bold" style={{ color: usuario.sessao?.fim === 'Em sessao' ? '#34d399' : AURORA.text }}>{usuario.sessao?.fim || '—'}</p>
+            <LogOut className="w-3 h-3 mx-auto mb-1" style={{ color: usuario.sessao?.fim === 'Em sessão' ? '#34d399' : AURORA.textMuted }} />
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Ultima Saida</p>
+            <p className="text-xs font-bold" style={{ color: usuario.sessao?.fim === 'Em sessão' ? '#34d399' : AURORA.text }}>{usuario.sessao?.fim || '—'}</p>
           </div>
           <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
             <Activity className="w-3 h-3 mx-auto mb-1" style={{ color: AURORA.accent }} />
-            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Duracao</p>
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Tempo Total</p>
             <p className="text-xs font-bold" style={{ color: AURORA.accent }}>{usuario.sessao?.duracao || '—'}</p>
           </div>
         </div>
+
+        {/* Lista de sessoes individuais */}
+        {usuario.sessao?.sessoes?.length > 0 && (
+          <div className="px-5 py-3" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] uppercase tracking-wide font-bold" style={{ color: AURORA.accent }}>
+                Sessoes do Periodo
+              </p>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+                {usuario.sessao.sessoes.length} sessao(oes)
+              </span>
+            </div>
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {usuario.sessao.sessoes.map((s, i) => {
+                const sInicio = new Date(s.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const sFim = s.ativa && usuario.status === 'online'
+                  ? 'Em sessão'
+                  : (s.fim
+                    ? new Date(s.fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                    : (s.ultimo_heartbeat
+                      ? new Date(s.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '*'
+                      : '—'));
+                const sFimMs = s.fim ? new Date(s.fim).getTime() : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat).getTime() : Date.now());
+                const sDurMin = Math.max(0, Math.round((sFimMs - new Date(s.inicio).getTime()) / 1000 / 60));
+                const sDur = sDurMin < 60 ? `${sDurMin} min` : `${Math.floor(sDurMin / 60)}h ${sDurMin % 60}min`;
+                const dataSessao = new Date(s.inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                return (
+                  <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs"
+                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(0,212,170,0.1)', color: AURORA.accent }}>
+                      {dataSessao}
+                    </span>
+                    <span style={{ color: AURORA.textMuted }}>de</span>
+                    <span className="font-semibold" style={{ color: AURORA.text }}>{sInicio}</span>
+                    <span style={{ color: AURORA.textMuted }}>as</span>
+                    <span className="font-semibold" style={{ color: sFim === 'Em sessão' ? '#34d399' : AURORA.text }}>{sFim}</span>
+                    <span className="ml-auto font-bold" style={{ color: AURORA.accent }}>{sDur}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[9px] mt-1.5" style={{ color: AURORA.textDim }}>* horario aproximado (ultimo sinal de vida)</p>
+          </div>
+        )}
 
         {/* Atuacoes */}
         <div className="px-5 py-4">

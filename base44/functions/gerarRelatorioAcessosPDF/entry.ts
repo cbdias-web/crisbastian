@@ -63,15 +63,30 @@ Deno.serve(async (req) => {
 
     const admin = base44.asServiceRole;
 
-    // Buscar usuarios e atividades em paralelo
-    const [usuarios, vendas, mensagens, chamados, interacoes, agendas] = await Promise.all([
+    // Buscar usuarios, atividades e sessoes em paralelo
+    const [usuarios, vendas, mensagens, chamados, interacoes, agendas, sessoes] = await Promise.all([
       admin.entities.User.list('full_name'),
       admin.entities.Venda.list('-created_date', 500),
       admin.entities.MensagemChat.list('-created_date', 500),
       admin.entities.ChamadoSuporte.list('-created_date', 500),
       admin.entities.InteracaoCliente.list('-created_date', 500),
       admin.entities.AgendaContato.list('-created_date', 500),
+      admin.entities.SessaoUsuario.list('-inicio', 500),
     ]);
+
+    // Filtrar e agrupar sessoes por usuario
+    const sessoesFiltradas = sessoes.filter(s => {
+      if (!s.inicio) return false;
+      const d = s.inicio.split('T')[0];
+      if (fDataInicio && d < fDataInicio) return false;
+      if (fDataFim && d > fDataFim) return false;
+      return true;
+    });
+    const sessoesPorUsuario = {};
+    for (const s of sessoesFiltradas) {
+      if (!sessoesPorUsuario[s.user_id]) sessoesPorUsuario[s.user_id] = [];
+      sessoesPorUsuario[s.user_id].push(s);
+    }
 
     const filtrarPorPeriodo = (lista) => {
       if (!fDataInicio && !fDataFim) return lista;
@@ -115,36 +130,68 @@ Deno.serve(async (req) => {
       return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     };
 
+    const formatDuracaoPdf = (min) => {
+      if (!min || min <= 0) return '-';
+      if (min < 60) return `${min} min`;
+      return `${Math.floor(min / 60)}h ${min % 60}min`;
+    };
+
     const formatSessao = (u) => {
-      const inicio = u.acesso_inicio;
-      const fim = u.acesso_fim;
-      const ultimo = u.ultimo_acesso;
-      const isOnline = getOnlineStatus(ultimo) === 'Online';
-
-      const inicioStr = inicio
-        ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        : '-';
-
-      let fimStr = '-';
-      if (isOnline) {
-        fimStr = 'Em sessao';
-      } else if (fim) {
-        fimStr = new Date(fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      } else if (ultimo) {
-        fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const userSessoes = sessoesPorUsuario[u.id] || [];
+      if (userSessoes.length === 0) {
+        // Fallback para dados do User entity
+        const inicio = u.acesso_inicio;
+        const ultimo = u.ultimo_acesso;
+        const isOnline = getOnlineStatus(ultimo) === 'Online';
+        const inicioStr = inicio
+          ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : '-';
+        let fimStr = '-';
+        if (isOnline) fimStr = 'Em sessao';
+        else if (u.acesso_fim) fimStr = new Date(u.acesso_fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        else if (ultimo) fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        let duracao = '-';
+        if (inicio) {
+          const fimRef = isOnline ? Date.now() : (u.acesso_fim ? new Date(u.acesso_fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
+          if (fimRef) {
+            const diffMin = Math.round((fimRef - new Date(inicio).getTime()) / 1000 / 60);
+            duracao = formatDuracaoPdf(diffMin);
+          }
+        }
+        return { inicio: inicioStr, fim: fimStr, duracao, numSessoes: 0 };
       }
 
-      let duracao = '-';
-      if (inicio) {
-        const fimRef = isOnline ? Date.now() : (fim ? new Date(fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
+      const sorted = [...userSessoes].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+      const primeira = sorted[0];
+      const ultima = sorted[sorted.length - 1];
+      const isOnline = getOnlineStatus(u.ultimo_acesso) === 'Online';
+      const temAtiva = sorted.some(s => s.ativa);
+
+      const inicioStr = new Date(primeira.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      let fimStr = '-';
+      if (temAtiva && isOnline) {
+        fimStr = 'Em sessao';
+      } else if (ultima.fim) {
+        fimStr = new Date(ultima.fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      } else if (ultima.ultimo_heartbeat) {
+        fimStr = new Date(ultima.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      let totalMin = 0;
+      for (const s of sorted) {
+        const fimRef = s.fim ? new Date(s.fim) : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat) : null);
         if (fimRef) {
-          const diffMin = Math.round((fimRef - new Date(inicio).getTime()) / 1000 / 60);
-          if (diffMin < 60) duracao = `${diffMin} min`;
-          else duracao = `${Math.floor(diffMin / 60)}h ${diffMin % 60}min`;
+          totalMin += Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
         }
       }
 
-      return { inicio: inicioStr, fim: fimStr, duracao };
+      return {
+        inicio: inicioStr,
+        fim: fimStr,
+        duracao: formatDuracaoPdf(totalMin),
+        numSessoes: sorted.length,
+      };
     };
 
     // Processar usuarios com dados

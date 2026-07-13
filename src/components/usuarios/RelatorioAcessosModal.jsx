@@ -35,44 +35,56 @@ const formatDataHora = (iso) => {
   return { data, hora, relativo };
 };
 
-const formatSessao = (u) => {
-  const inicio = u.acesso_inicio;
-  const fim = u.acesso_fim;
-  const ultimo = u.ultimo_acesso;
-  const isOnline = getOnlineStatus(ultimo) === 'online';
+const formatDuracao = (min) => {
+  if (!min || min <= 0) return '—';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${h}h ${m}min`;
+};
 
-  // Horario de inicio
-  const inicioStr = inicio
-    ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    : '—';
+const formatHora = (iso) => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+};
 
-  // Horario de fim: se online, "Em sessao"; se tem acesso_fim usa ele; senao usa ultimo_acesso
+const computarSessoes = (userSessoes, ultimoAcesso) => {
+  if (!userSessoes || userSessoes.length === 0) {
+    return { inicio: '—', fim: '—', duracao: '—', numSessoes: 0, totalMin: 0, sessoes: [] };
+  }
+  const sorted = [...userSessoes].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+  const primeira = sorted[0];
+  const ultima = sorted[sorted.length - 1];
+  const isOnline = getOnlineStatus(ultimoAcesso) === 'online';
+  const temAtiva = sorted.some(s => s.ativa);
+
+  const inicioStr = formatHora(primeira.inicio);
+
   let fimStr = '—';
-  if (isOnline) {
-    fimStr = 'Em sessao';
-  } else if (fim) {
-    fimStr = new Date(fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  } else if (ultimo) {
-    fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (temAtiva && isOnline) {
+    fimStr = 'Em sessão';
+  } else if (ultima.fim) {
+    fimStr = formatHora(ultima.fim);
+  } else if (ultima.ultimo_heartbeat) {
+    fimStr = formatHora(ultima.ultimo_heartbeat);
   }
 
-  // Duracao: inicio -> fim (ou agora se online)
-  let duracao = '—';
-  if (inicio) {
-    const fimRef = isOnline ? Date.now() : (fim ? new Date(fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
+  let totalMin = 0;
+  for (const s of sorted) {
+    const fimRef = s.fim ? new Date(s.fim) : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat) : null);
     if (fimRef) {
-      const diffMs = fimRef - new Date(inicio).getTime();
-      const diffMin = Math.round(diffMs / 1000 / 60);
-      if (diffMin < 60) duracao = `${diffMin} min`;
-      else {
-        const h = Math.floor(diffMin / 60);
-        const m = diffMin % 60;
-        duracao = `${h}h ${m}min`;
-      }
+      totalMin += Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
     }
   }
 
-  return { inicio: inicioStr, fim: fimStr, duracao };
+  return {
+    inicio: inicioStr,
+    fim: fimStr,
+    duracao: formatDuracao(totalMin),
+    numSessoes: sorted.length,
+    totalMin,
+    sessoes: sorted,
+  };
 };
 
 const getOnlineStatus = (ultimoAcesso) => {
@@ -98,6 +110,29 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState(hoje); // default: hoje
   const [usuarioPopup, setUsuarioPopup] = useState(null); // usuario selecionado para popup
+
+  const { data: sessoes = [] } = useQuery({
+    queryKey: ['relatorio-sessoes', dataInicio, dataFim],
+    queryFn: async () => {
+      const all = await base44.entities.SessaoUsuario.list('-inicio', 500);
+      return all.filter(s => {
+        if (!s.inicio) return false;
+        const d = s.inicio.split('T')[0];
+        if (dataInicio && d < dataInicio) return false;
+        if (dataFim && d > dataFim) return false;
+        return true;
+      });
+    },
+  });
+
+  const sessoesPorUsuario = useMemo(() => {
+    const map = {};
+    for (const s of sessoes) {
+      if (!map[s.user_id]) map[s.user_id] = [];
+      map[s.user_id].push(s);
+    }
+    return map;
+  }, [sessoes]);
 
   const { data: atividades = {}, isLoading } = useQuery({
     queryKey: ['relatorio-acessos-atividades', dataInicio, dataFim],
@@ -156,10 +191,10 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       const totalAtua = atua.vendas + atua.mensagens + atua.chamados + atua.interacoes + atua.agendas;
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const menusCount = isAdminUser ? 'Total' : (u.menus_acesso?.length || 0);
-      const sessao = formatSessao(u);
+      const sessao = computarSessoes(sessoesPorUsuario[u.id] || [], u.ultimo_acesso);
       return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount, sessao };
     });
-  }, [usuarios, atividades]);
+  }, [usuarios, atividades, sessoesPorUsuario]);
 
   const usuariosFiltrados = useMemo(() => {
     return usuariosComDados.filter(u => {

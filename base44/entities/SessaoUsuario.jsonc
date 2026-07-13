@@ -1,0 +1,47 @@
+{
+  "name": "SessaoUsuario",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usuario"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email do usuario"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nome do usuario"
+    },
+    "inicio": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Inicio da sessao"
+    },
+    "fim": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fim da sessao"
+    },
+    "duracao_min": {
+      "type": "number",
+      "description": "Duracao total em minutos",
+      "default": 0
+    },
+    "ativa": {
+      "type": "boolean",
+      "default": true,
+      "description": "Sessao ativa no momento"
+    },
+    "ultimo_heartbeat": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Ultimo sinal de vida (atualizado a cada 2 min)"
+    }
+  },
+  "required": [
+    "user_id",
+    "inicio"
+  ]
+}
