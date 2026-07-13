@@ -127,38 +127,11 @@ Com base nas informacoes acima, gere uma resposta de suporte para este chamado. 
 
     const { resposta, acao_recomendada, resumo_interno } = llmResponse;
 
-    // Postar a resposta da IA como resposta do chamado
-    const novaResposta = {
-      autor_nome: 'Assistente IA (Auto-Resolucao)',
-      texto: resposta,
-      data_hora: new Date().toISOString(),
-      is_suporte: true,
-    };
-
-    const respostasAtualizadas = [...(chamado.respostas || []), novaResposta];
-
-    // Atualizar status do chamado com base na recomendacao da IA
+    // NAO aplicar automaticamente — retornar sugestao para validacao do administrador
     let novoStatus = chamado.status;
     if (acao_recomendada === 'resolvido') novoStatus = 'resolvido';
     else if (acao_recomendada === 'aguardando_usuario') novoStatus = 'aguardando_usuario';
     else if (acao_recomendada === 'em_andamento') novoStatus = 'em_andamento';
-
-    await admin.entities.ChamadoSuporte.update(chamadoId, {
-      respostas: respostasAtualizadas,
-      status: novoStatus,
-    });
-
-    // Notificar o usuario via Jarvis
-    try {
-      if (chamado.usuario_email) {
-        await admin.entities.JarvisMensagem.create({
-          destinatario_email: chamado.usuario_email,
-          remetente_nome: 'Suporte Villela Exchange',
-          remetente_email: 'suporte@villelaexchange.com.br',
-          mensagem: `📋 **Chamado ${chamado.numero || '#' + chamado.id.slice(-4)} — ${chamado.titulo}**\n\nSua solicitacao foi analisada e respondida automaticamente pelo nosso assistente de IA.\n\nAcesse a Central de Suporte para visualizar a resposta.`,
-        });
-      }
-    } catch (_) {}
 
     return Response.json({
       success: true,

@@ -87,6 +87,7 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
   const [resposta, setResposta] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [analisandoIA, setAnalisandoIA] = useState(false);
+  const [sugestaoIA, setSugestaoIA] = useState(null);
   const [avaliacao, setAvaliacao] = useState(chamado.avaliacao || 0);
 
   const respostas = chamado.respostas || [];
@@ -142,19 +143,51 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
     try {
       const response = await base44.functions.invoke('analisarChamadoIA', { chamado_id: chamado.id });
       const data = response.data;
-      const novaResposta = {
-        autor_nome: 'Assistente IA (Auto-Resolução)',
-        texto: data.resposta,
-        data_hora: new Date().toISOString(),
-        is_suporte: true,
-      };
-      const respostasAtualizadas = [...(chamado.respostas || []), novaResposta];
-      await onUpdate(chamado.id, { respostas: respostasAtualizadas, status: data.novo_status });
-      toast.success(`Análise concluída! ${data.resumo_interno || ''}`);
+      setSugestaoIA({
+        resposta: data.resposta,
+        novo_status: data.novo_status,
+        resumo_interno: data.resumo_interno,
+      });
+      toast.success('Análise da IA concluída — revise e aprove a sugestão abaixo.');
     } catch (error) {
       toast.error('Erro ao analisar: ' + (error.response?.data?.error || error.message));
     }
     setAnalisandoIA(false);
+  }
+
+  async function aprovarSugestaoIA() {
+    if (!sugestaoIA) return;
+    setEnviando(true);
+    try {
+      const novaResposta = {
+        autor_nome: 'Assistente IA (Auto-Resolução)',
+        texto: sugestaoIA.resposta,
+        data_hora: new Date().toISOString(),
+        is_suporte: true,
+      };
+      const respostasAtualizadas = [...(chamado.respostas || []), novaResposta];
+      await onUpdate(chamado.id, { respostas: respostasAtualizadas, status: sugestaoIA.novo_status });
+      try {
+        if (chamado.usuario_email) {
+          await base44.entities.JarvisMensagem.create({
+            destinatario_email: chamado.usuario_email,
+            remetente_nome: 'Suporte Villela Exchange',
+            remetente_email: user?.email || '',
+            mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)} — ${chamado.titulo}**\n\nSua solicitação foi analisada e respondida.\n\nAcesse a Central de Suporte para visualizar a resposta.`,
+          });
+        }
+      } catch (_) {}
+      setSugestaoIA(null);
+      toast.success('Sugestão aprovada e enviada ao usuário!');
+    } catch (error) {
+      toast.error('Erro ao aprovar: ' + (error.response?.data?.error || error.message));
+    }
+    setEnviando(false);
+  }
+
+  function rejeitarSugestaoIA() {
+    setSugestaoIA(null);
+    toast.info('Sugestão da IA descartada.');
   }
 
   return (
@@ -212,6 +245,38 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
                   <p className="text-gray-700 leading-relaxed">{r.texto}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Sugestão da IA — painel de revisão do administrador */}
+          {sugestaoIA && (
+            <div className="rounded-xl p-4 border-2 border-emerald-300 bg-emerald-50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5" /> Sugestão da IA — Revisão do Administrador
+                </span>
+                <button onClick={rejeitarSugestaoIA} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+              </div>
+              {sugestaoIA.resumo_interno && (
+                <p className="text-xs text-gray-500 mb-2 italic">Resumo: {sugestaoIA.resumo_interno}</p>
+              )}
+              <p className="text-xs font-semibold text-gray-600 mb-1">Resposta sugerida (editável):</p>
+              <textarea value={sugestaoIA.resposta} onChange={e => setSugestaoIA({ ...sugestaoIA, resposta: e.target.value })} rows={6}
+                className="w-full border border-emerald-200 rounded-xl py-2.5 px-3 text-sm focus:outline-none focus:border-emerald-400 resize-none mb-2" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={aprovarSugestaoIA} disabled={enviando}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition disabled:opacity-50">
+                  {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  Aprovar e Enviar
+                </button>
+                <button onClick={rejeitarSugestaoIA}
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold transition hover:bg-gray-50">
+                  Rejeitar
+                </button>
+                <span className="text-xs text-gray-400 ml-auto">
+                  Status sugerido: <strong>{STATUS_CFG[sugestaoIA.novo_status]?.label || sugestaoIA.novo_status}</strong>
+                </span>
+              </div>
             </div>
           )}
 
