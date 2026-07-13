@@ -244,6 +244,9 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Ignorar usuarios bloqueados e inativos (sem ultimo_acesso)
+    usuariosProc = usuariosProc.filter(u => u.ativo !== false && u.ultimo_acesso);
+
     // Aplicar filtros
     if (fUsuarioId) usuariosProc = usuariosProc.filter(u => u.id === fUsuarioId);
     if (fUsuariosIds && Array.isArray(fUsuariosIds) && fUsuariosIds.length > 0) {

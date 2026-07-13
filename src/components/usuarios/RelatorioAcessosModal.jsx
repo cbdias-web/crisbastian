@@ -207,8 +207,12 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
     },
   });
 
+  const usuariosAtivos = useMemo(() => {
+    return usuarios.filter(u => u.ativo !== false && u.ultimo_acesso);
+  }, [usuarios]);
+
   const usuariosComDados = useMemo(() => {
-    return usuarios.map(u => {
+    return usuariosAtivos.map(u => {
       const status = getOnlineStatus(u.ultimo_acesso);
       const acesso = formatDataHora(u.ultimo_acesso);
       const atua = {
@@ -224,7 +228,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       const sessao = computarSessoes(sessoesPorUsuario[u.id] || [], u);
       return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount, sessao };
     });
-  }, [usuarios, atividades, sessoesPorUsuario]);
+  }, [usuariosAtivos, atividades, sessoesPorUsuario]);
 
   const usuariosFiltrados = useMemo(() => {
     return usuariosComDados.filter(u => {
@@ -251,7 +255,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
     const bloqueados = usuariosComDados.filter(u => u.ativo === false).length;
     const nuncaAcessou = usuariosComDados.filter(u => !u.ultimo_acesso).length;
     const totalAtuacoes = usuariosComDados.reduce((s, u) => s + u.totalAtua, 0);
-    return { total: usuariosComDados.length, online, bloqueados, nuncaAcessou, totalAtuacoes };
+    return { total: usuariosComDados.length, online, bloqueados: 0, nuncaAcessou: 0, totalAtuacoes };
   }, [usuariosComDados]);
 
   // Dados para grafico - top 8 usuarios por atuações
@@ -422,8 +426,8 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                     {usuariosSelecionados.length === 0
                       ? 'Todos os usuarios'
                       : usuariosSelecionados.length === 1
-                        ? (usuarios.find(u => u.id === usuariosSelecionados[0])?.nome_tratamento ||
-                           usuarios.find(u => u.id === usuariosSelecionados[0])?.full_name || '1 selecionado')
+                        ? (usuariosAtivos.find(u => u.id === usuariosSelecionados[0])?.nome_tratamento ||
+                           usuariosAtivos.find(u => u.id === usuariosSelecionados[0])?.full_name || '1 selecionado')
                         : `${usuariosSelecionados.length} usuarios selecionados`}
                   </span>
                   <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${usuarioDropOpen ? 'rotate-180' : ''}`} style={{ color: AURORA.textMuted }} />
@@ -433,7 +437,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                     style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                     {/* Header com acoes rapidas */}
                     <div className="flex items-center gap-2 px-3 py-2 sticky top-0" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
-                      <button onClick={() => setUsuariosSelecionados(usuarios.map(u => u.id))}
+                      <button onClick={() => setUsuariosSelecionados(usuariosAtivos.map(u => u.id))}
                         className="text-[10px] px-2 py-0.5 rounded-md transition"
                         style={{ color: AURORA.accent, background: AURORA.accentDim }}>
                         Selecionar todos
@@ -444,7 +448,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                         Limpar
                       </button>
                     </div>
-                    {usuarios.map(u => {
+                    {usuariosAtivos.map(u => {
                       const checked = usuariosSelecionados.includes(u.id);
                       return (
                         <button key={u.id} onClick={() => toggleUsuario(u.id)}
