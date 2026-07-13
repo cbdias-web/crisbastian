@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity } from 'lucide-react';
 import { toast } from 'sonner';
+import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal';
 
 const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
@@ -35,6 +36,7 @@ export default function Usuarios() {
   const [enviandoConviteVendedor, setEnviandoConviteVendedor] = useState(null);
   const [migrandoClientes, setMigrandoClientes] = useState(false);
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
+  const [showRelatorioAcessos, setShowRelatorioAcessos] = useState(false);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
 
@@ -240,13 +242,23 @@ export default function Usuarios() {
             <h1 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h1>
             <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuário{usuarios.length !== 1 ? 's' : ''} cadastrado{usuarios.length !== 1 ? 's' : ''}</p>
           </div>
-          <Button
-            onClick={() => setShowConviteModal(true)}
-            className="bg-[#0f1e35] hover:bg-[#1a3150] text-white px-5"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            + Convidar Usuário
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setShowRelatorioAcessos(true)}
+              variant="outline"
+              className="border-[#00D4AA] text-[#00D4AA] hover:bg-[rgba(0,212,170,0.08)]"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Relatório de Acessos
+            </Button>
+            <Button
+              onClick={() => setShowConviteModal(true)}
+              className="bg-[#0f1e35] hover:bg-[#1a3150] text-white px-5"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              + Convidar Usuário
+            </Button>
+          </div>
         </div>
 
         {/* Status Online */}
@@ -567,6 +579,14 @@ export default function Usuarios() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Modal de Relatório de Acessos */}
+        {showRelatorioAcessos && (
+          <RelatorioAcessosModal
+            usuarios={usuarios}
+            onClose={() => setShowRelatorioAcessos(false)}
+          />
         )}
 
         {/* Modal de Convite */}
