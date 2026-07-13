@@ -86,6 +86,7 @@ function FaqAccordion({ item }) {
 function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
   const [resposta, setResposta] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [analisandoIA, setAnalisandoIA] = useState(false);
   const [avaliacao, setAvaliacao] = useState(chamado.avaliacao || 0);
 
   const respostas = chamado.respostas || [];
@@ -136,6 +137,26 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
     toast.success('Chamado reaberto.');
   }
 
+  async function analisarComIA() {
+    setAnalisandoIA(true);
+    try {
+      const response = await base44.functions.invoke('analisarChamadoIA', { chamado_id: chamado.id });
+      const data = response.data;
+      const novaResposta = {
+        autor_nome: 'Assistente IA (Auto-Resolução)',
+        texto: data.resposta,
+        data_hora: new Date().toISOString(),
+        is_suporte: true,
+      };
+      const respostasAtualizadas = [...(chamado.respostas || []), novaResposta];
+      await onUpdate(chamado.id, { respostas: respostasAtualizadas, status: data.novo_status });
+      toast.success(`Análise concluída! ${data.resumo_interno || ''}`);
+    } catch (error) {
+      toast.error('Erro ao analisar: ' + (error.response?.data?.error || error.message));
+    }
+    setAnalisandoIA(false);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -154,7 +175,17 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
               <p className="text-xs text-gray-400 mt-0.5">Aberto por: {chamado.usuario_nome}</p>
             )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isAdmin && chamado.status !== 'fechado' && (
+              <button onClick={analisarComIA} disabled={analisandoIA}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff', boxShadow: '0 2px 8px rgba(0,212,170,0.3)' }}>
+                {analisandoIA ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                {analisandoIA ? 'Analisando...' : 'Analisar com IA'}
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
+          </div>
         </div>
 
         {/* Corpo */}
@@ -171,8 +202,8 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
               {respostas.map((r, i) => (
                 <div key={i} className={`rounded-xl p-3 text-sm ${r.is_suporte ? 'bg-blue-50 border border-blue-100' : 'bg-white border border-gray-200'}`}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className={`text-xs font-semibold ${r.is_suporte ? 'text-blue-700' : 'text-gray-700'}`}>
-                      {r.is_suporte ? '🛡️ Suporte' : r.autor_nome}
+                    <span className={`text-xs font-semibold ${r.is_suporte ? (r.autor_nome?.includes('IA') ? 'text-emerald-700' : 'text-blue-700') : 'text-gray-700'}`}>
+                      {r.is_suporte ? (r.autor_nome?.includes('IA') ? `🤖 ${r.autor_nome}` : '🛡️ Suporte') : r.autor_nome}
                     </span>
                     <span className="text-[10px] text-gray-400">
                       {new Date(r.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
