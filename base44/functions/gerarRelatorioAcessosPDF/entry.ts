@@ -183,19 +183,28 @@ Deno.serve(async (req) => {
       }
 
       let totalMin = 0;
+      const sessoesLista = [];
       for (const s of sorted) {
         let fimRef = null;
+        let sFimStr = '-';
+        let sDurMin = 0;
         if (s.fim) {
           fimRef = new Date(s.fim);
+          sFimStr = new Date(s.fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
         } else if (s.ativa && isOnline) {
-          // Sessao ativa de usuario online: usar horario atual
           fimRef = new Date(nowMs);
+          sFimStr = 'Em sessao';
         } else if (s.ultimo_heartbeat) {
           fimRef = new Date(s.ultimo_heartbeat);
+          sFimStr = new Date(s.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
         }
         if (fimRef) {
-          totalMin += Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
+          sDurMin = Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
+          totalMin += sDurMin;
         }
+        const sData = new Date(s.inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
+        const sInicio = new Date(s.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+        sessoesLista.push({ data: sData, inicio: sInicio, fim: sFimStr, durMin: sDurMin });
       }
 
       return {
@@ -204,6 +213,7 @@ Deno.serve(async (req) => {
         duracao: formatDuracaoPdf(totalMin),
         totalMin,
         numSessoes: sorted.length,
+        sessoesLista,
       };
     };
 
@@ -238,6 +248,7 @@ Deno.serve(async (req) => {
         acessoStr: formatDataHora(u.ultimo_acesso),
         menusStr: isAdminUser ? 'Total' : String(u.menus_acesso?.length || 0),
         topPagesStr: topPages || '-',
+        navegs,
         total,
         sessao: formatSessao(u),
       };
@@ -292,20 +303,22 @@ Deno.serve(async (req) => {
       accentDark: '#00a886',
       accentLight: '#e6fffa',
       text: '#1a1a2e',
-      textLight: '#4a5568',
-      textMuted: '#8895a6',
+      textSecondary: '#334155',
+      textLight: '#475569',
+      textMuted: '#64748b',
       white: '#ffffff',
-      border: '#e2e8f0',
-      rowAlt: '#f7fafc',
-      green: '#10b981',
+      border: '#d1dae3',
+      rowAlt: '#f8fafc',
+      detailBg: '#f0fdfa',
+      green: '#059669',
       greenBg: '#ecfdf5',
-      amber: '#f59e0b',
+      amber: '#d97706',
       amberBg: '#fffbeb',
-      red: '#ef4444',
+      red: '#dc2626',
       redBg: '#fef2f2',
-      blue: '#3b82f6',
+      blue: '#2563eb',
       blueBg: '#eff6ff',
-      purple: '#8b5cf6',
+      purple: '#7c3aed',
       purpleBg: '#f5f3ff',
     };
 
@@ -564,7 +577,7 @@ Deno.serve(async (req) => {
       doc.setFont('helvetica', 'normal');
 
       // Email
-      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.setTextColor(...hexToRgb(C.textSecondary));
       doc.text(email, cx + 1.5, y + 4.5); cx += cols[1].w;
 
       // Papel
@@ -578,7 +591,7 @@ Deno.serve(async (req) => {
       doc.setFont('helvetica', 'normal');
 
       // Inicio da sessao
-      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.setTextColor(...hexToRgb(C.textSecondary));
       doc.text(sanitize(u.sessao.inicio), cx + cols[4].w / 2, y + 4.5, { align: 'center' }); cx += cols[4].w;
 
       // Fim da sessao
@@ -586,7 +599,7 @@ Deno.serve(async (req) => {
         doc.setTextColor(...hexToRgb(C.green));
         doc.setFont('helvetica', 'bold');
       } else {
-        doc.setTextColor(...hexToRgb(C.textMuted));
+        doc.setTextColor(...hexToRgb(C.textSecondary));
       }
       doc.text(sanitize(u.sessao.fim), cx + cols[5].w / 2, y + 4.5, { align: 'center' }); cx += cols[5].w;
       doc.setFont('helvetica', 'normal');
@@ -617,6 +630,63 @@ Deno.serve(async (req) => {
       doc.line(tableX, y + rowH, tableX + tableW, y + rowH);
 
       y += rowH;
+
+      // ═══ DETALHE POR USUARIO: sessoes + paginas ═══
+      const userNavegs = u.navegs || {};
+      const userSessoes = u.sessao?.sessoesLista || [];
+      const hasS = userSessoes.length > 0;
+      const hasP = Object.keys(userNavegs).length > 0;
+
+      if (hasS || hasP) {
+        if (y > pageH - 20) {
+          doc.addPage();
+          y = 14;
+          y = drawTableHeader(y);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(6.5);
+        }
+
+        const dh = 4.5;
+        const totalDH = (hasS ? dh : 0) + (hasP ? dh : 0);
+
+        doc.setFillColor(...hexToRgb(C.detailBg));
+        doc.rect(tableX, y, tableW, totalDH, 'F');
+
+        let dy = y;
+        if (hasS) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5);
+          doc.setTextColor(...hexToRgb(C.accentDark));
+          doc.text('SESSOES', tableX + 2, dy + 3);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...hexToRgb(C.textSecondary));
+          const sStr = userSessoes.slice(0, 8).map(s =>
+            `${s.data} ${s.inicio}-${s.fim} (${formatDuracaoPdf(s.durMin)})`
+          ).join('  |  ');
+          doc.text(sanitize(sStr).substring(0, 210), tableX + 16, dy + 3);
+          dy += dh;
+        }
+
+        if (hasP) {
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(5);
+          doc.setTextColor(...hexToRgb(C.accentDark));
+          doc.text('PAGINAS', tableX + 2, dy + 3);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...hexToRgb(C.textSecondary));
+          const pStr = Object.entries(userNavegs)
+            .sort(([, a], [, b]) => b - a)
+            .map(([p, c]) => `${PAGE_LABELS_PDF[p] || p} (${c})`)
+            .join(', ');
+          doc.text(sanitize(pStr).substring(0, 210), tableX + 16, dy + 3);
+        }
+
+        doc.setDrawColor(...hexToRgb(C.border));
+        doc.setLineWidth(0.1);
+        doc.line(tableX, y + totalDH, tableX + tableW, y + totalDH);
+
+        y += totalDH + 1;
+      }
     }
 
     // ═══ FOOTER em todas as paginas ═══
