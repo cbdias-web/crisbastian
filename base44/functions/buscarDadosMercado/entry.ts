@@ -51,7 +51,11 @@ async function fetchQuote(symbol, rangeKey) {
 
   return {
     price: meta.regularMarketPrice,
-    prevClose: meta.chartPreviousClose || meta.previousClose,
+    // previousClose = fechamento do dia anterior (fixo, independe do range do gráfico)
+    // chartPreviousClose varia conforme o range (5d, 1d, etc) — causa divergência
+    prevClose: meta.previousClose || meta.chartPreviousClose,
+    regularMarketChangePercent: meta.regularMarketChangePercent,
+    regularMarketChange: meta.regularMarketChange,
     currency: meta.currency,
     series,
   };
@@ -74,8 +78,15 @@ Deno.serve(async (req) => {
       SYMBOLS.map(async (item) => {
         const data = await fetchQuote(item.symbol, rangeKey);
         if (!data || !data.price) return null;
-        const change = data.prevClose ? data.price - data.prevClose : 0;
-        const changePct = data.prevClose ? (change / data.prevClose) * 100 : 0;
+        // Usa a variação diária oficial do Yahoo Finance quando disponível
+        // (regularMarketChangePercent = variação vs fechamento do dia anterior)
+        // evita divergências entre diferentes ranges de gráfico
+        const changePct = data.regularMarketChangePercent != null
+          ? data.regularMarketChangePercent
+          : (data.prevClose ? ((data.price - data.prevClose) / data.prevClose) * 100 : 0);
+        const change = data.regularMarketChange != null
+          ? data.regularMarketChange
+          : (data.prevClose ? data.price - data.prevClose : 0);
         return {
           key: item.key,
           label: item.label,
