@@ -37,6 +37,7 @@ export default function Usuarios() {
   const [migrandoClientes, setMigrandoClientes] = useState(false);
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
   const [showRelatorioAcessos, setShowRelatorioAcessos] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
 
@@ -244,12 +245,23 @@ export default function Usuarios() {
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() => setShowRelatorioAcessos(true)}
+              onClick={() => {
+                if (selectedUserIds.length > 0) {
+                  setShowRelatorioAcessos(true);
+                } else {
+                  setShowRelatorioAcessos(true);
+                }
+              }}
               variant="outline"
               className="border-[#00D4AA] text-[#00D4AA] hover:bg-[rgba(0,212,170,0.08)]"
             >
               <Activity className="w-4 h-4 mr-2" />
               Relatório de Acessos
+              {selectedUserIds.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#00D4AA] text-[#0d1117]">
+                  {selectedUserIds.length}
+                </span>
+              )}
             </Button>
             <Button
               onClick={() => setShowConviteModal(true)}
@@ -368,6 +380,15 @@ export default function Usuarios() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
+                <th className="px-3 py-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedUserIds.length === usuarios.length && usuarios.length > 0}
+                    onChange={(e) => setSelectedUserIds(e.target.checked ? usuarios.map(u => u.id) : [])}
+                    className="w-4 h-4 accent-[#00D4AA] cursor-pointer"
+                    title="Selecionar todos"
+                  />
+                </th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">E-mail</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome de Tratamento</th>
@@ -388,14 +409,24 @@ export default function Usuarios() {
                 return (
                   <React.Fragment key={usuario.id}>
                     <tr className="hover:bg-gray-50/50 transition">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                            {initials}
-                          </div>
-                          <span className="text-sm text-gray-800 font-medium">{usuario.full_name || usuario.email}</span>
-                        </div>
+                      <td className="px-3 py-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.includes(usuario.id)}
+                          onChange={() => setSelectedUserIds(prev =>
+                            prev.includes(usuario.id) ? prev.filter(id => id !== usuario.id) : [...prev, usuario.id]
+                          )}
+                          className="w-4 h-4 accent-[#00D4AA] cursor-pointer"
+                        />
                       </td>
+                       <td className="px-5 py-3.5">
+                         <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                             {initials}
+                           </div>
+                           <span className="text-sm text-gray-800 font-medium">{usuario.full_name || usuario.email}</span>
+                         </div>
+                       </td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{usuario.email}</td>
                       <td className="px-5 py-3.5 text-sm text-gray-700">{usuario.nome_tratamento || usuario.full_name || '—'}</td>
                       <td className="px-5 py-3.5">
@@ -475,7 +506,7 @@ export default function Usuarios() {
                     </tr>
                     {isEditing && (
                       <tr>
-                        <td colSpan={7} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                        <td colSpan={8} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
                           <div className="space-y-3">
                             <div>
                               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Nome de Tratamento</p>
@@ -516,7 +547,7 @@ export default function Usuarios() {
               })}
               {usuarios.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-gray-400">
+                  <td colSpan={8} className="py-16 text-center text-gray-400">
                     <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
                     <p className="text-sm">Nenhum usuário encontrado</p>
                   </td>
@@ -585,6 +616,7 @@ export default function Usuarios() {
         {showRelatorioAcessos && (
           <RelatorioAcessosModal
             usuarios={usuarios}
+            preSelecionados={selectedUserIds}
             onClose={() => setShowRelatorioAcessos(false)}
           />
         )}

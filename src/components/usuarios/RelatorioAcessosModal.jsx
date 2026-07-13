@@ -131,11 +131,11 @@ const statusColors = {
   offline: { dot: '#6b7280', bg: 'rgba(107,114,128,0.12)', text: '#9ca3af', label: 'Offline' },
 };
 
-export default function RelatorioAcessosModal({ usuarios, onClose }) {
+export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], onClose }) {
   const [gerandoPDF, setGerandoPDF] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [usuariosSelecionados, setUsuariosSelecionados] = useState([]); // array de IDs
+  const [usuariosSelecionados, setUsuariosSelecionados] = useState(preSelecionados || []); // array de IDs
   const [usuarioDropOpen, setUsuarioDropOpen] = useState(false);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState(hoje); // default: hoje
