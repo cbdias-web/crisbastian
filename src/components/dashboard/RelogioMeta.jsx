@@ -88,7 +88,7 @@ export default function RelogioMeta({ vendas }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+        <div className="grid grid-cols-3 gap-4 pt-2 border-t">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-gray-500" />
             <div>
@@ -102,6 +102,17 @@ export default function RelogioMeta({ vendas }) {
               <p className="text-xs text-gray-500">Falta Converter</p>
               <p className="font-semibold">
                 {(metaMes.valor_meta - totalRealizado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-blue-500" />
+            <div>
+              <p className="text-xs text-gray-500">Falta por dia</p>
+              <p className="font-semibold text-blue-600">
+                {diasRestantes > 0
+                  ? ((metaMes.valor_meta - totalRealizado) / diasRestantes).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                  : '—'}
               </p>
             </div>
           </div>
