@@ -290,9 +290,10 @@ export default function Usuarios() {
               return (
                 <button
                   key={u.id}
-                  onClick={() => setSelectedUserIds(prev =>
-                    prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
-                  )}
+                  onClick={() => {
+                    setSelectedUserIds([u.id]);
+                    setShowRelatorioAcessos(true);
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition cursor-pointer ${
                     selectedUserIds.includes(u.id)
                       ? 'bg-[rgba(0,212,170,0.12)] border-[#00D4AA] text-[#00D4AA]'
