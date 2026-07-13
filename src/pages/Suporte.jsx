@@ -134,8 +134,37 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
   }
 
   async function reabrirChamado() {
-    await onUpdate(chamado.id, { status: 'aberto' });
-    toast.success('Chamado reaberto.');
+    await alterarStatus('aberto');
+  }
+
+  async function alterarStatus(novoStatus) {
+    if (novoStatus === chamado.status) return;
+    const msgSistema = {
+      autor_nome: 'Sistema',
+      texto: `🔄 Status alterado para: ${STATUS_CFG[novoStatus]?.label || novoStatus}`,
+      data_hora: new Date().toISOString(),
+      is_suporte: true,
+    };
+    const respostasAtualizadas = [...respostas, msgSistema];
+    await onUpdate(chamado.id, { respostas: respostasAtualizadas, status: novoStatus });
+    try {
+      if (isAdmin && chamado.usuario_email) {
+        await base44.entities.JarvisMensagem.create({
+          destinatario_email: chamado.usuario_email,
+          remetente_nome: 'Suporte Villela Exchange',
+          remetente_email: user?.email || '',
+          mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)} — ${chamado.titulo}**\n\nStatus atualizado para: **${STATUS_CFG[novoStatus]?.label || novoStatus}**\n\nAcesse a Central de Suporte para mais detalhes.`,
+        });
+      } else if (!isAdmin) {
+        await base44.entities.JarvisMensagem.create({
+          destinatario_email: 'suporte@villelaexchange.com.br',
+          remetente_nome: user?.full_name || '',
+          remetente_email: user?.email || '',
+          mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)}**\n\nStatus atualizado para: **${STATUS_CFG[novoStatus]?.label || novoStatus}** por ${user?.full_name || 'usuário'}.`,
+        });
+      }
+    } catch (_) {}
+    toast.success(`Status alterado para: ${STATUS_CFG[novoStatus]?.label || novoStatus}`);
   }
 
   async function analisarComIA() {
@@ -233,17 +262,23 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
           {respostas.length > 0 && (
             <div className="space-y-3">
               {respostas.map((r, i) => (
-                <div key={i} className={`rounded-xl p-3 text-sm ${r.is_suporte ? 'bg-blue-50 border border-blue-100' : 'bg-white border border-gray-200'}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-xs font-semibold ${r.is_suporte ? (r.autor_nome?.includes('IA') ? 'text-emerald-700' : 'text-blue-700') : 'text-gray-700'}`}>
-                      {r.is_suporte ? (r.autor_nome?.includes('IA') ? `🤖 ${r.autor_nome}` : '🛡️ Suporte') : r.autor_nome}
-                    </span>
-                    <span className="text-[10px] text-gray-400">
-                      {new Date(r.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
-                    </span>
+                r.autor_nome === 'Sistema' ? (
+                  <div key={i} className="text-center py-1">
+                    <span className="text-xs text-gray-400 italic bg-gray-100 px-3 py-1 rounded-full">{r.texto}</span>
                   </div>
-                  <p className="text-gray-700 leading-relaxed">{r.texto}</p>
-                </div>
+                ) : (
+                  <div key={i} className={`rounded-xl p-3 text-sm ${r.is_suporte ? (r.autor_nome?.includes('IA') ? 'bg-emerald-50 border border-emerald-100' : 'bg-blue-50 border border-blue-100') : 'bg-white border border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-xs font-semibold ${r.is_suporte ? (r.autor_nome?.includes('IA') ? 'text-emerald-700' : 'text-blue-700') : 'text-gray-700'}`}>
+                        {r.is_suporte ? (r.autor_nome?.includes('IA') ? `🤖 ${r.autor_nome}` : '🛡️ Suporte') : r.autor_nome}
+                      </span>
+                      <span className="text-[10px] text-gray-400">
+                        {new Date(r.data_hora).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                      </span>
+                    </div>
+                    <p className="text-gray-700 leading-relaxed">{r.texto}</p>
+                  </div>
+                )
               ))}
             </div>
           )}
@@ -294,8 +329,8 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
                   Enviar
                 </button>
                 {isAdmin && (
-                  <select onChange={e => onUpdate(chamado.id, { status: e.target.value })}
-                    defaultValue=""
+                  <select onChange={e => { if (e.target.value) alterarStatus(e.target.value); }}
+                    value=""
                     className="border border-gray-200 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-blue-400 bg-white">
                     <option value="" disabled>Alterar status...</option>
                     {Object.entries(STATUS_CFG).map(([k, v]) => (
@@ -359,6 +394,7 @@ export default function Suporte() {
   const [chamadoAberto, setChamadoAberto] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [busca, setBusca] = useState('');
+  const [duplicados, setDuplicados] = useState(null);
 
   // Formulario novo chamado
   const [form, setForm] = useState({ titulo: '', descricao: '', categoria: '', prioridade: 'media' });
@@ -392,6 +428,28 @@ export default function Suporte() {
       toast.error('Preencha todos os campos obrigatorios.');
       return;
     }
+    // Verificar chamados similares em andamento
+    setEnviando(true);
+    try {
+      const todos = await base44.entities.ChamadoSuporte.list('-created_date', 200);
+      const abertos = todos.filter(c => ['aberto', 'em_andamento', 'aguardando_usuario'].includes(c.status));
+      const palavras = form.titulo.toLowerCase().split(' ').filter(p => p.length > 3);
+      const similares = abertos.filter(c => {
+        const cTitulo = (c.titulo || '').toLowerCase();
+        const cDesc = (c.descricao || '').toLowerCase();
+        return palavras.filter(p => cTitulo.includes(p) || cDesc.includes(p)).length >= 2;
+      });
+      if (similares.length > 0) {
+        setDuplicados(similares);
+        setEnviando(false);
+        toast.warning('Encontramos chamados similares em andamento. Verifique antes de continuar.');
+        return;
+      }
+    } catch (err) {}
+    await criarChamado();
+  }
+
+  async function criarChamado() {
     setEnviando(true);
     try {
       const u = await base44.auth.me();
@@ -419,6 +477,7 @@ export default function Suporte() {
       } catch (_) {}
       qc.invalidateQueries({ queryKey: ['chamados-suporte'] });
       setForm({ titulo: '', descricao: '', categoria: '', prioridade: 'media' });
+      setDuplicados(null);
       toast.success(`Chamado ${numero} aberto com sucesso! Responderemos em breve.`);
       setTab('chamados');
       setChamadoAberto(novo);
@@ -494,6 +553,62 @@ export default function Suporte() {
         {/* ── INICIO ── */}
         {tab === 'inicio' && (
           <div className="space-y-5">
+            {/* Demandas em Tratamento */}
+            {chamados.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-bold text-gray-900 text-sm">Demandas em Tratamento</h2>
+                    <p className="text-xs text-gray-400 mt-0.5">{isAdmin ? 'Visão geral de todos os chamados' : 'Seus chamados ativos'}</p>
+                  </div>
+                  <button onClick={() => setTab('chamados')} className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                    Ver todos <ChevronRight className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-gray-100">
+                  {[
+                    { key: 'aberto', label: 'Abertos', color: 'text-blue-600' },
+                    { key: 'em_andamento', label: 'Em Andamento', color: 'text-amber-600' },
+                    { key: 'aguardando_usuario', label: 'Aguardando', color: 'text-purple-600' },
+                    { key: 'resolvido', label: 'Resolvidos', color: 'text-green-600' },
+                  ].map(s => {
+                    const count = chamados.filter(c => c.status === s.key).length;
+                    return (
+                      <div key={s.key} className="bg-white px-4 py-3 text-center">
+                        <p className={`text-2xl font-bold ${s.color}`}>{count}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">{s.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {chamados.filter(c => ['aberto', 'em_andamento', 'aguardando_usuario'].includes(c.status)).length > 0 && (
+                  <div className="divide-y divide-gray-100">
+                    {chamados
+                      .filter(c => ['aberto', 'em_andamento', 'aguardando_usuario'].includes(c.status))
+                      .slice(0, 5)
+                      .map(c => {
+                        const ultimaAtividade = c.respostas?.[c.respostas.length - 1];
+                        return (
+                          <button key={c.id} onClick={() => setChamadoAberto(c)}
+                            className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition text-left">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CFG[c.status]?.dot}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">{c.titulo}</p>
+                              <p className="text-xs text-gray-400">
+                                {c.numero || `#${c.id.slice(-4)}`} · {c.categoria}
+                                {isAdmin && c.usuario_nome && ` · ${c.usuario_nome}`}
+                                {ultimaAtividade && ` · últ. ${new Date(ultimaAtividade.data_hora).toLocaleDateString('pt-BR')}`}
+                              </p>
+                            </div>
+                            <Badge status={c.status} />
+                          </button>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Canais de contato */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {CONTATOS.map(c => {
@@ -567,6 +682,39 @@ export default function Suporte() {
         {/* ── ABRIR CHAMADO ── */}
         {tab === 'abrir' && (
           <div className="max-w-2xl mx-auto">
+            {duplicados && duplicados.length > 0 && (
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 mb-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-bold text-amber-800 text-sm">Chamados similares em andamento</h3>
+                </div>
+                <p className="text-xs text-amber-700 mb-3">Encontramos chamados que tratam do mesmo assunto. Verifique se algum deles já resolve sua demanda antes de abrir um novo.</p>
+                <div className="space-y-2 mb-4">
+                  {duplicados.map(d => (
+                    <button key={d.id} onClick={() => { setChamadoAberto(d); setDuplicados(null); setTab('chamados'); }}
+                      className="w-full text-left bg-white border border-amber-200 rounded-xl p-3 hover:border-amber-400 transition">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-400 font-mono">{d.numero || `#${d.id.slice(-4)}`}</span>
+                        <Badge status={d.status} />
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800">{d.titulo}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{d.categoria} · {d.usuario_nome} · {new Date(d.created_date).toLocaleDateString('pt-BR')}</p>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={criarChamado} disabled={enviando}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition disabled:opacity-60">
+                    {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                    Continuar mesmo assim
+                  </button>
+                  <button onClick={() => setDuplicados(null)}
+                    className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-50 transition">
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-6 py-5 border-b border-gray-100">
                 <h2 className="font-bold text-gray-900">Novo Chamado</h2>
