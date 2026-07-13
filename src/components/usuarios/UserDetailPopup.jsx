@@ -1,5 +1,8 @@
-import React from 'react';
-import { X, Mail, Shield, Clock, Wifi, Activity, TrendingUp, Calendar, Users, LogIn, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Mail, Shield, Clock, Wifi, Activity, TrendingUp, Calendar, Users, LogIn, LogOut, FileDown, Loader2, Compass } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { getPageLabel } from '@/lib/pageLabels';
+import { toast } from 'sonner';
 
 const AURORA = {
   bg: '#0d1117',
@@ -20,17 +23,35 @@ const statusColors = {
 };
 
 export default function UserDetailPopup({ usuario, onClose }) {
+  const [gerandoPDF, setGerandoPDF] = useState(false);
   if (!usuario) return null;
   const sc = statusColors[usuario.status] || statusColors.offline;
   const initials = (usuario.full_name || usuario.email || 'U').charAt(0).toUpperCase();
 
-  const atuaItems = [
-    { label: 'Vendas', value: usuario.atua.vendas, color: '#00D4AA', icon: TrendingUp },
-    { label: 'Mensagens Chat', value: usuario.atua.mensagens, color: '#60a5fa', icon: Activity },
-    { label: 'Chamados', value: usuario.atua.chamados, color: '#fbbf24', icon: Shield },
-    { label: 'Interacoes', value: usuario.atua.interacoes, color: '#a78bfa', icon: Users },
-    { label: 'Agenda', value: usuario.atua.agendas, color: '#34d399', icon: Calendar },
-  ];
+  const navegs = usuario.navegs || {};
+  const navegItems = Object.entries(navegs)
+    .sort(([, a], [, b]) => b - a)
+    .map(([page, count]) => ({ label: getPageLabel(page), value: count, color: '#00D4AA' }));
+
+  const gerarPDFUsuario = async () => {
+    setGerandoPDF(true);
+    try {
+      const response = await base44.functions.invoke('gerarRelatorioAcessosPDF', {
+        usuarios_ids: [usuario.id],
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${(usuario.nome_tratamento || usuario.full_name || 'usuario').replace(/\s+/g, '-')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('PDF gerado!');
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar PDF');
+    }
+    setGerandoPDF(false);
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
@@ -166,29 +187,39 @@ export default function UserDetailPopup({ usuario, onClose }) {
           </div>
         )}
 
-        {/* Atuacoes */}
+        {/* Navegacao */}
         <div className="px-5 py-4">
-          <p className="text-[10px] uppercase tracking-wide font-bold mb-2" style={{ color: AURORA.accent }}>Atuacoes no Periodo</p>
-          <div className="grid grid-cols-1 gap-1.5">
-            {atuaItems.map((item, i) => {
-              const Icon = item.icon;
-              return (
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] uppercase tracking-wide font-bold" style={{ color: AURORA.accent }}>Paginas Visitadas</p>
+            <button onClick={gerarPDFUsuario} disabled={gerandoPDF}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold transition"
+              style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+              {gerandoPDF ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileDown className="w-3 h-3" />}
+              {gerandoPDF ? 'Gerando...' : 'Gerar PDF'}
+            </button>
+          </div>
+          {navegItems.length > 0 ? (
+            <div className="space-y-1.5 max-h-48 overflow-y-auto">
+              {navegItems.map((item, i) => (
                 <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: item.color }} />
-                  <span className="text-xs flex-1" style={{ color: AURORA.textMuted }}>{item.label}</span>
-                  <span className="text-sm font-bold" style={{ color: item.value > 0 ? item.color : AURORA.textDim }}>
-                    {item.value}
-                  </span>
+                  <Compass className="w-3.5 h-3.5 flex-shrink-0" style={{ color: item.color }} />
+                  <span className="text-xs flex-1" style={{ color: AURORA.text }}>{item.label}</span>
+                  <span className="text-sm font-bold" style={{ color: item.color }}>{item.value}x</span>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4" style={{ color: AURORA.textDim }}>
+              <Compass className="w-6 h-6 mx-auto mb-1" style={{ opacity: 0.4 }} />
+              <p className="text-xs">Sem registros de navegacao no periodo</p>
+            </div>
+          )}
 
           {/* Total */}
           <div className="mt-3 flex items-center justify-between px-3 py-2.5 rounded-lg"
             style={{ background: 'rgba(0,212,170,0.08)', border: `1px solid ${AURORA.border}` }}>
-            <span className="text-xs font-bold uppercase tracking-wide" style={{ color: AURORA.accent }}>Total de Atuacoes</span>
+            <span className="text-xs font-bold uppercase tracking-wide" style={{ color: AURORA.accent }}>Total de Navegacoes</span>
             <span className="text-lg font-bold" style={{ color: AURORA.accent }}>{usuario.totalAtua}</span>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { pagesConfig } from '@/pages.config';
 
 export default function NavigationTracker() {
     const location = useLocation();
-    const { isAuthenticated } = useAuth();
+    const { user, isAuthenticated } = useAuth();
     const { Pages, mainPage } = pagesConfig;
     const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 
@@ -28,15 +28,24 @@ export default function NavigationTracker() {
                 key => key.toLowerCase() === pathSegment.toLowerCase()
             );
 
-            pageName = matchedKey || null;
+            pageName = matchedKey || pathSegment;
         }
 
-        if (isAuthenticated && pageName) {
+        if (isAuthenticated && pageName && user) {
             base44.appLogs.logUserInApp(pageName).catch(() => {
                 // Silently fail - logging shouldn't break the app
             });
+
+            // Registrar navegação real na entidade NavegacaoUsuario
+            base44.entities.NavegacaoUsuario.create({
+                user_id: user.id,
+                user_email: user.email,
+                user_name: user.full_name || user.nome_tratamento || '',
+                pagina: pageName,
+                acessado_em: new Date().toISOString(),
+            }).catch(() => {});
         }
-    }, [location, isAuthenticated, Pages, mainPageKey]);
+    }, [location, isAuthenticated, user, Pages, mainPageKey]);
 
     return null;
 }

@@ -64,13 +64,9 @@ Deno.serve(async (req) => {
     const admin = base44.asServiceRole;
 
     // Buscar usuarios, atividades e sessoes em paralelo
-    const [usuarios, vendas, mensagens, chamados, interacoes, agendas, sessoes] = await Promise.all([
+    const [usuarios, navegacoes, sessoes] = await Promise.all([
       admin.entities.User.list('full_name'),
-      admin.entities.Venda.list('-created_date', 500),
-      admin.entities.MensagemChat.list('-created_date', 500),
-      admin.entities.ChamadoSuporte.list('-created_date', 500),
-      admin.entities.InteracaoCliente.list('-created_date', 500),
-      admin.entities.AgendaContato.list('-created_date', 500),
+      admin.entities.NavegacaoUsuario.list('-acessado_em', 500),
       admin.entities.SessaoUsuario.list('-inicio', 500),
     ]);
 
@@ -105,33 +101,19 @@ Deno.serve(async (req) => {
       sessoesPorUsuario[s.user_id].push(s);
     }
 
-    const filtrarPorPeriodo = (lista) => {
-      if (!fDataInicio && !fDataFim) return lista;
-      return lista.filter(item => {
-        if (!item.created_date) return false;
-        const d = item.created_date.split('T')[0];
-        if (fDataInicio && d < fDataInicio) return false;
-        if (fDataFim && d > fDataFim) return false;
-        return true;
-      });
-    };
-
-    const contar = (lista) => {
-      const filtrada = filtrarPorPeriodo(lista);
-      const map = {};
-      for (const item of filtrada) {
-        if (item.created_by_id) {
-          map[item.created_by_id] = (map[item.created_by_id] || 0) + 1;
-        }
-      }
-      return map;
-    };
-
-    const vMap = contar(vendas);
-    const mMap = contar(mensagens);
-    const cMap = contar(chamados);
-    const iMap = contar(interacoes);
-    const aMap = contar(agendas);
+    // Agrupar navegacoes por usuario e pagina
+    const navegsFiltradas = navegacoes.filter(n => {
+      if (!n.acessado_em) return false;
+      const d = n.acessado_em.split('T')[0];
+      if (fDataInicio && d < fDataInicio) return false;
+      if (fDataFim && d > fDataFim) return false;
+      return true;
+    });
+    const navegsPorUsuario = {};
+    for (const n of navegsFiltradas) {
+      if (!navegsPorUsuario[n.user_id]) navegsPorUsuario[n.user_id] = {};
+      navegsPorUsuario[n.user_id][n.pagina] = (navegsPorUsuario[n.user_id][n.pagina] || 0) + 1;
+    }
 
     const getOnlineStatus = (ultimo) => {
       if (!ultimo) return 'Offline';
@@ -224,22 +206,37 @@ Deno.serve(async (req) => {
     };
 
     // Processar usuarios com dados
+    const PAGE_LABELS_PDF = {
+      Dashboard: 'Dashboard', MarketNews: 'Mercado', Vendas: 'Vendas',
+      MeusClientes: 'Agenda', CentralLeads: 'Central Leads', Contratos: 'Contratos',
+      Implantacoes: 'Implant.', Pipeline: 'Pipeline', Precificacao: 'Precific.',
+      Desempenho: 'Desempenho', Clientes: 'Clientes', Vendedores: 'Vendedores',
+      Espelhamentos: 'Indicad.', ChatPage: 'Chat', RelatorioInteracoes: 'Rel.Inter.',
+      Manual: 'Manual', Treinamento: 'Capacit.', Suporte: 'Suporte',
+      Comissoes: 'Comiss.', Notificacoes: 'Notifs', Comunicados: 'Comunic.',
+      NotasFiscais: 'NF', TreinamentoAdmin: 'Cap.Admin', RelatorioComissoes: 'Rel.Com.',
+      Leads: 'Prospec.', Metas: 'Metas', Produtos: 'Produtos', Importar: 'Importar',
+      Usuarios: 'Usuarios', AssistenteTreinamentos: 'Assistente',
+    };
+
     let usuariosProc = usuarios.map(u => {
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const status = u.ativo === false ? 'Bloqueado' : getOnlineStatus(u.ultimo_acesso);
-      const v = vMap[u.id] || 0;
-      const m = mMap[u.id] || 0;
-      const c = cMap[u.id] || 0;
-      const it = iMap[u.id] || 0;
-      const ag = aMap[u.id] || 0;
+      const navegs = navegsPorUsuario[u.id] || {};
+      const total = Object.values(navegs).reduce((s, v) => s + v, 0);
+      const topPages = Object.entries(navegs)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 3)
+        .map(([p, c]) => `${PAGE_LABELS_PDF[p] || p} (${c})`)
+        .join(', ');
       return {
         ...u,
         isAdminUser,
         statusStr: status,
         acessoStr: formatDataHora(u.ultimo_acesso),
         menusStr: isAdminUser ? 'Total' : String(u.menus_acesso?.length || 0),
-        atua: { v, m, c, it, ag },
-        total: v + m + c + it + ag,
+        topPagesStr: topPages || '-',
+        total,
         sessao: formatSessao(u),
       };
     });
@@ -377,7 +374,7 @@ Deno.serve(async (req) => {
       { label: 'Online', value: online, color: C.green, bg: C.greenBg },
       { label: 'Bloqueados', value: bloqueados, color: C.red, bg: C.redBg },
       { label: 'Nunca acessou', value: nunca, color: C.amber, bg: C.amberBg },
-      { label: 'Total Atuacoes', value: totalAtuacoes, color: C.purple, bg: C.purpleBg },
+      { label: 'Total Navegacoes', value: totalAtuacoes, color: C.purple, bg: C.purpleBg },
     ];
 
     cards.forEach((card, i) => {
@@ -414,7 +411,7 @@ Deno.serve(async (req) => {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...hexToRgb(C.text));
-    doc.text('Top 8 Usuarios por Atuacoes', 18, chartY + 7);
+    doc.text('Top 8 Usuarios por Navegacoes', 18, chartY + 7);
 
     if (topUsuarios.length === 0) {
       doc.setFont('helvetica', 'normal');
@@ -476,20 +473,16 @@ Deno.serve(async (req) => {
 
     // Definicao das colunas
     const cols = [
-      { header: 'Usuario', w: 38, align: 'left' },
-      { header: 'E-mail', w: 38, align: 'left' },
+      { header: 'Usuario', w: 42, align: 'left' },
+      { header: 'E-mail', w: 42, align: 'left' },
       { header: 'Papel', w: 14, align: 'left' },
       { header: 'Status', w: 16, align: 'left' },
       { header: 'Inicio', w: 14, align: 'center' },
       { header: 'Fim', w: 16, align: 'center' },
       { header: 'Duracao', w: 16, align: 'center' },
       { header: 'Menus', w: 11, align: 'center' },
-      { header: 'Vendas', w: 12, align: 'center' },
-      { header: 'Msgs', w: 12, align: 'center' },
-      { header: 'Cham.', w: 12, align: 'center' },
-      { header: 'Inter.', w: 12, align: 'center' },
-      { header: 'Agenda', w: 12, align: 'center' },
-      { header: 'Total', w: 14, align: 'center' },
+      { header: 'Top Paginas Visitadas', w: 90, align: 'left' },
+      { header: 'Naveg.', w: 14, align: 'center' },
     ];
     const rowH = 6.5;
     const tableW = cols.reduce((s, c) => s + c.w, 0);
@@ -598,25 +591,15 @@ Deno.serve(async (req) => {
       doc.setTextColor(...hexToRgb(C.text));
       doc.text(u.menusStr, cx + cols[7].w / 2, y + 4.5, { align: 'center' }); cx += cols[7].w;
 
-      // Atividades
-      const atuaCells = [
-        { v: u.atua.v, c: C.accent },
-        { v: u.atua.m, c: C.blue },
-        { v: u.atua.c, c: C.amber },
-        { v: u.atua.it, c: C.purple },
-        { v: u.atua.ag, c: C.green },
-      ];
-      for (const ac of atuaCells) {
-        doc.setTextColor(...hexToRgb(ac.v > 0 ? ac.c : C.textMuted));
-        doc.setFont('helvetica', ac.v > 0 ? 'bold' : 'normal');
-        doc.text(String(ac.v), cx + 6, y + 4.5, { align: 'center' });
-        cx += 12;
-      }
+      // Top paginas visitadas
+      doc.setTextColor(...hexToRgb(u.topPagesStr !== '-' ? C.textLight : C.textMuted));
+      doc.setFont('helvetica', 'normal');
+      doc.text(sanitize(u.topPagesStr).substring(0, 60), cx + 1.5, y + 4.5); cx += cols[8].w;
 
-      // Total
+      // Navegacoes total
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...hexToRgb(u.total > 0 ? C.accent : C.textMuted));
-      doc.text(String(u.total), cx + cols[13].w / 2, y + 4.5, { align: 'center' });
+      doc.text(String(u.total), cx + cols[9].w / 2, y + 4.5, { align: 'center' });
 
       // Bottom border
       doc.setDrawColor(...hexToRgb(C.border));

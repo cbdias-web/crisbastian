@@ -1,0 +1,31 @@
+{
+  "name": "NavegacaoUsuario",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usuario"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email do usuario"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "Nome do usuario"
+    },
+    "pagina": {
+      "type": "string",
+      "description": "Nome/chave da pagina visitada"
+    },
+    "acessado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do acesso"
+    }
+  },
+  "required": [
+    "user_id",
+    "pagina"
+  ]
+}

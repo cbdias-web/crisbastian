@@ -164,48 +164,28 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
     return map;
   }, [sessoes]);
 
-  const { data: atividades = {}, isLoading } = useQuery({
-    queryKey: ['relatorio-acessos-atividades', dataInicio, dataFim],
+  const { data: navegacoes = [], isLoading } = useQuery({
+    queryKey: ['relatorio-navegacoes', dataInicio, dataFim],
     queryFn: async () => {
-      const [vendas, mensagens, chamados, interacoes, agendas] = await Promise.all([
-        base44.entities.Venda.list('-created_date', 500),
-        base44.entities.MensagemChat.list('-created_date', 500),
-        base44.entities.ChamadoSuporte.list('-created_date', 500),
-        base44.entities.InteracaoCliente.list('-created_date', 500),
-        base44.entities.AgendaContato.list('-created_date', 500),
-      ]);
-
-      const filtrarPorPeriodo = (lista) => {
-        if (!dataInicio && !dataFim) return lista;
-        return lista.filter(item => {
-          if (!item.created_date) return false;
-          const d = item.created_date.split('T')[0];
-          if (dataInicio && d < dataInicio) return false;
-          if (dataFim && d > dataFim) return false;
-          return true;
-        });
-      };
-
-      const contar = (lista) => {
-        const filtrada = filtrarPorPeriodo(lista);
-        const map = {};
-        for (const item of filtrada) {
-          if (item.created_by_id) {
-            map[item.created_by_id] = (map[item.created_by_id] || 0) + 1;
-          }
-        }
-        return map;
-      };
-
-      return {
-        vendas: contar(vendas),
-        mensagens: contar(mensagens),
-        chamados: contar(chamados),
-        interacoes: contar(interacoes),
-        agendas: contar(agendas),
-      };
+      const all = await base44.entities.NavegacaoUsuario.list('-acessado_em', 500);
+      return all.filter(n => {
+        if (!n.acessado_em) return false;
+        const d = n.acessado_em.split('T')[0];
+        if (dataInicio && d < dataInicio) return false;
+        if (dataFim && d > dataFim) return false;
+        return true;
+      });
     },
   });
+
+  const navegsPorUsuario = useMemo(() => {
+    const map = {};
+    for (const n of navegacoes) {
+      if (!map[n.user_id]) map[n.user_id] = {};
+      map[n.user_id][n.pagina] = (map[n.user_id][n.pagina] || 0) + 1;
+    }
+    return map;
+  }, [navegacoes]);
 
   const usuariosAtivos = useMemo(() => {
     return usuarios.filter(u => u.ativo !== false && u.ultimo_acesso);
@@ -215,20 +195,14 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
     return usuariosAtivos.map(u => {
       const status = getOnlineStatus(u.ultimo_acesso);
       const acesso = formatDataHora(u.ultimo_acesso);
-      const atua = {
-        vendas: atividades.vendas?.[u.id] || 0,
-        mensagens: atividades.mensagens?.[u.id] || 0,
-        chamados: atividades.chamados?.[u.id] || 0,
-        interacoes: atividades.interacoes?.[u.id] || 0,
-        agendas: atividades.agendas?.[u.id] || 0,
-      };
-      const totalAtua = atua.vendas + atua.mensagens + atua.chamados + atua.interacoes + atua.agendas;
+      const navegs = navegsPorUsuario[u.id] || {};
+      const totalAtua = Object.values(navegs).reduce((s, v) => s + v, 0);
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const menusCount = isAdminUser ? 'Total' : (u.menus_acesso?.length || 0);
       const sessao = computarSessoes(sessoesPorUsuario[u.id] || [], u);
-      return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount, sessao };
+      return { ...u, status, acesso, navegs, totalAtua, isAdminUser, menusCount, sessao };
     });
-  }, [usuariosAtivos, atividades, sessoesPorUsuario]);
+  }, [usuariosAtivos, navegsPorUsuario, sessoesPorUsuario]);
 
   const usuariosFiltrados = useMemo(() => {
     return usuariosComDados.filter(u => {
@@ -555,7 +529,7 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
             <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr>
-                  {['Usuario', 'Papel', 'Status', 'Inicio', 'Fim', 'Duracao', 'Menus', 'Vendas', 'Msgs', 'Chamados', 'Interacoes', 'Agenda', 'Total'].map((h, i) => (
+                  {['Usuario', 'Papel', 'Status', 'Inicio', 'Fim', 'Duracao', 'Menus', 'Navegacoes'].map((h, i) => (
                     <th key={i} className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider first:rounded-tl-xl last:rounded-tr-xl"
                       style={{ color: AURORA.text, background: AURORA.surface2, borderBottom: `2px solid ${AURORA.accent}` }}>
                       {h}
@@ -611,18 +585,13 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
                         {u.sessao.duracao}
                       </td>
                       <td className="px-3 py-2.5 text-center text-xs" style={{ color: '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>{u.menusCount}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.vendas > 0 ? '#00D4AA' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.vendas}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.mensagens > 0 ? '#60a5fa' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.mensagens}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.chamados > 0 ? '#fbbf24' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.chamados}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.interacoes > 0 ? '#a78bfa' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.interacoes}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.agendas > 0 ? '#34d399' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.agendas}</td>
                       <td className="px-3 py-2.5 text-center text-xs font-bold" style={{ color: u.totalAtua > 0 ? '#00D4AA' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.totalAtua}</td>
                     </tr>
                   );
                 })}
                 {usuariosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-sm" style={{ color: AURORA.textDim }}>
+                    <td colSpan={8} className="py-12 text-center text-sm" style={{ color: AURORA.textDim }}>
                       <Users className="w-8 h-8 mx-auto mb-2" style={{ color: AURORA.textDim, opacity: 0.5 }} />
                       Nenhum usuario encontrado com os filtros selecionados
                     </td>
