@@ -115,6 +115,38 @@ Deno.serve(async (req) => {
       return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     };
 
+    const formatSessao = (u) => {
+      const inicio = u.acesso_inicio;
+      const fim = u.acesso_fim;
+      const ultimo = u.ultimo_acesso;
+      const isOnline = getOnlineStatus(ultimo) === 'Online';
+
+      const inicioStr = inicio
+        ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        : '-';
+
+      let fimStr = '-';
+      if (isOnline) {
+        fimStr = 'Em sessao';
+      } else if (fim) {
+        fimStr = new Date(fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      } else if (ultimo) {
+        fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      let duracao = '-';
+      if (inicio) {
+        const fimRef = isOnline ? Date.now() : (fim ? new Date(fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
+        if (fimRef) {
+          const diffMin = Math.round((fimRef - new Date(inicio).getTime()) / 1000 / 60);
+          if (diffMin < 60) duracao = `${diffMin} min`;
+          else duracao = `${Math.floor(diffMin / 60)}h ${diffMin % 60}min`;
+        }
+      }
+
+      return { inicio: inicioStr, fim: fimStr, duracao };
+    };
+
     // Processar usuarios com dados
     let usuariosProc = usuarios.map(u => {
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
@@ -132,6 +164,7 @@ Deno.serve(async (req) => {
         menusStr: isAdminUser ? 'Total' : String(u.menus_acesso?.length || 0),
         atua: { v, m, c, it, ag },
         total: v + m + c + it + ag,
+        sessao: formatSessao(u),
       };
     });
 
@@ -364,18 +397,20 @@ Deno.serve(async (req) => {
 
     // Definicao das colunas
     const cols = [
-      { header: 'Usuario', w: 42, align: 'left' },
-      { header: 'E-mail', w: 42, align: 'left' },
-      { header: 'Papel', w: 16, align: 'left' },
-      { header: 'Status', w: 18, align: 'left' },
-      { header: 'Ultimo Acesso', w: 28, align: 'left' },
-      { header: 'Menus', w: 12, align: 'center' },
-      { header: 'Vendas', w: 13, align: 'center' },
-      { header: 'Msgs', w: 13, align: 'center' },
-      { header: 'Cham.', w: 13, align: 'center' },
-      { header: 'Inter.', w: 13, align: 'center' },
-      { header: 'Agenda', w: 13, align: 'center' },
-      { header: 'Total', w: 15, align: 'center' },
+      { header: 'Usuario', w: 38, align: 'left' },
+      { header: 'E-mail', w: 38, align: 'left' },
+      { header: 'Papel', w: 14, align: 'left' },
+      { header: 'Status', w: 16, align: 'left' },
+      { header: 'Inicio', w: 14, align: 'center' },
+      { header: 'Fim', w: 16, align: 'center' },
+      { header: 'Duracao', w: 16, align: 'center' },
+      { header: 'Menus', w: 11, align: 'center' },
+      { header: 'Vendas', w: 12, align: 'center' },
+      { header: 'Msgs', w: 12, align: 'center' },
+      { header: 'Cham.', w: 12, align: 'center' },
+      { header: 'Inter.', w: 12, align: 'center' },
+      { header: 'Agenda', w: 12, align: 'center' },
+      { header: 'Total', w: 14, align: 'center' },
     ];
     const rowH = 6.5;
     const tableW = cols.reduce((s, c) => s + c.w, 0);
@@ -460,13 +495,29 @@ Deno.serve(async (req) => {
       doc.text(status, cx + 1.5, y + 4.5); cx += cols[3].w;
       doc.setFont('helvetica', 'normal');
 
-      // Ultimo acesso
+      // Inicio da sessao
       doc.setTextColor(...hexToRgb(C.textMuted));
-      doc.text(sanitize(u.acessoStr).substring(0, 22), cx + 1.5, y + 4.5); cx += cols[4].w;
+      doc.text(sanitize(u.sessao.inicio), cx + cols[4].w / 2, y + 4.5, { align: 'center' }); cx += cols[4].w;
+
+      // Fim da sessao
+      if (u.sessao.fim === 'Em sessao') {
+        doc.setTextColor(...hexToRgb(C.green));
+        doc.setFont('helvetica', 'bold');
+      } else {
+        doc.setTextColor(...hexToRgb(C.textMuted));
+      }
+      doc.text(sanitize(u.sessao.fim), cx + cols[5].w / 2, y + 4.5, { align: 'center' }); cx += cols[5].w;
+      doc.setFont('helvetica', 'normal');
+
+      // Duracao
+      doc.setTextColor(...hexToRgb(u.sessao.duracao !== '-' ? C.accent : C.textMuted));
+      doc.setFont('helvetica', u.sessao.duracao !== '-' ? 'bold' : 'normal');
+      doc.text(sanitize(u.sessao.duracao), cx + cols[6].w / 2, y + 4.5, { align: 'center' }); cx += cols[6].w;
+      doc.setFont('helvetica', 'normal');
 
       // Menus
       doc.setTextColor(...hexToRgb(C.text));
-      doc.text(u.menusStr, cx + cols[5].w / 2, y + 4.5, { align: 'center' }); cx += cols[5].w;
+      doc.text(u.menusStr, cx + cols[7].w / 2, y + 4.5, { align: 'center' }); cx += cols[7].w;
 
       // Atividades
       const atuaCells = [
@@ -479,14 +530,14 @@ Deno.serve(async (req) => {
       for (const ac of atuaCells) {
         doc.setTextColor(...hexToRgb(ac.v > 0 ? ac.c : C.textMuted));
         doc.setFont('helvetica', ac.v > 0 ? 'bold' : 'normal');
-        doc.text(String(ac.v), cx + 6.5, y + 4.5, { align: 'center' });
-        cx += 13;
+        doc.text(String(ac.v), cx + 6, y + 4.5, { align: 'center' });
+        cx += 12;
       }
 
       // Total
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...hexToRgb(u.total > 0 ? C.accent : C.textMuted));
-      doc.text(String(u.total), cx + cols[11].w / 2, y + 4.5, { align: 'center' });
+      doc.text(String(u.total), cx + cols[13].w / 2, y + 4.5, { align: 'center' });
 
       // Bottom border
       doc.setDrawColor(...hexToRgb(C.border));

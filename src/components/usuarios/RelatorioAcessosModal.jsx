@@ -35,6 +35,46 @@ const formatDataHora = (iso) => {
   return { data, hora, relativo };
 };
 
+const formatSessao = (u) => {
+  const inicio = u.acesso_inicio;
+  const fim = u.acesso_fim;
+  const ultimo = u.ultimo_acesso;
+  const isOnline = getOnlineStatus(ultimo) === 'online';
+
+  // Horario de inicio
+  const inicioStr = inicio
+    ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+
+  // Horario de fim: se online, "Em sessao"; se tem acesso_fim usa ele; senao usa ultimo_acesso
+  let fimStr = '—';
+  if (isOnline) {
+    fimStr = 'Em sessao';
+  } else if (fim) {
+    fimStr = new Date(fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } else if (ultimo) {
+    fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Duracao: inicio -> fim (ou agora se online)
+  let duracao = '—';
+  if (inicio) {
+    const fimRef = isOnline ? Date.now() : (fim ? new Date(fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
+    if (fimRef) {
+      const diffMs = fimRef - new Date(inicio).getTime();
+      const diffMin = Math.round(diffMs / 1000 / 60);
+      if (diffMin < 60) duracao = `${diffMin} min`;
+      else {
+        const h = Math.floor(diffMin / 60);
+        const m = diffMin % 60;
+        duracao = `${h}h ${m}min`;
+      }
+    }
+  }
+
+  return { inicio: inicioStr, fim: fimStr, duracao };
+};
+
 const getOnlineStatus = (ultimoAcesso) => {
   if (!ultimoAcesso) return 'offline';
   const diff = (Date.now() - new Date(ultimoAcesso).getTime()) / 1000 / 60;
@@ -116,7 +156,8 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       const totalAtua = atua.vendas + atua.mensagens + atua.chamados + atua.interacoes + atua.agendas;
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const menusCount = isAdminUser ? 'Total' : (u.menus_acesso?.length || 0);
-      return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount };
+      const sessao = formatSessao(u);
+      return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount, sessao };
     });
   }, [usuarios, atividades]);
 
@@ -448,7 +489,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
             <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr>
-                  {['Usuario', 'Papel', 'Status', 'Ultimo Acesso', 'Horario', 'Menus', 'Vendas', 'Msgs', 'Chamados', 'Interacoes', 'Agenda', 'Total'].map((h, i) => (
+                  {['Usuario', 'Papel', 'Status', 'Inicio', 'Fim', 'Duracao', 'Menus', 'Vendas', 'Msgs', 'Chamados', 'Interacoes', 'Agenda', 'Total'].map((h, i) => (
                     <th key={i} className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider first:rounded-tl-xl last:rounded-tr-xl"
                       style={{ color: AURORA.text, background: AURORA.surface2, borderBottom: `2px solid ${AURORA.accent}` }}>
                       {h}
@@ -494,12 +535,14 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-xs" style={{ color: u.acesso.data === 'Nunca acessou' ? AURORA.textDim : '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>
-                        {u.acesso.data}
+                      <td className="px-3 py-2.5 text-xs" style={{ color: u.sessao.inicio === '—' ? AURORA.textDim : '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>
+                        {u.sessao.inicio}
                       </td>
-                      <td className="px-3 py-2.5 text-xs" style={{ color: '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>
-                        {u.acesso.hora}
-                        <span className="block text-[9px]" style={{ color: AURORA.textDim }}>{u.acesso.relativo}</span>
+                      <td className="px-3 py-2.5 text-xs" style={{ color: u.sessao.fim === 'Em sessao' ? '#34d399' : (u.sessao.fim === '—' ? AURORA.textDim : '#9da7b3'), borderBottom: `1px solid ${AURORA.border}`, fontWeight: u.sessao.fim === 'Em sessao' ? 600 : 400 }}>
+                        {u.sessao.fim}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs font-semibold" style={{ color: u.sessao.duracao === '—' ? AURORA.textDim : AURORA.accent, borderBottom: `1px solid ${AURORA.border}` }}>
+                        {u.sessao.duracao}
                       </td>
                       <td className="px-3 py-2.5 text-center text-xs" style={{ color: '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>{u.menusCount}</td>
                       <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.vendas > 0 ? '#00D4AA' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.vendas}</td>
@@ -513,7 +556,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                 })}
                 {usuariosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="py-12 text-center text-sm" style={{ color: AURORA.textDim }}>
+                    <td colSpan={13} className="py-12 text-center text-sm" style={{ color: AURORA.textDim }}>
                       <Users className="w-8 h-8 mx-auto mb-2" style={{ color: AURORA.textDim, opacity: 0.5 }} />
                       Nenhum usuario encontrado com os filtros selecionados
                     </td>

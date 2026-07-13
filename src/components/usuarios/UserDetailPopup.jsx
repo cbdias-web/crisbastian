@@ -100,6 +100,25 @@ export default function UserDetailPopup({ usuario, onClose }) {
           </div>
         </div>
 
+        {/* Sessao: inicio, fim, duracao */}
+        <div className="px-5 py-3 grid grid-cols-3 gap-2" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+          <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
+            <Clock className="w-3 h-3 mx-auto mb-1" style={{ color: AURORA.accent }} />
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Inicio</p>
+            <p className="text-xs font-bold" style={{ color: AURORA.text }}>{usuario.sessao?.inicio || '—'}</p>
+          </div>
+          <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
+            <Wifi className="w-3 h-3 mx-auto mb-1" style={{ color: usuario.sessao?.fim === 'Em sessao' ? '#34d399' : AURORA.textMuted }} />
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Fim</p>
+            <p className="text-xs font-bold" style={{ color: usuario.sessao?.fim === 'Em sessao' ? '#34d399' : AURORA.text }}>{usuario.sessao?.fim || '—'}</p>
+          </div>
+          <div className="text-center rounded-lg py-2" style={{ background: AURORA.surface2 }}>
+            <Activity className="w-3 h-3 mx-auto mb-1" style={{ color: AURORA.accent }} />
+            <p className="text-[9px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Duracao</p>
+            <p className="text-xs font-bold" style={{ color: AURORA.accent }}>{usuario.sessao?.duracao || '—'}</p>
+          </div>
+        </div>
+
         {/* Atuacoes */}
         <div className="px-5 py-4">
           <p className="text-[10px] uppercase tracking-wide font-bold mb-2" style={{ color: AURORA.accent }}>Atuacoes no Periodo</p>

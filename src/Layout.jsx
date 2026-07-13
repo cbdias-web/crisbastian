@@ -76,7 +76,8 @@ export default function Layout({ children, currentPageName }) {
           if (pendente) setComunicadoPendente(pendente);
         }
       } catch (e) {}
-      try { await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() }); } catch (e) {}
+      const agora = new Date().toISOString();
+      try { await base44.auth.updateMe({ ultimo_acesso: agora, acesso_inicio: agora }); } catch (e) {}
     }).catch(() => {});
   }, []);
 
@@ -85,6 +86,20 @@ export default function Layout({ children, currentPageName }) {
       try { await base44.auth.updateMe({ ultimo_acesso: new Date().toISOString() }); } catch (e) {}
     }, 2 * 60 * 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Registrar fim da sessão ao fechar/abandonar a página
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        const payload = JSON.stringify({ acesso_fim: new Date().toISOString() });
+        const blob = new Blob([payload], { type: 'application/json' });
+        // sendBeacon envia de forma não-bloqueante mesmo durante o unload
+        navigator.sendBeacon('/api/auth/me', blob);
+      } catch (e) {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
   useEffect(() => {
