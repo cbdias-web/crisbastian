@@ -181,6 +181,7 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
         resposta: data.resposta,
         novo_status: data.novo_status,
         resumo_interno: data.resumo_interno,
+        acao_executar: data.acao_executar || { tipo: 'nenhuma' },
       });
       toast.success('Análise da IA concluída — revise e aprove a sugestão abaixo.');
     } catch (error) {
@@ -193,9 +194,38 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
     if (!sugestaoIA) return;
     setEnviando(true);
     try {
+      // Se houver uma acao executavel, aplica-la antes de enviar a resposta
+      let acaoResultado = null;
+      const acao = sugestaoIA.acao_executar;
+      if (acao && acao.tipo && acao.tipo !== 'nenhuma') {
+        try {
+          const execResp = await base44.functions.invoke('executarAcaoChamado', {
+            chamado_id: chamado.id,
+            acao,
+          });
+          acaoResultado = execResp.data;
+          if (!acaoResultado.success) {
+            toast.error('Falha ao executar ação: ' + (acaoResultado.error || ''));
+            setEnviando(false);
+            return;
+          }
+        } catch (error) {
+          toast.error('Erro ao executar ação: ' + (error.response?.data?.error || error.message));
+          setEnviando(false);
+          return;
+        }
+      }
+
+      // Montar texto da resposta, incluindo resultado da acao executada
+      let textoResposta = sugestaoIA.resposta;
+      if (acaoResultado && acaoResultado.success && acaoResultado.tipo !== 'nenhuma') {
+        const detalhe = acaoResultado.mensagem || '';
+        textoResposta += `\n\n---\n✅ **Solução aplicada automaticamente:** ${detalhe}`;
+      }
+
       const novaResposta = {
         autor_nome: 'Assistente IA (Auto-Resolução)',
-        texto: sugestaoIA.resposta,
+        texto: textoResposta,
         data_hora: new Date().toISOString(),
         is_suporte: true,
       };
@@ -207,12 +237,14 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
             destinatario_email: chamado.usuario_email,
             remetente_nome: 'Suporte Villela Exchange',
             remetente_email: user?.email || '',
-            mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)} — ${chamado.titulo}**\n\nSua solicitação foi analisada e respondida.\n\nAcesse a Central de Suporte para visualizar a resposta.`,
+            mensagem: `📋 **Chamado #${chamado.numero || chamado.id.slice(-4)} — ${chamado.titulo}**\n\nSua solicitação foi analisada e ${acaoResultado?.success && acaoResultado.tipo !== 'nenhuma' ? 'resolvida' : 'respondida'}.\n\nAcesse a Central de Suporte para visualizar a resposta.`,
           });
         }
       } catch (_) {}
       setSugestaoIA(null);
-      toast.success('Sugestão aprovada e enviada ao usuário!');
+      toast.success(acaoResultado?.success && acaoResultado.tipo !== 'nenhuma'
+        ? 'Solução aplicada e enviada ao usuário!'
+        : 'Sugestão aprovada e enviada ao usuário!');
     } catch (error) {
       toast.error('Erro ao aprovar: ' + (error.response?.data?.error || error.message));
     }
@@ -335,6 +367,32 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
               </div>
               {sugestaoIA.resumo_interno && (
                 <p className="text-xs text-gray-500 mb-2 italic">Resumo: {sugestaoIA.resumo_interno}</p>
+              )}
+              {sugestaoIA.acao_executar && sugestaoIA.acao_executar.tipo && sugestaoIA.acao_executar.tipo !== 'nenhuma' && (
+                <div className="rounded-lg p-3 bg-white border border-emerald-300 mb-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-xs font-bold text-emerald-700">
+                      Ação que será executada ao aprovar: {sugestaoIA.acao_executar.tipo.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                  {sugestaoIA.acao_executar.justificativa && (
+                    <p className="text-xs text-gray-600 mb-1">{sugestaoIA.acao_executar.justificativa}</p>
+                  )}
+                  {sugestaoIA.acao_executar.dados && Object.keys(sugestaoIA.acao_executar.dados).length > 0 && (
+                    <div className="mt-1.5 space-y-0.5">
+                      {Object.entries(sugestaoIA.acao_executar.dados).slice(0, 8).map(([k, v]) => (
+                        <div key={k} className="flex gap-2 text-xs">
+                          <span className="text-gray-400 font-mono min-w-[120px]">{k}:</span>
+                          <span className="text-gray-700 truncate">{String(v)}</span>
+                        </div>
+                      ))}
+                      {Object.keys(sugestaoIA.acao_executar.dados).length > 8 && (
+                        <p className="text-xs text-gray-400 italic">+ {Object.keys(sugestaoIA.acao_executar.dados).length - 8} campos adicionais</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
               <p className="text-xs font-semibold text-gray-600 mb-1">Resposta sugerida (editável):</p>
               <textarea value={sugestaoIA.resposta} onChange={e => setSugestaoIA({ ...sugestaoIA, resposta: e.target.value })} rows={6}
