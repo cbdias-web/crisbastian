@@ -78,26 +78,55 @@ export default function Layout({ children, currentPageName }) {
       } catch (e) {}
       const agora = new Date().toISOString();
       try {
-        await base44.auth.updateMe({ ultimo_acesso: agora, acesso_inicio: agora });
+        await base44.auth.updateMe({ ultimo_acesso: agora });
 
-        // Fechar sessoes antigas que ficaram abertas (cleanup)
-        try {
-          await base44.functions.invoke('registrarFimSessao', { user_id: u.id, close_all: true });
-        } catch (e) {}
+        // Tentar reusar sessao existente (refresh nao cria nova sessao)
+        const existingSessionId = localStorage.getItem('current_session_id');
+        let sessionReused = false;
 
-        // Criar nova sessao individual
-        try {
-          const sessao = await base44.entities.SessaoUsuario.create({
-            user_id: u.id,
-            user_email: u.email,
-            user_name: u.full_name || u.nome_tratamento || '',
-            inicio: agora,
-            ativa: true,
-            ultimo_heartbeat: agora,
-            duracao_min: 0,
-          });
-          localStorage.setItem('current_session_id', sessao.id);
-        } catch (e) {}
+        if (existingSessionId) {
+          try {
+            const existing = await base44.entities.SessaoUsuario.get(existingSessionId);
+            if (existing && existing.user_id === u.id) {
+              // Se o heartbeat foi ha menos de 5 min, o usuario so deu refresh
+              const heartbeatAge = existing.ultimo_heartbeat
+                ? (Date.now() - new Date(existing.ultimo_heartbeat).getTime()) / 1000 / 60
+                : 999;
+              if (heartbeatAge <= 5) {
+                await base44.entities.SessaoUsuario.update(existingSessionId, {
+                  ativa: true,
+                  fim: null,
+                  ultimo_heartbeat: agora,
+                });
+                sessionReused = true;
+              }
+            }
+          } catch (e) {
+            // Sessao nao existe mais
+          }
+        }
+
+        if (!sessionReused) {
+          // Fechar sessoes antigas que ficaram abertas (cleanup)
+          try {
+            await base44.functions.invoke('registrarFimSessao', { user_id: u.id, close_all: true });
+          } catch (e) {}
+
+          // Criar nova sessao individual
+          try {
+            const sessao = await base44.entities.SessaoUsuario.create({
+              user_id: u.id,
+              user_email: u.email,
+              user_name: u.full_name || u.nome_tratamento || '',
+              inicio: agora,
+              ativa: true,
+              ultimo_heartbeat: agora,
+              duracao_min: 0,
+            });
+            localStorage.setItem('current_session_id', sessao.id);
+            await base44.auth.updateMe({ acesso_inicio: agora });
+          } catch (e) {}
+        }
       } catch (e) {}
     }).catch(() => {});
   }, []);
@@ -123,8 +152,8 @@ export default function Layout({ children, currentPageName }) {
       if (!sessionId) return;
       try {
         // Fire and forget - tenta fechar a sessao via SDK
+        // NAO remove do localStorage: permite reusar em caso de refresh (F5)
         base44.functions.invoke('registrarFimSessao', { session_id: sessionId }).catch(() => {});
-        localStorage.removeItem('current_session_id');
       } catch (e) {}
     };
 
