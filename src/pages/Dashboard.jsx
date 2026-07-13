@@ -388,7 +388,7 @@ export default function Dashboard() {
     return { nome: v.nome.split(" ")[0], volume: vol, meta: metaRecord?.valor_meta || 0, temComissaoMes };
   }).filter(r => r.volume > 0 || r.meta > 0 || r.temComissaoMes).sort((a, b) => b.volume - a.volume);
 
-  const recentes = vendasFiltradas.slice(0, 8);
+  const recentes = vendasAcumulado.slice(0, 8);
 
   const parcelasPorVendedor = (vendedorId) =>
     parcelasMes.filter(p => p.vendedor_id === vendedorId && p.data_vencimento >= mesIni && p.data_vencimento <= mesFim)
