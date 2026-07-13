@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react';
-import { Paperclip, X, FileText, Loader2, Download } from 'lucide-react';
+import { Paperclip, X, FileText, Loader2, Download, UploadCloud } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export default function AnexoUpload({ anexos = [], onChange, compact = false }) {
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
 
   async function handleFiles(files) {
@@ -29,8 +30,34 @@ export default function AnexoUpload({ anexos = [], onChange, compact = false }) 
     onChange(anexos.filter((_, i) => i !== idx));
   }
 
+  function onDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+    if (uploading) return;
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+  }
+
+  function onDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(true);
+  }
+
+  function onDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }
+
   return (
-    <div>
+    <div
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      className={`rounded-xl transition-all ${dragOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''}`}
+    >
       <input
         ref={inputRef}
         type="file"
@@ -58,15 +85,24 @@ export default function AnexoUpload({ anexos = [], onChange, compact = false }) 
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className={`flex items-center gap-1.5 text-xs font-semibold transition disabled:opacity-60 ${compact ? 'text-blue-600 hover:text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-      >
-        {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
-        {uploading ? 'Enviando...' : 'Anexar documento'}
-      </button>
+
+      {dragOver ? (
+        <div className="flex items-center justify-center gap-2 py-4 border-2 border-dashed border-blue-400 rounded-xl text-blue-600 text-sm font-semibold">
+          <UploadCloud className="w-5 h-5" />
+          Solte os arquivos aqui para anexar
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className={`flex items-center gap-1.5 text-xs font-semibold transition disabled:opacity-60 ${compact ? 'text-blue-600 hover:text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+        >
+          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+          {uploading ? 'Enviando...' : 'Anexar documento'}
+          {!compact && <span className="text-gray-400 font-normal hidden sm:inline">· arraste e solte ou clique</span>}
+        </button>
+      )}
     </div>
   );
 }
