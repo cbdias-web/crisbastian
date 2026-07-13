@@ -50,7 +50,7 @@ export default function MarketTicker() {
 
   useEffect(() => {
     fetchData();
-    intervalRef.current = setInterval(fetchData, 60 * 60 * 1000); // atualiza a cada hora
+    intervalRef.current = setInterval(fetchData, 5 * 60 * 1000); // atualiza a cada 5 minutos
     return () => clearInterval(intervalRef.current);
   }, []);
 
