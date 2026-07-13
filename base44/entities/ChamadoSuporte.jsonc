@@ -16,6 +16,7 @@
         "Acesso",
         "Vendas e Comissoes",
         "Contratos e Pipeline",
+        "Analise de Documentos",
         "Precificacao",
         "Chat Interno",
         "Capacitacao",
@@ -60,6 +61,22 @@
       "type": "string",
       "description": "Email do usuario"
     },
+    "anexos": {
+      "type": "array",
+      "description": "Documentos anexados ao chamado (contratos, comprovantes, etc.)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
     "respostas": {
       "type": "array",
       "description": "Thread de respostas do chamado",
@@ -77,6 +94,22 @@
           },
           "is_suporte": {
             "type": "boolean"
+          },
+          "anexos": {
+            "type": "array",
+            "description": "Documentos anexados a esta resposta",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "nome": {
+                  "type": "string"
+                }
+              }
+            },
+            "default": []
           }
         }
       },
