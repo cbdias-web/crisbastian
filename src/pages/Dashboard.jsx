@@ -115,7 +115,9 @@ function RelogioMeta({ producao, meta, periodoMesLabel, periodoMes }) {
   const dashEsperado = (pctEsperado / 100) * circumference;
 
   return (
-    <div className="rounded-2xl p-5 flex flex-col gap-4"
+    <div className="rounded-2xl p-5 flex flex-col gap-4 transition-all duration-200"
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(0,212,170,0.15), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.borderColor = `${A.accent}55`; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = A.border; }}
       style={{ background: A.surface, border: `1px solid ${A.border}` }}>
       <div className="flex items-center gap-2">
         <Clock className="w-4 h-4" style={{ color: A.accent }} />
@@ -784,7 +786,10 @@ export default function Dashboard() {
         </div>
 
         {/* ─── Acesso Rápido ────────────────────────────────────────────── */}
-        <div className="rounded-2xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+        <div className="rounded-2xl p-5 transition-all duration-200"
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 20px rgba(0,212,170,0.15), 0 4px 16px rgba(0,0,0,0.4)`; e.currentTarget.style.borderColor = `${A.accent}55`; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = A.border; }}
+          style={{ background: A.surface, border: `1px solid ${A.border}` }}>
           <h3 className="font-semibold text-sm mb-4" style={{ color: A.text }}>Acesso Rápido</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {[
