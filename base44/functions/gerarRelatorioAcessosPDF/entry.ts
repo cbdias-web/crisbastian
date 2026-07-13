@@ -74,6 +74,23 @@ Deno.serve(async (req) => {
       admin.entities.SessaoUsuario.list('-inicio', 500),
     ]);
 
+    // Limpar sessoes stale (ativa=true mas heartbeat > 10 min) antes de gerar relatorio
+    const staleThresholdMs = Date.now() - 10 * 60 * 1000;
+    for (const s of sessoes) {
+      if (!s.ativa) continue;
+      const hbMs = s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat).getTime() : (s.inicio ? new Date(s.inicio).getTime() : 0);
+      if (hbMs < staleThresholdMs) {
+        const fim = s.ultimo_heartbeat || s.inicio || new Date().toISOString();
+        const duracaoMin = Math.max(0, Math.round((new Date(fim).getTime() - new Date(s.inicio).getTime()) / 1000 / 60));
+        try {
+          await admin.entities.SessaoUsuario.update(s.id, { fim, ativa: false, duracao_min: duracaoMin });
+          s.fim = fim;
+          s.ativa = false;
+          s.duracao_min = duracaoMin;
+        } catch (e) {}
+      }
+    }
+
     // Filtrar e agrupar sessoes por usuario
     const sessoesFiltradas = sessoes.filter(s => {
       if (!s.inicio) return false;
@@ -138,23 +155,28 @@ Deno.serve(async (req) => {
 
     const formatSessao = (u) => {
       const userSessoes = sessoesPorUsuario[u.id] || [];
+      const isOnline = getOnlineStatus(u.ultimo_acesso) === 'Online';
+      const nowMs = Date.now();
+
+      // Fallback: sem registros de sessao, usar dados do User entity
       if (userSessoes.length === 0) {
-        // Fallback para dados do User entity
         const inicio = u.acesso_inicio;
         const ultimo = u.ultimo_acesso;
-        const isOnline = getOnlineStatus(ultimo) === 'Online';
         const inicioStr = inicio
           ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
           : '-';
         let fimStr = '-';
-        if (isOnline) fimStr = 'Em sessao';
-        else if (u.acesso_fim) fimStr = new Date(u.acesso_fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        else if (ultimo) fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         let duracao = '-';
-        if (inicio) {
-          const fimRef = isOnline ? Date.now() : (u.acesso_fim ? new Date(u.acesso_fim).getTime() : (ultimo ? new Date(ultimo).getTime() : null));
-          if (fimRef) {
-            const diffMin = Math.round((fimRef - new Date(inicio).getTime()) / 1000 / 60);
+        if (isOnline) {
+          fimStr = 'Em sessao';
+          if (inicio) {
+            const diffMin = Math.round((nowMs - new Date(inicio).getTime()) / 1000 / 60);
+            duracao = formatDuracaoPdf(diffMin);
+          }
+        } else if (ultimo) {
+          fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          if (inicio) {
+            const diffMin = Math.round((new Date(ultimo).getTime() - new Date(inicio).getTime()) / 1000 / 60);
             duracao = formatDuracaoPdf(diffMin);
           }
         }
@@ -164,7 +186,6 @@ Deno.serve(async (req) => {
       const sorted = [...userSessoes].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
       const primeira = sorted[0];
       const ultima = sorted[sorted.length - 1];
-      const isOnline = getOnlineStatus(u.ultimo_acesso) === 'Online';
       const temAtiva = sorted.some(s => s.ativa);
 
       const inicioStr = new Date(primeira.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -180,7 +201,15 @@ Deno.serve(async (req) => {
 
       let totalMin = 0;
       for (const s of sorted) {
-        const fimRef = s.fim ? new Date(s.fim) : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat) : null);
+        let fimRef = null;
+        if (s.fim) {
+          fimRef = new Date(s.fim);
+        } else if (s.ativa && isOnline) {
+          // Sessao ativa de usuario online: usar horario atual
+          fimRef = new Date(nowMs);
+        } else if (s.ultimo_heartbeat) {
+          fimRef = new Date(s.ultimo_heartbeat);
+        }
         if (fimRef) {
           totalMin += Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
         }

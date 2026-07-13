@@ -141,7 +141,8 @@ export default function UserDetailPopup({ usuario, onClose }) {
                     : (s.ultimo_heartbeat
                       ? new Date(s.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '*'
                       : '—'));
-                const sFimMs = s.fim ? new Date(s.fim).getTime() : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat).getTime() : Date.now());
+                const isSActive = s.ativa && usuario.status === 'online';
+                const sFimMs = s.fim ? new Date(s.fim).getTime() : (isSActive ? Date.now() : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat).getTime() : new Date(s.inicio).getTime()));
                 const sDurMin = Math.max(0, Math.round((sFimMs - new Date(s.inicio).getTime()) / 1000 / 60));
                 const sDur = sDurMin < 60 ? `${sDurMin} min` : `${Math.floor(sDurMin / 60)}h ${sDurMin % 60}min`;
                 const dataSessao = new Date(s.inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });

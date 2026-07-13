@@ -48,14 +48,36 @@ const formatHora = (iso) => {
   return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 };
 
-const computarSessoes = (userSessoes, ultimoAcesso) => {
+const computarSessoes = (userSessoes, user) => {
+  const ultimoAcesso = user.ultimo_acesso;
+  const isOnline = getOnlineStatus(ultimoAcesso) === 'online';
+  const nowMs = Date.now();
+
+  // Fallback: sem registros de sessao, usar dados do User entity
   if (!userSessoes || userSessoes.length === 0) {
-    return { inicio: '—', fim: '—', duracao: '—', numSessoes: 0, totalMin: 0, sessoes: [] };
+    const inicio = user.acesso_inicio;
+    const inicioStr = inicio ? formatHora(inicio) : '—';
+    let fimStr = '—';
+    let duracao = '—';
+    if (isOnline) {
+      fimStr = 'Em sessão';
+      if (inicio) {
+        const diffMin = Math.round((nowMs - new Date(inicio).getTime()) / 1000 / 60);
+        duracao = formatDuracao(diffMin);
+      }
+    } else if (ultimoAcesso) {
+      fimStr = formatHora(ultimoAcesso);
+      if (inicio) {
+        const diffMin = Math.round((new Date(ultimoAcesso).getTime() - new Date(inicio).getTime()) / 1000 / 60);
+        duracao = formatDuracao(diffMin);
+      }
+    }
+    return { inicio: inicioStr, fim: fimStr, duracao, numSessoes: 0, totalMin: 0, sessoes: [] };
   }
+
   const sorted = [...userSessoes].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
   const primeira = sorted[0];
   const ultima = sorted[sorted.length - 1];
-  const isOnline = getOnlineStatus(ultimoAcesso) === 'online';
   const temAtiva = sorted.some(s => s.ativa);
 
   const inicioStr = formatHora(primeira.inicio);
@@ -71,7 +93,15 @@ const computarSessoes = (userSessoes, ultimoAcesso) => {
 
   let totalMin = 0;
   for (const s of sorted) {
-    const fimRef = s.fim ? new Date(s.fim) : (s.ultimo_heartbeat ? new Date(s.ultimo_heartbeat) : null);
+    let fimRef = null;
+    if (s.fim) {
+      fimRef = new Date(s.fim);
+    } else if (s.ativa && isOnline) {
+      // Sessao ativa de usuario online: usar horario atual
+      fimRef = new Date(nowMs);
+    } else if (s.ultimo_heartbeat) {
+      fimRef = new Date(s.ultimo_heartbeat);
+    }
     if (fimRef) {
       totalMin += Math.max(0, Math.round((fimRef - new Date(s.inicio)) / 1000 / 60));
     }
@@ -191,7 +221,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       const totalAtua = atua.vendas + atua.mensagens + atua.chamados + atua.interacoes + atua.agendas;
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const menusCount = isAdminUser ? 'Total' : (u.menus_acesso?.length || 0);
-      const sessao = computarSessoes(sessoesPorUsuario[u.id] || [], u.ultimo_acesso);
+      const sessao = computarSessoes(sessoesPorUsuario[u.id] || [], u);
       return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount, sessao };
     });
   }, [usuarios, atividades, sessoesPorUsuario]);
