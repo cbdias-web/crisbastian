@@ -10,7 +10,7 @@ import {
   UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
   Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
   MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
-  Search, Zap, Rocket, Newspaper
+  Search, Zap, Rocket, Newspaper, Bot
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
@@ -285,6 +285,7 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', alwaysVisible: true },
         { name: 'Manual', icon: BookOpen, page: 'Manual', alwaysVisible: true },
         { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', alwaysVisible: true },
+        { name: 'Assistente IA', icon: Bot, page: 'AssistenteTreinamentos', alwaysVisible: true },
         { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', alwaysVisible: true, badge: chamadosPendentes.length },
       ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
     },
