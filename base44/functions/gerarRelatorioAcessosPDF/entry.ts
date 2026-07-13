@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     const formatDataHora = (iso) => {
       if (!iso) return 'Nunca acessou';
       const d = new Date(iso);
-      return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      return `${d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`;
     };
 
     const formatDuracaoPdf = (min) => {
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
         const inicio = u.acesso_inicio;
         const ultimo = u.ultimo_acesso;
         const inicioStr = inicio
-          ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          ? new Date(inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
           : '-';
         let fimStr = '-';
         let duracao = '-';
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
             duracao = formatDuracaoPdf(diffMin);
           }
         } else if (ultimo) {
-          fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
           if (inicio) {
             const diffMin = Math.round((new Date(ultimo).getTime() - new Date(inicio).getTime()) / 1000 / 60);
             duracao = formatDuracaoPdf(diffMin);
@@ -170,15 +170,15 @@ Deno.serve(async (req) => {
       const ultima = sorted[sorted.length - 1];
       const temAtiva = sorted.some(s => s.ativa);
 
-      const inicioStr = new Date(primeira.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const inicioStr = new Date(primeira.inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
 
       let fimStr = '-';
       if (temAtiva && isOnline) {
         fimStr = 'Em sessao';
       } else if (ultima.fim) {
-        fimStr = new Date(ultima.fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        fimStr = new Date(ultima.fim).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
       } else if (ultima.ultimo_heartbeat) {
-        fimStr = new Date(ultima.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        fimStr = new Date(ultima.ultimo_heartbeat).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
       }
 
       let totalMin = 0;
@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
     doc.setTextColor(180, 190, 200);
     doc.text(sanitize('Villela Exchange - Gestao Comercial'), 38, 27);
     doc.setFontSize(8);
-    doc.text(sanitize(`Gerado em: ${new Date().toLocaleString('pt-BR')}`), 38, 33);
+    doc.text(sanitize(`Gerado em: ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`), 38, 33);
 
     // Box de periodo a direita
     doc.setFillColor(...hexToRgb(C.darkBlue));
@@ -363,11 +363,11 @@ Deno.serve(async (req) => {
       doc.text(sanitize(`Usuario: ${uSel?.nome_tratamento || uSel?.full_name || 'Selecionado'}`), pageW - 77, 31);
     }
 
-    // ═══ CARDS DE SUMARIO ═══
-    const cardY = 55;
-    const cardH = 22;
-    const cardW = (pageW - 28 - 12) / 5; // 5 cards com gaps
-    const cardGap = 3;
+    // ═══ CARDS DE SUMARIO (coluna esquerda) ═══
+    const cardStartY = 55;
+    const cardH = 15;
+    const cardW = 120;
+    const cardGap = 2;
 
     const cards = [
       { label: 'Total', value: usuariosProc.length, color: C.accent, bg: C.accentLight },
@@ -378,52 +378,53 @@ Deno.serve(async (req) => {
     ];
 
     cards.forEach((card, i) => {
-      const cx = 14 + i * (cardW + cardGap);
+      const cy = cardStartY + i * (cardH + cardGap);
       // Card bg
       doc.setFillColor(...hexToRgb(card.bg));
-      doc.roundedRect(cx, cardY, cardW, cardH, 2, 2, 'F');
+      doc.roundedRect(14, cy, cardW, cardH, 2, 2, 'F');
       // Left accent bar
       doc.setFillColor(...hexToRgb(card.color));
-      doc.roundedRect(cx, cardY, 1.5, cardH, 0.5, 0.5, 'F');
+      doc.roundedRect(14, cy, 1.5, cardH, 0.5, 0.5, 'F');
       // Label
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(...hexToRgb(C.textMuted));
-      doc.text(sanitize(card.label).toUpperCase(), cx + 4, cardY + 7);
-      // Value
+      doc.text(sanitize(card.label).toUpperCase(), 19, cy + 6);
+      // Value (alinhado a direita)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
+      doc.setFontSize(13);
       doc.setTextColor(...hexToRgb(card.color));
-      doc.text(String(card.value), cx + 4, cardY + 17);
+      doc.text(String(card.value), 14 + cardW - 4, cy + 11, { align: 'right' });
     });
 
-    // ═══ GRAFICO DE BARRAS ═══
-    const chartY = 85;
-    const chartH = 55;
-    const chartW = pageW - 28;
+    // ═══ GRAFICO DE BARRAS (coluna direita) ═══
+    const chartX = 138;
+    const chartY = 55;
+    const chartH = 83;
+    const chartW = pageW - 14 - chartX;
 
     // Box do grafico
     doc.setFillColor(...hexToRgb(C.white));
     doc.setDrawColor(...hexToRgb(C.border));
-    doc.roundedRect(14, chartY, chartW, chartH, 3, 3, 'FD');
+    doc.roundedRect(chartX, chartY, chartW, chartH, 3, 3, 'FD');
 
     // Titulo do grafico
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
     doc.setTextColor(...hexToRgb(C.text));
-    doc.text('Top 8 Usuarios por Navegacoes', 18, chartY + 7);
+    doc.text('Top 8 Usuarios por Navegacoes', chartX + 4, chartY + 7);
 
     if (topUsuarios.length === 0) {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(...hexToRgb(C.textMuted));
-      doc.text('Nenhuma atuacao registrada no periodo selecionado.', 18, chartY + 20);
+      doc.text('Nenhuma navegacao registrada no periodo selecionado.', chartX + 4, chartY + 20);
     } else {
       const maxVal = Math.max(...topUsuarios.map(u => u.total), 1);
       const barAreaY = chartY + 12;
       const barAreaH = chartH - 18;
       const barAreaW = chartW - 10;
-      const barAreaX = 20;
+      const barAreaX = chartX + 6;
       const barW = (barAreaW / topUsuarios.length) - 4;
 
       // Linhas de grade horizontais
@@ -622,7 +623,7 @@ Deno.serve(async (req) => {
       doc.setFont('helvetica', 'normal');
       doc.text('Villela Exchange - Gestao Comercial', 14, pageH - 3);
       doc.text(`Pagina ${p} de ${totalPages}`, pageW / 2, pageH - 3, { align: 'center' });
-      doc.text(sanitize(`Gerado em ${new Date().toLocaleString('pt-BR')}`), pageW - 14, pageH - 3, { align: 'right' });
+      doc.text(sanitize(`Gerado em ${new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`), pageW - 14, pageH - 3, { align: 'right' });
     }
 
     const pdfBytes = doc.output('arraybuffer');
