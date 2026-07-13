@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3 } from 'lucide-react';
+import RelatorioContratosModal from '@/components/contratos/RelatorioContratosModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { todayBrasilia } from '@/lib/dateUtils';
@@ -48,6 +49,7 @@ export default function Contratos() {
   const [clientePreSelecionado, setClientePreSelecionado] = useState(null);
   const [filtroVendedores, setFiltroVendedores] = useState([]);
   const [vendedorDropdownOpen, setVendedorDropdownOpen] = useState(false);
+  const [showRelatorio, setShowRelatorio] = useState(false);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -171,15 +173,23 @@ export default function Contratos() {
       <div className="max-w-6xl mx-auto space-y-5">
 
         {/* Header — indicação da entidade */}
-        <div className="flex items-center gap-3 rounded-2xl px-5 py-4" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,212,170,0.12)' }}>
-            <FileText className="w-6 h-6" style={{ color: '#00D4AA' }} />
+        <div className="flex items-center justify-between gap-3 rounded-2xl px-5 py-4" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,212,170,0.12)' }}>
+              <FileText className="w-6 h-6" style={{ color: '#00D4AA' }} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: '#00D4AA' }}>Comercial</p>
+              <h1 className="text-2xl font-bold" style={{ color: '#e6edf3' }}>Contratos</h1>
+              <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: '#00D4AA' }}>Comercial</p>
-            <h1 className="text-2xl font-bold" style={{ color: '#e6edf3' }}>Contratos</h1>
-            <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
-          </div>
+          <button onClick={() => setShowRelatorio(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
+            style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+            <BarChart3 className="w-4 h-4" />
+            Relatório
+          </button>
         </div>
 
         {/* Cards de tipo */}
@@ -374,6 +384,7 @@ export default function Contratos() {
             </table>
           </div>
         )}
+        {showRelatorio && <RelatorioContratosModal onClose={() => setShowRelatorio(false)} />}
       </div>
     </div>
   );
