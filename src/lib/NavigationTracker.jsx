@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { base44 } from '@/api/base44Client';
@@ -9,6 +9,7 @@ export default function NavigationTracker() {
     const { user, isAuthenticated } = useAuth();
     const { Pages, mainPage } = pagesConfig;
     const mainPageKey = mainPage ?? Object.keys(Pages)[0];
+    const cachedUserRef = useRef(null);
 
     // Log user activity when navigating to a page
     useEffect(() => {
@@ -31,20 +32,42 @@ export default function NavigationTracker() {
             pageName = matchedKey || pathSegment;
         }
 
-        if (isAuthenticated && pageName && user) {
-            base44.appLogs.logUserInApp(pageName).catch(() => {
-                // Silently fail - logging shouldn't break the app
-            });
+        const trackNavigation = async () => {
+            if (!pageName) return;
+
+            let currentUser = user;
+
+            // Fallback: if useAuth() hasn't populated the user yet, try base44.auth.me() directly
+            if (!currentUser) {
+                if (cachedUserRef.current) {
+                    currentUser = cachedUserRef.current;
+                } else {
+                    try {
+                        currentUser = await base44.auth.me();
+                        if (currentUser) cachedUserRef.current = currentUser;
+                    } catch (e) {
+                        return;
+                    }
+                }
+            }
+
+            if (!currentUser) return;
+
+            base44.appLogs.logUserInApp(pageName).catch(() => {});
 
             // Registrar navegação real na entidade NavegacaoUsuario
             base44.entities.NavegacaoUsuario.create({
-                user_id: user.id,
-                user_email: user.email,
-                user_name: user.full_name || user.nome_tratamento || '',
+                user_id: currentUser.id,
+                user_email: currentUser.email,
+                user_name: currentUser.full_name || currentUser.nome_tratamento || '',
                 pagina: pageName,
                 acessado_em: new Date().toISOString(),
-            }).catch(() => {});
-        }
+            }).catch((e) => {
+                console.error('[NavigationTracker] Falha ao registrar navegação:', e?.message || e);
+            });
+        };
+
+        trackNavigation();
     }, [location, isAuthenticated, user, Pages, mainPageKey]);
 
     return null;

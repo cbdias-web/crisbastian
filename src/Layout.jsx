@@ -113,20 +113,28 @@ export default function Layout({ children, currentPageName }) {
             await base44.functions.invoke('registrarFimSessao', { user_id: u.id, close_all: true });
           } catch (e) {}
 
-          // Criar nova sessao individual
-          try {
-            const sessao = await base44.entities.SessaoUsuario.create({
-              user_id: u.id,
-              user_email: u.email,
-              user_name: u.full_name || u.nome_tratamento || '',
-              inicio: agora,
-              ativa: true,
-              ultimo_heartbeat: agora,
-              duracao_min: 0,
-            });
-            localStorage.setItem('current_session_id', sessao.id);
-            await base44.auth.updateMe({ acesso_inicio: agora });
-          } catch (e) {}
+          // Criar nova sessao individual (com retry)
+          let sessaoCriada = null;
+          for (let tentativa = 1; tentativa <= 3 && !sessaoCriada; tentativa++) {
+            try {
+              sessaoCriada = await base44.entities.SessaoUsuario.create({
+                user_id: u.id,
+                user_email: u.email,
+                user_name: u.full_name || u.nome_tratamento || '',
+                inicio: agora,
+                ativa: true,
+                ultimo_heartbeat: agora,
+                duracao_min: 0,
+              });
+            } catch (e) {
+              console.error(`[Layout] Tentativa ${tentativa} - Erro ao criar sessão:`, e?.message || e);
+              if (tentativa < 3) await new Promise(r => setTimeout(r, 1000 * tentativa));
+            }
+          }
+          if (sessaoCriada) {
+            localStorage.setItem('current_session_id', sessaoCriada.id);
+            try { await base44.auth.updateMe({ acesso_inicio: agora }); } catch (e) {}
+          }
         }
       } catch (e) {}
     }).catch(() => {});
