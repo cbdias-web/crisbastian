@@ -88,11 +88,12 @@ export default function Layout({ children, currentPageName }) {
           try {
             const existing = await base44.entities.SessaoUsuario.get(existingSessionId);
             if (existing && existing.user_id === u.id) {
-              // Se o heartbeat foi ha menos de 5 min, o usuario so deu refresh
+              // Reusar sessao se ainda ativa ou se heartbeat foi ha menos de 10 min
+              // (10 min = mesmo threshold do scheduler limparSessoesStale)
               const heartbeatAge = existing.ultimo_heartbeat
                 ? (Date.now() - new Date(existing.ultimo_heartbeat).getTime()) / 1000 / 60
                 : 999;
-              if (heartbeatAge <= 5) {
+              if (existing.ativa || heartbeatAge <= 10) {
                 await base44.entities.SessaoUsuario.update(existingSessionId, {
                   ativa: true,
                   fim: null,
@@ -145,30 +146,22 @@ export default function Layout({ children, currentPageName }) {
     return () => clearInterval(interval);
   }, []);
 
-  // Registrar fim da sessão ao fechar/abandonar a página
+  // Atualizar heartbeat ao sair da pagina (sem fechar a sessao)
+  // O scheduler limparSessoesStale fecha sessoes inativas (>10 min sem heartbeat)
   useEffect(() => {
-    const closeSession = () => {
+    const updateHeartbeatOnExit = () => {
       const sessionId = localStorage.getItem('current_session_id');
       if (!sessionId) return;
       try {
-        // Fire and forget - tenta fechar a sessao via SDK
-        // NAO remove do localStorage: permite reusar em caso de refresh (F5)
-        base44.functions.invoke('registrarFimSessao', { session_id: sessionId }).catch(() => {});
+        base44.entities.SessaoUsuario.update(sessionId, {
+          ultimo_heartbeat: new Date().toISOString(),
+        }).catch(() => {});
       } catch (e) {}
     };
 
-    // pagehide é mais confiavel que beforeunload em navegadores modernos
-    const handlePageHide = (e) => {
-      // Só fecha se a página estiver sendo realmente descarregada
-      if (!e.persisted) closeSession();
-    };
-    const handleBeforeUnload = () => closeSession();
-
-    window.addEventListener('pagehide', handlePageHide);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', updateHeartbeatOnExit);
     return () => {
-      window.removeEventListener('pagehide', handlePageHide);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', updateHeartbeatOnExit);
     };
   }, []);
 
