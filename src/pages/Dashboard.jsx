@@ -172,10 +172,13 @@ function RelogioMeta({ producao, meta, periodoMesLabel, periodoMes }) {
         </div>
       </div>
 
-      <div className="flex justify-between text-xs pt-2" style={{ borderTop: `1px solid ${A.border}`, color: A.textMuted }}>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs pt-2" style={{ borderTop: `1px solid ${A.border}`, color: A.textMuted }}>
         <span>📅 {diasDecorridos}/{diasTotais} dias</span>
         <span>⏳ {diasRestantes} dias restantes</span>
         <span>🎯 Falta {formatCurrency(Math.max(0, meta - producao))}</span>
+        <span style={{ color: A.accent }}>
+          ⚡ Falta/dia: {diasRestantes > 0 ? formatCurrency(Math.max(0, meta - producao) / diasRestantes) : '—'}
+        </span>
       </div>
     </div>
   );
