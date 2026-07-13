@@ -149,20 +149,21 @@ Deno.serve(async (req) => {
           : '-';
         let fimStr = '-';
         let duracao = '-';
+        let totalMin = 0;
         if (isOnline) {
           fimStr = 'Em sessao';
           if (inicio) {
-            const diffMin = Math.round((nowMs - new Date(inicio).getTime()) / 1000 / 60);
-            duracao = formatDuracaoPdf(diffMin);
+            totalMin = Math.round((nowMs - new Date(inicio).getTime()) / 1000 / 60);
+            duracao = formatDuracaoPdf(totalMin);
           }
         } else if (ultimo) {
           fimStr = new Date(ultimo).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
           if (inicio) {
-            const diffMin = Math.round((new Date(ultimo).getTime() - new Date(inicio).getTime()) / 1000 / 60);
-            duracao = formatDuracaoPdf(diffMin);
+            totalMin = Math.round((new Date(ultimo).getTime() - new Date(inicio).getTime()) / 1000 / 60);
+            duracao = formatDuracaoPdf(totalMin);
           }
         }
-        return { inicio: inicioStr, fim: fimStr, duracao, numSessoes: 0 };
+        return { inicio: inicioStr, fim: fimStr, duracao, totalMin, numSessoes: 0 };
       }
 
       const sorted = [...userSessoes].sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
@@ -201,6 +202,7 @@ Deno.serve(async (req) => {
         inicio: inicioStr,
         fim: fimStr,
         duracao: formatDuracaoPdf(totalMin),
+        totalMin,
         numSessoes: sorted.length,
       };
     };
@@ -262,9 +264,16 @@ Deno.serve(async (req) => {
 
     // Stats
     const online = usuariosProc.filter(u => u.statusStr === 'Online').length;
-    const bloqueados = usuariosProc.filter(u => u.ativo === false).length;
-    const nunca = usuariosProc.filter(u => !u.ultimo_acesso).length;
+    const tempoTotalMin = usuariosProc.reduce((s, u) => s + (u.sessao.totalMin || 0), 0);
+    const totalSessoes = usuariosProc.reduce((s, u) => s + (u.sessao.numSessoes || 0), 0);
     const totalAtuacoes = usuariosProc.reduce((s, u) => s + u.total, 0);
+    const menusUnicosSet = new Set();
+    for (const u of usuariosProc) {
+      for (const page of Object.keys(navegsPorUsuario[u.id] || {})) {
+        menusUnicosSet.add(page);
+      }
+    }
+    const menusUnicos = menusUnicosSet.size;
 
     // Top 8 para grafico
     const topUsuarios = [...usuariosProc].filter(u => u.total > 0).sort((a, b) => b.total - a.total).slice(0, 8);
@@ -370,11 +379,11 @@ Deno.serve(async (req) => {
     const cardGap = 2;
 
     const cards = [
-      { label: 'Total', value: usuariosProc.length, color: C.accent, bg: C.accentLight },
-      { label: 'Online', value: online, color: C.green, bg: C.greenBg },
-      { label: 'Bloqueados', value: bloqueados, color: C.red, bg: C.redBg },
-      { label: 'Nunca acessou', value: nunca, color: C.amber, bg: C.amberBg },
-      { label: 'Total Navegacoes', value: totalAtuacoes, color: C.purple, bg: C.purpleBg },
+      { label: 'Tempo no Portal', value: formatDuracaoPdf(tempoTotalMin), color: C.accent, bg: C.accentLight },
+      { label: 'Total de Sessoes', value: totalSessoes, color: C.blue, bg: C.blueBg },
+      { label: 'Total de Navegacoes', value: totalAtuacoes, color: C.purple, bg: C.purpleBg },
+      { label: 'Menus Acessados', value: menusUnicos, color: C.green, bg: C.greenBg },
+      { label: 'Usuarios no Relatorio', value: usuariosProc.length, color: C.amber, bg: C.amberBg },
     ];
 
     cards.forEach((card, i) => {
