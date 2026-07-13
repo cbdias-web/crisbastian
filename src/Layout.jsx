@@ -113,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
             await base44.functions.invoke('registrarFimSessao', { user_id: u.id, close_all: true });
           } catch (e) {}
 
-          // Criar nova sessao individual (com retry)
+          // Criar nova sessao individual (com retry + fallback backend)
           let sessaoCriada = null;
           for (let tentativa = 1; tentativa <= 3 && !sessaoCriada; tentativa++) {
             try {
@@ -134,6 +134,17 @@ export default function Layout({ children, currentPageName }) {
           if (sessaoCriada) {
             localStorage.setItem('current_session_id', sessaoCriada.id);
             try { await base44.auth.updateMe({ acesso_inicio: agora }); } catch (e) {}
+          } else {
+            // Fallback: função backend com service role
+            try {
+              const resp = await base44.functions.invoke('registrarAtividadeUsuario', {});
+              if (resp?.data?.session_id) {
+                localStorage.setItem('current_session_id', resp.data.session_id);
+                try { await base44.auth.updateMe({ acesso_inicio: agora }); } catch (e) {}
+              }
+            } catch (e) {
+              console.error('[Layout] Fallback backend também falhou:', e?.message || e);
+            }
           }
         }
       } catch (e) {}
@@ -144,10 +155,15 @@ export default function Layout({ children, currentPageName }) {
     const interval = setInterval(async () => {
       try {
         const agora = new Date().toISOString();
-        await base44.auth.updateMe({ ultimo_acesso: agora });
+        try { await base44.auth.updateMe({ ultimo_acesso: agora }); } catch (e) {}
         const sessionId = localStorage.getItem('current_session_id');
         if (sessionId) {
-          await base44.entities.SessaoUsuario.update(sessionId, { ultimo_heartbeat: agora });
+          try {
+            await base44.entities.SessaoUsuario.update(sessionId, { ultimo_heartbeat: agora });
+          } catch (e) {
+            // Fallback: atualizar via backend (service role)
+            try { await base44.functions.invoke('registrarAtividadeUsuario', { session_id: sessionId }); } catch (e2) {}
+          }
         }
       } catch (e) {}
     }, 2 * 60 * 1000);

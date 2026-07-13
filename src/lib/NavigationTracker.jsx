@@ -11,24 +11,26 @@ export default function NavigationTracker() {
     const mainPageKey = mainPage ?? Object.keys(Pages)[0];
     const cachedUserRef = useRef(null);
 
+    // Limpar cache quando usuário desloga
+    useEffect(() => {
+        if (isAuthenticated === false) {
+            cachedUserRef.current = null;
+        }
+    }, [isAuthenticated]);
+
     // Log user activity when navigating to a page
     useEffect(() => {
-        // Extract page name from pathname
         const pathname = location.pathname;
         let pageName;
 
         if (pathname === '/' || pathname === '') {
             pageName = mainPageKey;
         } else {
-            // Remove leading slash and get the first segment
             const pathSegment = pathname.replace(/^\//, '').split('/')[0];
-
-            // Try case-insensitive lookup in Pages config
             const pageKeys = Object.keys(Pages);
             const matchedKey = pageKeys.find(
                 key => key.toLowerCase() === pathSegment.toLowerCase()
             );
-
             pageName = matchedKey || pathSegment;
         }
 
@@ -37,7 +39,7 @@ export default function NavigationTracker() {
 
             let currentUser = user;
 
-            // Fallback: if useAuth() hasn't populated the user yet, try base44.auth.me() directly
+            // Fallback: se useAuth() ainda não populou o user, tentar base44.auth.me()
             if (!currentUser) {
                 if (cachedUserRef.current) {
                     currentUser = cachedUserRef.current;
@@ -55,16 +57,23 @@ export default function NavigationTracker() {
 
             base44.appLogs.logUserInApp(pageName).catch(() => {});
 
-            // Registrar navegação real na entidade NavegacaoUsuario
-            base44.entities.NavegacaoUsuario.create({
-                user_id: currentUser.id,
-                user_email: currentUser.email,
-                user_name: currentUser.full_name || currentUser.nome_tratamento || '',
-                pagina: pageName,
-                acessado_em: new Date().toISOString(),
-            }).catch((e) => {
-                console.error('[NavigationTracker] Falha ao registrar navegação:', e?.message || e);
-            });
+            // Tentar criação direta primeiro (rápido)
+            try {
+                await base44.entities.NavegacaoUsuario.create({
+                    user_id: currentUser.id,
+                    user_email: currentUser.email,
+                    user_name: currentUser.full_name || currentUser.nome_tratamento || '',
+                    pagina: pageName,
+                    acessado_em: new Date().toISOString(),
+                });
+            } catch (e) {
+                // Fallback: função backend com service role (contorna permissões)
+                try {
+                    await base44.functions.invoke('registrarAtividadeUsuario', { pagina: pageName });
+                } catch (e2) {
+                    console.error('[NavigationTracker] Falha ao registrar navegação:', e?.message || e);
+                }
+            }
         };
 
         trackNavigation();
