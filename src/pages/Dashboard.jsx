@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import AuroraMeta3D from '@/components/dashboard/AuroraMeta3D';
 import {
   TrendingUp, Users, FileText, DollarSign,
   ArrowUpRight, ChevronDown, Check, Calendar, X, Upload,
@@ -126,13 +125,31 @@ function RelogioMeta({ producao, meta, periodoMesLabel, periodoMes }) {
       </div>
 
       <div className="flex items-center gap-5">
-        {/* 3D Aurora gauge */}
-        <AuroraMeta3D
-          progress={pctRealizado}
-          expectedProgress={pctEsperado}
-          achieved={atingida}
-          size={128}
-        />
+        {/* Circular gauge */}
+        <div className="relative flex-shrink-0 w-32 h-32">
+          <svg width="128" height="128" viewBox="0 0 128 128">
+            {/* Track */}
+            <circle cx="64" cy="64" r={radius} fill="none" stroke="rgba(0,212,170,0.08)" strokeWidth="10" />
+            {/* Expected (dim) */}
+            <circle cx="64" cy="64" r={radius} fill="none" stroke="rgba(0,212,170,0.25)" strokeWidth="10"
+              strokeDasharray={`${dashEsperado} ${circumference - dashEsperado}`}
+              strokeLinecap="round"
+              transform="rotate(-90 64 64)" />
+            {/* Realizado */}
+            <circle cx="64" cy="64" r={radius} fill="none"
+              stroke={atingida ? '#10b981' : adiantado ? A.accent : '#f59e0b'}
+              strokeWidth="10"
+              strokeDasharray={`${dashRealizado} ${circumference - dashRealizado}`}
+              strokeLinecap="round"
+              transform="rotate(-90 64 64)" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold" style={{ color: atingida ? '#10b981' : A.text }}>
+              {Math.round(pctRealizado)}%
+            </span>
+            <span className="text-[9px] uppercase tracking-wider" style={{ color: A.textMuted }}>da meta</span>
+          </div>
+        </div>
 
         {/* Details */}
         <div className="flex-1 space-y-3">
@@ -571,19 +588,12 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase tracking-wider font-semibold mb-3" style={{ color: A.accent }}>
                 Meta do Time — {periodoMesLabel}
               </p>
-              <div className="flex items-center gap-4 mb-3">
-                <div className="flex-1">
-                  <div className="flex items-end gap-3">
-                    <p className="text-2xl font-bold" style={{ color: A.text }}>{formatCurrency(valorTotal)}</p>
-                    <p className="text-sm mb-0.5" style={{ color: A.textMuted }}>de {formatCurrency(metaTimeMes)}</p>
-                  </div>
-                </div>
-                <AuroraMeta3D
-                  progress={metaTimePct || 0}
-                  expectedProgress={0}
-                  achieved={metaTimeAtingida}
-                  size={72}
-                />
+              <div className="flex items-end gap-3 mb-3">
+                <p className="text-2xl font-bold" style={{ color: A.text }}>{formatCurrency(valorTotal)}</p>
+                <p className="text-sm mb-0.5" style={{ color: A.textMuted }}>de {formatCurrency(metaTimeMes)}</p>
+                <span className="ml-auto text-lg font-bold" style={{ color: metaTimeAtingida ? '#10b981' : A.accent }}>
+                  {metaTimePct}%
+                </span>
               </div>
               {/* Double bar */}
               <div className="space-y-2">
