@@ -2,8 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { X, FileDown, Loader2, Wifi, Clock, Shield, Activity, Users } from 'lucide-react';
+import { X, FileDown, Loader2, Wifi, Clock, Shield, Activity, Users, Search, Calendar, ChevronDown, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
+
+const AURORA = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  surface2: '#1c2333',
+  border: 'rgba(0,212,170,0.15)',
+  accent: '#00D4AA',
+  accentDim: 'rgba(0,212,170,0.12)',
+  text: '#e6edf3',
+  textMuted: 'rgba(230,237,243,0.55)',
+  textDim: 'rgba(230,237,243,0.35)',
+};
 
 const formatDataHora = (iso) => {
   if (!iso) return { data: 'Nunca acessou', hora: '—', relativo: '—' };
@@ -13,9 +26,9 @@ const formatDataHora = (iso) => {
   const diffMin = (Date.now() - d.getTime()) / 1000 / 60;
   let relativo;
   if (diffMin <= 3) relativo = 'Online agora';
-  else if (diffMin <= 60) relativo = `Há ${Math.round(diffMin)} min`;
-  else if (diffMin <= 1440) relativo = `Há ${Math.round(diffMin / 60)}h`;
-  else relativo = `Há ${Math.round(diffMin / 1440)} dia(s)`;
+  else if (diffMin <= 60) relativo = `Ha ${Math.round(diffMin)} min`;
+  else if (diffMin <= 1440) relativo = `Ha ${Math.round(diffMin / 60)}h`;
+  else relativo = `Ha ${Math.round(diffMin / 1440)} dia(s)`;
   return { data, hora, relativo };
 };
 
@@ -27,11 +40,21 @@ const getOnlineStatus = (ultimoAcesso) => {
   return 'offline';
 };
 
+const statusColors = {
+  online: { dot: '#10b981', bg: 'rgba(16,185,129,0.12)', text: '#34d399', label: 'Online' },
+  ausente: { dot: '#f59e0b', bg: 'rgba(245,158,11,0.12)', text: '#fbbf24', label: 'Ausente' },
+  offline: { dot: '#6b7280', bg: 'rgba(107,114,128,0.12)', text: '#9ca3af', label: 'Offline' },
+};
+
 export default function RelatorioAcessosModal({ usuarios, onClose }) {
   const [gerandoPDF, setGerandoPDF] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState('todos');
+  const [usuarioDropOpen, setUsuarioDropOpen] = useState(false);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
 
-  // Busca atividades por usuário (group by created_by_id)
   const { data: atividades = {}, isLoading } = useQuery({
     queryKey: ['relatorio-acessos-atividades'],
     queryFn: async () => {
@@ -43,9 +66,21 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
         base44.entities.AgendaContato.list('-created_date', 500),
       ]);
 
+      const filtrarPorPeriodo = (lista) => {
+        if (!dataInicio && !dataFim) return lista;
+        return lista.filter(item => {
+          if (!item.created_date) return false;
+          const d = item.created_date.split('T')[0];
+          if (dataInicio && d < dataInicio) return false;
+          if (dataFim && d > dataFim) return false;
+          return true;
+        });
+      };
+
       const contar = (lista) => {
+        const filtrada = filtrarPorPeriodo(lista);
         const map = {};
-        for (const item of lista) {
+        for (const item of filtrada) {
           if (item.created_by_id) {
             map[item.created_by_id] = (map[item.created_by_id] || 0) + 1;
           }
@@ -77,31 +112,60 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       const totalAtua = atua.vendas + atua.mensagens + atua.chamados + atua.interacoes + atua.agendas;
       const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const menusCount = isAdminUser ? 'Total' : (u.menus_acesso?.length || 0);
-
       return { ...u, status, acesso, atua, totalAtua, isAdminUser, menusCount };
     });
   }, [usuarios, atividades]);
 
-  const usuariosFiltrados = filtroStatus === 'todos'
-    ? usuariosComDados
-    : usuariosComDados.filter(u => {
-        if (filtroStatus === 'online') return u.status === 'online';
-        if (filtroStatus === 'bloqueados') return u.ativo === false;
-        if (filtroStatus === 'inativos') return !u.ultimo_acesso;
-        return true;
-      });
+  const usuariosFiltrados = useMemo(() => {
+    return usuariosComDados.filter(u => {
+      // Filtro por usuario selecionado
+      if (usuarioSelecionado !== 'todos' && u.id !== usuarioSelecionado) return false;
+      // Filtro por busca textual
+      if (searchTerm) {
+        const t = searchTerm.toLowerCase();
+        const match = (u.full_name?.toLowerCase().includes(t) ||
+          u.email?.toLowerCase().includes(t) ||
+          u.nome_tratamento?.toLowerCase().includes(t));
+        if (!match) return false;
+      }
+      // Filtro por status
+      if (filtroStatus === 'online') return u.status === 'online';
+      if (filtroStatus === 'bloqueados') return u.ativo === false;
+      if (filtroStatus === 'inativos') return !u.ultimo_acesso;
+      return true;
+    });
+  }, [usuariosComDados, filtroStatus, searchTerm, usuarioSelecionado]);
 
   const stats = useMemo(() => {
     const online = usuariosComDados.filter(u => u.status === 'online').length;
     const bloqueados = usuariosComDados.filter(u => u.ativo === false).length;
     const nuncaAcessou = usuariosComDados.filter(u => !u.ultimo_acesso).length;
-    return { total: usuariosComDados.length, online, bloqueados, nuncaAcessou };
+    const totalAtuacoes = usuariosComDados.reduce((s, u) => s + u.totalAtua, 0);
+    return { total: usuariosComDados.length, online, bloqueados, nuncaAcessou, totalAtuacoes };
+  }, [usuariosComDados]);
+
+  // Dados para grafico - top 8 usuarios por atuações
+  const chartData = useMemo(() => {
+    return [...usuariosComDados]
+      .filter(u => u.totalAtua > 0)
+      .sort((a, b) => b.totalAtua - a.totalAtua)
+      .slice(0, 8)
+      .map(u => ({
+        nome: (u.nome_tratamento || u.full_name || 'N/A').split(' ')[0].substring(0, 12),
+        atuações: u.totalAtua,
+      }));
   }, [usuariosComDados]);
 
   const gerarPDF = async () => {
     setGerandoPDF(true);
     try {
-      const response = await base44.functions.invoke('gerarRelatorioAcessosPDF', {});
+      const response = await base44.functions.invoke('gerarRelatorioAcessosPDF', {
+        usuario_id: usuarioSelecionado !== 'todos' ? usuarioSelecionado : null,
+        data_inicio: dataInicio || null,
+        data_fim: dataFim || null,
+        filtro_status: filtroStatus,
+        search_term: searchTerm || null,
+      });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -109,31 +173,51 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       a.download = `relatorio-acessos-${new Date().toISOString().split('T')[0]}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Relatório PDF gerado!');
+      toast.success('Relatorio PDF gerado!');
     } catch (error) {
       toast.error(error.response?.data?.error || 'Erro ao gerar PDF');
     }
     setGerandoPDF(false);
   };
 
-  const statusColors = {
-    online: { dot: '#10b981', bg: 'rgba(16,185,129,0.12)', text: '#34d399', label: 'Online' },
-    ausente: { dot: '#f59e0b', bg: 'rgba(245,158,11,0.12)', text: '#fbbf24', label: 'Ausente' },
-    offline: { dot: '#6b7280', bg: 'rgba(107,114,128,0.12)', text: '#9ca3af', label: 'Offline' },
+  const limparFiltros = () => {
+    setSearchTerm('');
+    setUsuarioSelecionado('todos');
+    setDataInicio('');
+    setDataFim('');
+    setFiltroStatus('todos');
+  };
+
+  const temFiltros = searchTerm || usuarioSelecionado !== 'todos' || dataInicio || dataFim || filtroStatus !== 'todos';
+
+  const usuarioSel = usuarios.find(u => u.id === usuarioSelecionado);
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, borderRadius: 8, padding: '6px 10px' }}>
+        <p style={{ color: AURORA.text, fontSize: 11, fontWeight: 600 }}>{payload[0].payload.nome}</p>
+        <p style={{ color: AURORA.accent, fontSize: 12, fontWeight: 700 }}>{payload[0].value} atuacoes</p>
+      </div>
+    );
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-[#1c2333] rounded-2xl shadow-2xl w-full max-w-6xl my-6 border border-[rgba(0,212,170,0.18)]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[rgba(0,212,170,0.15)] flex items-center justify-between sticky top-0 bg-[#1c2333] rounded-t-2xl z-10">
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 overflow-y-auto" style={{ backdropFilter: 'blur(4px)' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-7xl my-6 overflow-hidden"
+        style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}` }}>
+
+        {/* ═══ HEADER ═══ */}
+        <div className="px-6 py-4 flex items-center justify-between sticky top-0 z-20"
+          style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.12)' }}>
-              <Activity className="w-5 h-5" style={{ color: '#00D4AA' }} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', boxShadow: '0 4px 16px rgba(0,212,170,0.3)' }}>
+              <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-base" style={{ color: '#e6edf3' }}>Relatório de Acessos</h3>
-              <p className="text-xs" style={{ color: 'rgba(230,237,243,0.55)' }}>Controle de acesso e atuações dos usuários</p>
+              <h3 className="font-bold text-lg" style={{ color: AURORA.text }}>Relatorio de Acessos</h3>
+              <p className="text-xs" style={{ color: AURORA.textMuted }}>Controle de acesso e atuacoes dos usuarios</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -142,147 +226,232 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
               {gerandoPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileDown className="w-4 h-4 mr-2" />}
               Exportar PDF
             </Button>
-            <button onClick={onClose} className="p-2 rounded-lg transition hover:bg-[rgba(0,212,170,0.1)]" style={{ color: 'rgba(230,237,243,0.55)' }}>
+            <button onClick={onClose} className="p-2 rounded-lg transition hover:bg-[rgba(0,212,170,0.1)]" style={{ color: AURORA.textMuted }}>
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.12)' }}>
-            <Users className="w-4 h-4" style={{ color: '#00D4AA' }} />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(230,237,243,0.55)' }}>Total</p>
-              <p className="text-lg font-bold" style={{ color: '#e6edf3' }}>{stats.total}</p>
-            </div>
-          </div>
-          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-            <Wifi className="w-4 h-4 text-emerald-400" />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(230,237,243,0.55)' }}>Online</p>
-              <p className="text-lg font-bold text-emerald-400">{stats.online}</p>
-            </div>
-          </div>
-          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-            <Shield className="w-4 h-4 text-red-400" />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(230,237,243,0.55)' }}>Bloqueados</p>
-              <p className="text-lg font-bold text-red-400">{stats.bloqueados}</p>
-            </div>
-          </div>
-          <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
-            <Clock className="w-4 h-4 text-amber-400" />
-            <div>
-              <p className="text-[10px] uppercase tracking-wide" style={{ color: 'rgba(230,237,243,0.55)' }}>Nunca acessou</p>
-              <p className="text-lg font-bold text-amber-400">{stats.nuncaAcessou}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Filtros */}
-        <div className="px-6 pb-3 flex items-center gap-2 flex-wrap">
+        {/* ═══ STATS CARDS ═══ */}
+        <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
-            { key: 'todos', label: 'Todos' },
-            { key: 'online', label: 'Online agora' },
-            { key: 'bloqueados', label: 'Bloqueados' },
-            { key: 'inativos', label: 'Nunca acessou' },
-          ].map(f => (
-            <button key={f.key} onClick={() => setFiltroStatus(f.key)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium transition"
-              style={{
-                background: filtroStatus === f.key ? 'rgba(0,212,170,0.15)' : 'transparent',
-                color: filtroStatus === f.key ? '#00D4AA' : 'rgba(230,237,243,0.55)',
-                border: `1px solid ${filtroStatus === f.key ? 'rgba(0,212,170,0.3)' : 'rgba(0,212,170,0.1)'}`,
-              }}>
-              {f.label}
-            </button>
+            { icon: Users, label: 'Total', value: stats.total, color: '#00D4AA', bg: 'rgba(0,212,170,0.06)' },
+            { icon: Wifi, label: 'Online', value: stats.online, color: '#34d399', bg: 'rgba(16,185,129,0.06)' },
+            { icon: Shield, label: 'Bloqueados', value: stats.bloqueados, color: '#f87171', bg: 'rgba(239,68,68,0.06)' },
+            { icon: Clock, label: 'Nunca acessou', value: stats.nuncaAcessou, color: '#fbbf24', bg: 'rgba(245,158,11,0.06)' },
+            { icon: TrendingUp, label: 'Total Atuacoes', value: stats.totalAtuacoes, color: '#a78bfa', bg: 'rgba(167,139,250,0.06)' },
+          ].map((s, i) => (
+            <div key={i} className="rounded-xl p-3 flex items-center gap-3 transition hover:scale-105"
+              style={{ background: s.bg, border: `1px solid ${s.color}22` }}>
+              <s.icon className="w-4 h-4 flex-shrink-0" style={{ color: s.color }} />
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: AURORA.textMuted }}>{s.label}</p>
+                <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+              </div>
+            </div>
           ))}
         </div>
 
-        {/* Tabela */}
+        {/* ═══ FILTROS ═══ */}
+        <div className="px-6 pb-4">
+          <div className="rounded-xl p-4 space-y-3" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <div className="flex items-center gap-2 mb-1">
+              <Search className="w-4 h-4" style={{ color: AURORA.accent }} />
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: AURORA.accent }}>Filtros de Pesquisa</p>
+              {temFiltros && (
+                <button onClick={limparFiltros} className="ml-auto text-[11px] px-2 py-0.5 rounded-md transition"
+                  style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              {/* Busca textual */}
+              <div>
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Buscar</label>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: AURORA.textMuted }} />
+                  <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Nome ou email..."
+                    className="w-full pl-9 pr-3 py-2 text-sm rounded-lg focus:outline-none transition"
+                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                </div>
+              </div>
+
+              {/* Selecao de usuario */}
+              <div className="relative">
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Usuario</label>
+                <button onClick={() => setUsuarioDropOpen(p => !p)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <span className="truncate">{usuarioSelecionado === 'todos' ? 'Todos os usuarios' : (usuarioSel?.nome_tratamento || usuarioSel?.full_name || 'Selecionado')}</span>
+                  <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${usuarioDropOpen ? 'rotate-180' : ''}`} style={{ color: AURORA.textMuted }} />
+                </button>
+                {usuarioDropOpen && (
+                  <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
+                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                    <button onClick={() => { setUsuarioSelecionado('todos'); setUsuarioDropOpen(false); }}
+                      className="w-full text-left px-3 py-2 text-sm transition hover:bg-[rgba(0,212,170,0.08)]"
+                      style={{ color: usuarioSelecionado === 'todos' ? AURORA.accent : AURORA.text }}>
+                      Todos os usuarios
+                    </button>
+                    {usuarios.map(u => (
+                      <button key={u.id} onClick={() => { setUsuarioSelecionado(u.id); setUsuarioDropOpen(false); }}
+                        className="w-full text-left px-3 py-2 text-sm transition hover:bg-[rgba(0,212,170,0.08)]"
+                        style={{ color: usuarioSelecionado === u.id ? AURORA.accent : AURORA.text }}>
+                        {u.nome_tratamento || u.full_name || u.email}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Data inicio */}
+              <div>
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Data Inicio</label>
+                <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none transition"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+
+              {/* Data fim */}
+              <div>
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Data Fim</label>
+                <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none transition"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+            </div>
+
+            {/* Filtros rapidos por status */}
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-[10px] uppercase tracking-wide" style={{ color: AURORA.textMuted }}>Status:</span>
+              {[
+                { key: 'todos', label: 'Todos' },
+                { key: 'online', label: 'Online agora' },
+                { key: 'bloqueados', label: 'Bloqueados' },
+                { key: 'inativos', label: 'Nunca acessou' },
+              ].map(f => (
+                <button key={f.key} onClick={() => setFiltroStatus(f.key)}
+                  className="px-3 py-1 rounded-lg text-xs font-medium transition"
+                  style={{
+                    background: filtroStatus === f.key ? AURORA.accentDim : 'transparent',
+                    color: filtroStatus === f.key ? AURORA.accent : AURORA.textMuted,
+                    border: `1px solid ${filtroStatus === f.key ? 'rgba(0,212,170,0.3)' : 'rgba(0,212,170,0.1)'}`,
+                  }}>
+                  {f.label}
+                </button>
+              ))}
+              <span className="ml-auto text-xs" style={{ color: AURORA.textMuted }}>
+                {usuariosFiltrados.length} usuario(s) exibido(s)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ GRAFICO ═══ */}
+        {chartData.length > 0 && (
+          <div className="px-6 pb-4">
+            <div className="rounded-xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="w-4 h-4" style={{ color: AURORA.accent }} />
+                <p className="text-sm font-semibold" style={{ color: AURORA.text }}>Top 8 Usuarios por Atuacoes</p>
+                <span className="text-[10px]" style={{ color: AURORA.textMuted }}>(no periodo selecionado)</span>
+              </div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                  <XAxis dataKey="nome" tick={{ fill: AURORA.textMuted, fontSize: 10 }} axisLine={{ stroke: AURORA.border }} tickLine={false} />
+                  <YAxis tick={{ fill: AURORA.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,212,170,0.05)' }} />
+                  <Bar dataKey="atuacoes" radius={[6, 6, 0, 0]}>
+                    {chartData.map((entry, idx) => (
+                      <Cell key={idx} fill={`rgba(0,212,170,${0.4 + (idx / chartData.length) * 0.6})`} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ TABELA ═══ */}
         <div className="px-6 pb-6 overflow-x-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#00D4AA' }} />
+              <Loader2 className="w-6 h-6 animate-spin" style={{ color: AURORA.accent }} />
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
-                <tr className="border-b" style={{ borderColor: 'rgba(0,212,170,0.15)' }}>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Usuário</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Papel</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Status</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Último Acesso</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Horário</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Menus</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Vendas</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Msgs Chat</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Chamados</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Interações</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Agenda</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>Total Atuações</th>
+                <tr>
+                  {['Usuario', 'Papel', 'Status', 'Ultimo Acesso', 'Horario', 'Menus', 'Vendas', 'Msgs', 'Chamados', 'Interacoes', 'Agenda', 'Total'].map((h, i) => (
+                    <th key={i} className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-wider first:rounded-tl-xl last:rounded-tr-xl"
+                      style={{ color: AURORA.text, background: AURORA.surface2, borderBottom: `2px solid ${AURORA.accent}` }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {usuariosFiltrados.map(u => {
+                {usuariosFiltrados.map((u, idx) => {
                   const sc = statusColors[u.status];
                   const initials = (u.full_name || u.email || 'U').charAt(0).toUpperCase();
                   return (
-                    <tr key={u.id} className="border-b transition hover:bg-[rgba(0,212,170,0.04)]"
-                      style={{ borderColor: 'rgba(0,212,170,0.08)' }}>
-                      <td className="px-3 py-2.5">
+                    <tr key={u.id} className="transition"
+                      style={{ background: idx % 2 === 0 ? 'rgba(28,35,51,0.5)' : 'transparent' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.06)'}
+                      onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(28,35,51,0.5)' : 'transparent'}>
+                      <td className="px-3 py-2.5" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                             style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
                             {initials}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-medium truncate" style={{ color: '#e6edf3' }}>{u.nome_tratamento || u.full_name || '—'}</p>
-                            <p className="text-[10px] truncate" style={{ color: 'rgba(230,237,243,0.4)' }}>{u.email}</p>
+                            <p className="font-medium truncate" style={{ color: AURORA.text }}>{u.nome_tratamento || u.full_name || '—'}</p>
+                            <p className="text-[10px] truncate" style={{ color: AURORA.textDim }}>{u.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-2.5">
+                      <td className="px-3 py-2.5" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
                         <span className="text-xs font-medium px-2 py-0.5 rounded-full"
-                          style={{
-                            background: u.isAdminUser ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,249,0.12)',
-                            color: u.isAdminUser ? '#fbbf24' : '#60a5fa',
-                          }}>
-                          {u.isAdminUser ? 'Admin' : 'Usuário'}
+                          style={{ background: u.isAdminUser ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,249,0.12)', color: u.isAdminUser ? '#fbbf24' : '#60a5fa' }}>
+                          {u.isAdminUser ? 'Admin' : 'Usuario'}
                         </span>
                         {u.ativo === false && (
                           <span className="ml-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">Bloqueado</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5">
-                        <span className="flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full inline-flex"
+                      <td className="px-3 py-2.5" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
                           style={{ background: sc.bg, color: sc.text }}>
                           <span className="w-1.5 h-1.5 rounded-full" style={{ background: sc.dot }} />
                           {sc.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2.5 text-xs" style={{ color: u.acesso.data === 'Nunca acessou' ? 'rgba(230,237,243,0.4)' : '#9da7b3' }}>
+                      <td className="px-3 py-2.5 text-xs" style={{ color: u.acesso.data === 'Nunca acessou' ? AURORA.textDim : '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>
                         {u.acesso.data}
                       </td>
-                      <td className="px-3 py-2.5 text-xs" style={{ color: '#9da7b3' }}>
+                      <td className="px-3 py-2.5 text-xs" style={{ color: '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>
                         {u.acesso.hora}
-                        <span className="block text-[9px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{u.acesso.relativo}</span>
+                        <span className="block text-[9px]" style={{ color: AURORA.textDim }}>{u.acesso.relativo}</span>
                       </td>
-                      <td className="px-3 py-2.5 text-center text-xs" style={{ color: '#9da7b3' }}>{u.menusCount}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.vendas > 0 ? '#00D4AA' : 'rgba(230,237,243,0.3)' }}>{u.atua.vendas}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.mensagens > 0 ? '#60a5fa' : 'rgba(230,237,243,0.3)' }}>{u.atua.mensagens}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.chamados > 0 ? '#fbbf24' : 'rgba(230,237,243,0.3)' }}>{u.atua.chamados}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.interacoes > 0 ? '#a78bfa' : 'rgba(230,237,243,0.3)' }}>{u.atua.interacoes}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.agendas > 0 ? '#34d399' : 'rgba(230,237,243,0.3)' }}>{u.atua.agendas}</td>
-                      <td className="px-3 py-2.5 text-center text-xs font-bold" style={{ color: u.totalAtua > 0 ? '#00D4AA' : 'rgba(230,237,243,0.3)' }}>{u.totalAtua}</td>
+                      <td className="px-3 py-2.5 text-center text-xs" style={{ color: '#9da7b3', borderBottom: `1px solid ${AURORA.border}` }}>{u.menusCount}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.vendas > 0 ? '#00D4AA' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.vendas}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.mensagens > 0 ? '#60a5fa' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.mensagens}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.chamados > 0 ? '#fbbf24' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.chamados}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.interacoes > 0 ? '#a78bfa' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.interacoes}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-semibold" style={{ color: u.atua.agendas > 0 ? '#34d399' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.atua.agendas}</td>
+                      <td className="px-3 py-2.5 text-center text-xs font-bold" style={{ color: u.totalAtua > 0 ? '#00D4AA' : AURORA.textDim, borderBottom: `1px solid ${AURORA.border}` }}>{u.totalAtua}</td>
                     </tr>
                   );
                 })}
                 {usuariosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="py-10 text-center text-sm" style={{ color: 'rgba(230,237,243,0.4)' }}>
-                      Nenhum usuário encontrado no filtro selecionado
+                    <td colSpan={12} className="py-12 text-center text-sm" style={{ color: AURORA.textDim }}>
+                      <Users className="w-8 h-8 mx-auto mb-2" style={{ color: AURORA.textDim, opacity: 0.5 }} />
+                      Nenhum usuario encontrado com os filtros selecionados
                     </td>
                   </tr>
                 )}

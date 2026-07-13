@@ -1,6 +1,46 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { jsPDF } from 'npm:jspdf@4.0.0';
 
+// Sanitiza texto para WinAnsi/cp1252 (encoding padrao do jsPDF helvetica)
+// Substitui caracteres Unicode que nao existem em cp1252 por equivalentes ASCII
+function sanitize(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/—/g, '-')    // em dash
+    .replace(/–/g, '-')    // en dash
+    .replace(/'/g, "'")    // right single quote
+    .replace(/'/g, "'")    // left single quote
+    .replace(/"/g, '"')    // right double quote
+    .replace(/"/g, '"')    // left double quote
+    .replace(/\u2026/g, '...') // ellipsis
+    .replace(/\u00a0/g, ' ')   // nbsp
+    .replace(/\u2022/g, '-')   // bullet
+    .replace(/\u25CF/g, 'o')   // black circle
+    .replace(/\u2192/g, '->')  // right arrow
+    .replace(/\u00b7/g, '-')   // middle dot
+    .replace(/\u2013/g, '-')   // figure dash
+    .replace(/\u2018/g, "'")   // left single quote
+    .replace(/\u2019/g, "'")   // right single quote
+    .replace(/\u201c/g, '"')   // left double quote
+    .replace(/\u201d/g, '"')   // right double quote
+    .replace(/\u2122/g, 'TM')  // trademark
+    .replace(/\u00ae/g, '(R)') // registered
+    .replace(/\u00b0/g, ' deg ') // degree
+    .replace(/\u00d7/g, 'x')   // multiplication
+    .replace(/\u00f7/g, '/')   // division
+    .replace(/[\u2000-\u200F]/g, ' ') // various spaces
+    .replace(/[\u2010-\u2015]/g, '-') // various dashes
+    .replace(/[\u2028-\u202F]/g, ' ') // line/par sep, other punct
+    .replace(/[\u2050-\u205F]/g, ' ') // other punct
+    .replace(/[\u2190-\u21FF]/g, '->') // arrows
+    .replace(/[\u2200-\u22FF]/g, '')   // math operators
+    .replace(/[\u2300-\u23FF]/g, '')   // misc technical
+    .replace(/[\u25A0-\u25FF]/g, '')   // geometric shapes
+    .replace(/[\u2600-\u26FF]/g, '')   // misc symbols
+    // Manter acentos Latin-1 (cp1252 suporta: á-ú, Á-Ú, ã-õ, Ã-Õ, ç, Ç, â-ê, etc.)
+    .trim();
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -10,9 +50,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Acesso restrito a administradores' }, { status: 403 });
     }
 
+    // Parse payload
+    let body = {};
+    try { body = await req.json(); } catch {}
+
+    const fUsuarioId = body.usuario_id || null;
+    const fDataInicio = body.data_inicio || null;
+    const fDataFim = body.data_fim || null;
+    const fStatus = body.filtro_status || 'todos';
+    const fSearch = (body.search_term || '').toLowerCase();
+
     const admin = base44.asServiceRole;
 
-    // Buscar usuários e atividades em paralelo
+    // Buscar usuarios e atividades em paralelo
     const [usuarios, vendas, mensagens, chamados, interacoes, agendas] = await Promise.all([
       admin.entities.User.list('full_name'),
       admin.entities.Venda.list('-created_date', 500),
@@ -22,9 +72,21 @@ Deno.serve(async (req) => {
       admin.entities.AgendaContato.list('-created_date', 500),
     ]);
 
+    const filtrarPorPeriodo = (lista) => {
+      if (!fDataInicio && !fDataFim) return lista;
+      return lista.filter(item => {
+        if (!item.created_date) return false;
+        const d = item.created_date.split('T')[0];
+        if (fDataInicio && d < fDataInicio) return false;
+        if (fDataFim && d > fDataFim) return false;
+        return true;
+      });
+    };
+
     const contar = (lista) => {
+      const filtrada = filtrarPorPeriodo(lista);
       const map = {};
-      for (const item of lista) {
+      for (const item of filtrada) {
         if (item.created_by_id) {
           map[item.created_by_id] = (map[item.created_by_id] || 0) + 1;
         }
@@ -49,170 +111,401 @@ Deno.serve(async (req) => {
     const formatDataHora = (iso) => {
       if (!iso) return 'Nunca acessou';
       const d = new Date(iso);
-      const data = d.toLocaleDateString('pt-BR');
-      const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      return `${data} ${hora}`;
+      return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
     };
 
-    // ===== Gerar PDF =====
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-
-    // Cores
-    const DARK = '#0d1117';
-    const ACCENT = '#00D4AA';
-    const TEXT = '#1a1a2e';
-    const MUTED = '#6b7280';
-    const LIGHT_BG = '#f0fdfa';
-
-    // Header
-    doc.setFillColor(DARK);
-    doc.rect(0, 0, pageW, 22, 'F');
-    doc.setTextColor('#ffffff');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('VILLELA EXCHANGE — Relatório de Acessos', 10, 10);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 10, 16);
-    doc.text(`Total de usuários: ${usuarios.length}`, pageW - 10, 10, { align: 'right' });
-    doc.text(`Online agora: ${usuarios.filter(u => getOnlineStatus(u.ultimo_acesso) === 'Online').length}`, pageW - 10, 16, { align: 'right' });
-
-    // Stats
-    const online = usuarios.filter(u => getOnlineStatus(u.ultimo_acesso) === 'Online').length;
-    const bloqueados = usuarios.filter(u => u.ativo === false).length;
-    const nunca = usuarios.filter(u => !u.ultimo_acesso).length;
-
-    let y = 28;
-    doc.setTextColor(TEXT);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total: ${usuarios.length}  |  Online: ${online}  |  Bloqueados: ${bloqueados}  |  Nunca acessou: ${nunca}`, 10, y);
-    y += 4;
-
-    // Tabela
-    const cols = [
-      { header: 'Usuário', w: 45 },
-      { header: 'E-mail', w: 45 },
-      { header: 'Papel', w: 18 },
-      { header: 'Status', w: 16 },
-      { header: 'Último Acesso', w: 30 },
-      { header: 'Menus', w: 14 },
-      { header: 'Vendas', w: 14 },
-      { header: 'Msgs', w: 14 },
-      { header: 'Cham.', w: 14 },
-      { header: 'Interaç.', w: 16 },
-      { header: 'Agenda', w: 14 },
-      { header: 'Total', w: 16 },
-    ];
-
-    const rowH = 7;
-    const tableW = cols.reduce((s, c) => s + c.w, 0);
-    let x = 10;
-
-    // Header row
-    doc.setFillColor(ACCENT);
-    doc.rect(x, y, tableW, rowH, 'F');
-    doc.setTextColor('#ffffff');
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    for (const col of cols) {
-      doc.text(col.header, x + 1.5, y + 5);
-      x += col.w;
-    }
-    y += rowH;
-
-    // Data rows
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-
-    for (let i = 0; i < usuarios.length; i++) {
-      const u = usuarios[i];
-      if (y > pageH - 15) {
-        doc.addPage();
-        y = 15;
-        // Re-desenha header
-        x = 10;
-        doc.setFillColor(ACCENT);
-        doc.rect(x, y, tableW, rowH, 'F');
-        doc.setTextColor('#ffffff');
-        doc.setFont('helvetica', 'bold');
-        for (const col of cols) {
-          doc.text(col.header, x + 1.5, y + 5);
-          x += col.w;
-        }
-        y += rowH;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7);
-      }
-
-      x = 10;
-      // Alternating row bg
-      if (i % 2 === 0) {
-        doc.setFillColor(LIGHT_BG);
-        doc.rect(x, y, tableW, rowH, 'F');
-      }
-
-      const nome = (u.nome_tratamento || u.full_name || '—').substring(0, 28);
-      const email = (u.email || '—').substring(0, 30);
-      const isAdmin = u.role === 'admin' || u.permissao_admin === true;
-      const papel = isAdmin ? 'Admin' : 'Usuário';
+    // Processar usuarios com dados
+    let usuariosProc = usuarios.map(u => {
+      const isAdminUser = u.role === 'admin' || u.permissao_admin === true;
       const status = u.ativo === false ? 'Bloqueado' : getOnlineStatus(u.ultimo_acesso);
-      const acesso = formatDataHora(u.ultimo_acesso).substring(0, 18);
-      const menus = isAdmin ? 'Total' : String(u.menus_acesso?.length || 0);
       const v = vMap[u.id] || 0;
       const m = mMap[u.id] || 0;
       const c = cMap[u.id] || 0;
       const it = iMap[u.id] || 0;
       const ag = aMap[u.id] || 0;
-      const total = v + m + c + it + ag;
+      return {
+        ...u,
+        isAdminUser,
+        statusStr: status,
+        acessoStr: formatDataHora(u.ultimo_acesso),
+        menusStr: isAdminUser ? 'Total' : String(u.menus_acesso?.length || 0),
+        atua: { v, m, c, it, ag },
+        total: v + m + c + it + ag,
+      };
+    });
 
-      // Status color
-      let statusColor = MUTED;
-      if (status === 'Online') statusColor = '#10b981';
-      else if (status === 'Ausente') statusColor = '#f59e0b';
-      else if (status === 'Bloqueado') statusColor = '#ef4444';
+    // Aplicar filtros
+    if (fUsuarioId) usuariosProc = usuariosProc.filter(u => u.id === fUsuarioId);
+    if (fSearch) {
+      usuariosProc = usuariosProc.filter(u =>
+        (u.full_name || '').toLowerCase().includes(fSearch) ||
+        (u.email || '').toLowerCase().includes(fSearch) ||
+        (u.nome_tratamento || '').toLowerCase().includes(fSearch)
+      );
+    }
+    if (fStatus === 'online') usuariosProc = usuariosProc.filter(u => u.statusStr === 'Online');
+    if (fStatus === 'bloqueados') usuariosProc = usuariosProc.filter(u => u.ativo === false);
+    if (fStatus === 'inativos') usuariosProc = usuariosProc.filter(u => !u.ultimo_acesso);
 
-      doc.setTextColor(TEXT);
-      doc.text(nome, x + 1.5, y + 5); x += cols[0].w;
-      doc.setTextColor(MUTED);
-      doc.text(email, x + 1.5, y + 5); x += cols[1].w;
-      doc.setTextColor(isAdmin ? '#d97706' : TEXT);
-      doc.text(papel, x + 1.5, y + 5); x += cols[2].w;
-      doc.setTextColor(statusColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(status, x + 1.5, y + 5); x += cols[3].w;
+    // Stats
+    const online = usuariosProc.filter(u => u.statusStr === 'Online').length;
+    const bloqueados = usuariosProc.filter(u => u.ativo === false).length;
+    const nunca = usuariosProc.filter(u => !u.ultimo_acesso).length;
+    const totalAtuacoes = usuariosProc.reduce((s, u) => s + u.total, 0);
+
+    // Top 8 para grafico
+    const topUsuarios = [...usuariosProc].filter(u => u.total > 0).sort((a, b) => b.total - a.total).slice(0, 8);
+
+    // ===== GERAR PDF =====
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();   // 297mm
+    const pageH = doc.internal.pageSize.getHeight();  // 210mm
+
+    // Paleta Aurora Borealis (adaptada para PDF - fundo claro com accents escuros)
+    const C = {
+      darkBg: '#0d1117',
+      darkNav: '#1a1a2e',
+      darkBlue: '#16213e',
+      accent: '#00D4AA',
+      accentDark: '#00a886',
+      accentLight: '#e6fffa',
+      text: '#1a1a2e',
+      textLight: '#4a5568',
+      textMuted: '#8895a6',
+      white: '#ffffff',
+      border: '#e2e8f0',
+      rowAlt: '#f7fafc',
+      green: '#10b981',
+      greenBg: '#ecfdf5',
+      amber: '#f59e0b',
+      amberBg: '#fffbeb',
+      red: '#ef4444',
+      redBg: '#fef2f2',
+      blue: '#3b82f6',
+      blueBg: '#eff6ff',
+      purple: '#8b5cf6',
+      purpleBg: '#f5f3ff',
+    };
+
+    const hexToRgb = (hex) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    };
+
+    // ═══════════════════════════════════════════════════
+    // PAGINA 1: CAPA + SUMARIO + GRAFICO
+    // ═══════════════════════════════════════════════════
+
+    // Fundo escuro no topo (header)
+    doc.setFillColor(...hexToRgb(C.darkBg));
+    doc.rect(0, 0, pageW, 45, 'F');
+
+    // Faixa accent
+    doc.setFillColor(...hexToRgb(C.accent));
+    doc.rect(0, 45, pageW, 1.5, 'F');
+
+    // Logo / Brand
+    doc.setFillColor(...hexToRgb(C.accent));
+    doc.roundedRect(14, 12, 18, 18, 3, 3, 'F');
+    doc.setTextColor(...hexToRgb(C.white));
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('VX', 23, 23, { align: 'center' });
+
+    // Titulo
+    doc.setFontSize(18);
+    doc.setTextColor(...hexToRgb(C.white));
+    doc.text(sanitize('Relatorio de Acessos'), 38, 20);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(180, 190, 200);
+    doc.text(sanitize('Villela Exchange - Gestao Comercial'), 38, 27);
+    doc.setFontSize(8);
+    doc.text(sanitize(`Gerado em: ${new Date().toLocaleString('pt-BR')}`), 38, 33);
+
+    // Box de periodo a direita
+    doc.setFillColor(...hexToRgb(C.darkBlue));
+    doc.roundedRect(pageW - 80, 10, 66, 28, 3, 3, 'F');
+    doc.setTextColor(...hexToRgb(C.accent));
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PERIODO', pageW - 77, 17);
+    doc.setTextColor(...hexToRgb(C.white));
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const periodoLabel = fDataInicio || fDataFim
+      ? sanitize(`${fDataInicio || 'Inicio'} a ${fDataFim || 'Hoje'}`)
+      : 'Todos os periodos';
+    doc.text(periodoLabel, pageW - 77, 24);
+    if (fSearch) {
+      doc.setFontSize(7);
+      doc.setTextColor(180, 190, 200);
+      doc.text(sanitize(`Busca: "${fSearch}"`), pageW - 77, 31);
+    } else if (fUsuarioId) {
+      const uSel = usuarios.find(u => u.id === fUsuarioId);
+      doc.setFontSize(7);
+      doc.setTextColor(180, 190, 200);
+      doc.text(sanitize(`Usuario: ${uSel?.nome_tratamento || uSel?.full_name || 'Selecionado'}`), pageW - 77, 31);
+    }
+
+    // ═══ CARDS DE SUMARIO ═══
+    const cardY = 55;
+    const cardH = 22;
+    const cardW = (pageW - 28 - 12) / 5; // 5 cards com gaps
+    const cardGap = 3;
+
+    const cards = [
+      { label: 'Total', value: usuariosProc.length, color: C.accent, bg: C.accentLight },
+      { label: 'Online', value: online, color: C.green, bg: C.greenBg },
+      { label: 'Bloqueados', value: bloqueados, color: C.red, bg: C.redBg },
+      { label: 'Nunca acessou', value: nunca, color: C.amber, bg: C.amberBg },
+      { label: 'Total Atuacoes', value: totalAtuacoes, color: C.purple, bg: C.purpleBg },
+    ];
+
+    cards.forEach((card, i) => {
+      const cx = 14 + i * (cardW + cardGap);
+      // Card bg
+      doc.setFillColor(...hexToRgb(card.bg));
+      doc.roundedRect(cx, cardY, cardW, cardH, 2, 2, 'F');
+      // Left accent bar
+      doc.setFillColor(...hexToRgb(card.color));
+      doc.roundedRect(cx, cardY, 1.5, cardH, 0.5, 0.5, 'F');
+      // Label
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(MUTED);
-      doc.text(acesso, x + 1.5, y + 5); x += cols[4].w;
-      doc.setTextColor(TEXT);
-      doc.text(menus, x + 1.5, y + 5, { align: 'center' }); x += cols[5].w;
-      doc.text(String(v), x + 1.5, y + 5, { align: 'center' }); x += cols[6].w;
-      doc.text(String(m), x + 1.5, y + 5, { align: 'center' }); x += cols[7].w;
-      doc.text(String(c), x + 1.5, y + 5, { align: 'center' }); x += cols[8].w;
-      doc.text(String(it), x + 1.5, y + 5, { align: 'center' }); x += cols[9].w;
-      doc.text(String(ag), x + 1.5, y + 5, { align: 'center' }); x += cols[10].w;
+      doc.setFontSize(7);
+      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.text(sanitize(card.label).toUpperCase(), cx + 4, cardY + 7);
+      // Value
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(ACCENT);
-      doc.text(String(total), x + 1.5, y + 5, { align: 'center' }); x += cols[11].w;
+      doc.setFontSize(16);
+      doc.setTextColor(...hexToRgb(card.color));
+      doc.text(String(card.value), cx + 4, cardY + 17);
+    });
+
+    // ═══ GRAFICO DE BARRAS ═══
+    const chartY = 85;
+    const chartH = 55;
+    const chartW = pageW - 28;
+
+    // Box do grafico
+    doc.setFillColor(...hexToRgb(C.white));
+    doc.setDrawColor(...hexToRgb(C.border));
+    doc.roundedRect(14, chartY, chartW, chartH, 3, 3, 'FD');
+
+    // Titulo do grafico
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...hexToRgb(C.text));
+    doc.text('Top 8 Usuarios por Atuacoes', 18, chartY + 7);
+
+    if (topUsuarios.length === 0) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.text('Nenhuma atuacao registrada no periodo selecionado.', 18, chartY + 20);
+    } else {
+      const maxVal = Math.max(...topUsuarios.map(u => u.total), 1);
+      const barAreaY = chartY + 12;
+      const barAreaH = chartH - 18;
+      const barAreaW = chartW - 10;
+      const barAreaX = 20;
+      const barW = (barAreaW / topUsuarios.length) - 4;
+
+      // Linhas de grade horizontais
+      for (let g = 0; g <= 4; g++) {
+        const gy = barAreaY + (barAreaH / 4) * g;
+        doc.setDrawColor(235, 238, 242);
+        doc.setLineDashPattern([0.5, 1], 0);
+        doc.line(barAreaX, gy, barAreaX + barAreaW - 5, gy);
+      }
+      doc.setLineDashPattern([], 0);
+
+      topUsuarios.forEach((u, i) => {
+        const bx = barAreaX + i * (barW + 4);
+        const barVal = (u.total / maxVal) * barAreaH;
+        const by = barAreaY + barAreaH - barVal;
+
+        // Barra com gradiente (simulado com cor solida)
+        const opacity = 0.5 + (i / topUsuarios.length) * 0.5;
+        const [r, g, b] = hexToRgb(C.accent);
+        doc.setFillColor(r, g, b);
+        doc.roundedRect(bx, by, barW, barVal, 1, 1, 'F');
+
+        // Valor no topo
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...hexToRgb(C.accentDark));
+        doc.text(String(u.total), bx + barW / 2, by - 1.5, { align: 'center' });
+
+        // Nome do usuario
+        const nome = sanitize((u.nome_tratamento || u.full_name || 'N/A').split(' ')[0]).substring(0, 10);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(...hexToRgb(C.textMuted));
+        doc.text(nome, bx + barW / 2, barAreaY + barAreaH + 4, { align: 'center' });
+      });
+    }
+
+    // ═══ TABELA DETALHADA ═══
+    let y = chartY + chartH + 8;
+
+    // Titulo da secao
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...hexToRgb(C.text));
+    doc.text(sanitize(`Detalhamento por Usuario (${usuariosProc.length})`), 14, y);
+    y += 3;
+
+    // Definicao das colunas
+    const cols = [
+      { header: 'Usuario', w: 42, align: 'left' },
+      { header: 'E-mail', w: 42, align: 'left' },
+      { header: 'Papel', w: 16, align: 'left' },
+      { header: 'Status', w: 18, align: 'left' },
+      { header: 'Ultimo Acesso', w: 28, align: 'left' },
+      { header: 'Menus', w: 12, align: 'center' },
+      { header: 'Vendas', w: 13, align: 'center' },
+      { header: 'Msgs', w: 13, align: 'center' },
+      { header: 'Cham.', w: 13, align: 'center' },
+      { header: 'Inter.', w: 13, align: 'center' },
+      { header: 'Agenda', w: 13, align: 'center' },
+      { header: 'Total', w: 15, align: 'center' },
+    ];
+    const rowH = 6.5;
+    const tableW = cols.reduce((s, c) => s + c.w, 0);
+    let tableX = 14;
+
+    // Helper para desenhar header da tabela
+    const drawTableHeader = (startY) => {
+      let cx = tableX;
+      doc.setFillColor(...hexToRgb(C.darkNav));
+      doc.rect(cx, startY, tableW, rowH, 'F');
+      // Accent line abaixo do header
+      doc.setFillColor(...hexToRgb(C.accent));
+      doc.rect(cx, startY + rowH, tableW, 0.5, 'F');
+      doc.setTextColor(...hexToRgb(C.white));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      for (const col of cols) {
+        if (col.align === 'center') {
+          doc.text(sanitize(col.header), cx + col.w / 2, startY + 4.5, { align: 'center' });
+        } else {
+          doc.text(sanitize(col.header), cx + 1.5, startY + 4.5);
+        }
+        cx += col.w;
+      }
+      return startY + rowH;
+    };
+
+    y = drawTableHeader(y);
+
+    // Linhas de dados
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+
+    for (let i = 0; i < usuariosProc.length; i++) {
+      const u = usuariosProc[i];
+
+      // Quebra de pagina
+      if (y > pageH - 20) {
+        doc.addPage();
+        y = 14;
+        y = drawTableHeader(y);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6.5);
+      }
+
+      let cx = tableX;
+
+      // Alternating row
+      if (i % 2 === 0) {
+        doc.setFillColor(...hexToRgb(C.rowAlt));
+        doc.rect(cx, y, tableW, rowH, 'F');
+      }
+
+      const nome = sanitize(u.nome_tratamento || u.full_name || '-').substring(0, 26);
+      const email = sanitize(u.email || '-').substring(0, 28);
+      const papel = u.isAdminUser ? 'Admin' : 'Usuario';
+      const status = u.statusStr;
+
+      // Cor do status
+      let statusColor = C.textMuted;
+      if (status === 'Online') statusColor = C.green;
+      else if (status === 'Ausente') statusColor = C.amber;
+      else if (status === 'Bloqueado') statusColor = C.red;
+
+      // Usuario
+      doc.setTextColor(...hexToRgb(C.text));
+      doc.setFont('helvetica', 'bold');
+      doc.text(nome, cx + 1.5, y + 4.5); cx += cols[0].w;
       doc.setFont('helvetica', 'normal');
 
-      // Border
-      doc.setDrawColor(220, 220, 220);
-      doc.line(10, y + rowH, 10 + tableW, y + rowH);
+      // Email
+      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.text(email, cx + 1.5, y + 4.5); cx += cols[1].w;
+
+      // Papel
+      doc.setTextColor(...hexToRgb(u.isAdminUser ? C.amber : C.blue));
+      doc.text(papel, cx + 1.5, y + 4.5); cx += cols[2].w;
+
+      // Status
+      doc.setTextColor(...hexToRgb(statusColor));
+      doc.setFont('helvetica', 'bold');
+      doc.text(status, cx + 1.5, y + 4.5); cx += cols[3].w;
+      doc.setFont('helvetica', 'normal');
+
+      // Ultimo acesso
+      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.text(sanitize(u.acessoStr).substring(0, 22), cx + 1.5, y + 4.5); cx += cols[4].w;
+
+      // Menus
+      doc.setTextColor(...hexToRgb(C.text));
+      doc.text(u.menusStr, cx + cols[5].w / 2, y + 4.5, { align: 'center' }); cx += cols[5].w;
+
+      // Atividades
+      const atuaCells = [
+        { v: u.atua.v, c: C.accent },
+        { v: u.atua.m, c: C.blue },
+        { v: u.atua.c, c: C.amber },
+        { v: u.atua.it, c: C.purple },
+        { v: u.atua.ag, c: C.green },
+      ];
+      for (const ac of atuaCells) {
+        doc.setTextColor(...hexToRgb(ac.v > 0 ? ac.c : C.textMuted));
+        doc.setFont('helvetica', ac.v > 0 ? 'bold' : 'normal');
+        doc.text(String(ac.v), cx + 6.5, y + 4.5, { align: 'center' });
+        cx += 13;
+      }
+
+      // Total
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...hexToRgb(u.total > 0 ? C.accent : C.textMuted));
+      doc.text(String(u.total), cx + cols[11].w / 2, y + 4.5, { align: 'center' });
+
+      // Bottom border
+      doc.setDrawColor(...hexToRgb(C.border));
+      doc.setLineWidth(0.1);
+      doc.line(tableX, y + rowH, tableX + tableW, y + rowH);
 
       y += rowH;
     }
 
-    // Footer
+    // ═══ FOOTER em todas as paginas ═══
     const totalPages = doc.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
       doc.setPage(p);
+      // Linha accent no rodape
+      doc.setFillColor(...hexToRgb(C.accent));
+      doc.rect(0, pageH - 8, pageW, 0.5, 'F');
+      // Texto
       doc.setFontSize(7);
-      doc.setTextColor(MUTED);
-      doc.text(`Página ${p} de ${totalPages}`, pageW / 2, pageH - 5, { align: 'center' });
-      doc.text('Villela Exchange — Gestão Comercial', 10, pageH - 5);
+      doc.setTextColor(...hexToRgb(C.textMuted));
+      doc.setFont('helvetica', 'normal');
+      doc.text('Villela Exchange - Gestao Comercial', 14, pageH - 3);
+      doc.text(`Pagina ${p} de ${totalPages}`, pageW / 2, pageH - 3, { align: 'center' });
+      doc.text(sanitize(`Gerado em ${new Date().toLocaleString('pt-BR')}`), pageW - 14, pageH - 3, { align: 'right' });
     }
 
     const pdfBytes = doc.output('arraybuffer');
