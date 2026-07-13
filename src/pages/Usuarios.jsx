@@ -288,7 +288,16 @@ export default function Usuarios() {
               const status = getOnlineStatus(u.ultimo_acesso);
               const label = getStatusLabel(u.ultimo_acesso);
               return (
-                <div key={u.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs bg-white border-gray-200 text-gray-600">
+                <button
+                  key={u.id}
+                  onClick={() => setSelectedUserIds(prev =>
+                    prev.includes(u.id) ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                  )}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition cursor-pointer ${
+                    selectedUserIds.includes(u.id)
+                      ? 'bg-[rgba(0,212,170,0.12)] border-[#00D4AA] text-[#00D4AA]'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-[#00D4AA]'
+                  }`}>
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
                     status === 'online' ? 'bg-emerald-500' :
                     status === 'ausente' ? 'bg-amber-400' : 'bg-gray-300'
@@ -297,7 +306,7 @@ export default function Usuarios() {
                   <span className={`text-[10px] ${
                     status === 'online' ? 'text-emerald-600 font-semibold' : 'text-gray-400'
                   }`}>{label}</span>
-                </div>
+                </button>
               );
             })}
           </div>
