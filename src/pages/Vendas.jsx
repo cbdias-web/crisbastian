@@ -507,6 +507,7 @@ export default function Vendas() {
   });
 
   const totalAcumulado = filteredVendas
+    .filter(v => v.considerar_acumulado !== false)
     .reduce((sum, v) => sum + (v.valor || 0), 0);
 
   const exportarVendas = () => {
