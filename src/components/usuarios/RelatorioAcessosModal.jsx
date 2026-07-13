@@ -2,9 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { X, FileDown, Loader2, Wifi, Clock, Shield, Activity, Users, Search, Calendar, ChevronDown, TrendingUp } from 'lucide-react';
+import { X, FileDown, Loader2, Wifi, Clock, Shield, Activity, Users, Search, ChevronDown, TrendingUp, Check, XCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
+import UserDetailPopup from './UserDetailPopup';
 
 const AURORA = {
   bg: '#0d1117',
@@ -17,6 +18,8 @@ const AURORA = {
   textMuted: 'rgba(230,237,243,0.55)',
   textDim: 'rgba(230,237,243,0.35)',
 };
+
+const hoje = new Date().toISOString().split('T')[0];
 
 const formatDataHora = (iso) => {
   if (!iso) return { data: 'Nunca acessou', hora: '—', relativo: '—' };
@@ -50,13 +53,14 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
   const [gerandoPDF, setGerandoPDF] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [usuarioSelecionado, setUsuarioSelecionado] = useState('todos');
+  const [usuariosSelecionados, setUsuariosSelecionados] = useState([]); // array de IDs
   const [usuarioDropOpen, setUsuarioDropOpen] = useState(false);
   const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const [dataFim, setDataFim] = useState(hoje); // default: hoje
+  const [usuarioPopup, setUsuarioPopup] = useState(null); // usuario selecionado para popup
 
   const { data: atividades = {}, isLoading } = useQuery({
-    queryKey: ['relatorio-acessos-atividades'],
+    queryKey: ['relatorio-acessos-atividades', dataInicio, dataFim],
     queryFn: async () => {
       const [vendas, mensagens, chamados, interacoes, agendas] = await Promise.all([
         base44.entities.Venda.list('-created_date', 500),
@@ -118,8 +122,8 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
 
   const usuariosFiltrados = useMemo(() => {
     return usuariosComDados.filter(u => {
-      // Filtro por usuario selecionado
-      if (usuarioSelecionado !== 'todos' && u.id !== usuarioSelecionado) return false;
+      // Filtro por usuarios selecionados (multi)
+      if (usuariosSelecionados.length > 0 && !usuariosSelecionados.includes(u.id)) return false;
       // Filtro por busca textual
       if (searchTerm) {
         const t = searchTerm.toLowerCase();
@@ -134,7 +138,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
       if (filtroStatus === 'inativos') return !u.ultimo_acesso;
       return true;
     });
-  }, [usuariosComDados, filtroStatus, searchTerm, usuarioSelecionado]);
+  }, [usuariosComDados, filtroStatus, searchTerm, usuariosSelecionados]);
 
   const stats = useMemo(() => {
     const online = usuariosComDados.filter(u => u.status === 'online').length;
@@ -160,7 +164,8 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
     setGerandoPDF(true);
     try {
       const response = await base44.functions.invoke('gerarRelatorioAcessosPDF', {
-        usuario_id: usuarioSelecionado !== 'todos' ? usuarioSelecionado : null,
+        usuario_id: usuariosSelecionados.length === 1 ? usuariosSelecionados[0] : null,
+        usuarios_ids: usuariosSelecionados.length > 1 ? usuariosSelecionados : null,
         data_inicio: dataInicio || null,
         data_fim: dataFim || null,
         filtro_status: filtroStatus,
@@ -182,15 +187,28 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
 
   const limparFiltros = () => {
     setSearchTerm('');
-    setUsuarioSelecionado('todos');
+    setUsuariosSelecionados([]);
     setDataInicio('');
-    setDataFim('');
+    setDataFim(hoje);
     setFiltroStatus('todos');
   };
 
-  const temFiltros = searchTerm || usuarioSelecionado !== 'todos' || dataInicio || dataFim || filtroStatus !== 'todos';
+  const temFiltros = searchTerm || usuariosSelecionados.length > 0 || dataInicio || dataFim !== hoje || filtroStatus !== 'todos';
 
-  const usuarioSel = usuarios.find(u => u.id === usuarioSelecionado);
+  const toggleUsuario = (id) => {
+    setUsuariosSelecionados(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  // Stats cards com filtro clicavel
+  const statsCards = [
+    { icon: Users, label: 'Total', value: stats.total, color: '#00D4AA', bg: 'rgba(0,212,170,0.06)', filterKey: 'todos' },
+    { icon: Wifi, label: 'Online', value: stats.online, color: '#34d399', bg: 'rgba(16,185,129,0.06)', filterKey: 'online' },
+    { icon: Shield, label: 'Bloqueados', value: stats.bloqueados, color: '#f87171', bg: 'rgba(239,68,68,0.06)', filterKey: 'bloqueados' },
+    { icon: Clock, label: 'Nunca acessou', value: stats.nuncaAcessou, color: '#fbbf24', bg: 'rgba(245,158,11,0.06)', filterKey: 'inativos' },
+    { icon: TrendingUp, label: 'Total Atuacoes', value: stats.totalAtuacoes, color: '#a78bfa', bg: 'rgba(167,139,250,0.06)', filterKey: null },
+  ];
 
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
@@ -232,24 +250,31 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
           </div>
         </div>
 
-        {/* ═══ STATS CARDS ═══ */}
+        {/* ═══ STATS CARDS (clicaveis) ═══ */}
         <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { icon: Users, label: 'Total', value: stats.total, color: '#00D4AA', bg: 'rgba(0,212,170,0.06)' },
-            { icon: Wifi, label: 'Online', value: stats.online, color: '#34d399', bg: 'rgba(16,185,129,0.06)' },
-            { icon: Shield, label: 'Bloqueados', value: stats.bloqueados, color: '#f87171', bg: 'rgba(239,68,68,0.06)' },
-            { icon: Clock, label: 'Nunca acessou', value: stats.nuncaAcessou, color: '#fbbf24', bg: 'rgba(245,158,11,0.06)' },
-            { icon: TrendingUp, label: 'Total Atuacoes', value: stats.totalAtuacoes, color: '#a78bfa', bg: 'rgba(167,139,250,0.06)' },
-          ].map((s, i) => (
-            <div key={i} className="rounded-xl p-3 flex items-center gap-3 transition hover:scale-105"
-              style={{ background: s.bg, border: `1px solid ${s.color}22` }}>
-              <s.icon className="w-4 h-4 flex-shrink-0" style={{ color: s.color }} />
-              <div>
-                <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: AURORA.textMuted }}>{s.label}</p>
-                <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
-              </div>
-            </div>
-          ))}
+          {statsCards.map((s, i) => {
+            const isActive = s.filterKey && filtroStatus === s.filterKey;
+            return (
+              <button key={i}
+                onClick={() => s.filterKey && setFiltroStatus(isActive ? 'todos' : s.filterKey)}
+                disabled={!s.filterKey}
+                className="rounded-xl p-3 flex items-center gap-3 transition text-left"
+                style={{
+                  background: isActive ? AURORA.accentDim : s.bg,
+                  border: `1px solid ${isActive ? 'rgba(0,212,170,0.4)' : `${s.color}22`}`,
+                  cursor: s.filterKey ? 'pointer' : 'default',
+                  boxShadow: isActive ? '0 4px 16px rgba(0,212,170,0.15)' : 'none',
+                }}
+                onMouseEnter={e => { if (s.filterKey && !isActive) e.currentTarget.style.transform = 'scale(1.03)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
+                <s.icon className="w-4 h-4 flex-shrink-0" style={{ color: s.color }} />
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide font-medium" style={{ color: AURORA.textMuted }}>{s.label}</p>
+                  <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* ═══ FILTROS ═══ */}
@@ -279,30 +304,57 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                 </div>
               </div>
 
-              {/* Selecao de usuario */}
+              {/* Selecao multipla de usuarios */}
               <div className="relative">
-                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Usuario</label>
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>
+                  Usuario(s) {usuariosSelecionados.length > 0 && `(${usuariosSelecionados.length} selecionado(s))`}
+                </label>
                 <button onClick={() => setUsuarioDropOpen(p => !p)}
                   className="w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-                  <span className="truncate">{usuarioSelecionado === 'todos' ? 'Todos os usuarios' : (usuarioSel?.nome_tratamento || usuarioSel?.full_name || 'Selecionado')}</span>
+                  <span className="truncate">
+                    {usuariosSelecionados.length === 0
+                      ? 'Todos os usuarios'
+                      : usuariosSelecionados.length === 1
+                        ? (usuarios.find(u => u.id === usuariosSelecionados[0])?.nome_tratamento ||
+                           usuarios.find(u => u.id === usuariosSelecionados[0])?.full_name || '1 selecionado')
+                        : `${usuariosSelecionados.length} usuarios selecionados`}
+                  </span>
                   <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-1 transition-transform ${usuarioDropOpen ? 'rotate-180' : ''}`} style={{ color: AURORA.textMuted }} />
                 </button>
                 {usuarioDropOpen && (
                   <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg shadow-2xl max-h-64 overflow-y-auto"
                     style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                    <button onClick={() => { setUsuarioSelecionado('todos'); setUsuarioDropOpen(false); }}
-                      className="w-full text-left px-3 py-2 text-sm transition hover:bg-[rgba(0,212,170,0.08)]"
-                      style={{ color: usuarioSelecionado === 'todos' ? AURORA.accent : AURORA.text }}>
-                      Todos os usuarios
-                    </button>
-                    {usuarios.map(u => (
-                      <button key={u.id} onClick={() => { setUsuarioSelecionado(u.id); setUsuarioDropOpen(false); }}
-                        className="w-full text-left px-3 py-2 text-sm transition hover:bg-[rgba(0,212,170,0.08)]"
-                        style={{ color: usuarioSelecionado === u.id ? AURORA.accent : AURORA.text }}>
-                        {u.nome_tratamento || u.full_name || u.email}
+                    {/* Header com acoes rapidas */}
+                    <div className="flex items-center gap-2 px-3 py-2 sticky top-0" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
+                      <button onClick={() => setUsuariosSelecionados(usuarios.map(u => u.id))}
+                        className="text-[10px] px-2 py-0.5 rounded-md transition"
+                        style={{ color: AURORA.accent, background: AURORA.accentDim }}>
+                        Selecionar todos
                       </button>
-                    ))}
+                      <button onClick={() => setUsuariosSelecionados([])}
+                        className="text-[10px] px-2 py-0.5 rounded-md transition"
+                        style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)' }}>
+                        Limpar
+                      </button>
+                    </div>
+                    {usuarios.map(u => {
+                      const checked = usuariosSelecionados.includes(u.id);
+                      return (
+                        <button key={u.id} onClick={() => toggleUsuario(u.id)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm transition hover:bg-[rgba(0,212,170,0.08)]"
+                          style={{ color: checked ? AURORA.accent : AURORA.text }}>
+                          <span className="w-4 h-4 rounded border flex items-center justify-center flex-shrink-0"
+                            style={{
+                              background: checked ? AURORA.accent : 'transparent',
+                              borderColor: checked ? AURORA.accent : AURORA.border,
+                            }}>
+                            {checked && <Check className="w-3 h-3 text-white" />}
+                          </span>
+                          {u.nome_tratamento || u.full_name || u.email}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -315,9 +367,9 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
               </div>
 
-              {/* Data fim */}
+              {/* Data fim (default: hoje) */}
               <div>
-                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Data Fim</label>
+                <label className="text-[10px] uppercase tracking-wide block mb-1" style={{ color: AURORA.textMuted }}>Data Fim <span style={{ color: AURORA.accent }}>(hoje)</span></label>
                 <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)}
                   className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none transition"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
@@ -343,6 +395,17 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                   {f.label}
                 </button>
               ))}
+              {usuariosSelecionados.length > 0 && (
+                <div className="flex items-center gap-1.5 ml-2 px-2 py-1 rounded-lg"
+                  style={{ background: AURORA.accentDim, border: '1px solid rgba(0,212,170,0.2)' }}>
+                  <span className="text-[10px] font-medium" style={{ color: AURORA.accent }}>
+                    {usuariosSelecionados.length} usuario(s) filtrado(s)
+                  </span>
+                  <button onClick={() => setUsuariosSelecionados([])}>
+                    <XCircle className="w-3 h-3" style={{ color: AURORA.accent }} />
+                  </button>
+                </div>
+              )}
               <span className="ml-auto text-xs" style={{ color: AURORA.textMuted }}>
                 {usuariosFiltrados.length} usuario(s) exibido(s)
               </span>
@@ -362,7 +425,7 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <XAxis dataKey="nome" tick={{ fill: AURORA.textMuted, fontSize: 10 }} axisLine={{ stroke: AURORA.border }} tickLine={false} />
-                  <YAxis tick={{ fill: AURORA.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: AURORA.textMuted, fontSize: 10 }} axisLine={false } tickLine={false} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,212,170,0.05)' }} />
                   <Bar dataKey="atuacoes" radius={[6, 6, 0, 0]}>
                     {chartData.map((entry, idx) => (
@@ -398,8 +461,9 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
                   const sc = statusColors[u.status];
                   const initials = (u.full_name || u.email || 'U').charAt(0).toUpperCase();
                   return (
-                    <tr key={u.id} className="transition"
+                    <tr key={u.id} className="transition cursor-pointer"
                       style={{ background: idx % 2 === 0 ? 'rgba(28,35,51,0.5)' : 'transparent' }}
+                      onClick={() => setUsuarioPopup(u)}
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.06)'}
                       onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(28,35,51,0.5)' : 'transparent'}>
                       <td className="px-3 py-2.5" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
@@ -460,6 +524,11 @@ export default function RelatorioAcessosModal({ usuarios, onClose }) {
           )}
         </div>
       </div>
+
+      {/* ═══ POPUP DE DETALHE DO USUARIO ═══ */}
+      {usuarioPopup && (
+        <UserDetailPopup usuario={usuarioPopup} onClose={() => setUsuarioPopup(null)} />
+      )}
     </div>
   );
 }

@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
     try { body = await req.json(); } catch {}
 
     const fUsuarioId = body.usuario_id || null;
+    const fUsuariosIds = body.usuarios_ids || null; // multi-selecao
     const fDataInicio = body.data_inicio || null;
     const fDataFim = body.data_fim || null;
     const fStatus = body.filtro_status || 'todos';
@@ -136,6 +137,9 @@ Deno.serve(async (req) => {
 
     // Aplicar filtros
     if (fUsuarioId) usuariosProc = usuariosProc.filter(u => u.id === fUsuarioId);
+    if (fUsuariosIds && Array.isArray(fUsuariosIds) && fUsuariosIds.length > 0) {
+      usuariosProc = usuariosProc.filter(u => fUsuariosIds.includes(u.id));
+    }
     if (fSearch) {
       usuariosProc = usuariosProc.filter(u =>
         (u.full_name || '').toLowerCase().includes(fSearch) ||
