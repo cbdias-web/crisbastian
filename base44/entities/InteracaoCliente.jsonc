@@ -53,6 +53,15 @@
         "Sem resposta"
       ],
       "description": "Resultado da intera\u00e7\u00e3o"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "realizada",
+        "agendada"
+      ],
+      "default": "realizada",
+      "description": "Status: 'realizada' (conclu\u00edda) ou 'agendada' (pr\u00f3ximo contato pendente de preenchimento)"
     }
   },
   "required": [
