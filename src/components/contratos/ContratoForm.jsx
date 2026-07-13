@@ -32,6 +32,7 @@ const TIPO_COLOR = {
   'OFFSHORE': '#0e7490',
   'GARANTIAS': '#be123c',
   'HORA TÉCNICA': '#0f766e',
+  'RATING': '#0369a1',
 };
 
 const TIPO_GRADIENT = {
@@ -43,6 +44,7 @@ const TIPO_GRADIENT = {
   'OFFSHORE': 'from-cyan-700 to-cyan-600',
   'GARANTIAS': 'from-rose-700 to-rose-600',
   'HORA TÉCNICA': 'from-teal-700 to-teal-600',
+  'RATING': 'from-sky-700 to-sky-600',
 };
 
 function calcProgress(form, aba) {
@@ -868,7 +870,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         onChange={e => setForm(f => ({ ...f, _tipoOverride: e.target.value }))}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all appearance-none cursor-pointer"
                       >
-                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA'].map(t => (
+                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA','RATING'].map(t => (
                           <option key={t} value={t}>{t}</option>
                         ))}
                       </select>

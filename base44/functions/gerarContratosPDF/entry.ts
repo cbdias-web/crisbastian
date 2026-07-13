@@ -12,6 +12,7 @@ const PDF_URLS = {
   'OFFSHORE': null,
   'GARANTIAS': null,
   'HORA TÉCNICA': null,
+  'RATING': null,
 };
 
 const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -381,6 +382,191 @@ Deno.serve(async (req) => {
           b64G += String.fromCharCode(...u8G.slice(i, i + 8192));
         }
         return Response.json({ pdf_base64: btoa(b64G), filename: 'contrato_GARANTIAS.pdf', tipo: 'GARANTIAS' });
+      }
+
+      // ── RATING: geração completa do zero com logo Villela e conteúdo de rating ──
+      if (contrato.tipo === 'RATING') {
+        const rDoc = await PDFDocument.create();
+        const font     = await rDoc.embedFont('Helvetica');
+        const fontBold = await rDoc.embedFont('Helvetica-Bold');
+        const BLACK  = { type: 'RGB', red: 0,    green: 0,    blue: 0 };
+        const WHITE  = { type: 'RGB', red: 1,    green: 1,    blue: 1 };
+        const GRAY   = { type: 'RGB', red: 0.45, green: 0.45, blue: 0.45 };
+        const DKGRAY = { type: 'RGB', red: 0.25, green: 0.25, blue: 0.25 };
+        const TEAL   = { type: 'RGB', red: 0.0,  green: 0.52, blue: 0.40 };
+
+        const PW = 595, PH = 842, ML = 65, MR = 530, TW = MR - ML;
+        const FS = 10, LH = 14.5;
+
+        let page = rDoc.addPage([PW, PH]);
+        let y = PH - 48;
+
+        const d = contrato;
+        const dataCtrt = d.data_contrato ? new Date(d.data_contrato + 'T00:00:00') : new Date();
+        const diaFmt   = `${String(dataCtrt.getDate()).padStart(2,'0')} de ${MESES_PT[dataCtrt.getMonth()]} de ${dataCtrt.getFullYear()}`;
+        const valTot   = fmtVal(d.valor_total);
+        const valTotExt= numeroParaExtenso(d.valor_total);
+        const entrada  = (d.valor_adesao && d.valor_adesao > 0) ? d.valor_adesao : (d.valor_total || 0);
+        const valEntr  = fmtVal(entrada);
+        const numParc  = Math.round(d.num_parcelas || 0);
+        const valParc  = numParc > 0 ? fmtVal(d.valor_parcela || 0) : '0,00';
+        const diaV     = String(d.dia_vencimento || '____');
+        const mens     = fmtVal(d.mensalidade);
+        const prazo    = String(d.prazo_meses || '____');
+
+        function nextLineR(extra = 0) {
+          y -= LH + extra;
+          if (y < 60) { page = rDoc.addPage([PW, PH]); y = PH - 60; }
+        }
+        function dtR(text, x, sz, f, col = BLACK) {
+          if (y < 60) { page = rDoc.addPage([PW, PH]); y = PH - 60; }
+          page.drawText(String(text || ''), { x, y, size: sz, font: f, color: col });
+        }
+        function paraR(label, text, gapAfter = 8) {
+          const bW   = label ? fontBold.widthOfTextAtSize(label, FS) : 0;
+          const words = (text || '').split(' ');
+          let firstLine = '';
+          let firstMaxW = TW - bW;
+          let splitIdx  = 0;
+          for (let i = 0; i < words.length; i++) {
+            const test = firstLine ? firstLine + ' ' + words[i] : words[i];
+            if (font.widthOfTextAtSize(test, FS) > firstMaxW && firstLine) { splitIdx = i; break; }
+            firstLine = test; splitIdx = i + 1;
+          }
+          if (label) dtR(label, ML, FS, fontBold);
+          if (firstLine) dtR(firstLine, ML + bW, FS, font);
+          nextLineR();
+          const rest = words.slice(splitIdx).join(' ');
+          if (rest) {
+            const moreLines = wrapText(rest, font, FS, TW);
+            for (const ln of moreLines) { dtR(ln, ML, FS, font); nextLineR(); }
+          }
+          y -= gapAfter;
+        }
+        function paraBoldR(text, gapAfter = 8) {
+          const lines = wrapText(text, fontBold, FS, TW);
+          for (const ln of lines) { dtR(ln, ML, FS, fontBold); nextLineR(); }
+          y -= gapAfter;
+        }
+        function paraTextR(text, sz = FS, gapAfter = 8) {
+          const lines = wrapText(text, font, sz, TW);
+          for (const ln of lines) { dtR(ln, ML, sz, font); nextLineR(); }
+          y -= gapAfter;
+        }
+
+        // ── LOGO Villela Exchange (topo) ──
+        page.drawRectangle({ x: 0, y: PH - 75, width: PW, height: 75, color: WHITE });
+        const iconX = ML, iconY = PH - 20;
+        page.drawRectangle({ x: iconX,      y: iconY - 38, width: 30, height: 30, color: TEAL });
+        page.drawRectangle({ x: iconX + 16, y: iconY - 54, width: 22, height: 22, color: WHITE, borderColor: TEAL, borderWidth: 2 });
+        page.drawText('VILLELA',  { x: iconX + 44, y: iconY - 12, size: 22, font: fontBold, color: DKGRAY });
+        page.drawText('EXCHANGE', { x: iconX + 46, y: iconY - 32, size: 10, font, color: GRAY });
+        page.drawLine({ start: { x: ML, y: PH - 80 }, end: { x: MR, y: PH - 80 }, thickness: 0.5, color: GRAY });
+        y = PH - 100;
+
+        // ── TÍTULO ──
+        const titulo = 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE RATING';
+        const tW = fontBold.widthOfTextAtSize(titulo, 12);
+        dtR(titulo, (PW - tW) / 2, 12, fontBold);
+        page.drawLine({ start: { x: (PW-tW)/2, y: y-1 }, end: { x: (PW-tW)/2+tW, y: y-1 }, thickness: 0.8, color: BLACK });
+        y -= 30;
+
+        // ── CONTRATANTE ──
+        paraR('CONTRATANTE: ', (d.nome || '') + (d.cpf_cnpj ? ', inscrito(a) sob CPF/CNPJ nº ' + d.cpf_cnpj : '') + (d.endereco ? ', residente/domiciliado(a) em ' + d.endereco + ', ' + (d.bairro || '') + ', ' + (d.cidade || '') + '/' + (d.estado || '') : ''), 12);
+
+        // ── CONTRATADA ──
+        paraR('CONTRATADA: ', 'VILLELA EXCHANGE, pessoa jurídica de direito privado, inscrita no CNPJ sob nº próprio, com sede em território nacional, atuando na intermediação de serviços financeiros e consultoria internacional.', 18);
+
+        // ── CLÁUSULA PRIMEIRA — DO OBJETO ──
+        paraR('CLÁUSULA PRIMEIRA – DO OBJETO: ',
+          `O presente contrato tem por objeto a prestação de serviços de rating (análise e avaliação de crédito) por parte da Contratada em favor do Contratante, incluindo a análise documental, avaliação de capacidade de pagamento, emissão de parecer técnico de rating de crédito e suporte para acesso a mercados financeiros internacionais. O valor total dos serviços contratados é de R$ (${valTot}) (${valTotExt}).`, 10);
+
+        paraR('Parágrafo primeiro: ',
+          'O rating de crédito emitido pela Contratada constitui parecer técnico baseado nas informações e documentos fornecidos pelo Contratante, não representando garantia de concessão de crédito por terceiros ou instituições financeiras.', 10);
+
+        paraR('Parágrafo segundo: ',
+          'A Contratada utilizará metodologias próprias e reconhecidas no mercado para a avaliação, podendo solicitar documentos complementares durante o processo de análise.', 18);
+
+        // ── CLÁUSULA SEGUNDA — DO PREÇO E PAGAMENTO ──
+        paraR('CLÁUSULA SEGUNDA – DO PREÇO E DAS CONDIÇÕES DE PAGAMENTO: ',
+          `Pelos serviços prestados, o Contratante pagará à Contratada o valor total de R$ (${valTot}) (${valTotExt}), conforme as condições abaixo:`, 10);
+
+        if (entrada > 0) {
+          paraR('I – ', `Entrada (adesão) no valor de R$ (${valEntr}), paga na data da assinatura deste contrato.`, 4);
+        }
+        if (numParc > 0) {
+          paraR('II – ', `Saldo restante parcelado em (${numParc}) parcelas mensais e sucessivas de R$ (${valParc}), com vencimento todo dia (${diaV}).`, 4);
+        } else {
+          paraR('II – ', 'O valor total será pago em parcela única, conforme acordado entre as partes.', 4);
+        }
+        if (d.forma_pagamento) {
+          paraR('III – ', `Forma de pagamento: ${d.forma_pagamento}.`, 4);
+        }
+        if (d.data_primeiro_pagamento) {
+          paraR('IV – ', `Data do primeiro pagamento: ${fmtDate(d.data_primeiro_pagamento)}.`, 4);
+        }
+        y -= 6;
+
+        paraR('Parágrafo único: ',
+          'O atraso no pagamento de qualquer parcela acarretará juros de mora de 2% (dois por cento) ao mês e multa de 2% (dois por cento) sobre o valor em atraso.', 18);
+
+        // ── CLÁUSULA TERCEIRA — DO PRAZO ──
+        paraR('CLÁUSULA TERCEIRA – DO PRAZO: ',
+          prazo !== '____'
+            ? `O presente contrato vigorará pelo prazo de (${prazo}) meses, a contar da data de sua assinatura e do recebimento da documentação completa pelo Contratante.`
+            : 'O presente contrato vigorará pelo prazo necessário à conclusão dos serviços de rating, a contar da data de sua assinatura e do recebimento da documentação completa pelo Contratante.', 18);
+
+        // ── CLÁUSULA QUARTA — OBRIGAÇÕES DA CONTRATADA ──
+        paraBoldR('CLÁUSULA QUARTA – DAS OBRIGAÇÕES DA CONTRATADA:', 6);
+        paraTextR('I – Realizar a análise de crédito e emitir o parecer técnico de rating dentro do prazo estipulado;', FS, 4);
+        paraTextR('II – Manter o sigilo das informações fornecidas pelo Contratante, nos termos da legislação aplicável;', FS, 4);
+        paraTextR('III – Utilizar metodologias reconhecidas e padrões técnicos adequados para a avaliação;', FS, 4);
+        paraTextR('IV – Disponibilizar o resultado da análise em formato claro e acessível ao Contratante.', FS, 18);
+
+        // ── CLÁUSULA QUINTA — OBRIGAÇÕES DO CONTRATANTE ──
+        paraBoldR('CLÁUSULA QUINTA – DAS OBRIGAÇÕES DO CONTRATANTE:', 6);
+        paraTextR('I – Efetuar o pagamento dos honorários nas datas e condições acordadas;', FS, 4);
+        paraTextR('II – Fornecer toda a documentação necessária para a análise de crédito de forma completa e verídica;', FS, 4);
+        paraTextR('III – Informar imediatamente qualquer alteração cadastral ou financeira relevante durante o período de análise;', FS, 4);
+        paraTextR('IV – Utilizar o parecer de rating exclusivamente para os fins contratados, sendo vedada sua reprodução ou comercialização sem autorização prévia da Contratada.', FS, 18);
+
+        // ── CLÁUSULA SEXTA — RESCISÃO ──
+        paraR('CLÁUSULA SEXTA – DA RESCISÃO: ',
+          'O presente contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia e por escrito, com antecedência mínima de 15 (quinze) dias. Na hipótese de rescisão por iniciativa do Contratante antes da conclusão dos serviços, não haverá restituição dos valores já pagos, correspondentes aos serviços já prestados.', 18);
+
+        paraR('Parágrafo único: ',
+          'O inadimplemento de qualquer das cláusulas do presente contrato dará à parte prejudicada o direito de rescindi-lo imediatamente, com direito à percepção de perdas e danos.', 18);
+
+        // ── CLÁUSULA SÉTIMA — SIGILO E PROTEÇÃO DE DADOS ──
+        paraR('CLÁUSULA SÉTIMA – DO SIGILO E PROTEÇÃO DE DADOS: ',
+          'As partes comprometem-se a manter sigilo absoluto sobre todas as informações trocadas durante a vigência deste contrato, inclusive após seu término, nos termos da Lei nº 13.709/2018 (Lei Geral de Proteção de Dados – LGPD).', 18);
+
+        // ── CLÁUSULA OITAVA — FORO ──
+        paraR('CLÁUSULA OITAVA – DO FORO: ',
+          'As partes elegem o foro da Comarca do domicílio do Contratante para dirimir quaisquer controvérsias oriundas do presente contrato, com renúncia a qualquer outro, por mais privilegiado que seja.', 18);
+
+        // ── DATA E ASSINATURA ──
+        if (y < 200) { page = rDoc.addPage([PW, PH]); y = PH - 60; }
+        paraR('', `____________________, ${diaFmt}.`, 30);
+
+        const sigY = y;
+        page.drawLine({ start: { x: ML, y: sigY }, end: { x: ML + 180, y: sigY }, thickness: 0.8, color: BLACK });
+        page.drawLine({ start: { x: MR - 180, y: sigY }, end: { x: MR, y: sigY }, thickness: 0.8, color: BLACK });
+        y -= 14;
+        dtR('Contratante', ML + 60, 9, font);
+        dtR('Contratada', MR - 130, 9, font);
+        y -= 18;
+        const nomeContratanteR = wrapText(d.nome || '', font, 9, 180);
+        if (nomeContratanteR.length > 0) dtR(nomeContratanteR[0], ML, 9, font, GRAY);
+        dtR('Villela Exchange', MR - 110, 9, font, GRAY);
+
+        const pdfR = await rDoc.save();
+        const u8R  = new Uint8Array(pdfR);
+        let b64R   = '';
+        for (let i = 0; i < u8R.length; i += 8192) {
+          b64R += String.fromCharCode(...u8R.slice(i, i + 8192));
+        }
+        return Response.json({ pdf_base64: btoa(b64R), filename: 'contrato_RATING.pdf', tipo: 'RATING' });
       }
 
       // Generic fallback for ROF, CANAL BANCÁRIO, OFFSHORE, HORA TÉCNICA

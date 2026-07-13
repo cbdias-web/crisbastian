@@ -12,7 +12,8 @@
         "CANAL BANC\u00c1RIO",
         "OFFSHORE",
         "GARANTIAS",
-        "HORA T\u00c9CNICA"
+        "HORA T\u00c9CNICA",
+        "RATING"
       ],
       "description": "Tipo de contrato"
     },
@@ -283,7 +284,7 @@
     },
     "mensalidade": {
       "type": "number",
-      "description": "Mensalidade (espec\u00edfico para GARANTIAS)"
+      "description": "Mensalidade (espec\u00edfico para GARANTIAS e RATING)"
     },
     "valor_divida": {
       "type": "number",
