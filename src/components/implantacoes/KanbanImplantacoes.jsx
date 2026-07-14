@@ -20,6 +20,7 @@ const COLUNAS = [
   { key: 'em_andamento', label: 'Em Andamento', color: '#00D4AA', bg: 'rgba(0,212,170,0.10)' },
   { key: 'aguardando_cliente', label: 'Aguard. Cliente', color: '#60a5fa', bg: 'rgba(96,165,250,0.10)' },
   { key: 'concluido', label: 'Concluído', color: '#22c55e', bg: 'rgba(34,197,94,0.10)' },
+  { key: 'concluido_feedback', label: 'Concluído - Enviar Feedback', color: '#a78bfa', bg: 'rgba(167,139,250,0.10)' },
   { key: 'cancelado', label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.10)' },
 ];
 
@@ -45,12 +46,6 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
     const novoStatus = destination.droppableId;
     if (novoStatus === source.droppableId) return;
 
-    // Apenas admins podem mover via drag
-    if (!isAdmin) {
-      toast.error('Apenas administradores podem alterar o status');
-      return;
-    }
-
     try {
       const impl = implantacoes.find(i => i.id === draggableId);
       const historicoEntry = {
@@ -66,10 +61,10 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
         historico: [...(impl.historico || []), historicoEntry],
       };
 
-      if (novoStatus === 'concluido' && !impl.data_conclusao) {
+      if ((novoStatus === 'concluido' || novoStatus === 'concluido_feedback') && !impl.data_conclusao) {
         updateData.data_conclusao = new Date().toISOString().split('T')[0];
       }
-      if (novoStatus !== 'concluido') {
+      if (novoStatus !== 'concluido' && novoStatus !== 'concluido_feedback') {
         updateData.data_conclusao = '';
       }
 
@@ -127,18 +122,18 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
                   >
                     {items.length === 0 && (
                       <p className="text-center text-[11px] py-6" style={{ color: AURORA.textMuted }}>
-                        {isAdmin ? 'Arraste para cá' : 'Vazio'}
+                        Arraste para cá
                       </p>
                     )}
                     {items.map((imp, index) => {
                       const etapas = imp.etapas || [];
                       const concluidas = etapas.filter(e => e.concluida).length;
                       const progresso = etapas.length > 0 ? Math.round((concluidas / etapas.length) * 100) : 0;
-                      const atrasada = imp.status !== 'concluido' && imp.status !== 'cancelado' && imp.data_prevista_conclusao && new Date(imp.data_prevista_conclusao) < new Date();
+                      const atrasada = imp.status !== 'concluido' && imp.status !== 'concluido_feedback' && imp.status !== 'cancelado' && imp.data_prevista_conclusao && new Date(imp.data_prevista_conclusao) < new Date();
                       const priColor = PRIORIDADE_DOT[imp.prioridade] || PRIORIDADE_DOT.media;
 
                       return (
-                        <Draggable key={imp.id} draggableId={imp.id} index={index} isDragDisabled={!isAdmin}>
+                        <Draggable key={imp.id} draggableId={imp.id} index={index} isDragDisabled={false}>
                           {(prov, snap) => (
                             <div
                               ref={prov.innerRef}

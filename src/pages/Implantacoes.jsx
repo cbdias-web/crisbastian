@@ -23,6 +23,7 @@ const STATUS_CONFIG = {
   em_andamento: { label: 'Em Andamento', color: '#00D4AA', bg: 'rgba(0,212,170,0.15)' },
   aguardando_cliente: { label: 'Aguard. Cliente', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
   concluido: { label: 'Concluído', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' },
+  concluido_feedback: { label: 'Concluído - Feedback', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
   cancelado: { label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.15)' },
 };
 
@@ -41,6 +42,7 @@ export default function Implantacoes() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('Todos');
   const [filtroProduto, setFiltroProduto] = useState('Todos');
+  const [filtroVendedor, setFiltroVendedor] = useState('Todos');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [implantacaoAtiva, setImplantacaoAtiva] = useState(null);
@@ -61,22 +63,24 @@ export default function Implantacoes() {
   });
 
   const produtosDisponiveis = [...new Set(implantacoes.map(i => i.produto).filter(Boolean))].sort();
+  const vendedoresDisponiveis = [...new Set(implantacoes.map(i => i.vendedor_nome).filter(Boolean))].sort();
 
   const filtradas = implantacoes.filter(imp => {
     const matchBusca = !busca || imp.cliente_nome?.toLowerCase().includes(busca.toLowerCase()) || imp.cpf_cnpj?.includes(busca) || imp.produto?.toLowerCase().includes(busca.toLowerCase());
     const matchStatus = filtroStatus === 'Todos' || imp.status === filtroStatus;
     const matchProduto = filtroProduto === 'Todos' || imp.produto === filtroProduto;
+    const matchVendedor = filtroVendedor === 'Todos' || imp.vendedor_nome === filtroVendedor;
     const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
     const matchDataIni = !filtroDataInicio || dataRef >= filtroDataInicio;
     const matchDataFim = !filtroDataFim || dataRef <= filtroDataFim;
-    return matchBusca && matchStatus && matchProduto && matchDataIni && matchDataFim;
+    return matchBusca && matchStatus && matchProduto && matchVendedor && matchDataIni && matchDataFim;
   });
 
   const total = filtradas.length;
-  const totalConcluidas = filtradas.filter(i => i.status === 'concluido').length;
+  const totalConcluidas = filtradas.filter(i => i.status === 'concluido' || i.status === 'concluido_feedback').length;
   const totalAndamento = filtradas.filter(i => i.status === 'em_andamento' || i.status === 'aguardando_documentacao').length;
   const totalAtrasadas = filtradas.filter(i => {
-    if (i.status === 'concluido' || i.status === 'cancelado') return false;
+    if (i.status === 'concluido' || i.status === 'concluido_feedback' || i.status === 'cancelado') return false;
     if (!i.data_prevista_conclusao) return false;
     return new Date(i.data_prevista_conclusao) < new Date();
   }).length;
@@ -170,6 +174,11 @@ export default function Implantacoes() {
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
             <option value="Todos">Todos os produtos</option>
             {produtosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+            <option value="Todos">Todos os gerentes</option>
+            {vendedoresDisponiveis.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>

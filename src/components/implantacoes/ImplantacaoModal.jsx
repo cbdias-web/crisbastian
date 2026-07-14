@@ -20,6 +20,7 @@ const STATUS_OPTIONS = [
   { value: 'em_andamento', label: 'Em Andamento', color: '#00D4AA' },
   { value: 'aguardando_cliente', label: 'Aguardando Cliente', color: '#60a5fa' },
   { value: 'concluido', label: 'Concluído', color: '#22c55e' },
+  { value: 'concluido_feedback', label: 'Concluído - Enviar Feedback', color: '#a78bfa' },
   { value: 'cancelado', label: 'Cancelado', color: '#f87171' },
 ];
 

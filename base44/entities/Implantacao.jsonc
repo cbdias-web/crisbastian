@@ -54,6 +54,7 @@
         "em_andamento",
         "aguardando_cliente",
         "concluido",
+        "concluido_feedback",
         "cancelado"
       ],
       "default": "aguardando_documentacao",
