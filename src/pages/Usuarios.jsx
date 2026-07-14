@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal';
+import RelatorioRoletaModal from '../components/roleta/RelatorioRoletaModal';
 
 const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
@@ -37,6 +38,7 @@ export default function Usuarios() {
   const [migrandoClientes, setMigrandoClientes] = useState(false);
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
   const [showRelatorioAcessos, setShowRelatorioAcessos] = useState(false);
+  const [showRelatorioRoleta, setShowRelatorioRoleta] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
@@ -293,6 +295,14 @@ export default function Usuarios() {
               )}
             </Button>
             <Button
+              onClick={() => setShowRelatorioRoleta(true)}
+              variant="outline"
+              className="border-amber-400 text-amber-600 hover:bg-amber-50"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              Relatório de Prêmios
+            </Button>
+            <Button
               onClick={() => setShowConviteModal(true)}
               className="bg-[#0f1e35] hover:bg-[#1a3150] text-white px-5"
             >
@@ -430,9 +440,7 @@ export default function Usuarios() {
                 </th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">E-mail</th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Nome de Tratamento</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Papel</th>
-                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Permissões</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Chat</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
@@ -463,22 +471,20 @@ export default function Usuarios() {
                            <div className="w-8 h-8 rounded-full bg-[#0f1e35] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                              {initials}
                            </div>
-                           <span className="text-sm text-gray-800 font-medium">{usuario.full_name || usuario.email}</span>
+                           <div className="min-w-0">
+                             <p className="text-sm text-gray-800 font-medium truncate">{usuario.full_name || usuario.email}</p>
+                             {usuario.nome_tratamento && usuario.nome_tratamento !== usuario.full_name && (
+                               <p className="text-[10px] text-gray-500 truncate">{usuario.nome_tratamento}</p>
+                             )}
+                           </div>
                          </div>
                        </td>
                       <td className="px-5 py-3.5 text-sm text-gray-500">{usuario.email}</td>
-                      <td className="px-5 py-3.5 text-sm text-gray-700">{usuario.nome_tratamento || usuario.full_name || '—'}</td>
                       <td className="px-5 py-3.5">
                         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
                           isAdminUser ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-600'
                         }`}>
                           {isAdminUser ? 'Admin' : 'Usuário'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <span className="text-gray-400">◎</span>
-                          {isAdminUser ? 'Acesso total' : `${menusUsuario.length} menus`}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">
@@ -507,7 +513,7 @@ export default function Usuarios() {
                         </button>
                       </td>
                       <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <button
                             onClick={() => isEditing ? cancelarEdicao() : iniciarEdicao(usuario)}
                             className="p-1.5 hover:bg-gray-100 rounded-lg transition text-gray-400 hover:text-blue-600"
@@ -556,7 +562,7 @@ export default function Usuarios() {
                     </tr>
                     {isEditing && (
                       <tr>
-                        <td colSpan={8} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                        <td colSpan={7} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
                           <div className="space-y-3">
                             <div>
                               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Nome de Tratamento</p>
@@ -597,7 +603,7 @@ export default function Usuarios() {
               })}
               {usuarios.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-gray-400">
+                  <td colSpan={7} className="py-16 text-center text-gray-400">
                     <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
                     <p className="text-sm">Nenhum usuário encontrado</p>
                   </td>
@@ -668,6 +674,13 @@ export default function Usuarios() {
             usuarios={usuarios}
             preSelecionados={selectedUserIds}
             onClose={() => setShowRelatorioAcessos(false)}
+          />
+        )}
+
+        {showRelatorioRoleta && (
+          <RelatorioRoletaModal
+            roletas={roletas}
+            onClose={() => setShowRelatorioRoleta(false)}
           />
         )}
 
