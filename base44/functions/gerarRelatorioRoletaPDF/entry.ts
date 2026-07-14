@@ -1,8 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { jsPDF } from 'npm:jspdf@4.0.0';
 
-function removerAcentos(str) {
-  return str?.normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
+/**
+ * Sanitiza texto para o PDF mantendo acentos portugueses (que a fonte
+ * padrão helvetica/WinAnsi suporta) e substituindo apenas caracteres
+ * realmente incompativeis (em-dash, emojis, aspas tipograficas, etc.)
+ */
+function sanitizarTexto(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/—/g, '-')       // em-dash -> hifen
+    .replace(/–/g, '-')       // en-dash -> hifen
+    .replace(/[""]/g, '"')    // aspas curvas -> retas
+    .replace(/['']/g, "'")    // apostrofos curvos -> retos
+    .replace(/…/g, '...')     // reticencias tipograficas
+    .replace(/[•]/g, '-')     // bullet -> hifen
+    .replace(/°/g, 'o')       // simbolo de grau
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}]/gu, '') // emojis/simbolos unicode
+    .replace(/\u00A0/g, ' ')  // no-break space -> espaco
+    .trim();
 }
 
 Deno.serve(async (req) => {
@@ -26,12 +42,12 @@ Deno.serve(async (req) => {
     doc.rect(0, 0, pageW, 35, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(18);
-    doc.setFont(undefined, 'bold');
-    doc.text(removerAcentos('VILLELA EXCHANGE'), pageW / 2, 15, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text(sanitizarTexto('VILLELA EXCHANGE'), pageW / 2, 15, { align: 'center' });
     doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(removerAcentos('Relatorio de Premios da Roleta'), pageW / 2, 22, { align: 'center' });
-    doc.text(removerAcentos(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`), pageW / 2, 28, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text(sanitizarTexto('Relatório de Prêmios da Roleta'), pageW / 2, 22, { align: 'center' });
+    doc.text(sanitizarTexto(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`), pageW / 2, 28, { align: 'center' });
 
     // ── Resumo ──
     doc.setTextColor(0, 0, 0);
@@ -42,7 +58,7 @@ Deno.serve(async (req) => {
     // Contar prêmios por tipo
     const contaPremios = {};
     giradas.forEach(r => {
-      const p = r.premio || '—';
+      const p = r.premio || '-';
       contaPremios[p] = (contaPremios[p] || 0) + 1;
     });
 
@@ -51,13 +67,13 @@ Deno.serve(async (req) => {
     doc.roundedRect(14, resumoY, pageW - 28, 22, 3, 3, 'F');
 
     doc.setFontSize(9);
-    doc.setFont(undefined, 'bold');
-    doc.text(removerAcentos('Total Liberados:'), 20, resumoY + 8);
-    doc.text(removerAcentos('Total Resgatados:'), 20, resumoY + 16);
-    doc.text(removerAcentos('Pendentes:'), 100, resumoY + 8);
-    doc.text(removerAcentos('Tipos de Premio:'), 100, resumoY + 16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(sanitizarTexto('Total Liberados:'), 20, resumoY + 8);
+    doc.text(sanitizarTexto('Total Resgatados:'), 20, resumoY + 16);
+    doc.text(sanitizarTexto('Pendentes:'), 100, resumoY + 8);
+    doc.text(sanitizarTexto('Tipos de Prêmio:'), 100, resumoY + 16);
 
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     doc.text(totalLib.toString(), 52, resumoY + 8);
     doc.text(totalGir.toString(), 55, resumoY + 16);
     doc.text(totalPend.toString(), 128, resumoY + 8);
@@ -66,49 +82,49 @@ Deno.serve(async (req) => {
     // ── Distribuição de prêmios ──
     let distY = resumoY + 30;
     doc.setFontSize(10);
-    doc.setFont(undefined, 'bold');
-    doc.text(removerAcentos('Distribuicao de Premios:'), 14, distY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(sanitizarTexto('Distribuição de Prêmios:'), 14, distY);
     distY += 5;
 
     doc.setFontSize(8);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
     Object.entries(contaPremios).forEach(([premio, count]) => {
       distY += 5;
-      doc.text(removerAcentos(`${premio}: ${count}x`), 20, distY);
+      doc.text(sanitizarTexto(`${premio}: ${count}x`), 20, distY);
     });
 
     // ── Tabela de prêmios resgatados ──
     let y = distY + 12;
     doc.setFontSize(8);
-    doc.setFont(undefined, 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setFillColor(15, 30, 53);
     doc.rect(14, y, pageW - 28, 8, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.text('Usuario', 16, y + 5);
+    doc.text(sanitizarTexto('Usuário'), 16, y + 5);
     doc.text('E-mail', 70, y + 5);
-    doc.text('Premio', 120, y + 5);
-    doc.text('Data', pageW - 35, y + 5);
+    doc.text(sanitizarTexto('Prêmio'), 120, y + 5);
+    doc.text(sanitizarTexto('Data'), pageW - 35, y + 5);
 
     y += 10;
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, 'normal');
+    doc.setFont('helvetica', 'normal');
 
     giradas.forEach((r, idx) => {
       if (y > pageH - 25) {
         doc.addPage();
         y = 20;
         doc.setFontSize(8);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setFillColor(15, 30, 53);
         doc.rect(14, y, pageW - 28, 8, 'F');
         doc.setTextColor(255, 255, 255);
-        doc.text('Usuario', 16, y + 5);
+        doc.text(sanitizarTexto('Usuário'), 16, y + 5);
         doc.text('E-mail', 70, y + 5);
-        doc.text('Premio', 120, y + 5);
-        doc.text('Data', pageW - 35, y + 5);
+        doc.text(sanitizarTexto('Prêmio'), 120, y + 5);
+        doc.text(sanitizarTexto('Data'), pageW - 35, y + 5);
         y += 10;
         doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'normal');
       }
 
       if (idx % 2 === 0) {
@@ -116,10 +132,10 @@ Deno.serve(async (req) => {
         doc.rect(14, y - 4, pageW - 28, 7, 'F');
       }
 
-      doc.text(removerAcentos(r.user_nome || '—').substring(0, 30), 16, y);
-      doc.text(removerAcentos(r.user_email || '—').substring(0, 28), 70, y);
-      doc.text(removerAcentos(r.premio || '—').substring(0, 25), 120, y);
-      doc.text(r.girado_em ? new Date(r.girado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—', pageW - 35, y);
+      doc.text(sanitizarTexto(r.user_nome || '-').substring(0, 30), 16, y);
+      doc.text(sanitizarTexto(r.user_email || '-').substring(0, 28), 70, y);
+      doc.text(sanitizarTexto(r.premio || '-').substring(0, 25), 120, y);
+      doc.text(r.girado_em ? new Date(r.girado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-', pageW - 35, y);
 
       y += 7;
     });
@@ -127,7 +143,7 @@ Deno.serve(async (req) => {
     if (giradas.length === 0) {
       doc.setFontSize(10);
       doc.setTextColor(150, 150, 150);
-      doc.text(removerAcentos('Nenhum premio resgatado ainda.'), pageW / 2, y + 10, { align: 'center' });
+      doc.text(sanitizarTexto('Nenhum prêmio resgatado ainda.'), pageW / 2, y + 10, { align: 'center' });
     }
 
     // ── Footer ──
@@ -136,8 +152,8 @@ Deno.serve(async (req) => {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Pagina ${i} de ${totalPages}`, pageW / 2, pageH - 8, { align: 'center' });
-      doc.text(removerAcentos('Villela Exchange - Relatorio de Premios da Roleta'), 14, pageH - 8);
+      doc.text(sanitizarTexto(`Página ${i} de ${totalPages}`), pageW / 2, pageH - 8, { align: 'center' });
+      doc.text(sanitizarTexto('Villela Exchange - Relatório de Prêmios da Roleta'), 14, pageH - 8);
     }
 
     const pdfBase64 = doc.output('arraybuffer');
