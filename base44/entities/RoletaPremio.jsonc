@@ -1,0 +1,40 @@
+{
+  "name": "RoletaPremio",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio autorizado a girar a roleta"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "Email do usu\u00e1rio"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Roleta liberada para o usu\u00e1rio"
+    },
+    "ja_girou": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se o usu\u00e1rio j\u00e1 girou a roleta"
+    },
+    "premio": {
+      "type": "string",
+      "description": "Pr\u00eamio sorteado"
+    },
+    "girado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do sorteio"
+    }
+  },
+  "required": [
+    "user_id"
+  ]
+}

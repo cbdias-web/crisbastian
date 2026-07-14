@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal';
 
@@ -76,6 +76,35 @@ export default function Usuarios() {
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
     enabled: isAdmin
   });
+
+  const { data: roletas = [] } = useQuery({
+    queryKey: ['roletas-premios'],
+    queryFn: () => base44.entities.RoletaPremio.list(),
+    enabled: isAdmin,
+    refetchInterval: 15000
+  });
+
+  const toggleRoleta = async (usuario) => {
+    const existing = roletas.find(r => r.user_id === usuario.id && r.ativo);
+    try {
+      if (existing) {
+        await base44.entities.RoletaPremio.update(existing.id, { ativo: false });
+        toast.success('Roleta desativada para ' + (usuario.full_name || usuario.email));
+      } else {
+        await base44.entities.RoletaPremio.create({
+          user_id: usuario.id,
+          user_nome: usuario.full_name || usuario.email,
+          user_email: usuario.email,
+          ativo: true,
+          ja_girou: false,
+        });
+        toast.success('🎡 Roleta liberada para ' + (usuario.full_name || usuario.email) + '!');
+      }
+      queryClient.invalidateQueries(['roletas-premios']);
+    } catch (e) {
+      toast.error('Erro ao liberar roleta');
+    }
+  };
 
   // Vendedores sem acesso ao sistema (email não coincide com nenhum usuário)
   const emailsUsuarios = new Set(usuarios.map(u => u.email?.toLowerCase()));
@@ -503,6 +532,17 @@ export default function Usuarios() {
                             title={usuario.ativo === false ? 'Reativar usuário' : 'Bloquear usuário'}
                           >
                             {usuario.ativo === false ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => toggleRoleta(usuario)}
+                            className={`p-1.5 rounded-lg transition ${
+                              roletas.find(r => r.user_id === usuario.id && r.ativo)
+                                ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
+                                : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'
+                            }`}
+                            title={roletas.find(r => r.user_id === usuario.id && r.ativo) ? 'Roleta ativa — clique para desativar' : 'Liberar roleta de prêmios'}
+                          >
+                            <Gift className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => { if (confirm(`Remover ${usuario.full_name || usuario.email}?`)) deleteUserMutation.mutate(usuario.id); }}

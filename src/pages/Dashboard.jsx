@@ -10,6 +10,7 @@ import {
   Clock, Zap, Award
 } from "lucide-react";
 import ParcelasVincendasModal from "@/components/parcelas/ParcelasVincendasModal";
+import RoletaPopup from "@/components/roleta/RoletaPopup.jsx";
 import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
@@ -231,6 +232,7 @@ export default function Dashboard() {
   const [agendaPopupDismissed, setAgendaPopupDismissed] = useState(false);
   const [agendaPendentes, setAgendaPendentes] = useState(0);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [roletaPendente, setRoletaPendente] = useState(null);
   const navigate = useNavigate();
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
@@ -293,6 +295,11 @@ export default function Dashboard() {
       if (usr) {
         const isAdm = usr.role === 'admin' || usr.permissao_admin === true;
         const impersonado = isAdm ? getImpersonatedVendedor() : null;
+        // Verificar roleta liberada
+        try {
+          const roletas = await base44.entities.RoletaPremio.filter({ user_id: usr.id, ativo: true, ja_girou: false });
+          if (roletas.length > 0) setRoletaPendente(roletas[0]);
+        } catch (e) {}
         const vendedorAtivo = impersonado || vends.find(v => v.email === usr.email) || null;
         if (vendedorAtivo) {
           setVendedor(vendedorAtivo);
@@ -853,6 +860,14 @@ export default function Dashboard() {
           <AvatarPickerModal
             onSelect={url => { applyAvatar(url); setShowAvatarPicker(false); }}
             onClose={() => setShowAvatarPicker(false)} />
+        )}
+
+        {roletaPendente && (
+          <RoletaPopup
+            roletaId={roletaPendente.id}
+            user={user}
+            onClose={() => setRoletaPendente(null)}
+          />
         )}
 
         {showProfileModal && (
