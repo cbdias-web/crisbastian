@@ -137,7 +137,7 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
   const [searchTerm, setSearchTerm] = useState('');
   const [usuariosSelecionados, setUsuariosSelecionados] = useState(preSelecionados || []); // array de IDs
   const [usuarioDropOpen, setUsuarioDropOpen] = useState(false);
-  const [dataInicio, setDataInicio] = useState('');
+  const [dataInicio, setDataInicio] = useState(hoje); // default: hoje
   const [dataFim, setDataFim] = useState(hoje); // default: hoje
   const [usuarioPopup, setUsuarioPopup] = useState(null); // usuario selecionado para popup
 
@@ -269,12 +269,12 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
   const limparFiltros = () => {
     setSearchTerm('');
     setUsuariosSelecionados([]);
-    setDataInicio('');
+    setDataInicio(hoje);
     setDataFim(hoje);
     setFiltroStatus('todos');
   };
 
-  const temFiltros = searchTerm || usuariosSelecionados.length > 0 || dataInicio || dataFim !== hoje || filtroStatus !== 'todos';
+  const temFiltros = searchTerm || usuariosSelecionados.length > 0 || dataInicio !== hoje || dataFim !== hoje || filtroStatus !== 'todos';
 
   const toggleUsuario = (id) => {
     setUsuariosSelecionados(prev =>
