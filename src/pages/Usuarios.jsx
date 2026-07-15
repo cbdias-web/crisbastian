@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
-import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity, Gift } from 'lucide-react';
+import { Users, Edit2, Save, X, Shield, UserPlus, Mail, Wifi, Trash2, ArrowRight, Lock, Unlock, MessageSquare, MessageSquareOff, Activity, Gift, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal';
 import RelatorioRoletaModal from '../components/roleta/RelatorioRoletaModal';
+import RoletaPreviewModal from '../components/roleta/RoletaPreviewModal';
 
 const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
@@ -39,6 +40,7 @@ export default function Usuarios() {
   const [showMigrarcaoModal, setShowMigrarcaoModal] = useState(false);
   const [showRelatorioAcessos, setShowRelatorioAcessos] = useState(false);
   const [showRelatorioRoleta, setShowRelatorioRoleta] = useState(false);
+  const [showPreviewRoleta, setShowPreviewRoleta] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const queryClient = useQueryClient();
@@ -293,6 +295,14 @@ export default function Usuarios() {
                   {selectedUserIds.length}
                 </span>
               )}
+            </Button>
+            <Button
+              onClick={() => setShowPreviewRoleta(true)}
+              variant="outline"
+              className="border-[#00D4AA] text-[#00D4AA] hover:bg-[rgba(0,212,170,0.08)]"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              Visualizar Roleta
             </Button>
             <Button
               onClick={() => setShowRelatorioRoleta(true)}
@@ -682,6 +692,10 @@ export default function Usuarios() {
             roletas={roletas}
             onClose={() => setShowRelatorioRoleta(false)}
           />
+        )}
+
+        {showPreviewRoleta && (
+          <RoletaPreviewModal onClose={() => setShowPreviewRoleta(false)} />
         )}
 
         {/* Modal de Convite */}

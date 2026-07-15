@@ -3,16 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-
-const PREMIOS = [
-  { label: 'Almoço', emoji: '🍽️', color: '#ef4444' },
-  { label: 'Janta', emoji: '🌙', color: '#8b5cf6' },
-  { label: 'Dia de Folga', emoji: '🏖️', color: '#10b981' },
-  { label: 'R$ 100,00', emoji: '💰', color: '#f59e0b' },
-];
-
-// Duplicar para 8 segmentos (visual mais rico)
-const SEGMENTOS = [...PREMIOS, ...PREMIOS];
+import RoletaWheel, { SEGMENTOS } from './RoletaWheel.jsx';
 
 const A = {
   bg: '#0d1117',
@@ -24,6 +15,8 @@ const A = {
   textMuted: 'rgba(230,237,243,0.5)',
   gold: '#D4AF37',
 };
+
+const WHEEL_SIZE = 440;
 
 export default function RoletaPopup({ roletaId, user, onClose }) {
   const [spinning, setSpinning] = useState(false);
@@ -53,7 +46,6 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
       setSpinning(false);
       setResultado(premio);
 
-      // Confetti!
       confetti({
         particleCount: 120,
         spread: 80,
@@ -75,34 +67,10 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
     }, 4200);
   };
 
-  // SVG segments
-  const radius = 155;
-  const center = 175;
-  const segAngle = 360 / SEGMENTOS.length;
-
-  const segments = SEGMENTOS.map((seg, i) => {
-    const startAngle = (i * segAngle - 90) * (Math.PI / 180);
-    const endAngle = ((i + 1) * segAngle - 90) * (Math.PI / 180);
-    const x1 = center + radius * Math.cos(startAngle);
-    const y1 = center + radius * Math.sin(startAngle);
-    const x2 = center + radius * Math.cos(endAngle);
-    const y2 = center + radius * Math.sin(endAngle);
-    const largeArc = segAngle > 180 ? 1 : 0;
-    const path = `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
-
-    const textAngle = (i * segAngle + segAngle / 2 - 90) * (Math.PI / 180);
-    const textRadius = radius * 0.62;
-    const tx = center + textRadius * Math.cos(textAngle);
-    const ty = center + textRadius * Math.sin(textAngle);
-    const textRotation = i * segAngle + segAngle / 2;
-
-    return { path, seg, tx, ty, textRotation };
-  });
-
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)' }}>
-      <div className="rounded-3xl shadow-2xl w-full max-w-md relative overflow-hidden"
+      <div className="rounded-3xl shadow-2xl w-full max-w-lg relative overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
           border: '1px solid rgba(0,212,170,0.25)',
@@ -131,15 +99,15 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
 
         {/* Wheel */}
         <div className="p-6 flex flex-col items-center">
-          <div className="relative" style={{ width: 360, height: 360 }}>
+          <div className="relative" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
             {/* Pointer */}
             <div className="absolute left-1/2 -translate-x-1/2 z-10"
               style={{
                 top: '-4px',
                 width: 0, height: 0,
-                borderLeft: '14px solid transparent',
-                borderRight: '14px solid transparent',
-                borderTop: '24px solid #00D4AA',
+                borderLeft: '16px solid transparent',
+                borderRight: '16px solid transparent',
+                borderTop: '28px solid #00D4AA',
                 filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))',
               }} />
 
@@ -147,27 +115,7 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
             <div className="absolute inset-0 rounded-full"
               style={{ boxShadow: '0 0 40px rgba(0,212,170,0.3)', border: '3px solid rgba(0,212,170,0.4)', borderRadius: '50%' }} />
 
-            <svg width="350" height="350" viewBox="0 0 350 350"
-              style={{
-                transform: `rotate(${rotation}deg)`,
-                transition: spinning ? 'transform 4.2s cubic-bezier(0.17, 0.67, 0.12, 0.99)' : 'none',
-                display: 'block',
-                margin: 5,
-              }}>
-              {segments.map((s, i) => (
-                <g key={i}>
-                  <path d={s.path} fill={s.seg.color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-                  <text x={s.tx} y={s.ty} fill="white" fontSize="13" fontWeight="bold"
-                    textAnchor="middle" dominantBaseline="middle"
-                    transform={`rotate(${s.textRotation}, ${s.tx}, ${s.ty})`}
-                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-                    {s.seg.emoji} {s.seg.label}
-                  </text>
-                </g>
-              ))}
-              <circle cx={center} cy={center} r="22" fill="#0d1117" stroke="#00D4AA" strokeWidth="2" />
-              <text x={center} y={center} fill="#00D4AA" fontSize="20" textAnchor="middle" dominantBaseline="middle">🎁</text>
-            </svg>
+            <RoletaWheel rotation={rotation} spinning={spinning} size={WHEEL_SIZE} />
           </div>
 
           {/* Spin button or result */}
