@@ -34,7 +34,7 @@ export default function RoletaWheel({ rotation = 0, spinning = false, size = 440
     const path = `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
     const textAngle = (i * segAngle + segAngle / 2 - 90) * (Math.PI / 180);
-    const textRadius = radius * 0.6;
+    const textRadius = radius * 0.72;
     const tx = center + textRadius * Math.cos(textAngle);
     const ty = center + textRadius * Math.sin(textAngle);
     const textRotation = i * segAngle + segAngle / 2;
