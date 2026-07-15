@@ -34,7 +34,7 @@ export default function RoletaWheel({ rotation = 0, spinning = false, size = 440
     const path = `M ${center} ${center} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
     const textAngle = (i * segAngle + segAngle / 2 - 90) * (Math.PI / 180);
-    const textRadius = radius * 0.72;
+    const textRadius = radius * 0.68;
     const tx = center + textRadius * Math.cos(textAngle);
     const ty = center + textRadius * Math.sin(textAngle);
     const textRotation = i * segAngle + segAngle / 2;
@@ -42,8 +42,7 @@ export default function RoletaWheel({ rotation = 0, spinning = false, size = 440
     return { path, seg, tx, ty, textRotation };
   });
 
-  const fontSizeEmoji = Math.round(size * 0.052);  // ~23px at 440
-  const fontSizeLabel = Math.round(size * 0.042);  // ~18px at 440
+  const fontSizeEmoji = Math.round(size * 0.085);  // ~37px at 440
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
@@ -55,12 +54,11 @@ export default function RoletaWheel({ rotation = 0, spinning = false, size = 440
       {segments.map((s, i) => (
         <g key={i}>
           <path d={s.path} fill={s.seg.color} stroke="rgba(0,0,0,0.35)" strokeWidth="1.5" />
-          <text x={s.tx} y={s.ty} fill="white"
+          <text x={s.tx} y={s.ty}
             textAnchor="middle" dominantBaseline="middle"
             transform={`rotate(${s.textRotation}, ${s.tx}, ${s.ty})`}
-            style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}>
-            <tspan x={s.tx} dy="-0.55em" fontSize={fontSizeEmoji} fontWeight="bold">{s.seg.emoji}</tspan>
-            <tspan x={s.tx} dy="1.3em" fontSize={fontSizeLabel} fontWeight="bold">{s.seg.label}</tspan>
+            style={{ fontSize: fontSizeEmoji }}>
+            {s.seg.emoji}
           </text>
         </g>
       ))}

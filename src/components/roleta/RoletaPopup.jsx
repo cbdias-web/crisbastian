@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import RoletaWheel, { SEGMENTOS } from './RoletaWheel.jsx';
+import RoletaWheel, { SEGMENTOS, PREMIOS } from './RoletaWheel.jsx';
 
 const A = {
   bg: '#0d1117',
@@ -70,7 +70,7 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)' }}>
-      <div className="rounded-3xl shadow-2xl w-full max-w-lg relative overflow-hidden"
+      <div className="rounded-3xl shadow-2xl w-full max-w-2xl relative overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{
           background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
           border: '1px solid rgba(0,212,170,0.25)',
@@ -97,9 +97,28 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
           )}
         </div>
 
-        {/* Wheel */}
-        <div className="p-6 flex flex-col items-center">
-          <div className="relative" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
+        {/* Wheel + Legend */}
+        <div className="p-6 flex flex-col lg:flex-row items-center gap-6">
+          {/* Legend lateral (hidden after result) */}
+          {!resultado && (
+            <div className="w-full lg:w-44 flex-shrink-0 space-y-2 order-2 lg:order-1">
+              <p className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: A.accent }}>
+                Legenda
+              </p>
+              {PREMIOS.map((p, i) => (
+                <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                  style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center text-lg"
+                    style={{ background: p.color }}>
+                    {p.emoji}
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: A.text }}>{p.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="relative flex-shrink-0 order-1 lg:order-2" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
             {/* Pointer */}
             <div className="absolute left-1/2 -translate-x-1/2 z-10"
               style={{
@@ -116,20 +135,23 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
               style={{ boxShadow: '0 0 40px rgba(0,212,170,0.3)', border: '3px solid rgba(0,212,170,0.4)', borderRadius: '50%' }} />
 
             <RoletaWheel rotation={rotation} spinning={spinning} size={WHEEL_SIZE} />
-          </div>
+            </div>
 
-          {/* Spin button or result */}
-          {resultado ? (
+            {/* Spin button or result */}
+            {resultado ? (
             <div className="mt-6 text-center space-y-4 w-full">
-              <div className="p-6 rounded-2xl"
-                style={{
-                  background: 'rgba(0,212,170,0.08)',
-                  border: '1px solid rgba(0,212,170,0.3)',
-                  boxShadow: '0 0 24px rgba(0,212,170,0.15)',
-                }}>
-                <div className="text-5xl mb-2">{resultado.emoji}</div>
-                <p className="text-2xl font-bold" style={{ color: A.accent }}>{resultado.label}</p>
-              </div>
+             <div className="p-6 rounded-2xl"
+               style={{
+                 background: 'rgba(0,212,170,0.08)',
+                 border: '1px solid rgba(0,212,170,0.3)',
+                 boxShadow: '0 0 24px rgba(0,212,170,0.15)',
+               }}>
+               <p className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: A.textMuted }}>
+                 Você ganhou
+               </p>
+               <div className="text-5xl mb-2">{resultado.emoji}</div>
+               <p className="text-2xl font-bold" style={{ color: A.accent }}>{resultado.label}</p>
+             </div>
               <button onClick={onClose}
                 className="w-full py-3 rounded-xl font-semibold transition"
                 style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: '#0d1117' }}>
