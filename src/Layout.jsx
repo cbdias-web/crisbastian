@@ -10,9 +10,10 @@ import {
   UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
   Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
   MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
-  Search, Zap, Rocket, Newspaper, Bot
+  Search, Zap, Rocket, Newspaper, Bot, User
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
+import ProfileModal from '@/components/ProfileModal.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
@@ -49,6 +50,7 @@ export default function Layout({ children, currentPageName }) {
   const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [userAvatar, setUserAvatar] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
@@ -380,6 +382,18 @@ export default function Layout({ children, currentPageName }) {
       )}
       {!showOnboarding && user && <GoogleCalendarConectarModal />}
 
+      {showProfileModal && user && (
+        <ProfileModal
+          user={user}
+          userAvatar={userAvatar}
+          onAvatarChange={(url, updatedUser) => {
+            if (url !== undefined) setUserAvatar(url);
+            if (updatedUser) setUser(updatedUser);
+          }}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
+
       {/* ═══ IMPERSONATION BANNER ═══ */}
       {impersonating && (
         <div className="fixed top-0 left-0 right-0 z-[70] flex items-center justify-between px-4 py-2 text-sm font-semibold"
@@ -482,7 +496,7 @@ export default function Layout({ children, currentPageName }) {
                 <div className="text-right hidden sm:block">
                   <p className="text-[9px] uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Bem Vindo</p>
                   <p className="text-sm font-semibold leading-tight" style={{ color: AURORA.text }}>
-                    {(user?.nome_tratamento || user?.full_name || 'Usuário').split(' ')[0]}
+                    {user?.nome_tratamento || user?.full_name || 'Usuário'}
                   </p>
                 </div>
                 <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0"
@@ -499,6 +513,13 @@ export default function Layout({ children, currentPageName }) {
                   <div className="px-3 py-2 text-xs" style={{ color: AURORA.textMuted, borderBottom: `1px solid ${AURORA.border}` }}>
                     {user?.email}
                   </div>
+                  <button onClick={() => { setShowUserMenu(false); setShowProfileModal(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm transition"
+                    style={{ color: AURORA.text }}
+                    onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                    <User className="w-4 h-4" /> Meu Perfil
+                  </button>
                   <button onClick={handleLogout}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm transition"
                     style={{ color: '#f87171' }}

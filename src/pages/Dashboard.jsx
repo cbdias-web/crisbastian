@@ -503,20 +503,7 @@ export default function Dashboard() {
             <h2 className="text-2xl font-bold" style={{ color: A.text }}>Visão Geral</h2>
             <p className="text-sm mt-0.5" style={{ color: A.textMuted }}>Acompanhe o desempenho da sua operação</p>
           </div>
-          {user && (
-            <button onClick={openProfileModal}
-              className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition self-start sm:self-auto"
-              style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-              <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>{impersonado ? 'Espelhando' : 'Bem Vindo'}</p>
-                <p className="text-sm font-semibold" style={{ color: A.text }}>{displayName}</p>
-              </div>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0"
-                style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: A.bg }}>
-                {avatarUrl ? <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" /> : displayName.charAt(0).toUpperCase()}
-              </div>
-            </button>
-          )}
+
         </div>
 
         {/* ─── Bonus banner ─────────────────────────────────────────────── */}
