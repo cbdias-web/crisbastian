@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
+import GerenteMultiSelect from '@/components/leads/GerenteMultiSelect';
 import {
   Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
   TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus, AlertTriangle
@@ -799,11 +800,11 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [showMeetModal, setShowMeetModal] = useState(false);
   const queryClient = useQueryClient();
 
-  const [filtroVendedorId, setFiltroVendedorId] = useState('');
+  const [filtroVendedoresIds, setFiltroVendedoresIds] = useState([]);
   const [filtroPeriodoInicio, setFiltroPeriodoInicio] = useState('');
   const [filtroPeriodoFim, setFiltroPeriodoFim] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
-  const [showFiltros, setShowFiltros] = useState(false);
+  const [showFiltros, setShowFiltros] = useState(true);
 
   const [filtroRapidoStatus, setFiltroRapidoStatus] = useState('');
   const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
@@ -830,14 +831,14 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     refetchInterval: 60000,
   });
 
-  const useGlobal = isAdmin || !!filtroVendedorId;
+  const useGlobal = isAdmin || filtroVendedoresIds.length > 0;
   const agendaRaw = useGlobal ? agendaGlobal : agendaVendedor;
   const loading = useGlobal ? isLoading : isLoadingVendedor;
   const todasAgendasRef = agendaGlobal;
 
   const agenda = useMemo(() => {
     let items = agendaRaw;
-    if (filtroVendedorId && filtroVendedorId !== '__todos__') items = items.filter(a => a.vendedor_id === filtroVendedorId);
+    if (filtroVendedoresIds.length > 0) items = items.filter(a => filtroVendedoresIds.includes(a.vendedor_id));
     if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
     if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
     if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
@@ -845,9 +846,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     if (filtroRapidoInicio) items = items.filter(a => a.data_agendada >= filtroRapidoInicio);
     if (filtroRapidoFim) items = items.filter(a => a.data_agendada <= filtroRapidoFim);
     return items;
-  }, [agendaRaw, filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, filtroRapidoStatus, filtroRapidoInicio, filtroRapidoFim, isAdmin]);
+  }, [agendaRaw, filtroVendedoresIds, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, filtroRapidoStatus, filtroRapidoInicio, filtroRapidoFim, isAdmin]);
 
-  const filtroVendedorObj = (filtroVendedorId && filtroVendedorId !== '__todos__') ? (todosVendedores.find(v => v.id === filtroVendedorId) || null) : null;
+  const filtroVendedorObj = filtroVendedoresIds.length === 1 ? (todosVendedores.find(v => v.id === filtroVendedoresIds[0]) || null) : null;
   const vendedorEfetivo = filtroVendedorObj || vendedor;
 
   const invalidateAgenda = () => {
@@ -883,7 +884,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     toast.success('Agendamento excluído!');
   };
 
-  const temFiltroAtivo = !!(filtroVendedorId || filtroPeriodoInicio || filtroPeriodoFim || filtroStatus);
+  const temFiltroAtivo = !!(filtroVendedoresIds.length > 0 || filtroPeriodoInicio || filtroPeriodoFim || filtroStatus);
 
   const dotDates = useMemo(() => new Set(agenda.map(a => a.data_agendada)), [agenda]);
 
@@ -917,57 +918,65 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     <>
       {/* Filtros (admin) */}
       {isAdmin && (
-        <div className="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="mb-4 rounded-2xl overflow-hidden" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)' }}>
           <button
             onClick={() => setShowFiltros(f => !f)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold transition"
+            style={{ color: '#e6edf3' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
           >
             <div className="flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
               <span>Filtros da Agenda Global</span>
               {temFiltroAtivo && (
-                <span className="bg-[#0f1e35] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  {[filtroVendedorId, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus].filter(Boolean).length} ativo(s)
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: '#00D4AA', color: '#0d1117' }}>
+                  {[filtroVendedoresIds.length > 0, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus].filter(Boolean).length} ativo(s)
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2">
               {temFiltroAtivo && (
                 <button
-                  onClick={e => { e.stopPropagation(); setFiltroVendedorId(''); setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); setFiltroStatus(''); }}
-                  className="text-xs text-red-500 hover:underline font-normal"
+                  onClick={e => { e.stopPropagation(); setFiltroVendedoresIds([]); setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); setFiltroStatus(''); }}
+                  className="text-xs hover:underline font-normal"
+                  style={{ color: '#f87171' }}
                 >
                   Limpar
                 </button>
               )}
-              <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${showFiltros ? 'rotate-90' : ''}`} />
+              <ChevronRight className="w-4 h-4 transition-transform" style={{ color: 'rgba(230,237,243,0.4)', transform: showFiltros ? 'rotate(90deg)' : 'none' }} />
             </div>
           </button>
 
           {showFiltros && (
-            <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 border-t border-gray-100">
+            <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block font-medium">Gerente</label>
-                <select value={filtroVendedorId} onChange={e => setFiltroVendedorId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
-                  <option value="">Todos os gerentes</option>
-                  {todosVendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
-                </select>
+                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Gerente(s)</label>
+                <GerenteMultiSelect
+                  vendedores={todosVendedores}
+                  selected={filtroVendedoresIds}
+                  onChange={setFiltroVendedoresIds}
+                />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block font-medium">Período — início</label>
+                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Período — início</label>
                 <input type="date" value={filtroPeriodoInicio} onChange={e => setFiltroPeriodoInicio(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block font-medium">Período — fim</label>
+                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Período — fim</label>
                 <input type="date" value={filtroPeriodoFim} onChange={e => setFiltroPeriodoFim(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block font-medium">Status</label>
+                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Status</label>
                 <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
+                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
                   <option value="">Todos</option>
                   {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                 </select>
@@ -1036,25 +1045,13 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
           {/* Seletor de agenda — todos os gerentes podem ver agendas dos demais */}
           {!isAdmin && todosVendedores.length > 0 && (
-            <div className="rounded-2xl px-4 py-3 mb-4 flex items-center gap-3 flex-wrap" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-shrink-0">Visualizando:</span>
-              <select
-                value={filtroVendedorId || ''}
-                onChange={e => setFiltroVendedorId(e.target.value)}
-                className="flex-1 min-w-0 px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]"
-              >
-                <option value="">Minha agenda</option>
-                <option value="__todos__">📋 Todos os gerentes</option>
-                {todosVendedores.map(v => (
-                  <option key={v.id} value={v.id}>{v.nome}</option>
-                ))}
-              </select>
-              {filtroVendedorId && (
-                <button onClick={() => setFiltroVendedorId('')}
-                  className="text-xs text-red-500 hover:underline font-semibold flex-shrink-0">
-                  ✕ Minha agenda
-                </button>
-              )}
+            <div className="rounded-2xl px-4 py-3 mb-4" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+              <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: 'rgba(230,237,243,0.5)' }}>Visualizando agendas de:</label>
+              <GerenteMultiSelect
+                vendedores={todosVendedores}
+                selected={filtroVendedoresIds}
+                onChange={setFiltroVendedoresIds}
+              />
             </div>
           )}
           {/* Filtro rápido */}
@@ -1103,9 +1100,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 <p className="text-xs text-gray-400">
                   {filtroVendedorObj
                     ? `Agenda de ${filtroVendedorObj.nome}`
-                    : (isAdmin || filtroVendedorId === '__todos__')
+                    : (isAdmin || filtroVendedoresIds.length === 0)
                       ? 'Agenda Global — todos os gerentes'
-                      : `Agenda de Contatos · ${vendedor?.nome || 'Minha agenda'}`}
+                      : `${filtroVendedoresIds.length} gerentes selecionados`}
                 </p>
               </div>
               <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
@@ -1172,7 +1169,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                           >
                             <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
                             <span className="truncate">
-                              {isAdmin && !filtroVendedorId ? `[${item.vendedor_nome?.split(' ')[0] || '?'}] ` : ''}
+                              {isAdmin && filtroVendedoresIds.length === 0 ? `[${item.vendedor_nome?.split(' ')[0] || '?'}] ` : ''}
                               {item.horario ? `${item.horario} · ` : ''}{item.lead_nome}
                             </span>
                           </div>
@@ -1202,7 +1199,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 </div>
               ) : (
                 <>
-                  {((isAdmin || filtroVendedorId === '__todos__') && !filtroVendedorObj) ? (
+                  {((isAdmin || filtroVendedoresIds.length === 0) && !filtroVendedorObj) ? (
                     (() => {
                       const porGerente = selItems.reduce((acc, it) => {
                         const key = it.vendedor_id || '_sem_gerente';
