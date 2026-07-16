@@ -92,7 +92,8 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
       </div>
       <button
         onClick={() => { setViewDate(new Date()); onSelect(new Date()); }}
-        className="mt-3 w-full text-xs text-center text-[#1a3150] font-semibold hover:underline"
+        className="mt-3 w-full text-xs text-center font-semibold rounded-lg py-1.5 transition"
+        style={{ color: '#00D4AA', background: 'rgba(0,212,170,0.08)' }}
       >
         Ir para hoje
       </button>
@@ -910,7 +911,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
   if (loading) return (
     <div className="flex items-center justify-center py-12">
-      <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
+      <div className="w-7 h-7 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(0,212,170,0.2)', borderTopColor: '#00D4AA' }} />
     </div>
   );
 
@@ -996,56 +997,45 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             dotDates={dotDates}
           />
           
-          <div className="bg-gradient-to-br from-[#0f1e35] to-[#1a3150] rounded-2xl p-4 text-white shadow-lg">
-            <p className="text-[10px] font-semibold text-blue-300/70 uppercase tracking-widest mb-3">
+          {/* Stats compactas */}
+          <div className="rounded-2xl p-3.5" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <p className="text-[9px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: 'rgba(230,237,243,0.35)' }}>
               {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
             </p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-blue-200/80">Total</span>
-                <span className="text-lg font-bold">{selItems.length}</span>
+            <div className="grid grid-cols-3 gap-1.5">
+              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <p className="text-lg font-bold leading-none" style={{ color: '#e6edf3' }}>{selItems.length}</p>
+                <p className="text-[9px] mt-1" style={{ color: 'rgba(230,237,243,0.4)' }}>Total</p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-amber-300/80">Pendentes</span>
-                <span className="text-sm font-semibold text-amber-300">{pendentes}</span>
+              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(245,158,11,0.08)' }}>
+                <p className="text-lg font-bold leading-none" style={{ color: '#fbbf24' }}>{pendentes}</p>
+                <p className="text-[9px] mt-1" style={{ color: 'rgba(251,191,36,0.5)' }}>Pend.</p>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-emerald-300/80">Realizados</span>
-                <span className="text-sm font-semibold text-emerald-300">{realizados}</span>
+              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(16,185,129,0.08)' }}>
+                <p className="text-lg font-bold leading-none" style={{ color: '#34d399' }}>{realizados}</p>
+                <p className="text-[9px] mt-1" style={{ color: 'rgba(52,211,153,0.5)' }}>Feitos</p>
               </div>
             </div>
             {selItems.length > 0 && (
-              <div className="mt-3 bg-white/10 rounded-xl h-1.5 overflow-hidden">
-                <div className="h-full bg-emerald-400 rounded-xl transition-all" style={{ width: `${(realizados / selItems.length) * 100}%` }} />
+              <div className="mt-2.5 rounded-full h-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${(realizados / selItems.length) * 100}%`, background: '#00D4AA' }} />
               </div>
             )}
             {isAdmin && (
-              <div className="mt-3 pt-3 border-t border-white/10">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-blue-200/60">Total filtrado</span>
-                  <span className="text-xs font-bold text-blue-200">{agenda.length}</span>
-                </div>
+              <div className="mt-2.5 pt-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>
+                <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.35)' }}>Filtrado</span>
+                <span className="text-xs font-bold" style={{ color: '#00D4AA' }}>{agenda.length}</span>
               </div>
             )}
-          </div>
-          <div className="bg-white border border-gray-100 rounded-2xl p-1 flex shadow-sm">
-            <button onClick={() => { setView('semana'); setWeekOffset(0); }}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${view === 'semana' ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              Semana
-            </button>
-            <button onClick={() => { setView('dia'); setSelectedDate(new Date()); }}
-              className={`flex-1 py-1.5 rounded-xl text-xs font-semibold transition ${view === 'dia' ? 'bg-[#0f1e35] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              Dia
-            </button>
           </div>
         </div>
 
         {/* RIGHT */}
         <div className="flex-1 min-w-0">
 
-          {/* Seletor de agenda — todos os gerentes podem ver agendas dos demais */}
+          {/* Seletor de agenda — usuários não-admin */}
           {!isAdmin && todosVendedores.length > 0 && (
-            <div className="rounded-2xl px-4 py-3 mb-4" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <div className="rounded-2xl px-4 py-3 mb-3" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
               <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: 'rgba(230,237,243,0.5)' }}>Visualizando agendas de:</label>
               <GerenteMultiSelect
                 vendedores={todosVendedores}
@@ -1054,76 +1044,105 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               />
             </div>
           )}
-          {/* Filtro rápido */}
-          <div className="rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-3" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtro rápido:</span>
-            <div className="flex gap-1.5">
-              {[{ key: '', label: 'Todos' }, { key: 'pendente', label: 'Pendentes' }, { key: 'realizado', label: 'Realizados' }].map(opt => (
-                <button key={opt.key} onClick={() => setFiltroRapidoStatus(opt.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${filtroRapidoStatus === opt.key ? 'bg-[#0f1e35] text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                  {opt.label}
+
+          {/* Unified toolbar: nav + title + view toggle + filters + actions */}
+          <div className="rounded-2xl mb-3 overflow-hidden" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+            {/* Row 1: Navigation + Title + Actions */}
+            <div className="flex items-center justify-between px-4 py-2.5 gap-3 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <button onClick={() => { setWeekOffset(w => w - 1); setView('semana'); }}
+                  className="p-1.5 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
+                  <ChevronLeft className="w-4 h-4" style={{ color: '#e6edf3' }} />
                 </button>
-              ))}
-            </div>
-            {filtroRapidoStatus && (
-              <div className="flex items-center gap-2 ml-2">
-                <span className="text-[10px] text-gray-400 font-medium">Período:</span>
-                <input type="date" value={filtroRapidoInicio} onChange={e => setFiltroRapidoInicio(e.target.value)}
-                  className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                <span className="text-[10px] text-gray-400">até</span>
-                <input type="date" value={filtroRapidoFim} onChange={e => setFiltroRapidoFim(e.target.value)}
-                  className="px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                {(filtroRapidoInicio || filtroRapidoFim) && (
-                  <button onClick={() => { setFiltroRapidoInicio(''); setFiltroRapidoFim(''); }}
-                    className="text-xs text-red-400 hover:text-red-600 font-semibold px-1 hover:bg-red-50 rounded transition">✕</button>
-                )}
+                <div>
+                  <h2 className="text-sm font-bold leading-tight" style={{ color: '#e6edf3' }}>
+                    {view === 'semana'
+                      ? `${format(weekStart, "d MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "d MMM yyyy", { locale: ptBR })}`
+                      : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  </h2>
+                  <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>
+                    {filtroVendedorObj
+                      ? `Agenda de ${filtroVendedorObj.nome}`
+                      : (isAdmin || filtroVendedoresIds.length === 0)
+                        ? 'Agenda Global'
+                        : `${filtroVendedoresIds.length} gerentes selecionados`}
+                  </p>
+                </div>
+                <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
+                  className="p-1.5 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
+                  <ChevronRight className="w-4 h-4" style={{ color: '#e6edf3' }} />
+                </button>
               </div>
-            )}
-            {(filtroRapidoStatus || filtroRapidoInicio || filtroRapidoFim) && (
-              <span className="text-xs text-blue-600 font-semibold ml-auto">{agenda.length} registro(s)</span>
-            )}
-          </div>
 
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <button onClick={() => { setWeekOffset(w => w - 1); setView('semana'); }}
-                className="p-2 rounded-xl bg-white border border-gray-100 hover:border-gray-300 shadow-sm transition">
-                <ChevronLeft className="w-4 h-4 text-gray-500" />
-              </button>
-              <div>
-                <h2 className="text-base font-bold text-gray-900">
-                  {view === 'semana'
-                    ? `${format(weekStart, "d MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "d MMM yyyy", { locale: ptBR })}`
-                    : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                </h2>
-                <p className="text-xs text-gray-400">
-                  {filtroVendedorObj
-                    ? `Agenda de ${filtroVendedorObj.nome}`
-                    : (isAdmin || filtroVendedoresIds.length === 0)
-                      ? 'Agenda Global — todos os gerentes'
-                      : `${filtroVendedoresIds.length} gerentes selecionados`}
-                </p>
+              <div className="flex items-center gap-1.5">
+                {/* View toggle */}
+                <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                  <button onClick={() => { setView('semana'); setWeekOffset(0); }}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
+                    style={{
+                      background: view === 'semana' ? '#00D4AA' : 'transparent',
+                      color: view === 'semana' ? '#0d1117' : 'rgba(230,237,243,0.5)',
+                    }}>
+                    Semana
+                  </button>
+                  <button onClick={() => { setView('dia'); setSelectedDate(new Date()); }}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
+                    style={{
+                      background: view === 'dia' ? '#00D4AA' : 'transparent',
+                      color: view === 'dia' ? '#0d1117' : 'rgba(230,237,243,0.5)',
+                    }}>
+                    Dia
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('dia'); }}
+                  className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"
+                  style={{ background: 'rgba(0,212,170,0.1)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
+                  Hoje
+                </button>
+                <button
+                  onClick={() => setShowMeetModal(true)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"
+                  style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
+                  <Video className="w-3 h-3" /> Meet
+                </button>
               </div>
-              <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
-                className="p-2 rounded-xl bg-white border border-gray-100 hover:border-gray-300 shadow-sm transition">
-                <ChevronRight className="w-4 h-4 text-gray-500" />
-              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowMeetModal(true)}
-                className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition shadow-sm flex items-center gap-1.5"
-              >
-                <Video className="w-3.5 h-3.5" /> Agendar c/ Meet
-              </button>
 
-              <button
-                onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('dia'); }}
-                className="px-3 py-1.5 text-xs font-semibold bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition shadow-sm"
-              >
-                Hoje
-              </button>
+            {/* Row 2: Quick filters (compact) */}
+            <div className="flex items-center gap-2 px-4 py-2 flex-wrap" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>
+              <div className="flex gap-1">
+                {[{ key: '', label: 'Todos' }, { key: 'pendente', label: 'Pendentes' }, { key: 'realizado', label: 'Realizados' }].map(opt => (
+                  <button key={opt.key} onClick={() => setFiltroRapidoStatus(opt.key)}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
+                    style={{
+                      background: filtroRapidoStatus === opt.key ? 'rgba(0,212,170,0.15)' : 'transparent',
+                      color: filtroRapidoStatus === opt.key ? '#00D4AA' : 'rgba(230,237,243,0.5)',
+                    }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {filtroRapidoStatus && (
+                <div className="flex items-center gap-1.5">
+                  <input type="date" value={filtroRapidoInicio} onChange={e => setFiltroRapidoInicio(e.target.value)}
+                    className="px-2 py-0.5 text-[11px] rounded-md focus:outline-none"
+                    style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+                  <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.3)' }}>→</span>
+                  <input type="date" value={filtroRapidoFim} onChange={e => setFiltroRapidoFim(e.target.value)}
+                    className="px-2 py-0.5 text-[11px] rounded-md focus:outline-none"
+                    style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+                  {(filtroRapidoInicio || filtroRapidoFim) && (
+                    <button onClick={() => { setFiltroRapidoInicio(''); setFiltroRapidoFim(''); }}
+                      className="text-[11px] font-semibold px-1 rounded transition" style={{ color: '#f87171' }}>✕</button>
+                  )}
+                </div>
+              )}
+              <span className="text-[11px] font-semibold ml-auto" style={{ color: '#00D4AA' }}>{agenda.length} registro(s)</span>
             </div>
           </div>
 
@@ -1209,11 +1228,11 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                       }, {});
                       return Object.values(porGerente).map(grupo => (
                         <div key={grupo.nome}>
-                          <p className="text-xs font-bold text-[#1a3150] uppercase tracking-wider mb-2 mt-1 flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-[#1a3150]" />
+                          <p className="text-xs font-bold uppercase tracking-wider mb-2 mt-1 flex items-center gap-1.5" style={{ color: '#00D4AA' }}>
+                            <span className="w-2 h-2 rounded-full" style={{ background: '#00D4AA' }} />
                             {grupo.nome} · {grupo.items.length} contato{grupo.items.length !== 1 ? 's' : ''}
                           </p>
-                          <div className="space-y-2 ml-3 pl-3 border-l-2 border-gray-100">
+                          <div className="space-y-2 ml-3 pl-3" style={{ borderLeft: '2px solid rgba(0,212,170,0.2)' }}>
                             {grupo.items.map(item => (
                               <EventCard
                                 key={item.id}
@@ -1249,7 +1268,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
               {sortedDates.filter(d => d !== selStr && d >= tStr).length > 0 && (
                 <div className="pt-2">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2 px-1">Outros dias</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Outros dias</p>
                   <div className="flex flex-wrap gap-2">
                     {sortedDates.filter(d => d !== selStr && d >= tStr).slice(0, 10).map(d => {
                       const count = (grouped[d] || []).length;
@@ -1258,12 +1277,15 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                         <button
                           key={d}
                           onClick={() => setSelectedDate(parseISO(d))}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-100 hover:border-[#1a3150] rounded-xl text-xs font-medium text-gray-600 transition shadow-sm"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition"
+                          style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.7)' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.4)'; e.currentTarget.style.background = 'rgba(0,212,170,0.06)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.15)'; e.currentTarget.style.background = '#1c2333'; }}
                         >
-                          <Calendar className="w-3 h-3 text-gray-400" />
+                          <Calendar className="w-3 h-3" style={{ color: 'rgba(230,237,243,0.35)' }} />
                           {isToday(parseISO(d)) ? 'Hoje' : isTomorrow(parseISO(d)) ? 'Amanhã' : format(parseISO(d), 'dd/MM', { locale: ptBR })}
-                          <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-1.5 rounded-full">{count}</span>
-                          {pend > 0 && <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 rounded-full">{pend}p</span>}
+                          <span className="text-[10px] font-bold px-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(230,237,243,0.5)' }}>{count}</span>
+                          {pend > 0 && <span className="text-[10px] font-bold px-1.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>{pend}p</span>}
                         </button>
                       );
                     })}
