@@ -17,7 +17,7 @@ const sections = [
     content: [
       { subtitle: 'O que é o Villela Exchange – Gestão Comercial?', text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial. Integra Contratos, Pipeline, Prospecção, Treinamentos e IA em um único ambiente.' },
       { subtitle: 'Acesso e Login', text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.' },
-      { subtitle: 'Perfil do Usuário', text: 'Clique no seu nome no canto superior do Dashboard para acessar seu perfil. Você pode alterar seu nome de tratamento (como aparece no sistema).' },
+      { subtitle: 'Perfil e Menu de Usuário', text: 'No canto superior direito do cabeçalho (presente em todas as páginas), você vê "Bem Vindo" + seu nome completo + sua foto de avatar. Clique no avatar para abrir o menu dropdown com seu e-mail, "Meu Perfil" (editar nome de tratamento, enviar/trocar foto, escolher personagem) e "Sair".' },
       { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Dashboard, Mercado, Vendas, Agenda do Dia, Central de Leads, Contratos, Implantações, Pipeline, Precificação, Desempenho.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Chat Interno, Rel. Interações, Manual, Capacitação, Suporte.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação (Admin), Rel. Comissões, Prospecção, Metas, Produtos, Importar, Usuários.'] },
     ],
   },
@@ -73,6 +73,7 @@ const sections = [
     color: 'from-emerald-500 to-emerald-600', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100',
     content: [
       { subtitle: 'Dois caminhos para registrar uma venda', items: ['**Caminho A — Venda direta:** para produtos sem contrato formal. Acesse Vendas > Nova Venda.', '**Caminho B — Via Contrato:** obrigatório para CONTA GLOBAL, CONTA INTERNACIONAL e DOLARIZE AQUI.'] },
+      { subtitle: 'Tipo de venda (Nova x Recorrência)', items: ['**Nova:** venda de nova implantação — direcionada automaticamente para o módulo de Implantações.', '**Recorrência:** pagamento de parcela/mensalidade — não gera implantação, apenas atualiza financeiro e metas.', 'O campo "tipo_venda" aparece no formulário de venda e diferencia o tratamento no fluxo pós-venda.'] },
       { subtitle: 'Registrar uma nova venda (Caminho A)', steps: ['Acesse "Vendas" > clique em "Nova Venda".', 'Selecione o(s) Produto(s) na lista de ativos.', 'Selecione o Vendedor — o percentual de comissão é carregado automaticamente.', 'Informe o Valor Total do Contrato e a estrutura de pagamento.', 'Defina o Valor de Entrada (conta para a meta do mês imediatamente).', 'Busque o cliente pelo nome ou CPF/CNPJ.', 'Adicione Indicadores se houver.', 'Ajuste datas e valores de cada parcela individualmente.', 'Clique em "Salvar".'] },
       { subtitle: 'Estrutura de pagamento', items: ['**Sem parcelas (à vista):** valor total conta 100% para a meta.', '**Entrada + Nx parcelas:** entrada conta imediatamente; saldo vai para "Parcelas Vincendas".', '**Comissão zerada (0%):** aceito e persiste corretamente.'] },
       { subtitle: 'O que acontece automaticamente ao salvar', items: ['**Comissão do vendedor** gerada sobre o valor de entrada.', '**Comissões dos indicadores** geradas proporcionalmente.', '**Cliente vinculado** — criado automaticamente se não existia.', '**Parcelas criadas** no módulo "Parcelas Vincendas".', '**Meta e Dashboard atualizados** em tempo real.', '**Implantação criada automaticamente** — o sistema busca o contrato relacionado e cria o registro de implantação com checklist de fases. Se o contrato não for encontrado, sinaliza para anexamento manual.'] },
@@ -344,7 +345,7 @@ const sections = [
     id: 'contratos', icon: ScrollText, title: 'Contratos',
     color: 'from-amber-700 to-amber-800', bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-200',
     content: [
-      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore.**'] },
+      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore, Garantias, Hora Técnica, Rating.**'] },
       { subtitle: 'Criar contrato', steps: ['Acesse "Contratos" > selecione o tipo.', 'Busque cliente existente ou preencha manualmente.', 'Preencha Dados Pessoais, Endereço, Financeiro e Obs.', 'Clique em "Salvar". Admins são notificados automaticamente.'] },
       { subtitle: 'Fluxo de etapas', items: ['**Rascunho → PDF Gerado → Assinado → Aguardando Pagamento → Pago → No Pipeline.**'] },
       { subtitle: 'Enviar para Vendas', text: 'Após assinatura + pagamento confirmado, clique em "Enviar para Vendas". Cria venda pré-preenchida.' },
@@ -383,7 +384,7 @@ const sections = [
         'Após anexar, o status de "contrato não encontrado" é atualizado automaticamente.',
       ]},
       { subtitle: 'Status e prioridade', items: [
-        '**Status:** Aguardando Documentação → Em Andamento → Aguardando Cliente → Concluído / Cancelado.',
+        '**Status:** Aguardando Documentação → Em Andamento → Aguardando Cliente → Concluído / Concluído com Feedback / Cancelado.',
         '**Prioridade:** Baixa, Média, Alta ou Urgente — exibida como indicador colorido na lista.',
         '**Prazo:** defina a data prevista de conclusão. Implantações atrasadas aparecem destacadas em vermelho.',
       ]},
@@ -620,6 +621,105 @@ const sections = [
         'Cliente recebe um documento **profissional e personalizado** com seus dados.'] },
     ],
   },
+  {
+    id: 'perfil-usuario', icon: UserCheck, title: 'Perfil & Menu de Usuário',
+    color: 'from-sky-600 to-sky-700', bg: 'bg-sky-50', text: 'text-sky-800', border: 'border-sky-100',
+    content: [
+      { subtitle: 'Menu unificado no cabeçalho', text: 'O menu de usuário agora é único e aparece no cabeçalho superior em todas as páginas do sistema. Exibe "Bem Vindo" + nome completo + foto do avatar. O bloco duplicado que existia no Dashboard foi removido.' },
+      { subtitle: 'Como acessar o perfil', steps: ['Clique no seu avatar/nome no canto superior direito.', 'No dropdown que aparece, clique em **"Meu Perfil"**.', 'O modal de perfil abre com suas informações e opções de personalização.'] },
+      { subtitle: '🖼️ Enviar foto de perfil', items: [
+        'No modal de perfil, clique no **ícone de upload** (câmera) sobre o avatar.',
+        'Selecione uma imagem do seu computador ou celular.',
+        'A foto é enviada e aparece instantaneamente no cabeçalho de todas as páginas.',
+        '**Espelhamento:** se um admin estiver espelhando um vendedor, a foto atualizada é a do vendedor espelhado.',
+      ]},
+      { subtitle: '🎭 Escolher Personagem', items: [
+        'No modal de perfil, clique em **"Escolher Personagem"**.',
+        'Selecione um avatar/personagem da galeria disponível.',
+        'O personagem substitui a foto de perfil em todo o sistema.',
+        'Você pode trocar a qualquer momento ou remover para voltar à inicial.',
+      ]},
+      { subtitle: 'Editar nome de tratamento', items: [
+        'O campo **"Nome de tratamento"** define como seu nome aparece no sistema.',
+        'Diferente do nome completo e e-mail (que não podem ser alterados), o nome de tratamento é editável.',
+        'Após alterar, clique em **"Salvar"** — o novo nome aparece imediatamente no cabeçalho.',
+      ]},
+      { subtitle: 'Espelhamento (Admin)', items: [
+        'Administradores podem **espelhar** um vendedor para ver o sistema da perspectiva dele.',
+        'Use o botão **"Espelhar"** no cabeçalho e selecione o vendedor.',
+        'O avatar e nome do vendedor espelhado aparecem no cabeçalho (com banner laranja de aviso).',
+        'O perfil editado durante o espelhamento afeta o vendedor espelhado, não o admin.',
+        'Clique em **"Sair do Espelhamento"** para voltar ao seu usuário.',
+      ]},
+    ],
+  },
+  {
+    id: 'gamificacao-roleta', icon: Target, title: 'Gamificação — Roleta de Prêmios',
+    color: 'from-pink-600 to-purple-700', bg: 'bg-pink-50', text: 'text-pink-800', border: 'border-pink-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Sistema de gamificação onde administradores liberam uma roleta de prêmios para usuários específicos. Cada usuário autorizado pode girar a roleta uma única vez e receber um prêmio sorteado.' },
+      { subtitle: 'Como funciona (Usuário)', steps: ['O admin libera a roleta para o seu usuário (página Usuários).', 'Ao acessar o sistema, um popup da roleta aparece automaticamente.', 'Clique em "Girar" para acionar a roleta.', 'A roleta anima e para em um prêmio (representado por emoji).', 'O prêmio sorteado é exibido com descrição detalhada na lateral.', 'O resultado é salvo permanentemente — cada usuário gira apenas uma vez.'] },
+      { subtitle: 'Prêmios padrão', items: ['🍽️ **Almoço**', '🌙 **Janta**', '🏖️ **Dia de Folga**', '💰 **R$ 100,00**', 'Os prêmios podem ser customizados pelo administrador.'] },
+      { subtitle: '🎨 Visual da Roleta', items: [
+        'A roleta exibe **apenas emojis** nos segmentos (sem texto) para maior clareza visual.',
+        'Uma **legenda lateral** descreve cada prêmio em texto.',
+        'Após o giro, a **descrição completa** do prêmio sorteado aparece abaixo da roleta.',
+        'O componente é padronizado (RoletaWheel) entre o popup do usuário e a prévia do admin.',
+      ]},
+      { subtitle: '🔧 Gestão (Admin)', items: [
+        'Na página **Usuários**, o admin pode liberar a roleta para usuários específicos.',
+        '**Visualizar Roleta:** botão de prévia que permite ao admin testar a roleta sem salvar resultados.',
+        '**Relatório de Prêmios:** gera PDF com histórico de todos os sorteios realizados.',
+        'Cada registro contém: usuário, prêmio sorteado e data/hora do sorteio.',
+      ]},
+      { subtitle: '📊 Relatório de Prêmios (PDF)', items: [
+        'Acesse o relatório pela página de Usuários ou pelo botão no popup da roleta.',
+        'Contém: estatísticas consolidadas (total de sorteios, prêmio mais sorteado).',
+        'Lista detalhada de cada sorteio: usuário, e-mail, prêmio, data.',
+        'Exportável em PDF com formatação compatível com acentuação portuguesa.',
+      ]},
+    ],
+  },
+  {
+    id: 'relatorio-acessos', icon: Activity, title: 'Relatório de Acessos & Sessões',
+    color: 'from-indigo-600 to-blue-700', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Sistema de rastreamento de sessões de usuários que registra horários de início, fim e duração de cada acesso à plataforma, além do histórico de páginas visitadas. Disponível para administradores na página de Usuários.' },
+      { subtitle: '📏 Como o rastreamento funciona', items: [
+        'Ao fazer login, o sistema cria automaticamente uma **sessão ativa** com horário de início.',
+        'A cada **2 minutos**, um sinal de vida (heartbeat) atualiza a sessão.',
+        'Ao sair ou fechar o navegador, a sessão é **encerrada** com horário de fim e duração calculada.',
+        'Se o usuário ficar inativo por mais de **10 minutos** sem heartbeat, a sessão é encerrada automaticamente por rotina agendada.',
+        'Ao retornar, uma nova sessão é criada (não duplica sessões em refresh de página).',
+      ]},
+      { subtitle: '📊 Dados disponíveis no relatório', items: [
+        '**Início da sessão:** horário exato de entrada.',
+        '**Fim da sessão:** horário de saída (manual ou por inatividade).',
+        '**Duração total:** tempo em minutos entre início e fim.',
+        '**Status:** Ativa ou Encerrada.',
+        '**Páginas visitadas:** histórico de navegação com data/hora de cada acesso.',
+      ]},
+      { subtitle: '🔍 Filtros e visualização', items: [
+        'Filtro por **período** (data inicial e final).',
+        'Filtro por **usuário** específico.',
+        '**Cards de resumo:** total de sessões, tempo total online, média por sessão.',
+        '**Gráfico temporal:** visualização de atividade ao longo do tempo.',
+        '**Tabela detalhada:** lista de sessões com sorting por coluna.',
+        '**Popup individual:** clique em um usuário para ver detalhamento de suas sessões.',
+      ]},
+      { subtitle: '📄 Exportar PDF', items: [
+        'Clique em **"Gerar PDF"** para exportar o relatório completo.',
+        'O documento inclui: resumo estatístico, gráficos e tabela de sessões.',
+        'Usuários **inativos ou bloqueados** são filtrados automaticamente do relatório.',
+        'Horários formatados em padrão brasileiro (DD/MM/AAAA HH:MM).',
+      ]},
+      { subtitle: '⚠️ Limitações', items: [
+        'O rastreamento é baseado em **atividade no navegador** — se o usuário deixar a aba aberta sem interagir, a sessão é encerrada após 10 min de inatividade.',
+        'Múltiplas abas/janelas do mesmo usuário compartilham a mesma sessão.',
+        'O relatório não rastreia atividade fora da plataforma (ex: e-mails enviados externamente).',
+      ]},
+    ],
+  },
 ];
 
 // ─── CATEGORY CARDS ──────────────────────────────────────────────────────────
@@ -641,13 +741,13 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho'],
+    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho'],
+    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
   },
 ];
 
@@ -730,7 +830,7 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'clientes'];
+  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'perfil-usuario'];
   const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
 
   const visibleSections = activeCategory
