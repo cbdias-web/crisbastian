@@ -92,7 +92,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
   const isPending = item.status === 'pendente';
 
   return (
-    <div className="group relative rounded-xl p-2.5 transition-all cursor-grab active:cursor-grabbing"
+    <div className="group relative rounded-xl p-2.5 transition-all duration-200 cursor-grab active:cursor-grabbing"
       style={{
         background: isDragging ? 'rgba(0,212,170,0.08)' : '#1c2333',
         border: `1px solid ${isDragging ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.12)'}`,
@@ -100,8 +100,20 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
         boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
       }}
       onClick={() => { if (!isDragging) onClienteClick?.(item.cliente_id || item.lead_id); }}
-      onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,212,170,0.25)'; }}
-      onMouseLeave={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,212,170,0.12)'; }}>
+      onMouseEnter={e => {
+        if (isDragging) return;
+        e.currentTarget.style.borderColor = 'rgba(0,212,170,0.45)';
+        e.currentTarget.style.boxShadow = '0 0 0 1px rgba(0,212,170,0.25), 0 8px 28px rgba(0,212,170,0.18), 0 4px 12px rgba(0,0,0,0.4)';
+        e.currentTarget.style.transform = 'scale(1.035)';
+        e.currentTarget.style.zIndex = '10';
+      }}
+      onMouseLeave={e => {
+        if (isDragging) return;
+        e.currentTarget.style.borderColor = 'rgba(0,212,170,0.12)';
+        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.zIndex = '';
+      }}>
 
       {/* Top: avatar + name + menu */}
       <div className="flex items-start gap-2">
