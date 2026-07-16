@@ -99,6 +99,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
         opacity: updating === item.id ? 0.5 : 1,
         boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
       }}
+      onClick={() => { if (!isDragging) onClienteClick?.(item.cliente_id || item.lead_id); }}
       onMouseEnter={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,212,170,0.25)'; }}
       onMouseLeave={e => { if (!isDragging) e.currentTarget.style.borderColor = 'rgba(0,212,170,0.12)'; }}>
 
@@ -109,11 +110,10 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
           {inicial}
         </div>
         <div className="flex-1 min-w-0">
-          <button onClick={(e) => { e.stopPropagation(); onClienteClick?.(item.lead_id); }}
-            className="text-xs font-bold text-left hover:underline truncate block w-full leading-tight"
+          <span className="text-xs font-bold text-left hover:underline truncate block w-full leading-tight"
             style={{ color: '#e6edf3' }}>
             {item.lead_nome}
-          </button>
+          </span>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             {item.horario && (
               <span className="text-[10px] font-semibold flex items-center gap-0.5" style={{ color: '#00D4AA' }}>
