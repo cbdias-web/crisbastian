@@ -48,6 +48,7 @@ export default function Layout({ children, currentPageName }) {
   const [vendedoresList, setVendedoresList] = useState([]);
   const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [userAvatar, setUserAvatar] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
@@ -61,6 +62,12 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
+      try {
+        if (u?.email) {
+          const vends = await base44.entities.Vendedor.filter({ email: u.email });
+          if (vends.length > 0 && vends[0].avatar_url) setUserAvatar(vends[0].avatar_url);
+        }
+      } catch (e) {}
       try {
         const aceites = await base44.entities.AceiteUsuario.filter({ user_id: u.id });
         const a = aceites[0] || null;
@@ -468,18 +475,23 @@ export default function Layout({ children, currentPageName }) {
             {/* User avatar menu */}
             <div className="relative" ref={userMenuRef}>
               <button onClick={() => setShowUserMenu(p => !p)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg transition"
-                style={{ color: AURORA.textMuted }}
-                onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
-                onMouseLeave={e => { if (!showUserMenu) e.currentTarget.style.background = 'transparent'; }}>
-                <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
-                  style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
-                  {(user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+                className="flex items-center gap-3 px-3 py-1.5 rounded-2xl transition"
+                style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
+                onMouseEnter={e => e.currentTarget.style.background = AURORA.surface2}
+                onMouseLeave={e => { if (!showUserMenu) e.currentTarget.style.background = AURORA.surface; }}>
+                <div className="text-right hidden sm:block">
+                  <p className="text-[9px] uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Bem Vindo</p>
+                  <p className="text-sm font-semibold leading-tight" style={{ color: AURORA.text }}>
+                    {(user?.nome_tratamento || user?.full_name || 'Usuário').split(' ')[0]}
+                  </p>
                 </div>
-                <span className="hidden md:inline text-sm" style={{ color: AURORA.text }}>
-                  {(user?.nome_tratamento || user?.full_name || '').split(' ')[0]}
-                </span>
-                <ChevronDown className="w-3.5 h-3.5" />
+                <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+                  {userAvatar
+                    ? <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                    : (user?.nome_tratamento || user?.full_name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <ChevronDown className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
               </button>
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-1 w-44 rounded-xl shadow-2xl py-1 z-50"

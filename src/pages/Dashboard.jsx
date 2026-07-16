@@ -508,7 +508,7 @@ export default function Dashboard() {
               className="flex items-center gap-3 px-4 py-2.5 rounded-2xl transition self-start sm:self-auto"
               style={{ background: A.surface, border: `1px solid ${A.border}` }}>
               <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>{impersonado ? 'Espelhando' : 'Bem-vindo'}</p>
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: A.textMuted }}>{impersonado ? 'Espelhando' : 'Bem Vindo'}</p>
                 <p className="text-sm font-semibold" style={{ color: A.text }}>{displayName}</p>
               </div>
               <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden flex-shrink-0"
