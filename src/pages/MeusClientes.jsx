@@ -651,7 +651,7 @@ export default function MeusClientes() {
                 className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition"
                 style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.25)' }}>
                 {deduplicando ? <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(251,191,36,0.3)', borderTopColor: '#fbbf24' }} /> : <Users className="w-3 h-3" />}
-                Deduplicar
+                Remover Duplicados
               </button>
             )}
             <button onClick={() => setShowNovoLeadModal(true)}
