@@ -41,10 +41,14 @@ export default function GerenteMultiSelect({ vendedores = [], selected = [], onC
   const selectAll = () => onChange(vendedores.map(v => v.id));
   const clearAll = () => onChange([]);
 
+  const selectedVendedores = selected
+    .map(id => vendedores.find(v => v.id === id))
+    .filter(Boolean);
+
   const displayText = selected.length === 0
     ? 'Todos os gerentes'
     : selected.length === 1
-      ? vendedores.find(v => v.id === selected[0])?.nome || '1 gerente'
+      ? selectedVendedores[0]?.nome || '1 gerente'
       : `${selected.length} gerentes`;
 
   return (
@@ -76,9 +80,40 @@ export default function GerenteMultiSelect({ vendedores = [], selected = [], onC
         </div>
       </button>
 
+      {/* Tags dos gerentes selecionados */}
+      {selectedVendedores.length > 0 && !open && (
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {selectedVendedores.slice(0, 4).map(v => (
+            <span key={v.id}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium"
+              style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+              {v.avatar_url
+                ? <img src={v.avatar_url} alt="" className="w-3 h-3 rounded-full object-cover" />
+                : <span className="w-3 h-3 rounded-full flex items-center justify-center text-[7px] font-bold"
+                    style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+                    {(v.nome || '?').charAt(0).toUpperCase()}
+                  </span>}
+              <span className="truncate max-w-[80px]">{v.nome.split(' ')[0]}</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onChange(selected.filter(s => s !== v.id)); }}
+                className="hover:opacity-70 transition flex-shrink-0">
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </span>
+          ))}
+          {selectedVendedores.length > 4 && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+              style={{ background: 'rgba(255,255,255,0.06)', color: AURORA.textMuted }}>
+              +{selectedVendedores.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl shadow-2xl overflow-hidden"
-          style={{ background: AURORA.surface2, border: `1px solid ${AURORA.borderActive}` }}>
+        <div className="absolute z-[100] mt-1.5 w-full rounded-xl shadow-2xl overflow-hidden"
+          style={{ background: AURORA.surface2, border: `1px solid ${AURORA.borderActive}`, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
 
           {/* Search */}
           <div className="p-2 border-b" style={{ borderColor: AURORA.border }}>

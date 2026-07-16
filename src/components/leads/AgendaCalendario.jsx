@@ -805,7 +805,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
   const [filtroPeriodoInicio, setFiltroPeriodoInicio] = useState('');
   const [filtroPeriodoFim, setFiltroPeriodoFim] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('');
-  const [showFiltros, setShowFiltros] = useState(true);
+  const [showFiltros, setShowFiltros] = useState(false);
 
   const [filtroRapidoStatus, setFiltroRapidoStatus] = useState('');
   const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
