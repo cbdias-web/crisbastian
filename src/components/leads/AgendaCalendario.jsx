@@ -2,12 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
+import KanbanBoard from '@/components/agenda/KanbanBoard';
 import GerenteMultiSelect from '@/components/leads/GerenteMultiSelect';
 import {
-  Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw,
-  TrendingUp, ChevronLeft, ChevronRight, X, Plus, Video, Copy, ExternalLink, Link2, UserPlus, AlertTriangle
+  Calendar, Clock, ChevronLeft, ChevronRight, X, Plus, Video,
+  TrendingUp, Filter, AlertTriangle, CalendarDays
 } from 'lucide-react';
-import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 import {
   format, isToday, isTomorrow, parseISO, startOfWeek,
   addDays, addWeeks, isSameDay, startOfMonth, endOfMonth,
@@ -16,50 +16,36 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
-
-// ── Config ────────────────────────────────────────────────────────────────────
-
-const STATUS = {
-  pendente:    { label: 'Pendente',    dot: 'bg-amber-400',   pillStyle: { background: 'rgba(245,158,11,0.15)', color: '#d97706' },   icon: Clock },
-  realizado:   { label: 'Realizado',   dot: 'bg-emerald-400', pillStyle: { background: 'rgba(16,185,129,0.15)', color: '#059669' }, icon: CheckCircle2 },
-  nao_atendeu: { label: 'Não atendeu', dot: 'bg-red-400',     pillStyle: { background: 'rgba(239,68,68,0.15)',  color: '#dc2626' },       icon: XCircle },
-  reagendado:  { label: 'Reagendado',  dot: 'bg-blue-400',    pillStyle: { background: 'rgba(59,130,246,0.15)', color: '#2563eb' },     icon: RotateCcw },
-};
-
-const WEEK_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-const today = () => new Date();
+const WEEK_DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-// ── Mini Calendar ─────────────────────────────────────────────────────────────
+// ── Mini Calendar ────────────────────────────────────────────────────────────
 
 function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
   const [viewDate, setViewDate] = useState(selected || new Date());
   const start = startOfMonth(viewDate);
   const end = endOfMonth(viewDate);
   const firstDow = getDay(start);
-
   const days = [];
   for (let i = 0; i < firstDow; i++) days.push(null);
   for (let d = start; d <= end; d = addDays(d, 1)) days.push(new Date(d));
 
   return (
-    <div className="rounded-2xl p-4 select-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setViewDate(v => subMonths(v, 1))} className="p-1 rounded-lg hover:bg-gray-100 transition">
-          <ChevronLeft className="w-4 h-4 text-gray-500" />
+    <div className="rounded-xl p-3 select-none" style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
+      <div className="flex items-center justify-between mb-2">
+        <button onClick={() => setViewDate(v => subMonths(v, 1))} className="p-0.5 rounded transition hover:bg-white/5">
+          <ChevronLeft className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.4)' }} />
         </button>
-        <span className="text-sm font-semibold capitalize" style={{ color: '#e6edf3' }}>
-          {format(viewDate, 'MMMM yyyy', { locale: ptBR })}
+        <span className="text-[11px] font-bold capitalize" style={{ color: '#e6edf3' }}>
+          {format(viewDate, 'MMM yyyy', { locale: ptBR })}
         </span>
-        <button onClick={() => setViewDate(v => addMonths(v, 1))} className="p-1 rounded-lg hover:bg-gray-100 transition">
-          <ChevronRight className="w-4 h-4 text-gray-500" />
+        <button onClick={() => setViewDate(v => addMonths(v, 1))} className="p-0.5 rounded transition hover:bg-white/5">
+          <ChevronRight className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.4)' }} />
         </button>
       </div>
-      <div className="grid grid-cols-7 mb-1">
-        {WEEK_DAYS.map(d => (
-          <div key={d} className="text-center text-[10px] font-semibold text-gray-400 uppercase">{d[0]}</div>
+      <div className="grid grid-cols-7 mb-0.5">
+        {WEEK_DAYS.map((d, i) => (
+          <div key={i} className="text-center text-[9px] font-bold" style={{ color: 'rgba(230,237,243,0.3)' }}>{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-y-0.5">
@@ -70,297 +56,31 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
           const isTod = isToday(day);
           const hasDot = dotDates.has(ds);
           return (
-            <button
-              key={ds}
-              onClick={() => onSelect(day)}
-              className="relative flex flex-col items-center justify-center w-full aspect-square rounded-xl text-xs font-medium transition-all"
-              style={
-                isSelected
-                  ? { background: '#00D4AA', color: '#0d1117', fontWeight: 700 }
-                  : isTod
-                  ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA', fontWeight: 700 }
-                  : { color: 'rgba(230,237,243,0.7)' }
-              }
-            >
+            <button key={ds} onClick={() => onSelect(day)}
+              className="relative flex items-center justify-center w-full aspect-square rounded-lg text-[11px] font-medium transition-all"
+              style={isSelected
+                ? { background: '#00D4AA', color: '#0d1117', fontWeight: 700 }
+                : isTod
+                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA', fontWeight: 700 }
+                : { color: 'rgba(230,237,243,0.6)' }}>
               {format(day, 'd')}
-              {hasDot && (
-                <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isSelected ? 'bg-amber-300' : 'bg-amber-400'}`} />
+              {hasDot && !isSelected && (
+                <span className="absolute bottom-0.5 w-1 h-1 rounded-full" style={{ background: '#f59e0b' }} />
               )}
             </button>
           );
         })}
       </div>
-      <button
-        onClick={() => { setViewDate(new Date()); onSelect(new Date()); }}
-        className="mt-3 w-full text-xs text-center font-semibold rounded-lg py-1.5 transition"
-        style={{ color: '#00D4AA', background: 'rgba(0,212,170,0.08)' }}
-      >
-        Ir para hoje
+      <button onClick={() => { setViewDate(new Date()); onSelect(new Date()); }}
+        className="mt-2 w-full text-[10px] font-semibold rounded-md py-1 transition"
+        style={{ color: '#00D4AA', background: 'rgba(0,212,170,0.08)' }}>
+        Hoje
       </button>
     </div>
   );
 }
 
-// ── Google Meet Button ────────────────────────────────────────────────────────
-
-function MeetButton({ item, onLinkGerado }) {
-  const [loading, setLoading] = useState(false);
-  const [showTimeForm, setShowTimeForm] = useState(false);
-  const [horario, setHorario] = useState('09:00');
-  const [needsConnect, setNeedsConnect] = useState(false);
-
-  const handleConnect = async () => {
-    const url = await base44.connectors.connectAppUser(CONNECTOR_ID);
-    const popup = window.open(url, '_blank');
-    const timer = setInterval(() => {
-      if (!popup || popup.closed) { clearInterval(timer); setNeedsConnect(false); }
-    }, 500);
-  };
-
-  const handleGenerate = async () => {
-    setLoading(true);
-    try {
-      const res = await base44.functions.invoke('criarMeetAgenda', {
-        agenda_id: item.id,
-        lead_nome: item.lead_nome,
-        data_agendada: item.data_agendada,
-        horario_inicio: horario,
-        com_meet: true,
-      });
-      onLinkGerado(res.data.meet_link);
-      toast.success('Link Meet criado!');
-      setShowTimeForm(false);
-    } catch (e) {
-      const msg = e?.response?.data?.error || e?.message || '';
-      if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('not connected') || msg.toLowerCase().includes('no active')) {
-        setNeedsConnect(true);
-        setShowTimeForm(false);
-        toast.error('Conecte sua conta Google primeiro');
-      } else {
-        toast.error('Erro ao gerar link: ' + msg);
-      }
-    }
-    setLoading(false);
-  };
-
-  if (item.meet_link) {
-    return (
-      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-        <a href={item.meet_link} target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white text-[11px] font-semibold rounded-xl transition shadow-sm">
-          <Video className="w-3 h-3" /> Entrar no Meet
-        </a>
-        <button onClick={() => { navigator.clipboard.writeText(item.meet_link); toast.success('Link copiado!'); }}
-          className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-xl border border-blue-100 hover:bg-blue-100 transition">
-          <Copy className="w-3 h-3" /> Copiar
-        </button>
-      </div>
-    );
-  }
-
-  if (needsConnect) {
-    return (
-      <button onClick={handleConnect}
-        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#1a73e8] text-[#1a73e8] text-[11px] font-semibold rounded-xl hover:bg-blue-50 transition mt-2">
-        <Link2 className="w-3 h-3" /> Conectar Google Calendar
-      </button>
-    );
-  }
-
-  const horarioPreenchido = item.horario || horario;
-
-  if (showTimeForm) {
-    return (
-      <div className="flex items-center gap-2 mt-2 flex-wrap bg-blue-50 rounded-xl p-2.5 border border-blue-100">
-        <span className="text-[11px] text-gray-600 font-medium">Horário:</span>
-        <input type="time" value={horarioPreenchido} onChange={e => setHorario(e.target.value)}
-          className="text-xs px-2 py-1.5 border border-blue-200 rounded-xl focus:outline-none focus:border-[#1a73e8] bg-white" />
-        <p className="text-[10px] text-blue-500 w-full -mt-1">O Meet será criado neste horário automaticamente.</p>
-        <button onClick={handleGenerate} disabled={loading}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#1a73e8] text-white text-[11px] font-semibold rounded-xl hover:bg-[#1557b0] transition">
-          {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Video className="w-3 h-3" />}
-          {loading ? 'Gerando...' : 'Gerar Meet'}
-        </button>
-        <button onClick={() => setShowTimeForm(false)} className="text-[11px] text-gray-400 hover:text-gray-600">Cancelar</button>
-      </div>
-    );
-  }
-
-  return (
-    <button onClick={() => { setShowTimeForm(true); if (item.horario) setHorario(item.horario); }}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-xl transition mt-2"
-      style={{ background: 'rgba(0,212,170,0.08)', border: '1px solid rgba(0,212,170,0.25)', color: '#00D4AA' }}>
-      <Video className="w-3 h-3" /> Gerar Link Meet
-    </button>
-  );
-}
-
-// ── Event Card ────────────────────────────────────────────────────────────────
-
-const AVATAR_COLORS = [
-  'bg-[#0f1e35]', 'bg-blue-600', 'bg-indigo-600', 'bg-emerald-600',
-  'bg-amber-600', 'bg-purple-600', 'bg-rose-600', 'bg-teal-600',
-];
-function avatarColor(name = '') {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
-  return AVATAR_COLORS[h % AVATAR_COLORS.length];
-}
-
-function EventCard({ item: itemProp, isToday: isTod, onAction, onDelete, onPipeline, onClienteClick, updating }) {
-  const [item, setItem] = useState(itemProp);
-  const [reagendando, setReagendando] = useState(false);
-  const [novaData, setNovaData] = useState('');
-  const [editando, setEditando] = useState(false);
-  const [editData, setEditData] = useState(itemProp.data_agendada);
-  const [editHorario, setEditHorario] = useState(itemProp.horario || '');
-  const sc = STATUS[item.status] || STATUS.pendente;
-  const Icon = sc.icon;
-  const inicial = (item.lead_nome || '?').charAt(0).toUpperCase();
-  const bgAvatar = avatarColor(item.lead_nome || '');
-
-  React.useEffect(() => { setItem(itemProp); setEditData(itemProp.data_agendada); setEditHorario(itemProp.horario || ''); }, [itemProp]);
-
-  // Border left color by status
-  const borderAccent = {
-    pendente: 'border-l-amber-400',
-    realizado: 'border-l-emerald-400',
-    nao_atendeu: 'border-l-red-400',
-    reagendado: 'border-l-blue-400',
-  }[item.status] || 'border-l-amber-400';
-
-  return (
-    <div className={`group relative rounded-2xl border border-l-4 ${borderAccent} shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden`}
-      style={{ background: '#1c2333', borderColor: 'rgba(0,212,170,0.15)' }}>
-      <div className="p-4">
-        {/* TOP ROW: avatar + info + status + actions */}
-        <div className="flex items-start gap-3">
-          {/* Avatar */}
-          <div className={`w-10 h-10 rounded-xl ${bgAvatar} flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm`}>
-            {inicial}
-          </div>
-
-          {/* Info block */}
-          <div className="flex-1 min-w-0">
-            <button
-              onClick={() => onClienteClick && onClienteClick(item.lead_id)}
-              className="text-sm font-bold hover:underline transition text-left leading-tight block truncate w-full"
-              style={{ color: '#e6edf3' }}
-            >
-              {item.lead_nome}
-            </button>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {item.horario && (
-                <span className="text-[11px] font-semibold flex items-center gap-0.5" style={{ color: '#00D4AA' }}>
-                  <Clock className="w-3 h-3" /> {item.horario}
-                </span>
-              )}
-              {item.lead_telefone && (
-                <span className="text-[11px] flex items-center gap-0.5" style={{ color: 'rgba(230,237,243,0.6)' }}>
-                  <Phone className="w-3 h-3" /> {item.lead_telefone}
-                </span>
-              )}
-              {item.lead_cpf_cnpj && (
-                <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>{item.lead_cpf_cnpj}</span>
-              )}
-            </div>
-          </div>
-
-          {/* Status pill + edit + delete */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full" style={sc.pillStyle}>
-              <Icon className="w-2.5 h-2.5" /> {sc.label}
-            </span>
-            <button
-              onClick={() => { setEditando(e => !e); setReagendando(false); setEditData(item.data_agendada); }}
-              title="Alterar data/horário"
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-300 hover:text-[#1a3150] transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
-            <button
-              onClick={() => { if (confirm(`Excluir agendamento de "${item.lead_nome}"?`)) onDelete(item); }}
-              title="Excluir agendamento"
-              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Reagendado info */}
-        {item.status === 'reagendado' && item.nova_data && (
-          <p className="text-[11px] mt-2 flex items-center gap-1 ml-13" style={{ color: '#60a5fa' }}>
-            <RotateCcw className="w-2.5 h-2.5" /> Reagendado para {format(parseISO(item.nova_data), 'dd/MM', { locale: ptBR })}
-          </p>
-        )}
-
-        {/* Edit inline */}
-        {editando && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap rounded-xl p-2.5"
-            style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)' }}>
-            <span className="text-[11px] text-gray-500 font-medium">Data:</span>
-            <input type="date" value={editData} onChange={e => setEditData(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-            <span className="text-[11px] text-gray-500 font-medium">Horário:</span>
-            <input type="time" value={editHorario} onChange={e => setEditHorario(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-            {mensagemNaoDiaUtil(editData) && (
-              <p className="text-[11px] text-red-500 flex items-center gap-1 w-full">
-                <AlertTriangle className="w-3 h-3 flex-shrink-0" /> {mensagemNaoDiaUtil(editData)}
-              </p>
-            )}
-            <button onClick={() => { const aviso = mensagemNaoDiaUtil(editData); if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; } onAction(item, item.status, undefined, editData, editHorario); setEditando(false); }}
-              disabled={!editData}
-              className="text-xs bg-[#0f1e35] text-white px-3 py-1.5 rounded-xl hover:bg-[#1a3150] transition">Salvar</button>
-            <button onClick={() => setEditando(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
-          </div>
-        )}
-
-        {/* Reagendar form */}
-        {reagendando && (
-          <div className="mt-3 flex items-center gap-2 flex-wrap rounded-xl p-2.5"
-            style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)' }}>
-            <span className="text-[11px] font-medium" style={{ color: '#60a5fa' }}>Nova data:</span>
-            <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
-              className="text-xs px-2.5 py-1.5 border border-blue-200 rounded-xl focus:outline-none focus:border-[#1a73e8] bg-white" />
-            <button onClick={() => { onAction(item, 'reagendado', novaData); setReagendando(false); }}
-              className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-xl hover:bg-blue-700 transition">Confirmar</button>
-            <button onClick={() => setReagendando(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancelar</button>
-          </div>
-        )}
-
-        {/* Action buttons — always visible for pending */}
-        {item.status === 'pendente' && (
-          <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-            <button onClick={() => onAction(item, 'realizado')} disabled={updating === item.id}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold rounded-xl transition shadow-sm">
-              <CheckCircle2 className="w-3 h-3" /> Realizado
-            </button>
-            <button onClick={() => onAction(item, 'nao_atendeu')} disabled={updating === item.id}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-xl transition"
-              style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
-              <XCircle className="w-3 h-3" /> Não atendeu
-            </button>
-            <button onClick={() => { setReagendando(true); setNovaData(''); setEditando(false); }}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-xl transition"
-              style={{ background: 'rgba(59,130,246,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}>
-              <RotateCcw className="w-3 h-3" /> Reagendar
-            </button>
-            <button onClick={() => onPipeline(item)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-semibold rounded-xl border border-indigo-200 transition">
-              <TrendingUp className="w-3 h-3" /> Pipeline
-            </button>
-          </div>
-        )}
-
-        <MeetButton item={item} onLinkGerado={(link) => setItem(prev => ({ ...prev, meet_link: link }))} />
-      </div>
-    </div>
-  );
-}
-
-// ── Pipeline Modal ────────────────────────────────────────────────────────────
+// ── Pipeline Modal ───────────────────────────────────────────────────────────
 
 function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
   const [form, setForm] = useState({ produto: '', valor_estimado: '', temperatura: 'Morno' });
@@ -389,43 +109,47 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)' }}>
           <div>
-            <p className="font-semibold text-gray-900 text-sm">Adicionar ao Pipeline</p>
-            <p className="text-xs text-gray-400 mt-0.5">{item.lead_nome}</p>
+            <p className="font-bold text-sm" style={{ color: '#e6edf3' }}>Adicionar ao Pipeline</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(230,237,243,0.4)' }}>{item.lead_nome}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg transition hover:bg-white/5"><X className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.5)' }} /></button>
         </div>
         <div className="p-5 space-y-3">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Produto *</label>
+            <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Produto *</label>
             <input value={form.produto} onChange={e => setForm(p => ({ ...p, produto: e.target.value }))}
               placeholder="Ex: Conta Global"
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+              className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+              style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Valor estimado</label>
+              <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Valor estimado</label>
               <input type="number" value={form.valor_estimado} onChange={e => setForm(p => ({ ...p, valor_estimado: e.target.value }))}
                 placeholder="R$ 0"
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
             </div>
             <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Temperatura</label>
+              <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Temperatura</label>
               <select value={form.temperatura} onChange={e => setForm(p => ({ ...p, temperatura: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-white focus:outline-none focus:border-[#1a3150]">
+                className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
+                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
                 {['Frio', 'Morno', 'Quente'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
           </div>
         </div>
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
+        <div className="px-5 py-4 flex justify-end gap-2" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
+          <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl transition" style={{ color: 'rgba(230,237,243,0.6)', border: '1px solid rgba(0,212,170,0.15)' }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving}
-            className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2">
-            {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <TrendingUp className="w-3.5 h-3.5" />}
+            className="px-4 py-2 text-sm rounded-xl transition flex items-center gap-2 font-semibold text-white"
+            style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+            {saving ? <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} /> : <TrendingUp className="w-3.5 h-3.5" />}
             Adicionar
           </button>
         </div>
@@ -434,382 +158,21 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
   );
 }
 
-// ── Novo Agendamento Modal ────────────────────────────────────────────────────
-
-function NovoAgendamentoModal({ todosVendedores, clientes, todasAgendas = [], onClose, onSaved, currentUserEmail, user, vendedor }) {
-  const [form, setForm] = useState({
-    vendedores_ids: [],
-    lead_id: '',
-    data_agendada: new Date().toISOString().split('T')[0],
-    horario: '',
-    observacao: '',
-  });
-  const [saving, setSaving] = useState(false);
-  const [clienteSearch, setClienteSearch] = useState('');
-  const [dropdownVendedor, setDropdownVendedor] = useState(false);
-  const [searchVendedor, setSearchVendedor] = useState('');
-  const [showNovoContatoForm, setShowNovoContatoForm] = useState(false);
-  const [novoContatoForm, setNovoContatoForm] = useState({ nome: '', cpf_cnpj: '', telefone: '' });
-  const [criandoContato, setCriandoContato] = useState(false);
-  const [clientesLocais, setClientesLocais] = useState(clientes);
-
-  const criarNovoContato = async () => {
-    if (!novoContatoForm.nome.trim()) { toast.error('Nome é obrigatório'); return; }
-    setCriandoContato(true);
-    try {
-      const novoCliente = await base44.entities.Cliente.create({
-        nome: novoContatoForm.nome.trim(),
-        cpf_cnpj: novoContatoForm.cpf_cnpj.trim(),
-        telefone: novoContatoForm.telefone.trim(),
-        origem: 'nativo',
-      });
-      setClientesLocais(prev => [...prev, novoCliente]);
-      setForm(p => ({ ...p, lead_id: novoCliente.id }));
-      setClienteSearch(novoCliente.nome);
-      setShowNovoContatoForm(false);
-      setNovoContatoForm({ nome: '', cpf_cnpj: '', telefone: '' });
-      toast.success('Contato criado!');
-    } catch (e) {
-      toast.error('Erro ao criar contato');
-    }
-    setCriandoContato(false);
-  };
-
-  const clientesFiltrados = clientesLocais
-    .filter(c => !clienteSearch || c.nome?.toLowerCase().includes(clienteSearch.toLowerCase()) || c.cpf_cnpj?.includes(clienteSearch))
-    .slice(0, 20);
-
-  const clienteSelecionado = clientesLocais.find(c => c.id === form.lead_id);
-  const vendedoresFiltrados = todosVendedores.filter(v =>
-    !searchVendedor || v.nome?.toLowerCase().includes(searchVendedor.toLowerCase())
-  );
-
-  const toggleVendedor = (vid) => {
-    setForm(prev => ({
-      ...prev,
-      vendedores_ids: prev.vendedores_ids.includes(vid)
-        ? prev.vendedores_ids.filter(id => id !== vid)
-        : [...prev.vendedores_ids, vid],
-    }));
-  };
-
-  const handleSave = async () => {
-    if (form.vendedores_ids.length === 0) { toast.error('Selecione ao menos um gerente'); return; }
-    if (!form.lead_id) { toast.error('Selecione o cliente/lead'); return; }
-    if (!form.data_agendada) { toast.error('Informe a data'); return; }
-    if (!form.horario) { toast.error('Informe o horário do agendamento'); return; }
-    const aviso = mensagemNaoDiaUtil(form.data_agendada);
-    if (aviso) { toast.error(`Não é possível agendar: ${aviso}`); return; }
-
-    setSaving(true);
-    const c = clienteSelecionado;
-    const criadorId = vendedor?.id || '';
-    const criadorNome = vendedor?.nome || user?.nome_tratamento || user?.full_name || user?.email || '';
-    let criou = 0;
-
-    try {
-      for (const vid of form.vendedores_ids) {
-        const v = todosVendedores.find(vv => vv.id === vid);
-        if (!v) continue;
-
-        const jaExiste = todasAgendas.some(a =>
-          a.vendedor_id === vid &&
-          a.data_agendada === form.data_agendada &&
-          a.lead_id === c.id &&
-          a.status === 'pendente'
-        );
-        if (jaExiste) {
-          toast.info(`${v.nome} já tem agendamento pendente com ${c.nome} nesta data — pulado.`);
-          continue;
-        }
-
-        const novoAgendamento = await base44.entities.AgendaContato.create({
-          lead_id: c.id,
-          lead_nome: c.nome,
-          lead_cpf_cnpj: c.cpf_cnpj || '',
-          lead_telefone: c.telefone || '',
-          cliente_id: c.id,
-          vendedor_id: v.id,
-          vendedor_nome: v.nome,
-          data_agendada: form.data_agendada,
-          horario: form.horario,
-          posicao_dia: 0,
-          lote_id: '',
-          status: 'pendente',
-          resultado: form.observacao || '',
-        });
-        criou++;
-
-        if (novoAgendamento?.id) {
-          try {
-            await base44.functions.invoke('criarMeetAgenda', {
-              agenda_id: novoAgendamento.id,
-              lead_nome: c.nome,
-              data_agendada: form.data_agendada,
-              horario_inicio: form.horario,
-              target_user_email: v.email || '',
-              organizer_email: currentUserEmail,
-              com_meet: false,
-            });
-          } catch (e) {}
-        }
-      }
-
-      if (criadorId && !form.vendedores_ids.includes(criadorId) && criou > 0) {
-        const jaExisteCriador = todasAgendas.some(a =>
-          a.vendedor_id === criadorId &&
-          a.data_agendada === form.data_agendada &&
-          a.lead_id === c.id &&
-          a.status === 'pendente'
-        );
-        if (!jaExisteCriador) {
-          const conflitHorario = todasAgendas.find(a =>
-            a.vendedor_id === criadorId &&
-            a.data_agendada === form.data_agendada &&
-            a.horario === form.horario &&
-            a.status === 'pendente'
-          );
-          if (conflitHorario) {
-            toast.info(`Você já tem um compromisso às ${form.horario} com ${conflitHorario.lead_nome} — cópia não criada na sua agenda.`);
-          } else {
-            await base44.entities.AgendaContato.create({
-              lead_id: c.id,
-              lead_nome: c.nome,
-              lead_cpf_cnpj: c.cpf_cnpj || '',
-              lead_telefone: c.telefone || '',
-              cliente_id: c.id,
-              vendedor_id: criadorId,
-              vendedor_nome: criadorNome,
-              data_agendada: form.data_agendada,
-              horario: form.horario,
-              posicao_dia: 0,
-              lote_id: '',
-              status: 'pendente',
-              resultado: form.observacao || '',
-            });
-          }
-        }
-      }
-
-      if (criou > 0) {
-        toast.success(`${criou} agendamento(s) criado(s) para ${form.data_agendada.split('-').reverse().join('/')}!`);
-      }
-      onSaved();
-    } catch (e) {
-      toast.error('Erro ao criar agendamento');
-    }
-    setSaving(false);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
-          <div>
-            <p className="font-bold text-white text-sm">Novo Agendamento</p>
-            <p className="text-blue-200 text-xs mt-0.5">Criar agendamento para qualquer gerente</p>
-          </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
-          {/* Gerentes */}
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">
-              Gerente(s) * <span className="text-blue-500 font-semibold">({form.vendedores_ids.length} selecionado{form.vendedores_ids.length !== 1 ? 's' : ''})</span>
-            </label>
-            {form.vendedores_ids.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {form.vendedores_ids.map(vid => {
-                  const v = todosVendedores.find(vv => vv.id === vid);
-                  return (
-                    <span key={vid} className="flex items-center gap-1 px-2 py-1 bg-[#0f1e35] text-white text-xs font-medium rounded-lg">
-                      {v?.nome}
-                      <button onClick={() => toggleVendedor(vid)} className="text-white/60 hover:text-white ml-0.5">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar e selecionar gerentes..."
-                value={searchVendedor}
-                onFocus={() => setDropdownVendedor(true)}
-                onChange={e => { setSearchVendedor(e.target.value); setDropdownVendedor(true); }}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]"
-              />
-              {dropdownVendedor && (
-                <>
-                  <div className="fixed inset-0 z-[9]" onClick={() => setDropdownVendedor(false)} />
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    {vendedoresFiltrados.map(v => {
-                      const selected = form.vendedores_ids.includes(v.id);
-                      return (
-                        <button key={v.id} onClick={() => { toggleVendedor(v.id); setSearchVendedor(''); }}
-                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left hover:bg-gray-50 transition border-b border-gray-50 last:border-0 ${selected ? 'bg-blue-50' : ''}`}>
-                          <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${selected ? 'bg-[#0f1e35] border-[#0f1e35]' : 'border-gray-300'}`}>
-                            {selected && <svg width="9" height="9" viewBox="0 0 10 8" fill="none"><path d="M1 4L4 7L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                          </div>
-                          <span className={`font-medium ${selected ? 'text-[#0f1e35]' : 'text-gray-700'}`}>{v.nome}</span>
-                        </button>
-                      );
-                    })}
-                    {vendedoresFiltrados.length === 0 && (
-                      <p className="text-xs text-gray-400 text-center py-3">Nenhum gerente encontrado</p>
-                    )}
-                    <button onClick={() => setDropdownVendedor(false)}
-                      className="w-full text-center text-xs text-gray-400 hover:text-gray-600 py-2 border-t border-gray-100">
-                      Fechar
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Cliente / Lead */}
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Cliente / Lead *</label>
-            <input
-              type="text"
-              placeholder="Buscar cliente ou lead..."
-              value={clienteSearch}
-              onChange={e => { setClienteSearch(e.target.value); setForm(p => ({ ...p, lead_id: '' })); setShowNovoContatoForm(false); }}
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] mb-1"
-            />
-            {clienteSelecionado ? (
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl">
-                <span className="text-sm font-medium text-[#0f1e35] flex-1">{clienteSelecionado.nome}</span>
-                {clienteSelecionado.vendedor_nome && (
-                  <span className="text-[10px]" style={{ color: '#00D4AA' }}>Gerente: {clienteSelecionado.vendedor_nome}</span>
-                )}
-                <button onClick={() => { setForm(p => ({ ...p, lead_id: '' })); setClienteSearch(''); }} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : clienteSearch.length > 0 && (
-              <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
-                {clientesFiltrados.length === 0 ? (
-                  <div className="py-2 px-3">
-                    <p className="text-xs text-gray-400 text-center py-2">Nenhum cliente encontrado</p>
-                    {!showNovoContatoForm ? (
-                      <button
-                        onClick={() => { setShowNovoContatoForm(true); setNovoContatoForm(f => ({ ...f, nome: clienteSearch })); }}
-                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition mt-1">
-                        <Plus className="w-3.5 h-3.5" /> Criar novo contato "{clienteSearch}"
-                      </button>
-                    ) : (
-                      <div className="space-y-2 mt-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                        <p className="text-[11px] font-semibold text-gray-600 mb-2">Novo Contato</p>
-                        <input
-                          type="text"
-                          placeholder="Nome completo *"
-                          value={novoContatoForm.nome}
-                          onChange={e => setNovoContatoForm(f => ({ ...f, nome: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
-                        />
-                        <input
-                          type="text"
-                          placeholder="CPF / CNPJ"
-                          value={novoContatoForm.cpf_cnpj}
-                          onChange={e => setNovoContatoForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Telefone"
-                          value={novoContatoForm.telefone}
-                          onChange={e => setNovoContatoForm(f => ({ ...f, telefone: e.target.value }))}
-                          className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
-                        />
-                        <div className="flex gap-2">
-                          <button onClick={() => setShowNovoContatoForm(false)}
-                            className="flex-1 py-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 text-gray-500">Cancelar</button>
-                          <button onClick={criarNovoContato} disabled={criandoContato || !novoContatoForm.nome.trim()}
-                            className="flex-1 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-1">
-                            {criandoContato ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
-                            Criar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : clientesFiltrados.map(c => (
-                  <button key={c.id} onClick={() => { setForm(p => ({ ...p, lead_id: c.id })); setClienteSearch(c.nome); }}
-                    className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition">
-                    <span className="font-medium">{c.nome}</span>
-                    {c.cpf_cnpj && <span className="text-xs text-gray-400 ml-2">{c.cpf_cnpj}</span>}
-                    {c.vendedor_nome && <span className="text-[10px] text-blue-500 ml-2">· {c.vendedor_nome}</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Data e Horário */}
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="text-xs text-gray-500 mb-1 block">Data do agendamento *</label>
-              <input type="date" value={form.data_agendada} onChange={e => setForm(p => ({ ...p, data_agendada: e.target.value }))}
-                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${mensagemNaoDiaUtil(form.data_agendada) ? 'border-red-300 bg-red-50' : 'border-gray-200'}`} />
-              {mensagemNaoDiaUtil(form.data_agendada) && (
-                <p className="text-[11px] text-red-500 mt-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> {mensagemNaoDiaUtil(form.data_agendada)}
-                </p>
-              )}
-            </div>
-            <div className="w-36">
-              <label className="text-xs text-gray-500 mb-1 block">Horário *</label>
-              <input type="time" value={form.horario} onChange={e => setForm(p => ({ ...p, horario: e.target.value }))}
-                className={`w-full px-3 py-2 text-sm border rounded-xl focus:outline-none focus:border-[#1a3150] ${!form.horario ? 'border-amber-300' : 'border-gray-200'}`} />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">Observação / Contexto</label>
-            <input type="text" value={form.observacao} onChange={e => setForm(p => ({ ...p, observacao: e.target.value }))}
-              placeholder="Motivo ou contexto da reunião..."
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-          </div>
-        </div>
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-          <button onClick={handleSave} disabled={saving}
-            className="px-4 py-2 text-sm bg-[#0f1e35] text-white rounded-xl hover:bg-[#1a3150] transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            {saving ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />}
-            Criar Agendamento
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Main Component ─────────────────────────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AgendaCalendario({ vendedorId, vendedor, user, onClienteClick, isAdmin, todosVendedores = [], clientes = [] }) {
-  const currentUserEmail = user?.email || '';
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [view, setView] = useState('dia');
   const [updating, setUpdating] = useState(null);
   const [pipelineItem, setPipelineItem] = useState(null);
-  const [showPast, setShowPast] = useState(false);
   const [showMeetModal, setShowMeetModal] = useState(false);
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const queryClient = useQueryClient();
 
+  // Filters
   const [filtroVendedoresIds, setFiltroVendedoresIds] = useState([]);
   const [filtroPeriodoInicio, setFiltroPeriodoInicio] = useState('');
   const [filtroPeriodoFim, setFiltroPeriodoFim] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('');
-  const [showFiltros, setShowFiltros] = useState(false);
-
-  const [filtroRapidoStatus, setFiltroRapidoStatus] = useState('');
-  const [filtroRapidoInicio, setFiltroRapidoInicio] = useState('');
-  const [filtroRapidoFim, setFiltroRapidoFim] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: agendaGlobal = [], isLoading } = useQuery({
     queryKey: ['agenda-contatos-global'],
@@ -825,29 +188,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     refetchInterval: 30000,
   });
 
-  const { data: todasAgendas = [] } = useQuery({
-    queryKey: ['agenda-contatos-todos'],
-    queryFn: () => base44.entities.AgendaContato.list('data_agendada', 5000),
-    enabled: false, // agendaGlobal substitui
-    refetchInterval: 60000,
-  });
-
   const useGlobal = isAdmin || filtroVendedoresIds.length > 0;
   const agendaRaw = useGlobal ? agendaGlobal : agendaVendedor;
   const loading = useGlobal ? isLoading : isLoadingVendedor;
-  const todasAgendasRef = agendaGlobal;
 
   const agenda = useMemo(() => {
     let items = agendaRaw;
     if (filtroVendedoresIds.length > 0) items = items.filter(a => filtroVendedoresIds.includes(a.vendedor_id));
     if (filtroPeriodoInicio) items = items.filter(a => a.data_agendada >= filtroPeriodoInicio);
     if (filtroPeriodoFim) items = items.filter(a => a.data_agendada <= filtroPeriodoFim);
-    if (filtroStatus) items = items.filter(a => a.status === filtroStatus);
-    if (filtroRapidoStatus) items = items.filter(a => a.status === filtroRapidoStatus);
-    if (filtroRapidoInicio) items = items.filter(a => a.data_agendada >= filtroRapidoInicio);
-    if (filtroRapidoFim) items = items.filter(a => a.data_agendada <= filtroRapidoFim);
     return items;
-  }, [agendaRaw, filtroVendedoresIds, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus, filtroRapidoStatus, filtroRapidoInicio, filtroRapidoFim, isAdmin]);
+  }, [agendaRaw, filtroVendedoresIds, filtroPeriodoInicio, filtroPeriodoFim]);
 
   const filtroVendedorObj = filtroVendedoresIds.length === 1 ? (todosVendedores.find(v => v.id === filtroVendedoresIds[0]) || null) : null;
   const vendedorEfetivo = filtroVendedorObj || vendedor;
@@ -871,13 +222,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     setUpdating(item.id);
     const updateData = nova_data_agendada
       ? { data_agendada: nova_data_agendada, ...(novo_horario !== undefined ? { horario: novo_horario } : {}) }
-      : {
-          status,
-          realizado_em: new Date().toISOString(),
-          ...(nova_data ? { nova_data } : {}),
-        };
+      : { status, realizado_em: new Date().toISOString(), ...(nova_data ? { nova_data } : {}) };
     updateMutation.mutate({ id: item.id, data: updateData });
-    toast.success(nova_data_agendada ? 'Agendamento atualizado!' : (STATUS[status]?.label || status));
+    toast.success(nova_data_agendada ? 'Agendamento atualizado!' : status);
   };
 
   const handleDelete = (item) => {
@@ -885,29 +232,33 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
     toast.success('Agendamento excluído!');
   };
 
-  const temFiltroAtivo = !!(filtroVendedoresIds.length > 0 || filtroPeriodoInicio || filtroPeriodoFim || filtroStatus);
+  const handleDragEnd = (result) => {
+    const { source, destination, draggableId } = result;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId) return;
+    const item = agenda.find(i => i.id === draggableId);
+    if (!item) return;
+    const newStatus = destination.droppableId;
+    handleAction(item, newStatus);
+  };
 
   const dotDates = useMemo(() => new Set(agenda.map(a => a.data_agendada)), [agenda]);
 
-  const grouped = useMemo(() => {
-    return agenda.reduce((acc, item) => {
-      const d = item.data_agendada;
-      if (!acc[d]) acc[d] = [];
-      acc[d].push(item);
-      return acc;
-    }, {});
-  }, [agenda]);
-
-  const weekStart = startOfWeek(addWeeks(new Date(), weekOffset), { weekStartsOn: 0 });
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
+  // Items for kanban: selected date OR all upcoming
   const selStr = format(selectedDate, 'yyyy-MM-dd');
-  const selItems = grouped[selStr] || [];
-  const pendentes = selItems.filter(i => i.status === 'pendente').length;
-  const realizados = selItems.filter(i => i.status === 'realizado').length;
-
   const tStr = todayStr();
-  const sortedDates = Object.keys(grouped).sort().filter(d => showPast ? true : d >= tStr);
+  const kanbanItems = showAllUpcoming
+    ? agenda.filter(a => a.data_agendada >= tStr)
+    : agenda.filter(a => a.data_agendada === selStr);
+
+  // Stats
+  const pendentes = kanbanItems.filter(i => i.status === 'pendente').length;
+  const realizados = kanbanItems.filter(i => i.status === 'realizado').length;
+  const total = kanbanItems.length;
+
+  // Other dates for quick nav
+  const sortedDates = [...new Set(agenda.filter(a => a.data_agendada >= tStr).map(a => a.data_agendada))].sort()
+    .filter(d => d !== selStr);
 
   if (loading) return (
     <div className="flex items-center justify-center py-12">
@@ -917,126 +268,45 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
   return (
     <>
-      {/* Filtros (admin) */}
-      {isAdmin && (
-        <div className="mb-4 rounded-2xl overflow-hidden" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)' }}>
-          <button
-            onClick={() => setShowFiltros(f => !f)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold transition"
-            style={{ color: '#e6edf3' }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.05)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <div className="flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-              <span>Filtros da Agenda Global</span>
-              {temFiltroAtivo && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: '#00D4AA', color: '#0d1117' }}>
-                  {[filtroVendedoresIds.length > 0, filtroPeriodoInicio, filtroPeriodoFim, filtroStatus].filter(Boolean).length} ativo(s)
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {temFiltroAtivo && (
-                <button
-                  onClick={e => { e.stopPropagation(); setFiltroVendedoresIds([]); setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); setFiltroStatus(''); }}
-                  className="text-xs hover:underline font-normal"
-                  style={{ color: '#f87171' }}
-                >
-                  Limpar
-                </button>
-              )}
-              <ChevronRight className="w-4 h-4 transition-transform" style={{ color: 'rgba(230,237,243,0.4)', transform: showFiltros ? 'rotate(90deg)' : 'none' }} />
-            </div>
-          </button>
-
-          {showFiltros && (
-            <div className="px-4 pb-4 pt-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
-              <div>
-                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Gerente(s)</label>
-                <GerenteMultiSelect
-                  vendedores={todosVendedores}
-                  selected={filtroVendedoresIds}
-                  onChange={setFiltroVendedoresIds}
-                />
-              </div>
-              <div>
-                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Período — início</label>
-                <input type="date" value={filtroPeriodoInicio} onChange={e => setFiltroPeriodoInicio(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
-              </div>
-              <div>
-                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Período — fim</label>
-                <input type="date" value={filtroPeriodoFim} onChange={e => setFiltroPeriodoFim(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
-              </div>
-              <div>
-                <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Status</label>
-                <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
-                  <option value="">Todos</option>
-                  {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div className="flex flex-col lg:flex-row gap-5">
-
-        {/* LEFT */}
-        <div className="flex flex-col gap-4 lg:w-56 flex-shrink-0">
+      <div className="flex flex-col lg:flex-row gap-3">
+        {/* LEFT RAIL */}
+        <div className="flex flex-col gap-3 lg:w-52 flex-shrink-0">
           <MiniCalendar
             selected={selectedDate}
-            onSelect={(d) => { setSelectedDate(d); setView('dia'); }}
+            onSelect={(d) => { setSelectedDate(d); setShowAllUpcoming(false); }}
             dotDates={dotDates}
           />
-          
-          {/* Stats compactas */}
-          <div className="rounded-2xl p-3.5" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-            <p className="text-[9px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: 'rgba(230,237,243,0.35)' }}>
-              {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+
+          {/* Stats */}
+          <div className="rounded-xl p-3" style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
+            <p className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(230,237,243,0.35)' }}>
+              {showAllUpcoming ? 'Próximos' : format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
             </p>
-            <div className="grid grid-cols-3 gap-1.5">
-              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                <p className="text-lg font-bold leading-none" style={{ color: '#e6edf3' }}>{selItems.length}</p>
-                <p className="text-[9px] mt-1" style={{ color: 'rgba(230,237,243,0.4)' }}>Total</p>
+            <div className="grid grid-cols-3 gap-1">
+              <div className="text-center rounded-lg py-1.5" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                <p className="text-base font-bold leading-none" style={{ color: '#e6edf3' }}>{total}</p>
+                <p className="text-[8px] mt-0.5" style={{ color: 'rgba(230,237,243,0.35)' }}>Total</p>
               </div>
-              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(245,158,11,0.08)' }}>
-                <p className="text-lg font-bold leading-none" style={{ color: '#fbbf24' }}>{pendentes}</p>
-                <p className="text-[9px] mt-1" style={{ color: 'rgba(251,191,36,0.5)' }}>Pend.</p>
+              <div className="text-center rounded-lg py-1.5" style={{ background: 'rgba(245,158,11,0.08)' }}>
+                <p className="text-base font-bold leading-none" style={{ color: '#fbbf24' }}>{pendentes}</p>
+                <p className="text-[8px] mt-0.5" style={{ color: 'rgba(251,191,36,0.5)' }}>Pend.</p>
               </div>
-              <div className="text-center rounded-lg py-2" style={{ background: 'rgba(16,185,129,0.08)' }}>
-                <p className="text-lg font-bold leading-none" style={{ color: '#34d399' }}>{realizados}</p>
-                <p className="text-[9px] mt-1" style={{ color: 'rgba(52,211,153,0.5)' }}>Feitos</p>
+              <div className="text-center rounded-lg py-1.5" style={{ background: 'rgba(16,185,129,0.08)' }}>
+                <p className="text-base font-bold leading-none" style={{ color: '#34d399' }}>{realizados}</p>
+                <p className="text-[8px] mt-0.5" style={{ color: 'rgba(52,211,153,0.5)' }}>Feitos</p>
               </div>
             </div>
-            {selItems.length > 0 && (
-              <div className="mt-2.5 rounded-full h-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${(realizados / selItems.length) * 100}%`, background: '#00D4AA' }} />
-              </div>
-            )}
-            {isAdmin && (
-              <div className="mt-2.5 pt-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>
-                <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.35)' }}>Filtrado</span>
-                <span className="text-xs font-bold" style={{ color: '#00D4AA' }}>{agenda.length}</span>
+            {total > 0 && (
+              <div className="mt-2 rounded-full h-1 overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${total > 0 ? (realizados / total) * 100 : 0}%`, background: '#00D4AA' }} />
               </div>
             )}
           </div>
-        </div>
 
-        {/* RIGHT */}
-        <div className="flex-1 min-w-0">
-
-          {/* Seletor de agenda — usuários não-admin */}
-          {!isAdmin && todosVendedores.length > 0 && (
-            <div className="rounded-2xl px-4 py-3 mb-3" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-              <label className="text-xs font-semibold uppercase tracking-wider block mb-2" style={{ color: 'rgba(230,237,243,0.5)' }}>Visualizando agendas de:</label>
+          {/* Gerente filter */}
+          {todosVendedores.length > 0 && (
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(230,237,243,0.35)' }}>Gerentes</p>
               <GerenteMultiSelect
                 vendedores={todosVendedores}
                 selected={filtroVendedoresIds}
@@ -1045,253 +315,109 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             </div>
           )}
 
-          {/* Unified toolbar: nav + title + view toggle + filters + actions */}
-          <div className="rounded-2xl mb-3 overflow-hidden" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
-            {/* Row 1: Navigation + Title + Actions */}
-            <div className="flex items-center justify-between px-4 py-2.5 gap-3 flex-wrap">
-              <div className="flex items-center gap-2.5">
-                <button onClick={() => { setWeekOffset(w => w - 1); setView('semana'); }}
-                  className="p-1.5 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.1)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
-                  <ChevronLeft className="w-4 h-4" style={{ color: '#e6edf3' }} />
-                </button>
-                <div>
-                  <h2 className="text-sm font-bold leading-tight" style={{ color: '#e6edf3' }}>
-                    {view === 'semana'
-                      ? `${format(weekStart, "d MMM", { locale: ptBR })} – ${format(addDays(weekStart, 6), "d MMM yyyy", { locale: ptBR })}`
-                      : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                  </h2>
-                  <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>
-                    {filtroVendedorObj
-                      ? `Agenda de ${filtroVendedorObj.nome}`
-                      : (isAdmin || filtroVendedoresIds.length === 0)
-                        ? 'Agenda Global'
-                        : `${filtroVendedoresIds.length} gerentes selecionados`}
-                  </p>
-                </div>
-                <button onClick={() => { setWeekOffset(w => w + 1); setView('semana'); }}
-                  className="p-1.5 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.1)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}>
-                  <ChevronRight className="w-4 h-4" style={{ color: '#e6edf3' }} />
-                </button>
-              </div>
+          {/* Advanced filters toggle */}
+          <button onClick={() => setShowFilters(p => !p)}
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition w-full"
+            style={{
+              background: showFilters || filtroPeriodoInicio || filtroPeriodoFim ? 'rgba(0,212,170,0.1)' : 'transparent',
+              color: showFilters || filtroPeriodoInicio || filtroPeriodoFim ? '#00D4AA' : 'rgba(230,237,243,0.4)',
+              border: `1px solid ${showFilters || filtroPeriodoInicio || filtroPeriodoFim ? 'rgba(0,212,170,0.2)' : 'rgba(255,255,255,0.06)'}`,
+            }}>
+            <Filter className="w-3 h-3" /> Período
+            {(filtroPeriodoInicio || filtroPeriodoFim) && <span className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: '#00D4AA' }} />}
+          </button>
+          {showFilters && (
+            <div className="space-y-1.5 p-2 rounded-lg" style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
+              <input type="date" value={filtroPeriodoInicio} onChange={e => setFiltroPeriodoInicio(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] rounded focus:outline-none"
+                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              <input type="date" value={filtroPeriodoFim} onChange={e => setFiltroPeriodoFim(e.target.value)}
+                className="w-full px-2 py-1 text-[10px] rounded focus:outline-none"
+                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              {(filtroPeriodoInicio || filtroPeriodoFim) && (
+                <button onClick={() => { setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); }}
+                  className="text-[10px] font-semibold" style={{ color: '#f87171' }}>Limpar período</button>
+              )}
+            </div>
+          )}
+        </div>
 
-              <div className="flex items-center gap-1.5">
-                {/* View toggle */}
-                <div className="flex rounded-lg p-0.5" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                  <button onClick={() => { setView('semana'); setWeekOffset(0); }}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
-                    style={{
-                      background: view === 'semana' ? '#00D4AA' : 'transparent',
-                      color: view === 'semana' ? '#0d1117' : 'rgba(230,237,243,0.5)',
-                    }}>
-                    Semana
-                  </button>
-                  <button onClick={() => { setView('dia'); setSelectedDate(new Date()); }}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
-                    style={{
-                      background: view === 'dia' ? '#00D4AA' : 'transparent',
-                      color: view === 'dia' ? '#0d1117' : 'rgba(230,237,243,0.5)',
-                    }}>
-                    Dia
-                  </button>
-                </div>
-                <button
-                  onClick={() => { setWeekOffset(0); setSelectedDate(new Date()); setView('dia'); }}
-                  className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"
-                  style={{ background: 'rgba(0,212,170,0.1)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
-                  Hoje
-                </button>
-                <button
-                  onClick={() => setShowMeetModal(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"
-                  style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <Video className="w-3 h-3" /> Meet
-                </button>
+        {/* RIGHT: Toolbar + Kanban */}
+        <div className="flex-1 min-w-0">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-xl"
+            style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
+            <div className="flex items-center gap-2">
+              <button onClick={() => { setSelectedDate(d => addDays(d, -1)); setShowAllUpcoming(false); }}
+                className="p-1 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <ChevronLeft className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.6)' }} />
+              </button>
+              <div className="min-w-0">
+                <p className="text-xs font-bold leading-tight" style={{ color: '#e6edf3' }}>
+                  {showAllUpcoming ? 'Próximos contatos' : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                </p>
+                <p className="text-[9px]" style={{ color: 'rgba(230,237,243,0.35)' }}>
+                  {filtroVendedorObj ? `Agenda de ${filtroVendedorObj.nome}` : (isAdmin || filtroVendedoresIds.length === 0) ? 'Agenda Global' : `${filtroVendedoresIds.length} gerentes`}
+                </p>
               </div>
+              <button onClick={() => { setSelectedDate(d => addDays(d, 1)); setShowAllUpcoming(false); }}
+                className="p-1 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                <ChevronRight className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.6)' }} />
+              </button>
             </div>
 
-            {/* Row 2: Quick filters (compact) */}
-            <div className="flex items-center gap-2 px-4 py-2 flex-wrap" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>
-              <div className="flex gap-1">
-                {[{ key: '', label: 'Todos' }, { key: 'pendente', label: 'Pendentes' }, { key: 'realizado', label: 'Realizados' }].map(opt => (
-                  <button key={opt.key} onClick={() => setFiltroRapidoStatus(opt.key)}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
-                    style={{
-                      background: filtroRapidoStatus === opt.key ? 'rgba(0,212,170,0.15)' : 'transparent',
-                      color: filtroRapidoStatus === opt.key ? '#00D4AA' : 'rgba(230,237,243,0.5)',
-                    }}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {filtroRapidoStatus && (
-                <div className="flex items-center gap-1.5">
-                  <input type="date" value={filtroRapidoInicio} onChange={e => setFiltroRapidoInicio(e.target.value)}
-                    className="px-2 py-0.5 text-[11px] rounded-md focus:outline-none"
-                    style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
-                  <span className="text-[10px]" style={{ color: 'rgba(230,237,243,0.3)' }}>→</span>
-                  <input type="date" value={filtroRapidoFim} onChange={e => setFiltroRapidoFim(e.target.value)}
-                    className="px-2 py-0.5 text-[11px] rounded-md focus:outline-none"
-                    style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
-                  {(filtroRapidoInicio || filtroRapidoFim) && (
-                    <button onClick={() => { setFiltroRapidoInicio(''); setFiltroRapidoFim(''); }}
-                      className="text-[11px] font-semibold px-1 rounded transition" style={{ color: '#f87171' }}>✕</button>
-                  )}
-                </div>
-              )}
-              <span className="text-[11px] font-semibold ml-auto" style={{ color: '#00D4AA' }}>{agenda.length} registro(s)</span>
+            <div className="flex items-center gap-1.5">
+              <button onClick={() => { setSelectedDate(new Date()); setShowAllUpcoming(false); }}
+                className="px-2.5 py-1 text-[10px] font-semibold rounded-lg transition"
+                style={{ background: !showAllUpcoming && isToday(selectedDate) ? 'rgba(0,212,170,0.15)' : 'transparent', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
+                Hoje
+              </button>
+              <button onClick={() => setShowAllUpcoming(p => !p)}
+                className="px-2.5 py-1 text-[10px] font-semibold rounded-lg transition flex items-center gap-1"
+                style={{
+                  background: showAllUpcoming ? 'rgba(0,212,170,0.15)' : 'transparent',
+                  color: showAllUpcoming ? '#00D4AA' : 'rgba(230,237,243,0.4)',
+                  border: `1px solid ${showAllUpcoming ? 'rgba(0,212,170,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                }}>
+                <CalendarDays className="w-3 h-3" /> Próximos
+              </button>
+              <button onClick={() => setShowMeetModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg transition"
+                style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
+                <Video className="w-3 h-3" /> Meet
+              </button>
             </div>
           </div>
 
-          {/* SEMANA VIEW */}
-          {view === 'semana' && (
-            <div className="grid grid-cols-7 gap-2">
-              {weekDays.map(day => {
-                const ds = format(day, 'yyyy-MM-dd');
-                const items = grouped[ds] || [];
-                const isTod = isToday(day);
-                const isSelected = isSameDay(day, selectedDate);
-                const pendCount = items.filter(i => i.status === 'pendente').length;
+          {/* Kanban */}
+          <KanbanBoard
+            items={kanbanItems}
+            onAction={handleAction}
+            onDelete={handleDelete}
+            onPipeline={setPipelineItem}
+            onClienteClick={onClienteClick}
+            updating={updating}
+            showGerente={isAdmin || filtroVendedoresIds.length === 0}
+            onDragEnd={handleDragEnd}
+          />
 
+          {/* Other dates quick nav */}
+          {!showAllUpcoming && sortedDates.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {sortedDates.slice(0, 8).map(d => {
+                const count = agenda.filter(a => a.data_agendada === d).length;
+                const pend = agenda.filter(a => a.data_agendada === d && a.status === 'pendente').length;
                 return (
-                  <div key={ds}
-                    onClick={() => { setSelectedDate(day); setView('dia'); }}
-                    className="group cursor-pointer rounded-2xl p-2 min-h-[120px] transition-all hover:shadow-md"
-                    style={{
-                      background: isTod ? 'rgba(245,158,11,0.08)' : isSelected ? 'rgba(0,212,170,0.08)' : '#1c2333',
-                      border: `1px solid ${isTod ? 'rgba(245,158,11,0.4)' : isSelected ? 'rgba(0,212,170,0.3)' : 'rgba(0,212,170,0.12)'}`,
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase">{WEEK_DAYS[getDay(day)]}</p>
-                        <p className="text-lg font-bold leading-none" style={{ color: isTod ? '#f59e0b' : '#e6edf3' }}>
-                          {format(day, 'd')}
-                        </p>
-                      </div>
-                      {pendCount > 0 && (
-                        <span className="w-5 h-5 bg-amber-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
-                          {pendCount}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      {items.slice(0, 3).map(item => {
-                        const sc = STATUS[item.status] || STATUS.pendente;
-                        return (
-                          <div key={item.id}
-                            className="flex items-center gap-1 px-1.5 py-1 rounded-lg text-[10px] font-medium truncate"
-                            style={sc.pillStyle}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${sc.dot}`} />
-                            <span className="truncate">
-                              {isAdmin && filtroVendedoresIds.length === 0 ? `[${item.vendedor_nome?.split(' ')[0] || '?'}] ` : ''}
-                              {item.horario ? `${item.horario} · ` : ''}{item.lead_nome}
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {items.length > 3 && (
-                        <p className="text-[10px] text-gray-400 text-center">+{items.length - 3} mais</p>
-                      )}
-                      {items.length === 0 && (
-                        <p className="text-[10px] text-gray-300 text-center mt-3">—</p>
-                      )}
-                    </div>
-                  </div>
+                  <button key={d} onClick={() => { setSelectedDate(parseISO(d)); }}
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition"
+                    style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)', color: 'rgba(230,237,243,0.6)' }}>
+                    <Calendar className="w-2.5 h-2.5" style={{ color: 'rgba(230,237,243,0.3)' }} />
+                    {isToday(parseISO(d)) ? 'Hoje' : isTomorrow(parseISO(d)) ? 'Amanhã' : format(parseISO(d), 'dd/MM', { locale: ptBR })}
+                    <span className="text-[9px] font-bold px-1 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(230,237,243,0.4)' }}>{count}</span>
+                    {pend > 0 && <span className="text-[9px] font-bold px-1 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>{pend}p</span>}
+                  </button>
                 );
               })}
-            </div>
-          )}
-
-          {/* DIA VIEW */}
-          {view === 'dia' && (
-            <div className="space-y-3">
-              {selItems.length === 0 ? (
-                <div className="rounded-2xl py-14 text-center" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.12)' }}>
-                  <Calendar className="w-10 h-10 mx-auto mb-2" style={{ color: 'rgba(0,212,170,0.3)' }} />
-                  <p className="text-gray-400 text-sm">Nenhum contato para este dia</p>
-                  <p className="text-gray-300 text-xs mt-1">Selecione outro dia no calendário</p>
-                </div>
-              ) : (
-                <>
-                  {((isAdmin || filtroVendedoresIds.length === 0) && !filtroVendedorObj) ? (
-                    (() => {
-                      const porGerente = selItems.reduce((acc, it) => {
-                        const key = it.vendedor_id || '_sem_gerente';
-                        if (!acc[key]) acc[key] = { nome: it.vendedor_nome || 'Sem gerente', items: [] };
-                        acc[key].items.push(it);
-                        return acc;
-                      }, {});
-                      return Object.values(porGerente).map(grupo => (
-                        <div key={grupo.nome}>
-                          <p className="text-xs font-bold uppercase tracking-wider mb-2 mt-1 flex items-center gap-1.5" style={{ color: '#00D4AA' }}>
-                            <span className="w-2 h-2 rounded-full" style={{ background: '#00D4AA' }} />
-                            {grupo.nome} · {grupo.items.length} contato{grupo.items.length !== 1 ? 's' : ''}
-                          </p>
-                          <div className="space-y-2 ml-3 pl-3" style={{ borderLeft: '2px solid rgba(0,212,170,0.2)' }}>
-                            {grupo.items.map(item => (
-                              <EventCard
-                                key={item.id}
-                                item={item}
-                                isToday={isToday(selectedDate)}
-                                onAction={handleAction}
-                                onDelete={handleDelete}
-                                onPipeline={setPipelineItem}
-                                onClienteClick={onClienteClick}
-                                updating={updating}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ));
-                    })()
-                  ) : (
-                    selItems.map(item => (
-                      <EventCard
-                        key={item.id}
-                        item={item}
-                        isToday={isToday(selectedDate)}
-                        onAction={handleAction}
-                        onDelete={handleDelete}
-                        onPipeline={setPipelineItem}
-                        onClienteClick={onClienteClick}
-                        updating={updating}
-                      />
-                    ))
-                  )}
-                </>
-              )}
-
-              {sortedDates.filter(d => d !== selStr && d >= tStr).length > 0 && (
-                <div className="pt-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 px-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Outros dias</p>
-                  <div className="flex flex-wrap gap-2">
-                    {sortedDates.filter(d => d !== selStr && d >= tStr).slice(0, 10).map(d => {
-                      const count = (grouped[d] || []).length;
-                      const pend = (grouped[d] || []).filter(i => i.status === 'pendente').length;
-                      return (
-                        <button
-                          key={d}
-                          onClick={() => setSelectedDate(parseISO(d))}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition"
-                          style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.7)' }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.4)'; e.currentTarget.style.background = 'rgba(0,212,170,0.06)'; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,212,170,0.15)'; e.currentTarget.style.background = '#1c2333'; }}
-                        >
-                          <Calendar className="w-3 h-3" style={{ color: 'rgba(230,237,243,0.35)' }} />
-                          {isToday(parseISO(d)) ? 'Hoje' : isTomorrow(parseISO(d)) ? 'Amanhã' : format(parseISO(d), 'dd/MM', { locale: ptBR })}
-                          <span className="text-[10px] font-bold px-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(230,237,243,0.5)' }}>{count}</span>
-                          {pend > 0 && <span className="text-[10px] font-bold px-1.5 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>{pend}p</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -1316,14 +442,9 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
           clientes={clientes}
           todosVendedores={todosVendedores}
           onClose={() => setShowMeetModal(false)}
-          onSaved={() => {
-            setShowMeetModal(false);
-            invalidateAgenda();
-          }}
+          onSaved={() => { setShowMeetModal(false); invalidateAgenda(); }}
         />
       )}
-
-
     </>
   );
 }

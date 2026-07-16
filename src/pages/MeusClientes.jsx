@@ -624,62 +624,58 @@ export default function MeusClientes() {
     <div className="min-h-screen" style={{ background: AURORA.bg, color: AURORA.text }}>
       <AgendaNotificacoes vendedorId={vendedor?.id} />
 
-      {/* ── PAGE HEADER ── */}
+      {/* ── HEADER ── */}
       <div className="sticky top-0 z-20"
         style={{
           background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
           borderBottom: `1px solid ${AURORA.border}`,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         }}>
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          {/* Title row */}
-          <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-xl font-bold leading-none" style={{ color: AURORA.text }}>Agenda do Dia</h1>
-              <p className="text-xs mt-1" style={{ color: AURORA.textMuted }}>
+              <h1 className="text-base font-bold leading-none" style={{ color: AURORA.text }}>Agenda do Dia</h1>
+              <p className="text-[10px] mt-0.5" style={{ color: AURORA.textMuted }}>
                 {isAdmin
                   ? vendedoresSelecionados.length === 0
-                    ? 'Carteira Geral — todos os gerentes'
+                    ? 'Carteira Geral'
                     : vendedoresSelecionados.length === 1
-                      ? `Carteira de ${todosVendedores.find(v => v.id === vendedoresSelecionados[0])?.nome || ''}`
-                      : `${vendedoresSelecionados.length} gerentes selecionados`
-                  : vendedor ? `Carteira de ${vendedor.nome}` : 'Nenhum vendedor vinculado ao seu e-mail'
-                }
+                      ? todosVendedores.find(v => v.id === vendedoresSelecionados[0])?.nome || ''
+                      : `${vendedoresSelecionados.length} gerentes`
+                  : vendedor?.nome || '—'}
               </p>
             </div>
-            {/* Primary actions */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {isAdmin && (
-                <button onClick={executarDeduplicacao} disabled={deduplicando}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition"
-                  style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.25)' }}>
-                  {deduplicando ? <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(251,191,36,0.3)', borderTopColor: '#fbbf24' }} /> : <Users className="w-3 h-3" />}
-                  Deduplicar
-                </button>
-              )}
-              <button onClick={() => setShowNovoLeadModal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white rounded-xl transition shadow-sm"
-                style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
-                <Plus className="w-3.5 h-3.5" /> Novo Lead
+          </div>
+          <div className="flex items-center gap-1.5">
+            {isAdmin && (
+              <button onClick={executarDeduplicacao} disabled={deduplicando}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-medium rounded-lg transition"
+                style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.25)' }}>
+                {deduplicando ? <div className="w-3 h-3 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(251,191,36,0.3)', borderTopColor: '#fbbf24' }} /> : <Users className="w-3 h-3" />}
+                Deduplicar
               </button>
-              <button onClick={() => setMostrarClientes(p => !p)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition"
-                style={{
-                  background: mostrarClientes ? AURORA.accentDim : 'transparent',
-                  color: mostrarClientes ? AURORA.accent : AURORA.textMuted,
-                  border: `1px solid ${mostrarClientes ? AURORA.border : 'rgba(255,255,255,0.08)'}`,
-                }}>
-                {mostrarClientes ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                {mostrarClientes ? `Ocultar (${clientesFiltrados.length})` : `Ver Carteira (${clientesFiltradosPorVendedor.length})`}
-              </button>
-            </div>
+            )}
+            <button onClick={() => setShowNovoLeadModal(true)}
+              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-white rounded-lg transition"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+              <Plus className="w-3 h-3" /> Novo Lead
+            </button>
+            <button onClick={() => setMostrarClientes(p => !p)}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"
+              style={{
+                background: mostrarClientes ? AURORA.accentDim : 'transparent',
+                color: mostrarClientes ? AURORA.accent : AURORA.textMuted,
+                border: `1px solid ${mostrarClientes ? AURORA.border : 'rgba(255,255,255,0.08)'}`,
+              }}>
+              {mostrarClientes ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+              {mostrarClientes ? `Ocultar` : `Carteira (${clientesFiltradosPorVendedor.length})`}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
 
-        {/* ── AGENDA CALENDÁRIO ── */}
+        {/* ── AGENDA KANBAN ── */}
         {(isAdmin || vendedorParaAgenda) && (
           <AgendaCalendario
             vendedorId={vendedorParaAgenda?.id || ''}
@@ -692,72 +688,55 @@ export default function MeusClientes() {
           />
         )}
 
-        {/* ── CARTEIRA DE CLIENTES ── */}
+        {/* ── CARTEIRA ── */}
         {mostrarClientes && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {/* Toolbar da carteira */}
-            <div className="rounded-2xl p-4 space-y-3" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-              {/* Filtros de origem + busca */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {[
-                  { key: 'todos', label: 'Todos', count: clientesFiltradosPorVendedor.length },
-                  { key: 'clientes', label: 'Clientes', count: totalClientes },
-                  { key: 'leads', label: 'Leads', count: totalLeads },
-                ].map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setFiltroOrigem(opt.key)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-                    style={{
-                      background: filtroOrigem === opt.key ? AURORA.accentDim : 'transparent',
-                      color: filtroOrigem === opt.key ? AURORA.accent : AURORA.textMuted,
-                      border: `1px solid ${filtroOrigem === opt.key ? AURORA.border : 'transparent'}`,
-                    }}
-                  >
-                    {opt.label}
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold"
-                      style={{ background: filtroOrigem === opt.key ? 'rgba(0,212,170,0.2)' : 'rgba(255,255,255,0.06)', color: filtroOrigem === opt.key ? AURORA.accent : AURORA.textMuted }}>
-                      {opt.count}
-                    </span>
-                  </button>
-                ))}
-                <div className="ml-auto relative">
-                  <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: AURORA.textMuted }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                  <input
-                    type="text"
-                    placeholder="Buscar por nome ou CPF..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-56 pl-8 pr-3 py-1.5 text-xs rounded-lg focus:outline-none transition"
-                    style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}
-                  />
-                </div>
+            <div className="rounded-xl p-2.5 flex items-center gap-2 flex-wrap" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+              {[
+                { key: 'todos', label: 'Todos', count: clientesFiltradosPorVendedor.length },
+                { key: 'clientes', label: 'Clientes', count: totalClientes },
+                { key: 'leads', label: 'Leads', count: totalLeads },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setFiltroOrigem(opt.key)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition"
+                  style={{
+                    background: filtroOrigem === opt.key ? AURORA.accentDim : 'transparent',
+                    color: filtroOrigem === opt.key ? AURORA.accent : AURORA.textMuted,
+                  }}
+                >
+                  {opt.label}
+                  <span className="px-1 py-0.5 rounded text-[9px] font-bold"
+                    style={{ background: filtroOrigem === opt.key ? 'rgba(0,212,170,0.2)' : 'rgba(255,255,255,0.06)', color: filtroOrigem === opt.key ? AURORA.accent : AURORA.textMuted }}>
+                    {opt.count}
+                  </span>
+                </button>
+              ))}
+              <div className="ml-auto relative">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: AURORA.textMuted }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  className="w-44 pl-8 pr-3 py-1 text-[11px] rounded-lg focus:outline-none transition"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}
+                />
               </div>
 
-              {/* Subcarteiras */}
               {subcarteirasDisponiveis.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-1" style={{ borderTop: `1px solid ${AURORA.border}` }}>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Pastas:</span>
-                  <button
-                    onClick={() => setFiltroSubcarteira('todas')}
-                    className="px-2.5 py-1 rounded-md text-[11px] font-medium transition"
-                    style={{
-                      background: filtroSubcarteira === 'todas' ? AURORA.accentDim : 'transparent',
-                      color: filtroSubcarteira === 'todas' ? AURORA.accent : AURORA.textMuted,
-                    }}
-                  >
+                <div className="flex items-center gap-1 flex-wrap">
+                  <button onClick={() => setFiltroSubcarteira('todas')}
+                    className="px-2 py-0.5 rounded text-[10px] font-medium transition"
+                    style={{ background: filtroSubcarteira === 'todas' ? AURORA.accentDim : 'transparent', color: filtroSubcarteira === 'todas' ? AURORA.accent : AURORA.textMuted }}>
                     Todas
                   </button>
                   {subcarteirasDisponiveis.map(sc => (
-                    <button
-                      key={sc}
-                      onClick={() => setFiltroSubcarteira(filtroSubcarteira === sc ? 'todas' : sc)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition"
-                      style={{
-                        background: filtroSubcarteira === sc ? AURORA.accentDim : 'transparent',
-                        color: filtroSubcarteira === sc ? AURORA.accent : AURORA.textMuted,
-                      }}
-                    >
+                    <button key={sc} onClick={() => setFiltroSubcarteira(filtroSubcarteira === sc ? 'todas' : sc)}
+                      className="px-2 py-0.5 rounded text-[10px] font-medium transition"
+                      style={{ background: filtroSubcarteira === sc ? AURORA.accentDim : 'transparent', color: filtroSubcarteira === sc ? AURORA.accent : AURORA.textMuted }}>
                       📁 {sc}
                     </button>
                   ))}
