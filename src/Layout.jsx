@@ -65,7 +65,12 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.me().then(async (u) => {
       setUser(u);
       try {
-        if (u?.email) {
+        const imp = getImpersonatedVendedor();
+        if (imp?.avatar_url) {
+          setUserAvatar(imp.avatar_url);
+        } else if (u?.avatar_url) {
+          setUserAvatar(u.avatar_url);
+        } else if (u?.email) {
           const vends = await base44.entities.Vendedor.filter({ email: u.email });
           if (vends.length > 0 && vends[0].avatar_url) setUserAvatar(vends[0].avatar_url);
         }
@@ -199,10 +204,22 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   useEffect(() => {
-    const handleChange = () => setImpersonating(getImpersonatedVendedor());
+    const handleChange = () => {
+      const imp = getImpersonatedVendedor();
+      setImpersonating(imp);
+      if (imp?.avatar_url) {
+        setUserAvatar(imp.avatar_url);
+      } else if (user?.avatar_url) {
+        setUserAvatar(user.avatar_url);
+      } else if (user?.email) {
+        base44.entities.Vendedor.filter({ email: user.email })
+          .then(vends => { if (vends.length > 0 && vends[0].avatar_url) setUserAvatar(vends[0].avatar_url); })
+          .catch(() => {});
+      }
+    };
     window.addEventListener('impersonation-change', handleChange);
     return () => window.removeEventListener('impersonation-change', handleChange);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (isAdmin) {
