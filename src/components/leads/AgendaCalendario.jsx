@@ -303,18 +303,6 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             )}
           </div>
 
-          {/* Gerente filter */}
-          {todosVendedores.length > 0 && (
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest mb-1.5" style={{ color: 'rgba(230,237,243,0.35)' }}>Gerentes</p>
-              <GerenteMultiSelect
-                vendedores={todosVendedores}
-                selected={filtroVendedoresIds}
-                onChange={setFiltroVendedoresIds}
-              />
-            </div>
-          )}
-
           {/* Advanced filters toggle */}
           <button onClick={() => setShowFilters(p => !p)}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[10px] font-semibold transition w-full"
@@ -388,6 +376,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
               </button>
             </div>
           </div>
+
+          {/* Gerente filter */}
+          {todosVendedores.length > 0 && (
+            <div className="mb-2">
+              <GerenteMultiSelect
+                vendedores={todosVendedores}
+                selected={filtroVendedoresIds}
+                onChange={setFiltroVendedoresIds}
+              />
+            </div>
+          )}
 
           {/* Kanban */}
           <KanbanBoard
