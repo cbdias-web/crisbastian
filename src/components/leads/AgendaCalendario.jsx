@@ -332,36 +332,57 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
 
         {/* RIGHT: Toolbar + Kanban */}
         <div className="flex-1 min-w-0">
-          {/* Toolbar */}
-          <div className="flex items-center justify-between px-3 py-2 mb-2 rounded-xl"
+          {/* Unified toolbar + gerente filter in a single line */}
+          <div className="flex items-center gap-2 px-2.5 py-1.5 mb-2 rounded-xl flex-wrap"
             style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
-            <div className="flex items-center gap-2">
+            {/* Date nav box */}
+            <div className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition"
+              style={{ background: 'rgba(255,255,255,0.03)' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
               <button onClick={() => { setSelectedDate(d => addDays(d, -1)); setShowAllUpcoming(false); }}
-                className="p-1 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <ChevronLeft className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.6)' }} />
+                className="p-0.5 rounded transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <div className="min-w-0">
                 <p className="text-xs font-bold leading-tight" style={{ color: '#e6edf3' }}>
-                  {showAllUpcoming ? 'Próximos contatos' : format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  {showAllUpcoming ? 'Próximos contatos' : format(selectedDate, "EEE, d 'de' MMM", { locale: ptBR })}
                 </p>
                 <p className="text-[9px]" style={{ color: 'rgba(230,237,243,0.35)' }}>
-                  {filtroVendedorObj ? `Agenda de ${filtroVendedorObj.nome}` : (isAdmin || filtroVendedoresIds.length === 0) ? 'Agenda Global' : `${filtroVendedoresIds.length} gerentes`}
+                  {filtroVendedorObj ? filtroVendedorObj.nome : (isAdmin || filtroVendedoresIds.length === 0) ? 'Agenda Global' : `${filtroVendedoresIds.length} gerentes`}
                 </p>
               </div>
               <button onClick={() => { setSelectedDate(d => addDays(d, 1)); setShowAllUpcoming(false); }}
-                className="p-1 rounded-lg transition" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                <ChevronRight className="w-3.5 h-3.5" style={{ color: 'rgba(230,237,243,0.6)' }} />
+                className="p-0.5 rounded transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            {/* Gerente filter box */}
+            {todosVendedores.length > 0 && (
+              <div className="flex-1 min-w-[140px] max-w-[220px] rounded-lg transition"
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
+                <GerenteMultiSelect
+                  vendedores={todosVendedores}
+                  selected={filtroVendedoresIds}
+                  onChange={setFiltroVendedoresIds}
+                />
+              </div>
+            )}
+
+            {/* Action buttons box */}
+            <div className="flex items-center gap-1 rounded-lg px-1.5 py-1 transition ml-auto"
+              style={{ background: 'rgba(255,255,255,0.03)' }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
               <button onClick={() => { setSelectedDate(new Date()); setShowAllUpcoming(false); }}
-                className="px-2.5 py-1 text-[10px] font-semibold rounded-lg transition"
+                className="px-2 py-0.5 text-[10px] font-semibold rounded-md transition"
                 style={{ background: !showAllUpcoming && isToday(selectedDate) ? 'rgba(0,212,170,0.15)' : 'transparent', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
                 Hoje
               </button>
               <button onClick={() => setShowAllUpcoming(p => !p)}
-                className="px-2.5 py-1 text-[10px] font-semibold rounded-lg transition flex items-center gap-1"
+                className="px-2 py-0.5 text-[10px] font-semibold rounded-md transition flex items-center gap-0.5"
                 style={{
                   background: showAllUpcoming ? 'rgba(0,212,170,0.15)' : 'transparent',
                   color: showAllUpcoming ? '#00D4AA' : 'rgba(230,237,243,0.4)',
@@ -370,23 +391,12 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
                 <CalendarDays className="w-3 h-3" /> Próximos
               </button>
               <button onClick={() => setShowMeetModal(true)}
-                className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-lg transition"
+                className="flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-semibold rounded-md transition"
                 style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
                 <Video className="w-3 h-3" /> Meet
               </button>
             </div>
           </div>
-
-          {/* Gerente filter */}
-          {todosVendedores.length > 0 && (
-            <div className="mb-2">
-              <GerenteMultiSelect
-                vendedores={todosVendedores}
-                selected={filtroVendedoresIds}
-                onChange={setFiltroVendedoresIds}
-              />
-            </div>
-          )}
 
           {/* Kanban */}
           <KanbanBoard
