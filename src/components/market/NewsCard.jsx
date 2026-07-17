@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, ExternalLink, ChevronDown, Clock } from 'lucide-react';
 import Sparkline from './Sparkline';
+
+function formatData(iso) {
+  if (!iso) return '';
+  try {
+    const d = new Date(iso);
+    const agora = new Date();
+    const diffMs = agora - d;
+    const diffH = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffH < 1) return 'agora';
+    if (diffH < 24) return `há ${diffH}h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return 'ontem';
+    if (diffD < 7) return `há ${diffD} dias`;
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  } catch { return ''; }
+}
 
 const A = {
   bg: '#0d1117',
@@ -65,6 +81,11 @@ export default function NewsCard({ news }) {
               <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full"
                 style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
                 ⚡ Alta
+              </span>
+            )}
+            {news.publicado_em && (
+              <span className="text-[9px] flex items-center gap-0.5 ml-auto" style={{ color: A.textMuted }}>
+                <Clock className="w-2.5 h-2.5" /> {formatData(news.publicado_em)}
               </span>
             )}
           </div>

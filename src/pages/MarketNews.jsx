@@ -45,7 +45,20 @@ export default function MarketNews() {
     queryKey: ['market-news'],
     queryFn: async () => {
       const all = await base44.entities.MarketNews.list('-publicado_em', 100);
-      return all.filter(n => n.ativo !== false);
+      const ativas = all.filter(n => n.ativo !== false);
+      // Remover notícias com mais de 3 dias
+      const limite = Date.now() - 3 * 24 * 60 * 60 * 1000;
+      const expiradas = ativas.filter(n => {
+        if (!n.publicado_em) return false;
+        return new Date(n.publicado_em).getTime() < limite;
+      });
+      if (expiradas.length > 0) {
+        for (const n of expiradas) {
+          try { await base44.entities.MarketNews.delete(n.id); } catch (e) {}
+        }
+        return ativas.filter(n => !expiradas.find(e => e.id === n.id));
+      }
+      return ativas;
     },
     refetchInterval: 5 * 60 * 1000,
   });
