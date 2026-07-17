@@ -140,6 +140,19 @@ Responda APENAS com o JSON, sem texto adicional.`;
 
     const noticias = (llmRes as any)?.noticias || [];
 
+    // Limpar notícias antigas antes de gerar novas (evita acúmulo de conteúdo desatualizado)
+    const antigas = await base44.asServiceRole.entities.MarketNews.list('-created_date', 500);
+    if (antigas.length > 0) {
+      const limite = Date.now() - 3 * 24 * 60 * 60 * 1000;
+      const expiradas = antigas.filter(n => {
+        const ref = n.publicado_em || n.created_date;
+        return ref && new Date(ref).getTime() < limite;
+      });
+      for (const n of expiradas) {
+        try { await base44.asServiceRole.entities.MarketNews.delete(n.id); } catch (e) {}
+      }
+    }
+
     // Salvar no banco
     const agora = new Date().toISOString();
     const registros = noticias.map(n => ({
@@ -167,7 +180,7 @@ Responda APENAS com o JSON, sem texto adicional.`;
       await base44.asServiceRole.entities.MarketNews.bulkCreate(registros);
     }
 
-    return Response.json({ success: true, criadas: registros.length });
+    return Response.json({ success: true, criadas: registros.length, removidas: antigas.filter(n => { const ref = n.publicado_em || n.created_date; return ref && new Date(ref).getTime() < (Date.now() - 3 * 24 * 60 * 60 * 1000); }).length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
