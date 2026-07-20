@@ -161,6 +161,7 @@ export default function RelatorioRoletaModal({ roletas, onClose }) {
                   <tr style={{ borderBottom: `1px solid ${A.border}` }}>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>Usuário</th>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>E-mail</th>
+                    <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>Tipo</th>
                     <th className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>Prêmio</th>
                     <th className="px-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider" style={{ color: A.textMuted }}>Data</th>
                   </tr>
@@ -172,6 +173,11 @@ export default function RelatorioRoletaModal({ roletas, onClose }) {
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <td className="px-4 py-2.5 text-sm font-medium" style={{ color: A.text }}>{r.user_nome || '—'}</td>
                       <td className="px-4 py-2.5 text-xs" style={{ color: A.textMuted }}>{r.user_email || '—'}</td>
+                      <td className="px-4 py-2.5 text-xs" style={{ color: A.text }}>
+                        {r.tipo === 'brincadeira'
+                          ? <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>🎉 Brincadeira</span>
+                          : <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: 'rgba(0,212,170,0.12)', color: A.accent }}>🎁 Padrão</span>}
+                      </td>
                       <td className="px-4 py-2.5 text-sm" style={{ color: A.gold }}>
                         <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'rgba(212,175,55,0.1)' }}>
                           {r.premio || '—'}

@@ -853,7 +853,15 @@ export default function Dashboard() {
           <RoletaPopup
             roletaId={roletaPendente.id}
             user={user}
-            onClose={() => setRoletaPendente(null)}
+            tipo={roletaPendente.tipo || 'default'}
+            onClose={async () => {
+              setRoletaPendente(null);
+              // Re-buscar roletas pendentes (pode haver mais de um tipo liberado)
+              try {
+                const roletas = await base44.entities.RoletaPremio.filter({ user_id: user.id, ativo: true, ja_girou: false });
+                if (roletas.length > 0) setRoletaPendente(roletas[0]);
+              } catch (e) {}
+            }}
           />
         )}
 

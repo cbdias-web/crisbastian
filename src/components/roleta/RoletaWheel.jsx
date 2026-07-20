@@ -1,15 +1,41 @@
 import React from 'react';
 
-// Prêmios padrão da roleta — compartilhado entre popup e preview
-export const PREMIOS = [
+// ─── Conjuntos de prêmios ───────────────────────────────────────────
+// Roleta padrão (prêmios reais)
+export const PREMIOS_DEFAULT = [
   { label: 'Almoço', emoji: '🍽️', color: '#ef4444' },
   { label: 'Janta', emoji: '🌙', color: '#8b5cf6' },
   { label: 'Dia de Folga', emoji: '🏖️', color: '#10b981' },
   { label: 'R$ 100,00', emoji: '💰', color: '#f59e0b' },
 ];
 
-// Duplicar para 8 segmentos (visual mais rico)
-export const SEGMENTOS = [...PREMIOS, ...PREMIOS];
+// Roleta da brincadeira (team fun)
+export const PREMIOS_BRINCADEIRA = [
+  { label: 'Fazer o Chimarrão', emoji: '🧉', color: '#10b981' },
+  { label: 'Fazer o Café', emoji: '☕', color: '#a16207' },
+  { label: 'Trazer Pão de Queijo', emoji: '🧀', color: '#f59e0b' },
+];
+
+// Mapeia tipo → prêmios
+export const PREMIOS_POR_TIPO = {
+  default: PREMIOS_DEFAULT,
+  brincadeira: PREMIOS_BRINCADEIRA,
+};
+
+// Backward-compat: PREMIOS = default
+export const PREMIOS = PREMIOS_DEFAULT;
+
+/**
+ * Retorna os prêmios (únicos) e segmentos (duplicados para visual mais rico)
+ * para um determinado tipo de roleta.
+ */
+export function getSegmentos(tipo = 'default') {
+  const premios = PREMIOS_POR_TIPO[tipo] || PREMIOS_DEFAULT;
+  return [...premios, ...premios]; // duplicar para roda mais segmentada
+}
+
+// Backward-compat: SEGMENTOS = default duplicado
+export const SEGMENTOS = [...PREMIOS_DEFAULT, ...PREMIOS_DEFAULT];
 
 /**
  * Renderiza apenas a roda SVG (sem botões/lógica de spin).
@@ -17,13 +43,15 @@ export const SEGMENTOS = [...PREMIOS, ...PREMIOS];
  *  - rotation: graus de rotação atual
  *  - spinning: se está animando (aplica transition)
  *  - size: tamanho em px (default 440)
+ *  - premios: array de prêmios (default: PREMIOS_DEFAULT)
  */
-export default function RoletaWheel({ rotation = 0, spinning = false, size = 440 }) {
+export default function RoletaWheel({ rotation = 0, spinning = false, size = 440, premios = PREMIOS_DEFAULT }) {
+  const segmentos = [...premios, ...premios];
   const radius = size / 2 - 20;
   const center = size / 2;
-  const segAngle = 360 / SEGMENTOS.length;
+  const segAngle = 360 / segmentos.length;
 
-  const segments = SEGMENTOS.map((seg, i) => {
+  const segments = segmentos.map((seg, i) => {
     const startAngle = (i * segAngle - 90) * (Math.PI / 180);
     const endAngle = ((i + 1) * segAngle - 90) * (Math.PI / 180);
     const x1 = center + radius * Math.cos(startAngle);

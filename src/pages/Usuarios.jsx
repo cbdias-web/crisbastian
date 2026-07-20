@@ -45,7 +45,7 @@ export default function Usuarios() {
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
   const [liberandoRodadas, setLiberandoRodadas] = useState(false);
   const [showLiberarRodadasModal, setShowLiberarRodadasModal] = useState(false);
-  const [rodadasPorUsuario, setRodadasPorUsuario] = useState(1);
+  const [tipoRoletaSelecionado, setTipoRoletaSelecionado] = useState('default');
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -218,23 +218,24 @@ export default function Usuarios() {
     let criadas = 0;
     let resetadas = 0;
     for (const u of usuariosSelecionados) {
-      const existentes = roletas.filter(r => r.user_id === u.id);
+      const existentes = roletas.filter(r => r.user_id === u.id && (r.tipo || 'default') === tipoRoletaSelecionado);
       const ativas = existentes.filter(r => r.ativo && !r.ja_girou);
       const giradas = existentes.filter(r => r.ativo && r.ja_girou);
 
-      // Se já tem rodadas ativas não giradas, pular (já tem rodada disponível)
+      // Se já tem rodadas ativas não giradas deste tipo, pular (já tem rodada disponível)
       if (ativas.length > 0) continue;
 
-      // Resetar registros já girados (reactivar com ja_girou=false)
+      // Resetar registros já girados deste tipo (reativar com ja_girou=false)
       if (giradas.length > 0) {
         await base44.entities.RoletaPremio.update(giradas[0].id, { ja_girou: false, premio: '', girado_em: null });
         resetadas++;
       } else {
-        // Criar nova roleta ativa
+        // Criar nova roleta ativa do tipo selecionado
         await base44.entities.RoletaPremio.create({
           user_id: u.id,
           user_nome: u.full_name || u.email,
           user_email: u.email,
+          tipo: tipoRoletaSelecionado,
           ativo: true,
           ja_girou: false,
         });
@@ -242,7 +243,8 @@ export default function Usuarios() {
       }
     }
     queryClient.invalidateQueries(['roletas-premios']);
-    toast.success(`${selectedUserIds.length} usuário(s) processado(s)! ${resetadas} rodada(s) resetada(s), ${criadas} nova(s) liberada(s).`);
+    const tipoLabel = tipoRoletaSelecionado === 'brincadeira' ? 'Brincadeira' : 'Padrão';
+    toast.success(`${selectedUserIds.length} usuário(s) processado(s) [Roleta ${tipoLabel}]! ${resetadas} rodada(s) resetada(s), ${criadas} nova(s) liberada(s).`);
     setShowLiberarRodadasModal(false);
     setLiberandoRodadas(false);
   };
@@ -344,7 +346,7 @@ export default function Usuarios() {
               className="border-[#00D4AA] text-[#00D4AA] hover:bg-[rgba(0,212,170,0.08)]"
             >
               <Eye className="w-4 h-4 mr-2" />
-              Visualizar Roleta
+              Visualizar Roletas
             </Button>
             <Button
               onClick={() => {
@@ -778,9 +780,43 @@ export default function Usuarios() {
                     <strong>{selectedUserIds.length} usuário(s) selecionado(s):</strong> {selectedUserIds.map(id => usuarios.find(u => u.id === id)?.full_name || usuarios.find(u => u.id === id)?.email).join(', ')}
                   </p>
                 </div>
+                {/* Seletor de tipo de roleta */}
+                <div>
+                  <label className="text-xs text-gray-500 mb-2 block font-semibold uppercase tracking-wider">Tipo de Roleta</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setTipoRoletaSelecionado('default')}
+                      className="px-3 py-2.5 rounded-xl text-sm font-medium transition border-2 text-left"
+                      style={{
+                        background: tipoRoletaSelecionado === 'default' ? 'rgba(0,212,170,0.1)' : 'white',
+                        borderColor: tipoRoletaSelecionado === 'default' ? '#00D4AA' : '#e5e7eb',
+                        color: tipoRoletaSelecionado === 'default' ? '#0d1117' : '#6b7280',
+                      }}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-base">🎁</span>
+                        <span className="font-semibold">Roleta Padrão</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400">Almoço, Janta, Folga, R$100</p>
+                    </button>
+                    <button
+                      onClick={() => setTipoRoletaSelecionado('brincadeira')}
+                      className="px-3 py-2.5 rounded-xl text-sm font-medium transition border-2 text-left"
+                      style={{
+                        background: tipoRoletaSelecionado === 'brincadeira' ? 'rgba(245,158,11,0.1)' : 'white',
+                        borderColor: tipoRoletaSelecionado === 'brincadeira' ? '#f59e0b' : '#e5e7eb',
+                        color: tipoRoletaSelecionado === 'brincadeira' ? '#92400e' : '#6b7280',
+                      }}>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-base">🎉</span>
+                        <span className="font-semibold">Brincadeira</span>
+                      </div>
+                      <p className="text-[10px] text-gray-400">🧉 Chimarrão, ☕ Café, 🧀 Pão de Queijo</p>
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">
-                    Esta ação vai <strong>liberar uma nova rodada</strong> da roleta para cada usuário selecionado:
+                    Esta ação vai <strong>liberar uma nova rodada</strong> da roleta selecionada para cada usuário:
                   </p>
                   <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
                     <li>Usuários que já giraram terão a rodada <strong>resetada</strong> (poderão girar novamente)</li>

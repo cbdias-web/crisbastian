@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import RoletaWheel, { SEGMENTOS, PREMIOS } from './RoletaWheel.jsx';
+import RoletaWheel, { PREMIOS_POR_TIPO, getSegmentos } from './RoletaWheel.jsx';
 
 const A = {
   bg: '#0d1117',
@@ -18,7 +18,15 @@ const A = {
 
 const WHEEL_SIZE = 440;
 
-export default function RoletaPopup({ roletaId, user, onClose }) {
+const TITULOS = {
+  default: 'Roleta de Prêmios',
+  brincadeira: 'Roleta da Brincadeira 🎉',
+};
+
+export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose }) {
+  const premios = PREMIOS_POR_TIPO[tipo] || PREMIOS_POR_TIPO.default;
+  const segmentos = getSegmentos(tipo);
+
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [resultado, setResultado] = useState(null);
@@ -29,9 +37,9 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
     setSpinning(true);
     setResultado(null);
 
-    const segAngle = 360 / SEGMENTOS.length;
-    const randomSeg = Math.floor(Math.random() * SEGMENTOS.length);
-    const premio = SEGMENTOS[randomSeg];
+    const segAngle = 360 / segmentos.length;
+    const randomSeg = Math.floor(Math.random() * segmentos.length);
+    const premio = segmentos[randomSeg];
     const segmentCenter = randomSeg * segAngle + segAngle / 2;
 
     const fullSpins = 5;
@@ -81,7 +89,7 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
         <div className="px-6 py-5 text-center relative" style={{ borderBottom: `1px solid ${A.border}` }}>
           <div className="flex items-center justify-center gap-2 mb-1">
             <Gift className="w-6 h-6" style={{ color: A.accent }} />
-            <h2 className="text-xl font-bold" style={{ color: A.text }}>Roleta de Prêmios</h2>
+            <h2 className="text-xl font-bold" style={{ color: A.text }}>{TITULOS[tipo] || TITULOS.default}</h2>
           </div>
           <p className="text-sm" style={{ color: A.textMuted }}>
             {resultado ? '🎉 Parabéns! Você foi premiado!' : 'Gire a roleta e ganhe um prêmio!'}
@@ -105,7 +113,7 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
               <p className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: A.accent }}>
                 Legenda
               </p>
-              {PREMIOS.map((p, i) => (
+              {premios.map((p, i) => (
                 <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg"
                   style={{ background: A.surface, border: `1px solid ${A.border}` }}>
                   <div className="w-8 h-8 rounded-md flex items-center justify-center text-lg"
@@ -134,7 +142,7 @@ export default function RoletaPopup({ roletaId, user, onClose }) {
             <div className="absolute inset-0 rounded-full"
               style={{ boxShadow: '0 0 40px rgba(0,212,170,0.3)', border: '3px solid rgba(0,212,170,0.4)', borderRadius: '50%' }} />
 
-            <RoletaWheel rotation={rotation} spinning={spinning} size={WHEEL_SIZE} />
+            <RoletaWheel rotation={rotation} spinning={spinning} size={WHEEL_SIZE} premios={premios} />
             </div>
 
             {/* Spin button or result */}
