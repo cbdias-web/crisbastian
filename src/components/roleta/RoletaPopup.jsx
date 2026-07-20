@@ -16,7 +16,7 @@ const A = {
   gold: '#D4AF37',
 };
 
-const WHEEL_SIZE = 440;
+const WHEEL_SIZE = 340;
 
 const TITULOS = {
   default: 'Roleta de Prêmios',
@@ -106,27 +106,24 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
         </div>
 
         {/* Wheel + Legend */}
-        <div className="p-6 flex flex-col lg:flex-row items-center gap-6">
-          {/* Legend lateral (hidden after result) */}
+        <div className="p-6 flex flex-col items-center gap-4">
+          {/* Legend (horizontal, hidden after result) */}
           {!resultado && (
-            <div className="w-full lg:w-44 flex-shrink-0 space-y-2 order-2 lg:order-1">
-              <p className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: A.accent }}>
-                Legenda
-              </p>
+            <div className="w-full flex flex-wrap justify-center gap-2 flex-shrink-0">
               {premios.map((p, i) => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                <div key={i} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg"
                   style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-                  <div className="w-8 h-8 rounded-md flex items-center justify-center text-lg"
+                  <div className="w-6 h-6 rounded-md flex items-center justify-center text-sm"
                     style={{ background: p.color }}>
                     {p.emoji}
                   </div>
-                  <span className="text-sm font-medium" style={{ color: A.text }}>{p.label}</span>
+                  <span className="text-xs font-medium" style={{ color: A.text }}>{p.label}</span>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="relative flex-shrink-0 order-1 lg:order-2" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE }}>
+          <div className="relative flex-shrink-0" style={{ width: WHEEL_SIZE, height: WHEEL_SIZE, maxWidth: '100%' }}>
             {/* Pointer */}
             <div className="absolute left-1/2 -translate-x-1/2 z-10"
               style={{
@@ -147,7 +144,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
 
             {/* Spin button or result */}
             {resultado ? (
-            <div className="mt-6 text-center space-y-4 w-full">
+            <div className="text-center space-y-4 w-full max-w-sm">
              <div className="p-6 rounded-2xl"
                style={{
                  background: 'rgba(0,212,170,0.08)',
@@ -168,7 +165,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
             </div>
           ) : (
             <button onClick={spin} disabled={spinning}
-              className="mt-6 px-10 py-3 rounded-xl font-bold text-lg transition disabled:opacity-60"
+              className="px-10 py-3 rounded-xl font-bold text-lg transition disabled:opacity-60 w-full max-w-xs"
               style={{
                 background: spinning ? '#333' : `linear-gradient(135deg, ${A.accent}, #0066cc)`,
                 color: '#0d1117',
