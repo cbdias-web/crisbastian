@@ -43,6 +43,9 @@ export default function Usuarios() {
   const [showPreviewRoleta, setShowPreviewRoleta] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
   const [migracaoForm, setMigracaoForm] = useState({ vendedor_origem_id: '', vendedor_destino_id: '' });
+  const [liberandoRodadas, setLiberandoRodadas] = useState(false);
+  const [showLiberarRodadasModal, setShowLiberarRodadasModal] = useState(false);
+  const [rodadasPorUsuario, setRodadasPorUsuario] = useState(1);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -205,6 +208,45 @@ export default function Usuarios() {
     setEnviandoConviteVendedor(null);
   };
 
+  const liberarRodadasSelecionados = async () => {
+    if (selectedUserIds.length === 0) {
+      toast.error('Selecione ao menos um usuário');
+      return;
+    }
+    const usuariosSelecionados = usuarios.filter(u => selectedUserIds.includes(u.id));
+    setLiberandoRodadas(true);
+    let criadas = 0;
+    let resetadas = 0;
+    for (const u of usuariosSelecionados) {
+      const existentes = roletas.filter(r => r.user_id === u.id);
+      const ativas = existentes.filter(r => r.ativo && !r.ja_girou);
+      const giradas = existentes.filter(r => r.ativo && r.ja_girou);
+
+      // Se já tem rodadas ativas não giradas, pular (já tem rodada disponível)
+      if (ativas.length > 0) continue;
+
+      // Resetar registros já girados (reactivar com ja_girou=false)
+      if (giradas.length > 0) {
+        await base44.entities.RoletaPremio.update(giradas[0].id, { ja_girou: false, premio: '', girado_em: null });
+        resetadas++;
+      } else {
+        // Criar nova roleta ativa
+        await base44.entities.RoletaPremio.create({
+          user_id: u.id,
+          user_nome: u.full_name || u.email,
+          user_email: u.email,
+          ativo: true,
+          ja_girou: false,
+        });
+        criadas++;
+      }
+    }
+    queryClient.invalidateQueries(['roletas-premios']);
+    toast.success(`${selectedUserIds.length} usuário(s) processado(s)! ${resetadas} rodada(s) resetada(s), ${criadas} nova(s) liberada(s).`);
+    setShowLiberarRodadasModal(false);
+    setLiberandoRodadas(false);
+  };
+
   const executarMigracao = async () => {
     if (!confirm('Executar migração de clientes de vendedores inativos? Fernando Huffel → Samuel Fraga; Christiano → Bruna')) return;
     setMigrandoClientes(true);
@@ -303,6 +345,25 @@ export default function Usuarios() {
             >
               <Eye className="w-4 h-4 mr-2" />
               Visualizar Roleta
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedUserIds.length === 0) {
+                  toast.error('Selecione os usuários na lista para liberar rodadas');
+                  return;
+                }
+                setShowLiberarRodadasModal(true);
+              }}
+              variant="outline"
+              className="border-amber-400 text-amber-600 hover:bg-amber-50"
+            >
+              <Gift className="w-4 h-4 mr-2" />
+              Liberar Rodadas
+              {selectedUserIds.length > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                  {selectedUserIds.length}
+                </span>
+              )}
             </Button>
             <Button
               onClick={() => setShowRelatorioRoleta(true)}
@@ -696,6 +757,51 @@ export default function Usuarios() {
 
         {showPreviewRoleta && (
           <RoletaPreviewModal onClose={() => setShowPreviewRoleta(false)} />
+        )}
+
+        {/* Modal Liberar Rodadas */}
+        {showLiberarRodadasModal && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-semibold text-gray-900">Liberar Rodadas da Roleta</h3>
+                </div>
+                <button onClick={() => setShowLiberarRodadasModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-amber-50 rounded-xl p-3 border border-amber-200">
+                  <p className="text-xs text-amber-700">
+                    <strong>{selectedUserIds.length} usuário(s) selecionado(s):</strong> {selectedUserIds.map(id => usuarios.find(u => u.id === id)?.full_name || usuarios.find(u => u.id === id)?.email).join(', ')}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-600">
+                    Esta ação vai <strong>liberar uma nova rodada</strong> da roleta para cada usuário selecionado:
+                  </p>
+                  <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
+                    <li>Usuários que já giraram terão a rodada <strong>resetada</strong> (poderão girar novamente)</li>
+                    <li>Usuários sem roleta ativada terão uma <strong>nova rodada criada</strong></li>
+                    <li>Usuários que já têm rodada disponível serão <strong>mantidos</strong></li>
+                  </ul>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowLiberarRodadasModal(false)} disabled={liberandoRodadas}>Cancelar</Button>
+                <Button onClick={liberarRodadasSelecionados} disabled={liberandoRodadas}
+                  className="bg-amber-500 hover:bg-amber-600 text-white">
+                  {liberandoRodadas ? (
+                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Liberando...</>
+                  ) : (
+                    <><Gift className="w-4 h-4 mr-2" />Confirmar Liberação</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Modal de Convite */}
