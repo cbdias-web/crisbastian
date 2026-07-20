@@ -91,26 +91,23 @@ export default function Usuarios() {
     refetchInterval: 15000
   });
 
-  const toggleRoleta = async (usuario) => {
-    const existing = roletas.find(r => r.user_id === usuario.id && r.ativo);
+  const desativarRoleta = async (roleta, usuario) => {
     try {
-      if (existing) {
-        await base44.entities.RoletaPremio.update(existing.id, { ativo: false });
-        toast.success('Roleta desativada para ' + (usuario.full_name || usuario.email));
-      } else {
-        await base44.entities.RoletaPremio.create({
-          user_id: usuario.id,
-          user_nome: usuario.full_name || usuario.email,
-          user_email: usuario.email,
-          ativo: true,
-          ja_girou: false,
-        });
-        toast.success('🎡 Roleta liberada para ' + (usuario.full_name || usuario.email) + '!');
-      }
+      await base44.entities.RoletaPremio.update(roleta.id, { ativo: false });
+      toast.success(`Roleta ${roleta.tipo === 'brincadeira' ? 'Brincadeira' : 'Padrão'} desativada para ${usuario.full_name || usuario.email}`);
       queryClient.invalidateQueries(['roletas-premios']);
     } catch (e) {
-      toast.error('Erro ao liberar roleta');
+      toast.error('Erro ao desativar roleta');
     }
+  };
+
+  const abrirLiberarParaUsuario = (usuario) => {
+    setSelectedUserIds([usuario.id]);
+    setShowLiberarRodadasModal(true);
+  };
+
+  const getRoletasUsuario = (userId) => {
+    return roletas.filter(r => r.user_id === userId && r.ativo);
   };
 
   // Vendedores sem acesso ao sistema (email não coincide com nenhum usuário)
@@ -516,6 +513,7 @@ export default function Usuarios() {
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Papel</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Chat</th>
+                <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Roletas</th>
                 <th className="px-5 py-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Ações</th>
               </tr>
             </thead>
@@ -584,8 +582,36 @@ export default function Usuarios() {
                             : <><MessageSquare className="w-3.5 h-3.5" /> Visível</>
                           }
                         </button>
-                      </td>
-                      <td className="px-5 py-3.5">
+                        </td>
+                        <td className="px-5 py-3.5">
+                        <div className="flex flex-wrap gap-1">
+                         {(() => {
+                           const roletasUsuario = getRoletasUsuario(usuario.id);
+                           if (roletasUsuario.length === 0) {
+                             return <span className="text-[10px] text-gray-300">—</span>;
+                           }
+                           return roletasUsuario.map(r => (
+                             <button
+                               key={r.id}
+                               onClick={() => desativarRoleta(r, usuario)}
+                               className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold transition cursor-pointer ${
+                                 r.ja_girou
+                                   ? 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                                   : r.tipo === 'brincadeira'
+                                     ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                     : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                               }`}
+                               title={r.ja_girou
+                                 ? `Já girou — ${r.premio || '—'} (clique para desativar)`
+                                 : `Disponível — clique para desativar`}
+                             >
+                               {r.tipo === 'brincadeira' ? '🎉' : '🎁'} {r.ja_girou ? '✓' : '●'}
+                             </button>
+                           ));
+                         })()}
+                        </div>
+                        </td>
+                        <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => isEditing ? cancelarEdicao() : iniciarEdicao(usuario)}
@@ -613,13 +639,9 @@ export default function Usuarios() {
                             {usuario.ativo === false ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                           </button>
                           <button
-                            onClick={() => toggleRoleta(usuario)}
-                            className={`p-1.5 rounded-lg transition ${
-                              roletas.find(r => r.user_id === usuario.id && r.ativo)
-                                ? 'text-amber-500 bg-amber-50 hover:bg-amber-100'
-                                : 'text-gray-400 hover:text-amber-500 hover:bg-amber-50'
-                            }`}
-                            title={roletas.find(r => r.user_id === usuario.id && r.ativo) ? 'Roleta ativa — clique para desativar' : 'Liberar roleta de prêmios'}
+                            onClick={() => abrirLiberarParaUsuario(usuario)}
+                            className="p-1.5 rounded-lg transition text-gray-400 hover:text-amber-500 hover:bg-amber-50"
+                            title="Liberar / gerenciar rodadas da roleta"
                           >
                             <Gift className="w-4 h-4" />
                           </button>
@@ -635,7 +657,7 @@ export default function Usuarios() {
                     </tr>
                     {isEditing && (
                       <tr>
-                        <td colSpan={7} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                        <td colSpan={8} className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
                           <div className="space-y-3">
                             <div>
                               <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Nome de Tratamento</p>
@@ -676,7 +698,7 @@ export default function Usuarios() {
               })}
               {usuarios.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-gray-400">
+                  <td colSpan={8} className="py-16 text-center text-gray-400">
                     <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />
                     <p className="text-sm">Nenhum usuário encontrado</p>
                   </td>
@@ -816,13 +838,16 @@ export default function Usuarios() {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">
-                    Esta ação vai <strong>liberar uma nova rodada</strong> da roleta selecionada para cada usuário:
+                    Esta ação vai <strong>liberar uma rodada</strong> da roleta selecionada para cada usuário:
                   </p>
                   <ul className="text-xs text-gray-500 space-y-1 ml-4 list-disc">
-                    <li>Usuários que já giraram terão a rodada <strong>resetada</strong> (poderão girar novamente)</li>
-                    <li>Usuários sem roleta ativada terão uma <strong>nova rodada criada</strong></li>
-                    <li>Usuários que já têm rodada disponível serão <strong>mantidos</strong></li>
+                    <li>Quem já girou terá a rodada <strong>resetada</strong> (poderá girar de novo)</li>
+                    <li>Quem não tem roleta deste tipo terá uma <strong>nova criada</strong></li>
+                    <li>Quem já tem rodada disponível deste tipo será <strong>mantido</strong></li>
                   </ul>
+                  <p className="text-[10px] text-gray-400 mt-2">
+                    Na tabela, 🎁 = Padrão, 🎉 = Brincadeira, ● = disponível, ✓ = já girou. Clique num badge para desativar.
+                  </p>
                 </div>
               </div>
               <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
