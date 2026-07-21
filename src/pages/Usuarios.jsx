@@ -214,6 +214,7 @@ export default function Usuarios() {
     setLiberandoRodadas(true);
     let criadas = 0;
     let resetadas = 0;
+    const usuariosNotificar = [];
     for (const u of usuariosSelecionados) {
       const existentes = roletas.filter(r => r.user_id === u.id && (r.tipo || 'default') === tipoRoletaSelecionado);
       const ativas = existentes.filter(r => r.ativo && !r.ja_girou);
@@ -238,10 +239,24 @@ export default function Usuarios() {
         });
         criadas++;
       }
+      usuariosNotificar.push({ id: u.id, email: u.email, nome: u.full_name || u.nome_tratamento || u.email });
     }
+
+    // Notificar via Jarvis os usuários que receberam/resetaram a roleta
+    if (usuariosNotificar.length > 0) {
+      try {
+        await base44.functions.invoke('notificarRoletaJarvis', {
+          usuarios: usuariosNotificar,
+          tipo: tipoRoletaSelecionado,
+        });
+      } catch (e) {
+        console.error('Erro ao notificar Jarvis:', e);
+      }
+    }
+
     queryClient.invalidateQueries(['roletas-premios']);
     const tipoLabel = tipoRoletaSelecionado === 'brincadeira' ? 'Brincadeira' : 'Padrão';
-    toast.success(`${selectedUserIds.length} usuário(s) processado(s) [Roleta ${tipoLabel}]! ${resetadas} rodada(s) resetada(s), ${criadas} nova(s) liberada(s).`);
+    toast.success(`${selectedUserIds.length} usuário(s) processado(s) [Roleta ${tipoLabel}]! ${resetadas} rodada(s) resetada(s), ${criadas} nova(s) liberada(s). ${usuariosNotificar.length} notificado(s) via Jarvis.`);
     setShowLiberarRodadasModal(false);
     setLiberandoRodadas(false);
   };
