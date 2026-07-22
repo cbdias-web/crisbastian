@@ -243,6 +243,7 @@ export default function Clientes() {
   const [modal, setModal] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [exportandoBase, setExportandoBase] = useState(false);
   const [agendaCliente, setAgendaCliente] = useState(null);
   const [detalheCliente, setDetalheCliente] = useState(null); // { id, tab }
   const [user, setUser] = useState(null);
@@ -362,6 +363,94 @@ export default function Clientes() {
     const a = document.createElement("a"); a.href = url; a.download = "clientes.csv"; a.click();
   };
 
+  // Exportar base de clientes por produto (Dolarize, Conta Global, Score, Rating, Conta Internacional, Canal Bancário)
+  const exportarBaseProdutos = async () => {
+    setExportandoBase(true);
+    try {
+      const tiposContrato = ["CONTA GLOBAL", "CONTA INTERNACIONAL", "DOLARIZE", "CANAL BANCÁRIO", "RATING"];
+      const produtosVenda = ["DOLARIZE", "CONTA GLOBAL", "SCORE", "RATING", "CONTA INTERNACIONAL", "CANAL BANCÁRIO", "CANAL BANCARIO"];
+
+      // 1. Contratos — têm todos os campos (nome, cpf_cnpj, responsavel_legal, telefone, email)
+      const todosContratos = await base44.entities.Contrato.list("-created_date", 5000);
+      const contratosFiltrados = todosContratos.filter(c => tiposContrato.includes(c.tipo));
+
+      // 2. Vendas — para produtos que podem não ter contrato (ex: SCORE)
+      const todasVendas = await base44.entities.Venda.list("-data", 5000);
+      const vendasFiltradas = todasVendas.filter(v => v.produto && produtosVenda.includes(v.produto.toUpperCase()));
+
+      // 3. Clientes — lookup por cpf_cnpj ou nome para telefone/email
+      const todosClientes = await base44.entities.Cliente.list("nome", 5000);
+      const clienteByCpf = {};
+      const clienteByNome = {};
+      for (const c of todosClientes) {
+        if (c.cpf_cnpj) clienteByCpf[c.cpf_cnpj.trim()] = c;
+        if (c.nome) clienteByNome[c.nome.trim().toLowerCase()] = c;
+      }
+
+      // 4. Monta registros deduplicados por cpf_cnpj (ou nome como fallback)
+      const registrosMap = {};
+
+      // Contratos primeiro (têm representante)
+      for (const c of contratosFiltrados) {
+        const key = c.cpf_cnpj?.trim() || c.nome?.trim().toLowerCase();
+        if (!key || registrosMap[key]) continue;
+        registrosMap[key] = {
+          nome: c.nome || "",
+          cpf_cnpj: c.cpf_cnpj || "",
+          representante: c.responsavel_legal || "",
+          telefone: c.telefone || "",
+          email: c.email || "",
+          produto: c.tipo || "",
+        };
+      }
+
+      // Vendas — complementa com telefone/email do Cliente
+      for (const v of vendasFiltradas) {
+        const cpf = v.cpf_cnpj?.trim();
+        const nomeLow = v.cliente?.trim().toLowerCase();
+        const key = cpf || nomeLow;
+        if (!key || registrosMap[key]) continue;
+        const cli = (cpf && clienteByCpf[cpf]) || (nomeLow && clienteByNome[nomeLow]);
+        registrosMap[key] = {
+          nome: v.cliente || cli?.nome || "",
+          cpf_cnpj: cpf || cli?.cpf_cnpj || "",
+          representante: "",
+          telefone: cli?.telefone || "",
+          email: cli?.email || "",
+          produto: v.produto || "",
+        };
+      }
+
+      const registros = Object.values(registrosMap);
+      if (registros.length === 0) {
+        toast.info("Nenhum cliente encontrado para os produtos selecionados.");
+        setExportandoBase(false);
+        return;
+      }
+
+      const headers = ["Nome", "CPF/CNPJ", "Representante", "Telefone", "E-mail", "Produto"];
+      const esc = (val) => {
+        const s = String(val || "");
+        return (s.includes(";") || s.includes('"') || s.includes("\n")) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rows = [headers.join(";")];
+      for (const r of registros) {
+        rows.push([r.nome, r.cpf_cnpj, r.representante, r.telefone, r.email, r.produto].map(esc).join(";"));
+      }
+      const blob = new Blob(["\ufeff" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "base_clientes_produtos.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${registros.length} cliente(s) exportado(s)!`);
+    } catch (e) {
+      toast.error("Erro ao exportar base: " + e.message);
+    }
+    setExportandoBase(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4">
@@ -381,6 +470,10 @@ export default function Clientes() {
                 {importing ? "Importando..." : "Importar"}
               </Button>
             )}
+            <Button variant="outline" onClick={exportarBaseProdutos} disabled={exportandoBase} className="text-sm border-[#00D4AA] text-[#00D4AA] hover:bg-[rgba(0,212,170,0.08)]">
+              {exportandoBase ? <div className="w-4 h-4 border-2 border-[#00D4AA] border-t-transparent rounded-full animate-spin mr-2" /> : <Download className="w-4 h-4 mr-2" />}
+              {exportandoBase ? "Gerando..." : "Base Produtos"}
+            </Button>
             <Button variant="outline" onClick={exportCSV} className="text-sm">
               <Download className="w-4 h-4 mr-2" /> CSV
             </Button>
