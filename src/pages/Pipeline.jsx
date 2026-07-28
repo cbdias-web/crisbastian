@@ -643,84 +643,57 @@ export default function Pipeline() {
           </div>
         </div>
 
-        {/* KPI Parcelas a Receber */}
-        {totalParcelasPendentes > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4 shadow-sm">
-            <div>
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">💰 Parcelas a Receber</p>
-              <p className="text-2xl font-bold text-amber-700 mt-1">{fmtVal(valorParcelasPendentes)}</p>
-              <p className="text-xs text-amber-600 mt-0.5">{totalParcelasPendentes} parcela(s) pendente(s) no Pipeline</p>
-            </div>
-            <DollarSign className="w-10 h-10 text-amber-300 flex-shrink-0" />
-          </div>
-        )}
+        {/* KPIs — barra única (muda de contexto conforme gerente selecionado) */}
+        {(() => {
+          const showingGerente = isAdmin && filtroVendedor !== 'Todos' && negociosGerente;
+          const kpiTotal = showingGerente ? negociosGerente.length : totalGeral;
+          const kpiAtivos = showingGerente ? gerenteAtivos : totalAtivos;
+          const kpiEmNegociacao = showingGerente ? gerenteEmNegociacao : valorTotal;
+          const kpiFechados = showingGerente ? gerenteFechados : negocios.filter(n => n.temperatura === 'Fechado').length;
+          const kpiVolumeFechado = showingGerente ? gerenteVolumeFechado : valorFechado;
+          const kpiParcelas = showingGerente
+            ? parcelasVendaPendentes.filter(p => vendedorSelecionado && p.vendedor_id === vendedorSelecionado.id)
+            : parcelasVendaPendentes;
+          const kpiValorParcelas = kpiParcelas.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
-        {/* KPIs — totais gerais */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
-            <p className="text-2xl font-bold text-teal-700">{fmtVal(valorTotal)}</p>
-            <p className="text-xs text-teal-600 mt-0.5">
-              Total em negociação{temFiltroPeriodo ? <span className="ml-1 text-[10px] bg-teal-200 text-teal-800 px-1.5 py-0.5 rounded-full font-semibold">período</span> : ''}
-            </p>
-          </div>
-          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
-            <p className="text-2xl font-bold text-teal-700">{totalAtivos}</p>
-            <p className="text-xs text-teal-600 mt-0.5">Negócios ativos</p>
-          </div>
-          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
-            <p className="text-2xl font-bold text-teal-700">{totalGeral}</p>
-            <p className="text-xs text-teal-600 mt-0.5">Total de negócios</p>
-          </div>
-          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
-            <p className="text-2xl font-bold text-teal-700">{negocios.filter(n => n.temperatura === 'Fechado').length}</p>
-            <p className="text-xs text-teal-600 mt-0.5">Fechados</p>
-          </div>
-          <div className="bg-teal-50 rounded-2xl p-4 shadow-sm border border-teal-100">
-            <p className="text-lg font-bold text-teal-700">{fmtVal(valorFechado)}</p>
-            <p className="text-xs text-teal-600 mt-0.5">Volume fechado</p>
-          </div>
-        </div>
-
-        {/* KPIs do gerente selecionado */}
-        {isAdmin && filtroVendedor !== 'Todos' && negociosGerente && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3">
-            <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-2">
-              📊 Totais de {filtroVendedor}
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
-                <p className="text-lg font-bold text-indigo-700">{negociosGerente.length}</p>
-                <p className="text-[10px] text-indigo-500 mt-0.5">Total negociações</p>
-              </div>
-              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
-                <p className="text-lg font-bold text-indigo-700">{gerenteAtivos}</p>
-                <p className="text-[10px] text-indigo-500 mt-0.5">Ativos</p>
-              </div>
-              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
-                <p className="text-sm font-bold text-orange-600">{fmtVal(gerenteEmNegociacao)}</p>
-                <p className="text-[10px] text-indigo-500 mt-0.5">Em negociação</p>
-              </div>
-              <div className="bg-white rounded-xl p-2.5 border border-indigo-100 text-center">
-                <p className="text-sm font-bold text-emerald-600">{fmtVal(gerenteVolumeFechado)}</p>
-                <p className="text-[10px] text-indigo-500 mt-0.5">Volume fechado ({gerenteFechados})</p>
-              </div>
-              <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-200 text-center">
-                <p className="text-sm font-bold text-amber-600">
-                  {fmtVal(parcelasVendaPendentes.filter(p => {
-                    const vend = vendedores.find(v => v.nome === filtroVendedor);
-                    return vend && p.vendedor_id === vend.id;
-                  }).reduce((s, p) => s + (p.valor_parcela || 0), 0))}
+          return (
+            <div className="rounded-2xl p-3" style={{ background: 'rgba(27,29,46,0.6)', border: '1px solid rgba(0,212,170,0.12)' }}>
+              {showingGerente && (
+                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: '#818cf8' }}>
+                  📊 Totais de {filtroVendedor}
                 </p>
-                <p className="text-[10px] text-amber-600 mt-0.5 font-medium">
-                  💰 Parcelas a receber ({parcelasVendaPendentes.filter(p => {
-                    const vend = vendedores.find(v => v.nome === filtroVendedor);
-                    return vend && p.vendedor_id === vend.id;
-                  }).length})
-                </p>
+              )}
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
+                  <p className="text-lg font-bold" style={{ color: '#2dd4bf' }}>{fmtVal(kpiEmNegociacao)}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#5ee7d4' }}>Em negociação{temFiltroPeriodo ? ' *' : ''}</p>
+                </div>
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
+                  <p className="text-lg font-bold" style={{ color: '#2dd4bf' }}>{kpiTotal}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#5ee7d4' }}>Negócios</p>
+                </div>
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
+                  <p className="text-lg font-bold" style={{ color: '#2dd4bf' }}>{kpiAtivos}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#5ee7d4' }}>Ativos</p>
+                </div>
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
+                  <p className="text-lg font-bold" style={{ color: '#2dd4bf' }}>{kpiFechados}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#5ee7d4' }}>Fechados</p>
+                </div>
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: 'rgba(20,184,166,0.08)', border: '1px solid rgba(20,184,166,0.2)' }}>
+                  <p className="text-base font-bold" style={{ color: '#2dd4bf' }}>{fmtVal(kpiVolumeFechado)}</p>
+                  <p className="text-[10px] mt-0.5" style={{ color: '#5ee7d4' }}>Volume fechado</p>
+                </div>
+                <div className="rounded-xl p-2.5 text-center transition hover:shadow-lg" style={{ background: kpiParcelas.length > 0 ? 'rgba(251,191,36,0.1)' : 'rgba(22,27,34,0.5)', border: kpiParcelas.length > 0 ? '1px solid rgba(251,191,36,0.3)' : '1px solid rgba(0,212,170,0.1)' }}>
+                  <p className="text-base font-bold" style={{ color: '#fbbf24' }}>{fmtVal(kpiValorParcelas)}</p>
+                  <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#fbbf24' }}>
+                    💰 Parcelas {kpiParcelas.length > 0 && `(${kpiParcelas.length})`}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Filtros */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
