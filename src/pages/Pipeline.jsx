@@ -695,84 +695,66 @@ export default function Pipeline() {
           );
         })()}
 
-        {/* Filtros */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          {/* Linha 1: Busca + Temperatura + Gerente */}
-          <div className="flex flex-wrap gap-4 items-end">
+        {/* Filtros — linha única */}
+        <div className="rounded-2xl p-3" style={{ background: 'rgba(27,29,46,0.6)', border: '1px solid rgba(0,212,170,0.12)' }}>
+          <div className="flex flex-wrap gap-3 items-center">
             {/* Busca */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Buscar</span>
-              <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
-                placeholder="Cliente ou produto..."
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] w-44" />
-            </div>
+            <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
+              placeholder="Cliente ou produto..."
+              className="px-3 py-1.5 text-sm rounded-lg focus:outline-none w-40" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
 
             {/* Temperatura */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Status</span>
-              <div className="flex gap-1.5 flex-wrap">
-                {['Todos', ...TEMPERATURAS.map(t => t.value)].map(t => (
-                  <button key={t} onClick={() => setFiltroTemp(t)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${filtroTemp === t ? 'bg-[#0f1e35] text-white border-[#0f1e35]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400 hover:bg-gray-50'}`}>
-                    {t}
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-1">
+              {['Todos', ...TEMPERATURAS.map(t => t.value)].map(t => (
+                <button key={t} onClick={() => setFiltroTemp(t)}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition"
+                  style={filtroTemp === t
+                    ? { background: 'rgba(0,212,170,0.15)', borderColor: 'rgba(0,212,170,0.4)', color: '#00D4AA' }
+                    : { background: 'transparent', borderColor: 'rgba(0,212,170,0.15)', color: '#7b8495' }}>
+                  {t}
+                </button>
+              ))}
             </div>
 
-            {/* Gerente (admin only) */}
+            {/* Gerente */}
             {isAdmin && (
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Gerente</span>
-                <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
-                  className={`px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:border-[#1a3150] font-medium ${filtroVendedor !== 'Todos' ? 'border-[#1a3150] bg-[#0f1e35]/5 text-[#0f1e35]' : 'border-gray-200 text-gray-700'}`}>
-                  <option value="Todos">Todos os gerentes</option>
-                  {vendedores.length > 0
-                    ? vendedores.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
-                    : vendedoresUnicos.map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
+              <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg focus:outline-none font-medium"
+                style={{ background: '#1c2333', border: `1px solid ${filtroVendedor !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
+                <option value="Todos">Todos os gerentes</option>
+                {vendedores.length > 0
+                  ? vendedores.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
+                  : vendedoresUnicos.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             )}
 
-            {/* Contador */}
-            <div className="ml-auto flex flex-col items-end gap-0.5 pb-0.5">
-              <span className="text-xs font-bold text-gray-700">{negociosFiltrados.length} negócio(s)</span>
-              {aba === 'parcelas' && (filtroVendedor !== 'Todos' || filtroDataInicio || filtroDataFim) && (
-                <span className="text-[10px] text-amber-600 font-semibold">{parcelasParaExibir.length} parcela(s) filtrada(s)</span>
-              )}
-            </div>
-          </div>
-
-          {/* Linha 2: Produto + Período */}
-          <div className="flex flex-wrap gap-4 items-end mt-3 pt-3 border-t border-gray-100">
             {/* Produto */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Produto</span>
-              <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
-                className={`px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:border-[#1a3150] ${filtroProduto !== 'Todos' ? 'border-[#1a3150] bg-[#0f1e35]/5 text-[#0f1e35] font-medium' : 'border-gray-200 text-gray-700'}`}>
-                <option value="Todos">Todos os produtos</option>
-                {produtosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
+            <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
+              className="px-3 py-1.5 text-sm rounded-lg focus:outline-none"
+              style={{ background: '#1c2333', border: `1px solid ${filtroProduto !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
+              <option value="Todos">Todos os produtos</option>
+              {produtosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
 
             {/* Período */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Prev. Efetivação</span>
-              <div className="flex items-center gap-2">
-                <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                <span className="text-xs text-gray-400 font-medium">até</span>
-                <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
-                  className="px-2 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-              </div>
+            <div className="flex items-center gap-1.5">
+              <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
+                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
+              <span className="text-xs" style={{ color: '#7b8495' }}>até</span>
+              <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
+                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
             </div>
 
-            {/* Limpar filtros secundários */}
+            {/* Contador */}
+            <span className="ml-auto text-xs font-bold" style={{ color: '#e6edf3' }}>{negociosFiltrados.length} negócio(s)</span>
+
+            {/* Limpar filtros */}
             {(filtroDataInicio || filtroDataFim || filtroProduto !== 'Todos' || busca || filtroTemp !== 'Todos' || filtroVendedor !== 'Todos') && (
               <button
                 onClick={() => { setFiltroDataInicio(''); setFiltroDataFim(''); setFiltroProduto('Todos'); setBusca(''); setFiltroTemp('Todos'); setFiltroVendedor('Todos'); }}
-                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg transition">
-                <X className="w-3 h-3" /> Limpar filtros
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
+                style={{ color: '#f87171', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
+                <X className="w-3 h-3" /> Limpar
               </button>
             )}
           </div>
