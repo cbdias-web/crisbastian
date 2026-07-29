@@ -277,6 +277,11 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
         const created = await base44.entities.RncCanalBancario.create(dados);
         rncId = created.id;
         setRncExistente(created);
+      } else {
+        // Sempre atualizar antes de gerar — o usuário pode ter alterado tipo/fichas sem salvar
+        const dados = { ...coletarDados(), status: rncExistente.status === 'concluido' ? 'concluido' : 'rascunho' };
+        await base44.entities.RncCanalBancario.update(rncId, dados);
+        setRncExistente(prev => ({ ...prev, ...dados }));
       }
       const res = await base44.functions.invoke('gerarRncCanalBancarioPDF', { rnc_id: rncId });
       if (res?.data?.pdf_base64) {
