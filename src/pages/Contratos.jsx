@@ -187,12 +187,20 @@ export default function Contratos() {
               <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
             </div>
           </div>
-          <button onClick={() => setShowRelatorio(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
-            style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
-            <BarChart3 className="w-4 h-4" />
-            Relatório
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setRncContrato({})}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
+              style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}>
+              <FileCheck2 className="w-4 h-4" />
+              RNC Canal Bancário
+            </button>
+            <button onClick={() => setShowRelatorio(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
+              style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+              <BarChart3 className="w-4 h-4" />
+              Relatório
+            </button>
+          </div>
         </div>
 
         {/* Cards de tipo */}

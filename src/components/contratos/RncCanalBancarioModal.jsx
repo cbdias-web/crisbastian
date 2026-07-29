@@ -58,6 +58,10 @@ const labelStyle = { color: AURORA.textMuted, fontSize: '10px', fontWeight: 600,
 export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   const queryClient = useQueryClient();
   const [rncExistente, setRncExistente] = useState(null);
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [resultadosBusca, setResultadosBusca] = useState([]);
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
+  const [clienteVinculado, setClienteVinculado] = useState(null);
   const [tipoCanal, setTipoCanal] = useState('PF');
   const [operarAcima270k, setOperarAcima270k] = useState(false);
   const [form, setForm] = useState({
@@ -129,6 +133,52 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
 
   const docRecebidoCount = documentos.filter(d => d.recebido).length;
   const allObrigatoriosRecebidos = documentos.filter(d => d.obrigatorio).every(d => d.recebido);
+
+  const buscarCliente = async (termo) => {
+    setBuscaCliente(termo);
+    if (!termo || termo.length < 3) { setResultadosBusca([]); return; }
+    setBuscandoCliente(true);
+    try {
+      const todos = await base44.entities.Cliente.list('-created_date', 50);
+      const tLower = termo.toLowerCase();
+      const tDigits = termo.replace(/\D/g, '');
+      setResultadosBusca(todos.filter(c =>
+        c.nome?.toLowerCase().includes(tLower) ||
+        (tDigits && c.cpf_cnpj?.replace(/\D/g, '').includes(tDigits))
+      ).slice(0, 8));
+    } catch (e) {}
+    setBuscandoCliente(false);
+  };
+
+  const selecionarCliente = (cliente) => {
+    setClienteVinculado(cliente);
+    setForm(f => ({
+      ...f,
+      nome: cliente.nome || '', cpf_cnpj: cliente.cpf_cnpj || '',
+      email: cliente.email || '', telefone: cliente.telefone || '',
+      cidade: cliente.cidade || '', estado: cliente.estado || '',
+    }));
+    setBuscaCliente(cliente.nome || '');
+    setResultadosBusca([]);
+  };
+
+  const sincronizarCliente = async () => {
+    if (!form.cpf_cnpj?.trim() || !form.nome?.trim()) return;
+    try {
+      const existentes = await base44.entities.Cliente.filter({ cpf_cnpj: form.cpf_cnpj });
+      const dadosCliente = {
+        nome: form.nome, email: form.email, telefone: form.telefone,
+        cidade: form.cidade, estado: form.estado,
+      };
+      if (existentes.length > 0) {
+        await base44.entities.Cliente.update(existentes[0].id, dadosCliente);
+        toast.success('Cadastro do cliente atualizado!');
+      } else {
+        await base44.entities.Cliente.create({ ...dadosCliente, cpf_cnpj: form.cpf_cnpj, origem: 'nativo' });
+        toast.success('Cliente cadastrado no sistema!');
+      }
+    } catch (e) {}
+  };
 
   const handleUploadDoc = async (index, file) => {
     setUploadingDoc(index);
@@ -210,6 +260,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
         setRncExistente(created);
       }
       queryClient.invalidateQueries(['rnc-canal-bancario']);
+      await sincronizarCliente();
       toast.success(status === 'concluido' ? 'RNC concluída e salva!' : 'RNC salva como rascunho.');
     } catch (e) {
       toast.error('Erro ao salvar: ' + e.message);
@@ -300,7 +351,11 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
             <div>
               <h2 className="text-lg font-bold" style={{ color: AURORA.text }}>RNC — Canal Bancário</h2>
               <p className="text-xs" style={{ color: AURORA.textMuted }}>
-                {rncExistente ? `Rascunho salvo · ${contrato?.nome || ''}` : `Contrato: ${contrato?.nome || '—'}`}
+                {rncExistente
+                  ? `Rascunho salvo · ${form.nome || contrato?.nome || ''}`
+                  : contrato?.id
+                    ? `Contrato: ${contrato?.nome || '—'}`
+                    : 'Formulário independente — preencha os dados do cliente'}
               </p>
             </div>
           </div>
@@ -311,6 +366,39 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          {/* Buscar cliente (apenas standalone) */}
+          {!contrato?.id && (
+            <div className="rounded-xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+              <label className="block mb-2" style={labelStyle}>Buscar cliente existente (opcional)</label>
+              <div className="relative">
+                <input value={buscaCliente} onChange={e => buscarCliente(e.target.value)}
+                  placeholder="Digite nome ou CPF/CNPJ para preencher automaticamente..."
+                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none pr-10"
+                  style={inputStyle} />
+                {buscandoCliente && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin" style={{ color: AURORA.accent }} />}
+              </div>
+              {clienteVinculado && (
+                <p className="text-[10px] mt-1 flex items-center gap-1" style={{ color: AURORA.accent }}>
+                  <CheckCircle2 className="w-3 h-3" /> Cliente vinculado: {clienteVinculado.nome}
+                </p>
+              )}
+              {resultadosBusca.length > 0 && (
+                <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+                  {resultadosBusca.map(c => (
+                    <button key={c.id} onClick={() => selecionarCliente(c)}
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs transition"
+                      style={{ background: AURORA.surface2, color: AURORA.text }}
+                      onMouseEnter={e => e.currentTarget.style.background = AURORA.accentDim}
+                      onMouseLeave={e => e.currentTarget.style.background = AURORA.surface2}>
+                      <span className="font-semibold">{c.nome}</span>
+                      <span className="ml-2" style={{ color: AURORA.textMuted }}>{c.cpf_cnpj}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tipo de canal */}
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setTipoCanal('PF')}
