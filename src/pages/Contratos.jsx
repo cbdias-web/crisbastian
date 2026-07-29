@@ -219,20 +219,19 @@ export default function Contratos() {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${qtd > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
                     {qtd} contrato{qtd !== 1 ? 's' : ''}
                   </span>
-                  <div className="flex items-center gap-1.5">
-                    {tipo === 'CANAL BANCÁRIO' && (
-                      <button onClick={(e) => { e.stopPropagation(); setRncContrato({}); }}
-                        className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-500/30 text-violet-100 hover:bg-violet-500/50 transition flex items-center gap-1">
-                        <FileCheck2 className="w-2.5 h-2.5" /> RNC
-                      </button>
-                    )}
-                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/25 transition-colors">
-                      <svg className="w-2.5 h-2.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
+                  <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/25 transition-colors">
+                    <svg className="w-2.5 h-2.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
                   </div>
                 </div>
+                {tipo === 'CANAL BANCÁRIO' && (
+                  <button onClick={(e) => { e.stopPropagation(); setRncContrato({}); }}
+                    className="w-full mt-2.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition"
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
+                    <FileCheck2 className="w-3 h-3" /> Formulário RNC
+                  </button>
+                )}
               </div>
             );
           })}
