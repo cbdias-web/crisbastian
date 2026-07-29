@@ -187,20 +187,12 @@ export default function Contratos() {
               <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setRncContrato({})}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
-              style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#a78bfa' }}>
-              <FileCheck2 className="w-4 h-4" />
-              RNC Canal Bancário
-            </button>
-            <button onClick={() => setShowRelatorio(true)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
-              style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
-              <BarChart3 className="w-4 h-4" />
-              Relatório
-            </button>
-          </div>
+          <button onClick={() => setShowRelatorio(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
+            style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+            <BarChart3 className="w-4 h-4" />
+            Relatório
+          </button>
         </div>
 
         {/* Cards de tipo */}
@@ -209,8 +201,8 @@ export default function Contratos() {
             const Icon = cfg.icon;
             const qtd = contratos.filter(c => c.tipo === tipo && (isAdmin || c.created_by === user?.email || c.vendedor_id === user?.id)).length;
             return (
-              <button key={tipo} onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
-                className={`group relative rounded-2xl p-4 text-left text-white overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl active:scale-[0.98] ${cfg.color} shadow-lg border border-white/10`}>
+              <div key={tipo} onClick={() => { setTipoSelecionado(tipo); setClientePreSelecionado(null); setView('novo'); }}
+                className={`group relative rounded-2xl p-4 text-left text-white overflow-hidden transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl active:scale-[0.98] ${cfg.color} shadow-lg border border-white/10 cursor-pointer`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
                 <div className="absolute -right-3 -bottom-3 opacity-[0.08] pointer-events-none">
                   <Icon className="w-20 h-20" />
@@ -227,13 +219,21 @@ export default function Contratos() {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${qtd > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/50'}`}>
                     {qtd} contrato{qtd !== 1 ? 's' : ''}
                   </span>
-                  <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/25 transition-colors">
-                    <svg className="w-2.5 h-2.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
+                  <div className="flex items-center gap-1.5">
+                    {tipo === 'CANAL BANCÁRIO' && (
+                      <button onClick={(e) => { e.stopPropagation(); setRncContrato({}); }}
+                        className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-violet-500/30 text-violet-100 hover:bg-violet-500/50 transition flex items-center gap-1">
+                        <FileCheck2 className="w-2.5 h-2.5" /> RNC
+                      </button>
+                    )}
+                    <div className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white/25 transition-colors">
+                      <svg className="w-2.5 h-2.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

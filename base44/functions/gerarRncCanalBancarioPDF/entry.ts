@@ -97,12 +97,14 @@ Deno.serve(async (req) => {
       y -= 22;
     }
     function campo(label, value) {
-      const v = value || '—';
+      const hasVal = value && String(value).trim();
+      const v = hasVal ? String(value) : '______________________________________________';
       dt(label + ':', ML, 9, fontBold, BLACK);
-      const vLines = wrapText(v, font, 9, TW - fontBold.widthOfTextAtSize(label + ': ', 9));
+      const labelW = fontBold.widthOfTextAtSize(label + ': ', 9);
+      const vLines = wrapText(v, font, 9, TW - labelW);
       if (vLines.length > 0) {
-        dt(vLines[0], ML + fontBold.widthOfTextAtSize(label + ': ', 9), 9, font, BLACK);
-        for (let i = 1; i < vLines.length; i++) { nextLine(); dt(vLines[i], ML, 9, font, BLACK); }
+        dt(vLines[0], ML + labelW, 9, font, hasVal ? BLACK : GRAY);
+        for (let i = 1; i < vLines.length; i++) { nextLine(); dt(vLines[i], ML, 9, font, hasVal ? BLACK : GRAY); }
       }
       nextLine(4);
     }
@@ -110,20 +112,20 @@ Deno.serve(async (req) => {
     secao('DADOS DO TITULAR');
     campo(rnc.tipo_canal === 'PF' ? 'Nome Completo' : 'Razão Social', rnc.nome);
     campo(rnc.tipo_canal === 'PF' ? 'CPF' : 'CNPJ', rnc.cpf_cnpj);
-    if (rnc.rg_ie) campo(rnc.tipo_canal === 'PF' ? 'RG' : 'Inscrição Estadual', rnc.rg_ie);
-    if (rnc.nascimento_fundacao) campo(rnc.tipo_canal === 'PF' ? 'Data de Nascimento' : 'Data de Fundação', fmtDate(rnc.nascimento_fundacao));
-    if (rnc.nacionalidade) campo('Nacionalidade', rnc.nacionalidade);
-    if (rnc.profissao_natureza) campo(rnc.tipo_canal === 'PF' ? 'Profissão' : 'Natureza Jurídica', rnc.profissao_natureza);
-    if (rnc.estado_civil) campo('Estado Civil', rnc.estado_civil);
-    if (rnc.email) campo('E-mail', rnc.email);
-    if (rnc.telefone) campo('Telefone / WhatsApp', rnc.telefone);
+    campo(rnc.tipo_canal === 'PF' ? 'RG' : 'Inscrição Estadual', rnc.rg_ie);
+    campo(rnc.tipo_canal === 'PF' ? 'Data de Nascimento' : 'Data de Fundação', rnc.nascimento_fundacao ? fmtDate(rnc.nascimento_fundacao) : '');
+    campo('Nacionalidade', rnc.nacionalidade);
+    campo(rnc.tipo_canal === 'PF' ? 'Profissão' : 'Natureza Jurídica', rnc.profissao_natureza);
+    if (rnc.tipo_canal === 'PF') campo('Estado Civil', rnc.estado_civil);
+    campo('E-mail', rnc.email);
+    campo('Telefone / WhatsApp', rnc.telefone);
 
     // Endereço
     secao('ENDEREÇO');
-    if (rnc.cep) campo('CEP', rnc.cep);
-    if (rnc.endereco) campo('Logradouro', rnc.endereco);
-    if (rnc.bairro) campo('Bairro', rnc.bairro);
-    if (rnc.cidade || rnc.estado) campo('Cidade / Estado', `${rnc.cidade || '—'} / ${rnc.estado || '—'}`);
+    campo('CEP', rnc.cep);
+    campo('Logradouro', rnc.endereco);
+    campo('Bairro', rnc.bairro);
+    campo('Cidade / Estado', rnc.cidade || rnc.estado ? `${rnc.cidade || ''} / ${rnc.estado || ''}` : '');
 
     // Flag 270k
     secao('VOLUME DE OPERAÇÃO');

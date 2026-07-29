@@ -237,6 +237,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
     tipo_canal: tipoCanal,
     operar_acima_270k: operarAcima270k,
     ...form,
+    nome: form.nome?.trim() || 'Formulário RNC',
     documentos,
     socios: tipoCanal === 'PJ' ? socios : [],
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
@@ -244,7 +245,6 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   });
 
   const handleSalvar = async (status = 'rascunho') => {
-    if (!form.nome?.trim()) { toast.error('Informe o nome/razão social.'); return; }
     if (!allObrigatoriosRecebidos && status === 'concluido') {
       toast.error('Documentos obrigatórios pendentes. Marque todos como recebidos antes de concluir.');
       return;
@@ -269,7 +269,6 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   };
 
   const handleGerarPdf = async () => {
-    if (!rncExistente && !form.nome?.trim()) { toast.error('Salve a RNC antes de gerar o PDF.'); return; }
     setGerandoPdf(true);
     try {
       let rncId = rncExistente?.id;
