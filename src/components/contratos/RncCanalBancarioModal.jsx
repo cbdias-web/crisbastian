@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   X, Building2, User, FileCheck2, Upload, CheckCircle2, Circle, Plus, Trash2,
-  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp
+  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { todayBrasilia, isoNowBrasilia } from '@/lib/dateUtils';
@@ -66,9 +66,12 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   const [operarAcima270k, setOperarAcima270k] = useState(false);
   const [form, setForm] = useState({
     nome: '', cpf_cnpj: '', rg_ie: '', nascimento_fundacao: '', nacionalidade: 'Brasileira',
-    profissao_natureza: '', estado_civil: '', email: '', telefone: '',
+    profissao_natureza: '', estado_civil: '', dupla_nacionalidade: '', media_salarial: '', quantidade_funcionarios: '',
+    email: '', telefone: '',
     cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacoes: '',
   });
+  const [linkRnc, setLinkRnc] = useState('');
+  const [gerandoLink, setGerandoLink] = useState(false);
   const [documentos, setDocumentos] = useState([]);
   const [socios, setSocios] = useState([]);
   const [salvando, setSalvando] = useState(false);
@@ -93,12 +96,14 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
             nome: rnc.nome || '', cpf_cnpj: rnc.cpf_cnpj || '', rg_ie: rnc.rg_ie || '',
             nascimento_fundacao: rnc.nascimento_fundacao || '', nacionalidade: rnc.nacionalidade || '',
             profissao_natureza: rnc.profissao_natureza || '', estado_civil: rnc.estado_civil || '',
+            dupla_nacionalidade: rnc.dupla_nacionalidade || '', media_salarial: rnc.media_salarial || '', quantidade_funcionarios: rnc.quantidade_funcionarios || '',
             email: rnc.email || '', telefone: rnc.telefone || '',
             cep: rnc.cep || '', endereco: rnc.endereco || '', bairro: rnc.bairro || '',
             cidade: rnc.cidade || '', estado: rnc.estado || '', observacoes: rnc.observacoes || '',
           });
           setDocumentos(rnc.documentos || []);
           setSocios(rnc.socios || []);
+          if (rnc.link_token) setLinkRnc(window.location.origin + '/rnc-publica/' + rnc.link_token);
         } else {
           setForm(f => ({
             ...f,
@@ -238,6 +243,8 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
     operar_acima_270k: operarAcima270k,
     ...form,
     nome: form.nome?.trim() || 'Formulário RNC',
+    media_salarial: form.media_salarial ? Number(String(form.media_salarial).replace(/[^\d.,]/g, '').replace(',', '.')) : null,
+    quantidade_funcionarios: form.quantidade_funcionarios ? Number(form.quantidade_funcionarios) : null,
     documentos,
     socios: tipoCanal === 'PJ' ? socios : [],
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
@@ -313,6 +320,33 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   };
 
   const updateForm = (field, value) => setForm(f => ({ ...f, [field]: value }));
+
+  const handleGerarLink = async () => {
+    let rncId = rncExistente?.id;
+    if (!rncId) {
+      setSalvando(true);
+      try {
+        const dados = { ...coletarDados(), status: 'rascunho' };
+        const created = await base44.entities.RncCanalBancario.create(dados);
+        rncId = created.id;
+        setRncExistente(created);
+      } catch (e) { toast.error('Erro ao salvar: ' + e.message); setSalvando(false); return; }
+      setSalvando(false);
+    }
+    setGerandoLink(true);
+    try {
+      const res = await base44.functions.invoke('gerarLinkRnc', { rnc_id: rncId });
+      if (res?.data?.link) {
+        const fullUrl = window.location.origin + res.data.link;
+        setLinkRnc(fullUrl);
+        navigator.clipboard?.writeText(fullUrl).catch(() => {});
+        toast.success('Link gerado e copiado para a área de transferência!');
+      } else {
+        toast.error('Erro ao gerar link.');
+      }
+    } catch (e) { toast.error('Erro: ' + e.message); }
+    setGerandoLink(false);
+  };
 
   const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
     <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
@@ -471,11 +505,30 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
                       {ESTADOS_CIVIS.map(e => <option key={e} value={e}>{e}</option>)}
                     </select>
                   </div>
+                  <LabeledInput label="Média Salarial (R$)" field="media_salarial" type="number" placeholder="Ex: 5000" />
+                  <div>
+                    <label className="block mb-1" style={labelStyle}>Possui dupla nacionalidade?</label>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'sim')}
+                        className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition"
+                        style={form.dupla_nacionalidade === 'sim' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle }}>
+                        Sim
+                      </button>
+                      <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'nao')}
+                        className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition"
+                        style={form.dupla_nacionalidade === 'nao' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle }}>
+                        Não
+                      </button>
+                    </div>
+                  </div>
                 </>
               ) : (
-                <div className="col-span-2">
-                  <LabeledInput label="Natureza Jurídica" field="profissao_natureza" placeholder="Ex: Ltda, ME" />
-                </div>
+                <>
+                  <div className="col-span-2">
+                    <LabeledInput label="Natureza Jurídica" field="profissao_natureza" placeholder="Ex: Ltda, ME" />
+                  </div>
+                  <LabeledInput label="Quantidade de Funcionários" field="quantidade_funcionarios" type="number" placeholder="Ex: 10" />
+                </>
               )}
               <LabeledInput label="E-mail" field="email" placeholder="email@exemplo.com" />
               <LabeledInput label="Telefone / WhatsApp" field="telefone" placeholder="(00) 00000-0000" />
@@ -615,13 +668,28 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
         {/* Footer */}
         <div className="flex items-center justify-between gap-2 px-5 py-4 flex-shrink-0"
           style={{ background: AURORA.surface, borderTop: `1px solid ${AURORA.border}` }}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {rncExistente?.pdf_url && (
               <a href={rncExistente.pdf_url} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0"
                 style={{ background: 'rgba(59,130,249,0.15)', border: '1px solid rgba(59,130,249,0.3)', color: '#60a5fa' }}>
                 <Download className="w-3.5 h-3.5" /> Ver PDF gerado
               </a>
+            )}
+            <button onClick={handleGerarLink} disabled={gerandoLink || salvando}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0"
+              style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', color: '#a78bfa' }}>
+              {gerandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+              Gerar Link p/ Cliente
+            </button>
+            {linkRnc && (
+              <div className="flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                <span className="text-[10px] truncate flex-1" style={{ color: AURORA.accent }}>{linkRnc}</span>
+                <button onClick={() => { navigator.clipboard?.writeText(linkRnc); toast.success('Link copiado!'); }}
+                  className="p-1 rounded flex-shrink-0" style={{ color: AURORA.accent }}>
+                  <Copy className="w-3 h-3" />
+                </button>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-2">

@@ -235,7 +235,15 @@ Deno.serve(async (req) => {
     campo(rnc.tipo_canal === 'PF' ? 'Data de Nascimento' : 'Data de Fundacao', rnc.nascimento_fundacao ? fmtDate(rnc.nascimento_fundacao) : '');
     campo('Nacionalidade', rnc.nacionalidade);
     campo(rnc.tipo_canal === 'PF' ? 'Profissao' : 'Natureza Juridica', rnc.profissao_natureza);
-    if (rnc.tipo_canal === 'PF') campo('Estado Civil', rnc.estado_civil);
+    if (rnc.tipo_canal === 'PF') {
+      campo('Estado Civil', rnc.estado_civil);
+      const dn = rnc.dupla_nacionalidade === 'sim' ? 'SIM' : (rnc.dupla_nacionalidade === 'nao' ? 'NAO' : '');
+      campo('Possui Dupla Nacionalidade?', dn);
+      campo('Media Salarial (R$)', rnc.media_salarial ? Number(rnc.media_salarial).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '');
+    }
+    if (rnc.tipo_canal === 'PJ') {
+      campo('Quantidade de Funcionarios', rnc.quantidade_funcionarios != null ? String(rnc.quantidade_funcionarios) : '');
+    }
     campo('E-mail', rnc.email);
     campo('Telefone / WhatsApp', rnc.telefone);
     y -= 4;

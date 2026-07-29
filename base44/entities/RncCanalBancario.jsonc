@@ -48,6 +48,22 @@
       "type": "string",
       "description": "Estado civil (PF)"
     },
+    "dupla_nacionalidade": {
+      "type": "string",
+      "enum": [
+        "sim",
+        "nao"
+      ],
+      "description": "Possui dupla nacionalidade? (PF)"
+    },
+    "media_salarial": {
+      "type": "number",
+      "description": "Media salarial em R$ (PF)"
+    },
+    "quantidade_funcionarios": {
+      "type": "number",
+      "description": "Quantidade de funcionarios (PJ)"
+    },
     "email": {
       "type": "string",
       "description": "E-mail de contato"
@@ -169,6 +185,24 @@
     "observacoes": {
       "type": "string",
       "description": "Observacoes adicionais"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Token unico do link publico de preenchimento pelo cliente"
+    },
+    "link_gerado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que o link foi gerado"
+    },
+    "link_origem_admin": {
+      "type": "string",
+      "description": "E-mail do admin que gerou o link"
+    },
+    "link_preenchido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da ultima submissao do cliente via link"
     }
   },
   "required": [

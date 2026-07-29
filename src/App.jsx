@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
@@ -30,6 +30,7 @@ import Desempenho from './pages/Desempenho';
 import CentralLeads from './pages/CentralLeads';
 import Implantacoes from './pages/Implantacoes';
 import MarketNews from './pages/MarketNews';
+import RncPublicaPage from './pages/RncPublicaPage';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -40,6 +41,19 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
+  const location = useLocation();
+  // Página pública de RNC — bypassa autenticação
+  if (location.pathname.startsWith('/rnc-publica')) {
+    return (
+      <Routes>
+        <Route path="/rnc-publica/:token" element={<RncPublicaPage />} />
+      </Routes>
+    );
+  }
+  return <AuthenticatedAppInner />;
+};
+
+const AuthenticatedAppInner = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
