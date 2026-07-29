@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3, FileCheck2 } from 'lucide-react';
 import RelatorioContratosModal from '@/components/contratos/RelatorioContratosModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -9,6 +9,7 @@ import { todayBrasilia } from '@/lib/dateUtils';
 import ContratoForm from '@/components/contratos/ContratoForm';
 import ContratoViewer from '@/components/contratos/ContratoViewer';
 import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSidebar';
+import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -51,6 +52,7 @@ export default function Contratos() {
   const [filtroVendedores, setFiltroVendedores] = useState([]);
   const [vendedorDropdownOpen, setVendedorDropdownOpen] = useState(false);
   const [showRelatorio, setShowRelatorio] = useState(false);
+  const [rncContrato, setRncContrato] = useState(null);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -364,6 +366,12 @@ export default function Contratos() {
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                           )}
+                          {c.tipo === 'CANAL BANCÁRIO' && (
+                            <button onClick={() => setRncContrato(c)}
+                              className="p-1.5 bg-violet-50 text-violet-600 hover:bg-violet-100 rounded-lg transition" title="RNC — Documentação Canal Bancário">
+                              <FileCheck2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => enviarParaVendas(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
@@ -386,6 +394,13 @@ export default function Contratos() {
           </div>
         )}
         {showRelatorio && <RelatorioContratosModal onClose={() => setShowRelatorio(false)} />}
+        {rncContrato && (
+          <RncCanalBancarioModal
+            contrato={rncContrato}
+            user={user}
+            onClose={() => setRncContrato(null)}
+          />
+        )}
       </div>
     </div>
   );
