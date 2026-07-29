@@ -1,28 +1,24 @@
 {
   "name": "Villela Exchange",
   "short_name": "Villela",
-  "description": "Gestão Comercial - Villela Exchange",
+  "description": "Gestão Comercial Villela Exchange",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1e35",
-  "theme_color": "#0f1e35",
-  "orientation": "portrait",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "https://base44.com/logo_v2.svg",
-      "sizes": "any",
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300D4AA'/><stop offset='1' stop-color='%230066cc'/></linearGradient></defs><rect width='512' height='512' rx='96' fill='url(%23g)'/><text x='256' y='340' font-family='Arial,sans-serif' font-size='240' font-weight='bold' fill='white' text-anchor='middle'>VX</text></svg>",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "https://base44.com/logo_v2.svg",
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300D4AA'/><stop offset='1' stop-color='%230066cc'/></linearGradient></defs><rect width='512' height='512' rx='96' fill='url(%23g)'/><text x='256' y='340' font-family='Arial,sans-serif' font-size='240' font-weight='bold' fill='white' text-anchor='middle'>VX</text></svg>",
       "sizes": "192x192",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "https://base44.com/logo_v2.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }
