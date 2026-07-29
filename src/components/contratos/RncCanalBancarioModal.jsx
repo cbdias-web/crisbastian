@@ -322,17 +322,21 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   const updateForm = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
   const handleGerarLink = async () => {
+    setSalvando(true);
     let rncId = rncExistente?.id;
-    if (!rncId) {
-      setSalvando(true);
-      try {
-        const dados = { ...coletarDados(), status: 'rascunho' };
+    try {
+      const dados = { ...coletarDados(), status: rncExistente?.status === 'concluido' ? 'concluido' : 'rascunho' };
+      if (rncId) {
+        // Sempre atualizar antes de gerar — o usuário pode ter alterado tipo/fichas sem salvar
+        await base44.entities.RncCanalBancario.update(rncId, dados);
+        setRncExistente(prev => ({ ...prev, ...dados }));
+      } else {
         const created = await base44.entities.RncCanalBancario.create(dados);
         rncId = created.id;
         setRncExistente(created);
-      } catch (e) { toast.error('Erro ao salvar: ' + e.message); setSalvando(false); return; }
-      setSalvando(false);
-    }
+      }
+    } catch (e) { toast.error('Erro ao salvar: ' + e.message); setSalvando(false); return; }
+    setSalvando(false);
     setGerandoLink(true);
     try {
       const res = await base44.functions.invoke('gerarLinkRnc', { rnc_id: rncId });
