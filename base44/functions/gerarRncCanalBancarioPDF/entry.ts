@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
       nextLine(8);
     } else {
       for (const d of docs) {
-        const status = d.recebido ? '✓ RECEBIDO' : (d.obrigatorio ? '⚠ PENDENTE (obrigatório)' : '— Não aplicável');
+        const status = d.recebido ? '[OK] RECEBIDO' : (d.obrigatorio ? '[!] PENDENTE (obrigatorio)' : '- Nao aplicavel');
         const statusColor = d.recebido ? TEAL : (d.obrigatorio ? GOLD : GRAY);
         // Descrição
         const descLines = wrapText(d.descricao, font, 9, TW - 120);
@@ -168,10 +168,10 @@ Deno.serve(async (req) => {
         const s = rnc.socios[i];
         dt(`${i + 1}. ${s.nome || '—'}  —  CPF: ${s.cpf || '—'}`, ML, 9, fontBold, BLACK);
         nextLine(4);
-        const docStatus = s.documento_url ? '✓ Documento de identificação anexado' : '⚠ Documento de identificação pendente';
+        const docStatus = s.documento_url ? '[OK] Documento de identificacao anexado' : '[!] Documento de identificacao pendente';
         dt(docStatus, ML + 15, 8, font, s.documento_url ? TEAL : GOLD);
         nextLine(2);
-        const compStatus = s.comprovante_url ? '✓ Comprovante de endereço anexado' : '⚠ Comprovante de endereço pendente';
+        const compStatus = s.comprovante_url ? '[OK] Comprovante de endereco anexado' : '[!] Comprovante de endereco pendente';
         dt(compStatus, ML + 15, 8, font, s.comprovante_url ? TEAL : GOLD);
         nextLine(8);
       }
