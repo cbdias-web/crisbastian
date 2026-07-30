@@ -201,8 +201,8 @@ export default function ParcelasVincendasModal({ onClose, user }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(2px)' }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)' }}>
+    <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pb-6" style={{ background: 'transparent', paddingTop: '128px' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-5xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
           <div>
