@@ -101,6 +101,10 @@ body {
 .bg-gray-50, .bg-gray-100 { background-color: #161b22 !important; }
 .bg-gray-200 { background-color: #21262d !important; }
 .bg-gray-300 { background-color: #2d333b !important; }
+/* Opacity variants used in modal strips/rows — keep them dark, not light grey */
+.bg-gray-50\/50, .bg-gray-50\/60, .bg-gray-50\/80 { background-color: rgba(22,27,34,0.6) !important; }
+.hover\:bg-gray-50\/60:hover { background-color: rgba(0,212,170,0.06) !important; }
+.bg-red-50\/50 { background-color: rgba(239,68,68,0.08) !important; }
 
 /* ── Tinted backgrounds → dark surfaces with subtle hue ── */
 .bg-blue-50 { background-color: rgba(59,130,249,0.10) !important; }
