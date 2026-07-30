@@ -494,7 +494,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: A.bg, color: A.text }} className="p-4 sm:p-6">
+    <div style={{ minHeight: '100vh', background: 'transparent', color: A.text }} className="p-4 sm:p-6">
       <div className="space-y-5 max-w-[1400px] mx-auto">
 
         {/* ─── Header row ──────────────────────────────────────────────── */}

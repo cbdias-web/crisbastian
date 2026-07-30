@@ -405,7 +405,7 @@ export default function Layout({ children, currentPageName }) {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           backgroundAttachment: 'fixed',
-          opacity: 0.18,
+          opacity: 0.28,
           pointerEvents: 'none',
         }}
       />
