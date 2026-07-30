@@ -201,16 +201,18 @@ export default function ParcelasVincendasModal({ onClose, user }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(2px)' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)' }}>
         {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+        <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
           <div>
-            <h2 className="font-bold text-gray-900 text-lg">Parcelas Vincendas</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{parcelasFiltradas.length} parcela(s) · Total: {fmtVal(totalFiltrado)}</p>
+            <h2 className="font-bold text-lg" style={{ color: '#e6edf3' }}>Parcelas Vincendas</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>{parcelasFiltradas.length} parcela(s) · Total: {fmtVal(totalFiltrado)}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
-            <X className="w-5 h-5 text-gray-400" />
+          <button onClick={onClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition"
+            style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <X className="w-4 h-4" /> Fechar
           </button>
         </div>
 
