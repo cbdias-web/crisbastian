@@ -400,12 +400,12 @@ export default function Layout({ children, currentPageName }) {
           right: 0,
           bottom: 0,
           zIndex: 0,
-          backgroundImage: 'url("https://media.base44.com/images/public/698a1739c50002e4d14fa547/d9c28df48_generated_image.png")',
+          backgroundImage: 'url("https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png")',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           backgroundAttachment: 'fixed',
-          opacity: 0.28,
+          opacity: 0.45,
           pointerEvents: 'none',
         }}
       />
@@ -417,7 +417,7 @@ export default function Layout({ children, currentPageName }) {
           right: 0,
           bottom: 0,
           zIndex: 0,
-          background: 'linear-gradient(180deg, rgba(13,17,23,0.78) 0%, rgba(13,17,23,0.68) 40%, rgba(13,17,23,0.82) 100%)',
+          background: 'linear-gradient(180deg, rgba(13,17,23,0.55) 0%, rgba(13,17,23,0.45) 40%, rgba(13,17,23,0.60) 100%)',
           pointerEvents: 'none',
         }}
       />
