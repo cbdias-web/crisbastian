@@ -391,6 +391,37 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div style={{ minHeight: '100vh', background: AURORA.bg, color: AURORA.text }}>
+      {/* ═══ BACKGROUND WATERMARK (fixed, com overlay escuro) ═══ */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0,
+          backgroundImage: 'url("https://media.base44.com/images/public/698a1739c50002e4d14fa547/d9c28df48_generated_image.png")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          opacity: 0.18,
+          pointerEvents: 'none',
+        }}
+      />
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 0,
+          background: 'linear-gradient(180deg, rgba(13,17,23,0.78) 0%, rgba(13,17,23,0.68) 40%, rgba(13,17,23,0.82) 100%)',
+          pointerEvents: 'none',
+        }}
+      />
+
       {showOnboarding && user && (
         <OnboardingModal user={user} aceite={aceite} onComplete={() => setShowOnboarding(false)} />
       )}
@@ -676,11 +707,13 @@ export default function Layout({ children, currentPageName }) {
       {/* ═══ MAIN CONTENT ═══ */}
       <main
         style={{
+          position: 'relative',
+          zIndex: 1,
           paddingTop: impersonating
             ? (isMobile ? '150px' : '116px')
             : (isMobile ? '110px' : '116px'),
           minHeight: '100vh',
-          background: AURORA.bg,
+          background: 'transparent',
         }}
       >
         <MarketTicker />
