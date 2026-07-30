@@ -245,6 +245,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 thead tr, .bg-gray-50\/80 { background-color: rgba(22,27,34,0.9) !important; }
 
 /* ── Make page root containers transparent so the global watermark shows through gaps ──
-   Page roots set inline background #0d1117 (= A.bg); cards use different surface colors,
-   so this selector only clears the page wrapper, never the cards on top of it. */
-main > div[style*="0d1117"] { background-color: transparent !important; }
+   Page roots are marked by min-h-screen / minHeight:100vh (cards never use these).
+   Placed AFTER the .bg-gray-50 override so it wins the !important tie on roots that
+   combine min-h-screen + bg-gray-50 (e.g. Vendas). Cards keep their solid surfaces. */
+main > div.min-h-screen,
+main > div[style*="100vh"],
+main > div[style*="0d1117"],
+main > div[style*="161b22"] {
+  background-color: transparent !important;
+}
