@@ -9,16 +9,22 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300D4AA'/><stop offset='1' stop-color='%230066cc'/></linearGradient></defs><rect width='512' height='512' rx='96' fill='url(%23g)'/><text x='256' y='340' font-family='Arial,sans-serif' font-size='240' font-weight='bold' fill='white' text-anchor='middle'>VX</text></svg>",
+      "src": "https://media.base44.com/images/public/698a1739c50002e4d14fa547/4514a4f77_generated_image.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='192' height='192' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%2300D4AA'/><stop offset='1' stop-color='%230066cc'/></linearGradient></defs><rect width='512' height='512' rx='96' fill='url(%23g)'/><text x='256' y='340' font-family='Arial,sans-serif' font-size='240' font-weight='bold' fill='white' text-anchor='middle'>VX</text></svg>",
+      "src": "https://media.base44.com/images/public/698a1739c50002e4d14fa547/4514a4f77_generated_image.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/698a1739c50002e4d14fa547/4514a4f77_generated_image.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
