@@ -220,8 +220,9 @@ export default function Pipeline() {
     return true;
   });
 
-  // Parcelas filtradas por período (quando filtro de data está ativo — usa data_vencimento)
+  // Parcelas filtradas por período + produto (quando filtros ativos — usa data_vencimento)
   const parcelasVendaFiltradas = parcelasVendaPendentes.filter(p => {
+    if (filtroProduto !== 'Todos' && p.produto !== filtroProduto) return false;
     if (filtroDataInicio && p.data_vencimento && p.data_vencimento < filtroDataInicio) return false;
     if (filtroDataFim && p.data_vencimento && p.data_vencimento > filtroDataFim) return false;
     return true;
@@ -539,8 +540,8 @@ export default function Pipeline() {
     setConvertendo(null);
   };
 
-  // KPI parcelas pendentes (usa filtradas quando há período selecionado)
-  const parcelasParaExibir = (filtroDataInicio || filtroDataFim) ? parcelasVendaFiltradas : parcelasVendaPendentes;
+  // KPI parcelas pendentes (usa filtradas quando há período ou produto selecionado)
+  const parcelasParaExibir = (filtroDataInicio || filtroDataFim || filtroProduto !== 'Todos') ? parcelasVendaFiltradas : parcelasVendaPendentes;
   const totalParcelasPendentes = parcelasParaExibir.length;
   const valorParcelasPendentes = parcelasParaExibir.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
@@ -651,9 +652,10 @@ export default function Pipeline() {
           const kpiEmNegociacao = showingGerente ? gerenteEmNegociacao : valorTotal;
           const kpiFechados = showingGerente ? gerenteFechados : negocios.filter(n => n.temperatura === 'Fechado').length;
           const kpiVolumeFechado = showingGerente ? gerenteVolumeFechado : valorFechado;
-          const kpiParcelas = showingGerente
+          const kpiParcelasBase = showingGerente
             ? parcelasVendaPendentes.filter(p => vendedorSelecionado && p.vendedor_id === vendedorSelecionado.id)
             : parcelasVendaPendentes;
+          const kpiParcelas = kpiParcelasBase.filter(p => filtroProduto === 'Todos' || p.produto === filtroProduto);
           const kpiValorParcelas = kpiParcelas.reduce((s, p) => s + (p.valor_parcela || 0), 0);
 
           return (
