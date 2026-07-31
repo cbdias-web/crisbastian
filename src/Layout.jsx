@@ -719,8 +719,10 @@ export default function Layout({ children, currentPageName }) {
         <MarketTicker />
         <BannerAlertaSistema user={user} />
         {children}
-        <AssistenteFloating />
       </main>
+
+      {/* Jarvis fora do <main> para não ser tapado pelo cabeçalho fixo (z-50) */}
+      <AssistenteFloating />
     </div>
   );
 }
