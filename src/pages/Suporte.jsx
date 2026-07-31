@@ -90,6 +90,7 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
   const [enviando, setEnviando] = useState(false);
   const [analisandoIA, setAnalisandoIA] = useState(false);
   const [sugestaoIA, setSugestaoIA] = useState(null);
+  const [resolvendoIA, setResolvendoIA] = useState(false);
   const [avaliacao, setAvaliacao] = useState(chamado.avaliacao || 0);
 
   const respostas = chamado.respostas || [];
@@ -256,6 +257,29 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
     toast.info('Sugestão da IA descartada.');
   }
 
+  async function resolverComIA() {
+    setResolvendoIA(true);
+    try {
+      const response = await base44.functions.invoke('resolverChamadoIA', { chamado_id: chamado.id });
+      const data = response.data;
+      if (!data.success) {
+        toast.error('Erro ao resolver: ' + (data.error || ''));
+        return;
+      }
+      // Recarregar o chamado atualizado do banco
+      const fresh = await base44.entities.ChamadoSuporte.get(chamado.id);
+      await onUpdate(chamado.id, fresh);
+      toast.success(
+        data.acao_executada?.success
+          ? 'Problema resolvido automaticamente pela IA!'
+          : 'Resposta da IA enviada ao chamado!'
+      );
+    } catch (error) {
+      toast.error('Erro ao resolver com IA: ' + (error.response?.data?.error || error.message));
+    }
+    setResolvendoIA(false);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -281,6 +305,15 @@ function ChamadoDetalhe({ chamado, user, isAdmin, onClose, onUpdate }) {
                 style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff', boxShadow: '0 2px 8px rgba(0,212,170,0.3)' }}>
                 {analisandoIA ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
                 {analisandoIA ? 'Analisando...' : 'Analisar com IA'}
+              </button>
+            )}
+            {chamado.status !== 'fechado' && (isAdmin || chamado.usuario_id === user?.id) && (
+              <button onClick={resolverComIA} disabled={resolvendoIA}
+                title="O Jarvis analisa e resolve este chamado automaticamente, sem precisar do suporte humano"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-60"
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' }}>
+                {resolvendoIA ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+                {resolvendoIA ? 'Resolvendo...' : 'Resolver com IA'}
               </button>
             )}
             <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="w-5 h-5" /></button>
