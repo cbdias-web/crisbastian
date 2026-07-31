@@ -1182,7 +1182,7 @@ export default function MeusClientes() {
         if (!cliente) return null;
         return (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-140px)] flex flex-col">
               {/* Header */}
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0f1e35 0%, #1a3150 100%)' }}>
                 <div>

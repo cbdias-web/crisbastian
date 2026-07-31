@@ -216,7 +216,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }} onClick={e => e.stopPropagation()}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="px-6 py-4 flex items-start justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
           <div>

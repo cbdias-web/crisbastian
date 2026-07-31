@@ -239,6 +239,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border-color: rgba(0,212,170,0.12);
 }
 
+/* ── Modals: keep full-screen overlays below the fixed app header ──
+   The app header is fixed at z-50; page content sits inside <main> (z-1 stacking
+   context), so any centered modal is clipped under the header. Nudge every
+   full-screen z-50 flex overlay to start below the header instead of centering. */
+.fixed.inset-0.z-50 {
+  align-items: flex-start !important;
+  padding-top: 116px !important;
+}
+
 /* ── Scrollbar styling ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #161b22; }
