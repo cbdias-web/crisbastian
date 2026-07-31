@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import {
   MessageCircle, Mail, ChevronDown, CheckCircle2, Send, Loader2, LifeBuoy,
   BookOpen, Zap, AlertCircle, Plus, Clock, Search, X, Star, MessageSquare,
-  ChevronRight, RefreshCw, Filter, Paperclip, FileText, Download
+  ChevronRight, RefreshCw, Filter, Paperclip, FileText, Download, Bot
 } from 'lucide-react';
 import { toast } from 'sonner';
 import useIsAdmin from '@/hooks/useIsAdmin';
@@ -860,6 +860,13 @@ export default function Suporte() {
               <div className="px-6 py-5 border-b border-gray-100">
                 <h2 className="font-bold text-gray-900">Novo Chamado</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Descreva detalhadamente — isso agiliza o atendimento</p>
+              </div>
+              <div className="mx-6 mt-4 flex items-start gap-3 rounded-xl p-3"
+                style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,102,204,0.08))', border: '1px solid rgba(0,212,170,0.25)' }}>
+                <Bot className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#00D4AA' }} />
+                <p className="text-xs" style={{ color: '#9ae8d6' }}>
+                  <strong style={{ color: '#00D4AA' }}>Jarvis atende automaticamente.</strong> Ao abrir o chamado, nosso assistente de IA analisa sua solicitação (inclusive documentos anexados) e envia uma resposta em instantes — podendo já executar ações como gerar contratos ou registrar vendas quando aplicável.
+                </p>
               </div>
               <form onSubmit={abrirChamado} className="p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
