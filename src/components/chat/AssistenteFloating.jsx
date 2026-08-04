@@ -554,7 +554,7 @@ export default function AssistenteFloating() {
   return (
     <>
       {/* Floating button */}
-      <div ref={btnContainerRef} style={btnStyle} className="flex flex-col items-center gap-2 select-none">
+      <div ref={btnContainerRef} data-jarvis-root style={btnStyle} className="flex flex-col items-center gap-2 select-none">
         <button
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}

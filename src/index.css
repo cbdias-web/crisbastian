@@ -249,6 +249,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding-top: 116px !important;
 }
 
+/* ── Esconde o Jarvis quando um modal overlay estiver aberto ── */
+body:has(.fixed.inset-0.z-50) [data-jarvis-root],
+body:has(.fixed.inset-0.z-\[100\]) [data-jarvis-root] {
+  display: none !important;
+}
+
 /* ── Scrollbar styling ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #161b22; }

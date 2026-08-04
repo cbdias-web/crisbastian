@@ -388,7 +388,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="w-full max-w-3xl max-h-[92vh] rounded-2xl overflow-hidden flex flex-col"
+      <div className="w-full max-w-3xl max-h-[calc(100vh-140px)] rounded-2xl overflow-hidden flex flex-col"
         style={{ background: AURORA.bg, border: `1px solid ${AURORA.borderActive}` }}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
