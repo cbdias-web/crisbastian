@@ -243,7 +243,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    The app header is fixed at z-50; page content sits inside <main> (z-1 stacking
    context), so any centered modal is clipped under the header. Nudge every
    full-screen z-50 flex overlay to start below the header instead of centering. */
-.fixed.inset-0.z-50 {
+.fixed.inset-0.z-50,
+.fixed.inset-0.z-\[100\] {
   align-items: flex-start !important;
   padding-top: 116px !important;
 }

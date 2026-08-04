@@ -10,6 +10,7 @@ import ContratoForm from '@/components/contratos/ContratoForm';
 import ContratoViewer from '@/components/contratos/ContratoViewer';
 import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSidebar';
 import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
+import RncListModal from '@/components/contratos/RncListModal';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -53,6 +54,8 @@ export default function Contratos() {
   const [vendedorDropdownOpen, setVendedorDropdownOpen] = useState(false);
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [rncContrato, setRncContrato] = useState(null);
+  const [rncDirectId, setRncDirectId] = useState(null);
+  const [showRncList, setShowRncList] = useState(false);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -187,12 +190,20 @@ export default function Contratos() {
               <p className="text-sm mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>Gere, gerencie e acompanhe contratos de clientes</p>
             </div>
           </div>
-          <button onClick={() => setShowRelatorio(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105 flex-shrink-0"
-            style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
-            <BarChart3 className="w-4 h-4" />
-            Relatório
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => setShowRncList(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
+              style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)', color: '#a78bfa' }}>
+              <FileCheck2 className="w-4 h-4" />
+              RNCs
+            </button>
+            <button onClick={() => setShowRelatorio(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
+              style={{ background: 'rgba(0,212,170,0.12)', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+              <BarChart3 className="w-4 h-4" />
+              Relatório
+            </button>
+          </div>
         </div>
 
         {/* Cards de tipo */}
@@ -401,11 +412,28 @@ export default function Contratos() {
           </div>
         )}
         {showRelatorio && <RelatorioContratosModal onClose={() => setShowRelatorio(false)} />}
-        {rncContrato && (
+        {showRncList && (
+          <RncListModal
+            onClose={() => setShowRncList(false)}
+            onOpenRnc={(rnc) => {
+              setShowRncList(false);
+              if (rnc.contrato_id) {
+                const ct = contratos.find(c => c.id === rnc.contrato_id);
+                setRncContrato(ct || { id: rnc.contrato_id, nome: rnc.nome, cpf_cnpj: rnc.cpf_cnpj });
+                setRncDirectId(null);
+              } else {
+                setRncContrato(null);
+                setRncDirectId(rnc.id);
+              }
+            }}
+          />
+        )}
+        {(rncContrato || rncDirectId) && (
           <RncCanalBancarioModal
-            contrato={rncContrato}
+            contrato={rncContrato || {}}
+            rncId={rncDirectId}
             user={user}
-            onClose={() => setRncContrato(null)}
+            onClose={() => { setRncContrato(null); setRncDirectId(null); }}
           />
         )}
       </div>

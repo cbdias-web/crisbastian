@@ -55,7 +55,7 @@ const AURORA = {
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };
 const labelStyle = { color: AURORA.textMuted, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' };
 
-export default function RncCanalBancarioModal({ contrato, user, onClose }) {
+export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }) {
   const queryClient = useQueryClient();
   const [rncExistente, setRncExistente] = useState(null);
   const [buscaCliente, setBuscaCliente] = useState('');
@@ -83,27 +83,34 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   const [secaoSociosOpen, setSecaoSociosOpen] = useState(true);
   const [secaoObsOpen, setSecaoObsOpen] = useState(true);
 
+  const aplicarRnc = (rnc) => {
+    setRncExistente(rnc);
+    setTipoCanal(rnc.tipo_canal || 'PF');
+    setOperarAcima270k(rnc.operar_acima_270k || false);
+    setForm({
+      nome: rnc.nome || '', cpf_cnpj: rnc.cpf_cnpj || '', rg_ie: rnc.rg_ie || '',
+      nascimento_fundacao: rnc.nascimento_fundacao || '', nacionalidade: rnc.nacionalidade || '',
+      profissao_natureza: rnc.profissao_natureza || '', estado_civil: rnc.estado_civil || '',
+      dupla_nacionalidade: rnc.dupla_nacionalidade || '', media_salarial: rnc.media_salarial || '', quantidade_funcionarios: rnc.quantidade_funcionarios || '',
+      email: rnc.email || '', telefone: rnc.telefone || '',
+      cep: rnc.cep || '', endereco: rnc.endereco || '', bairro: rnc.bairro || '',
+      cidade: rnc.cidade || '', estado: rnc.estado || '', observacoes: rnc.observacoes || '',
+    });
+    setDocumentos(rnc.documentos || []);
+    setSocios(rnc.socios || []);
+    if (rnc.link_token) setLinkRnc(window.location.origin + '/rnc-publica/' + rnc.link_token);
+  };
+
   useEffect(() => {
+    if (rncId) {
+      base44.entities.RncCanalBancario.get(rncId).then(aplicarRnc).catch(() => {});
+      return;
+    }
     if (!contrato?.id) return;
     base44.entities.RncCanalBancario.filter({ contrato_id: contrato.id })
       .then(rncs => {
         if (rncs.length > 0) {
-          const rnc = rncs[0];
-          setRncExistente(rnc);
-          setTipoCanal(rnc.tipo_canal || 'PF');
-          setOperarAcima270k(rnc.operar_acima_270k || false);
-          setForm({
-            nome: rnc.nome || '', cpf_cnpj: rnc.cpf_cnpj || '', rg_ie: rnc.rg_ie || '',
-            nascimento_fundacao: rnc.nascimento_fundacao || '', nacionalidade: rnc.nacionalidade || '',
-            profissao_natureza: rnc.profissao_natureza || '', estado_civil: rnc.estado_civil || '',
-            dupla_nacionalidade: rnc.dupla_nacionalidade || '', media_salarial: rnc.media_salarial || '', quantidade_funcionarios: rnc.quantidade_funcionarios || '',
-            email: rnc.email || '', telefone: rnc.telefone || '',
-            cep: rnc.cep || '', endereco: rnc.endereco || '', bairro: rnc.bairro || '',
-            cidade: rnc.cidade || '', estado: rnc.estado || '', observacoes: rnc.observacoes || '',
-          });
-          setDocumentos(rnc.documentos || []);
-          setSocios(rnc.socios || []);
-          if (rnc.link_token) setLinkRnc(window.location.origin + '/rnc-publica/' + rnc.link_token);
+          aplicarRnc(rncs[0]);
         } else {
           setForm(f => ({
             ...f,
@@ -125,7 +132,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
         }
       })
       .catch(() => {});
-  }, [contrato?.id]);
+  }, [contrato?.id, rncId]);
 
   useEffect(() => {
     if (rncExistente) return;
@@ -238,7 +245,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose }) {
   };
 
   const coletarDados = () => ({
-    contrato_id: contrato?.id || '',
+    contrato_id: rncExistente?.contrato_id || contrato?.id || '',
     tipo_canal: tipoCanal,
     operar_acima_270k: operarAcima270k,
     ...form,
