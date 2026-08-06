@@ -18,7 +18,7 @@ const formasPagamento = [
 export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin }) {
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
-    queryFn: () => base44.entities.Vendedor.list('nome', 500),
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
   });
 
   const { data: produtos = [] } = useQuery({
