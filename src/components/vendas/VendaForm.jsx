@@ -468,7 +468,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 </button>
                 {vendedorOpen && (
                   <div className="absolute z-30 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
-                    {vendedores.map(v => {
+                    {vendedores.filter(v => v.ativo !== false).map(v => {
                       const isSelected = !!selectedVendedores.find(sv => sv.id === v.id);
                       return (
                         <button key={v.id} type="button" onClick={() => { toggleVendedor(v); setVendedorOpen(false); }}
