@@ -173,43 +173,44 @@ export default function AgendaMeetModal({
         });
       }
 
-      // 2. Se quer Meet → chama função backend com horário já definido
-      if (form.com_meet) {
-        try {
-          // Descobre e-mail do gerente principal (especialista alvo) e dos adicionais
-          const gerentePrincipal = todosVendedores.find(v => v.id === vidFinal);
-          const targetEmail = gerentePrincipal?.email && gerentePrincipal.email !== user.email ? gerentePrincipal.email : '';
-          const adicionaisEmails = gerentesAdicionais
-            .map(g => g.email)
-            .filter(e => e && e !== user.email && e !== targetEmail);
+      // 2. Cria evento no Google Calendar para todos os participantes (link Meet opcional)
+      try {
+        const gerentePrincipal = todosVendedores.find(v => v.id === vidFinal);
+        const targetEmail = gerentePrincipal?.email && gerentePrincipal.email !== user.email ? gerentePrincipal.email : '';
+        const adicionaisEmails = gerentesAdicionais
+          .map(g => g.email)
+          .filter(e => e && e !== user.email && e !== targetEmail);
+        const adicionaisNomes = gerentesAdicionais.map(g => g.nome).filter(Boolean);
 
-          const res = await base44.functions.invoke('criarMeetAgenda', {
-            agenda_id: agenda.id,
-            lead_nome: cNome,
-            data_agendada: form.data,
-            horario_inicio: form.horario,
-            horario_fim: form.horario_fim,
-            com_meet: true,
-            target_user_email: targetEmail,
-            organizer_email: user.email,
-            attendees_emails: adicionaisEmails,
-          });
-          const meetLink = res.data?.meet_link;
-          const calendarLink = res.data?.calendar_link;
-          setResultado({ meet_link: meetLink, calendar_link: calendarLink });
-          if (meetLink) toast.success('Reunião agendada com Meet!');
-          else toast.success('Evento criado no Google Calendar!');
-        } catch (err) {
-          const msg = err?.response?.data?.error || err?.message || '';
-          if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
-            toast.warning('Agenda criada! Para gerar Meet, conecte seu Google Calendar nas configurações.');
-          } else {
-            toast.warning('Agenda criada, mas houve erro ao criar o Meet: ' + msg);
-          }
+        const res = await base44.functions.invoke('criarMeetAgenda', {
+          agenda_id: agenda.id,
+          lead_nome: cNome,
+          data_agendada: form.data,
+          horario_inicio: form.horario,
+          horario_fim: form.horario_fim,
+          com_meet: form.com_meet,
+          target_user_email: targetEmail,
+          target_vendedor_nome: gerentePrincipal?.nome || '',
+          organizer_email: user.email,
+          attendees_emails: adicionaisEmails,
+          adicionais_nomes: adicionaisNomes,
+        });
+        if (res.data?.skipped) {
+          toast.success('Agendamento criado! Conecte seu Google Calendar nas configurações para sincronizar com a agenda.');
           setResultado({ meet_link: null, calendar_link: null });
+        } else {
+          const meetLink = res.data?.meet_link;
+          setResultado({ meet_link: meetLink, calendar_link: res.data?.calendar_link });
+          if (meetLink) toast.success('Reunião agendada com Meet!');
+          else toast.success('Compromisso criado no Google Calendar!');
         }
-      } else {
-        toast.success('Agendamento criado!');
+      } catch (err) {
+        const msg = err?.response?.data?.error || err?.message || '';
+        if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
+          toast.warning('Agenda criada! Para sincronizar com o Google, conecte seu Google Calendar nas configurações.');
+        } else {
+          toast.warning('Agenda criada, mas houve erro ao criar o evento no Google: ' + msg);
+        }
         setResultado({ meet_link: null, calendar_link: null });
       }
 

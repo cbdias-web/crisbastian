@@ -125,7 +125,13 @@ export default function MeusClientes() {
         setVendedor(impersonado);
         setTimeout(() => sincronizarAgenda(), 500);
       } else {
-        const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        let vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        if (vendedores.length === 0) {
+          // Fallback: e-mail de login pode divergir do e-mail do cadastro — casa por nome
+          const all = await base44.entities.Vendedor.list('nome', 500);
+          const norm = s => (s || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          vendedores = all.filter(v => norm(v.nome) === norm(u.full_name || ''));
+        }
         if (vendedores.length > 0) {
           setVendedor(vendedores[0]);
           setTimeout(() => sincronizarAgenda(), 500);
@@ -141,7 +147,12 @@ export default function MeusClientes() {
       if (impersonado) {
         setVendedor(impersonado);
       } else {
-        const vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        let vendedores = await base44.entities.Vendedor.filter({ email: u.email });
+        if (vendedores.length === 0) {
+          const all = await base44.entities.Vendedor.list('nome', 500);
+          const norm = s => (s || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          vendedores = all.filter(v => norm(v.nome) === norm(u.full_name || ''));
+        }
         setVendedor(vendedores[0] || null);
       }
     };
