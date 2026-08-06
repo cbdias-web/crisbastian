@@ -84,6 +84,13 @@ export default function Usuarios() {
     enabled: isAdmin
   });
 
+  // Vendedores inativos (origem da migração — saíram mas ainda podem ter carteira)
+  const { data: vendedoresInativos = [] } = useQuery({
+    queryKey: ['vendedores-inativos-lista'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: false }, 'nome'),
+    enabled: isAdmin
+  });
+
   const { data: roletas = [] } = useQuery({
     queryKey: ['roletas-premios'],
     queryFn: () => base44.entities.RoletaPremio.list(),
@@ -742,7 +749,7 @@ export default function Usuarios() {
                   <select value={migracaoForm.vendedor_origem_id} onChange={(e) => setMigracaoForm(p => ({ ...p, vendedor_origem_id: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-600 bg-white">
                     <option value="">Selecione um vendedor...</option>
-                    {vendedores.map(v => (
+                    {vendedoresInativos.map(v => (
                       <option key={v.id} value={v.id}>{v.nome}</option>
                     ))}
                   </select>
