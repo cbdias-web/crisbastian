@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
       return Response.json({ connected: true });
     }
 
-    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim, target_user_email, organizer_email, com_meet } = body;
+    const { agenda_id, lead_nome, data_agendada, horario_inicio, horario_fim, target_user_email, organizer_email, attendees_emails, com_meet } = body;
 
     if (!agenda_id || !data_agendada) {
       return Response.json({ error: 'agenda_id e data_agendada são obrigatórios' }, { status: 400 });
@@ -75,6 +75,14 @@ Deno.serve(async (req) => {
     }
     if (target_user_email && target_user_email !== user.email && target_user_email !== organizer_email) {
       attendees.push({ email: target_user_email });
+    }
+    // Gerentes adicionais (outros participantes) — recebem convite no Google Calendar
+    if (Array.isArray(attendees_emails)) {
+      for (const em of attendees_emails) {
+        if (em && em !== targetEmail && em !== user.email && !attendees.some(a => a.email === em)) {
+          attendees.push({ email: em });
+        }
+      }
     }
 
     // Monta o corpo do evento

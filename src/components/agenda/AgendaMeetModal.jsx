@@ -176,6 +176,13 @@ export default function AgendaMeetModal({
       // 2. Se quer Meet → chama função backend com horário já definido
       if (form.com_meet) {
         try {
+          // Descobre e-mail do gerente principal (especialista alvo) e dos adicionais
+          const gerentePrincipal = todosVendedores.find(v => v.id === vidFinal);
+          const targetEmail = gerentePrincipal?.email && gerentePrincipal.email !== user.email ? gerentePrincipal.email : '';
+          const adicionaisEmails = gerentesAdicionais
+            .map(g => g.email)
+            .filter(e => e && e !== user.email && e !== targetEmail);
+
           const res = await base44.functions.invoke('criarMeetAgenda', {
             agenda_id: agenda.id,
             lead_nome: cNome,
@@ -183,6 +190,9 @@ export default function AgendaMeetModal({
             horario_inicio: form.horario,
             horario_fim: form.horario_fim,
             com_meet: true,
+            target_user_email: targetEmail,
+            organizer_email: user.email,
+            attendees_emails: adicionaisEmails,
           });
           const meetLink = res.data?.meet_link;
           const calendarLink = res.data?.calendar_link;
