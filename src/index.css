@@ -244,6 +244,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    context), so any centered modal is clipped under the header. Nudge every
    full-screen z-50 flex overlay to start below the header instead of centering. */
 .fixed.inset-0.z-50,
+.fixed.inset-0.z-\[80\],
 .fixed.inset-0.z-\[100\] {
   align-items: flex-start !important;
   padding-top: 116px !important;
@@ -251,6 +252,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ── Esconde o Jarvis quando um modal overlay estiver aberto ── */
 body:has(.fixed.inset-0.z-50) [data-jarvis-root],
+body:has(.fixed.inset-0.z-\[80\]) [data-jarvis-root],
 body:has(.fixed.inset-0.z-\[100\]) [data-jarvis-root] {
   display: none !important;
 }
