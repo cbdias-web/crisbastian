@@ -8,7 +8,9 @@ const ACEITOS = '.pdf,.jpg,.jpeg,.png,.txt';
 
 export default function ComprovantesUpload({ comprovantes = [], onChange }) {
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef(null);
+  const dragCounter = useRef(0);
 
   const handleFiles = async (fileList) => {
     const files = Array.from(fileList || []);
@@ -44,15 +46,42 @@ export default function ComprovantesUpload({ comprovantes = [], onChange }) {
         className="hidden"
         onChange={e => handleFiles(e.target.files)}
       />
-      <button
-        type="button"
+      <div
+        onDragEnter={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter.current += 1;
+          setDragging(true);
+        }}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter.current -= 1;
+          if (dragCounter.current <= 0) { dragCounter.current = 0; setDragging(false); }
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dragCounter.current = 0;
+          setDragging(false);
+          if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
+        }}
         onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-input border-dashed rounded-md text-sm bg-background hover:bg-gray-50 transition text-gray-500 disabled:opacity-60"
+        role="button"
+        tabIndex={0}
+        className={`w-full flex items-center justify-center gap-2 px-3 py-4 border-2 border-dashed rounded-md text-sm bg-background transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+          dragging ? 'border-[#00D4AA] bg-[rgba(0,212,170,0.08)] text-[#00D4AA]' : 'border-input hover:bg-gray-50 text-gray-500'
+        }`}
+        style={dragging ? { boxShadow: '0 0 0 3px rgba(0,212,170,0.15)' } : undefined}
       >
         {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-        {uploading ? 'Enviando...' : 'Anexar comprovante(s) (PDF, JPG, PNG, TXT)'}
-      </button>
+        {uploading
+          ? 'Enviando...'
+          : dragging
+            ? 'Solte aqui para anexar'
+            : 'Arraste o comprovante ou clique para anexar (PDF, JPG, PNG, TXT)'}
+      </div>
 
       {(comprovantes || []).length > 0 && (
         <div className="mt-2 space-y-1.5">
