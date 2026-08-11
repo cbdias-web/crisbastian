@@ -172,12 +172,14 @@ export default function Usuarios() {
   };
 
   const toggleAdmin = (usuario) => {
-    const novoRole = usuario.role === 'admin' ? 'user' : 'admin';
+    const virarAdmin = usuario.role !== 'admin' && usuario.permissao_admin !== true;
+    const novoRole = virarAdmin ? 'admin' : 'user';
     updateUserMutation.mutate({
       id: usuario.id,
       data: {
         role: novoRole,
-        menus_acesso: novoRole === 'admin' ? menusDisponiveis.map(m => m.id) : (usuario.menus_acesso || menusDefault)
+        permissao_admin: virarAdmin,
+        menus_acesso: virarAdmin ? menusDisponiveis.map(m => m.id) : (usuario.menus_acesso || menusDefault)
       }
     });
   };
