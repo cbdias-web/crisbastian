@@ -59,41 +59,43 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
     },
   });
 
-  const canSave = isAdmin && form.nome.trim();
+  // O gerente responsável pode editar os dados do cliente, mas só admin pode trocar o gerente
+  const canChangeGerente = isAdmin;
+  const canSave = canEdit && form.nome.trim();
 
   return (
     <div className="p-5 space-y-4">
       <div>
         <Label className="text-xs text-gray-500">Nome *</Label>
-        <Input value={form.nome} onChange={e => set('nome', e.target.value)} disabled={!isAdmin} className="mt-1" />
+        <Input value={form.nome} onChange={e => set('nome', e.target.value)} disabled={!canEdit} className="mt-1" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-gray-500">CPF / CNPJ</Label>
-          <Input value={form.cpf_cnpj} onChange={e => set('cpf_cnpj', e.target.value)} disabled={!isAdmin} className="mt-1" />
+          <Input value={form.cpf_cnpj} onChange={e => set('cpf_cnpj', e.target.value)} disabled={!canEdit} className="mt-1" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Telefone</Label>
-          <Input value={form.telefone} onChange={e => set('telefone', e.target.value)} disabled={!isAdmin} className="mt-1" />
+          <Input value={form.telefone} onChange={e => set('telefone', e.target.value)} disabled={!canEdit} className="mt-1" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Email</Label>
-          <Input value={form.email} onChange={e => set('email', e.target.value)} disabled={!isAdmin} className="mt-1" />
+          <Input value={form.email} onChange={e => set('email', e.target.value)} disabled={!canEdit} className="mt-1" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Cidade</Label>
-          <Input value={form.cidade} onChange={e => set('cidade', e.target.value)} disabled={!isAdmin} className="mt-1" />
+          <Input value={form.cidade} onChange={e => set('cidade', e.target.value)} disabled={!canEdit} className="mt-1" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Estado (UF)</Label>
-          <Input value={form.estado} maxLength={2} onChange={e => set('estado', e.target.value.toUpperCase())} disabled={!isAdmin} className="mt-1" />
+          <Input value={form.estado} maxLength={2} onChange={e => set('estado', e.target.value.toUpperCase())} disabled={!canEdit} className="mt-1" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Gerente Responsável</Label>
           <select
             value={form.vendedor_id}
             onChange={e => handleVendedor(e.target.value)}
-            disabled={!isAdmin}
+            disabled={!canChangeGerente}
             className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-[#1a3150] disabled:opacity-60 disabled:bg-gray-50"
           >
             <option value="">— Sem vínculo —</option>
@@ -107,7 +109,7 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
           <select
             value={form.subcarteira || ''}
             onChange={e => set('subcarteira', e.target.value === '__nova__' ? '' : e.target.value)}
-            disabled={!isAdmin}
+            disabled={!canEdit}
             className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-[#1a3150] disabled:opacity-60"
           >
             <option value="">— Nenhuma —</option>
@@ -115,14 +117,14 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
             <option value="__nova__">+ Digitar nova...</option>
           </select>
         ) : (
-          <Input value={form.subcarteira} onChange={e => set('subcarteira', e.target.value)} disabled={!isAdmin} placeholder="Ex: Clientes Redes Sociais" className="mt-1" />
+          <Input value={form.subcarteira} onChange={e => set('subcarteira', e.target.value)} disabled={!canEdit} placeholder="Ex: Clientes Redes Sociais" className="mt-1" />
         )}
       </div>
       <div>
         <Label className="text-xs text-gray-500">Observação</Label>
-        <Textarea value={form.observacao} onChange={e => set('observacao', e.target.value)} disabled={!isAdmin} rows={2} className="mt-1" />
+        <Textarea value={form.observacao} onChange={e => set('observacao', e.target.value)} disabled={!canEdit} rows={2} className="mt-1" />
       </div>
-      {isAdmin && (
+      {canEdit && (
         <div className="flex justify-end pt-1">
           <Button
             onClick={() => updateMutation.mutate(form)}
