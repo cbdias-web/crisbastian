@@ -349,6 +349,7 @@ export default function ClienteDetalheModal({ clienteId, vendedores, clientes, i
               vendedores={vendedores}
               clientes={clientes}
               isAdmin={isAdmin}
+              vendedor={vendedor}
               onSaved={() => {}}
             />
           ) : (
