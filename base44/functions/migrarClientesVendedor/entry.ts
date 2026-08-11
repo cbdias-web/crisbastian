@@ -17,16 +17,17 @@ Deno.serve(async (req) => {
 
     const clientesOrigem = await base44.asServiceRole.entities.Cliente.filter({ vendedor_id: vendedor_origem_id });
 
+    const vendedorDestino = await base44.asServiceRole.entities.Vendedor.filter({ id: vendedor_destino_id });
+    const nomeDestino = vendedorDestino[0]?.nome || 'Vendedor';
+
     let migrados = 0;
     for (const cliente of clientesOrigem) {
       await base44.asServiceRole.entities.Cliente.update(cliente.id, {
-        vendedor_id: vendedor_destino_id
+        vendedor_id: vendedor_destino_id,
+        vendedor_nome: nomeDestino,
       });
       migrados++;
     }
-
-    const vendedorDestino = await base44.asServiceRole.entities.Vendedor.filter({ id: vendedor_destino_id });
-    const nomeDestino = vendedorDestino[0]?.nome || 'Vendedor';
 
     return Response.json({
       success: true,
