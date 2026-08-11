@@ -22,7 +22,8 @@ const resultadoConfig = {
 };
 
 // ── Aba Dados ─────────────────────────────────────────────────────────────────
-function AbaDados({ cliente, vendedores, clientes, isAdmin, onSaved }) {
+function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved }) {
+  const canEdit = isAdmin || (vendedor && cliente?.vendedor_id === vendedor.id);
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     nome: cliente?.nome || '',
