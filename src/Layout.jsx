@@ -244,6 +244,7 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+  const isHenriqueStein = user?.email === 'henrique.stein@psjunior.com';
 
   const { data: notificacoesPendentes = [] } = useQuery({
     queryKey: ['notificacoes-pendentes'],
@@ -400,12 +401,12 @@ export default function Layout({ children, currentPageName }) {
           right: 0,
           bottom: 0,
           zIndex: 0,
-          backgroundImage: 'url("https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png")',
-          backgroundSize: 'cover',
+          backgroundImage: `url("${isHenriqueStein ? 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/a807d1c54_generated_image.png' : 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png'}")`,
+          backgroundSize: isHenriqueStein ? 'contain' : 'cover',
           backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
+          backgroundRepeat: isHenriqueStein ? 'no-repeat' : 'no-repeat',
           backgroundAttachment: 'fixed',
-          opacity: 0.45,
+          opacity: isHenriqueStein ? 0.18 : 0.45,
           pointerEvents: 'none',
         }}
       />
@@ -476,8 +477,8 @@ export default function Layout({ children, currentPageName }) {
               VX
             </div>
             <div>
-              <div className="font-bold text-sm" style={{ color: AURORA.text }}>Villela Exchange</div>
-              <div className="text-[10px] uppercase tracking-widest" style={{ color: AURORA.textMuted }}>Gestão Comercial</div>
+              <div className="font-bold text-sm" style={{ color: AURORA.text }}>{isHenriqueStein ? 'PS JUNIOR' : 'Villela Exchange'}</div>
+              <div className="text-[10px] uppercase tracking-widest" style={{ color: AURORA.textMuted }}>{isHenriqueStein ? 'Colorada' : 'Gestão Comercial'}</div>
             </div>
           </Link>
 
