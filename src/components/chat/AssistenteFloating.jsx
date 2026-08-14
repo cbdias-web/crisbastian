@@ -334,10 +334,6 @@ export default function AssistenteFloating() {
       const user = await base44.auth.me();
       if (!user?.email) return;
       const pendentes = await base44.entities.JarvisMensagem.filter({ destinatario_email: user.email, lida: false });
-      // Executa comandos automaticamente nas novas mensagens
-      pendentes.forEach(msg => {
-        executarComandoMensagem(msg.mensagem, navigate);
-      });
       setMensagensPendentes(pendentes);
       return { user, pendentes };
     } catch (e) {}
