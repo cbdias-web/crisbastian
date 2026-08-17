@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-const JARVIS_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/5ce91c65b_CapturadeTela2026-07-06as094023.png';
+const JARVIS_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/c776416c4_image.png';
 
 const SIZE_MAP = {
   sm: { dim: 32, cls: 'w-8 h-8' },
