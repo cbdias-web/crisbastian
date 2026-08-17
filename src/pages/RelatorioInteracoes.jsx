@@ -139,6 +139,11 @@ export default function RelatorioInteracoes() {
   };
 
   const salvarEdicaoInteracao = () => {
+    const podEditar = isAdmin || editandoInteracao?.vendedor_id === vendedor?.id || editandoInteracao?.created_by === user?.email;
+    if (!podEditar) {
+      toast.error('Você pode editar apenas suas próprias interações');
+      return;
+    }
     if (!editInteracaoForm.descricao?.trim()) {
       toast.error('Descrição é obrigatória');
       return;
@@ -620,7 +625,7 @@ export default function RelatorioInteracoes() {
                         <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                       </button>
                       {isOpen && (
-                        <div className="border-t border-gray-50 bg-gray-50/30">
+                        <div className="border-t border-gray-50 bg-[#0d1117]/40">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-b border-gray-100">
@@ -638,7 +643,10 @@ export default function RelatorioInteracoes() {
                                 const res = resultadoConfig[i.resultado] || resultadoConfig['Neutro'];
                                 const ResIcon = res.icon;
                                 return (
-                                  <tr key={i.id} className="hover:bg-white transition">
+                                  <tr key={i.id} onClick={() => {
+                                    setEditandoInteracao(i);
+                                    setEditInteracaoForm({ tipo: i.tipo, descricao: i.descricao, data_interacao: i.data_interacao, proximo_contato: i.proximo_contato || '', resultado: i.resultado });
+                                  }} className="hover:bg-[#1c2333] transition cursor-pointer">
                                     <td className="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
                                       {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
                                     </td>
@@ -660,7 +668,7 @@ export default function RelatorioInteracoes() {
                                       <button onClick={(e) => handleEditarInteracao(i, e)} className="p-1.5 hover:bg-blue-50 rounded-lg text-gray-300 hover:text-blue-600 transition" title="Editar">
                                         <Edit2 className="w-3.5 h-3.5" />
                                       </button>
-                                      <button onClick={() => handleDeleteInteracao(i.id)} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-500 transition" title="Excluir">
+                                      <button onClick={(e) => { e.stopPropagation(); handleDeleteInteracao(i.id); }} disabled={deleteInteracaoMutation.isPending} className="p-1.5 hover:bg-red-50 rounded-lg text-gray-300 hover:text-red-500 transition" title="Excluir">
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
                                     </td>
