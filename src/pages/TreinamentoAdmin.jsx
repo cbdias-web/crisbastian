@@ -251,7 +251,7 @@ export default function TreinamentoAdmin() {
               const aulasModulo = aulas.filter(a => a.modulo_id === modulo.id);
               const aberto = moduloAberto === modulo.id;
               return (
-                <div key={modulo.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] hover:bg-gradient-to-b hover:from-blue-50 hover:to-indigo-50 hover:border-blue-200">
+                <div key={modulo.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.01] hover:border-blue-200">
                   <div className="flex items-center gap-4 p-4">
                     <button onClick={() => setModuloAberto(aberto ? null : modulo.id)} className="flex-1 flex items-center gap-3 text-left min-w-0">
                       {modulo.capa_url ? (
