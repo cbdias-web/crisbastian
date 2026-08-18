@@ -1,5 +1,32 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+const DOC_CONFIG_PF = [
+  { tipo: 'passaporte', descricao: 'Passaporte vigente (foto + dados)', obrigatorio: true },
+  { tipo: 'comprovante_endereco', descricao: 'Comprovante de endereço (até 90 dias)', obrigatorio: true },
+  { tipo: 'irpf', descricao: 'IRPF 2025/2026 ou declaração de isento', obrigatorio: false },
+];
+const DOC_CONFIG_PJ = [
+  { tipo: 'contrato_social', descricao: 'Contrato social / Estatuto e última alteração', obrigatorio: true },
+  { tipo: 'passaporte_responsavel', descricao: 'Passaporte do responsável legal', obrigatorio: true },
+  { tipo: 'comprovante_endereco_empresa', descricao: 'Comprovante de endereço da empresa (até 90 dias)', obrigatorio: true },
+  { tipo: 'dre', descricao: 'DRE (assinado pela empresa + contador)', obrigatorio: false },
+  { tipo: 'balanco', descricao: 'Balanço (assinado pela empresa + contador)', obrigatorio: false },
+  { tipo: 'faturamento', descricao: 'Faturamento dos últimos 12 meses', obrigatorio: false },
+];
+
+// Reconstrói o checklist correto para o tipo, preservando arquivos já enviados.
+// Corrige registros PJ antigos salvos com a lista de PF.
+function mergeDocs(tipo: string, savedDocs: any[]) {
+  const cfg = tipo === 'PJ' ? DOC_CONFIG_PJ : DOC_CONFIG_PF;
+  const saved = Array.isArray(savedDocs) ? savedDocs : [];
+  return cfg.map(d => {
+    const found = saved.find(s => s.tipo === d.tipo);
+    return found
+      ? { ...d, recebido: !!found.recebido, url: found.url || '', nome_arquivo: found.nome_arquivo || '' }
+      : { ...d, recebido: false, url: '', nome_arquivo: '' };
+  });
+}
+
 function sanitize(rnc: any) {
   return {
     id: rnc.id,
@@ -45,10 +72,10 @@ function sanitize(rnc: any) {
     secao3_telefone: rnc.secao3_telefone,
     secao3_passaporte: rnc.secao3_passaporte,
     secao3_beneficiarios: rnc.secao3_beneficiarios || [],
-    // Documentos
-    documentos: (rnc.documentos || []).map((d: any) => ({
+    // Documentos — sempre reconciliados ao checklist correto do tipo
+    documentos: mergeDocs(rnc.tipo_conta, rnc.documentos).map((d: any) => ({
       tipo: d.tipo, descricao: d.descricao, obrigatorio: d.obrigatorio,
-      recebido: d.recebido, nome_arquivo: d.nome_arquivo,
+      recebido: d.recebido, url: d.url, nome_arquivo: d.nome_arquivo,
     })),
     observacoes: rnc.observacoes,
   };
@@ -87,7 +114,7 @@ function calcularPendencias(rnc: any): string[] {
     });
   }
 
-  const docs = rnc.documentos || [];
+  const docs = mergeDocs(rnc.tipo_conta, rnc.documentos);
   for (const d of docs) {
     if (d.obrigatorio && !d.recebido) p.push('Documento: ' + d.descricao);
   }

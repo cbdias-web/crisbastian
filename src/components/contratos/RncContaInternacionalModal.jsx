@@ -28,6 +28,19 @@ function buildDocInicial(tipo) {
   return cfg.map(d => ({ ...d, recebido: false, url: '', nome_arquivo: '' }));
 }
 
+// Reconstrói o checklist correto para o tipo, preservando arquivos já enviados
+// (casa por `tipo`). Corrige registros PJ antigos salvos com a lista de PF.
+function mergeDocs(tipo, savedDocs) {
+  const cfg = tipo === 'PJ' ? DOC_CONFIG_PJ : DOC_CONFIG_PF;
+  const saved = Array.isArray(savedDocs) ? savedDocs : [];
+  return cfg.map(d => {
+    const found = saved.find(s => s.tipo === d.tipo);
+    return found
+      ? { ...d, recebido: !!found.recebido, url: found.url || '', nome_arquivo: found.nome_arquivo || '' }
+      : { ...d, recebido: false, url: '', nome_arquivo: '' };
+  });
+}
+
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
   border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
@@ -167,7 +180,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
       secao3_passaporte: rnc.secao3_passaporte || '',
     });
     setBeneficiarios(rnc.secao3_beneficiarios?.length > 0 ? rnc.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
-    setDocumentos(rnc.documentos?.length > 0 ? rnc.documentos : buildDocInicial(rnc.tipo_conta || 'PF'));
+    setDocumentos(mergeDocs(rnc.tipo_conta || 'PF', rnc.documentos));
     setObservacoes(rnc.observacoes || '');
     if (rnc.link_token) setLinkRnc(window.location.origin + '/conta-internacional-publica/' + rnc.link_token);
   };
@@ -191,8 +204,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   }, [contrato?.id, rncId]);
 
   useEffect(() => {
-    if (rncExistente) return;
-    setDocumentos(buildDocInicial(tipoConta));
+    setDocumentos(prev => mergeDocs(tipoConta, prev));
   }, [tipoConta]);
 
   const coletarDados = () => ({
