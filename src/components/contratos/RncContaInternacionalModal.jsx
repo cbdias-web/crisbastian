@@ -49,6 +49,45 @@ const ASSINANTE_VAZIO = () => ({
 
 const BANCO_VAZIO = () => ({ nome_banco: '', pais: '', tipo_conta: '' });
 
+// Componentes de formulário — definidos FORA do componente pai para não
+// serem recriados a cada render (o que faz o input perder o foco a cada tecla).
+const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
+  <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+    <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 transition" style={{ background: AURORA.surface2 }}>
+      <div className="flex items-center gap-2">
+        <Icon className="w-4 h-4" style={{ color: AURORA.accent }} />
+        <span className="text-sm font-semibold" style={{ color: AURORA.text }}>{title}</span>
+        {badge && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: AURORA.accentDim, color: AURORA.accent }}>{badge}</span>}
+      </div>
+      {open ? <ChevronUp className="w-4 h-4" style={{ color: AURORA.textMuted }} /> : <ChevronDown className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
+    </button>
+    {open && <div className="p-4">{children}</div>}
+  </div>
+);
+
+const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
+  <div>
+    <label className="block mb-1" style={labelStyle}>{label}</label>
+    <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+  </div>
+);
+
+const RadioBtns = ({ label, value, onChange, opts }) => (
+  <div>
+    <label className="block mb-1" style={labelStyle}>{label}</label>
+    <div className="flex flex-wrap gap-2">
+      {opts.map(o => (
+        <button key={o.value} type="button" onClick={() => onChange(o.value)}
+          className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
+          style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export default function RncContaInternacionalModal({ contrato, user, onClose, rncId }) {
   const queryClient = useQueryClient();
   const [rncExistente, setRncExistente] = useState(null);
@@ -262,43 +301,6 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     } catch (e) { toast.error('Erro: ' + e.message); }
     setGerandoLink(false);
   };
-
-  const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
-    <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 transition" style={{ background: AURORA.surface2 }}>
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4" style={{ color: AURORA.accent }} />
-          <span className="text-sm font-semibold" style={{ color: AURORA.text }}>{title}</span>
-          {badge && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: AURORA.accentDim, color: AURORA.accent }}>{badge}</span>}
-        </div>
-        {open ? <ChevronUp className="w-4 h-4" style={{ color: AURORA.textMuted }} /> : <ChevronDown className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
-      </button>
-      {open && <div className="p-4">{children}</div>}
-    </div>
-  );
-
-  const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
-    <div>
-      <label className="block mb-1" style={labelStyle}>{label}</label>
-      <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
-    </div>
-  );
-
-  const RadioBtns = ({ label, value, onChange, opts }) => (
-    <div>
-      <label className="block mb-1" style={labelStyle}>{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {opts.map(o => (
-          <button key={o.value} type="button" onClick={() => onChange(o.value)}
-            className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
-            style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 
   const isPJ = tipoConta === 'PJ';
 

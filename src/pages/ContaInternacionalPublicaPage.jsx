@@ -26,6 +26,31 @@ const ASSINANTE_VAZIO = () => ({
   mais_182_dias_eua: '', mais_122_dias_eua_3anos: '', endereco_eua: '',
 });
 
+// Componentes de formulário — definidos FORA do componente pai para não
+// serem recriados a cada render (o que faz o input perder o foco a cada tecla).
+const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
+  <div>
+    <label className="block mb-1" style={labelStyle}>{label}</label>
+    <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+      style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+  </div>
+);
+
+const RadioBtns = ({ label, value, onChange, opts }) => (
+  <div>
+    <label className="block mb-1" style={labelStyle}>{label}</label>
+    <div className="flex flex-wrap gap-2">
+      {opts.map(o => (
+        <button key={o.value} type="button" onClick={() => onChange(o.value)}
+          className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
+          style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 export default function ContaInternacionalPublicaPage() {
   const { token } = useParams();
   const [loading, setLoading] = useState(true);
@@ -172,33 +197,10 @@ export default function ContaInternacionalPublicaPage() {
 
   const isPJ = rnc?.tipo_conta === 'PJ';
 
-  const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
-    <div>
-      <label className="block mb-1" style={labelStyle}>{label}</label>
-      <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
-    </div>
-  );
-
-  const RadioBtns = ({ label, value, onChange, opts }) => (
-    <div>
-      <label className="block mb-1" style={labelStyle}>{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {opts.map(o => (
-          <button key={o.value} type="button" onClick={() => onChange(o.value)}
-            className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
-            style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   const TABS = [
-    { id: 's1', label: 'Seção 1 — Conta' },
-    { id: 's2', label: 'Seção 2 — Assinantes' },
-    ...(!isPJ ? [{ id: 's3', label: 'Seção 3 — Titular' }] : []),
+    { id: 's1', label: 'Seção 1 — Conta PJ' },
+    { id: 's2', label: 'Seção 2 — Empresa/Sócio' },
+    ...(!isPJ ? [{ id: 's3', label: 'Seção 3 — Pessoa Física' }] : []),
     { id: 'docs', label: 'Documentos' },
   ];
 
