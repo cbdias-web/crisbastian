@@ -119,6 +119,10 @@
       "type": "string",
       "description": "Nome completo da empresa (PJ)"
     },
+    "secao1_pj_cnpj": {
+      "type": "string",
+      "description": "CNPJ ou EIN da empresa (PJ)"
+    },
     "secao1_pj_linha_negocios": {
       "type": "string",
       "description": "Linha de negocios da empresa em detalhes (PJ)"
@@ -202,7 +206,7 @@
     },
     "secao2_assinantes": {
       "type": "array",
-      "description": "Formulario de cada assinante autorizado da conta",
+      "description": "Formulario de cada assinante autorizado da conta (Dados do Socio)",
       "items": {
         "type": "object",
         "properties": {
@@ -314,6 +318,10 @@
     "secao3_telefone": {
       "type": "string",
       "description": "Telefone"
+    },
+    "secao3_passaporte": {
+      "type": "string",
+      "description": "Numero do passaporte do titular (PF)"
     },
     "secao3_beneficiarios": {
       "type": "array",

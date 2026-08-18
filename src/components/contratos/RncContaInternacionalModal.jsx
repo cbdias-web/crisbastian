@@ -117,6 +117,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     secao1_pj_razao_social: '', secao1_pj_linha_negocios: '', secao1_pj_num_empregados: '',
     secao1_pj_produtos_servicos: '', secao1_pj_pais_operacao: '', secao1_pj_receita_bruta: '',
     secao1_pj_prospeccao_receita: '',
+    secao1_pj_cnpj: '',
   });
   const [assinantesNomes, setAssinantesNomes] = useState(['']);
   const [bancosExistentes, setBancosExistentes] = useState([BANCO_VAZIO()]);
@@ -131,6 +132,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const [s3, setS3] = useState({
     secao3_nome: '', secao3_cpf: '', secao3_nascimento: '',
     secao3_nacionalidade: 'Brasileira', secao3_email: '', secao3_telefone: '',
+    secao3_passaporte: '',
   });
   const [beneficiarios, setBeneficiarios] = useState([{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
 
@@ -147,7 +149,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
       secao1_cartao_debito: rnc.secao1_cartao_debito || '', secao1_email: rnc.secao1_email || '',
       secao1_telefone_escritorio1: rnc.secao1_telefone_escritorio1 || '', secao1_telefone_escritorio2: rnc.secao1_telefone_escritorio2 || '',
       secao1_celular: rnc.secao1_celular || '', secao1_endereco_correspondencia: rnc.secao1_endereco_correspondencia || '',
-      secao1_pj_razao_social: rnc.secao1_pj_razao_social || '', secao1_pj_linha_negocios: rnc.secao1_pj_linha_negocios || '',
+      secao1_pj_razao_social: rnc.secao1_pj_razao_social || '', secao1_pj_cnpj: rnc.secao1_pj_cnpj || '', secao1_pj_linha_negocios: rnc.secao1_pj_linha_negocios || '',
       secao1_pj_num_empregados: rnc.secao1_pj_num_empregados || '', secao1_pj_produtos_servicos: rnc.secao1_pj_produtos_servicos || '',
       secao1_pj_pais_operacao: rnc.secao1_pj_pais_operacao || '', secao1_pj_receita_bruta: rnc.secao1_pj_receita_bruta || '',
       secao1_pj_prospeccao_receita: rnc.secao1_pj_prospeccao_receita || '',
@@ -162,6 +164,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
       secao3_nome: rnc.secao3_nome || '', secao3_cpf: rnc.secao3_cpf || '',
       secao3_nascimento: rnc.secao3_nascimento || '', secao3_nacionalidade: rnc.secao3_nacionalidade || 'Brasileira',
       secao3_email: rnc.secao3_email || '', secao3_telefone: rnc.secao3_telefone || '',
+      secao3_passaporte: rnc.secao3_passaporte || '',
     });
     setBeneficiarios(rnc.secao3_beneficiarios?.length > 0 ? rnc.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     setDocumentos(rnc.documentos?.length > 0 ? rnc.documentos : buildDocInicial(rnc.tipo_conta || 'PF'));
@@ -352,7 +355,10 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
           <CardSection title="Seção 1 — Informações da Conta" icon={Globe} open={s1Open} onToggle={() => setS1Open(p => !p)}>
             <div className="space-y-3">
               {isPJ && (
-                <LI label="Nome Completo da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />
+                <>
+                  <LI label="Nome Completo da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />
+                  <LI label="CNPJ/EIN" value={s1.secao1_pj_cnpj} onChange={v => setS1(f => ({ ...f, secao1_pj_cnpj: v }))} />
+                </>
               )}
               <RadioBtns label="Tipo de Conta"
                 value={s1.secao1_tipo_conta}
@@ -547,13 +553,11 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
                       <LI label="Valor Outra Renda (USD)" value={a.valor_outra_renda} onChange={v => update('valor_outra_renda', v)} />
                       <div className="col-span-2"><LI label="Explicação de Herança (se aplicável)" value={a.explicacao_heranca} onChange={v => update('explicacao_heranca', v)} /></div>
                       <LI label="País de Nascimento *" value={a.pais_nascimento} onChange={v => update('pais_nascimento', v)} />
+                      <LI label="Nº do Passaporte" value={a.numero_passaporte} onChange={v => update('numero_passaporte', v)} />
                       <RadioBtns label="Possui dupla nacionalidade?" value={a.dupla_nacionalidade} onChange={v => update('dupla_nacionalidade', v)}
                         opts={[{ value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' }]} />
                       {a.dupla_nacionalidade === 'sim' && (
-                        <>
-                          <LI label="País da 2ª Nacionalidade" value={a.pais_segunda_nacionalidade} onChange={v => update('pais_segunda_nacionalidade', v)} />
-                          <LI label="Nº do Passaporte" value={a.numero_passaporte} onChange={v => update('numero_passaporte', v)} />
-                        </>
+                        <LI label="País da 2ª Nacionalidade" value={a.pais_segunda_nacionalidade} onChange={v => update('pais_segunda_nacionalidade', v)} />
                       )}
                       <RadioBtns label="Ficou +182 dias nos EUA (último ano)?" value={a.mais_182_dias_eua} onChange={v => update('mais_182_dias_eua', v)}
                         opts={[{ value: 'sim', label: 'Sim (W9)' }, { value: 'nao', label: 'Não' }]} />
@@ -584,6 +588,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
                 <LI label="Nacionalidade" value={s3.secao3_nacionalidade} onChange={v => setS3(f => ({ ...f, secao3_nacionalidade: v }))} />
                 <LI label="E-mail" value={s3.secao3_email} onChange={v => setS3(f => ({ ...f, secao3_email: v }))} />
                 <div className="col-span-2"><LI label="Telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
+                <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
               </div>
               <p className="text-xs font-bold mt-4 mb-2" style={{ color: AURORA.accent }}>Beneficiários da Conta (em caso de falecimento)</p>
               {beneficiarios.map((b, i) => (

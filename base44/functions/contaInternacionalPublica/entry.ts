@@ -24,6 +24,7 @@ function sanitize(rnc: any) {
     secao1_endereco_correspondencia: rnc.secao1_endereco_correspondencia,
     // PJ
     secao1_pj_razao_social: rnc.secao1_pj_razao_social,
+    secao1_pj_cnpj: rnc.secao1_pj_cnpj,
     secao1_pj_linha_negocios: rnc.secao1_pj_linha_negocios,
     secao1_pj_num_empregados: rnc.secao1_pj_num_empregados,
     secao1_pj_produtos_servicos: rnc.secao1_pj_produtos_servicos,
@@ -42,6 +43,7 @@ function sanitize(rnc: any) {
     secao3_nacionalidade: rnc.secao3_nacionalidade,
     secao3_email: rnc.secao3_email,
     secao3_telefone: rnc.secao3_telefone,
+    secao3_passaporte: rnc.secao3_passaporte,
     secao3_beneficiarios: rnc.secao3_beneficiarios || [],
     // Documentos
     documentos: (rnc.documentos || []).map((d: any) => ({

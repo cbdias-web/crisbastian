@@ -192,6 +192,7 @@ Deno.serve(async (req) => {
 
     if (isPJ) {
       campo('Nome Completo da Empresa', rnc.secao1_pj_razao_social);
+      campo('CNPJ/EIN', rnc.secao1_pj_cnpj);
     }
     campo('Tipo de Conta', rnc.secao1_tipo_conta);
     campo('Proposito da Conta nos EUA', rnc.secao1_proposito);
@@ -305,9 +306,9 @@ Deno.serve(async (req) => {
         campo('Explicacao Heranca', a.explicacao_heranca);
         campo('Pais de Nascimento', a.pais_nascimento);
         campo('Possui Dupla Nacionalidade?', a.dupla_nacionalidade === 'sim' ? 'SIM' : a.dupla_nacionalidade === 'nao' ? 'NAO' : '');
+        campo('Numero do Passaporte', a.numero_passaporte);
         if (a.dupla_nacionalidade === 'sim') {
           campo('Pais da 2a Nacionalidade', a.pais_segunda_nacionalidade);
-          campo('Numero do Passaporte', a.numero_passaporte);
         }
         campo('Ficou +182 dias nos EUA (ultimo ano)?', a.mais_182_dias_eua === 'sim' ? 'SIM — necessario W9' : a.mais_182_dias_eua === 'nao' ? 'NAO' : '');
         campo('Ficou media +122 dias nos EUA (3 anos)?', a.mais_122_dias_eua_3anos === 'sim' ? 'SIM — necessario W9' : a.mais_122_dias_eua_3anos === 'nao' ? 'NAO' : '');
@@ -327,6 +328,7 @@ Deno.serve(async (req) => {
       campo('Nacionalidade', rnc.secao3_nacionalidade);
       campo('E-mail', rnc.secao3_email);
       campo('Telefone', rnc.secao3_telefone);
+      campo('Número do Passaporte', rnc.secao3_passaporte);
       y -= 4;
 
       const benef = rnc.secao3_beneficiarios || [];

@@ -61,7 +61,7 @@ export default function ContaInternacionalPublicaPage() {
   const [salvo, setSalvo] = useState(false);
   const [arquivos, setArquivos] = useState({});
   const [uploadingKey, setUploadingKey] = useState(null);
-  const [abas, setAbas] = useState('s1');
+  const [abas, setAbas] = useState('pf');
 
   // Seção 1
   const [s1, setS1] = useState({
@@ -73,6 +73,7 @@ export default function ContaInternacionalPublicaPage() {
     secao1_pj_razao_social: '', secao1_pj_linha_negocios: '', secao1_pj_num_empregados: '',
     secao1_pj_produtos_servicos: '', secao1_pj_pais_operacao: '', secao1_pj_receita_bruta: '',
     secao1_pj_prospeccao_receita: '',
+    secao1_pj_cnpj: '',
   });
   const [assinantesNomes, setAssinantesNomes] = useState(['']);
   const [bancosExistentes, setBancosExistentes] = useState([{ nome_banco: '', pais: '', tipo_conta: '' }]);
@@ -84,7 +85,7 @@ export default function ContaInternacionalPublicaPage() {
   const [assinantes, setAssinantes] = useState([ASSINANTE_VAZIO()]);
 
   // Seção 3
-  const [s3, setS3] = useState({ secao3_nome: '', secao3_cpf: '', secao3_nascimento: '', secao3_nacionalidade: 'Brasileira', secao3_email: '', secao3_telefone: '' });
+  const [s3, setS3] = useState({ secao3_nome: '', secao3_cpf: '', secao3_nascimento: '', secao3_nacionalidade: 'Brasileira', secao3_email: '', secao3_telefone: '', secao3_passaporte: '' });
   const [beneficiarios, setBeneficiarios] = useState([{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
 
   useEffect(() => {
@@ -100,6 +101,7 @@ export default function ContaInternacionalPublicaPage() {
       if (!data || data.error) { setError(data?.error || 'Link inválido ou expirado.'); setLoading(false); return; }
       const r = data.rnc;
       setRnc(r);
+      setAbas(r.tipo_conta === 'PJ' ? 'pj' : 'pf');
       setPendencias(data.pendencias || []);
       setS1({
         secao1_tipo_conta: r.secao1_tipo_conta || '', secao1_proposito: r.secao1_proposito || '',
@@ -113,6 +115,7 @@ export default function ContaInternacionalPublicaPage() {
         secao1_pj_num_empregados: r.secao1_pj_num_empregados || '', secao1_pj_produtos_servicos: r.secao1_pj_produtos_servicos || '',
         secao1_pj_pais_operacao: r.secao1_pj_pais_operacao || '', secao1_pj_receita_bruta: r.secao1_pj_receita_bruta || '',
         secao1_pj_prospeccao_receita: r.secao1_pj_prospeccao_receita || '',
+        secao1_pj_cnpj: r.secao1_pj_cnpj || '',
       });
       setAssinantesNomes(r.secao1_assinantes?.length > 0 ? r.secao1_assinantes : ['']);
       setBancosExistentes(r.secao1_bancos_existentes?.length > 0 ? r.secao1_bancos_existentes : [{ nome_banco: '', pais: '', tipo_conta: '' }]);
@@ -120,7 +123,7 @@ export default function ContaInternacionalPublicaPage() {
       setFornecedoresPJ(r.secao1_pj_fornecedores?.length > 0 ? r.secao1_pj_fornecedores : [{ nome: '', pais: '' }]);
       setAcionistasPJ(r.secao1_pj_acionistas?.length > 0 ? r.secao1_pj_acionistas.map((a) => ({ ...a, percentual: a.percentual ?? '' })) : [{ nome: '', percentual: '' }]);
       setAssinantes(r.secao2_assinantes?.length > 0 ? r.secao2_assinantes : [ASSINANTE_VAZIO()]);
-      setS3({ secao3_nome: r.secao3_nome || '', secao3_cpf: r.secao3_cpf || '', secao3_nascimento: r.secao3_nascimento || '', secao3_nacionalidade: r.secao3_nacionalidade || 'Brasileira', secao3_email: r.secao3_email || '', secao3_telefone: r.secao3_telefone || '' });
+      setS3({ secao3_nome: r.secao3_nome || '', secao3_cpf: r.secao3_cpf || '', secao3_nascimento: r.secao3_nascimento || '', secao3_nacionalidade: r.secao3_nacionalidade || 'Brasileira', secao3_email: r.secao3_email || '', secao3_telefone: r.secao3_telefone || '', secao3_passaporte: r.secao3_passaporte || '' });
       setBeneficiarios(r.secao3_beneficiarios?.length > 0 ? r.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     } catch (e) { setError('Não foi possível carregar o formulário.'); }
     setLoading(false);
@@ -197,12 +200,12 @@ export default function ContaInternacionalPublicaPage() {
 
   const isPJ = rnc?.tipo_conta === 'PJ';
 
-  const TABS = [
-    { id: 's1', label: 'Seção 1 — Conta PJ' },
-    { id: 's2', label: 'Seção 2 — Empresa/Sócio' },
-    ...(!isPJ ? [{ id: 's3', label: 'Seção 3 — Pessoa Física' }] : []),
-    { id: 'docs', label: 'Documentos' },
-  ];
+  const TABS = [];
+  let _secN = 1;
+  if (!isPJ) { TABS.push({ id: 'pf', label: `Seção ${_secN++} — Pessoa Física` }); }
+  TABS.push({ id: 'pj', label: `Seção ${_secN++} — Dados PJ` });
+  TABS.push({ id: 'socio', label: `Seção ${_secN++} — Dados do Sócio` });
+  TABS.push({ id: 'docs', label: 'Documentos' });
 
   return (
     <div className="min-h-screen py-6 px-4" style={{ background: AURORA.bg }}>
@@ -257,13 +260,18 @@ export default function ContaInternacionalPublicaPage() {
           ))}
         </div>
 
-        {/* SEÇÃO 1 */}
-        {abas === 's1' && (
+        {/* Dados PJ */}
+        {abas === 'pj' && (
           <div className="rounded-2xl p-5 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.accent }}>
-              <Globe className="w-4 h-4" /> Informações da Conta
+              <Building2 className="w-4 h-4" /> Dados PJ
             </h2>
-            {isPJ && <LI label="Nome Completo da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />}
+            {isPJ && (
+              <>
+                <LI label="Nome da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />
+                <LI label="CNPJ/EIN" value={s1.secao1_pj_cnpj} onChange={v => setS1(f => ({ ...f, secao1_pj_cnpj: v }))} />
+              </>
+            )}
             <RadioBtns label="Tipo de Conta" value={s1.secao1_tipo_conta}
               onChange={v => setS1(f => ({ ...f, secao1_tipo_conta: v }))}
               opts={isPJ ? [{ value: 'Conta Corrente', label: 'Conta Corrente' }, { value: 'Poupanca', label: 'Poupança' }]
@@ -284,6 +292,7 @@ export default function ContaInternacionalPublicaPage() {
             <div className="grid grid-cols-2 gap-3">
               <LI label="E-mail *" value={s1.secao1_email} onChange={v => setS1(f => ({ ...f, secao1_email: v }))} />
               <LI label="Celular" value={s1.secao1_celular} onChange={v => setS1(f => ({ ...f, secao1_celular: v }))} />
+              <LI label="Telefone Principal" value={s1.secao1_telefone_escritorio1} onChange={v => setS1(f => ({ ...f, secao1_telefone_escritorio1: v }))} />
             </div>
             <LI label="Endereço para Correspondências" value={s1.secao1_endereco_correspondencia} onChange={v => setS1(f => ({ ...f, secao1_endereco_correspondencia: v }))} />
             <div className="grid grid-cols-2 gap-3">
@@ -300,7 +309,7 @@ export default function ContaInternacionalPublicaPage() {
                 <div className="h-px" style={{ background: AURORA.border }} />
                 <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Informações Empresariais</p>
                 <div>
-                  <label className="block mb-1" style={labelStyle}>Linha de Negócios</label>
+                  <label className="block mb-1" style={labelStyle}>Atividade da Empresa</label>
                   <textarea value={s1.secao1_pj_linha_negocios} onChange={e => setS1(f => ({ ...f, secao1_pj_linha_negocios: e.target.value }))}
                     rows={2} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none" style={inputStyle} />
                 </div>
@@ -313,8 +322,8 @@ export default function ContaInternacionalPublicaPage() {
           </div>
         )}
 
-        {/* SEÇÃO 2 — ASSINANTES */}
-        {abas === 's2' && (
+        {/* Dados do Sócio */}
+        {abas === 'socio' && (
           <div className="space-y-4">
             {assinantes.map((a, i) => {
               const update = (field, val) => setAssinantes(ss => ss.map((x, j) => j === i ? { ...x, [field]: val } : x));
@@ -322,7 +331,7 @@ export default function ContaInternacionalPublicaPage() {
                 <div key={i} className="rounded-2xl p-5 space-y-3" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.accent }}>
-                      <User className="w-4 h-4" /> Assinante {i + 1}
+                      <User className="w-4 h-4" /> Sócio {i + 1}
                     </h2>
                     {assinantes.length > 1 && (
                       <button onClick={() => setAssinantes(ss => ss.filter((_, j) => j !== i))}
@@ -343,13 +352,11 @@ export default function ContaInternacionalPublicaPage() {
                     <LI label="Salário Anual (USD) *" value={a.salario_anual_usd} onChange={v => update('salario_anual_usd', v)} placeholder="Ex: 50000" />
                     <LI label="Outra Fonte de Renda" value={a.outra_fonte_renda} onChange={v => update('outra_fonte_renda', v)} />
                     <LI label="País de Nascimento *" value={a.pais_nascimento} onChange={v => update('pais_nascimento', v)} />
+                    <LI label="Nº Passaporte" value={a.numero_passaporte} onChange={v => update('numero_passaporte', v)} />
                     <RadioBtns label="Dupla Nacionalidade?" value={a.dupla_nacionalidade} onChange={v => update('dupla_nacionalidade', v)}
                       opts={[{ value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' }]} />
                     {a.dupla_nacionalidade === 'sim' && (
-                      <>
-                        <LI label="País da 2ª Nacionalidade" value={a.pais_segunda_nacionalidade} onChange={v => update('pais_segunda_nacionalidade', v)} />
-                        <LI label="Nº Passaporte" value={a.numero_passaporte} onChange={v => update('numero_passaporte', v)} />
-                      </>
+                      <LI label="País da 2ª Nacionalidade" value={a.pais_segunda_nacionalidade} onChange={v => update('pais_segunda_nacionalidade', v)} />
                     )}
                     <RadioBtns label="+182 dias nos EUA (último ano)?" value={a.mais_182_dias_eua} onChange={v => update('mais_182_dias_eua', v)}
                       opts={[{ value: 'sim', label: 'Sim (W9)' }, { value: 'nao', label: 'Não' }]} />
@@ -365,13 +372,13 @@ export default function ContaInternacionalPublicaPage() {
             <button onClick={() => setAssinantes(ss => [...ss, ASSINANTE_VAZIO()])}
               className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold w-full justify-center"
               style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
-              <Plus className="w-4 h-4" /> Adicionar Assinante Autorizado
+              <Plus className="w-4 h-4" /> Adicionar Sócio
             </button>
           </div>
         )}
 
-        {/* SEÇÃO 3 — TITULAR PF */}
-        {abas === 's3' && !isPJ && (
+        {/* Pessoa Física */}
+        {abas === 'pf' && !isPJ && (
           <div className="rounded-2xl p-5 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.accent }}>
               <User className="w-4 h-4" /> Dados do Titular (Conta Pessoal)
@@ -381,6 +388,7 @@ export default function ContaInternacionalPublicaPage() {
               <LI label="CPF" value={s3.secao3_cpf} onChange={v => setS3(f => ({ ...f, secao3_cpf: v }))} />
               <LI label="Data de Nascimento" type="date" value={s3.secao3_nascimento} onChange={v => setS3(f => ({ ...f, secao3_nascimento: v }))} />
               <LI label="Nacionalidade" value={s3.secao3_nacionalidade} onChange={v => setS3(f => ({ ...f, secao3_nacionalidade: v }))} />
+              <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
               <LI label="E-mail" value={s3.secao3_email} onChange={v => setS3(f => ({ ...f, secao3_email: v }))} />
               <div className="col-span-2"><LI label="Telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
             </div>
