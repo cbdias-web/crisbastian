@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Calendar, CheckCircle2 } from 'lucide-react';
 
 const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
-const STORAGE_KEY = 'google_calendar_conectado_v2';
+const STORAGE_KEY = 'google_calendar_conectado_v3';
 
 // Exporta função utilitária para abrir o modal manualmente
 export function abrirModalGoogleCalendar() {
@@ -28,21 +28,18 @@ export default function GoogleCalendarConectarModal() {
     const jaConectado = localStorage.getItem(STORAGE_KEY);
     if (jaConectado) return;
 
-    // Verifica se o usuário já está conectado tentando chamar a função
+    // __check_only só testa a conexão: sucesso {connected:true} = vinculado;
+    // qualquer erro = sem conexão → exibe o modal de vinculação.
     base44.functions.invoke('criarMeetAgenda', { __check_only: true })
-      .then(() => {
-        // Conseguiu → já conectado
-        localStorage.setItem(STORAGE_KEY, '1');
-      })
-      .catch((e) => {
-        const msg = e?.response?.data?.error || e?.message || '';
-        // Se o erro é de conexão, mostra o modal
-        if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active') || msg.toLowerCase().includes('not connected')) {
-          setShow(true);
-        } else {
-          // Qualquer outro erro significa que a conexão existe (ex: parâmetros faltando)
+      .then((res) => {
+        if (res?.data?.connected) {
           localStorage.setItem(STORAGE_KEY, '1');
+        } else {
+          setShow(true);
         }
+      })
+      .catch(() => {
+        setShow(true);
       });
   }, []);
 
@@ -57,16 +54,8 @@ export default function GoogleCalendarConectarModal() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         // Verificar se a conexão foi realmente estabelecida
         try {
-          await base44.functions.invoke('criarMeetAgenda', { __check_only: true });
-          // Sucesso: conexão estabelecida
-          setConectando(false);
-          setConectado(true);
-          localStorage.setItem(STORAGE_KEY, '1');
-          setTimeout(() => setShow(false), 2000);
-        } catch (e) {
-          const msg = e?.response?.data?.error || e?.message || '';
-          // Se o erro NÃO é de "não conectado", considera que a conexão existe
-          if (!msg.toLowerCase().includes('connection') && !msg.toLowerCase().includes('no active') && !msg.toLowerCase().includes('not connected') && !msg.toLowerCase().includes('no connection')) {
+          const res = await base44.functions.invoke('criarMeetAgenda', { __check_only: true });
+          if (res?.data?.connected) {
             setConectando(false);
             setConectado(true);
             localStorage.setItem(STORAGE_KEY, '1');
@@ -75,6 +64,9 @@ export default function GoogleCalendarConectarModal() {
             setConectando(false);
             setErroConexao(true);
           }
+        } catch (e) {
+          setConectando(false);
+          setErroConexao(true);
         }
       }
     }, 500);
