@@ -1,0 +1,414 @@
+{
+  "name": "RncContaInternacional",
+  "type": "object",
+  "properties": {
+    "contrato_id": {
+      "type": "string",
+      "description": "ID do contrato Conta Internacional vinculado"
+    },
+    "tipo_conta": {
+      "type": "string",
+      "enum": [
+        "PF",
+        "PJ"
+      ],
+      "description": "Tipo: Pessoa Fisica (PF) ou Pessoa Juridica (PJ)"
+    },
+    "secao1_tipo_conta": {
+      "type": "string",
+      "enum": [
+        "Conta Corrente",
+        "Poupanca",
+        "Money Market",
+        "CD"
+      ],
+      "description": "Tipo de conta bancaria"
+    },
+    "secao1_proposito": {
+      "type": "string",
+      "description": "Proposito da conta nos EUA - como sera usada, debitos e creditos"
+    },
+    "secao1_deposito_remetente": {
+      "type": "string",
+      "description": "Nome do remetente do deposito inicial"
+    },
+    "secao1_deposito_banco": {
+      "type": "string",
+      "description": "Nome do banco do deposito inicial"
+    },
+    "secao1_deposito_valor": {
+      "type": "string",
+      "description": "Valor do deposito inicial"
+    },
+    "secao1_origem_fundos": {
+      "type": "string",
+      "description": "Origem dos fundos do deposito inicial (salario, poupanca, heranca, etc)"
+    },
+    "secao1_bancos_existentes": {
+      "type": "array",
+      "description": "Bancos onde o titular ja possui conta",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome_banco": {
+            "type": "string"
+          },
+          "pais": {
+            "type": "string"
+          },
+          "tipo_conta": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "secao1_assinantes": {
+      "type": "array",
+      "description": "Nomes dos assinantes da conta (PJ: ate 4)",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "secao1_assinatura_tipo": {
+      "type": "string",
+      "enum": [
+        "Conjunta",
+        "Individual"
+      ],
+      "description": "Tipo de assinatura"
+    },
+    "secao1_talao_cheques": {
+      "type": "string",
+      "enum": [
+        "sim",
+        "nao"
+      ],
+      "description": "Deseja talao de cheques?"
+    },
+    "secao1_cartao_debito": {
+      "type": "string",
+      "enum": [
+        "sim",
+        "nao"
+      ],
+      "description": "Deseja cartao de debito?"
+    },
+    "secao1_email": {
+      "type": "string",
+      "description": "E-mail de contato"
+    },
+    "secao1_telefone_escritorio1": {
+      "type": "string",
+      "description": "Telefone escritorio 1"
+    },
+    "secao1_telefone_escritorio2": {
+      "type": "string",
+      "description": "Telefone escritorio 2"
+    },
+    "secao1_celular": {
+      "type": "string",
+      "description": "Numero do celular"
+    },
+    "secao1_endereco_correspondencia": {
+      "type": "string",
+      "description": "Endereco para correspondencias (se diferente do legal)"
+    },
+    "secao1_pj_razao_social": {
+      "type": "string",
+      "description": "Nome completo da empresa (PJ)"
+    },
+    "secao1_pj_linha_negocios": {
+      "type": "string",
+      "description": "Linha de negocios da empresa em detalhes (PJ)"
+    },
+    "secao1_pj_num_empregados": {
+      "type": "string",
+      "enum": [
+        "1-5",
+        "5-10",
+        "10-20",
+        "50",
+        "50-100",
+        "100-200",
+        ">200"
+      ],
+      "description": "Numero de empregados (PJ)"
+    },
+    "secao1_pj_produtos_servicos": {
+      "type": "string",
+      "description": "Produtos e servicos oferecidos pela empresa (PJ)"
+    },
+    "secao1_pj_pais_operacao": {
+      "type": "string",
+      "description": "Pais onde a empresa opera (PJ)"
+    },
+    "secao1_pj_receita_bruta": {
+      "type": "string",
+      "description": "Valor da receita bruta no ultimo ano em USD (PJ)"
+    },
+    "secao1_pj_prospeccao_receita": {
+      "type": "string",
+      "description": "Prospecao de receita bruta (empresa recente) em USD (PJ)"
+    },
+    "secao1_pj_clientes": {
+      "type": "array",
+      "description": "Clientes que usarao a conta nos EUA para enviar pagamentos (PJ)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "pais": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "secao1_pj_fornecedores": {
+      "type": "array",
+      "description": "Fornecedores que a empresa pagara pela conta nos EUA (PJ)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "pais": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "secao1_pj_acionistas": {
+      "type": "array",
+      "description": "Acionistas e percentual de participacao (PJ)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "secao2_assinantes": {
+      "type": "array",
+      "description": "Formulario de cada assinante autorizado da conta",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "telefone_residencia": {
+            "type": "string"
+          },
+          "telefone_celular": {
+            "type": "string"
+          },
+          "telefone_escritorio": {
+            "type": "string"
+          },
+          "endereco_correspondencia": {
+            "type": "string"
+          },
+          "nome_empresa": {
+            "type": "string"
+          },
+          "atividade_empresa": {
+            "type": "string"
+          },
+          "titulo_posicao": {
+            "type": "string"
+          },
+          "tipo_emprego": {
+            "type": "string",
+            "enum": [
+              "Empregado",
+              "Acionista",
+              "Aposentado"
+            ]
+          },
+          "salario_anual_usd": {
+            "type": "string"
+          },
+          "outra_fonte_renda": {
+            "type": "string"
+          },
+          "valor_outra_renda": {
+            "type": "string"
+          },
+          "explicacao_heranca": {
+            "type": "string"
+          },
+          "pais_nascimento": {
+            "type": "string"
+          },
+          "dupla_nacionalidade": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao"
+            ]
+          },
+          "pais_segunda_nacionalidade": {
+            "type": "string"
+          },
+          "numero_passaporte": {
+            "type": "string"
+          },
+          "mais_182_dias_eua": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao"
+            ]
+          },
+          "mais_122_dias_eua_3anos": {
+            "type": "string",
+            "enum": [
+              "sim",
+              "nao"
+            ]
+          },
+          "endereco_eua": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "secao3_nome": {
+      "type": "string",
+      "description": "Nome completo do titular (PF)"
+    },
+    "secao3_cpf": {
+      "type": "string",
+      "description": "CPF do titular (PF)"
+    },
+    "secao3_nascimento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de nascimento (PF)"
+    },
+    "secao3_nacionalidade": {
+      "type": "string",
+      "description": "Nacionalidade"
+    },
+    "secao3_email": {
+      "type": "string",
+      "description": "E-mail"
+    },
+    "secao3_telefone": {
+      "type": "string",
+      "description": "Telefone"
+    },
+    "secao3_beneficiarios": {
+      "type": "array",
+      "description": "Beneficiarios da conta PF (em caso de falecimento)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome_completo": {
+            "type": "string"
+          },
+          "data_nascimento": {
+            "type": "string"
+          },
+          "parentesco": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "documentos": {
+      "type": "array",
+      "description": "Checklist de documentos necessarios",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "recebido": {
+            "type": "boolean",
+            "default": false
+          },
+          "url": {
+            "type": "string"
+          },
+          "nome_arquivo": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "pdf_url": {
+      "type": "string",
+      "description": "URL do PDF gerado"
+    },
+    "pdf_nome": {
+      "type": "string",
+      "description": "Nome do arquivo PDF gerado"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "concluido",
+        "enviado"
+      ],
+      "default": "rascunho",
+      "description": "Status do formulario"
+    },
+    "preenchido_por": {
+      "type": "string",
+      "description": "Nome do usuario que preencheu"
+    },
+    "data_preenchimento": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observacoes": {
+      "type": "string"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Token unico do link publico"
+    },
+    "link_gerado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "link_origem_admin": {
+      "type": "string"
+    },
+    "link_preenchido_em": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "tipo_conta"
+  ]
+}

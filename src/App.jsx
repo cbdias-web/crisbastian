@@ -31,6 +31,7 @@ import CentralLeads from './pages/CentralLeads';
 import Implantacoes from './pages/Implantacoes';
 import MarketNews from './pages/MarketNews';
 import RncPublicaPage from './pages/RncPublicaPage';
+import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -47,6 +48,13 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/rnc-publica/:token" element={<RncPublicaPage />} />
+      </Routes>
+    );
+  }
+  if (location.pathname.startsWith('/conta-internacional-publica')) {
+    return (
+      <Routes>
+        <Route path="/conta-internacional-publica/:token" element={<ContaInternacionalPublicaPage />} />
       </Routes>
     );
   }

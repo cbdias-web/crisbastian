@@ -11,6 +11,7 @@ import ContratoViewer from '@/components/contratos/ContratoViewer';
 import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSidebar';
 import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
 import RncListModal from '@/components/contratos/RncListModal';
+import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -56,6 +57,8 @@ export default function Contratos() {
   const [rncContrato, setRncContrato] = useState(null);
   const [rncDirectId, setRncDirectId] = useState(null);
   const [showRncList, setShowRncList] = useState(false);
+  const [ciContrato, setCiContrato] = useState(null);
+  const [ciDirectId, setCiDirectId] = useState(null);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -243,6 +246,13 @@ export default function Contratos() {
                     <FileCheck2 className="w-3 h-3" /> Formulário RNC
                   </button>
                 )}
+                {tipo === 'CONTA INTERNACIONAL' && (
+                  <button onClick={(e) => { e.stopPropagation(); setCiContrato({}); setCiDirectId(null); }}
+                    className="w-full mt-2.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition"
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
+                    <Globe className="w-3 h-3" /> Formulário CI
+                  </button>
+                )}
               </div>
             );
           })}
@@ -390,6 +400,13 @@ export default function Contratos() {
                               <FileCheck2 className="w-3.5 h-3.5" />
                             </button>
                           )}
+                          {c.tipo === 'CONTA INTERNACIONAL' && (
+                            <button onClick={() => { setCiContrato(c); setCiDirectId(null); }}
+                              className="p-1.5 rounded-lg transition" title="Formulário Conta Internacional"
+                              style={{ background: 'rgba(59,130,249,0.12)', color: '#60a5fa' }}>
+                              <Globe className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => enviarParaVendas(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
@@ -434,6 +451,14 @@ export default function Contratos() {
             rncId={rncDirectId}
             user={user}
             onClose={() => { setRncContrato(null); setRncDirectId(null); }}
+          />
+        )}
+        {(ciContrato || ciDirectId) && (
+          <RncContaInternacionalModal
+            contrato={ciContrato || {}}
+            rncId={ciDirectId}
+            user={user}
+            onClose={() => { setCiContrato(null); setCiDirectId(null); }}
           />
         )}
       </div>
