@@ -88,6 +88,13 @@ export default function ContaInternacionalPublicaPage() {
   const [s3, setS3] = useState({ secao3_nome: '', secao3_cpf: '', secao3_nascimento: '', secao3_nacionalidade: 'Brasileira', secao3_email: '', secao3_telefone: '', secao3_passaporte: '' });
   const [beneficiarios, setBeneficiarios] = useState([{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
 
+  // PF: o titular é o assinante da conta; atualiza campos financeiros/residenciais no assinante[0]
+  const updateTitularField = (field, val) => setAssinantes(ss => {
+    const copy = ss.length > 0 ? [...ss] : [ASSINANTE_VAZIO()];
+    copy[0] = { ...copy[0], [field]: val };
+    return copy;
+  });
+
   useEffect(() => {
     if (!token) { setError('Link inválido.'); setLoading(false); return; }
     carregar();
@@ -150,6 +157,13 @@ export default function ContaInternacionalPublicaPage() {
     setSalvando(true); setSalvo(false);
     try {
       const uploads = Object.entries(arquivos).map(([tipo, v]) => ({ tipo, base64: v.base64, nome: v.nome, mime: v.mime }));
+      const isPJSend = rnc?.tipo_conta === 'PJ';
+      // PF: o titular é o assinante — sincroniza nome/e-mail para o registro ficar coerente
+      let assinantesSalvar = assinantes;
+      if (!isPJSend) {
+        const titular = assinantes[0] || ASSINANTE_VAZIO();
+        assinantesSalvar = [{ ...titular, nome: s3.secao3_nome, email: s3.secao3_email }];
+      }
       const dados = {
         ...s1,
         secao1_assinantes: assinantesNomes.filter(Boolean),
@@ -157,7 +171,7 @@ export default function ContaInternacionalPublicaPage() {
         secao1_pj_clientes: clientesPJ.filter(c => c.nome),
         secao1_pj_fornecedores: fornecedoresPJ.filter(f => f.nome),
         secao1_pj_acionistas: acionistasPJ.filter(a => a.nome).map(a => ({ ...a, percentual: a.percentual ? Number(a.percentual) : null })),
-        secao2_assinantes: assinantes,
+        secao2_assinantes: assinantesSalvar,
         ...s3,
         secao3_beneficiarios: beneficiarios.filter(b => b.nome_completo),
       };
@@ -201,11 +215,15 @@ export default function ContaInternacionalPublicaPage() {
   const isPJ = rnc?.tipo_conta === 'PJ';
 
   const TABS = [];
-  let _secN = 1;
-  if (!isPJ) { TABS.push({ id: 'pf', label: `Seção ${_secN++} — Pessoa Física` }); }
-  TABS.push({ id: 'pj', label: `Seção ${_secN++} — Dados PJ` });
-  TABS.push({ id: 'socio', label: `Seção ${_secN++} — Dados do Sócio` });
-  TABS.push({ id: 'docs', label: 'Documentos' });
+  if (isPJ) {
+    let _secN = 1;
+    TABS.push({ id: 'pj', label: `Seção ${_secN++} — Dados PJ` });
+    TABS.push({ id: 'socio', label: `Seção ${_secN++} — Dados do Sócio` });
+    TABS.push({ id: 'docs', label: 'Documentos' });
+  } else {
+    TABS.push({ id: 'pf', label: 'Cadastro Pessoa Física' });
+    TABS.push({ id: 'docs', label: 'Documentos' });
+  }
 
   return (
     <div className="min-h-screen py-6 px-4" style={{ background: AURORA.bg }}>
@@ -381,18 +399,40 @@ export default function ContaInternacionalPublicaPage() {
         {abas === 'pf' && !isPJ && (
           <div className="rounded-2xl p-5 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.accent }}>
-              <User className="w-4 h-4" /> Dados do Titular (Conta Pessoal)
+              <User className="w-4 h-4" /> Cadastro Pessoa Física
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2"><LI label="Nome Completo *" value={s3.secao3_nome} onChange={v => setS3(f => ({ ...f, secao3_nome: v }))} /></div>
               <LI label="CPF" value={s3.secao3_cpf} onChange={v => setS3(f => ({ ...f, secao3_cpf: v }))} />
               <LI label="Data de Nascimento" type="date" value={s3.secao3_nascimento} onChange={v => setS3(f => ({ ...f, secao3_nascimento: v }))} />
               <LI label="Nacionalidade" value={s3.secao3_nacionalidade} onChange={v => setS3(f => ({ ...f, secao3_nacionalidade: v }))} />
-              <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
               <LI label="E-mail" value={s3.secao3_email} onChange={v => setS3(f => ({ ...f, secao3_email: v }))} />
               <div className="col-span-2"><LI label="Telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
             </div>
-            <p className="text-xs font-bold pt-2" style={{ color: AURORA.accent }}>Beneficiários (em caso de falecimento)</p>
+
+            <div className="h-px" style={{ background: AURORA.border }} />
+            <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Informações Financeiras e Residenciais</p>
+            <div className="grid grid-cols-2 gap-3">
+              <LI label="Salário Anual (USD) *" value={(assinantes[0] || {}).salario_anual_usd} onChange={v => updateTitularField('salario_anual_usd', v)} placeholder="Ex: 50000" />
+              <LI label="Outra Fonte de Renda" value={(assinantes[0] || {}).outra_fonte_renda} onChange={v => updateTitularField('outra_fonte_renda', v)} />
+              <LI label="País de Nascimento *" value={(assinantes[0] || {}).pais_nascimento} onChange={v => updateTitularField('pais_nascimento', v)} />
+              <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
+              <RadioBtns label="Dupla Nacionalidade?" value={(assinantes[0] || {}).dupla_nacionalidade} onChange={v => updateTitularField('dupla_nacionalidade', v)}
+                opts={[{ value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' }]} />
+              <RadioBtns label="+182 Dias nos EUA (último ano)?" value={(assinantes[0] || {}).mais_182_dias_eua} onChange={v => updateTitularField('mais_182_dias_eua', v)}
+                opts={[{ value: 'sim', label: 'Sim (W9)' }, { value: 'nao', label: 'Não' }]} />
+              <RadioBtns label="Média +122 Dias EUA (3 anos)?" value={(assinantes[0] || {}).mais_122_dias_eua_3anos} onChange={v => updateTitularField('mais_122_dias_eua_3anos', v)}
+                opts={[{ value: 'sim', label: 'Sim (W9)' }, { value: 'nao', label: 'Não' }]} />
+              {(assinantes[0] || {}).dupla_nacionalidade === 'sim' && (
+                <LI label="País da 2ª Nacionalidade" value={(assinantes[0] || {}).pais_segunda_nacionalidade} onChange={v => updateTitularField('pais_segunda_nacionalidade', v)} />
+              )}
+              {((assinantes[0] || {}).mais_182_dias_eua === 'sim' || (assinantes[0] || {}).mais_122_dias_eua_3anos === 'sim') && (
+                <div className="col-span-2"><LI label="Endereço nos EUA" value={(assinantes[0] || {}).endereco_eua} onChange={v => updateTitularField('endereco_eua', v)} /></div>
+              )}
+            </div>
+
+            <div className="h-px" style={{ background: AURORA.border }} />
+            <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Beneficiários (em caso de falecimento)</p>
             {beneficiarios.map((b, i) => (
               <div key={i} className="grid grid-cols-3 gap-2 items-center">
                 <input value={b.nome_completo} onChange={e => setBeneficiarios(bs => bs.map((x, j) => j === i ? { ...x, nome_completo: e.target.value } : x))}

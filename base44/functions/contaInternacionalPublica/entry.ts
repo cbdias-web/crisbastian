@@ -103,15 +103,22 @@ function calcularPendencias(rnc: any): string[] {
   }
 
   const assinantes = rnc.secao2_assinantes || [];
-  if (assinantes.length === 0) {
-    p.push('Assinantes: Informar ao menos 1 assinante');
+  if (isPJ) {
+    if (assinantes.length === 0) {
+      p.push('Assinantes: Informar ao menos 1 assinante');
+    } else {
+      assinantes.forEach((a: any, i: number) => {
+        if (!a.nome?.trim()) p.push(`Assinante ${i + 1}: Nome`);
+        if (!a.email?.trim()) p.push(`Assinante ${i + 1}: E-mail`);
+        if (!a.pais_nascimento?.trim()) p.push(`Assinante ${i + 1}: Pais de nascimento`);
+        if (!a.salario_anual_usd?.trim()) p.push(`Assinante ${i + 1}: Salario anual`);
+      });
+    }
   } else {
-    assinantes.forEach((a: any, i: number) => {
-      if (!a.nome?.trim()) p.push(`Assinante ${i + 1}: Nome`);
-      if (!a.email?.trim()) p.push(`Assinante ${i + 1}: E-mail`);
-      if (!a.pais_nascimento?.trim()) p.push(`Assinante ${i + 1}: Pais de nascimento`);
-      if (!a.salario_anual_usd?.trim()) p.push(`Assinante ${i + 1}: Salario anual`);
-    });
+    // PF: o titular é o assinante; nome/e-mail vêm da Seção 3. Validar só os campos do novo bloco.
+    const a = assinantes[0] || {};
+    if (!a.pais_nascimento?.trim()) p.push('Dados: Pais de nascimento');
+    if (!a.salario_anual_usd?.trim()) p.push('Dados: Salario anual (USD)');
   }
 
   const docs = mergeDocs(rnc.tipo_conta, rnc.documentos);
