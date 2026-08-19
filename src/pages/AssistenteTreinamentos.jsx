@@ -104,7 +104,7 @@ export default function AssistenteTreinamentos() {
   const isTyping = sending || messages[messages.length - 1]?.role === 'assistant' && !messages[messages.length - 1]?.content;
 
   return (
-    <div className="flex h-screen" style={{ background: AURORA.bg, color: AURORA.text }}>
+    <div className="flex h-screen relative" style={{ background: 'transparent', color: AURORA.text }}>
       {/* Sidebar */}
       <aside className="w-64 flex flex-col flex-shrink-0" style={{ background: AURORA.surface, borderRight: `1px solid ${AURORA.border}` }}>
         <div className="p-4" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
