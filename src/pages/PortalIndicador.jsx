@@ -206,8 +206,8 @@ export default function PortalIndicador() {
   const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda').length;
   const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
   const pct = indicador.percentual_comissao ?? 0;
-  const comissaoEstimada = leads.reduce((s, l) => s + ((Number(l.valor_estimado) || 0) * pct / 100), 0);
-  const comissaoGerada = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + ((Number(l.valor_estimado) || 0) * pct / 100), 0);
+  const comissaoGerada = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + ((Number(l.valor_venda) || Number(l.valor_estimado) || 0) * pct / 100), 0);
+  const vendasConvertidasValor = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + (Number(l.valor_venda) || Number(l.valor_estimado) || 0), 0);
 
   const statusData = [
     { name: 'Novas', value: novos, color: AURORA.accent },
@@ -316,7 +316,7 @@ export default function PortalIndicador() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
           <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
           <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
-          <Kpi label="Comissão estimada" value={fmtMoeda(comissaoEstimada)} icon={DollarSign} color={AURORA.warning} />
+          <Kpi label="Vendas convertidas" value={fmtMoeda(vendasConvertidasValor)} icon={DollarSign} color={AURORA.accent} />
           <Kpi label="Vendas efetivas" value={vendasEfetivas} icon={Trophy} color={AURORA.green} />
           <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={CheckCircle2} color={AURORA.green} />
         </div>

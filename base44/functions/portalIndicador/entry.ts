@@ -90,6 +90,16 @@ export default async function(req: Request): Promise<Response> {
 
     if (action === 'listar') {
       const leads = await base44.asServiceRole.entities.LeadIndicacao.filter({ parceiro_id: ind.id });
+      // Anexa o valor REAL da venda (Venda.valor) para leads convertidos, usado no card "Vendas convertidas"
+      const comVenda = leads.filter((l: any) => l.venda_id);
+      if (comVenda.length > 0) {
+        try {
+          const todasVendas = await base44.asServiceRole.entities.Venda.list('-created_date', 500);
+          const porId: Record<string, number> = {};
+          for (const v of todasVendas) porId[v.id] = Number(v.valor) || 0;
+          for (const l of leads) (l as any).valor_venda = porId[(l as any).venda_id] || 0;
+        } catch (e) {}
+      }
       return Response.json({ leads });
     }
 

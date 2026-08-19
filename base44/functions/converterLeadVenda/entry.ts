@@ -133,6 +133,36 @@ export default async function(req: Request): Promise<Response> {
       } catch (e) {}
     }
 
+    // 5) Registra a conversão no histórico do cliente (InteracaoCliente) +
+    //    mensagem de sistema na ConversaWhatsapp — ambas visíveis no Portal do Indicador
+    const valorFmt = valorNum ? `R$ ${valorNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'não informado';
+    const textoConversao = `✅ Conversão em Venda efetivada · Produto: ${produto} · Valor do contrato: ${valorFmt}`;
+    const agoraIso = new Date().toISOString();
+    try {
+      await base44.asServiceRole.entities.InteracaoCliente.create({
+        cliente_id: cliente.id,
+        cliente_nome: nome,
+        vendedor_id,
+        vendedor_nome,
+        tipo: 'Outro',
+        descricao: `Conversão para venda efetiva. Produto: ${produto}. Valor do contrato: ${valorFmt}. Contrato: ${contrato.id}.`,
+        data_interacao: dataVenda,
+        resultado: 'Positivo',
+        status: 'realizada',
+      });
+    } catch (e) { console.log('Falha ao registrar InteracaoCliente da conversão:', e.message); }
+
+    try {
+      const convFull = await base44.asServiceRole.entities.ConversaWhatsapp.get(conversa_id);
+      const msgs = Array.isArray(convFull?.mensagens) ? convFull.mensagens : [];
+      msgs.push({ de: 'sistema', texto: textoConversao, timestamp: agoraIso, tipo: 'sistema' });
+      await base44.asServiceRole.entities.ConversaWhatsapp.update(conversa_id, {
+        mensagens: msgs,
+        ultima_mensagem: textoConversao,
+        ultima_mensagem_em: agoraIso,
+      });
+    } catch (e) { console.log('Falha ao registrar mensagem de conversão:', e.message); }
+
     return Response.json({
       ok: true,
       cliente_id: cliente.id,
