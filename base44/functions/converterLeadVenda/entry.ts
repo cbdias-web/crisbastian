@@ -86,6 +86,7 @@ export default async function(req: Request): Promise<Response> {
       vendedor_nome,
       cliente_id: cliente.id,
       valor_adesao: valorNum || null,
+      valor_total: valorNum || null,
       status: 'rascunho',
       indicadores: indicadoresArr,
       observacoes: obsComum,
