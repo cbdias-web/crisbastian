@@ -116,17 +116,18 @@ export default function Contratos() {
       }
       const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
-      // Vincula a venda à indicação de origem → dispara notificação "Venda concluída" ao indicador
+      // Vincula a venda à indicação de origem → dispara notificação "Venda concluída" ao indicador.
+      // Tudo aguardado antes do redirect para não abortar a atualização (race condition).
       try {
         const indicacoes = await base44.entities.LeadIndicacao.filter({ contrato_id: ct.id });
         for (const li of indicacoes) {
           await base44.entities.LeadIndicacao.update(li.id, { venda_id: venda.id, status: 'convertido_venda' });
         }
-      } catch (e) { console.log('Falha ao vincular venda à indicação:', e.message); }
+      } catch (e) { toast.warning('Venda criada, mas falha ao vincular indicação: ' + e.message); }
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
       toast.success('Venda criada! Indicador notificado. Redirecionando para Vendas...');
-      setTimeout(() => window.location.href = '/Vendas', 1200);
+      window.location.href = '/Vendas';
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
