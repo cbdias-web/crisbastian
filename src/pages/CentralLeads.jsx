@@ -44,6 +44,8 @@ export default function CentralLeads() {
   const [filtroGerente, setFiltroGerente] = useState('todos');
   const [filtroPeriodo, setFiltroPeriodo] = useState('todos');
   const [filtroHorario, setFiltroHorario] = useState('todos');
+  const [filtroProduto, setFiltroProduto] = useState('todos');
+  const [filtroOrigem, setFiltroOrigem] = useState('todos');
   const [busca, setBusca] = useState('');
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('leads');
@@ -115,8 +117,15 @@ export default function CentralLeads() {
       else if (filtroHorario === 'comercial') matchHorario = h >= 8 && h < 18;
     }
 
-    return matchStatus && matchBusca && matchGerente && matchPeriodo && matchHorario;
+    const matchProduto = filtroProduto === 'todos' || c.produto_interesse === filtroProduto;
+    const matchOrigem = filtroOrigem === 'todos' || c.origem === filtroOrigem;
+
+    return matchStatus && matchBusca && matchGerente && matchPeriodo && matchHorario && matchProduto && matchOrigem;
   });
+
+  // Produtos e origens disponíveis para os filtros (deduzidos das conversas existentes)
+  const produtosDisponiveis = [...new Set(conversas.map(c => c.produto_interesse).filter(Boolean))].sort();
+  const origensDisponiveis = [...new Set(conversas.map(c => c.origem).filter(Boolean))].sort();
 
   // Dados gerentes
   const toggleCentralLeads = async (v) => {
@@ -429,15 +438,29 @@ export default function CentralLeads() {
                   <option value="tarde">Tarde (12h–18h)</option>
                   <option value="noite">Noite/madrugada</option>
                 </select>
+
+                <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
+                  className="px-3 py-2 rounded-xl text-xs focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <option value="todos">📦 Todos produtos</option>
+                  {produtosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+
+                <select value={filtroOrigem} onChange={e => setFiltroOrigem(e.target.value)}
+                  className="px-3 py-2 rounded-xl text-xs focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <option value="todos">🔗 Todas origens</option>
+                  {origensDisponiveis.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
               </div>
 
               {/* Contador de resultados */}
-              {(filtroStatus !== 'todos' || filtroGerente !== 'todos' || filtroPeriodo !== 'todos' || filtroHorario !== 'todos' || busca) && (
+              {(filtroStatus !== 'todos' || filtroGerente !== 'todos' || filtroPeriodo !== 'todos' || filtroHorario !== 'todos' || filtroProduto !== 'todos' || filtroOrigem !== 'todos' || busca) && (
                 <div className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: AURORA.textMuted }}>
                     {conversasFiltradas.length} conversa{conversasFiltradas.length !== 1 ? 's' : ''} encontrada{conversasFiltradas.length !== 1 ? 's' : ''}
                   </span>
-                  <button onClick={() => { setFiltroStatus('todos'); setFiltroGerente('todos'); setFiltroPeriodo('todos'); setFiltroHorario('todos'); setBusca(''); }}
+                  <button onClick={() => { setFiltroStatus('todos'); setFiltroGerente('todos'); setFiltroPeriodo('todos'); setFiltroHorario('todos'); setFiltroProduto('todos'); setFiltroOrigem('todos'); setBusca(''); }}
                     className="text-xs underline" style={{ color: AURORA.accent }}>
                     Limpar filtros
                   </button>
@@ -516,18 +539,30 @@ export default function CentralLeads() {
                                     <CheckCircle2 className="w-3 h-3" /> Qualificado
                                   </button>
                                 )}
-                                {isAdmin && (
-                                  <button onClick={(e) => { e.stopPropagation(); setConversaGerenciar(conv); }}
-                                    className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg transition"
-                                    style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}
-                                    title="Gerenciar: excluir, mover/mesclar, transferir gerente">
-                                    <Settings className="w-3 h-3" /> Gerenciar
-                                  </button>
-                                )}
+                                <button onClick={(e) => { e.stopPropagation(); setConversaGerenciar(conv); }}
+                                  className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg transition"
+                                  style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}
+                                  title={isAdmin ? "Gerenciar: editar, excluir, mover/mesclar, transferir gerente" : "Editar / classificar lead"}>
+                                  <Settings className="w-3 h-3" /> {isAdmin ? 'Gerenciar' : 'Editar'}
+                                </button>
                               </div>
                             </div>
                             {isAdmin && conv.vendedor_nome && (
                               <p className="text-[10px] mt-1" style={{ color: 'rgba(230,237,243,0.3)' }}>👤 {conv.vendedor_nome}</p>
+                            )}
+                            {(conv.produto_interesse || conv.origem) && (
+                              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                {conv.produto_interesse && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: '1px solid rgba(0,212,170,0.25)' }}>
+                                    📦 {conv.produto_interesse}
+                                  </span>
+                                )}
+                                {conv.origem && (
+                                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.25)' }}>
+                                    🔗 {conv.origem}
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
@@ -563,6 +598,7 @@ export default function CentralLeads() {
           conversa={conversaGerenciar}
           conversas={conversas}
           vendedores={vendedores}
+          isAdmin={isAdmin}
           onClose={() => setConversaGerenciar(null)}
           onConcluido={() => { setConversaSelecionada(null); refetch(); }}
         />

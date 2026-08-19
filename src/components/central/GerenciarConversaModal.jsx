@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Trash2, GitMerge, UserCog, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
+import { X, Trash2, GitMerge, UserCog, AlertTriangle, Loader2, ArrowRight, Edit3, Save } from 'lucide-react';
 import { toast } from 'sonner';
+
+const PRODUTOS_SUGESTAO = [
+  'DOLARIZE', 'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'CANAL BANCÁRIO',
+  'OFFSHORE', 'ROF', 'GARANTIAS', 'RATING', 'HORA TÉCNICA',
+];
+const ORIGENS_SUGESTAO = [
+  'campanha_externa', 'base_clientes', 'organica', 'indicacao', 'webhook_make', 'manual',
+];
 
 const AURORA = {
   bg: '#0d1117',
@@ -14,12 +22,39 @@ const AURORA = {
   danger: '#f87171',
 };
 
-export default function GerenciarConversaModal({ conversa, conversas, vendedores, onClose, onConcluido }) {
-  const [aba, setAba] = useState('transferir');
+export default function GerenciarConversaModal({ conversa, conversas, vendedores, onClose, onConcluido, isAdmin = true }) {
+  const [aba, setAba] = useState('editar');
   const [salvando, setSalvando] = useState(false);
   const [novoGerenteId, setNovoGerenteId] = useState('');
   const [conversaDestinoId, setConversaDestinoId] = useState('');
   const [confirmarExcluir, setConfirmarExcluir] = useState(false);
+
+  // Edição / classificação
+  const [editNome, setEditNome] = useState(conversa.lead_nome || '');
+  const [editTelefone, setEditTelefone] = useState(conversa.telefone || '');
+  const [editProduto, setEditProduto] = useState(conversa.produto_interesse || '');
+  const [editOrigem, setEditOrigem] = useState(conversa.origem || '');
+  const [editObs, setEditObs] = useState(conversa.observacao_ia || '');
+
+  const salvarEdicao = async () => {
+    if (!editNome.trim()) { toast.error('Nome é obrigatório'); return; }
+    setSalvando(true);
+    try {
+      await base44.entities.ConversaWhatsapp.update(conversa.id, {
+        lead_nome: editNome.trim(),
+        telefone: editTelefone.trim(),
+        produto_interesse: editProduto.trim(),
+        origem: editOrigem.trim(),
+        observacao_ia: editObs.trim(),
+      });
+      toast.success('Lead atualizado e classificado');
+      onConcluido();
+      onClose();
+    } catch (err) {
+      toast.error('Erro ao salvar: ' + err.message);
+    }
+    setSalvando(false);
+  };
 
   // Conversas candidatas a mesclagem: mesmo telefone, exceto a atual
   const candidatasMesclagem = conversas.filter(
@@ -90,10 +125,11 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
   };
 
   const abas = [
-    { key: 'transferir', label: 'Transferir', icon: UserCog, color: AURORA.accent },
-    { key: 'mesclar', label: 'Mesclar / Mover', icon: GitMerge, color: '#a78bfa' },
-    { key: 'excluir', label: 'Excluir', icon: Trash2, color: AURORA.danger },
-  ];
+    { key: 'editar', label: 'Editar / Classificar', icon: Edit3, color: AURORA.accent, adminOnly: false },
+    { key: 'transferir', label: 'Transferir', icon: UserCog, color: AURORA.accent, adminOnly: true },
+    { key: 'mesclar', label: 'Mesclar / Mover', icon: GitMerge, color: '#a78bfa', adminOnly: true },
+    { key: 'excluir', label: 'Excluir', icon: Trash2, color: AURORA.danger, adminOnly: true },
+  ].filter(a => isAdmin || !a.adminOnly);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
@@ -126,6 +162,58 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
 
         {/* Conteúdo */}
         <div className="p-5">
+          {aba === 'editar' && (
+            <div className="space-y-3">
+              <p className="text-xs mb-1" style={{ color: AURORA.textMuted }}>
+                Edite os dados do lead e classifique por <strong style={{ color: AURORA.accent }}>produto</strong> e <strong style={{ color: AURORA.accent }}>origem</strong> para organizar a esteira.
+              </p>
+              <div>
+                <label className="text-[11px] font-semibold mb-1 block" style={{ color: AURORA.textMuted }}>Nome do lead</label>
+                <input value={editNome} onChange={e => setEditNome(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold mb-1 block" style={{ color: AURORA.textMuted }}>Telefone / WhatsApp</label>
+                <input value={editTelefone} onChange={e => setEditTelefone(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold mb-1 block" style={{ color: AURORA.textMuted }}>Produto de interesse</label>
+                <input list="produtos-sugestao" value={editProduto} onChange={e => setEditProduto(e.target.value)}
+                  placeholder="Selecione ou digite..."
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                <datalist id="produtos-sugestao">
+                  {PRODUTOS_SUGESTAO.map(p => <option key={p} value={p} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold mb-1 block" style={{ color: AURORA.textMuted }}>Origem</label>
+                <input list="origens-sugestao" value={editOrigem} onChange={e => setEditOrigem(e.target.value)}
+                  placeholder="Selecione ou digite..."
+                  className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                <datalist id="origens-sugestao">
+                  {ORIGENS_SUGESTAO.map(o => <option key={o} value={o} />)}
+                </datalist>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold mb-1 block" style={{ color: AURORA.textMuted }}>Observação / contexto (IA)</label>
+                <textarea value={editObs} onChange={e => setEditObs(e.target.value)} rows={2}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none"
+                  style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+              <button onClick={salvarEdicao} disabled={salvando}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
+                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Salvar Alterações
+              </button>
+            </div>
+          )}
+
           {aba === 'transferir' && (
             <div>
               <p className="text-xs mb-3" style={{ color: AURORA.textMuted }}>
