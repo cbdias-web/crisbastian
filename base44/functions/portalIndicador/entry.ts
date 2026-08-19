@@ -126,15 +126,18 @@ export default async function(req: Request): Promise<Response> {
 
       let conversa: any = null;
       const telRaw = lead.tipo === 'PF' ? (lead.pf_whatsapp || lead.pf_telefone) : (lead.pj_whatsapp || lead.pj_telefone);
+      const nomeLead = (lead.tipo === 'PF' ? lead.pf_nome : lead.pj_razao_social) || '';
+      const norm = (s: string) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
       if (telRaw) {
         const digits = String(telRaw).replace(/\D/g, '');
         if (digits.length >= 8) {
           try {
             const convs = await base44.asServiceRole.entities.ConversaWhatsapp.list('-updated_date', 200);
-            const match = convs.find(c => {
-              const cd = String(c.telefone || '').replace(/\D/g, '');
-              return cd && (cd.endsWith(digits) || digits.endsWith(cd) || cd.includes(digits) || digits.includes(cd));
-            });
+            // Apenas casamento exato de telefone (evita cruzar leads com números parecidos)
+            const exatos = convs.filter(c => String(c.telefone || '').replace(/\D/g, '') === digits);
+            // Entre os de mesmo telefone, prefere a conversa cujo nome bate com o lead
+            const porNome = exatos.find(c => norm(c.lead_nome) === norm(nomeLead));
+            const match = porNome || exatos[0] || null;
             if (match) conversa = { status: match.status, produto_interesse: match.produto_interesse, mensagens: match.mensagens || [] };
           } catch (e) {}
         }
