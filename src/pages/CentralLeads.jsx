@@ -236,7 +236,7 @@ export default function CentralLeads() {
                { key: 'leads', label: 'Conversas', icon: MessageSquare },
                { key: 'gerentes', label: `Gerentes (${gerentesInfo.length})`, icon: Users },
                { key: 'indicacoes', label: 'Indicações', icon: Send },
-               { key: 'parceiros', label: 'Parceiros', icon: Handshake },
+               { key: 'parceiros', label: 'Indicadores', icon: Handshake },
              ].map(aba => (
               <button key={aba.key} onClick={() => setAbaAtiva(aba.key)}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"

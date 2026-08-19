@@ -1,0 +1,101 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+
+// Portal público do Indicador (acesso via link_token).
+// - action 'buscar': retorna os dados do indicador + status do termo
+// - action 'aceitar_termo': registra aceite do Termo de Uso + envia boas-vindas
+// - action 'listar': retorna as LeadIndicacao do indicador (apenas as dele)
+export default async function(req: Request): Promise<Response> {
+  try {
+    const base44 = createClientFromRequest(req);
+    const body = await req.json();
+    const { action, token } = body;
+
+    if (!token) return Response.json({ error: 'Token obrigatório' }, { status: 400 });
+
+    const inds = await base44.asServiceRole.entities.Parceiro.filter({ link_token: token, ativo: true });
+    if (inds.length === 0) return Response.json({ error: 'Link inválido ou expirado' }, { status: 404 });
+    const ind = inds[0];
+
+    if (action === 'buscar') {
+      // Atualiza último acesso
+      try {
+        await base44.asServiceRole.entities.Parceiro.update(ind.id, { ultimo_acesso: new Date().toISOString() });
+      } catch (e) {}
+      return Response.json({
+        indicador: {
+          id: ind.id,
+          nome: ind.nome,
+          email: ind.email,
+          telefone: ind.telefone,
+          percentual_comissao: ind.percentual_comissao ?? 0,
+          receber_notificacoes: ind.receber_notificacoes !== false,
+          termo_aceito: ind.termo_aceito === true,
+          termo_aceito_em: ind.termo_aceito_em,
+          convite_enviado: ind.convite_enviado === true,
+        },
+      });
+    }
+
+    if (action === 'aceitar_termo') {
+      const versao = body.versao || '1.0';
+      const agora = new Date().toISOString();
+      await base44.asServiceRole.entities.Parceiro.update(ind.id, {
+        termo_aceito: true,
+        termo_aceito_em: agora,
+        termo_versao: versao,
+      });
+
+      // E-mail de boas-vindas
+      if (ind.email) {
+        try {
+          const body_html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: linear-gradient(135deg, #0d1117, #16213e); padding: 28px 24px; border-radius: 14px 14px 0 0;">
+                <h2 style="color: #00D4AA; margin: 0; font-size: 22px;">Bem-vindo ao Portal do Indicador 🎉</h2>
+                <p style="color: rgba(230,237,243,0.6); margin: 8px 0 0; font-size: 13px;">Villela Exchange</p>
+              </div>
+              <div style="background: #f8fafc; padding: 28px 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 14px 14px;">
+                <p style="color: #374151; font-size: 14px; margin: 0 0 16px;">Olá, <strong>${ind.nome}</strong>!</p>
+                <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+                  Seu cadastro foi formalizado com sucesso. Você aceitou o <strong>Termo de Uso (v${versao})</strong> da plataforma e já pode acompanhar suas indicações.
+                </p>
+                <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
+                  Agora você pode cadastrar novas indicações e acompanhar o status de cada lead em tempo real, direto pelo seu portal.
+                </p>
+                <p style="color: #6b7280; font-size: 12px; margin: 20px 0 0;">
+                  Você receberá notificações por e-mail sempre que houver movimentações nos seus leads.
+                </p>
+                <p style="margin: 20px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">Villela Exchange – Portal do Indicador</p>
+              </div>
+            </div>
+          `;
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: ind.email,
+            subject: `Bem-vindo ao Portal do Indicador · Villela Exchange`,
+            body: body_html,
+            from_name: 'Villela Exchange – Indicadores',
+          });
+        } catch (e) {
+          console.log('Falha ao enviar boas-vindas:', e.message);
+        }
+      }
+
+      return Response.json({ success: true });
+    }
+
+    if (action === 'listar') {
+      const leads = await base44.asServiceRole.entities.LeadIndicacao.filter({ parceiro_id: ind.id });
+      return Response.json({ leads });
+    }
+
+    if (action === 'toggle_notificacoes') {
+      const novo = body.receber !== undefined ? !!body.receber : !ind.receber_notificacoes;
+      await base44.asServiceRole.entities.Parceiro.update(ind.id, { receber_notificacoes: novo });
+      return Response.json({ success: true, receber_notificacoes: novo });
+    }
+
+    return Response.json({ error: 'Ação inválida' }, { status: 400 });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}

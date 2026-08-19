@@ -4,48 +4,86 @@
   "properties": {
     "nome": {
       "type": "string",
-      "description": "Nome do parceiro / indicador / agente externo"
+      "description": "Nome do indicador / parceiro externo"
     },
     "email": {
       "type": "string",
-      "description": "E-mail de contato do parceiro"
+      "description": "E-mail de contato do indicador"
     },
     "telefone": {
       "type": "string",
-      "description": "Telefone / WhatsApp do parceiro"
+      "description": "Telefone / WhatsApp do indicador"
     },
     "tipo": {
       "type": "string",
       "enum": [
+        "indicador",
         "parceiro",
-        "agente_externo",
-        "indicador"
+        "agente_externo"
       ],
-      "default": "parceiro",
-      "description": "Tipo de parceiro"
+      "default": "indicador",
+      "description": "Classifica\u00e7\u00e3o (todos s\u00e3o tratados como Indicador)"
     },
     "percentual_comissao": {
       "type": "number",
       "description": "Percentual padr\u00e3o de comiss\u00e3o/espelhamento (%)",
       "default": 10
     },
+    "receber_notificacoes": {
+      "type": "boolean",
+      "default": true,
+      "description": "Receber notifica\u00e7\u00f5es por e-mail sobre movimenta\u00e7\u00f5es dos seus leads"
+    },
     "ativo": {
       "type": "boolean",
       "default": true,
-      "description": "Parceiro ativo"
+      "description": "Indicador ativo"
     },
     "link_token": {
       "type": "string",
-      "description": "Token \u00fanico do link p\u00fablico de indica\u00e7\u00e3o"
+      "description": "Token \u00fanico do link p\u00fablico (formul\u00e1rio de indica\u00e7\u00e3o e portal do indicador)"
     },
     "link_gerado_em": {
       "type": "string",
       "format": "date-time",
       "description": "Data/hora de gera\u00e7\u00e3o do link"
     },
+    "convite_enviado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Convite do portal j\u00e1 foi enviado por e-mail"
+    },
+    "convite_enviado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do envio do convite"
+    },
+    "convite_enviado_por": {
+      "type": "string",
+      "description": "E-mail do admin que enviou o convite"
+    },
+    "termo_aceito": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicador aceitou o Termo de Uso do portal"
+    },
+    "termo_aceito_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da aceita\u00e7\u00e3o do termo"
+    },
+    "termo_versao": {
+      "type": "string",
+      "description": "Vers\u00e3o do termo aceito"
+    },
+    "ultimo_acesso": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltimo acesso do indicador ao portal"
+    },
     "observacoes": {
       "type": "string",
-      "description": "Observa\u00e7\u00f5es sobre o parceiro"
+      "description": "Observa\u00e7\u00f5es sobre o indicador"
     }
   },
   "required": [

@@ -33,6 +33,7 @@ import MarketNews from './pages/MarketNews';
 import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
+import PortalIndicador from './pages/PortalIndicador';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -63,6 +64,13 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/indicacao/:token" element={<IndicacaoPublicaPage />} />
+      </Routes>
+    );
+  }
+  if (location.pathname.startsWith('/portal-indicador')) {
+    return (
+      <Routes>
+        <Route path="/portal-indicador/:token" element={<PortalIndicador />} />
       </Routes>
     );
   }
