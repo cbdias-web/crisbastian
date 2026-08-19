@@ -54,8 +54,8 @@ export default function IndicacaoPublicaPage() {
 
   useEffect(() => {
     base44.functions.invoke('indicacaoParceiroPublica', { action: 'buscar', token })
-      .then(res => { setParceiro(res.parceiro); })
-      .catch(e => setErro(e.message || 'Link inválido'))
+      .then(res => { const r = res?.data || res; setParceiro(r?.parceiro); })
+      .catch(e => setErro(e?.message || 'Link inválido'))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -75,9 +75,15 @@ export default function IndicacaoPublicaPage() {
         ...(tipo === 'PF' ? pf : pj),
       };
       const res = await base44.functions.invoke('indicacaoParceiroPublica', { action: 'salvar', token, dados });
-      if (res.success) setSucesso(true);
+      const r = res?.data || res;
+      if (r?.success) {
+        toast.success('Indicação enviada com sucesso! Obrigado. 🙌');
+        setSucesso(true);
+      } else if (r?.error) {
+        toast.error(r.error);
+      }
     } catch (e) {
-      toast.error('Erro ao enviar: ' + (e.message || ''));
+      toast.error('Erro ao enviar: ' + (e?.message || ''));
     }
     setEnviando(false);
   };
