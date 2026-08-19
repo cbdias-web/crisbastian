@@ -140,7 +140,28 @@ export default async function(req: Request): Promise<Response> {
         }
       }
 
-      return Response.json({ lead, interacoes, conversa });
+      // ─── Jornada do cliente: contrato, venda, parcelas e implantação ───
+      let contrato: any = null;
+      if (lead.contrato_id) {
+        try { contrato = await base44.asServiceRole.entities.Contrato.get(lead.contrato_id); } catch (e) {}
+      }
+      let venda: any = null;
+      if (lead.venda_id) {
+        try { venda = await base44.asServiceRole.entities.Venda.get(lead.venda_id); } catch (e) {}
+      }
+      let parcelas: any[] = [];
+      if (lead.venda_id) {
+        try { parcelas = await base44.asServiceRole.entities.ParcelaVenda.filter({ venda_id: lead.venda_id }, 'numero_parcela'); } catch (e) {}
+      }
+      let implantacao: any = null;
+      if (lead.venda_id) {
+        try {
+          const imps = await base44.asServiceRole.entities.Implantacao.filter({ venda_id: lead.venda_id });
+          implantacao = imps[0] || null;
+        } catch (e) {}
+      }
+
+      return Response.json({ lead, interacoes, conversa, contrato, venda, parcelas, implantacao });
     }
 
     return Response.json({ error: 'Ação inválida' }, { status: 400 });

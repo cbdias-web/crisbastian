@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
+import JornadaCliente from '@/components/portal/JornadaCliente';
 
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
@@ -439,6 +440,8 @@ export default function PortalIndicador() {
                       <Info label="Tipo" value={detalheLead.lead.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
                       <Info label="Contato" value={getContato(detalheLead.lead)} />
                       </div>
+
+                      <JornadaCliente detalhe={detalheLead} />
 
                       <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: AURORA.accent }}><History className="w-3.5 h-3.5" /> Interações registradas</p>
                       {detalheLead.interacoes?.length > 0 ? (
