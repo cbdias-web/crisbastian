@@ -5,8 +5,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Loader2, ShieldCheck, PartyPopper, Plus, Bell, BellOff, RefreshCw, Phone, Mail,
   TrendingUp, Clock, CheckCircle2, XCircle, FileText, UserCheck, ArrowRight, LogOut,
+  DollarSign, Trophy, History, MessageSquare, X, Eye,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
+
+const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
 const AURORA = {
   bg: '#0d1117',
@@ -69,6 +73,9 @@ export default function PortalIndicador() {
   const [showTermo, setShowTermo] = useState(false);
   const [togglingNotif, setTogglingNotif] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [leadSelecionado, setLeadSelecionado] = useState(null);
+  const [detalheLead, setDetalheLead] = useState(null);
+  const [loadingDetalhe, setLoadingDetalhe] = useState(false);
 
   const WELCOME_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/0eb350833_generated_image.png';
 
@@ -115,6 +122,17 @@ export default function PortalIndicador() {
       toast.success(res.data.receber_notificacoes ? 'Notificações ativadas' : 'Notificações desativadas');
     } catch (e) { toast.error('Erro: ' + e.message); }
     setTogglingNotif(false);
+  };
+
+  const verLead = async (lead) => {
+    setLeadSelecionado(lead);
+    setDetalheLead(null);
+    setLoadingDetalhe(true);
+    try {
+      const res = await base44.functions.invoke('portalIndicador', { action: 'ver_lead', token, lead_id: lead.id });
+      setDetalheLead(res.data);
+    } catch (e) { toast.error('Erro ao carregar histórico: ' + e.message); }
+    setLoadingDetalhe(false);
   };
 
   if (loading) {
@@ -180,13 +198,29 @@ export default function PortalIndicador() {
   const novos = leads.filter(l => l.status === 'novo').length;
   const emAtend = leads.filter(l => l.status === 'em_atendimento').length;
   const convertidos = leads.filter(l => ['convertido_cliente', 'convertido_contrato', 'convertido_venda'].includes(l.status)).length;
+  const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda').length;
+  const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  const pct = indicador.percentual_comissao ?? 0;
+  const comissaoEstimada = leads.reduce((s, l) => s + ((Number(l.valor_estimado) || 0) * pct / 100), 0);
+  const comissaoGerada = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + ((Number(l.valor_estimado) || 0) * pct / 100), 0);
+
+  const statusData = [
+    { name: 'Novas', value: novos, color: AURORA.accent },
+    { name: 'Em Atendimento', value: emAtend, color: AURORA.warning },
+    { name: 'Convertidas', value: convertidos, color: AURORA.green },
+    { name: 'Descartadas', value: leads.filter(l => l.status === 'descartado').length, color: '#9ca3af' },
+  ].filter(d => d.value > 0);
 
   const getNome = (l) => l.tipo === 'PF' ? l.pf_nome : l.pj_razao_social;
   const getDoc = (l) => l.tipo === 'PF' ? l.pf_cpf : l.pj_cnpj;
   const getContato = (l) => l.tipo === 'PF' ? (l.pf_whatsapp || l.pf_telefone) : (l.pj_whatsapp || l.pj_telefone);
 
   return (
-    <div className="min-h-screen" style={{ background: AURORA.bg, color: AURORA.text }}>
+    <div className="min-h-screen relative" style={{ background: AURORA.bg, color: AURORA.text }}>
+      {/* ─── Marca d'água (mesma do portal interno) ─── */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.45, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55) 0%, rgba(13,17,23,0.45) 40%, rgba(13,17,23,0.60) 100%)', pointerEvents: 'none' }} />
+
       {/* ─── Overlay de boas-vindas (após aceite do termo) ─── */}
       {showWelcome && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(13,17,23,0.92)' }}>
@@ -237,7 +271,7 @@ export default function PortalIndicador() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-6">
+      <main className="max-w-5xl mx-auto px-6 py-6 relative" style={{ zIndex: 1 }}>
         {/* Welcome banner */}
         <div className="rounded-2xl p-5 mb-6 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,102,204,0.08))', border: `1px solid ${AURORA.border}` }}>
           <PartyPopper className="w-6 h-6 flex-shrink-0" style={{ color: AURORA.accent }} />
@@ -247,13 +281,40 @@ export default function PortalIndicador() {
           </div>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <Kpi label="Total de indicações" value={total} icon={TrendingUp} color={AURORA.accent} />
-          <Kpi label="Novas" value={novos} icon={Clock} color={AURORA.warning} />
-          <Kpi label="Em atendimento" value={emAtend} icon={FileText} color={AURORA.purple} />
-          <Kpi label="Convertidas" value={convertidos} icon={CheckCircle2} color={AURORA.green} />
+        {/* KPIs de gestão */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+          <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
+          <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
+          <Kpi label="Comissão estimada" value={fmtMoeda(comissaoEstimada)} icon={DollarSign} color={AURORA.warning} />
+          <Kpi label="Vendas efetivas" value={vendasEfetivas} icon={Trophy} color={AURORA.green} />
+          <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={CheckCircle2} color={AURORA.green} />
         </div>
+
+        {/* Gráfico de distribuição por status */}
+        {total > 0 && (
+          <div className="rounded-2xl p-4 mb-6 flex items-center gap-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <div className="flex-1">
+              <p className="text-xs font-bold mb-2" style={{ color: AURORA.text }}>Distribuição por status</p>
+              <div className="h-36">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={statusData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={38} outerRadius={62} paddingAngle={2}>
+                      {statusData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5 flex-shrink-0">
+              {statusData.map(d => (
+                <div key={d.name} className="flex items-center gap-2 text-xs" style={{ color: AURORA.textMuted }}>
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                  {d.name}: <strong style={{ color: AURORA.text }}>{d.value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-between mb-4">
@@ -285,9 +346,12 @@ export default function PortalIndicador() {
         ) : (
           <div className="space-y-2">
             {leads.map(lead => {
-              const st = STATUS_CFG[lead.status] || STATUS_CFG.novo;
-              return (
-                <div key={lead.id} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+             const st = STATUS_CFG[lead.status] || STATUS_CFG.novo;
+             return (
+               <div key={lead.id} onClick={() => verLead(lead)} className="rounded-2xl p-4 cursor-pointer transition"
+                 style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
+                 onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,170,0.35)'}
+                 onMouseLeave={e => e.currentTarget.style.borderColor = AURORA.border}>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00D4AA22, #0066cc22)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
                       {getNome(lead)?.charAt(0).toUpperCase()}
@@ -311,13 +375,81 @@ export default function PortalIndicador() {
                           {lead.contrato_id && <span className="text-[10px] flex items-center gap-1" style={{ color: AURORA.purple }}><FileText className="w-3 h-3" /> Contrato gerado</span>}
                         </div>
                       )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0 self-center" style={{ color: AURORA.textMuted }}>
+                      <Eye className="w-4 h-4" />
+                      </div>
+                      </div>
+                      </div>
+                      );
+                      })}
+                      </div>
+                      )}
+
+                      {/* ─── Modal: histórico de interações do lead ─── */}
+                      {leadSelecionado && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }} onClick={() => { setLeadSelecionado(null); setDetalheLead(null); }}>
+                      <div className="w-full max-w-xl rounded-2xl overflow-hidden max-h-[88vh] flex flex-col" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-between px-5 py-3" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
+                      <div>
+                      <p className="font-bold text-sm" style={{ color: AURORA.text }}>{getNome(leadSelecionado)}</p>
+                      <p className="text-[11px]" style={{ color: AURORA.textMuted }}>Histórico de interações · {leadSelecionado.produto}</p>
+                      </div>
+                      <button onClick={() => { setLeadSelecionado(null); setDetalheLead(null); }} className="p-1.5 rounded-lg" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
+                      </div>
+                      <div className="p-5 overflow-y-auto">
+                      {loadingDetalhe ? (
+                      <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
+                      ) : detalheLead ? (
+                      <>
+                      <div className="grid grid-cols-2 gap-2 mb-4">
+                      <Info label="Status atual" value={STATUS_CFG[detalheLead.lead.status]?.label || detalheLead.lead.status} />
+                      <Info label="Valor estimado" value={fmtMoeda(detalheLead.lead.valor_estimado)} />
+                      <Info label="Tipo" value={detalheLead.lead.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
+                      <Info label="Contato" value={getContato(detalheLead.lead)} />
+                      </div>
+
+                      <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: AURORA.accent }}><History className="w-3.5 h-3.5" /> Interações registradas</p>
+                      {detalheLead.interacoes?.length > 0 ? (
+                      <div className="space-y-2 mb-4">
+                        {detalheLead.interacoes.map((it, i) => (
+                          <div key={i} className="rounded-xl p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs font-semibold" style={{ color: AURORA.text }}>{it.tipo} · {it.resultado || '—'}</span>
+                              <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{fmtData(it.data_interacao)}</span>
+                            </div>
+                            <p className="text-xs" style={{ color: AURORA.textMuted }}>{it.descricao}</p>
+                            {it.vendedor_nome && <p className="text-[10px] mt-1" style={{ color: AURORA.purple }}>por {it.vendedor_nome}</p>}
+                          </div>
+                        ))}
+                      </div>
+                      ) : (
+                      <div className="rounded-xl p-4 mb-4 text-center" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                        <MessageSquare className="w-6 h-6 mx-auto mb-2" style={{ color: AURORA.textMuted }} />
+                        <p className="text-xs" style={{ color: AURORA.textMuted }}>Nenhuma interação registrada ainda</p>
+                      </div>
+                      )}
+
+                      {detalheLead.conversa && detalheLead.conversa.mensagens?.length > 0 && (
+                      <>
+                        <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: AURORA.accent }}><MessageSquare className="w-3.5 h-3.5" /> Conversa WhatsApp ({detalheLead.conversa.mensagens.length} msgs)</p>
+                        <div className="rounded-xl p-3 max-h-48 overflow-y-auto space-y-1.5" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                          {detalheLead.conversa.mensagens.slice(-30).map((m, i) => (
+                            <div key={i} className="text-[11px]" style={{ color: m.de === 'lead' ? AURORA.text : AURORA.accent }}>
+                              <span style={{ color: AURORA.textMuted }}>{new Date(m.timestamp).toLocaleString('pt-BR')}</span> · {m.texto}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                      )}
+                      </>
+                      ) : (
+                      <p className="text-sm text-center py-8" style={{ color: AURORA.textMuted }}>Não foi possível carregar o histórico.</p>
+                      )}
+                      </div>
+                      </div>
+                      </div>
+                      )}
 
         <p className="text-center text-[10px] mt-8" style={{ color: AURORA.textMuted }}>
           Villela Exchange · Portal do Indicador · {indicador.receber_notificacoes ? 'Você recebe notificações por e-mail' : 'Notificações desativadas'}
@@ -334,7 +466,16 @@ function Kpi({ label, value, icon: Icon, color }) {
         <Icon className="w-4 h-4" style={{ color }} />
         <p className="text-[11px]" style={{ color: AURORA.textMuted }}>{label}</p>
       </div>
-      <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+      <p className="text-xl font-bold" style={{ color }}>{value}</p>
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: AURORA.textMuted }}>{label}</p>
+      <p className="text-sm" style={{ color: AURORA.text }}>{value || '—'}</p>
     </div>
   );
 }

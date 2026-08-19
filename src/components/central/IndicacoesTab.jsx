@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Loader2, Trash2, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter } from 'lucide-react';
+import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import EditarIndicacaoModal from './EditarIndicacaoModal';
 
 const AURORA = {
   surface: '#161b22',
@@ -35,6 +36,7 @@ export default function IndicacoesTab({ vendedores }) {
   const [filtroParceiro, setFiltroParceiro] = useState('todos');
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
+  const [editando, setEditando] = useState(null);
 
   const { data: indicacoes = [], isLoading } = useQuery({
     queryKey: ['lead-indicacoes'],
@@ -66,14 +68,15 @@ export default function IndicacoesTab({ vendedores }) {
     } catch (e) { toast.error('Erro: ' + e.message); }
   };
 
-  const excluir = async (lead) => {
+  const excluir = async (lead, e) => {
+    if (e) e.stopPropagation();
     if (!confirm(`Excluir a indicação de "${getNome(lead)}"?`)) return;
     try {
       await base44.entities.LeadIndicacao.delete(lead.id);
       queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
-      setDetalhe(null);
+      if (detalhe?.id === lead.id) setDetalhe(null);
       toast.success('Indicação excluída');
-    } catch (e) { toast.error('Erro: ' + e.message); }
+    } catch (e2) { toast.error('Erro: ' + e2.message); }
   };
 
   // ─── Conversão em Cliente ───
@@ -203,12 +206,24 @@ export default function IndicacoesTab({ vendedores }) {
                       <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.purple }}>🔗 {lead.parceiro_nome}</span>
                     </div>
                   </div>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <button onClick={(e) => { e.stopPropagation(); setEditando(lead); }}
+                      className="p-1.5 rounded-lg transition" style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }} title="Editar">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={(e) => excluir(lead, e)}
+                      className="p-1.5 rounded-lg transition" style={{ background: 'rgba(239,68,68,0.12)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }} title="Excluir">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {editando && <EditarIndicacaoModal lead={editando} onClose={() => setEditando(null)} />}
 
       {/* Modal de detalhe / conversão */}
       {detalhe && (

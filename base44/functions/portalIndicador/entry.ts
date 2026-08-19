@@ -94,6 +94,40 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ success: true, receber_notificacoes: novo });
     }
 
+    if (action === 'ver_lead') {
+      const leadId = body.lead_id;
+      if (!leadId) return Response.json({ error: 'lead_id obrigatório' }, { status: 400 });
+      const lead = await base44.asServiceRole.entities.LeadIndicacao.get(leadId);
+      if (!lead || lead.parceiro_id !== ind.id) return Response.json({ error: 'Indicação não encontrada' }, { status: 404 });
+
+      // Histórico de interações: Interações do cliente (se já convertido) + conversa WhatsApp por telefone
+      const interacoes: any[] = [];
+      if (lead.cliente_id) {
+        try {
+          const ints = await base44.asServiceRole.entities.InteracaoCliente.filter({ cliente_id: lead.cliente_id }, '-data_interacao', 50);
+          interacoes.push(...ints);
+        } catch (e) {}
+      }
+
+      let conversa: any = null;
+      const telRaw = lead.tipo === 'PF' ? (lead.pf_whatsapp || lead.pf_telefone) : (lead.pj_whatsapp || lead.pj_telefone);
+      if (telRaw) {
+        const digits = String(telRaw).replace(/\D/g, '');
+        if (digits.length >= 8) {
+          try {
+            const convs = await base44.asServiceRole.entities.ConversaWhatsapp.list('-updated_date', 200);
+            const match = convs.find(c => {
+              const cd = String(c.telefone || '').replace(/\D/g, '');
+              return cd && (cd.endsWith(digits) || digits.endsWith(cd) || cd.includes(digits) || digits.includes(cd));
+            });
+            if (match) conversa = { status: match.status, produto_interesse: match.produto_interesse, mensagens: match.mensagens || [] };
+          } catch (e) {}
+        }
+      }
+
+      return Response.json({ lead, interacoes, conversa });
+    }
+
     return Response.json({ error: 'Ação inválida' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

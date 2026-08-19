@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Loader2, CheckCircle2, Send, User, Building2 } from 'lucide-react';
+import { Loader2, CheckCircle2, Send, User, Building2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AURORA = {
@@ -12,6 +13,8 @@ const AURORA = {
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
 };
+
+const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
 const PRODUTOS = [
   'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF',
@@ -36,6 +39,7 @@ const inputCls = "w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none";
 export default function IndicacaoPublicaPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const token = window.location.pathname.split('/').pop();
+  const navigate = useNavigate();
   const [parceiro, setParceiro] = useState(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState(null);
@@ -102,21 +106,35 @@ export default function IndicacaoPublicaPage() {
 
   if (sucesso) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
-        <div className="text-center max-w-sm">
+      <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: AURORA.bg }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.4, pointerEvents: 'none' }} />
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55), rgba(13,17,23,0.6))', pointerEvents: 'none' }} />
+        <div className="text-center max-w-sm relative" style={{ zIndex: 1 }}>
           <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(0,212,170,0.15)' }}>
             <CheckCircle2 className="w-9 h-9" style={{ color: AURORA.accent }} />
           </div>
           <h2 className="text-lg font-bold mb-2" style={{ color: AURORA.text }}>Indicação enviada!</h2>
-          <p className="text-sm" style={{ color: AURORA.textMuted }}>Obrigado, {parceiro?.nome}. Sua indicação foi recebida e seguirá em nossa esteira comercial.</p>
+          <p className="text-sm mb-5" style={{ color: AURORA.textMuted }}>Obrigado, {parceiro?.nome}. Sua indicação foi recebida e seguirá em nossa esteira comercial.</p>
+          <button onClick={() => navigate(`/portal-indicador/${token}`)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <ArrowLeft className="w-4 h-4" /> Voltar ao portal
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-8" style={{ background: AURORA.bg, color: AURORA.text }}>
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8 relative" style={{ background: AURORA.bg, color: AURORA.text }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.45, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55) 0%, rgba(13,17,23,0.45) 40%, rgba(13,17,23,0.60) 100%)', pointerEvents: 'none' }} />
+      <div className="max-w-2xl mx-auto relative" style={{ zIndex: 1 }}>
+        {/* Botão voltar */}
+        <button onClick={() => navigate(`/portal-indicador/${token}`)}
+          className="mb-4 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition"
+          style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
+          <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao portal
+        </button>
         {/* Header */}
         <div className="mb-6 text-center">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
