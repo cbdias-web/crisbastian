@@ -28,6 +28,7 @@ export const PAGE_LABELS = {
   Produtos: 'Produtos',
   Importar: 'Importar',
   Usuarios: 'Usuários',
+  DashParceiro: 'Dash Parceiro',
   AssistenteTreinamentos: 'Assistente',
 };
 

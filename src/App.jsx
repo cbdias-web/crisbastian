@@ -30,6 +30,7 @@ import Desempenho from './pages/Desempenho';
 import CentralLeads from './pages/CentralLeads';
 import Implantacoes from './pages/Implantacoes';
 import MarketNews from './pages/MarketNews';
+import DashParceiro from './pages/DashParceiro';
 import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
@@ -301,6 +302,14 @@ const AuthenticatedAppInner = () => {
         element={
           <LayoutWrapper currentPageName="MarketNews">
             <MarketNews />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/DashParceiro"
+        element={
+          <LayoutWrapper currentPageName="DashParceiro">
+            <DashParceiro />
           </LayoutWrapper>
         }
       />

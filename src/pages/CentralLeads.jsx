@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List, Send, Handshake } from 'lucide-react';
+import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatConversa from '@/components/central/ChatConversa';
 import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
 import RelatorioLeads from '@/components/central/RelatorioLeads';
 import GerenciarConversaModal from '@/components/central/GerenciarConversaModal';
 import KanbanLeads from '@/components/central/KanbanLeads';
-import ParceirosTab from '@/components/central/ParceirosTab';
-import IndicacoesTab from '@/components/central/IndicacoesTab';
+
 
 const AURORA = {
   bg: '#0d1117',
@@ -235,8 +234,6 @@ export default function CentralLeads() {
             {[
                { key: 'leads', label: 'Conversas', icon: MessageSquare },
                { key: 'gerentes', label: `Gerentes (${gerentesInfo.length})`, icon: Users },
-               { key: 'indicacoes', label: 'Indicações', icon: Send },
-               { key: 'parceiros', label: 'Indicadores', icon: Handshake },
              ].map(aba => (
               <button key={aba.key} onClick={() => setAbaAtiva(aba.key)}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
@@ -596,9 +593,6 @@ export default function CentralLeads() {
         )}
 
       </div>
-
-      {abaAtiva === 'indicacoes' && <IndicacoesTab vendedores={vendedores} />}
-      {abaAtiva === 'parceiros' && <ParceirosTab />}
 
       {showRelatorio && <RelatorioLeads onClose={() => setShowRelatorio(false)} />}
 

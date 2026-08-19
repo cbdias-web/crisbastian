@@ -10,7 +10,7 @@ import {
   UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
   Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
   MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
-  Search, Zap, Rocket, Newspaper, Bot, User
+  Search, Zap, Rocket, Newspaper, Bot, User, Handshake
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import ProfileModal from '@/components/ProfileModal.jsx';
@@ -352,6 +352,7 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Prospecção', icon: Users, page: 'Leads' },
         { name: 'Metas', icon: Target, page: 'Metas' },
         { name: 'Produtos', icon: Package, page: 'Produtos' },
+        { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro' },
         { name: 'Importar', icon: Upload, page: 'Importar' },
         { name: 'Usuários', icon: Users, page: 'Usuarios' },
       ]
