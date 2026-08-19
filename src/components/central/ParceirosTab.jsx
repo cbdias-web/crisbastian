@@ -89,7 +89,7 @@ export default function ParceirosTab() {
     if (!p.email) { toast.error('Cadastre um e-mail antes de enviar o convite'); return; }
     setEnviandoConvite(p.id);
     try {
-      const res = await base44.functions.invoke('convidarIndicador', { indicador_id: p.id });
+      const res = await base44.functions.invoke('convidarIndicador', { indicador_id: p.id, app_origin: window.location.origin });
       toast.success(`Convite enviado para ${res.enviado_para}`);
       queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
     } catch (e) { toast.error('Erro: ' + e.message); }

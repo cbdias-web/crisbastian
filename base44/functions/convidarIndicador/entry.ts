@@ -12,7 +12,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const { indicador_id } = body;
+    const { indicador_id, app_origin } = body;
     if (!indicador_id) return Response.json({ error: 'indicador_id é obrigatório' }, { status: 400 });
 
     const ind = await base44.entities.Parceiro.get(indicador_id);
@@ -28,7 +28,9 @@ export default async function(req: Request): Promise<Response> {
       token = crypto.randomUUID().replace(/-/g, '') + Date.now().toString(36);
     }
 
-    const origin = (() => { try { return new URL(req.url).origin; } catch (e) { return ''; } })();
+    // A origem pública do app (domínio publicado) deve vir do frontend;
+    // req.url aqui aponta para o dispatcher interno do backend, não para o app público.
+    const origin = app_origin || '';
     const link = `${origin}/portal-indicador/${token}`;
 
     await base44.entities.Parceiro.update(indicador_id, {
