@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List } from 'lucide-react';
+import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List, Send, Handshake } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatConversa from '@/components/central/ChatConversa';
 import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
 import RelatorioLeads from '@/components/central/RelatorioLeads';
 import GerenciarConversaModal from '@/components/central/GerenciarConversaModal';
 import KanbanLeads from '@/components/central/KanbanLeads';
+import ParceirosTab from '@/components/central/ParceirosTab';
+import IndicacoesTab from '@/components/central/IndicacoesTab';
 
 const AURORA = {
   bg: '#0d1117',
@@ -231,9 +233,11 @@ export default function CentralLeads() {
         {isAdmin && (
           <div className="flex gap-1 mb-4 p-1 rounded-xl w-fit" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
             {[
-              { key: 'leads', label: 'Conversas', icon: MessageSquare },
-              { key: 'gerentes', label: `Gerentes (${gerentesInfo.length})`, icon: Users },
-            ].map(aba => (
+               { key: 'leads', label: 'Conversas', icon: MessageSquare },
+               { key: 'gerentes', label: `Gerentes (${gerentesInfo.length})`, icon: Users },
+               { key: 'indicacoes', label: 'Indicações', icon: Send },
+               { key: 'parceiros', label: 'Parceiros', icon: Handshake },
+             ].map(aba => (
               <button key={aba.key} onClick={() => setAbaAtiva(aba.key)}
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
                 style={{
@@ -247,6 +251,7 @@ export default function CentralLeads() {
         )}
 
         {/* KPIs */}
+        {(abaAtiva === 'leads' || abaAtiva === 'gerentes') && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           {[
             { label: 'Conversas ativas', value: totalAtivas, icon: MessageSquare, color: '#00D4AA' },
@@ -263,6 +268,7 @@ export default function CentralLeads() {
             </div>
           ))}
         </div>
+        )}
 
         {/* ─── ABA GERENTES ─── */}
         {isAdmin && abaAtiva === 'gerentes' && (
@@ -590,6 +596,9 @@ export default function CentralLeads() {
         )}
 
       </div>
+
+      {abaAtiva === 'indicacoes' && <IndicacoesTab vendedores={vendedores} />}
+      {abaAtiva === 'parceiros' && <ParceirosTab />}
 
       {showRelatorio && <RelatorioLeads onClose={() => setShowRelatorio(false)} />}
 

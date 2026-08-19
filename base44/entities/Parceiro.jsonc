@@ -1,0 +1,54 @@
+{
+  "name": "Parceiro",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do parceiro / indicador / agente externo"
+    },
+    "email": {
+      "type": "string",
+      "description": "E-mail de contato do parceiro"
+    },
+    "telefone": {
+      "type": "string",
+      "description": "Telefone / WhatsApp do parceiro"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "parceiro",
+        "agente_externo",
+        "indicador"
+      ],
+      "default": "parceiro",
+      "description": "Tipo de parceiro"
+    },
+    "percentual_comissao": {
+      "type": "number",
+      "description": "Percentual padr\u00e3o de comiss\u00e3o/espelhamento (%)",
+      "default": 10
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Parceiro ativo"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Token \u00fanico do link p\u00fablico de indica\u00e7\u00e3o"
+    },
+    "link_gerado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora de gera\u00e7\u00e3o do link"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es sobre o parceiro"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

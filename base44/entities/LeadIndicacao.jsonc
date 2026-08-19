@@ -1,0 +1,221 @@
+{
+  "name": "LeadIndicacao",
+  "type": "object",
+  "properties": {
+    "parceiro_id": {
+      "type": "string",
+      "description": "ID do parceiro/indicador que enviou o lead"
+    },
+    "parceiro_nome": {
+      "type": "string",
+      "description": "Nome do parceiro (denormalizado)"
+    },
+    "parceiro_email": {
+      "type": "string",
+      "description": "E-mail do parceiro (denormalizado)"
+    },
+    "parceiro_percentual": {
+      "type": "number",
+      "description": "Percentual de espelhamento do parceiro no momento da indica\u00e7\u00e3o"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "PF",
+        "PJ"
+      ],
+      "description": "Tipo: Pessoa F\u00edsica (PF) ou Pessoa Jur\u00eddica (PJ)"
+    },
+    "produto": {
+      "type": "string",
+      "enum": [
+        "CONTA GLOBAL",
+        "CONTA INTERNACIONAL",
+        "DOLARIZE",
+        "ROF",
+        "CANAL BANC\u00c1RIO",
+        "OFFSHORE",
+        "GARANTIAS",
+        "HORA T\u00c9CNICA",
+        "RATING"
+      ],
+      "description": "Produto de interesse"
+    },
+    "valor_estimado": {
+      "type": "number",
+      "description": "Valor estimado para ades\u00e3o ao produto"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es do parceiro sobre o lead"
+    },
+    "pf_nome": {
+      "type": "string",
+      "description": "Nome completo (PF)"
+    },
+    "pf_cpf": {
+      "type": "string",
+      "description": "CPF (PF)"
+    },
+    "pf_rg": {
+      "type": "string",
+      "description": "RG (PF)"
+    },
+    "pf_nascimento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de nascimento (PF)"
+    },
+    "pf_nacionalidade": {
+      "type": "string",
+      "description": "Nacionalidade (PF)"
+    },
+    "pf_profissao": {
+      "type": "string",
+      "description": "Profiss\u00e3o (PF)"
+    },
+    "pf_email": {
+      "type": "string",
+      "description": "E-mail (PF)"
+    },
+    "pf_telefone": {
+      "type": "string",
+      "description": "Telefone (PF)"
+    },
+    "pf_whatsapp": {
+      "type": "string",
+      "description": "WhatsApp (PF)"
+    },
+    "pf_renda": {
+      "type": "number",
+      "description": "Renda mensal/annual estimada (PF)"
+    },
+    "pf_cep": {
+      "type": "string"
+    },
+    "pf_endereco": {
+      "type": "string"
+    },
+    "pf_numero": {
+      "type": "string"
+    },
+    "pf_complemento": {
+      "type": "string"
+    },
+    "pf_bairro": {
+      "type": "string"
+    },
+    "pf_cidade": {
+      "type": "string"
+    },
+    "pf_estado": {
+      "type": "string"
+    },
+    "pj_razao_social": {
+      "type": "string",
+      "description": "Raz\u00e3o Social (PJ)"
+    },
+    "pj_cnpj": {
+      "type": "string",
+      "description": "CNPJ (PJ)"
+    },
+    "pj_nome_responsavel": {
+      "type": "string",
+      "description": "Nome do respons\u00e1vel legal (PJ)"
+    },
+    "pj_cpf_responsavel": {
+      "type": "string",
+      "description": "CPF do respons\u00e1vel (PJ)"
+    },
+    "pj_email": {
+      "type": "string",
+      "description": "E-mail (PJ)"
+    },
+    "pj_telefone": {
+      "type": "string",
+      "description": "Telefone (PJ)"
+    },
+    "pj_whatsapp": {
+      "type": "string",
+      "description": "WhatsApp (PJ)"
+    },
+    "pj_ramo_atividade": {
+      "type": "string",
+      "description": "Ramo de atividade (PJ)"
+    },
+    "pj_faturamento": {
+      "type": "number",
+      "description": "Faturamento mensal/anual estimado (PJ)"
+    },
+    "pj_cep": {
+      "type": "string"
+    },
+    "pj_endereco": {
+      "type": "string"
+    },
+    "pj_numero": {
+      "type": "string"
+    },
+    "pj_complemento": {
+      "type": "string"
+    },
+    "pj_bairro": {
+      "type": "string"
+    },
+    "pj_cidade": {
+      "type": "string"
+    },
+    "pj_estado": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "novo",
+        "em_atendimento",
+        "convertido_cliente",
+        "convertido_contrato",
+        "convertido_venda",
+        "descartado"
+      ],
+      "default": "novo",
+      "description": "Status da indica\u00e7\u00e3o"
+    },
+    "link_token": {
+      "type": "string",
+      "description": "Token \u00fanico do link p\u00fablico do parceiro"
+    },
+    "link_preenchido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que o parceiro preencheu a indica\u00e7\u00e3o"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do cliente gerado ap\u00f3s convers\u00e3o"
+    },
+    "contrato_id": {
+      "type": "string",
+      "description": "ID do contrato gerado ap\u00f3s convers\u00e3o"
+    },
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda gerada ap\u00f3s convers\u00e3o"
+    },
+    "convertido": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica\u00e7\u00e3o j\u00e1 foi convertida"
+    },
+    "convertido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da convers\u00e3o"
+    }
+  },
+  "required": [
+    "parceiro_id",
+    "tipo",
+    "produto"
+  ]
+}
