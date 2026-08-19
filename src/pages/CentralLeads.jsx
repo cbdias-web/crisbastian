@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List } from 'lucide-react';
+import { MessageSquare, Zap, RefreshCw, CheckCircle2, Search, Sparkles, Phone, Clock, Copy, BarChart2, AlertTriangle, ArrowRight, Users, Lock, Settings, LayoutGrid, List, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import ChatConversa from '@/components/central/ChatConversa';
 import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
@@ -155,6 +155,8 @@ export default function CentralLeads() {
   const totalAtivas = conversas.filter(c => c.status === 'ativa').length;
   const totalAlerta = conversas.filter(c => c.alerta_sem_resposta || c.status === 'aguardando').length;
   const totalQualificados = conversas.filter(c => c.status === 'qualificado').length;
+  const totalDesqualificados = conversas.filter(c => c.status === 'desqualificado').length;
+  const totalConvertidos = conversas.filter(c => c.status === 'convertido').length;
 
   const marcarQualificado = async (conv, e) => {
     e.stopPropagation();
@@ -251,12 +253,14 @@ export default function CentralLeads() {
 
         {/* KPIs */}
         {(abaAtiva === 'leads' || abaAtiva === 'gerentes') && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-5">
           {[
             { label: 'Conversas ativas', value: totalAtivas, icon: MessageSquare, color: '#00D4AA' },
             { label: 'Qualificados', value: totalQualificados, icon: Sparkles, color: '#a78bfa' },
             { label: 'Aguardando resposta', value: totalAlerta, icon: AlertTriangle, color: '#fbbf24' },
             { label: 'Não lidas', value: totalNaoLidas, icon: Zap, color: '#f87171' },
+            { label: 'Desqualificados', value: totalDesqualificados, icon: XCircle, color: '#f87171' },
+            { label: 'Convertidos', value: totalConvertidos, icon: CheckCircle2, color: '#22c55e' },
           ].map(kpi => (
             <div key={kpi.label} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
               <div className="flex items-center gap-2 mb-1">
