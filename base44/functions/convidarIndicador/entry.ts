@@ -33,13 +33,13 @@ export default async function(req: Request): Promise<Response> {
     const origin = app_origin || '';
     const link = `${origin}/portal-indicador/${token}`;
 
-    await base44.entities.Parceiro.update(indicador_id, {
-      link_token: token,
-      link_gerado_em: ind.link_gerado_em || agora,
-      convite_enviado: true,
-      convite_enviado_em: agora,
-      convite_enviado_por: user.email,
-    });
+    // Garante o token no cadastro antes do envio (sem marcar convite_enviado ainda)
+    if (ind.link_token !== token) {
+      await base44.entities.Parceiro.update(indicador_id, {
+        link_token: token,
+        link_gerado_em: ind.link_gerado_em || agora,
+      });
+    }
 
     const body_html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -77,6 +77,13 @@ export default async function(req: Request): Promise<Response> {
       subject: `Convite · Portal do Indicador · Villela Exchange`,
       body: body_html,
       from_name: 'Villela Exchange – Indicadores',
+    });
+
+    // Só marca como enviado APÓS o disparo efetivo — evita falso positivo
+    await base44.entities.Parceiro.update(indicador_id, {
+      convite_enviado: true,
+      convite_enviado_em: agora,
+      convite_enviado_por: user.email,
     });
 
     return Response.json({ success: true, link, enviado_para: ind.email });
