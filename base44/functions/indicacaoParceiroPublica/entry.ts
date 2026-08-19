@@ -27,6 +27,11 @@ export default async function(req: Request): Promise<Response> {
 
     if (action === 'salvar') {
       const dados = body.dados || {};
+      // Sanitiza campos numéricos: strings vazias vindas do form viram null
+      const numFields = ['valor_estimado', 'pf_renda', 'pj_faturamento'];
+      for (const f of numFields) {
+        if (dados[f] === '' || dados[f] === undefined) dados[f] = null;
+      }
       // Validação mínima
       if (!dados.tipo || !dados.produto) {
         return Response.json({ error: 'Tipo e produto são obrigatórios' }, { status: 400 });

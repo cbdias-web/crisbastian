@@ -68,6 +68,9 @@ export default function PortalIndicador() {
   const [aceitando, setAceitando] = useState(false);
   const [showTermo, setShowTermo] = useState(false);
   const [togglingNotif, setTogglingNotif] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  const WELCOME_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/0eb350833_generated_image.png';
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -97,6 +100,7 @@ export default function PortalIndicador() {
       await base44.functions.invoke('portalIndicador', { action: 'aceitar_termo', token, versao: '1.0' });
       toast.success('Termo aceito! Bem-vindo ao portal.');
       setIndicador({ ...indicador, termo_aceito: true, termo_aceito_em: new Date().toISOString() });
+      setShowWelcome(true);
     } catch (e) { toast.error('Erro: ' + (e?.response?.data?.error || e.message)); }
     setAceitando(false);
   };
@@ -183,6 +187,33 @@ export default function PortalIndicador() {
 
   return (
     <div className="min-h-screen" style={{ background: AURORA.bg, color: AURORA.text }}>
+      {/* ─── Overlay de boas-vindas (após aceite do termo) ─── */}
+      {showWelcome && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(13,17,23,0.92)' }}>
+          <div className="max-w-md w-full rounded-3xl overflow-hidden text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.12), rgba(0,102,204,0.10))' }}>
+              <img src={WELCOME_IMG} alt="Boas-vindas" className="w-full h-44 object-cover" style={{ mixBlendMode: 'screen' }} />
+            </div>
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+                <PartyPopper className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-xl font-bold mb-1.5" style={{ color: AURORA.text }}>Bem-vindo, {indicador.nome.split(' ')[0]}! 🎉</h2>
+              <p className="text-sm leading-relaxed mb-1" style={{ color: AURORA.textMuted }}>
+                Seu cadastro foi formalizado com sucesso. Agora você pode cadastrar indicações e acompanhar a jornada de cada lead em tempo real.
+              </p>
+              <p className="text-xs mb-5" style={{ color: AURORA.accent }}>Comissão padrão: <strong>{indicador.percentual_comissao ?? 0}%</strong></p>
+              <button onClick={() => setShowWelcome(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition"
+                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                <ArrowRight className="w-4 h-4" /> Começar a indicar
+              </button>
+              <p className="text-[10px] mt-3" style={{ color: AURORA.textMuted }}>Enviamos também um e-mail de boas-vindas para {indicador.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0d1117, #16213e)', borderBottom: `1px solid ${AURORA.border}` }}>
         <div className="flex items-center gap-3">
