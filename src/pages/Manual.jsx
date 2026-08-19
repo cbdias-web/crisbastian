@@ -5,7 +5,7 @@ import {
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
   TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
-  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper
+  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -116,6 +116,56 @@ const sections = [
       { subtitle: 'O que são indicadores?', text: 'Parceiros externos que indicam clientes e recebem comissão pelo negócio fechado.' },
       { subtitle: 'Tipos de indicador', items: ['**Indicador externo:** cadastrado no menu "Indicadores".', '**Vendedor interno como indicador:** qualquer vendedor pode ser adicionado como indicador em venda de outro.'] },
       { subtitle: 'Limite de espelhamento', items: ['**Até 30%:** sem restrição.', '**30% a 50%:** requer autorização do administrador.', '**Acima de 50%:** bloqueado pelo sistema.'] },
+    ],
+  },
+  {
+    id: 'portal-indicador', icon: Handshake, title: 'Portal do Indicador',
+    color: 'from-pink-600 to-rose-700', bg: 'bg-pink-50', text: 'text-pink-800', border: 'border-pink-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Portal exclusivo e externo para indicadores/parceiros acompanharem suas indicações em tempo real, sem acessar o sistema interno. Cada indicador recebe um link único (token) enviado por e-mail no convite. Acesso público, não exige login da plataforma.' },
+      { subtitle: 'Convite e primeiro acesso', steps: ['O administrador cadastra o indicador no menu "Indicadores" e clica em "Enviar Convite".', 'O indicador recebe um e-mail com o link pessoal do portal.', 'Ao acessar o link pela primeira vez, ele lê e aceita o Termo de Uso (v1.0).', 'Um e-mail de boas-vindas é disparado automaticamente e o painel é liberado.'] },
+      { subtitle: '🤝 Capa de Boas-vindas / Bom Retorno', items: [
+        'Na **primeira visita** (após aceitar o termo), uma capa de boas-vindas é exibida com a imagem institucional e a comissão padrão do indicador.',
+        'Em **retornos reais** (nova sessão do navegador), uma capa de "Bom retorno" aparece — uma vez por sessão, sem repetir a cada navegação interna.',
+        'A distinção é automática com base no último acesso registrado.',
+      ]},
+      { subtitle: '📋 KPIs e gráfico do painel', items: [
+        '**Volume indicado:** soma dos valores estimados de todas as indicações.',
+        '**Total de indicações:** quantidade de leads cadastrados.',
+        '**Vendas convertidas:** soma do valor das vendas efetivadas (entrada).',
+        '**Vendas efetivas:** quantidade de leads que viraram venda.',
+        '**Comissão gerada:** soma das comissões sobre as vendas convertidas, usando o percentual EFETIVO de cada contrato.',
+        '**Gráfico de distribuição** por status (Novas, Em Atendimento, Convertidas, Descartadas).',
+      ]},
+      { subtitle: '💸 Comissão efetiva pelo contrato (não o padrão)', items: [
+        'O indicador nasce com uma **comissão padrão** (ex.: 10%) no cadastro.',
+        '**Vale sempre o percentual cadastrado no contrato** — se o contrato definir 15% para aquele indicador, o portal calcula sobre 15%, mesmo que o padrão seja 10%.',
+        'O sistema localiza o indicador dentro do campo "indicadores" do contrato e aplica o percentual específico de cada venda.',
+        'A comissão é exibida no detalhe do lead como "Comissão (X%): R$ Y", sobre o valor total do contrato.',
+      ]},
+      { subtitle: '🧭 Jornada do Cliente (timeline)', items: [
+        'No detalhe de cada lead, uma timeline mostra os marcos: **Indicação recebida → Cliente criado → Contrato gerado → Venda efetivada → Implantação**.',
+        'Cada marco exibe data e status (concluído ou pendente).',
+        'O status do contrato (rascunho, assinado, pago, no pipeline) aparece no card do contrato.',
+        'O status da implantação e o responsável aparecem no card de implantação.',
+      ]},
+      { subtitle: '💳 Parcelamento (entrada + parcelas + total)', items: [
+        'O box de parcelamento mostra o **total do contrato**, a **entrada** e as **parcelas** (ex.: Total R$ 7.500 · Entrada R$ 2.500 · + 2x de R$ 2.500).',
+        '**Parcelas recebidas:** barra de progresso com quantas parcelas já foram pagas vs. o total.',
+        '**Detalhamento:** lista cada parcela com número, valor, vencimento e status (Recebida, Pendente, Inadimplente).',
+        'A comissão do indicador é liberada conforme o recebimento de cada parcela.',
+      ]},
+      { subtitle: '💬 Histórico de interações e WhatsApp', items: [
+        'O detalhe do lead lista as **interações comerciais** registradas (tipo, resultado, data, descrição e vendedor).',
+        'Quando há conversa de WhatsApp, o histórico de mensagens é exibido (casamento **exato de telefone** + preferência pelo nome do lead, evitando cruzar leads com números parecidos).',
+        'Apenas conversas associadas àquele lead aparecem — não há mistura entre leads diferentes.',
+      ]},
+      { subtitle: '📝 Cadastrar nova indicação (link público)', steps: ['No painel, clique em "Nova Indicação".', 'Escolha Pessoa Física (PF) ou Pessoa Jurídica (PJ).', 'Preencha dados do indicado e o produto de interesse.', 'Informe o valor estimado e observações.', 'Envie — o lead é criado no sistema e aparece para a equipe de distribuição.'] },
+      { subtitle: '🔔 Notificações por e-mail', items: [
+        'O indicador pode ativar/desativar as notificações por e-mail no cabeçalho do portal.',
+        'Quando ativo, recebe avisos automáticos de movimentações dos seus leads (novo contrato, venda, implantação).',
+        'A preferência fica salva no cadastro do indicador.',
+      ]},
     ],
   },
   {
@@ -741,13 +791,13 @@ const categories = [
     id: 'operacoes', label: 'Operações', icon: Settings,
     gradFrom: '#56ab2f', gradTo: '#2d7a0f',
     color: 'from-[#56ab2f] to-[#2d7a0f]',
-    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
+    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'portal-indicador', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
   },
   {
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
+    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos', 'portal-indicador'],
   },
 ];
 
@@ -830,8 +880,8 @@ export default function Manual() {
   };
 
   // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'perfil-usuario'];
-  const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 12);
+  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'perfil-usuario', 'portal-indicador'];
+  const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 13);
 
   const visibleSections = activeCategory
     ? sections.filter(s => categories.find(c => c.id === activeCategory)?.sections.includes(s.id))
@@ -867,7 +917,7 @@ export default function Manual() {
                 </h1>
                 <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Jul/2026
+                  Guia completo de utilização — atualizado Ago/2026
                 </p>
               </div>
             </div>
@@ -877,7 +927,7 @@ export default function Manual() {
               {[
                 { v: sections.length, l: 'Seções', icon: '📋' },
                 { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
-                { v: 'Jul/2026', l: 'Atualizado', icon: '🗓' },
+                { v: 'Ago/2026', l: 'Atualizado', icon: '🗓' },
               ].map((k, i) => (
                 <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
                   <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
@@ -999,7 +1049,7 @@ export default function Manual() {
 
         {/* ── FOOTER ── */}
         <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Gestão Comercial · Manual da Plataforma · Jul/2026
+          Villela Exchange · Gestão Comercial · Manual da Plataforma · Ago/2026
         </div>
       </div>
     </div>
