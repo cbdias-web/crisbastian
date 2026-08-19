@@ -64,7 +64,9 @@ export default function IndicacaoPublicaPage() {
   const salvar = async () => {
     if (!produto) { toast.error('Selecione o produto'); return; }
     if (tipo === 'PF' && !pf.pf_nome?.trim()) { toast.error('Informe o nome do titular'); return; }
+    if (tipo === 'PF' && !(pf.pf_whatsapp || pf.pf_telefone)?.trim()) { toast.error('Informe o WhatsApp/telefone do titular — é obrigatório para direcionar o lead à Central'); return; }
     if (tipo === 'PJ' && !pj.pj_razao_social?.trim()) { toast.error('Informe a razão social'); return; }
+    if (tipo === 'PJ' && !(pj.pj_whatsapp || pj.pj_telefone)?.trim()) { toast.error('Informe o WhatsApp/telefone da empresa — é obrigatório para direcionar o lead à Central'); return; }
 
     setEnviando(true);
     try {
@@ -183,7 +185,7 @@ export default function IndicacaoPublicaPage() {
                 <Field label="Profissão"><input value={pf.pf_profissao || ''} onChange={setField(setPf)('pf_profissao')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={pf.pf_email || ''} onChange={setField(setPf)('pf_email')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Telefone"><input value={pf.pf_telefone || ''} onChange={setField(setPf)('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="WhatsApp"><input value={pf.pf_whatsapp || ''} onChange={setField(setPf)('pf_whatsapp')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="WhatsApp" required><input value={pf.pf_whatsapp || ''} onChange={setField(setPf)('pf_whatsapp')} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} /></Field>
                 <Field label="Renda estimada (R$)"><input type="number" value={pf.pf_renda || ''} onChange={setField(setPf)('pf_renda')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="CEP"><input value={pf.pf_cep || ''} onChange={setField(setPf)('pf_cep')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Endereço"><input value={pf.pf_endereco || ''} onChange={setField(setPf)('pf_endereco')} className={inputCls} style={inputStyle} /></Field>
@@ -207,7 +209,7 @@ export default function IndicacaoPublicaPage() {
                 <Field label="CPF do responsável"><input value={pj.pj_cpf_responsavel || ''} onChange={setField(setPj)('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={pj.pj_email || ''} onChange={setField(setPj)('pj_email')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Telefone"><input value={pj.pj_telefone || ''} onChange={setField(setPj)('pj_telefone')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="WhatsApp"><input value={pj.pj_whatsapp || ''} onChange={setField(setPj)('pj_whatsapp')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="WhatsApp" required><input value={pj.pj_whatsapp || ''} onChange={setField(setPj)('pj_whatsapp')} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} /></Field>
                 <Field label="Ramo de atividade"><input value={pj.pj_ramo_atividade || ''} onChange={setField(setPj)('pj_ramo_atividade')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Faturamento estimado (R$)"><input type="number" value={pj.pj_faturamento || ''} onChange={setField(setPj)('pj_faturamento')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="CEP"><input value={pj.pj_cep || ''} onChange={setField(setPj)('pj_cep')} className={inputCls} style={inputStyle} /></Field>
