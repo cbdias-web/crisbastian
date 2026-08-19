@@ -5,8 +5,9 @@ import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import {
   X, Phone, MessageSquare, Calendar, Plus, Save, Clock, CheckCircle2,
-  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings,
+  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, DollarSign,
 } from 'lucide-react';
+import ConverterLeadVendaModal from './ConverterLeadVendaModal';
 
 const AURORA = {
   bg: '#0d1117',
@@ -44,6 +45,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
   const queryClient = useQueryClient();
   const [showFormInteracao, setShowFormInteracao] = useState(false);
   const [showFormAgenda, setShowFormAgenda] = useState(false);
+  const [showConverter, setShowConverter] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   const [formInteracao, setFormInteracao] = useState({
@@ -192,6 +194,11 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"
                 style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
                 <MessageSquare className="w-3.5 h-3.5" /> Abrir Chat
+              </button>
+              <button onClick={() => setShowConverter(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition"
+                style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
+                <DollarSign className="w-3.5 h-3.5" /> Converter em Venda
               </button>
               <button onClick={onGerenciar}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"
@@ -435,6 +442,14 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
           )}
         </div>
       </div>
+
+      {showConverter && (
+        <ConverterLeadVendaModal
+          conversa={conversa}
+          onClose={() => setShowConverter(false)}
+          onConcluido={() => { queryClient.invalidateQueries({ queryKey: ['interacoes-lead', leadKey] }); onAtualizado?.(); }}
+        />
+      )}
     </div>
   );
 }
