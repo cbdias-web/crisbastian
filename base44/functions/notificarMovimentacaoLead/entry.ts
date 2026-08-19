@@ -18,6 +18,32 @@ export default async function(req: Request): Promise<Response> {
     const statusNov = conv.status;
     if (statusAnt === statusNov) return Response.json({ ok: true, skipped: true });
 
+    // ─── Espelha conclusão no LeadIndicacao para notificar o INDICADOR ───
+    // Quando o gerente move a conversa para "convertido" (conclusão no Kanban),
+    // sincroniza o status na LeadIndicacao vinculada. Essa atualização dispara a
+    // automação notificarMovimentacaoIndicacao, que envia o e-mail padronizado
+    // ao indicador ("Venda concluída 🎉") — reutilizando o fluxo já existente.
+    if (statusNov === 'convertido' && conv.origem && conv.origem.startsWith('Indicação · ')) {
+      const nomeParceiro = conv.origem.replace('Indicação · ', '').trim();
+      try {
+        const todas = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 500);
+        const li = todas.find((x) => x.parceiro_nome === nomeParceiro && (
+          (x.pf_nome && x.pf_nome === conv.lead_nome) ||
+          (x.pj_razao_social && x.pj_razao_social === conv.lead_nome)
+        ));
+        if (li && li.status !== 'convertido_venda') {
+          await base44.asServiceRole.entities.LeadIndicacao.update(li.id, {
+            status: 'convertido_venda',
+            convertido: true,
+            convertido_em: new Date().toISOString(),
+          });
+          console.log(`LeadIndicacao ${li.id} sincronizada para convertido_venda (Kanban).`);
+        }
+      } catch (e) {
+        console.log('Falha ao sincronizar LeadIndicacao na conclusão do Kanban:', e.message);
+      }
+    }
+
     const STATUS_LABEL = {
       ativa: 'Ativo',
       aguardando: 'Aguardando resposta',
