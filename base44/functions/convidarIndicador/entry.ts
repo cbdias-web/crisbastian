@@ -41,7 +41,7 @@ export default async function(req: Request): Promise<Response> {
     // 1) Convida como usuário (role 'user') — e-mail disparado pela plataforma
     let jaExistia = false;
     try {
-      await base44.auth.inviteUser(email, 'user');
+      await base44.users.inviteUser(email, 'user');
     } catch (e) {
       const msg = String(e?.message || e || '').toLowerCase();
       if (msg.includes('already') || msg.includes('exist') || msg.includes('invited') || msg.includes('registered')) {

@@ -19,22 +19,25 @@ export default function DashParceiro() {
   const [user, setUser] = useState(null);
   const [abaAtiva, setAbaAtiva] = useState('parceiros');
   const [parceiroLogado, setParceiroLogado] = useState(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
       // Indicador logado: localiza seu cadastro de Parceiro pelo e-mail
-      if (u?.role === 'indicador' && u.email) {
+      // (vale para role 'indicador', flag indicador, ou casamento por e-mail)
+      if (u && u.role !== 'admin' && u.email) {
         try {
           const ps = await base44.entities.Parceiro.filter({ email: u.email });
           setParceiroLogado(ps[0] || null);
         } catch (e) {}
       }
-    }).catch(() => {});
+      setChecked(true);
+    }).catch(() => setChecked(true));
   }, []);
 
   const isAdmin = user?.role === 'admin';
-  const isIndicador = user?.role === 'indicador' || user?.indicador === true;
+  const isIndicador = user?.role === 'indicador' || user?.indicador === true || !!parceiroLogado;
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-dash-parceiro'],
@@ -42,7 +45,7 @@ export default function DashParceiro() {
     enabled: !!user && isAdmin,
   });
 
-  if (user && !isAdmin && !isIndicador) {
+  if (user && checked && !isAdmin && !isIndicador) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
         <div className="text-center max-w-sm">

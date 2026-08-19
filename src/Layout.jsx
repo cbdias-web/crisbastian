@@ -40,6 +40,7 @@ const AURORA = {
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [parceiroByEmail, setParceiroByEmail] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
   const [aceite, setAceite] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -65,6 +66,15 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
+      // Sinal robusto de Indicador: e-mail cadastrado em Parceiro ativo
+      // (o usuário convidado só é criado ao aceitar o convite, então o role/flag
+      //  podem não estar setados no primeiro login — o casamento por e-mail garante).
+      try {
+        if (u && u.role !== 'admin' && u.email) {
+          const ps = await base44.entities.Parceiro.filter({ email: u.email });
+          if (ps.length > 0 && ps[0].ativo !== false) setParceiroByEmail(ps[0]);
+        }
+      } catch (e) {}
       try {
         const imp = getImpersonatedVendedor();
         if (imp?.avatar_url) {
@@ -245,7 +255,7 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
-  const isIndicador = user?.role === 'indicador' || user?.indicador === true;
+  const isIndicador = user?.role === 'indicador' || user?.indicador === true || !!parceiroByEmail;
   const isHenriqueStein = user?.email === 'henrique.stein@psjunior.com';
 
   // Indicador: sempre cai no Dash Parceiro
