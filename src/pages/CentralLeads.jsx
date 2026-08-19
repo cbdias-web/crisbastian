@@ -8,6 +8,7 @@ import StatusGerenteWidget from '@/components/central/StatusGerenteWidget';
 import RelatorioLeads from '@/components/central/RelatorioLeads';
 import GerenciarConversaModal from '@/components/central/GerenciarConversaModal';
 import KanbanLeads from '@/components/central/KanbanLeads';
+import LeadAbordagemModal from '@/components/central/LeadAbordagemModal';
 
 
 const AURORA = {
@@ -51,6 +52,7 @@ export default function CentralLeads() {
   const [showRelatorio, setShowRelatorio] = useState(false);
   const [abaAtiva, setAbaAtiva] = useState('leads');
   const [conversaGerenciar, setConversaGerenciar] = useState(null);
+  const [leadAbordagem, setLeadAbordagem] = useState(null);
   const [modoVisualizacao, setModoVisualizacao] = useState('lista');
   const queryClient = useQueryClient();
 
@@ -370,19 +372,9 @@ export default function CentralLeads() {
             {/* Modo Kanban */}
             {modoVisualizacao === 'kanban' ? (
               <>
-                {conversaSelecionada && (
-                  <div className="rounded-2xl overflow-hidden mb-4" style={{ border: `1px solid ${AURORA.border}`, height: '400px' }}>
-                    <ChatConversa
-                      conversa={conversaSelecionada}
-                      isAdmin={isAdmin}
-                      onClose={() => setConversaSelecionada(null)}
-                      onUpdate={(updated) => { setConversaSelecionada(updated); refetch(); }}
-                    />
-                  </div>
-                )}
                 <KanbanLeads
                   conversas={conversasFiltradas}
-                  onSelectConversa={setConversaSelecionada}
+                  onSelectConversa={setLeadAbordagem}
                   onRefresh={refetch}
                 />
               </>
@@ -604,6 +596,19 @@ export default function CentralLeads() {
           isAdmin={isAdmin}
           onClose={() => setConversaGerenciar(null)}
           onConcluido={() => { setConversaSelecionada(null); refetch(); }}
+        />
+      )}
+
+      {leadAbordagem && (
+        <LeadAbordagemModal
+          conversa={leadAbordagem}
+          user={user}
+          vendedor={vendedorLogado}
+          isAdmin={isAdmin}
+          onClose={() => setLeadAbordagem(null)}
+          onAtualizado={refetch}
+          onAbrirChat={() => { setConversaSelecionada(leadAbordagem); setLeadAbordagem(null); }}
+          onGerenciar={() => { setConversaGerenciar(leadAbordagem); setLeadAbordagem(null); }}
         />
       )}
     </div>
