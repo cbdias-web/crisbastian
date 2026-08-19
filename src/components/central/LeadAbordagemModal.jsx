@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import {
   X, Phone, MessageSquare, Calendar, Plus, Save, Clock, CheckCircle2,
-  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, DollarSign,
+  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, DollarSign, UserCheck,
 } from 'lucide-react';
 import ConverterLeadVendaModal from './ConverterLeadVendaModal';
 
@@ -46,7 +46,24 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
   const [showFormInteracao, setShowFormInteracao] = useState(false);
   const [showFormAgenda, setShowFormAgenda] = useState(false);
   const [showConverter, setShowConverter] = useState(false);
+  const [convertendoCliente, setConvertendoCliente] = useState(false);
   const [salvando, setSalvando] = useState(false);
+
+  const converterCliente = async () => {
+    setConvertendoCliente(true);
+    try {
+      const res = await base44.functions.invoke('converterLeadCliente', { conversa_id: conversa.id });
+      const data = res?.data || res;
+      if (data?.ja_existia) toast.info(data.mensagem || 'Cliente já cadastrado — lead vinculado.');
+      else toast.success('Cliente criado a partir do lead!');
+      queryClient.invalidateQueries({ queryKey: ['interacoes-lead', leadKey] });
+      onAtualizado?.();
+      onClose();
+    } catch (e) {
+      toast.error('Erro ao converter em cliente: ' + (e?.response?.data?.error || e.message));
+    }
+    setConvertendoCliente(false);
+  };
 
   const [formInteracao, setFormInteracao] = useState({
     tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Neutro',
@@ -194,6 +211,11 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"
                 style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
                 <MessageSquare className="w-3.5 h-3.5" /> Abrir Chat
+              </button>
+              <button onClick={converterCliente} disabled={convertendoCliente}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition disabled:opacity-40"
+                style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)' }}>
+                {convertendoCliente ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />} Converter em Cliente
               </button>
               <button onClick={() => setShowConverter(true)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition"
