@@ -122,20 +122,22 @@ Deno.serve(async (req) => {
 
     const pdfBytes = doc.output('arraybuffer');
 
-    // Retorna o PDF como base64 no JSON para o agente poder linkar
-    const uint8 = new Uint8Array(pdfBytes);
-    let binary = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < uint8.length; i += chunkSize) {
-      binary += String.fromCharCode(...uint8.subarray(i, i + chunkSize));
+    // Faz upload do PDF para o storage e devolve uma URL pública para download
+    const filename = titulo.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+    let file_url = '';
+    try {
+      const file = new File([new Blob([pdfBytes], { type: 'application/pdf' })], filename, { type: 'application/pdf' });
+      const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+      file_url = uploaded?.file_url || '';
+    } catch (e) {
+      return Response.json({ error: 'PDF gerado, mas falha no upload: ' + (e?.message || e) }, { status: 500 });
     }
-    const base64 = btoa(binary);
 
     return Response.json({
       success: true,
-      pdf_base64: base64,
-      filename: titulo.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf',
-      message: 'PDF gerado com sucesso!'
+      file_url,
+      filename,
+      message: 'PDF gerado com sucesso! Inclua o link de download na sua resposta em markdown: [Baixar PDF](file_url)'
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
