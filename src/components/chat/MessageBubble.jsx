@@ -27,16 +27,16 @@ const FunctionDisplay = ({ toolCall }) => {
     <div className="mt-2 text-xs">
       <button
         onClick={() => setExpanded(!expanded)}
-        className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all",
-          "hover:bg-slate-50",
-          expanded ? "bg-slate-50 border-slate-300" : "bg-white border-slate-200"
-        )}
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
+        style={{
+          background: expanded ? 'rgba(0,212,170,0.10)' : '#1c2333',
+          borderColor: expanded ? 'rgba(0,212,170,0.35)' : 'rgba(0,212,170,0.15)',
+        }}
       >
         <Icon className={cn("h-3 w-3", statusConfig.color, statusConfig.spin && "animate-spin")} />
-        <span className="text-slate-700">{label}</span>
-        {statusConfig.text && <span className="text-slate-500">· {statusConfig.text}</span>}
-        {!statusConfig.spin && <ChevronRight className={cn("h-3 w-3 text-slate-400 transition-transform ml-auto", expanded && "rotate-90")} />}
+        <span style={{ color: '#e6edf3' }}>{label}</span>
+        {statusConfig.text && <span style={{ color: 'rgba(230,237,243,0.55)' }}>· {statusConfig.text}</span>}
+        {!statusConfig.spin && <ChevronRight className={cn("h-3 w-3 transition-transform ml-auto", expanded && "rotate-90")} style={{ color: 'rgba(230,237,243,0.4)' }} />}
       </button>
     </div>
   );
@@ -54,22 +54,25 @@ export default function MessageBubble({ message }) {
       )}
       <div className={cn("max-w-[85%]", isUser && "flex flex-col items-end")}>
         {message.content && (
-          <div className={cn(
-            "rounded-2xl px-4 py-2.5",
-            isUser ? "bg-[#0f1e35] text-white" : "bg-white border border-slate-200"
-          )}>
+          <div
+            className="rounded-2xl px-4 py-2.5"
+            style={isUser
+              ? { background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }
+              : { background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}
+          >
             {isUser ? (
               <p className="text-sm leading-relaxed">{message.content}</p>
             ) : (
               <ReactMarkdown
-                className="text-sm prose prose-sm prose-slate max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                className="text-sm prose prose-sm prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
                 components={{
                   a: ({ href, children }) => (
                     <a
                       href={href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#1a3150] underline font-medium hover:text-[#0f1e35] inline-flex items-center gap-1"
+                      className="underline font-medium inline-flex items-center gap-1"
+                      style={{ color: '#00D4AA' }}
                     >
                       {children}
                       <Download className="w-3 h-3 inline" />
