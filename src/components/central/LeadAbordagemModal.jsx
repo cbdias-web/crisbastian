@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import {
   X, Phone, MessageSquare, Calendar, Plus, Save, Clock, CheckCircle2,
-  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, DollarSign, UserCheck,
+  ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, UserCheck, FileText,
 } from 'lucide-react';
 import ConverterLeadVendaModal from './ConverterLeadVendaModal';
 
@@ -219,8 +219,8 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
               </button>
               <button onClick={() => setShowConverter(true)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition"
-                style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
-                <DollarSign className="w-3.5 h-3.5" /> Converter em Venda
+                style={{ background: 'rgba(167,139,250,0.15)', color: '#a78bfa', border: '1px solid rgba(167,139,250,0.3)' }}>
+                <FileText className="w-3.5 h-3.5" /> Converter em Contrato
               </button>
               <button onClick={onGerenciar}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"

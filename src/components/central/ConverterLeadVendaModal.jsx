@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Loader2, CheckCircle2, DollarSign, FileText, UserCheck, Package, User, AlertTriangle } from 'lucide-react';
+import { X, Loader2, CheckCircle2, FileText, UserCheck, Package, User, AlertTriangle } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -46,10 +46,9 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
       setResultado({
         cliente_id: data2.cliente_id,
         contrato_id: data2.contrato_id,
-        venda_id: data2.venda_id,
         indicador: data2.indicador,
       });
-      toast.success('Lead convertido em Cliente, Contrato e Venda!');
+      toast.success('Lead convertido em Cliente e Contrato!');
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || 'Erro ao converter';
       toast.error(msg);
@@ -63,11 +62,11 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(52,211,153,0.15)' }}>
-              <DollarSign className="w-4 h-4" style={{ color: AURORA.green }} />
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(167,139,250,0.15)' }}>
+              <FileText className="w-4 h-4" style={{ color: AURORA.purple }} />
             </div>
             <div>
-              <p className="font-bold text-sm" style={{ color: AURORA.text }}>Converter Lead em Venda</p>
+              <p className="font-bold text-sm" style={{ color: AURORA.text }}>Converter Lead em Contrato</p>
               <p className="text-[11px]" style={{ color: AURORA.textMuted }}>{conversa.lead_nome}</p>
             </div>
           </div>
@@ -82,7 +81,7 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
             </div>
             <h3 className="text-base font-bold mb-2" style={{ color: AURORA.text }}>Conversão concluída!</h3>
             <p className="text-sm mb-4" style={{ color: AURORA.textMuted }}>
-              O lead foi transformado em cliente, contrato e venda — respeitando o produto de origem e o indicador como espelhamento.
+              O lead foi transformado em <strong style={{ color: AURORA.green }}>cliente</strong> e <strong style={{ color: AURORA.purple }}>contrato</strong>. O indicador foi notificado. A venda será gerada depois, na página de Contratos ("Enviar para Vendas"), com nova notificação ao indicador.
             </p>
             <div className="grid grid-cols-1 gap-2 text-left mb-4">
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
@@ -92,10 +91,6 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                 <FileText className="w-4 h-4" style={{ color: AURORA.purple }} />
                 <span className="text-xs" style={{ color: AURORA.text }}>Contrato criado (produto: {produto})</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                <DollarSign className="w-4 h-4" style={{ color: AURORA.accent }} />
-                <span className="text-xs" style={{ color: AURORA.text }}>Venda registrada</span>
               </div>
               {resultado.indicador && (
                 <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.25)' }}>
@@ -166,15 +161,15 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
             </div>
 
             <p className="text-[11px] leading-relaxed" style={{ color: AURORA.textMuted }}>
-              Esta ação cria <strong style={{ color: AURORA.green }}>Cliente</strong>, <strong style={{ color: AURORA.purple }}>Contrato</strong> (rascunho, tipo = {produto || '—'}) e <strong style={{ color: AURORA.accent }}>Venda</strong>, e marca o lead como convertido.
+              Esta ação cria <strong style={{ color: AURORA.green }}>Cliente</strong> e <strong style={{ color: AURORA.purple }}>Contrato</strong> (rascunho, tipo = {produto || '—'}), e notifica o indicador. A venda será gerada depois, na página de Contratos.
             </p>
 
             <div className="flex gap-2 pt-1">
               <button onClick={handleConverter} disabled={salvando || !podeConverter}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-40"
-                style={{ background: AURORA.green, color: '#0d1117' }}>
-                {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
-                {salvando ? 'Convertendo...' : 'Converter em Venda'}
+                style={{ background: AURORA.purple, color: '#0d1117' }}>
+                {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                {salvando ? 'Convertendo...' : 'Converter em Contrato'}
               </button>
               <button onClick={onClose}
                 className="px-4 py-2.5 rounded-xl text-sm font-semibold"

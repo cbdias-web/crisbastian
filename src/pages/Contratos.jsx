@@ -114,11 +114,18 @@ export default function Contratos() {
         vendaPayload.espelhamento_id = ct.indicadores[0]?.id || '';
         vendaPayload.percentual_comissao_espelhamento = ct.indicadores[0]?.percentual || 0;
       }
-      await base44.entities.Venda.create(vendaPayload);
+      const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
+      // Vincula a venda à indicação de origem → dispara notificação "Venda concluída" ao indicador
+      try {
+        const indicacoes = await base44.entities.LeadIndicacao.filter({ contrato_id: ct.id });
+        for (const li of indicacoes) {
+          await base44.entities.LeadIndicacao.update(li.id, { venda_id: venda.id, status: 'convertido_venda' });
+        }
+      } catch (e) { console.log('Falha ao vincular venda à indicação:', e.message); }
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
-      toast.success('Venda criada! Redirecionando para Vendas...');
+      toast.success('Venda criada! Indicador notificado. Redirecionando para Vendas...');
       setTimeout(() => window.location.href = '/Vendas', 1200);
     } catch (err) {
       toast.error('Erro: ' + err.message);

@@ -91,25 +91,11 @@ export default async function(req: Request): Promise<Response> {
       observacoes: obsComum,
     });
 
-    // 3) Venda (produto de origem, indicador como espelhamento)
-    const venda = await base44.asServiceRole.entities.Venda.create({
-      produto,
-      assessor_comercial: vendedor_nome,
-      vendedor_id,
-      valor: valorNum,
-      data: dataVenda,
-      tipo_venda: 'nova',
-      cliente: nome,
-      cpf_cnpj: doc,
-      espelhamento: indicador?.nome || '',
-      espelhamento_id: indicador?.id || '',
-      percentual_comissao_espelhamento: indicador?.percentual || 0,
-      indicadores: indicadoresArr,
-      observacao: `Convertido da Central de Leads. Contrato: ${contrato.id}.`,
-      considerar_acumulado: true,
-    });
-
-    // 4) Atualiza ConversaWhatsapp + Lead + LeadIndicacao
+    // (A Venda NÃO é criada aqui — o lead vira Contrato. A Venda é gerada depois,
+    //  na página de Contratos, pelo botão "Enviar para Vendas", que então
+    //  atualiza a LeadIndicacao para 'convertido_venda' e dispara a segunda
+    //  notificação ao indicador — "Venda concluída".)
+    // 3) Atualiza ConversaWhatsapp + Lead + LeadIndicacao
     try { await base44.asServiceRole.entities.ConversaWhatsapp.update(conversa_id, { status: 'convertido' }); } catch (e) {}
     if (lead) {
       try {
@@ -123,10 +109,9 @@ export default async function(req: Request): Promise<Response> {
     if (leadIndicacao) {
       try {
         await base44.asServiceRole.entities.LeadIndicacao.update(leadIndicacao.id, {
-          status: 'convertido_venda',
+          status: 'convertido_contrato',
           cliente_id: cliente.id,
           contrato_id: contrato.id,
-          venda_id: venda.id,
           convertido: true,
           convertido_em: new Date().toISOString(),
         });
@@ -136,7 +121,7 @@ export default async function(req: Request): Promise<Response> {
     // 5) Registra a conversão no histórico do cliente (InteracaoCliente) +
     //    mensagem de sistema na ConversaWhatsapp — ambas visíveis no Portal do Indicador
     const valorFmt = valorNum ? `R$ ${valorNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'não informado';
-    const textoConversao = `✅ Conversão em Venda efetivada · Produto: ${produto} · Valor do contrato: ${valorFmt}`;
+    const textoConversao = `✅ Contrato gerado · Produto: ${produto} · Valor: ${valorFmt}`;
     const agoraIso = new Date().toISOString();
     try {
       await base44.asServiceRole.entities.InteracaoCliente.create({
@@ -145,7 +130,7 @@ export default async function(req: Request): Promise<Response> {
         vendedor_id,
         vendedor_nome,
         tipo: 'Outro',
-        descricao: `Conversão para venda efetiva. Produto: ${produto}. Valor do contrato: ${valorFmt}. Contrato: ${contrato.id}.`,
+        descricao: `Conversão em contrato. Produto: ${produto}. Valor: ${valorFmt}. Contrato: ${contrato.id}.`,
         data_interacao: dataVenda,
         resultado: 'Positivo',
         status: 'realizada',
@@ -167,7 +152,6 @@ export default async function(req: Request): Promise<Response> {
       ok: true,
       cliente_id: cliente.id,
       contrato_id: contrato.id,
-      venda_id: venda.id,
       indicador,
       produto,
     });
