@@ -29,11 +29,11 @@ const STATUS_CFG = {
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
-export default function IndicacoesTab({ vendedores }) {
+export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador }) {
   const queryClient = useQueryClient();
   const [detalhe, setDetalhe] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
-  const [filtroParceiro, setFiltroParceiro] = useState('todos');
+  const [filtroParceiro, setFiltroParceiro] = useState(parceiroIdFixo || 'todos');
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
   const [editando, setEditando] = useState(null);
@@ -49,7 +49,7 @@ export default function IndicacoesTab({ vendedores }) {
 
   const filtradas = indicacoes.filter(i => {
     const matchStatus = filtroStatus === 'todos' || i.status === filtroStatus;
-    const matchParceiro = filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro;
+    const matchParceiro = parceiroIdFixo ? i.parceiro_id === parceiroIdFixo : (filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro);
     const nome = i.tipo === 'PF' ? i.pf_nome : i.pj_razao_social;
     const doc = i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj;
     const matchBusca = !busca || (nome?.toLowerCase().includes(busca.toLowerCase())) || (doc?.includes(busca));
@@ -164,10 +164,12 @@ export default function IndicacoesTab({ vendedores }) {
           <option value="todos">Todos status</option>
           {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={filtroParceiro} onChange={e => setFiltroParceiro(e.target.value)} className="px-3 py-2 rounded-xl text-xs" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-          <option value="todos">Todos parceiros</option>
-          {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </select>
+        {!parceiroIdFixo && (
+          <select value={filtroParceiro} onChange={e => setFiltroParceiro(e.target.value)} className="px-3 py-2 rounded-xl text-xs" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+            <option value="todos">Todos parceiros</option>
+            {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </select>
+        )}
       </div>
 
       {isLoading ? (
@@ -206,16 +208,18 @@ export default function IndicacoesTab({ vendedores }) {
                       <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.purple }}>🔗 {lead.parceiro_nome}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                    <button onClick={(e) => { e.stopPropagation(); setEditando(lead); }}
-                      className="p-1.5 rounded-lg transition" style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }} title="Editar">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={(e) => excluir(lead, e)}
-                      className="p-1.5 rounded-lg transition" style={{ background: 'rgba(239,68,68,0.12)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }} title="Excluir">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {!modoIndicador && (
+                    <div className="flex flex-col gap-1.5 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <button onClick={(e) => { e.stopPropagation(); setEditando(lead); }}
+                        className="p-1.5 rounded-lg transition" style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }} title="Editar">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={(e) => excluir(lead, e)}
+                        className="p-1.5 rounded-lg transition" style={{ background: 'rgba(239,68,68,0.12)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }} title="Excluir">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -295,34 +299,40 @@ export default function IndicacoesTab({ vendedores }) {
             </div>
 
             {/* Ações */}
-            <div className="p-4 flex flex-wrap gap-2" style={{ background: AURORA.surface2, borderTop: `1px solid ${AURORA.border}` }}>
-              {!detalhe.convertido && detalhe.status === 'novo' && (
-                <button onClick={() => atualizarStatus(detalhe, 'em_atendimento')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(251,191,36,0.12)', color: AURORA.warning, border: '1px solid rgba(251,191,36,0.3)' }}>
-                  Iniciar Atendimento
+            {modoIndicador ? (
+              <div className="p-4 flex justify-end" style={{ background: AURORA.surface2, borderTop: `1px solid ${AURORA.border}` }}>
+                <button onClick={() => setDetalhe(null)} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ background: AURORA.surface, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>Fechar</button>
+              </div>
+            ) : (
+              <div className="p-4 flex flex-wrap gap-2" style={{ background: AURORA.surface2, borderTop: `1px solid ${AURORA.border}` }}>
+                {!detalhe.convertido && detalhe.status === 'novo' && (
+                  <button onClick={() => atualizarStatus(detalhe, 'em_atendimento')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(251,191,36,0.12)', color: AURORA.warning, border: '1px solid rgba(251,191,36,0.3)' }}>
+                    Iniciar Atendimento
+                  </button>
+                )}
+                {!detalhe.cliente_id && (
+                  <button onClick={() => converterCliente(detalhe)} disabled={convertendo === 'cliente'}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                    style={{ background: 'rgba(52,211,153,0.12)', color: AURORA.green, border: '1px solid rgba(52,211,153,0.3)' }}>
+                    {convertendo === 'cliente' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />} Converter em Cliente
+                  </button>
+                )}
+                {!detalhe.contrato_id && (
+                  <button onClick={() => converterContrato(detalhe)} disabled={convertendo === 'contrato'}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                    style={{ background: 'rgba(167,139,250,0.12)', color: AURORA.purple, border: '1px solid rgba(167,139,250,0.3)' }}>
+                    {convertendo === 'contrato' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />} Converter em Contrato
+                  </button>
+                )}
+                <div className="flex-1" />
+                {detalhe.status !== 'descartado' && !detalhe.convertido && (
+                  <button onClick={() => atualizarStatus(detalhe, 'descartado')} className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(100,100,100,0.15)', color: '#9ca3af' }}>Descartar</button>
+                )}
+                <button onClick={() => excluir(detalhe)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(239,68,68,0.12)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }}>
+                  <Trash2 className="w-3.5 h-3.5" /> Excluir
                 </button>
-              )}
-              {!detalhe.cliente_id && (
-                <button onClick={() => converterCliente(detalhe)} disabled={convertendo === 'cliente'}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
-                  style={{ background: 'rgba(52,211,153,0.12)', color: AURORA.green, border: '1px solid rgba(52,211,153,0.3)' }}>
-                  {convertendo === 'cliente' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />} Converter em Cliente
-                </button>
-              )}
-              {!detalhe.contrato_id && (
-                <button onClick={() => converterContrato(detalhe)} disabled={convertendo === 'contrato'}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
-                  style={{ background: 'rgba(167,139,250,0.12)', color: AURORA.purple, border: '1px solid rgba(167,139,250,0.3)' }}>
-                  {convertendo === 'contrato' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />} Converter em Contrato
-                </button>
-              )}
-              <div className="flex-1" />
-              {detalhe.status !== 'descartado' && !detalhe.convertido && (
-                <button onClick={() => atualizarStatus(detalhe, 'descartado')} className="px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(100,100,100,0.15)', color: '#9ca3af' }}>Descartar</button>
-              )}
-              <button onClick={() => excluir(detalhe)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(239,68,68,0.12)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }}>
-                <Trash2 className="w-3.5 h-3.5" /> Excluir
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       )}

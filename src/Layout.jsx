@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import OnboardingModal from '@/components/OnboardingModal';
 import ComunicadoModal from '@/components/ComunicadoModal';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor, setImpersonatedVendedor, clearImpersonation } from '@/lib/impersonation';
@@ -38,6 +38,7 @@ const AURORA = {
 };
 
 export default function Layout({ children, currentPageName }) {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
   const [aceite, setAceite] = useState(null);
@@ -244,7 +245,15 @@ export default function Layout({ children, currentPageName }) {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+  const isIndicador = user?.role === 'indicador' || user?.indicador === true;
   const isHenriqueStein = user?.email === 'henrique.stein@psjunior.com';
+
+  // Indicador: sempre cai no Dash Parceiro
+  useEffect(() => {
+    if (isIndicador && currentPageName !== 'DashParceiro') {
+      navigate('/DashParceiro', { replace: true });
+    }
+  }, [isIndicador, currentPageName, navigate]);
 
   const { data: notificacoesPendentes = [] } = useQuery({
     queryKey: ['notificacoes-pendentes'],
@@ -310,7 +319,10 @@ export default function Layout({ children, currentPageName }) {
   const menusUsuario = user?.menus_acesso || ['Dashboard', 'Vendas', 'Vendedores'];
 
   // ─── Navigation groups ────────────────────────────────────────────────
-  const navGroups = [
+  const navGroups = isIndicador ? [{
+    label: 'Indicador',
+    items: [{ name: 'Meu Painel', icon: Handshake, page: 'DashParceiro', alwaysVisible: true }],
+  }] : [
     {
       label: 'Comercial',
       items: [
@@ -424,7 +436,7 @@ export default function Layout({ children, currentPageName }) {
         }}
       />
 
-      {showOnboarding && user && (
+      {showOnboarding && user && !isIndicador && (
         <OnboardingModal user={user} aceite={aceite} onComplete={() => setShowOnboarding(false)} />
       )}
       {!showOnboarding && comunicadoPendente && user && (

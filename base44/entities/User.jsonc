@@ -6,10 +6,16 @@
       "type": "string",
       "enum": [
         "admin",
-        "user"
+        "user",
+        "indicador"
       ],
       "default": "user",
-      "description": "Papel do usu\u00e1rio"
+      "description": "Papel do usu\u00e1rio (admin, user ou indicador)"
+    },
+    "indicador": {
+      "type": "boolean",
+      "default": false,
+      "description": "Usu\u00e1rio \u00e9 um Indicador (acesso restrito ao Dash Parceiro)"
     },
     "ativo": {
       "type": "boolean",

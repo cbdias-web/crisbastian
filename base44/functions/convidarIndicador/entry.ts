@@ -1,7 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Envia um e-mail de convite ao Indicador com o link do portal exclusivo.
-// Admin-only. Gera o link_token se ainda não existir e marca convite_enviado.
+// Convida um Indicador como USUÁRIO real do app.
+// 1. inviteUser aceita apenas 'user'/'admin' → convidamos como 'user'
+//    (a plataforma envia o e-mail de convite — dispensa domínio customizado).
+// 2. Em seguida promovemos o role para 'indicador' via User.update
+//    (validado contra o enum da entidade User, que inclui 'indicador').
+// Mantém o link_token do portal público como acesso alternativo (sem login).
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -12,7 +16,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const body = await req.json();
-    const { indicador_id, app_origin } = body;
+    const { indicador_id } = body;
     if (!indicador_id) return Response.json({ error: 'indicador_id é obrigatório' }, { status: 400 });
 
     const ind = await base44.entities.Parceiro.get(indicador_id);
@@ -21,72 +25,59 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Cadastre um e-mail válido no indicador antes de enviar o convite' }, { status: 400 });
     }
 
-    // Gera token se não existir
-    let token = ind.link_token;
+    const email = ind.email.trim();
     const agora = new Date().toISOString();
+
+    // Gera/mantém o token do portal público (acesso alternativo sem login)
+    let token = ind.link_token;
     if (!token) {
       token = crypto.randomUUID().replace(/-/g, '') + Date.now().toString(36);
-    }
-
-    // A origem pública do app (domínio publicado) deve vir do frontend;
-    // req.url aqui aponta para o dispatcher interno do backend, não para o app público.
-    const origin = app_origin || '';
-    const link = `${origin}/portal-indicador/${token}`;
-
-    // Garante o token no cadastro antes do envio (sem marcar convite_enviado ainda)
-    if (ind.link_token !== token) {
       await base44.entities.Parceiro.update(indicador_id, {
         link_token: token,
         link_gerado_em: ind.link_gerado_em || agora,
       });
     }
 
-    const body_html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: linear-gradient(135deg, #0d1117, #1a1a2e 60%, #16213e); padding: 28px 24px; border-radius: 14px 14px 0 0;">
-          <h2 style="color: #00D4AA; margin: 0; font-size: 22px;">Convite · Indicador Villela Exchange</h2>
-          <p style="color: rgba(230,237,243,0.6); margin: 8px 0 0; font-size: 13px;">Portal exclusivo de Indicadores</p>
-        </div>
-        <div style="background: #f8fafc; padding: 28px 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 14px 14px;">
-          <p style="color: #374151; font-size: 14px; margin: 0 0 16px;">Olá, <strong>${ind.nome}</strong>!</p>
-          <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-            Você foi cadastrado como <strong>Indicador</strong> da Villela Exchange. A partir do portal exclusivo você poderá:
-          </p>
-          <ul style="color: #374151; font-size: 14px; line-height: 1.7; margin: 0 0 20px; padding-left: 20px;">
-            <li>Cadastrar suas indicações (leads)</li>
-            <li>Acompanhar o status e a jornada de cada lead</li>
-            <li>Receber notificações sobre movimentações e conversões</li>
-            <li>Visualizar suas comissões/espelhamentos</li>
-          </ul>
-          <div style="text-align: center; margin: 24px 0;">
-            <a href="${link}" style="display: inline-block; background: #00D4AA; color: #0d1117; font-weight: 700; font-size: 15px; padding: 14px 32px; border-radius: 12px; text-decoration: none;">Acessar o Portal do Indicador</a>
-          </div>
-          <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 16px 0 0;">
-            No primeiro acesso você deverá formalizar seu cadastro aceitando o <strong>Termo de Uso</strong> da plataforma.
-            Guarde este link — ele é o seu acesso pessoal ao portal.
-          </p>
-          <p style="margin: 20px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
-            Villela Exchange – Gestão Comercial · Convite automático
-          </p>
-        </div>
-      </div>
-    `;
+    // 1) Convida como usuário (role 'user') — e-mail disparado pela plataforma
+    let jaExistia = false;
+    try {
+      await base44.auth.inviteUser(email, 'user');
+    } catch (e) {
+      const msg = String(e?.message || e || '').toLowerCase();
+      if (msg.includes('already') || msg.includes('exist') || msg.includes('invited') || msg.includes('registered')) {
+        jaExistia = true;
+      } else {
+        return Response.json({ error: 'Falha ao enviar convite: ' + (e?.message || String(e)) }, { status: 500 });
+      }
+    }
 
-    await base44.asServiceRole.integrations.Core.SendEmail({
-      to: ind.email,
-      subject: `Convite · Portal do Indicador · Villela Exchange`,
-      body: body_html,
-      from_name: 'Villela Exchange – Indicadores',
-    });
+    // 2) Promove o role para 'indicador' (busca o User pelo e-mail)
+    let rolePromovido = false;
+    try {
+      const users = await base44.entities.User.filter({ email });
+      if (users.length > 0) {
+        // Sinal robusto (boolean sempre setável) + role 'indicador' (best-effort)
+        await base44.entities.User.update(users[0].id, { indicador: true, role: 'indicador' });
+        rolePromovido = true;
+      }
+    } catch (e) {
+      // Se a plataforma bloquear role custom no update, o usuário permanece 'user'.
+      // O admin pode ajustar manualmente em Usuários.
+      console.log('role promotion skipped:', e?.message || e);
+    }
 
-    // Só marca como enviado APÓS o disparo efetivo — evita falso positivo
     await base44.entities.Parceiro.update(indicador_id, {
       convite_enviado: true,
       convite_enviado_em: agora,
       convite_enviado_por: user.email,
     });
 
-    return Response.json({ success: true, link, enviado_para: ind.email });
+    return Response.json({
+      success: true,
+      enviado_para: email,
+      usuario_existia: jaExistia,
+      role_indicador: rolePromovido,
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
