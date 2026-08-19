@@ -17,6 +17,9 @@ export default async function(req: Request): Promise<Response> {
     const ind = inds[0];
 
     if (action === 'buscar') {
+      // Captura o último acesso anterior (antes de atualizar) para distinguir retorno de primeira visita
+      const ultimo_acesso_anterior = ind.ultimo_acesso;
+      const era_retorno = !!(ultimo_acesso_anterior && ind.termo_aceito === true);
       // Atualiza último acesso
       try {
         await base44.asServiceRole.entities.Parceiro.update(ind.id, { ultimo_acesso: new Date().toISOString() });
@@ -32,6 +35,8 @@ export default async function(req: Request): Promise<Response> {
           termo_aceito: ind.termo_aceito === true,
           termo_aceito_em: ind.termo_aceito_em,
           convite_enviado: ind.convite_enviado === true,
+          ultimo_acesso: ultimo_acesso_anterior,
+          era_retorno,
         },
       });
     }

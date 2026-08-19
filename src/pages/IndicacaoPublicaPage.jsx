@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Loader2, CheckCircle2, Send, User, Building2, ArrowLeft } from 'lucide-react';
+import { Loader2, CheckCircle2, Send, User, Building2, ArrowLeft, ArrowRight, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AURORA = {
@@ -105,23 +105,7 @@ export default function IndicacaoPublicaPage() {
   }
 
   if (sucesso) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: AURORA.bg }}>
-        <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.4, pointerEvents: 'none' }} />
-        <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55), rgba(13,17,23,0.6))', pointerEvents: 'none' }} />
-        <div className="text-center max-w-sm relative" style={{ zIndex: 1 }}>
-          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(0,212,170,0.15)' }}>
-            <CheckCircle2 className="w-9 h-9" style={{ color: AURORA.accent }} />
-          </div>
-          <h2 className="text-lg font-bold mb-2" style={{ color: AURORA.text }}>Indicação enviada!</h2>
-          <p className="text-sm mb-5" style={{ color: AURORA.textMuted }}>Obrigado, {parceiro?.nome}. Sua indicação foi recebida e seguirá em nossa esteira comercial.</p>
-          <button onClick={() => navigate(`/portal-indicador/${token}`)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
-            <ArrowLeft className="w-4 h-4" /> Voltar ao portal
-          </button>
-        </div>
-      </div>
-    );
+    return <SucessoIndicacao parceiro={parceiro} token={token} navigate={navigate} />;
   }
 
   return (
@@ -247,6 +231,67 @@ export default function IndicacaoPublicaPage() {
         <p className="text-center text-[11px] mt-4" style={{ color: AURORA.textMuted }}>
           Villela Exchange · Sistema de Indicação de Parceiros
         </p>
+      </div>
+    </div>
+  );
+}
+
+function SucessoIndicacao({ parceiro, token, navigate }) {
+  const [segundos, setSegundos] = useState(5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSegundos(s => {
+        if (s <= 1) {
+          clearInterval(timer);
+          navigate(`/portal-indicador/${token}`);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [navigate, token]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: AURORA.bg }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.4, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55), rgba(13,17,23,0.6))', pointerEvents: 'none' }} />
+      <div className="max-w-md w-full rounded-3xl overflow-hidden text-center relative" style={{ zIndex: 1, background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+        <div className="px-6 pt-6">
+          <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)' }}>
+            <CheckCircle2 className="w-9 h-9" style={{ color: AURORA.accent }} />
+          </div>
+          <h2 className="text-lg font-bold mb-2" style={{ color: AURORA.text }}>Indicação enviada com sucesso!</h2>
+          <p className="text-sm mb-4" style={{ color: AURORA.text }}>
+            Muito obrigado, <strong style={{ color: AURORA.accent }}>{parceiro?.nome?.split(' ')[0]}</strong>! 🙌
+          </p>
+        </div>
+
+        <div className="mx-6 mb-5 rounded-2xl p-4 text-left" style={{ background: 'rgba(0,212,170,0.08)', border: `1px solid ${AURORA.border}` }}>
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold mb-0.5" style={{ color: AURORA.text }}>Lead direcionado à esteira comercial</p>
+              <p className="text-xs leading-relaxed" style={{ color: AURORA.textMuted }}>
+                Sua indicação foi encaminhada para a nossa esteira comercial e já está com um especialista de vendas. Acompanhe o andamento pelo seu painel.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 pb-6">
+          <button onClick={() => navigate(`/portal-indicador/${token}`)}
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition"
+            style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <ArrowRight className="w-4 h-4" /> Ir para meu painel
+          </button>
+          <p className="text-[11px] mt-3" style={{ color: AURORA.textMuted }}>
+            Levando você ao seu painel em <strong style={{ color: AURORA.accent }}>{segundos}s</strong>...
+          </p>
+        </div>
       </div>
     </div>
   );

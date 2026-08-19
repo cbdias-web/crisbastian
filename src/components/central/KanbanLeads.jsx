@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User } from 'lucide-react';
+import { Phone, Clock, ArrowRight, User, GripVertical } from 'lucide-react';
 
 const AURORA = {
   bg: '#0d1117',
@@ -84,9 +84,8 @@ export default function KanbanLeads({ conversas, onSelectConversa, onRefresh }) 
                           <div
                             ref={prov.innerRef}
                             {...prov.draggableProps}
-                            {...prov.dragHandleProps}
                             onClick={() => onSelectConversa(conv)}
-                            className="rounded-xl p-3 cursor-grab active:cursor-grabbing transition"
+                            className="rounded-xl p-3 cursor-pointer transition relative"
                             style={{
                               background: snap.isDragging ? AURORA.surface2 : AURORA.surface,
                               border: `1px solid ${snap.isDragging ? col.color : AURORA.border}`,
@@ -94,7 +93,20 @@ export default function KanbanLeads({ conversas, onSelectConversa, onRefresh }) 
                               ...prov.draggableProps.style,
                             }}
                           >
-                            <div className="flex items-start gap-2 mb-1.5">
+                            {/* Handle de arrasto dedicado — separa clique (abre chat) de drag (move coluna) */}
+                            <div
+                              {...prov.dragHandleProps}
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute top-1 right-1 p-1 rounded-md transition"
+                              style={{ color: AURORA.textMuted, cursor: 'grab', touchAction: 'none' }}
+                              title="Arraste para mover entre colunas"
+                              onMouseEnter={e => e.currentTarget.style.color = AURORA.accent}
+                              onMouseLeave={e => e.currentTarget.style.color = AURORA.textMuted}
+                            >
+                              <GripVertical className="w-3.5 h-3.5" />
+                            </div>
+
+                            <div className="flex items-start gap-2 mb-1.5 pr-5">
                               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0"
                                 style={{ background: `${col.color}22`, color: col.color }}>
                                 {conv.lead_nome?.charAt(0).toUpperCase()}
