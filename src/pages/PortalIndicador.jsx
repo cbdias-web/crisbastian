@@ -74,6 +74,7 @@ export default function PortalIndicador() {
   const [showTermo, setShowTermo] = useState(false);
   const [togglingNotif, setTogglingNotif] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showCapa, setShowCapa] = useState(false);
   const [leadSelecionado, setLeadSelecionado] = useState(null);
   const [detalheLead, setDetalheLead] = useState(null);
   const [loadingDetalhe, setLoadingDetalhe] = useState(false);
@@ -90,6 +91,12 @@ export default function PortalIndicador() {
     base44.functions.invoke('portalIndicador', { action: 'buscar', token })
       .then(res => {
         setIndicador(res.data.indicador);
+        // Capa de "Bom retorno" — apenas em retorno real (nova sessão do navegador),
+        // não na navegação dentro do portal (ex.: enviar lead e voltar ao painel).
+        const sessaoKey = `portal_indicador_sessao_${token}`;
+        const jaViuNestaSessao = sessionStorage.getItem(sessaoKey) === '1';
+        if (res.data.indicador?.era_retorno && !jaViuNestaSessao) setShowCapa(true);
+        sessionStorage.setItem(sessaoKey, '1');
       })
       .catch(e => { setErro(e?.response?.data?.error || e?.message || 'Link inválido'); })
       .finally(() => setLoading(false));
@@ -246,6 +253,32 @@ export default function PortalIndicador() {
                 <ArrowRight className="w-4 h-4" /> Começar a indicar
               </button>
               <p className="text-[10px] mt-3" style={{ color: AURORA.textMuted }}>Enviamos também um e-mail de boas-vindas para {indicador.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Capa de "Bom retorno" — apenas em retorno real (nova sessão do navegador) ─── */}
+      {showCapa && indicador?.termo_aceito && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(13,17,23,0.92)' }}>
+          <div className="max-w-md w-full rounded-3xl overflow-hidden text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+            <div style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.12), rgba(0,102,204,0.10))' }}>
+              <img src={WELCOME_IMG} alt="Boas-vindas" className="w-full h-44 object-cover" style={{ mixBlendMode: 'screen' }} />
+            </div>
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+                <PartyPopper className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-xl font-bold mb-1.5" style={{ color: AURORA.text }}>Bom retorno, {indicador.nome.split(' ')[0]}! 👋</h2>
+              <p className="text-sm leading-relaxed mb-1" style={{ color: AURORA.textMuted }}>
+                Que bom te ver de volta no Portal do Indicador. Acompanhe a jornada dos seus leads e cadastre novas indicações a qualquer momento.
+              </p>
+              <p className="text-xs mb-5" style={{ color: AURORA.accent }}>Comissão padrão: <strong>{indicador.percentual_comissao ?? 0}%</strong></p>
+              <button onClick={() => setShowCapa(false)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition"
+                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                <ArrowRight className="w-4 h-4" /> Acessar meu painel
+              </button>
             </div>
           </div>
         </div>
