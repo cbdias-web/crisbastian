@@ -45,11 +45,11 @@ export default function KanbanLeads({ conversas, onSelectConversa, onRefresh }) 
 
   return (
     <DragDropContext onDragStart={(start) => setDraggingId(start.draggableId)} onDragEnd={onDragEnd}>
-      <div className="flex gap-3 overflow-x-auto pb-4" style={{ minHeight: 'calc(100vh - 320px)' }}>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 pb-4" style={{ minHeight: 'calc(100vh - 320px)' }}>
         {COLUNAS.map(col => {
           const items = conversasPorStatus(col.key);
           return (
-            <div key={col.key} className="flex flex-col rounded-2xl flex-shrink-0" style={{ width: '260px', background: col.bg, border: `1px solid ${col.color}33` }}>
+            <div key={col.key} className="flex flex-col rounded-2xl min-w-0" style={{ background: col.bg, border: `1px solid ${col.color}33` }}>
               {/* Header da coluna */}
               <div className="flex items-center justify-between px-3 py-2.5 rounded-t-2xl" style={{ borderBottom: `1px solid ${col.color}33` }}>
                 <div className="flex items-center gap-2">
