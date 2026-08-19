@@ -57,9 +57,11 @@ function Milestone({ icon: Icon, titulo, sub, done, data }) {
 export default function JornadaCliente({ detalhe }) {
   const { lead, contrato, venda, parcelas = [], implantacao } = detalhe;
 
-  const numParcelas = Number(venda?.num_parcelas || contrato?.num_parcelas || 0);
+  const numParcelas = Number(contrato?.num_parcelas || venda?.num_parcelas || 0);
   const parcelado = numParcelas > 1;
-  const valorParcela = Number(venda?.valor || contrato?.valor_parcela || 0);
+  const valorTotal = Number(venda?.valor_total_contrato || contrato?.valor_total || 0);
+  const entrada = Number(venda?.valor || contrato?.valor_adesao || 0);
+  const valorParcela = Number(contrato?.valor_parcela || (numParcelas > 0 && valorTotal ? (valorTotal - entrada) / numParcelas : venda?.valor) || 0);
   const totalParcelasReg = parcelas.length;
   const parcelasRecebidas = parcelas.filter(p => p.status === 'recebida').length;
   const parcelasPendentes = parcelas.filter(p => p.status === 'pendente').length;
@@ -114,11 +116,20 @@ export default function JornadaCliente({ detalhe }) {
           <p className="text-xs font-bold" style={{ color: parcelado ? AURORA.warning : AURORA.text }}>
             {parcelado ? `Parcelado em ${numParcelas}x` : 'Pagamento à vista'}
           </p>
+          {valorTotal > 0 && (
+            <span className="ml-auto text-[11px] font-semibold" style={{ color: AURORA.text }}>
+              Total: {fmtMoeda(valorTotal)}
+            </span>
+          )}
         </div>
         {parcelado ? (
           <>
+            <div className="flex items-center justify-between text-[11px] mb-1.5">
+              <span style={{ color: AURORA.textMuted }}>Entrada</span>
+              <span style={{ color: AURORA.text }}><strong>{fmtMoeda(entrada)}</strong></span>
+            </div>
             <p className="text-[11px] mb-2" style={{ color: AURORA.textMuted }}>
-              {valorParcela ? `${numParcelas}x de ${fmtMoeda(valorParcela)}` : `${numParcelas} parcelas`} · A comissão do indicador é liberada conforme o recebimento de cada parcela.
+              {valorParcela ? `+ ${numParcelas}x de ${fmtMoeda(valorParcela)}` : `+ ${numParcelas} parcelas`} · A comissão do indicador é liberada conforme o recebimento de cada parcela.
             </p>
             {totalParcelasReg > 0 ? (
               <div>
