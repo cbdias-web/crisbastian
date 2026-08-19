@@ -210,8 +210,12 @@ export default function PortalIndicador() {
   const convertidos = leads.filter(l => ['convertido_cliente', 'convertido_contrato', 'convertido_venda'].includes(l.status)).length;
   const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda').length;
   const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
-  const pct = indicador.percentual_comissao ?? 0;
-  const comissaoGerada = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + ((Number(l.valor_venda) || Number(l.valor_estimado) || 0) * pct / 100), 0);
+  const pctPadrao = indicador.percentual_comissao ?? 0;
+  const comissaoGerada = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => {
+    const pctLead = Number(l.comissao_pct ?? pctPadrao);
+    const base = Number(l.valor_venda) || Number(l.valor_estimado) || 0;
+    return s + (base * pctLead / 100);
+  }, 0);
   const vendasConvertidasValor = leads.filter(l => l.status === 'convertido_venda').reduce((s, l) => s + (Number(l.valor_venda) || Number(l.valor_estimado) || 0), 0);
 
   const statusData = [
@@ -443,6 +447,15 @@ export default function PortalIndicador() {
                       <Info label="Valor estimado" value={fmtMoeda(detalheLead.lead.valor_estimado)} />
                       <Info label="Tipo" value={detalheLead.lead.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
                       <Info label="Contato" value={getContato(detalheLead.lead)} />
+                      {(() => {
+                        const pctLead = detalheLead.lead.comissao_pct
+                          ?? (Array.isArray(detalheLead.contrato?.indicadores)
+                            ? (detalheLead.contrato.indicadores.find(i => i.id === indicador.id || i.nome === indicador.nome)?.percentual)
+                            : null)
+                          ?? pctPadrao;
+                        const base = Number(detalheLead.venda?.valor_total_contrato) || Number(detalheLead.venda?.valor) || Number(detalheLead.lead.valor_estimado) || 0;
+                        return <Info label={`Comissão (${Number(pctLead)}%)`} value={fmtMoeda(base * Number(pctLead) / 100)} />;
+                      })()}
                       </div>
 
                       <JornadaCliente detalhe={detalheLead} />

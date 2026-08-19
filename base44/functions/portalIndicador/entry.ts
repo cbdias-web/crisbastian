@@ -90,15 +90,39 @@ export default async function(req: Request): Promise<Response> {
 
     if (action === 'listar') {
       const leads = await base44.asServiceRole.entities.LeadIndicacao.filter({ parceiro_id: ind.id });
-      // Anexa o valor REAL da venda (Venda.valor) para leads convertidos, usado no card "Vendas convertidas"
+      // Anexa o valor REAL da venda (Venda.valor_total_contrato ou Venda.valor) para leads convertidos
       const comVenda = leads.filter((l: any) => l.venda_id);
       if (comVenda.length > 0) {
         try {
           const todasVendas = await base44.asServiceRole.entities.Venda.list('-created_date', 500);
-          const porId: Record<string, number> = {};
-          for (const v of todasVendas) porId[v.id] = Number(v.valor) || 0;
-          for (const l of leads) (l as any).valor_venda = porId[(l as any).venda_id] || 0;
+          const porId: Record<string, any> = {};
+          for (const v of todasVendas) porId[v.id] = { valor: Number(v.valor) || 0, valor_total: Number(v.valor_total_contrato) || 0 };
+          for (const l of leads) {
+            const v = porId[(l as any).venda_id];
+            (l as any).valor_venda = v?.valor || 0;
+            (l as any).valor_total_venda = v?.valor_total || 0;
+          }
         } catch (e) {}
+      }
+      // Anexa o percentual de comissão EFETIVO por lead (válido é o cadastrado no contrato, não o padrão do indicador)
+      const comContrato = leads.filter((l: any) => l.contrato_id);
+      if (comContrato.length > 0) {
+        try {
+          const todosContratos = await base44.asServiceRole.entities.Contrato.list('-created_date', 500);
+          const porId: Record<string, any> = {};
+          for (const c of todosContratos) porId[c.id] = c;
+          for (const l of leads) {
+            const c = porId[(l as any).contrato_id];
+            if (c && Array.isArray(c.indicadores)) {
+              const indEntry = c.indicadores.find((i: any) => i.id === ind.id || i.nome === ind.nome);
+              (l as any).comissao_pct = indEntry ? Number(indEntry.percentual) || 0 : (Number(ind.percentual_comissao) || 0);
+            } else {
+              (l as any).comissao_pct = Number(ind.percentual_comissao) || 0;
+            }
+          }
+        } catch (e) {}
+      } else {
+        for (const l of leads) (l as any).comissao_pct = Number(ind.percentual_comissao) || 0;
       }
       return Response.json({ leads });
     }
