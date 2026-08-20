@@ -85,13 +85,22 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
   const converterCliente = async (lead) => {
     setConvertendo('cliente');
     try {
+      const isPF = lead.tipo === 'PF';
       const cliente = await base44.entities.Cliente.create({
         nome: getNome(lead),
         cpf_cnpj: getDoc(lead),
-        email: lead.tipo === 'PF' ? lead.pf_email : lead.pj_email,
+        email: isPF ? lead.pf_email : lead.pj_email,
         telefone: getContato(lead),
-        cidade: lead.tipo === 'PF' ? lead.pf_cidade : lead.pj_cidade,
-        estado: lead.tipo === 'PF' ? lead.pf_estado : lead.pj_estado,
+        responsavel_legal: !isPF ? lead.pj_nome_responsavel : '',
+        cpf_responsavel: !isPF ? lead.pj_cpf_responsavel : '',
+        nascimento: isPF ? lead.pf_nascimento : null,
+        nacionalidade: isPF ? lead.pf_nacionalidade : '',
+        profissao: isPF ? lead.pf_profissao : '',
+        cep: isPF ? lead.pf_cep : lead.pj_cep,
+        endereco: isPF ? lead.pf_endereco : lead.pj_endereco,
+        bairro: isPF ? lead.pf_bairro : lead.pj_bairro,
+        cidade: isPF ? lead.pf_cidade : lead.pj_cidade,
+        estado: isPF ? lead.pf_estado : lead.pj_estado,
         origem: 'lead',
         lead_id: lead.id,
         subcarteira: lead.parceiro_nome,

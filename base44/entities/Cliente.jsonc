@@ -18,6 +18,43 @@
       "type": "string",
       "description": "Telefone de contato"
     },
+    "responsavel_legal": {
+      "type": "string",
+      "description": "Nome do respons\u00e1vel legal (PJ)"
+    },
+    "cpf_responsavel": {
+      "type": "string",
+      "description": "CPF do respons\u00e1vel legal (PJ)"
+    },
+    "nascimento": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de nascimento (PF)"
+    },
+    "nacionalidade": {
+      "type": "string",
+      "description": "Nacionalidade (PF)"
+    },
+    "profissao": {
+      "type": "string",
+      "description": "Profiss\u00e3o (PF)"
+    },
+    "estado_civil": {
+      "type": "string",
+      "description": "Estado civil (PF)"
+    },
+    "cep": {
+      "type": "string",
+      "description": "CEP do endere\u00e7o"
+    },
+    "endereco": {
+      "type": "string",
+      "description": "Logradouro (rua, n\u00famero, complemento)"
+    },
+    "bairro": {
+      "type": "string",
+      "description": "Bairro"
+    },
     "cidade": {
       "type": "string",
       "description": "Cidade"

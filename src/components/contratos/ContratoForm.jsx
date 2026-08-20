@@ -66,8 +66,17 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       ...EMPTY,
       nome: clientePreSelecionado.nome || '',
       cpf_cnpj: clientePreSelecionado.cpf_cnpj || '',
+      responsavel_legal: clientePreSelecionado.responsavel_legal || '',
+      cpf_responsavel: clientePreSelecionado.cpf_responsavel || '',
+      nascimento: clientePreSelecionado.nascimento || '',
+      nacionalidade: clientePreSelecionado.nacionalidade || '',
+      profissao: clientePreSelecionado.profissao || '',
+      estado_civil: clientePreSelecionado.estado_civil || '',
       email: clientePreSelecionado.email || '',
       telefone: clientePreSelecionado.telefone || '',
+      cep: clientePreSelecionado.cep || '',
+      endereco: clientePreSelecionado.endereco || '',
+      bairro: clientePreSelecionado.bairro || '',
       cidade: clientePreSelecionado.cidade || '',
       estado: clientePreSelecionado.estado || '',
       cliente_id: clientePreSelecionado.id || '',
@@ -289,8 +298,13 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   const selecionarCliente = (c) => {
     setForm(f => ({
       ...f,
-      nome: c.nome || '', cpf_cnpj: c.cpf_cnpj || '', email: c.email || '',
-      telefone: c.telefone || '', cidade: c.cidade || '', estado: c.estado || '', cliente_id: c.id,
+      nome: c.nome || '', cpf_cnpj: c.cpf_cnpj || '',
+      responsavel_legal: c.responsavel_legal || '', cpf_responsavel: c.cpf_responsavel || '',
+      nascimento: c.nascimento || '', nacionalidade: c.nacionalidade || '',
+      profissao: c.profissao || '', estado_civil: c.estado_civil || '',
+      email: c.email || '', telefone: c.telefone || '',
+      cep: c.cep || '', endereco: c.endereco || '', bairro: c.bairro || '',
+      cidade: c.cidade || '', estado: c.estado || '', cliente_id: c.id,
     }));
     setBuscaCliente(c.nome);
     setShowBusca(false);
