@@ -75,33 +75,45 @@ export default async function(req: Request): Promise<Response> {
       convite_enviado_por: user.email,
     });
 
-    // E-mail personalizado em português, nominal (saudação pelo nome do indicador).
+    // E-mail de boas-vindas em HTML (mesmo template do enviarBoasVindasIndicador).
     // Envio best-effort: o convite nativo (criação da conta) já foi disparado acima.
     let emailPersonalizado = false;
     try {
-      const primeiroNome = (ind.nome || '').trim().split(/\s+/)[0] || 'indicador';
-      const assunto = 'Convite · Portal do Indicador · Villela Exchange';
-      const corpo = [
-        `Olá, ${primeiroNome}!`,
-        '',
-        'Você foi cadastrado como Indicador(a) da Villela Exchange. Seja muito bem-vindo(a)!',
-        '',
-        'Acesse seu Portal do Indicador para acompanhar suas indicações, comissões e o status dos seus leads em tempo real:',
-        portalUrl,
-        '',
-        `Seu acesso está vinculado ao e-mail ${email}. Para definir sua senha e entrar no sistema, use o link "Esqueci minha senha" na tela de login — ou aproveite o link acima, que dá acesso direto ao portal.`,
-        '',
-        'Qualquer dúvida, estamos à disposição.',
-        '',
-        'Abraço,',
-        'Equipe Villela Exchange',
-      ].join('\n');
+      const nome = ind.nome || 'indicador';
+      const html = `
+        <div style="font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 0 auto;">
+          <div style="background: #0d1b33; padding: 28px 24px; border-radius: 14px 14px 0 0; text-align: center;">
+            <h1 style="color: #00f5b4; margin: 0; font-size: 22px; font-weight: 700;">Bem-vindo ao Portal do Indicador 🎉</h1>
+            <p style="color: #ffffff; margin: 8px 0 0; font-size: 14px; letter-spacing: 0.5px;">Villela Exchange</p>
+          </div>
+          <div style="background: #f9f9f9; padding: 28px 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 14px 14px;">
+            <p style="color: #1f2937; font-size: 15px; margin: 0 0 16px;">Olá, <strong>${nome}</strong>!</p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">Você foi cadastrado como Indicador(a) da Villela Exchange. Seja muito bem-vindo(a)!</p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">
+              Para ativar seu acesso, acesse o portal e homologue seu token aceitando o <strong>Termo de Uso (v1.0)</strong>.
+            </p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">
+              Agora você pode cadastrar novas indicações e acompanhar o status de cada lead em tempo real, direto pelo seu portal.
+            </p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 22px;">
+              Você receberá notificações por e-mail sempre que houver movimentações nos seus leads.
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+              <a href="${portalUrl}" style="display: inline-block; background: #00f5b4; color: #0d1b33; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Acessar Portal do Indicador</a>
+            </div>
+            <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 16px 0 0; text-align: center;">
+              Seu acesso está vinculado ao e-mail ${email}. Para entrar no sistema, use este e-mail e defina sua senha pelo link "Esqueci minha senha" na tela de login.
+            </p>
+            <p style="color: #a0a0a0; font-size: 11px; text-align: center; margin: 22px 0 0;">Villela Exchange – Portal do Indicador</p>
+          </div>
+        </div>
+      `;
 
       await base44.integrations.Core.SendEmail({
         to: email,
-        subject: assunto,
-        body: corpo,
-        from_name: 'Villela Exchange',
+        subject: 'Bem-vindo ao Portal do Indicador · Villela Exchange',
+        body: html,
+        from_name: 'Villela Exchange – Indicadores',
       });
       emailPersonalizado = true;
     } catch (e) {
