@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2 } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -296,6 +296,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
           <div className="grid grid-cols-2 gap-3">
             <InfoRow icon={User} label="Vendedor" value={form.vendedor_nome} />
             <InfoRow icon={User} label="Responsável" value={form.responsavel_implantacao || 'Não definido'} editable={editing} onChange={v => setForm(f => ({ ...f, responsavel_implantacao: v }))} />
+            <InfoRow icon={Crown} label="Padrinho" value={form.padrinho_nome || 'Não definido'} />
             <InfoRow icon={Calendar} label="Entrada" value={fmtDate(form.data_entrada)} />
             <InfoRow icon={Calendar} label="Prev. Conclusão" value={fmtDate(form.data_prevista_conclusao)} editable={editing} type="date" onChange={v => setForm(f => ({ ...f, data_prevista_conclusao: v }))} />
             <InfoRow icon={Calendar} label="Conclusão" value={fmtDate(form.data_conclusao)} />

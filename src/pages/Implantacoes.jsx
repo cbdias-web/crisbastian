@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, Link2, FileWarning } from 'lucide-react';
+import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, Link2, FileWarning, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ImplantacaoModal from '@/components/implantacoes/ImplantacaoModal';
 import KanbanImplantacoes from '@/components/implantacoes/KanbanImplantacoes';
+import PadrinhosModal from '@/components/implantacoes/PadrinhosModal';
 
 const AURORA = {
   bg: '#0d1117',
@@ -47,6 +48,7 @@ export default function Implantacoes() {
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [implantacaoAtiva, setImplantacaoAtiva] = useState(null);
   const [gerandoPDF, setGerandoPDF] = useState(false);
+  const [showPadrinhos, setShowPadrinhos] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -60,6 +62,16 @@ export default function Implantacoes() {
     queryFn: () => base44.entities.Implantacao.list('-data_entrada', 500),
     enabled: !!user,
     refetchInterval: 30000,
+  });
+
+  const { data: meusProdutosPadrinho = [] } = useQuery({
+    queryKey: ['meus-produtos-padrinho', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      const ps = await base44.entities.PadrinhoProduto.filter({ user_email: user.email, ativo: true });
+      return ps.map(p => p.produto);
+    },
+    enabled: !!user?.email,
   });
 
   const produtosDisponiveis = [...new Set(implantacoes.map(i => i.produto).filter(Boolean))].sort();
@@ -135,6 +147,14 @@ export default function Implantacoes() {
             <h1 className="text-2xl font-bold" style={{ color: AURORA.text }}>Implantações</h1>
             <p className="text-sm mt-0.5" style={{ color: AURORA.textMuted }}>Acompanhe o status de implantação de produtos e contratos vendidos</p>
           </div>
+          {isAdmin && (
+            <button onClick={() => setShowPadrinhos(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition flex-shrink-0"
+              style={{ background: 'rgba(168,85,247,0.12)', color: '#a78bfa', border: '1px solid rgba(168,85,247,0.3)' }}>
+              <Crown className="w-3.5 h-3.5" />
+              Padrinhos
+            </button>
+          )}
           {isAdmin && (
             <button onClick={gerarRelatorioPDF} disabled={gerandoPDF}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition flex-shrink-0"
@@ -223,12 +243,14 @@ export default function Implantacoes() {
       {implantacaoAtiva && (
         <ImplantacaoModal
           implantacao={implantacaoAtiva}
-          isAdmin={isAdmin}
+          isAdmin={isAdmin || meusProdutosPadrinho.includes(implantacaoAtiva.produto)}
           user={user}
           onClose={() => setImplantacaoAtiva(null)}
           onUpdate={handleUpdate}
         />
       )}
+
+      {showPadrinhos && <PadrinhosModal onClose={() => setShowPadrinhos(false)} />}
     </div>
   );
 }

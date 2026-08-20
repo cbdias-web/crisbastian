@@ -69,6 +69,23 @@ Deno.serve(async (req) => {
       { fase: 'Treinamento & Handover', descricao: 'Apresentação do suporte pós-venda', concluida: false, concluida_em: '' },
     ];
 
+    // Padrinho do produto (responsável pela gestão da implantação)
+    let padrinhoId = '';
+    let padrinhoNome = '';
+    let padrinhoEmail = '';
+    if (venda.produto) {
+      try {
+        const padrinhos = await base44.asServiceRole.entities.PadrinhoProduto.filter({ produto: venda.produto, ativo: true });
+        if (padrinhos.length > 0) {
+          padrinhoId = padrinhos[0].user_id || '';
+          padrinhoNome = padrinhos[0].user_nome || '';
+          padrinhoEmail = padrinhos[0].user_email || '';
+        }
+      } catch (e) {
+        console.log('Erro ao buscar padrinho:', e.message);
+      }
+    }
+
     const observacaoHistorico = contratoEncontrado
       ? `Implantação criada automaticamente via formalização de venda. Contrato vinculado: ${contratoVinculado.tipo || '—'}`
       : 'Implantação criada automaticamente via formalização de venda. Contrato não localizado no sistema — aguardando anexamento manual.';
@@ -82,6 +99,9 @@ Deno.serve(async (req) => {
       produto: venda.produto || '',
       vendedor_id: venda.vendedor_id || '',
       vendedor_nome: venda.assessor_comercial || '',
+      padrinho_id: padrinhoId,
+      padrinho_nome: padrinhoNome,
+      padrinho_email: padrinhoEmail,
       valor_contrato: venda.valor_total_contrato || venda.valor || 0,
       data_entrada: venda.data || new Date().toISOString().split('T')[0],
       status: 'aguardando_documentacao',

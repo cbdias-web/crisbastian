@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
-import { User, Calendar, Link2, FileWarning, Clock, AlertTriangle } from 'lucide-react';
+import { User, Calendar, Link2, FileWarning, Clock, AlertTriangle, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 
 const AURORA = {
@@ -173,6 +173,14 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
                                   <User className="w-2.5 h-2.5 flex-shrink-0" style={{ color: AURORA.textMuted }} />
                                   <p className="text-[10px] truncate" style={{ color: AURORA.textMuted }}>
                                     {imp.responsavel_implantacao || imp.vendedor_nome}
+                                  </p>
+                                </div>
+                              )}
+                              {imp.padrinho_nome && (
+                                <div className="flex items-center gap-1 mb-1.5">
+                                  <Crown className="w-2.5 h-2.5 flex-shrink-0" style={{ color: '#a78bfa' }} />
+                                  <p className="text-[10px] truncate" style={{ color: '#a78bfa' }}>
+                                    {imp.padrinho_nome}
                                   </p>
                                 </div>
                               )}

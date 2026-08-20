@@ -1,0 +1,42 @@
+{
+  "name": "PadrinhoProduto",
+  "type": "object",
+  "properties": {
+    "produto": {
+      "type": "string",
+      "enum": [
+        "CONTA GLOBAL",
+        "CONTA INTERNACIONAL",
+        "DOLARIZE",
+        "ROF",
+        "CANAL BANC\u00c1RIO",
+        "OFFSHORE",
+        "GARANTIAS",
+        "HORA T\u00c9CNICA",
+        "RATING"
+      ],
+      "description": "Produto sob responsabilidade do padrinho (gest\u00e3o da implanta\u00e7\u00e3o)"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio padrinho"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "E-mail do padrinho (para notifica\u00e7\u00f5es Jarvis e e-mail)"
+    },
+    "user_nome": {
+      "type": "string",
+      "description": "Nome do padrinho"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "V\u00ednculo ativo (um padrinho ativo por produto)"
+    }
+  },
+  "required": [
+    "produto",
+    "user_email"
+  ]
+}

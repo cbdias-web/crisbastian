@@ -40,6 +40,23 @@ Deno.serve(async (req) => {
       if (vendedorUser) destinatarios.push(vendedorUser);
     }
 
+    // Padrinho do produto (responsável pela gestão da implantação do produto)
+    let padrinhoNome = implantacao.padrinho_nome || '';
+    let padrinhoEmail = implantacao.padrinho_email || '';
+    if (!padrinhoEmail && implantacao.produto) {
+      try {
+        const padrinhos = await base44.asServiceRole.entities.PadrinhoProduto.filter({ produto: implantacao.produto, ativo: true });
+        if (padrinhos.length > 0) {
+          padrinhoNome = padrinhos[0].user_nome || '';
+          padrinhoEmail = padrinhos[0].user_email || '';
+        }
+      } catch (e) {}
+    }
+    if (padrinhoEmail && !destinatarios.find(d => d.email?.toLowerCase() === padrinhoEmail.toLowerCase())) {
+      const padrinhoUser = usuarios.find(u => u.email?.toLowerCase() === padrinhoEmail.toLowerCase());
+      if (padrinhoUser) destinatarios.push(padrinhoUser);
+    }
+
     if (destinatarios.length === 0) {
       return Response.json({ ok: true, notificados: 0 });
     }
@@ -61,6 +78,7 @@ Deno.serve(async (req) => {
       `**Produto:** ${produto}\n` +
       `**Vendedor:** ${vendedor}\n` +
       `**Responsável:** ${responsavel}\n` +
+      `**Padrinho:** ${padrinhoNome || 'Não definido'}\n` +
       `**Valor:** ${valor}\n` +
       `**Status:** ${statusLabel}\n`;
 
@@ -107,6 +125,7 @@ Deno.serve(async (req) => {
                 <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Produto</td><td style="padding: 10px 14px; color: #111827;">${produto}</td></tr>
                 <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Vendedor</td><td style="padding: 10px 14px; color: #111827;">${vendedor}</td></tr>
                 <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Responsável</td><td style="padding: 10px 14px; color: #111827;">${responsavel}</td></tr>
+                <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Padrinho</td><td style="padding: 10px 14px; color: #111827;">${padrinhoNome || 'Não definido'}</td></tr>
                 <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Valor</td><td style="padding: 10px 14px; color: #0066cc; font-weight: 700;">${valor}</td></tr>
                 <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Status</td><td style="padding: 10px 14px; color: #00D4AA; font-weight: 700;">${statusLabel}</td></tr>
               </table>
