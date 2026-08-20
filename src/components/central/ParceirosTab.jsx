@@ -90,9 +90,13 @@ export default function ParceirosTab() {
     setEnviandoConvite(p.id);
     try {
       const res = await base44.functions.invoke('convidarIndicador', { indicador_id: p.id, app_origin: window.location.origin });
-      toast.success(`Convite enviado para ${res.enviado_para}`);
+      toast.success(`Convite enviado para ${res.enviado_para}${res.usuario_existia ? ' (usuário já cadastrado — convite reenviado)' : ''}`);
       queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
-    } catch (e) { toast.error('Erro: ' + e.message); }
+    } catch (e) {
+      // Extrai a mensagem real devolvida pelo backend (o SDK às vezes esconde o body)
+      const detalhe = e?.response?.data?.error || e?.data?.error || e?.message || 'Erro desconhecido';
+      toast.error('Erro ao enviar convite: ' + detalhe);
+    }
     setEnviandoConvite(null);
   };
 
