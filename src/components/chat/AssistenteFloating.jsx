@@ -321,9 +321,19 @@ export default function AssistenteFloating() {
   const unsubscribeRef = useRef(null);
 
   useEffect(() => {
-    base44.auth.me().then(u => {
+    base44.auth.me().then(async (u) => {
       setUserName(u?.nome_tratamento || u?.full_name || u?.email || '');
-      setIsIndicador(u?.role === 'indicador' || u?.indicador === true);
+      // Detecção robusta de Indicador: role/flag podem não estar setados antes do
+      // aceite do convite — casamento por e-mail com a entidade Parceiro garante o
+      // perfil correto (mesma lógica do Layout e do DashParceiro).
+      let indic = u?.role === 'indicador' || u?.indicador === true;
+      if (!indic && u?.email) {
+        try {
+          const ps = await base44.entities.Parceiro.filter({ email: u.email });
+          if (ps.length > 0 && ps[0].ativo !== false) indic = true;
+        } catch (e) {}
+      }
+      setIsIndicador(indic);
       setUserLoaded(true);
     }).catch(() => setUserLoaded(true));
   }, []);

@@ -143,7 +143,7 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
     <div className="min-h-screen p-4 md:p-6" style={{ background: AURORA.bg, color: AURORA.text }}>
       {/* ─── Overlay de boas-vindas (após aceite do termo) ─── */}
       {showWelcome && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-6" style={{ background: 'rgba(13,17,23,0.92)' }}>
+        <div className="fixed left-0 right-0 bottom-0 z-[80] flex items-center justify-center p-6" style={{ top: '140px', background: 'rgba(13,17,23,0.92)' }}>
           <div className="max-w-md w-full rounded-3xl overflow-hidden text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
             <div className="p-6">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
