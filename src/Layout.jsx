@@ -483,7 +483,8 @@ export default function Layout({ children, currentPageName }) {
         </div>
       )}
 
-      {/* ═══ TOP NAVIGATION BAR ═══ */}
+      {/* ═══ TOP NAVIGATION BAR ═══ (oculto para indicadores — usam o cabeçalho próprio do PortalIndicadorAuth) */}
+      {!isIndicador && (
       <header
         className="fixed left-0 right-0 z-50 flex flex-col"
         style={{
@@ -671,9 +672,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
       </header>
+      )}
 
       {/* ═══ MOBILE FULL-SCREEN MENU ═══ */}
-      {isMobile && mobileMenuOpen && (
+      {!isIndicador && isMobile && mobileMenuOpen && (
         <div className="fixed inset-0 z-[60] flex flex-col"
           style={{ background: 'rgba(13,17,23,0.98)', paddingTop: '60px' }}>
           <nav className="flex-1 overflow-y-auto px-4 py-4">
@@ -736,9 +738,11 @@ export default function Layout({ children, currentPageName }) {
         style={{
           position: 'relative',
           zIndex: 1,
-          paddingTop: impersonating
-            ? (isMobile ? '150px' : '116px')
-            : (isMobile ? '110px' : '116px'),
+          paddingTop: isIndicador
+            ? '0px'
+            : (impersonating
+              ? (isMobile ? '150px' : '116px')
+              : (isMobile ? '110px' : '116px')),
           minHeight: '100vh',
           background: 'transparent',
         }}

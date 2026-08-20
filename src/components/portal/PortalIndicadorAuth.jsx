@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, LayoutDashboard,
-  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake,
+  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import NovaIndicacaoModal from '@/components/central/NovaIndicacaoModal';
@@ -179,9 +179,16 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
               Olá, <strong style={{ color: AURORA.accent }}>{indicador.nome}</strong> — cadastro formalizado · comissão <strong>{indicador.percentual_comissao ?? 0}%</strong>
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-            <UserCircle className="w-4 h-4" style={{ color: AURORA.accent }} />
-            <span className="text-xs" style={{ color: AURORA.textMuted }}>{indicador.email}</span>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+              <UserCircle className="w-4 h-4" style={{ color: AURORA.accent }} />
+              <span className="text-xs" style={{ color: AURORA.textMuted }}>{indicador.email}</span>
+            </div>
+            <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
+              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
+              title="Sair">
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
