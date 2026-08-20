@@ -137,6 +137,12 @@ export default function CentralLeads() {
     toast.success(`${v.nome} ${v.ativo_central_leads === false ? 'habilitado' : 'removido'} da esteira de leads`);
   };
 
+  const toggleRecebeLeadsIndicacao = async (v) => {
+    await base44.entities.Vendedor.update(v.id, { recebe_leads_indicacao: v.recebe_leads_indicacao === false ? true : false });
+    queryClient.invalidateQueries({ queryKey: ['vendedores-central'] });
+    toast.success(`${v.nome} ${v.recebe_leads_indicacao === false ? 'habilitado' : 'removido'} da roleta de leads do Portal`);
+  };
+
   const agora = new Date();
   const statusMap = {};
   for (const s of statusGerentes) statusMap[s.vendedor_id] = s;
@@ -287,13 +293,14 @@ export default function CentralLeads() {
               <p className="text-center py-8 text-sm" style={{ color: AURORA.textMuted }}>Nenhum gerente ativo encontrado</p>
             ) : (
               <div>
-                <div className="grid px-5 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted, gridTemplateColumns: '2fr 1.8fr 0.7fr 0.7fr 1fr', borderBottom: `1px solid ${AURORA.border}` }}>
-                  <span>Gerente</span><span>Status da agenda</span><span>Leads ativos</span><span>Alertas SLA</span><span>Esteira de leads</span>
+                <div className="grid px-5 py-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted, gridTemplateColumns: '2fr 1.8fr 0.7fr 0.7fr 1fr 1fr', borderBottom: `1px solid ${AURORA.border}` }}>
+                  <span>Gerente</span><span>Status da agenda</span><span>Leads ativos</span><span>Alertas SLA</span><span>Esteira de leads</span><span>Leads do Portal</span>
                 </div>
                 {gerentesInfo.map(v => {
-                  const naEsteira = v.ativo_central_leads !== false;
-                  return (
-                  <div key={v.id} className="grid px-5 py-4 items-center" style={{ gridTemplateColumns: '2fr 1.8fr 0.7fr 0.7fr 1fr', borderBottom: `1px solid ${AURORA.border}`, opacity: naEsteira ? 1 : 0.6 }}>
+                   const naEsteira = v.ativo_central_leads !== false;
+                   const recebePortal = v.recebe_leads_indicacao !== false;
+                   return (
+                   <div key={v.id} className="grid px-5 py-4 items-center" style={{ gridTemplateColumns: '2fr 1.8fr 0.7fr 0.7fr 1fr 1fr', borderBottom: `1px solid ${AURORA.border}`, opacity: naEsteira ? 1 : 0.6 }}>
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                         style={{ background: 'linear-gradient(135deg,rgba(0,212,170,0.2),rgba(0,102,204,0.2))', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
@@ -338,6 +345,17 @@ export default function CentralLeads() {
                           border: `1px solid ${naEsteira ? 'rgba(0,212,170,0.3)' : 'rgba(239,68,68,0.3)'}`,
                         }}>
                         {naEsteira ? '✅ Na esteira' : '⛔ Fora da esteira'}
+                      </button>
+                    </div>
+                    <div className="flex justify-center">
+                      <button onClick={() => toggleRecebeLeadsIndicacao(v)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                        style={{
+                          background: recebePortal ? 'rgba(0,212,170,0.12)' : 'rgba(239,68,68,0.12)',
+                          color: recebePortal ? '#00D4AA' : '#f87171',
+                          border: `1px solid ${recebePortal ? 'rgba(0,212,170,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                        }}>
+                        {recebePortal ? '✅ Recebe' : '⛔ Não recebe'}
                       </button>
                     </div>
                   </div>

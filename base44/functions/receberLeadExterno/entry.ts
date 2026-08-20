@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
 
 // Período comercial: 08:00 às 18:00 horário de Brasília (UTC-3), seg-sex
 function isHorarioComercial() {
@@ -50,10 +51,8 @@ Deno.serve(async (req) => {
   // Se nenhum disponível, usar todos da esteira (fallback)
   const pool = disponiveis.length > 0 ? disponiveis : vendedores;
 
-  // Round-robin pelo total de conversas
-  const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 9999);
-  const indice = todasConversas.length % pool.length;
-  const vendedor = pool[indice];
+  // Roleta justa: um lead por gerente, obedecendo a sequência (quem há mais tempo não recebe)
+  const vendedor = await proximoDaRoleta(base44, pool);
 
   // Criar o lead
   const lead = await base44.asServiceRole.entities.Lead.create({
@@ -106,6 +105,5 @@ Deno.serve(async (req) => {
     conversa_id: conversa.id,
     vendedor_atribuido: vendedor.nome,
     horario_comercial: isHorarioComercial(),
-    indice_roleta: indice,
   });
 });

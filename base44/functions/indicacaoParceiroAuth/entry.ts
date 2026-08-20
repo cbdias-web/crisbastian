@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
 
 // Cria uma indicação a partir do painel autenticado do indicador.
 // Localiza o parceiro pelo e-mail do usuário logado (não exige link_token).
@@ -75,7 +76,7 @@ export default async function(req: Request): Promise<Response> {
         const obsLead = ['Indicação de ' + parceiro.nome, valorTxt, resumoTxt].filter(Boolean).join(' · ');
 
         const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
-        const vendedores = todosVendedores.filter(v => v.ativo_central_leads !== false);
+        const vendedores = todosVendedores.filter(v => v.recebe_leads_indicacao !== false);
 
         if (vendedores.length > 0) {
           const agora = new Date();
@@ -93,10 +94,8 @@ export default async function(req: Request): Promise<Response> {
           });
           const pool = disponiveis.length > 0 ? disponiveis : vendedores;
 
-          const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 9999);
-          const indice = todasConversas.length % pool.length;
-          const vendedor = pool[indice];
-          vendedor_atribuido = vendedor.nome;
+          const vendedor = await proximoDaRoleta(base44, pool);
+          vendedor_atribuido = vendedor?.nome || null;
 
           const leadCentral = await base44.asServiceRole.entities.Lead.create({
             nome: nomeLead,
