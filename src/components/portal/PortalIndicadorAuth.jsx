@@ -77,11 +77,18 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
   const aceitarTermo = async () => {
     setAceitando(true);
     try {
-      // Reusa a mesma função do portal público (valida token, marca termo, dispara e-mail de boas-vindas)
-      await base44.functions.invoke('portalIndicador', { action: 'aceitar_termo', token: parceiro.link_token, versao: '1.0' });
-      setIndicador({ ...parceiro, termo_aceito: true, termo_aceito_em: new Date().toISOString() });
+      // 1) Marca o termo como aceito DIRETAMENTE via SDK (instantâneo — não bloqueia em e-mail).
+      const agora = new Date().toISOString();
+      await base44.entities.Parceiro.update(parceiro.id, {
+        termo_aceito: true,
+        termo_aceito_em: agora,
+        termo_versao: '1.0',
+      });
+      setIndicador({ ...parceiro, termo_aceito: true, termo_aceito_em: agora });
       setShowWelcome(true);
       toast.success('Termo aceito! Bem-vindo ao portal.');
+      // 2) Dispara o e-mail de boas-vindas em BACKGROUND (fire-and-forget) — não trava a UI.
+      base44.functions.invoke('enviarBoasVindasIndicador', {}).catch(() => {});
     } catch (e) { toast.error('Erro: ' + (e?.message || 'não foi possível aceitar o termo')); }
     setAceitando(false);
   };

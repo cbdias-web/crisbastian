@@ -47,7 +47,17 @@ export default function DashParceiro() {
     enabled: !!user && isAdmin,
   });
 
-  if (user && checked && !isAdmin && !isIndicador) {
+  // Gateia até user + parceiroLogado estarem resolvidos (evita flash de "Acesso Restrito"
+  // ou "Cadastro não encontrado" antes do filtro assíncrono concluir).
+  if (!user || !checked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: AURORA.bg }}>
+        <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: 'rgba(0,212,170,0.2)', borderTopColor: AURORA.accent }} />
+      </div>
+    );
+  }
+
+  if (!isAdmin && !isIndicador) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
         <div className="text-center max-w-sm">
