@@ -41,9 +41,9 @@ const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '‚Ä
 export default function Implantacoes() {
   const [user, setUser] = useState(null);
   const [busca, setBusca] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('Todos');
   const [filtroProduto, setFiltroProduto] = useState('Todos');
   const [filtroVendedor, setFiltroVendedor] = useState('Todos');
+  const [filtroPadrinho, setFiltroPadrinho] = useState('Todos');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [implantacaoAtiva, setImplantacaoAtiva] = useState(null);
@@ -76,16 +76,17 @@ export default function Implantacoes() {
 
   const produtosDisponiveis = [...new Set(implantacoes.map(i => i.produto).filter(Boolean))].sort();
   const vendedoresDisponiveis = [...new Set(implantacoes.map(i => i.vendedor_nome).filter(Boolean))].sort();
+  const padrinhosDisponiveis = [...new Set(implantacoes.map(i => i.padrinho_nome).filter(Boolean))].sort();
 
   const filtradas = implantacoes.filter(imp => {
     const matchBusca = !busca || imp.cliente_nome?.toLowerCase().includes(busca.toLowerCase()) || imp.cpf_cnpj?.includes(busca) || imp.produto?.toLowerCase().includes(busca.toLowerCase());
-    const matchStatus = filtroStatus === 'Todos' || imp.status === filtroStatus;
     const matchProduto = filtroProduto === 'Todos' || imp.produto === filtroProduto;
     const matchVendedor = filtroVendedor === 'Todos' || imp.vendedor_nome === filtroVendedor;
+    const matchPadrinho = filtroPadrinho === 'Todos' || imp.padrinho_nome === filtroPadrinho;
     const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
     const matchDataIni = !filtroDataInicio || dataRef >= filtroDataInicio;
     const matchDataFim = !filtroDataFim || dataRef <= filtroDataFim;
-    return matchBusca && matchStatus && matchProduto && matchVendedor && matchDataIni && matchDataFim;
+    return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchDataIni && matchDataFim;
   });
 
   const total = filtradas.length;
@@ -104,7 +105,7 @@ export default function Implantacoes() {
         dataInicio: filtroDataInicio || null,
         dataFim: filtroDataFim || null,
         produtoFiltro: filtroProduto !== 'Todos' ? filtroProduto : null,
-        statusFiltro: filtroStatus !== 'Todos' ? filtroStatus : null,
+        statusFiltro: null,
       });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -200,10 +201,10 @@ export default function Implantacoes() {
             <option value="Todos">Todos os gerentes</option>
             {vendedoresDisponiveis.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
-          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+          <select value={filtroPadrinho} onChange={e => setFiltroPadrinho(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-            <option value="Todos">Todos os status</option>
-            {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+            <option value="Todos">Todos os padrinhos</option>
+            {padrinhosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Per√≠odo:</span>
