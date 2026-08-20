@@ -193,6 +193,23 @@ const POST_SUGGESTIONS = [
   'Agenda de prospecção de hoje',
 ];
 
+// Sugestões voltadas ao perfil do INDICADOR (portal do parceiro)
+const SUGGESTIONS_INDICADOR = [
+  'Como funciona minha comissão de indicação?',
+  'Como indicar um novo lead?',
+  'Qual o status das minhas indicações?',
+  'Quais produtos posso indicar?',
+];
+
+const POST_SUGGESTIONS_INDICADOR = [
+  'Quanto já ganhei em comissões?',
+  'Quais das minhas indicações viraram venda?',
+  'Como acompanhar o andamento de um lead?',
+  'Quais produtos têm maior comissão?',
+  'Como funciona o espelhamento da minha indicação?',
+  'Preciso de ajuda — falar com o suporte',
+];
+
 function recordActivity() {
   localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
 }
@@ -296,6 +313,7 @@ export default function AssistenteFloating() {
   const [mensagensPendentes, setMensagensPendentes] = useState([]);
   const [showPostSuggestions, setShowPostSuggestions] = useState(false);
   const [postSuggestions, setPostSuggestions] = useState([]);
+  const [isIndicador, setIsIndicador] = useState(false);
   // unreadChatCount removido — badge do chat interno fica só no menu lateral
   const inactivityTimerRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -305,6 +323,7 @@ export default function AssistenteFloating() {
   useEffect(() => {
     base44.auth.me().then(u => {
       setUserName(u?.nome_tratamento || u?.full_name || u?.email || '');
+      setIsIndicador(u?.role === 'indicador' || u?.indicador === true);
       setUserLoaded(true);
     }).catch(() => setUserLoaded(true));
   }, []);
@@ -438,7 +457,8 @@ export default function AssistenteFloating() {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
     setShowPostSuggestions(false);
     inactivityTimerRef.current = setTimeout(() => {
-      const shuffled = [...POST_SUGGESTIONS].sort(() => Math.random() - 0.5).slice(0, 3);
+      const base = isIndicador ? POST_SUGGESTIONS_INDICADOR : POST_SUGGESTIONS;
+      const shuffled = [...base].sort(() => Math.random() - 0.5).slice(0, 3);
       setPostSuggestions(shuffled);
       setShowPostSuggestions(true);
     }, INACTIVITY_SUGGESTIONS_MS);
@@ -639,9 +659,13 @@ export default function AssistenteFloating() {
             {messages.length === 0 && !sending && mensagensPendentes.length === 0 && (
               <div className="flex flex-col items-center text-center pt-4 pb-2">
                 <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>Olá! Sou o Jarvis 👋</p>
-                <p className="text-xs mt-1 mb-4" style={{ color: 'rgba(230,237,243,0.55)' }}>Acesso a treinamentos, produtos, clientes e muito mais — além da web.</p>
+                <p className="text-xs mt-1 mb-4" style={{ color: 'rgba(230,237,243,0.55)' }}>
+                  {isIndicador
+                    ? 'Acesso às suas indicações, comissões e produtos — além da web.'
+                    : 'Acesso a treinamentos, produtos, clientes e muito mais — além da web.'}
+                </p>
                 <div className="flex flex-col gap-1.5 w-full">
-                  {SUGGESTIONS.map(s => (
+                  {(isIndicador ? SUGGESTIONS_INDICADOR : SUGGESTIONS).map(s => (
                     <button key={s} onClick={() => send(s)}
                       className="text-left text-xs px-3 py-2 rounded-xl transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.75)' }}>
                       {s}
