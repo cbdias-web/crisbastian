@@ -10,6 +10,8 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import JornadaCliente from '@/components/portal/JornadaCliente';
+import MarketTicker from '@/components/MarketTicker.jsx';
+import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
@@ -318,6 +320,8 @@ export default function PortalIndicador() {
         </div>
       </header>
 
+      <MarketTicker />
+
       <main className="max-w-5xl mx-auto px-6 py-6 relative" style={{ zIndex: 1 }}>
         {/* Welcome banner */}
         <div className="rounded-2xl p-5 mb-6 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,102,204,0.08))', border: `1px solid ${AURORA.border}` }}>
@@ -513,6 +517,8 @@ export default function PortalIndicador() {
           Villela Exchange · Portal do Indicador · {indicador.receber_notificacoes ? 'Você recebe notificações por e-mail' : 'Notificações desativadas'}
         </p>
       </main>
+
+      <AssistenteFloating />
     </div>
   );
 }
