@@ -172,6 +172,13 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         )}
+        {modoIndicador && (
+          <button onClick={() => setShowNova(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
+            style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+            <Plus className="w-3.5 h-3.5" /> Nova Indicação
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -180,7 +187,16 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         <div className="text-center py-10 rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
           <Send className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted }} />
           <p className="font-semibold" style={{ color: AURORA.text }}>Nenhuma indicação recebida</p>
-          <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>As indicações dos parceiros aparecerão aqui automaticamente</p>
+          <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>
+            {modoIndicador ? 'Cadastre uma nova indicação para começar a acompanhar o andamento.' : 'As indicações dos parceiros aparecerão aqui automaticamente'}
+          </p>
+          {modoIndicador && (
+            <button onClick={() => setShowNova(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 mt-4 rounded-xl text-xs font-bold transition"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+              <Plus className="w-3.5 h-3.5" /> Nova Indicação
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
@@ -230,6 +246,8 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
       )}
 
       {editando && <EditarIndicacaoModal lead={editando} onClose={() => setEditando(null)} />}
+
+      {showNova && <NovaIndicacaoModal parceiro={parceiro} onClose={() => setShowNova(false)} />}
 
       {/* Modal de detalhe / conversão */}
       {detalhe && (

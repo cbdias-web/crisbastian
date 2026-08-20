@@ -96,7 +96,7 @@ export default function DashParceiro() {
           </div>
 
           {parceiroLogado ? (
-            <IndicacoesTab parceiroIdFixo={parceiroLogado.id} modoIndicador />
+            <IndicacoesTab parceiroIdFixo={parceiroLogado.id} modoIndicador parceiro={parceiroLogado} />
           ) : (
             <div className="text-center py-12 rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
               <UserCircle className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted }} />

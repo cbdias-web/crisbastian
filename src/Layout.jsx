@@ -616,7 +616,8 @@ export default function Layout({ children, currentPageName }) {
         {/* Row 2: Navigation tabs (desktop) */}
         {!isMobile && (
           <div className="flex items-center px-6 pb-2 gap-1" ref={dropdownRef}>
-            {/* Dashboard quick link */}
+            {/* Dashboard quick link (hidden for indicadores — they only have Meu Painel) */}
+            {!isIndicador && (
             <Link to={createPageUrl('Dashboard')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition"
               style={{
@@ -627,6 +628,7 @@ export default function Layout({ children, currentPageName }) {
               <BarChart3 className="w-3.5 h-3.5" />
               Dashboard
             </Link>
+            )}
 
             {navGroups.map((group) => {
               const isOpen = openDropdown === group.label;
