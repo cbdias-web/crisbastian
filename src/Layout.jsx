@@ -429,7 +429,6 @@ export default function Layout({ children, currentPageName }) {
           backgroundSize: isHenriqueStein ? 'contain' : 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: isHenriqueStein ? 'no-repeat' : 'no-repeat',
-          backgroundAttachment: 'fixed',
           opacity: isHenriqueStein ? 0.18 : 0.45,
           pointerEvents: 'none',
         }}

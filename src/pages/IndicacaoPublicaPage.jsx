@@ -118,7 +118,7 @@ export default function IndicacaoPublicaPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 relative" style={{ background: AURORA.bg, color: AURORA.text }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.45, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55) 0%, rgba(13,17,23,0.45) 40%, rgba(13,17,23,0.60) 100%)', pointerEvents: 'none' }} />
       <div className="max-w-2xl mx-auto relative" style={{ zIndex: 1 }}>
         {/* Botão voltar */}
@@ -263,7 +263,7 @@ function SucessoIndicacao({ parceiro, token, navigate }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative" style={{ background: AURORA.bg }}>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.4, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.4, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55), rgba(13,17,23,0.6))', pointerEvents: 'none' }} />
       <div className="max-w-md w-full rounded-3xl overflow-hidden text-center relative" style={{ zIndex: 1, background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
         <div className="px-6 pt-6">

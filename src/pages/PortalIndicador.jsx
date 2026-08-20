@@ -232,7 +232,7 @@ export default function PortalIndicador() {
   return (
     <div className="min-h-screen relative" style={{ background: AURORA.bg, color: AURORA.text }}>
       {/* ─── Marca d'água (mesma do portal interno) ─── */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed', opacity: 0.45, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, backgroundImage: `url("${WATERMARK_IMG}")`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.45, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(13,17,23,0.55) 0%, rgba(13,17,23,0.45) 40%, rgba(13,17,23,0.60) 100%)', pointerEvents: 'none' }} />
 
       {/* ─── Overlay de boas-vindas (após aceite do termo) ─── */}
