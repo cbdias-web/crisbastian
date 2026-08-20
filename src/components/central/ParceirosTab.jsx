@@ -26,6 +26,7 @@ export default function ParceirosTab() {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', percentual_comissao: 10, receber_notificacoes: true, ativo: true, observacoes: '' });
   const [salvando, setSalvando] = useState(false);
   const [enviandoConvite, setEnviandoConvite] = useState(null);
+  const [cadastrandoTodos, setCadastrandoTodos] = useState(false);
 
   const { data: indicadores = [], isLoading } = useQuery({
     queryKey: ['parceiros-indicacao'],
@@ -100,6 +101,26 @@ export default function ParceirosTab() {
     setEnviandoConvite(null);
   };
 
+  const cadastrarTodos = async () => {
+    const pendentes = indicadores.filter(p => p.ativo !== false && p.email && !p.convite_enviado);
+    if (pendentes.length === 0) { toast.info('Todos os indicadores com e-mail já foram cadastrados'); return; }
+    if (!confirm(`Cadastrar ${pendentes.length} indicador(es) como usuários da plataforma? Será enviado um convite por e-mail para cada um.`)) return;
+    setCadastrandoTodos(true);
+    try {
+      const res = await base44.functions.invoke('cadastrarTodosIndicadores', { app_origin: window.location.origin });
+      toast.success(
+        `${res.convidados} novo(s) convite(s) enviado(s) · ${res.ja_cadastrados} já cadastrado(s)` +
+        (res.sem_email ? ` · ${res.sem_email} sem e-mail` : '') +
+        (res.falhas ? ` · ${res.falhas} falha(s)` : '')
+      );
+      queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
+    } catch (e) {
+      const detalhe = e?.response?.data?.error || e?.data?.error || e?.message || 'Erro desconhecido';
+      toast.error('Erro ao cadastrar em massa: ' + detalhe);
+    }
+    setCadastrandoTodos(false);
+  };
+
   const copiarPortal = (p) => {
     if (!p.link_token) { toast.error('Envie o convite primeiro para gerar o link do portal'); return; }
     const url = `${window.location.origin}/portal-indicador/${p.link_token}`;
@@ -115,11 +136,20 @@ export default function ParceirosTab() {
           <p className="text-sm font-bold" style={{ color: AURORA.text }}>Indicadores</p>
           <span className="text-xs" style={{ color: AURORA.textMuted }}>({indicadores.length})</span>
         </div>
-        <button onClick={openNovo}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-          style={{ background: AURORA.accent, color: '#0d1117' }}>
-          <Plus className="w-3.5 h-3.5" /> Novo Indicador
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={cadastrarTodos} disabled={cadastrandoTodos || isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+            style={{ background: 'rgba(59,130,249,0.14)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.3)' }}
+            title="Cadastra (convida) todos os indicadores com e-mail que ainda não receberam convite">
+            {cadastrandoTodos ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Cadastrar Todos
+          </button>
+          <button onClick={openNovo}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+            style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <Plus className="w-3.5 h-3.5" /> Novo Indicador
+          </button>
+        </div>
       </div>
 
       {isLoading ? (

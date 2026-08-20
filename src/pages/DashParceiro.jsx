@@ -29,7 +29,17 @@ export default function DashParceiro() {
       if (u && u.role !== 'admin' && u.email) {
         try {
           const ps = await base44.entities.Parceiro.filter({ email: u.email });
-          setParceiroLogado(ps[0] || null);
+          const parceiro = ps[0] || null;
+          setParceiroLogado(parceiro);
+          // Cadastro validado pelo login → dispara e-mail de boas-vindas (uma única vez).
+          // Só dispara para indicadores (não admin) que ainda não receberam o e-mail.
+          if (parceiro && parceiro.boas_vindas_enviada !== true) {
+            base44.functions.invoke('enviarBoasVindasIndicador', { app_origin: window.location.origin })
+              .then(() => {
+                setParceiroLogado({ ...parceiro, boas_vindas_enviada: true });
+              })
+              .catch(() => {});
+          }
         } catch (e) {}
       }
       setChecked(true);
