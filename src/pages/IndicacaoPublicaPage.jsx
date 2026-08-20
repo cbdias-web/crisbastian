@@ -223,8 +223,8 @@ export default function IndicacaoPublicaPage() {
             </div>
           )}
 
-          {/* Observações */}
-          <Field label="Observações sobre o lead">
+          {/* Resumo de Vendas */}
+          <Field label="Resumo de Vendas">
             <textarea value={obs} onChange={e => setObs(e.target.value)} rows={3} placeholder="Contexto, urgência, pontos de atenção..." className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none" style={inputStyle} />
           </Field>
 

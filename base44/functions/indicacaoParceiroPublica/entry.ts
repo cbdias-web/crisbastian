@@ -65,7 +65,9 @@ export default async function(req: Request): Promise<Response> {
           const nomeLead = dados.tipo === 'PF' ? dados.pf_nome : dados.pj_razao_social;
           const docLead = dados.tipo === 'PF' ? dados.pf_cpf : dados.pj_cnpj;
           const emailLead = dados.tipo === 'PF' ? dados.pf_email : dados.pj_email;
-          const obsLead = `Indicação de ${parceiro.nome}${dados.observacoes ? ' · ' + dados.observacoes : ''}`.trim();
+          const valorTxt = dados.valor_estimado ? `Valor est.: R$ ${Number(dados.valor_estimado).toLocaleString('pt-BR')}` : '';
+          const resumoTxt = dados.observacoes ? `Resumo de Vendas: ${dados.observacoes}` : '';
+          const obsLead = ['Indicação de ' + parceiro.nome, valorTxt, resumoTxt].filter(Boolean).join(' · ');
 
           const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
           const vendedores = todosVendedores.filter(v => v.ativo_central_leads !== false);
@@ -116,7 +118,7 @@ export default async function(req: Request): Promise<Response> {
               observacao_ia: obsLead,
               mensagens: [{
                 de: 'Sistema',
-                texto: `Lead indicado por ${parceiro.nome} (parceiro). Produto: ${dados.produto || '—'}${dados.valor_estimado ? ' · Valor est.: R$ ' + Number(dados.valor_estimado).toLocaleString('pt-BR') : ''}.`,
+                texto: `Lead indicado por ${parceiro.nome} (parceiro). Produto: ${dados.produto || '—'}${dados.valor_estimado ? ' · Valor est.: R$ ' + Number(dados.valor_estimado).toLocaleString('pt-BR') : ''}${dados.observacoes ? ' · Resumo de Vendas: ' + dados.observacoes : ''}.`,
                 timestamp: agora.toISOString(),
                 tipo: 'sistema',
               }],
