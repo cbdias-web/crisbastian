@@ -38,6 +38,9 @@ export default async function(req: Request): Promise<Response> {
       });
     }
 
+    const appOrigin = (body && body.app_origin) || `https://${req.headers.get('host') || ''}`;
+    const portalUrl = `${appOrigin.replace(/\/$/, '')}/portal-indicador/${token}`;
+
     // 1) Convida como usuário (role 'user') — e-mail disparado pela plataforma
     let jaExistia = false;
     try {
@@ -72,11 +75,45 @@ export default async function(req: Request): Promise<Response> {
       convite_enviado_por: user.email,
     });
 
+    // E-mail personalizado em português, nominal (saudação pelo nome do indicador).
+    // Envio best-effort: o convite nativo (criação da conta) já foi disparado acima.
+    let emailPersonalizado = false;
+    try {
+      const primeiroNome = (ind.nome || '').trim().split(/\s+/)[0] || 'indicador';
+      const assunto = 'Convite · Portal do Indicador · Villela Exchange';
+      const corpo = [
+        `Olá, ${primeiroNome}!`,
+        '',
+        'Você foi cadastrado como Indicador(a) da Villela Exchange. Seja muito bem-vindo(a)!',
+        '',
+        'Acesse seu Portal do Indicador para acompanhar suas indicações, comissões e o status dos seus leads em tempo real:',
+        portalUrl,
+        '',
+        `Seu acesso está vinculado ao e-mail ${email}. Para definir sua senha e entrar no sistema, use o link "Esqueci minha senha" na tela de login — ou aproveite o link acima, que dá acesso direto ao portal.`,
+        '',
+        'Qualquer dúvida, estamos à disposição.',
+        '',
+        'Abraço,',
+        'Equipe Villela Exchange',
+      ].join('\n');
+
+      await base44.integrations.Core.SendEmail({
+        to: email,
+        subject: assunto,
+        body: corpo,
+        from_name: 'Villela Exchange',
+      });
+      emailPersonalizado = true;
+    } catch (e) {
+      console.log('email personalizado falhou (convite nativo já foi enviado):', e?.message || e);
+    }
+
     return Response.json({
       success: true,
       enviado_para: email,
       usuario_existia: jaExistia,
       role_indicador: rolePromovido,
+      email_personalizado: emailPersonalizado,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
