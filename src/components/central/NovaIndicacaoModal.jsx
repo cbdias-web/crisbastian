@@ -77,7 +77,7 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={sucesso ? onClose : undefined}>
-      <div className="w-full max-w-2xl rounded-2xl overflow-hidden max-h-[92vh] flex flex-col" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-2xl rounded-2xl overflow-hidden max-h-[calc(100vh-140px)] flex flex-col" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between px-5 py-3" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
@@ -195,7 +195,7 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
               </div>
             )}
 
-            <Field label="Observações sobre o lead">
+            <Field label="Resumo de Vendas">
               <textarea value={obs} onChange={e => setObs(e.target.value)} rows={3} placeholder="Contexto, urgência, pontos de atenção..." className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none" style={inputStyle} />
             </Field>
           </div>

@@ -345,7 +345,9 @@ export default function AssistenteFloating() {
       await checkMensagensPendentes();
     };
     poll();
-    const interval = setInterval(poll, 5000);
+    // Polling a cada 30s (era 5s): auth.me + filtro a cada 5s empilhava requisições
+    // quando o backend respondia lento, sobrecarregando o navegador.
+    const interval = setInterval(poll, 30000);
     return () => clearInterval(interval);
   }, [userLoaded]);
 
