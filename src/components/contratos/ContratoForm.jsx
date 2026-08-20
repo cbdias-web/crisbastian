@@ -80,6 +80,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       cidade: clientePreSelecionado.cidade || '',
       estado: clientePreSelecionado.estado || '',
       cliente_id: clientePreSelecionado.id || '',
+      observacoes: clientePreSelecionado.observacao || '',
     };
     return EMPTY;
   });
@@ -189,6 +190,35 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Quando o contrato nasce de um cliente que veio de uma indicação, puxa os
+  // dados completos da indicação de origem (responsável legal em PJ, etc.) para
+  // evitar retrabalho — mesmo para clientes criados antes da sincronização.
+  useEffect(() => {
+    if (!clientePreSelecionado?.lead_id) return;
+    let active = true;
+    base44.entities.LeadIndicacao.get(clientePreSelecionado.lead_id)
+      .then(ind => {
+        if (!active || !ind) return;
+        setForm(f => {
+          const isPF = ind.tipo === 'PF';
+          const pick = (cur, v) => cur || v || '';
+          return {
+            ...f,
+            responsavel_legal: pick(f.responsavel_legal, !isPF ? ind.pj_nome_responsavel : ''),
+            cpf_responsavel: pick(f.cpf_responsavel, !isPF ? ind.pj_cpf_responsavel : ''),
+            nascimento: pick(f.nascimento, isPF ? ind.pf_nascimento : ''),
+            nacionalidade: pick(f.nacionalidade, isPF ? ind.pf_nacionalidade : ''),
+            profissao: pick(f.profissao, isPF ? ind.pf_profissao : ''),
+            cep: pick(f.cep, isPF ? ind.pf_cep : ind.pj_cep),
+            endereco: pick(f.endereco, isPF ? ind.pf_endereco : ind.pj_endereco),
+            bairro: pick(f.bairro, isPF ? ind.pf_bairro : ind.pj_bairro),
+          };
+        });
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [clientePreSelecionado]);
+
   const buscarCep = async (cep) => {
     const cepLimpo = cep.replace(/\D/g, '');
     if (cepLimpo.length !== 8) return;
@@ -295,16 +325,28 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     c.cpf_cnpj?.includes(buscaCliente)
   ).slice(0, 8);
 
-  const selecionarCliente = (c) => {
+  const selecionarCliente = async (c) => {
+    let ind = null;
+    if (c.lead_id) {
+      try { ind = await base44.entities.LeadIndicacao.get(c.lead_id); } catch (e) {}
+    }
+    const isPF = ind ? ind.tipo === 'PF' : true;
+    const pick = (cur, v) => cur || v || '';
     setForm(f => ({
       ...f,
       nome: c.nome || '', cpf_cnpj: c.cpf_cnpj || '',
-      responsavel_legal: c.responsavel_legal || '', cpf_responsavel: c.cpf_responsavel || '',
-      nascimento: c.nascimento || '', nacionalidade: c.nacionalidade || '',
-      profissao: c.profissao || '', estado_civil: c.estado_civil || '',
+      responsavel_legal: pick(c.responsavel_legal, !isPF ? ind?.pj_nome_responsavel : ''),
+      cpf_responsavel: pick(c.cpf_responsavel, !isPF ? ind?.pj_cpf_responsavel : ''),
+      nascimento: pick(c.nascimento, isPF ? ind?.pf_nascimento : ''),
+      nacionalidade: pick(c.nacionalidade, isPF ? ind?.pf_nacionalidade : ''),
+      profissao: pick(c.profissao, isPF ? ind?.pf_profissao : ''),
+      estado_civil: c.estado_civil || '',
       email: c.email || '', telefone: c.telefone || '',
-      cep: c.cep || '', endereco: c.endereco || '', bairro: c.bairro || '',
+      cep: pick(c.cep, isPF ? ind?.pf_cep : ind?.pj_cep),
+      endereco: pick(c.endereco, isPF ? ind?.pf_endereco : ind?.pj_endereco),
+      bairro: pick(c.bairro, isPF ? ind?.pf_bairro : ind?.pj_bairro),
       cidade: c.cidade || '', estado: c.estado || '', cliente_id: c.id,
+      observacoes: f.observacoes || c.observacao || '',
     }));
     setBuscaCliente(c.nome);
     setShowBusca(false);
