@@ -38,9 +38,9 @@ export default function PadrinhosModal({ onClose }) {
   const [salvando, setSalvando] = useState(null);
   const [atribuicoes, setAtribuicoes] = useState({});
 
-  const { data: usuarios = [] } = useQuery({
-    queryKey: ['users-padrinhos'],
-    queryFn: () => base44.entities.User.list(),
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores-ativos-padrinhos'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
   });
   const { data: padrinhos = [], isLoading } = useQuery({
     queryKey: ['padrinho-produto'],
@@ -55,20 +55,20 @@ export default function PadrinhosModal({ onClose }) {
     setAtribuicoes(map);
   }, [padrinhos]);
 
-  const usuariosOrdenados = [...usuarios].filter(u => u.email).sort((a, b) =>
-    (a.full_name || a.email).localeCompare(b.full_name || b.email)
+  const vendedoresOrdenados = [...vendedores].filter(v => v.email).sort((a, b) =>
+    (a.nome || a.email).localeCompare(b.nome || b.email)
   );
 
-  const handleSelecionar = (produto, userId) => {
-    if (!userId) {
+  const handleSelecionar = (produto, email) => {
+    if (!email) {
       setAtribuicoes(a => ({ ...a, [produto]: undefined }));
       return;
     }
-    const u = usuarios.find(u => u.id === userId);
-    if (!u) return;
+    const v = vendedores.find(v => v.email === email);
+    if (!v) return;
     setAtribuicoes(a => ({
       ...a,
-      [produto]: { user_id: u.id, user_email: u.email, user_nome: u.full_name || u.email },
+      [produto]: { user_id: '', user_email: v.email, user_nome: v.nome || v.email },
     }));
   };
 
@@ -150,14 +150,14 @@ export default function PadrinhosModal({ onClose }) {
                       </div>
                       <div className="flex items-center gap-2">
                         <select
-                          value={sel?.user_id || ''}
+                          value={sel?.user_email || ''}
                           onChange={e => handleSelecionar(produto, e.target.value)}
                           className="px-3 py-2 text-xs rounded-xl focus:outline-none min-w-[200px]"
                           style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }}
                         >
                           <option value="">— Sem padrinho —</option>
-                          {usuariosOrdenados.map(u => (
-                            <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+                          {vendedoresOrdenados.map(v => (
+                            <option key={v.id} value={v.email}>{v.nome || v.email}</option>
                           ))}
                         </select>
                         <button
