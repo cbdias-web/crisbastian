@@ -304,7 +304,14 @@ export default function PortalIndicador() {
             {togglingNotif ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : indicador.receber_notificacoes ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{indicador.receber_notificacoes ? 'Notif. ativas' : 'Notif. desligadas'}</span>
           </button>
-          <button onClick={() => { if (confirm('Sair do portal?')) navigate('/'); }}
+          <button onClick={async () => {
+            if (!confirm('Sair do portal?')) return;
+            try {
+              const auth = await base44.auth.isAuthenticated();
+              if (auth) { await base44.auth.logout(); }
+              else { navigate('/'); }
+            } catch { navigate('/'); }
+          }}
             className="p-2 rounded-xl" style={{ background: AURORA.surface2, color: AURORA.textMuted }}>
             <LogOut className="w-4 h-4" />
           </button>
