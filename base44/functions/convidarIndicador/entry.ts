@@ -75,22 +75,23 @@ export default async function(req: Request): Promise<Response> {
       convite_enviado_por: user.email,
     });
 
-    // E-mail de boas-vindas em HTML (mesmo template do enviarBoasVindasIndicador).
-    // Envio best-effort: o convite nativo (criação da conta) já foi disparado acima.
+    // E-mail de CONVITE em HTML (diferente do "boas-vindas" enviado no aceite do termo).
+    // Este e-mail explica como acessar; o boas-vindas só dispara após o aceite do Termo
+    // no PortalIndicadorAuth, evitando duplicidade/confusão para qualquer cadastro.
     let emailPersonalizado = false;
     try {
       const nome = ind.nome || 'indicador';
       const html = `
         <div style="font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 0 auto;">
           <div style="background: #0d1b33; padding: 28px 24px; border-radius: 14px 14px 0 0; text-align: center;">
-            <h1 style="color: #00f5b4; margin: 0; font-size: 22px; font-weight: 700;">Bem-vindo ao Portal do Indicador 🎉</h1>
+            <h1 style="color: #00f5b4; margin: 0; font-size: 22px; font-weight: 700;">Convite: Portal do Indicador</h1>
             <p style="color: #ffffff; margin: 8px 0 0; font-size: 14px; letter-spacing: 0.5px;">Villela Exchange</p>
           </div>
           <div style="background: #f9f9f9; padding: 28px 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 14px 14px;">
             <p style="color: #1f2937; font-size: 15px; margin: 0 0 16px;">Olá, <strong>${nome}</strong>!</p>
-            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">Você foi cadastrado como Indicador(a) da Villela Exchange. Seja muito bem-vindo(a)!</p>
+            <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">Você foi cadastrado(a) como Indicador(a) da Villela Exchange. Este é o seu convite de acesso.</p>
             <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">
-              Para ativar seu acesso, acesse o portal e homologue seu token aceitando o <strong>Termo de Uso (v1.0)</strong>.
+              Para começar, acesse o portal e homologue seu token aceitando o <strong>Termo de Uso (v1.0)</strong>. Em seguida você verá as opções de indicação e acompanhamento.
             </p>
             <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">
               Agora você pode cadastrar novas indicações e acompanhar o status de cada lead em tempo real, direto pelo seu portal.
@@ -111,7 +112,7 @@ export default async function(req: Request): Promise<Response> {
 
       await base44.integrations.Core.SendEmail({
         to: email,
-        subject: 'Bem-vindo ao Portal do Indicador · Villela Exchange',
+        subject: 'Convite: Portal do Indicador · Villela Exchange',
         body: html,
         from_name: 'Villela Exchange – Indicadores',
       });
