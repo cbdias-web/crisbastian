@@ -258,14 +258,13 @@ export default function Layout({ children, currentPageName }) {
   const isIndicador = user?.role === 'indicador' || user?.indicador === true || !!parceiroByEmail;
   const isHenriqueStein = user?.email === 'henrique.stein@psjunior.com';
 
-  // Indicador: sempre cai no Portal do Indicador (token) — experiência completa:
-  // registro de acesso/token → termo de uso → boas-vindas → menus Indicar + Dash (acompanhar).
-  // O portal é uma rota pública (/portal-indicador/:token) que bypassa o Layout.
+  // Indicador: sempre cai no Dash Parceiro, que entrega a experiência completa do portal
+  // (termo de uso → boas-vindas → 2 menus: Indicar + Dash/acompanhar).
   useEffect(() => {
-    if (isIndicador && parceiroByEmail?.link_token) {
-      navigate(`/portal-indicador/${parceiroByEmail.link_token}`, { replace: true });
+    if (isIndicador && currentPageName !== 'DashParceiro') {
+      navigate('/DashParceiro', { replace: true });
     }
-  }, [isIndicador, parceiroByEmail, navigate]);
+  }, [isIndicador, currentPageName, navigate]);
 
   const { data: notificacoesPendentes = [] } = useQuery({
     queryKey: ['notificacoes-pendentes'],
