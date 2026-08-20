@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter } from 'lucide-react';
+import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import EditarIndicacaoModal from './EditarIndicacaoModal';
+import NovaIndicacaoModal from './NovaIndicacaoModal';
 
 const AURORA = {
   surface: '#161b22',
@@ -29,7 +30,7 @@ const STATUS_CFG = {
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
-export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador }) {
+export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro }) {
   const queryClient = useQueryClient();
   const [detalhe, setDetalhe] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -37,6 +38,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
   const [busca, setBusca] = useState('');
   const [convertendo, setConvertendo] = useState(null);
   const [editando, setEditando] = useState(null);
+  const [showNova, setShowNova] = useState(false);
 
   const { data: indicacoes = [], isLoading } = useQuery({
     queryKey: ['lead-indicacoes'],
