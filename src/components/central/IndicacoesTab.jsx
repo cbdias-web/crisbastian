@@ -5,7 +5,7 @@ import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, Map
 import { toast } from 'sonner';
 import EditarIndicacaoModal from './EditarIndicacaoModal';
 import NovaIndicacaoModal from './NovaIndicacaoModal';
-import JornadaLeadTimeline from './JornadaLeadTimeline';
+import DetalheJornadaIndicacao from './DetalheJornadaIndicacao';
 
 const AURORA = {
   surface: '#161b22',
@@ -285,51 +285,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                 <Info label="Status" value={STATUS_CFG[detalhe.status]?.label} />
               </div>
 
-              {/* Contato */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <Info icon={<Mail className="w-3 h-3" />} label="E-mail" value={detalhe.tipo === 'PF' ? detalhe.pf_email : detalhe.pj_email} />
-                <Info icon={<Phone className="w-3 h-3" />} label="Telefone" value={detalhe.tipo === 'PF' ? detalhe.pf_telefone : detalhe.pj_telefone} />
-                <Info icon={<Phone className="w-3 h-3" />} label="WhatsApp" value={detalhe.tipo === 'PF' ? detalhe.pf_whatsapp : detalhe.pj_whatsapp} />
-              </div>
-
-              {/* Dados PF ou PJ */}
-              {detalhe.tipo === 'PF' ? (
-                <Section title="Dados Pessoa Física">
-                  <Info label="CPF" value={detalhe.pf_cpf} />
-                  <Info label="RG" value={detalhe.pf_rg} />
-                  <Info label="Nascimento" value={detalhe.pf_nascimento} />
-                  <Info label="Nacionalidade" value={detalhe.pf_nacionalidade} />
-                  <Info label="Profissão" value={detalhe.pf_profissao} />
-                  <Info label="Renda" value={fmtMoeda(detalhe.pf_renda)} />
-                </Section>
-              ) : (
-                <Section title="Dados Pessoa Jurídica">
-                  <Info label="CNPJ" value={detalhe.pj_cnpj} />
-                  <Info label="Responsável" value={detalhe.pj_nome_responsavel} />
-                  <Info label="CPF Responsável" value={detalhe.pj_cpf_responsavel} />
-                  <Info label="Ramo" value={detalhe.pj_ramo_atividade} />
-                  <Info label="Faturamento" value={fmtMoeda(detalhe.pj_faturamento)} />
-                </Section>
-              )}
-
-              {/* Endereço */}
-              <Section title="Endereço">
-                <Info label="CEP" value={detalhe.tipo === 'PF' ? detalhe.pf_cep : detalhe.pj_cep} />
-                <Info label="Logradouro" value={detalhe.tipo === 'PF' ? detalhe.pf_endereco : detalhe.pj_endereco} />
-                <Info label="Número" value={detalhe.tipo === 'PF' ? detalhe.pf_numero : detalhe.pj_numero} />
-                <Info label="Complemento" value={detalhe.tipo === 'PF' ? detalhe.pf_complemento : detalhe.pj_complemento} />
-                <Info label="Bairro" value={detalhe.tipo === 'PF' ? detalhe.pf_bairro : detalhe.pj_bairro} />
-                <Info label="Cidade/UF" value={`${detalhe.tipo === 'PF' ? detalhe.pf_cidade : detalhe.pj_cidade || ''} / ${detalhe.tipo === 'PF' ? detalhe.pf_estado : detalhe.pj_estado || ''}`} />
-              </Section>
-
-              {detalhe.observacoes && (
-                <div className="rounded-xl p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <p className="text-[11px] font-bold mb-1" style={{ color: AURORA.textMuted }}>OBSERVAÇÕES</p>
-                  <p className="text-xs" style={{ color: AURORA.text }}>{detalhe.observacoes}</p>
-                </div>
-              )}
-
-              <JornadaLeadTimeline lead={detalhe} />
+              <DetalheJornadaIndicacao lead={detalhe} />
             </div>
 
             {/* Ações */}
