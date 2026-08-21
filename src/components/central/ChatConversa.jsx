@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Phone, Sparkles, X, AlertTriangle, ArrowRight, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import CadastroLeadPanel from './CadastroLeadPanel';
 
 const AURORA = {
   bg: '#0d1117',
@@ -162,6 +163,11 @@ export default function ChatConversa({ conversa, onClose, onUpdate, isAdmin }) {
           ))}
         </div>
       )}
+
+      {/* Cadastro completo do lead (dados da indicação de origem) */}
+      <div className="mx-3 mt-2">
+        <CadastroLeadPanel conversa={conversa} defaultOpen={false} />
+      </div>
 
       {/* Contexto IA */}
       {conversa.observacao_ia && (

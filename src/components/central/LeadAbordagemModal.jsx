@@ -8,6 +8,7 @@ import {
   ChevronRight, User, Package, MapPin, Users, Mail, Loader2, Settings, UserCheck, FileText,
 } from 'lucide-react';
 import ConverterLeadVendaModal from './ConverterLeadVendaModal';
+import CadastroLeadPanel from './CadastroLeadPanel';
 
 const AURORA = {
   bg: '#0d1117',
@@ -233,6 +234,9 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
 
         {/* Body */}
         <div className="overflow-y-auto flex-1 p-5 space-y-4">
+          {/* Cadastro completo do lead (dados da indicação de origem) */}
+          <CadastroLeadPanel conversa={conversa} />
+
           {/* Form Nova Interação */}
           {showFormInteracao && (
             <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)' }}>
