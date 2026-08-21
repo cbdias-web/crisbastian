@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
-import NovaIndicacaoModal from '@/components/central/NovaIndicacaoModal';
+import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 
 const AURORA = {
@@ -65,7 +65,7 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
   const [aceitando, setAceitando] = useState(false);
   const [concordo, setConcordo] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [showNova, setShowNova] = useState(false);
+  const [view, setView] = useState('dash');
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['indicador-leads-auth', parceiro?.id],
@@ -164,6 +164,10 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
   const chartData = Object.entries(STATUS_CHART)
     .map(([key, cfg]) => ({ key, name: cfg.label, value: leads.filter(l => l.status === key).length, color: cfg.color }))
     .filter(d => d.value > 0);
+
+  if (view === 'formulario') {
+    return <FormularioIndicacao parceiro={indicador} onVoltar={() => setView('dash')} />;
+  }
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ background: AURORA.bg, color: AURORA.text }}>
@@ -273,7 +277,7 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
               className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => setShowNova(true)}
+            <button onClick={() => setView('formulario')}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
               style={{ background: AURORA.accent, color: '#0d1117' }}>
               <Plus className="w-3.5 h-3.5" /> Nova Indicação
@@ -300,7 +304,6 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
         </div>
       </div>
 
-      {showNova && <NovaIndicacaoModal parceiro={indicador} onClose={() => setShowNova(false)} />}
     </div>
   );
 }
