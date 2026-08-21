@@ -305,6 +305,8 @@ export default function AssistenteFloating() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [awaitingReply, setAwaitingReply] = useState(false);
+  const [sendError, setSendError] = useState(null);
   const [initialized, setInitialized] = useState(false);
   const [userName, setUserName] = useState('');
   const [userLoaded, setUserLoaded] = useState(false);
@@ -461,7 +463,25 @@ export default function AssistenteFloating() {
     await startFreshConversation();
   };
 
-  const isTyping = sending || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
+  const isTyping = sending || awaitingReply || (messages.length > 0 && messages[messages.length - 1]?.role !== 'user' && !messages[messages.length - 1]?.content);
+
+  // Limpa "aguardando resposta" assim que chega uma resposta do assistente com conteúdo
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    if (awaitingReply && last?.role === 'assistant' && last?.content) {
+      setAwaitingReply(false);
+    }
+  }, [messages, awaitingReply]);
+
+  // Timeout: se o Jarvis demorar mais de 45s sem responder, avisa o usuário
+  useEffect(() => {
+    if (!awaitingReply) return;
+    const t = setTimeout(() => {
+      setAwaitingReply(false);
+      setSendError('O Jarvis está demorando para responder. Toque em "+" para iniciar uma nova conversa e reenvie.');
+    }, 45000);
+    return () => clearTimeout(t);
+  }, [awaitingReply]);
 
   const INACTIVITY_SUGGESTIONS_MS = 5 * 60 * 1000; // 5 minutos
 
@@ -497,11 +517,23 @@ export default function AssistenteFloating() {
     if (!conv) {
       conv = await base44.agents.createConversation({ agent_name: 'assistente_treinamentos', metadata: { name: 'Chat' } });
       setConversation(conv);
+      localStorage.setItem(CONVERSATION_KEY, conv.id);
+      if (unsubscribeRef.current) { unsubscribeRef.current(); unsubscribeRef.current = null; }
+      unsubscribeRef.current = base44.agents.subscribeToConversation(conv.id, (data) => {
+        setMessages(data.messages || []);
+      });
     }
     const content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
     setIsFirstMessage(false);
     recordActivity();
-    await base44.agents.addMessage(conv, { role: 'user', content });
+    setSendError(null);
+    setAwaitingReply(true);
+    try {
+      await base44.agents.addMessage(conv, { role: 'user', content });
+    } catch (e) {
+      setAwaitingReply(false);
+      setSendError('Não consegui enviar sua mensagem. Toque em "Nova conversa" e tente novamente.');
+    }
     setSending(false);
   };
 
@@ -699,6 +731,11 @@ export default function AssistenteFloating() {
             })}
             {!pdfDownloaded && <GlobalPdfButton messages={messages} onDownloaded={() => setPdfDownloaded(true)} />}
             {isTyping && <TypingIndicator />}
+            {sendError && (
+              <div className="rounded-xl px-3 py-2 text-xs" style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
+                {sendError}
+              </div>
+            )}
             {/* Post-response suggestions: só aparecem após 5 min de inatividade */}
             {showPostSuggestions && !isTyping && (
               <div className="mt-3 pt-3 space-y-1.5" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
