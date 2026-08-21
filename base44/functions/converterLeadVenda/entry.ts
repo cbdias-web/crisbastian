@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { dadosRicosLeadIndicacao, buscarLeadIndicacao } from '../../shared/dadosLeadIndicacao.ts';
 
 // Converte um lead da Central de Leads (ConversaWhatsapp + Lead vinculado) em
 // Cliente + Contrato + Venda, respeitando o PRODUTO DE ORIGEM (produto_interesse)
@@ -37,18 +38,12 @@ export default async function(req: Request): Promise<Response> {
     let leadIndicacao = null;
     if (conv.origem && conv.origem.startsWith('Indicação · ')) {
       const nomeParceiro = conv.origem.replace('Indicação · ', '').trim();
-      // 1) tenta achar a LeadIndicacao correspondente (mesmo parceiro + mesmo nome do lead)
-      try {
-        const todas = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 500);
-        leadIndicacao = todas.find((li) => li.parceiro_nome === nomeParceiro && (
-          (li.pf_nome && li.pf_nome === nome) ||
-          (li.pj_razao_social && li.pj_razao_social === nome)
-        ));
-      } catch (e) {}
+      // Localiza a LeadIndicacao de origem (match robusto por doc/telefone/nome)
+      leadIndicacao = await buscarLeadIndicacao(base44, conv, lead);
       if (leadIndicacao) {
         indicador = { id: leadIndicacao.parceiro_id, nome: leadIndicacao.parceiro_nome, percentual: leadIndicacao.parceiro_percentual ?? 0 };
       } else {
-        // 2) lookup Parceiro por nome
+        // fallback: lookup Parceiro por nome
         try {
           const parceiros = await base44.asServiceRole.entities.Parceiro.filter({ nome: nomeParceiro, ativo: true });
           if (parceiros.length > 0) indicador = { id: parceiros[0].id, nome: parceiros[0].nome, percentual: parceiros[0].percentual_comissao ?? 0 };
@@ -56,6 +51,12 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
+    // ─── Dados preservados da LeadIndicacao (jornada completa do lead) ───
+    // Garante que endereço completo e dados pessoais/PJ acompanhem o lead
+    // até o cliente e o contrato.
+    const ricos = dadosRicosLeadIndicacao(leadIndicacao) || {};
+    const emailFinal = email || ricos.email || '';
+    const telefoneFinal = telefone || ricos.whatsapp || '';
     const valorNum = Number(valor) || leadIndicacao?.valor_estimado || 0;
     const dataVenda = data || new Date().toISOString().split('T')[0];
     const indicadoresArr = indicador ? [{ id: indicador.id, nome: indicador.nome, percentual: indicador.percentual }] : [];
@@ -65,8 +66,19 @@ export default async function(req: Request): Promise<Response> {
     const cliente = await base44.asServiceRole.entities.Cliente.create({
       nome,
       cpf_cnpj: doc,
-      email,
-      telefone,
+      email: emailFinal || undefined,
+      telefone: telefoneFinal || undefined,
+      // ── Dados preservados da LeadIndicacao ──
+      responsavel_legal: ricos.responsavel_legal || undefined,
+      cpf_responsavel: ricos.cpf_responsavel || undefined,
+      nascimento: ricos.isPF ? (ricos.nascimento || undefined) : undefined,
+      nacionalidade: ricos.isPF ? (ricos.nacionalidade || undefined) : undefined,
+      profissao: ricos.isPF ? (ricos.profissao || undefined) : undefined,
+      cep: ricos.cep || undefined,
+      endereco: ricos.endereco || undefined,
+      bairro: ricos.bairro || undefined,
+      cidade: ricos.cidade || undefined,
+      estado: ricos.estado || undefined,
       vendedor_id,
       vendedor_nome,
       origem: 'lead',
@@ -76,12 +88,25 @@ export default async function(req: Request): Promise<Response> {
     });
 
     // 2) Contrato (tipo = produto de origem, indicador no espelhamento)
+    // Repassa os mesmos dados preservados da LeadIndicacao para que o contrato
+    // já nasça com endereço e dados do titular/empresa preenchidos.
     const contrato = await base44.asServiceRole.entities.Contrato.create({
       tipo: produto,
       nome,
       cpf_cnpj: doc,
-      email,
-      telefone,
+      email: emailFinal || undefined,
+      telefone: telefoneFinal || undefined,
+      // ── Dados preservados da LeadIndicacao ──
+      responsavel_legal: ricos.responsavel_legal || undefined,
+      cpf_responsavel: ricos.cpf_responsavel || undefined,
+      nascimento: ricos.isPF ? (ricos.nascimento || undefined) : undefined,
+      nacionalidade: ricos.isPF ? (ricos.nacionalidade || undefined) : undefined,
+      profissao: ricos.isPF ? (ricos.profissao || undefined) : undefined,
+      cep: ricos.cep || undefined,
+      endereco: ricos.endereco || undefined,
+      bairro: ricos.bairro || undefined,
+      cidade: ricos.cidade || undefined,
+      estado: ricos.estado || undefined,
       vendedor_id,
       vendedor_nome,
       cliente_id: cliente.id,

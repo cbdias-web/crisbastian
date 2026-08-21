@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { dadosRicosLeadIndicacao, buscarLeadIndicacao } from '../../shared/dadosLeadIndicacao.ts';
 
 // Converte um lead da Central de Leads (ConversaWhatsapp + Lead/LeadIndicacao
 // vinculados) em um CLIENTE formal — sem gerar contrato nem venda. O cliente
@@ -42,25 +43,18 @@ export default async function(req: Request): Promise<Response> {
     let indicadorId = '';
     if (conv.origem && conv.origem.startsWith('Indicação · ')) {
       indicadorNome = conv.origem.replace('Indicação · ', '').trim();
-      try {
-        const todas = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 500);
-        leadIndicacao = todas.find((li) => li.parceiro_nome === indicadorNome && (
-          (li.pf_nome && li.pf_nome === nome) ||
-          (li.pj_razao_social && li.pj_razao_social === nome)
-        ));
-        if (leadIndicacao) indicadorId = leadIndicacao.parceiro_id || '';
-      } catch (e) {}
+      leadIndicacao = await buscarLeadIndicacao(base44, conv, lead);
+      if (leadIndicacao) indicadorId = leadIndicacao.parceiro_id || '';
     }
 
     // ─── Monta dados do cliente a partir da fonte mais rica disponível ───
+    // Preserva TODOS os dados originais do formulário do indicador (endereço
+    // completo, dados pessoais/PJ) para que acompanhem o lead até o cliente.
+    const ricos = dadosRicosLeadIndicacao(leadIndicacao) || {};
     const isPF = leadIndicacao ? leadIndicacao.tipo === 'PF' : true;
-    const doc = docLead ||
-      (leadIndicacao ? (isPF ? leadIndicacao.pf_cpf : leadIndicacao.pj_cnpj) : '') || '';
-    const email = emailLead ||
-      (leadIndicacao ? (isPF ? leadIndicacao.pf_email : leadIndicacao.pj_email) : '') || '';
-    const cidade = leadIndicacao ? (isPF ? leadIndicacao.pf_cidade : leadIndicacao.pj_cidade) : '';
-    const estado = leadIndicacao ? (isPF ? leadIndicacao.pf_estado : leadIndicacao.pj_estado) : '';
-    const whats = leadIndicacao ? (isPF ? (leadIndicacao.pf_whatsapp || leadIndicacao.pf_telefone) : (leadIndicacao.pj_whatsapp || leadIndicacao.pj_telefone)) : '';
+    const doc = docLead || ricos.cpf_cnpj || '';
+    const email = emailLead || ricos.email || '';
+    const whats = ricos.whatsapp || '';
 
     // Evita duplicar cliente se já existir um com o mesmo CPF/CNPJ
     if (doc) {
@@ -96,8 +90,17 @@ export default async function(req: Request): Promise<Response> {
       cpf_cnpj: doc || undefined,
       email: email || undefined,
       telefone: telefone || whats || undefined,
-      cidade: cidade || undefined,
-      estado: estado || undefined,
+      // ── Dados preservados da LeadIndicacao (jornada completa do lead) ──
+      responsavel_legal: ricos.responsavel_legal || undefined,
+      cpf_responsavel: ricos.cpf_responsavel || undefined,
+      nascimento: isPF ? (ricos.nascimento || undefined) : undefined,
+      nacionalidade: isPF ? (ricos.nacionalidade || undefined) : undefined,
+      profissao: isPF ? (ricos.profissao || undefined) : undefined,
+      cep: ricos.cep || undefined,
+      endereco: ricos.endereco || undefined,
+      bairro: ricos.bairro || undefined,
+      cidade: ricos.cidade || undefined,
+      estado: ricos.estado || undefined,
       vendedor_id,
       vendedor_nome,
       origem: 'lead_convertido',
