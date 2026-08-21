@@ -5,6 +5,7 @@ import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, Map
 import { toast } from 'sonner';
 import EditarIndicacaoModal from './EditarIndicacaoModal';
 import NovaIndicacaoModal from './NovaIndicacaoModal';
+import JornadaLeadTimeline from './JornadaLeadTimeline';
 
 const AURORA = {
   surface: '#161b22',
@@ -64,7 +65,10 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
 
   const atualizarStatus = async (lead, status) => {
     try {
-      await base44.entities.LeadIndicacao.update(lead.id, { status });
+      await base44.entities.LeadIndicacao.update(lead.id, {
+        status,
+        historico: [...(lead.historico || []), { status, label: STATUS_CFG[status]?.label || status, data: new Date().toISOString() }],
+      });
       queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
       toast.success('Status atualizado');
     } catch (e) { toast.error('Erro: ' + e.message); }
@@ -111,6 +115,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         cliente_id: cliente.id,
         convertido: true,
         convertido_em: new Date().toISOString(),
+        historico: [...(lead.historico || []), { status: 'convertido_cliente', label: 'Cliente criado', data: new Date().toISOString() }],
       });
       queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
       toast.success('Cliente criado a partir da indicação!');
@@ -155,6 +160,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         contrato_id: contrato.id,
         convertido: true,
         convertido_em: new Date().toISOString(),
+        historico: [...(lead.historico || []), { status: 'convertido_contrato', label: 'Contrato gerado', data: new Date().toISOString() }],
       });
       queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
       toast.success('Contrato criado! Parceiro adicionado ao espelhamento.');
@@ -323,8 +329,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                 </div>
               )}
 
-              {detalhe.cliente_id && <p className="text-[11px]" style={{ color: AURORA.green }}>✓ Cliente criado (ID: {detalhe.cliente_id.slice(0, 8)}…)</p>}
-              {detalhe.contrato_id && <p className="text-[11px]" style={{ color: AURORA.purple }}>✓ Contrato criado (ID: {detalhe.contrato_id.slice(0, 8)}…)</p>}
+              <JornadaLeadTimeline lead={detalhe} />
             </div>
 
             {/* Ações */}

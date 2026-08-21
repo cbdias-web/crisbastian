@@ -25,6 +25,7 @@ export default function ParceirosTab() {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [selecionado, setSelecionado] = useState(null);
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', percentual_comissao: 10, receber_notificacoes: true, ativo: true, observacoes: '' });
   const [salvando, setSalvando] = useState(false);
   const [enviandoConvite, setEnviandoConvite] = useState(null);
@@ -147,7 +148,16 @@ export default function ParceirosTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {indicadores.map(p => (
-            <div key={p.id} className="rounded-2xl p-4 transition" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, opacity: p.ativo === false ? 0.6 : 1 }}>
+            <div key={p.id} onClick={() => setSelecionado(p.id)}
+              className="rounded-2xl p-4 transition cursor-pointer"
+              style={{
+                background: AURORA.surface,
+                border: selecionado === p.id ? `1px solid ${AURORA.accent}` : `1px solid ${AURORA.border}`,
+                boxShadow: selecionado === p.id ? '0 8px 24px rgba(0,212,170,0.18)' : 'none',
+                opacity: p.ativo === false ? 0.6 : 1,
+              }}
+              onMouseEnter={e => { if (selecionado !== p.id) { e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.45)'; e.currentTarget.style.borderColor = 'rgba(0,212,170,0.3)'; } }}
+              onMouseLeave={e => { if (selecionado !== p.id) { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = AURORA.border; } }}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="flex items-center gap-2">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'linear-gradient(135deg, #00D4AA22, #0066cc22)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
@@ -184,13 +194,15 @@ export default function ParceirosTab() {
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(100,100,100,0.2)', color: '#9ca3af' }}>Sem convite</span>
                 )}
               </div>
-              <button onClick={() => navigate(`/PortalIndicadorAdmin/${p.id}`)}
-                className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-bold transition mb-2"
-                style={{ background: AURORA.accent, color: '#0d1117' }}
-                title="Abrir o portal deste indicador">
+              <button onClick={(e) => { e.stopPropagation(); navigate(`/PortalIndicadorAdmin/${p.id}`); }}
+                className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-semibold transition mb-2"
+                style={{ background: 'rgba(0,212,170,0.10)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}
+                title="Abrir o portal deste indicador"
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.18)'; e.currentTarget.style.borderColor = 'rgba(0,212,170,0.4)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.10)'; e.currentTarget.style.borderColor = AURORA.border; }}>
                 <Eye className="w-3 h-3" /> Entrar no Portal
               </button>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                 <button onClick={() => enviarConvite(p)} disabled={enviandoConvite === p.id}
                   className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-40"
                   style={{ background: 'rgba(59,130,249,0.14)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.3)' }}>
