@@ -30,7 +30,7 @@ const STATUS_CFG = {
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
-export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro }) {
+export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro, hideNovaButton }) {
   const queryClient = useQueryClient();
   const [detalhe, setDetalhe] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -181,7 +181,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         )}
-        {modoIndicador && (
+        {modoIndicador && !hideNovaButton && (
           <button onClick={() => setShowNova(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
             style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
@@ -199,7 +199,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
           <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>
             {modoIndicador ? 'Cadastre uma nova indicação para começar a acompanhar o andamento.' : 'As indicações dos parceiros aparecerão aqui automaticamente'}
           </p>
-          {modoIndicador && (
+          {modoIndicador && !hideNovaButton && (
             <button onClick={() => setShowNova(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 mt-4 rounded-xl text-xs font-bold transition"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>

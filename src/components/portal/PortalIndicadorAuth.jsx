@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, LayoutDashboard,
-  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut,
+  ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
+  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import NovaIndicacaoModal from '@/components/central/NovaIndicacaoModal';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
@@ -20,6 +21,7 @@ const AURORA = {
   warning: '#fbbf24',
   green: '#34d399',
   purple: '#a78bfa',
+  red: '#f87171',
 };
 
 const TERMOS = `
@@ -48,12 +50,21 @@ Ao aceitar, o Indicador concorda integralmente com os termos acima.
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
+const STATUS_CHART = {
+  novo: { label: 'Novo', color: '#00D4AA' },
+  em_atendimento: { label: 'Em Atendimento', color: '#fbbf24' },
+  convertido_cliente: { label: '→ Cliente', color: '#34d399' },
+  convertido_contrato: { label: '→ Contrato', color: '#a78bfa' },
+  convertido_venda: { label: '→ Venda', color: '#22c55e' },
+  descartado: { label: 'Descartado', color: '#6b7280' },
+};
+
 export default function PortalIndicadorAuth({ user, parceiro }) {
+  const queryClient = useQueryClient();
   const [indicador, setIndicador] = useState(parceiro);
   const [aceitando, setAceitando] = useState(false);
   const [concordo, setConcordo] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [aba, setAba] = useState('indicar');
   const [showNova, setShowNova] = useState(false);
 
   const { data: leads = [], isLoading } = useQuery({
@@ -77,7 +88,6 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
   const aceitarTermo = async () => {
     setAceitando(true);
     try {
-      // 1) Marca o termo como aceito DIRETAMENTE via SDK (instantâneo — não bloqueia em e-mail).
       const agora = new Date().toISOString();
       await base44.entities.Parceiro.update(parceiro.id, {
         termo_aceito: true,
@@ -87,10 +97,18 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
       setIndicador({ ...parceiro, termo_aceito: true, termo_aceito_em: agora });
       setShowWelcome(true);
       toast.success('Termo aceito! Bem-vindo ao portal.');
-      // 2) Dispara o e-mail de boas-vindas em BACKGROUND (fire-and-forget) — não trava a UI.
       base44.functions.invoke('enviarBoasVindasIndicador', {}).catch(() => {});
     } catch (e) { toast.error('Erro: ' + (e?.message || 'não foi possível aceitar o termo')); }
     setAceitando(false);
+  };
+
+  const toggleNotificacoes = async () => {
+    try {
+      const novo = !indicador.receber_notificacoes;
+      await base44.entities.Parceiro.update(parceiro.id, { receber_notificacoes: novo });
+      setIndicador({ ...indicador, receber_notificacoes: novo });
+      toast.success(novo ? 'Notificações por e-mail ativadas' : 'Notificações por e-mail desativadas');
+    } catch (e) { toast.error('Erro: ' + e.message); }
   };
 
   const nomePrimeiro = (indicador.nome || user?.full_name || 'Indicador').split(' ')[0];
@@ -133,11 +151,19 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
     );
   }
 
-  // KPIs do dash
+  // ─── KPIs ───
   const total = leads.length;
-  const convertidos = leads.filter(l => ['convertido_cliente', 'convertido_contrato', 'convertido_venda'].includes(l.status)).length;
-  const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda').length;
   const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  const convertidos = leads.filter(l => ['convertido_cliente', 'convertido_contrato', 'convertido_venda'].includes(l.status));
+  const vendasConvertidasValor = convertidos.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda');
+  const vendasEfetivasValor = vendasEfetivas.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  const comissaoGerada = vendasEfetivasValor * ((indicador.percentual_comissao ?? 0) / 100);
+
+  // ─── Dados do gráfico de rosca ───
+  const chartData = Object.entries(STATUS_CHART)
+    .map(([key, cfg]) => ({ key, name: cfg.label, value: leads.filter(l => l.status === key).length, color: cfg.color }))
+    .filter(d => d.value > 0);
 
   return (
     <div className="min-h-screen p-4 md:p-6" style={{ background: AURORA.bg, color: AURORA.text }}>
@@ -166,77 +192,112 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
       )}
 
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
+        {/* ─── Header ─── */}
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)' }}>
-                <Handshake className="w-4 h-4" style={{ color: AURORA.accent }} />
-              </div>
-              <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Portal do Indicador</h1>
-            </div>
-            <p className="text-sm" style={{ color: AURORA.textMuted }}>
-              Olá, <strong style={{ color: AURORA.accent }}>{indicador.nome}</strong> — cadastro formalizado · comissão <strong>{indicador.percentual_comissao ?? 0}%</strong>
-            </p>
-          </div>
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-              <UserCircle className="w-4 h-4" style={{ color: AURORA.accent }} />
-              <span className="text-xs" style={{ color: AURORA.textMuted }}>{indicador.email}</span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+              VX
             </div>
-            <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
-              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
-              title="Sair">
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div>
+              <h1 className="text-lg font-bold leading-tight" style={{ color: AURORA.text }}>Portal do Indicador</h1>
+              <p className="text-xs" style={{ color: AURORA.textMuted }}>{indicador.nome} · {indicador.email}</p>
+            </div>
+          </div>
+          <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
+            className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
+            title="Sair">
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* ─── Banner de boas-vindas ─── */}
+        <div className="rounded-2xl p-4 mb-4 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), rgba(0,102,204,0.08))', border: `1px solid ${AURORA.border}` }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
+            <PartyPopper className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm" style={{ color: AURORA.text }}>Bem-vindo, {nomePrimeiro}!</p>
+            <p className="text-xs" style={{ color: AURORA.textMuted }}>Cadastre indicações e acompanhe a jornada de cada lead. Comissão padrão: <strong style={{ color: AURORA.accent }}>{indicador.percentual_comissao ?? 0}%</strong></p>
           </div>
         </div>
 
-        {/* 2 menus: Indicar + Dash */}
-        <div className="flex gap-1 mb-4 p-1 rounded-xl w-fit" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-          {[
-            { key: 'indicar', label: 'Indicar', icon: Send },
-            { key: 'dash', label: 'Dash (acompanhar)', icon: LayoutDashboard },
-          ].map(t => (
-            <button key={t.key} onClick={() => setAba(t.key)}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
-              style={{ background: aba === t.key ? AURORA.accent : 'transparent', color: aba === t.key ? '#0d1117' : AURORA.textMuted }}>
-              <t.icon className="w-3.5 h-3.5" /> {t.label}
-            </button>
-          ))}
+        {/* ─── KPIs ─── */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+          <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
+          <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
+          <Kpi label="Vendas convertidas" value={fmtMoeda(vendasConvertidasValor)} icon={DollarSign} color={AURORA.green} />
+          <Kpi label="Vendas efetivas" value={vendasEfetivas.length} icon={Trophy} color={AURORA.green} />
+          <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={DollarSign} color={AURORA.accent} />
         </div>
 
-        {aba === 'indicar' ? (
-          <div className="rounded-2xl p-8 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
-              <Plus className="w-7 h-7 text-white" />
+        {/* ─── Gráfico de distribuição por status ─── */}
+        <div className="rounded-2xl p-5 mb-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+          <p className="text-sm font-bold mb-3" style={{ color: AURORA.text }}>Distribuição por status</p>
+          {total === 0 ? (
+            <p className="text-xs text-center py-6" style={{ color: AURORA.textMuted }}>Nenhuma indicação ainda</p>
+          ) : (
+            <div className="flex flex-col md:flex-row items-center gap-5">
+              <div className="relative" style={{ width: 180, height: 180 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2} stroke="none">
+                      {chartData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <p className="text-2xl font-bold" style={{ color: AURORA.text }}>{total}</p>
+                  <p className="text-[10px]" style={{ color: AURORA.textMuted }}>indicações</p>
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-2 w-full">
+                {chartData.map(d => (
+                  <div key={d.key} className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                    <span className="text-xs flex-1" style={{ color: AURORA.textMuted }}>{d.name}</span>
+                    <span className="text-xs font-bold" style={{ color: AURORA.text }}>{d.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <h2 className="text-lg font-bold mb-1" style={{ color: AURORA.text }}>Cadastre uma nova indicação</h2>
-            <p className="text-sm mb-5 max-w-md mx-auto" style={{ color: AURORA.textMuted }}>
-              Informe os dados do lead (PF ou PJ). Após o cadastro, ele entra na esteira comercial da Villela Exchange e você acompanha o status no Dash.
-            </p>
+          )}
+        </div>
+
+        {/* ─── Suas Indicações ─── */}
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.text }}>
+            <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> Suas Indicações
+          </h2>
+          <div className="flex items-center gap-2">
+            <button onClick={() => queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] })}
+              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
             <button onClick={() => setShowNova(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
               style={{ background: AURORA.accent, color: '#0d1117' }}>
-              <Plus className="w-4 h-4" /> Nova Indicação
+              <Plus className="w-3.5 h-3.5" /> Nova Indicação
             </button>
           </div>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
         ) : (
-          <div>
-            {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-              <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
-              <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
-              <Kpi label="Convertidas" value={convertidos} icon={CheckCircle2} color={AURORA.green} />
-              <Kpi label="Vendas efetivas" value={vendasEfetivas} icon={Trophy} color={AURORA.green} />
-            </div>
-            {isLoading ? (
-              <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
-            ) : (
-              <IndicacoesTab parceiroIdFixo={indicador.id} modoIndicador parceiro={indicador} />
-            )}
-          </div>
+          <IndicacoesTab parceiroIdFixo={indicador.id} modoIndicador parceiro={indicador} hideNovaButton />
         )}
+
+        {/* ─── Footer ─── */}
+        <div className="mt-6 pt-4 flex flex-col md:flex-row items-center justify-between gap-2" style={{ borderTop: `1px solid ${AURORA.border}` }}>
+          <p className="text-[11px]" style={{ color: AURORA.textMuted }}>Villela Exchange · Portal do Indicador</p>
+          <button onClick={toggleNotificacoes}
+            className="flex items-center gap-1.5 text-[11px] font-medium transition"
+            style={{ color: indicador.receber_notificacoes ? AURORA.accent : AURORA.textMuted }}
+            title="Alternar notificações por e-mail">
+            {indicador.receber_notificacoes ? <Bell className="w-3 h-3" /> : <BellOff className="w-3 h-3" />}
+            {indicador.receber_notificacoes ? 'Você recebe notificações por e-mail' : 'Notificações por e-mail desativadas'}
+          </button>
+        </div>
       </div>
 
       {showNova && <NovaIndicacaoModal parceiro={indicador} onClose={() => setShowNova(false)} />}
@@ -251,7 +312,7 @@ function Kpi({ label, value, icon: Icon, color }) {
         <Icon className="w-4 h-4" style={{ color }} />
         <p className="text-[11px]" style={{ color: AURORA.textMuted }}>{label}</p>
       </div>
-      <p className="text-xl font-bold" style={{ color }}>{value}</p>
+      <p className="text-lg font-bold" style={{ color }}>{value}</p>
     </div>
   );
 }
