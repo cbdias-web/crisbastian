@@ -74,6 +74,23 @@ export default function Implantacoes() {
     enabled: !!user?.email,
   });
 
+  const { data: meuPadrinhoNome } = useQuery({
+    queryKey: ['meu-padrinho-nome', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const ps = await base44.entities.PadrinhoProduto.filter({ user_email: user.email, ativo: true });
+      return ps.length > 0 ? ps[0].user_nome : null;
+    },
+    enabled: !!user?.email,
+  });
+
+  // Padrinhos (não-admin) já visualizam o filtro aplicado ao seu próprio nome
+  useEffect(() => {
+    if (!isAdmin && meuPadrinhoNome && filtroPadrinho === 'Todos') {
+      setFiltroPadrinho(meuPadrinhoNome);
+    }
+  }, [meuPadrinhoNome, isAdmin, filtroPadrinho]);
+
   const produtosDisponiveis = [...new Set(implantacoes.map(i => i.produto).filter(Boolean))].sort();
   const vendedoresDisponiveis = [...new Set(implantacoes.map(i => i.vendedor_nome).filter(Boolean))].sort();
   const padrinhosDisponiveis = [...new Set(implantacoes.map(i => i.padrinho_nome).filter(Boolean))].sort();
