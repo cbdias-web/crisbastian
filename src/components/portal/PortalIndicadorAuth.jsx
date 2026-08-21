@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -59,7 +60,8 @@ const STATUS_CHART = {
   descartado: { label: 'Descartado', color: '#6b7280' },
 };
 
-export default function PortalIndicadorAuth({ user, parceiro }) {
+export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false, onSairAdmin }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [indicador, setIndicador] = useState(parceiro);
   const [aceitando, setAceitando] = useState(false);
@@ -67,10 +69,15 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
   const [showWelcome, setShowWelcome] = useState(false);
   const [view, setView] = useState('dash');
 
+  const sairPortal = () => {
+    if (onSairAdmin) onSairAdmin();
+    else navigate('/DashParceiro');
+  };
+
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ['indicador-leads-auth', parceiro?.id],
     queryFn: () => base44.entities.LeadIndicacao.filter({ parceiro_id: parceiro.id }, '-created_date', 200),
-    enabled: !!parceiro?.id && !!parceiro?.termo_aceito,
+    enabled: !!parceiro?.id && (modoAdmin || !!parceiro?.termo_aceito),
   });
 
   if (!parceiro) {
@@ -97,7 +104,7 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
       setIndicador({ ...parceiro, termo_aceito: true, termo_aceito_em: agora });
       setShowWelcome(true);
       toast.success('Termo aceito! Bem-vindo ao portal.');
-      base44.functions.invoke('enviarBoasVindasIndicador', {}).catch(() => {});
+      if (!modoAdmin) base44.functions.invoke('enviarBoasVindasIndicador', {}).catch(() => {});
     } catch (e) { toast.error('Erro: ' + (e?.message || 'não foi possível aceitar o termo')); }
     setAceitando(false);
   };
@@ -113,8 +120,8 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
 
   const nomePrimeiro = (indicador.nome || user?.full_name || 'Indicador').split(' ')[0];
 
-  // ─── 1) Aceite do Termo de Uso ───
-  if (!indicador.termo_aceito) {
+  // ─── 1) Aceite do Termo de Uso ─── (admin pula esta etapa — apenas visualiza o portal)
+  if (!modoAdmin && !indicador.termo_aceito) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: AURORA.bg }}>
         <div className="max-w-xl w-full rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
@@ -207,11 +214,25 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
               <p className="text-xs" style={{ color: AURORA.textMuted }}>{indicador.nome} · {indicador.email}</p>
             </div>
           </div>
-          <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
-            className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
-            title="Sair">
-            <LogOut className="w-4 h-4" />
-          </button>
+          {modoAdmin ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold px-2 py-1 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>
+                Modo Admin · Visualizando
+              </span>
+              <button onClick={sairPortal}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"
+                style={{ background: AURORA.accent, color: '#0d1117' }}
+                title="Voltar para o Dash Parceiro">
+                <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
+              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
+              title="Sair">
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* ─── Banner de boas-vindas ─── */}
@@ -277,11 +298,13 @@ export default function PortalIndicadorAuth({ user, parceiro }) {
               className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
-            <button onClick={() => setView('formulario')}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
-              <Plus className="w-3.5 h-3.5" /> Nova Indicação
-            </button>
+            {!modoAdmin && (
+              <button onClick={() => setView('formulario')}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
+                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                <Plus className="w-3.5 h-3.5" /> Nova Indicação
+              </button>
+            )}
           </div>
         </div>
 

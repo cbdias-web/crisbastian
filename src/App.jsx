@@ -35,6 +35,7 @@ import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
 import PortalIndicador from './pages/PortalIndicador';
+import PortalIndicadorAdmin from './pages/PortalIndicadorAdmin';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -310,6 +311,14 @@ const AuthenticatedAppInner = () => {
         element={
           <LayoutWrapper currentPageName="DashParceiro">
             <DashParceiro />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/PortalIndicadorAdmin/:parceiroId"
+        element={
+          <LayoutWrapper currentPageName="DashParceiro">
+            <PortalIndicadorAdmin />
           </LayoutWrapper>
         }
       />
