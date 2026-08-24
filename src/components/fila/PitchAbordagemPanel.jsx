@@ -17,7 +17,7 @@ const ROTEIROS = {
     nome: 'Dolarize',
     pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange. Tudo bem?
 
-Deixa eu te contextualizar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela é a fortaleza desta operação pelo seu histórico.
+Deixa eu te contextualizar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
 
 Você foi indicado para o Dolarize — a forma mais simples de investir em dólar sem complicação.
 
@@ -34,7 +34,7 @@ Ganchos: proteção cambial, reserva em moeda forte, simplicidade.`,
     nome: 'Conta Internacional',
     pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
 
-A Villela Exchange é a vertical do Grupo Villela que viabiliza soluções financeiras com engenharia técnica — o Grupo Villela é a fortaleza desta operação pelo histórico.
+A Villela Exchange é a vertical do Grupo Villela que viabiliza soluções financeiras com engenharia técnica — o Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
 
 Você foi indicado para a Conta Internacional — abrir uma conta nos EUA como residente no Brasil.
 
@@ -52,7 +52,7 @@ Ganchos: dolarização de caixa, pagamentos internacionais, proteção patrimoni
     nome: 'Offshore',
     pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
 
-A Villela Exchange é a vertical do Grupo Villela que entrega soluções financeiras com engenharia técnica — e proteção patrimonial é o nosso foco. O Grupo Villela é a fortaleza desta operação pelo seu histórico.
+A Villela Exchange é a vertical do Grupo Villela que entrega soluções financeiras com engenharia técnica — e proteção patrimonial é o nosso foco. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
 
 Você foi indicado para estruturação Offshore — proteção patrimonial e planejamento sucessório internacional.
 
@@ -97,7 +97,7 @@ Ganchos: capacidade operacional, proteção e estruturação financeira.`,
     nome: 'História do Grupo Villela',
     pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
 
-Deixa eu te contar quem somos: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela é a fortaleza desta operação pelo seu histórico de mais de 20 anos em câmbio e investimentos internacionais.
+Deixa eu te contar quem somos: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas. Câmbio e soluções internacionais são a vertente de negócios da Exchange.
 
 Quem somos:
 • Especialistas em câmbio, remessas e investimentos no exterior
@@ -116,7 +116,7 @@ const DEFAULT_ROTEIRO = {
   nome: 'Abordagem Geral',
   pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange. Tudo bem?
 
-Deixa eu te apresentar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela é a fortaleza desta operação pelo seu histórico.
+Deixa eu te apresentar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
 
 Nosso foco é proteção patrimonial — offshore, conta internacional e câmbio conversam diretamente com essa vertente. A Exchange possui diversas possibilidades de produtos.
 
@@ -129,8 +129,8 @@ Perguntas de qualificação:
 
 // FAQ construído com base nos produtos e no material de capacitação do portal.
 const FAQ = [
-  { cat: 'Institucional', q: 'Quem é a Villela Exchange?', a: 'A vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela é a fortaleza desta operação pelo seu histórico.' },
-  { cat: 'Institucional', q: 'Qual o foco da Exchange?', a: 'Proteção patrimonial. Offshore, conta internacional e câmbio conversam diretamente com essa vertente de negócios. A Exchange possui diversas possibilidades de produtos.' },
+  { cat: 'Institucional', q: 'Quem é a Villela Exchange?', a: 'A vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.' },
+  { cat: 'Institucional', q: 'Qual o foco da Exchange?', a: 'Câmbio e soluções internacionais são a vertente de negócios da Exchange, com foco em proteção patrimonial — offshore, conta internacional e câmbio conversam diretamente com essa vertente. A Exchange possui diversas possibilidades de produtos.' },
   { cat: 'Institucional', q: 'Vocês são corretora?', a: 'Não. Somos uma vertical consultiva que estrutura soluções financeiras sob medida, com engenharia técnica e acompanhamento jurídico e contábil.' },
   { cat: 'Institucional', q: 'É seguro? É regulado?', a: 'Atuamos com estrutura regulada e parceiros internacionais, sempre dentro da legalidade.' },
   { cat: 'Dolarize', q: 'O que é o Dolarize?', a: 'A forma mais simples de investir em dólar sem complicação, com starting price justo e liquidez diária.' },
