@@ -224,8 +224,8 @@ export default function PitchAbordagemPanel({ produto, nomeLead }) {
           </div>
 
           {/* Chat IA */}
-          <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2 min-h-[100px]">
-            {msgs.length === 0 && <p className="text-[10px] italic text-center pt-2" style={{ color: AURORA.textMuted }}>Trabalhe objeções em tempo real — clique acima ou digite a sua.</p>}
+          <div className="overflow-y-auto px-3 py-2 space-y-2" style={{ maxHeight: '40%' }}>
+            {msgs.length === 0 && <p className="text-[10px] italic text-center" style={{ color: AURORA.textMuted }}>Trabalhe objeções em tempo real — clique acima ou digite a sua.</p>}
             {msgs.map((m, i) => (
               <div key={i} className={`flex gap-2 ${m.de === 'user' ? 'flex-row-reverse' : ''}`}>
                 <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.15)' : 'rgba(0,212,170,0.15)' }}>
