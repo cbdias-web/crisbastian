@@ -226,7 +226,7 @@ export default function FilaContato() {
             )}
           </div>
         ) : (
-          <FilaContatoKanban itens={filaFiltrada} onSelectItem={setPopup} />
+          <FilaContatoKanban itens={filaFiltrada} onSelectItem={setPopup} onAtualizado={() => queryClient.invalidateQueries({ queryKey: ['fila-contato'] })} />
         )}
       </div>
 
