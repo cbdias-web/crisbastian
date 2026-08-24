@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
-import { Loader2, RefreshCw, Zap, Lock, Phone, Users } from 'lucide-react';
+import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import FilaContatoKanban from '@/components/fila/FilaContatoKanban';
 import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
@@ -27,6 +27,9 @@ export default function FilaContato() {
   const [vendedor, setVendedor] = useState(null);
   const [popup, setPopup] = useState(null);
   const [montando, setMontando] = useState(false);
+  const [busca, setBusca] = useState('');
+  const [dataFiltro, setDataFiltro] = useState(hoje());
+  const [modo, setModo] = useState('fila'); // 'fila' (data_fila) | 'agendados' (proximo_contato)
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -46,21 +49,28 @@ export default function FilaContato() {
   const temPermissao = isAdmin || (user?.menus_acesso || []).includes('FilaContato') || (user?.menus_acesso || []).includes('CentralLeads');
 
   const { data: fila = [], isLoading, refetch } = useQuery({
-    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin],
+    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataFiltro, modo],
     queryFn: async () => {
       if (!user) return [];
-      const hojeStr = hoje();
+      const filtro = modo === 'agendados'
+        ? { proximo_contato: dataFiltro, status: 'pendente' }
+        : { data_fila: dataFiltro };
       if (isAdmin && !getImpersonatedVendedor() && !vendedor) {
-        return base44.entities.FilaContato.filter({ data_fila: hojeStr }, 'prioridade');
+        return base44.entities.FilaContato.filter(filtro, 'prioridade');
       }
       const vid = vendedor?.id;
       if (!vid) return [];
-      const todos = await base44.entities.FilaContato.filter({ data_fila: hojeStr }, 'prioridade');
+      const todos = await base44.entities.FilaContato.filter(filtro, 'prioridade');
       return todos.filter(f => f.vendedor_id === vid);
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
   });
+
+  // Filtro local por nome/telefone (aplicado sobre o resultado da query)
+  const filaFiltrada = busca.trim()
+    ? fila.filter(f => (f.nome || '').toLowerCase().includes(busca.trim().toLowerCase()) || (f.telefone || '').includes(busca.trim()))
+    : fila;
 
   const montarFila = async () => {
     setMontando(true);
@@ -114,7 +124,7 @@ export default function FilaContato() {
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Fila de Contatos</h1>
             </div>
             <p className="text-sm" style={{ color: AURORA.textMuted }}>
-              {isAdmin && !getImpersonatedVendedor() ? 'Visão geral · Admin' : vendedor?.nome || '—'} · {hoje().split('-').reverse().join('/')}
+              {isAdmin && !getImpersonatedVendedor() ? 'Visão geral · Admin' : vendedor?.nome || '—'} · {dataFiltro.split('-').reverse().join('/')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -126,6 +136,39 @@ export default function FilaContato() {
             <button onClick={() => refetch()} className="p-2 rounded-xl transition" style={{ background: AURORA.surface2, color: AURORA.textMuted }}>
               <RefreshCw className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+
+        {/* Barra de filtros */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {/* Modo */}
+          <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${AURORA.border}` }}>
+            <button onClick={() => setModo('fila')}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition"
+              style={{ background: modo === 'fila' ? 'rgba(0,212,170,0.18)' : AURORA.surface, color: modo === 'fila' ? AURORA.accent : AURORA.textMuted }}>
+              <Calendar className="w-3.5 h-3.5" /> Fila do dia
+            </button>
+            <button onClick={() => setModo('agendados')}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition"
+              style={{ background: modo === 'agendados' ? 'rgba(251,191,36,0.18)' : AURORA.surface, color: modo === 'agendados' ? '#fbbf24' : AURORA.textMuted }}>
+              <Clock className="w-3.5 h-3.5" /> Agendados
+            </button>
+          </div>
+          {/* Data */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <Calendar className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
+            <input type="date" value={dataFiltro} onChange={e => setDataFiltro(e.target.value)}
+              className="bg-transparent text-xs focus:outline-none" style={{ color: AURORA.text }} />
+            {dataFiltro !== hoje() && (
+              <button onClick={() => setDataFiltro(hoje())} className="text-[10px] font-semibold" style={{ color: AURORA.accent }}>Hoje</button>
+            )}
+          </div>
+          {/* Busca */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl flex-1 min-w-[200px]" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: AURORA.textMuted }} />
+            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou telefone..."
+              className="bg-transparent text-xs flex-1 focus:outline-none" style={{ color: AURORA.text }} />
+            {busca && <button onClick={() => setBusca('')} className="flex-shrink-0"><X className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} /></button>}
           </div>
         </div>
 
@@ -148,18 +191,30 @@ export default function FilaContato() {
 
         {isLoading ? (
           <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin" style={{ color: AURORA.accent }} /></div>
-        ) : fila.length === 0 ? (
+        ) : filaFiltrada.length === 0 ? (
           <div className="rounded-2xl py-16 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-            <Zap className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
-            <p className="font-semibold" style={{ color: AURORA.text }}>Fila vazia para hoje</p>
-            <p className="text-sm mt-1 mb-4" style={{ color: AURORA.textMuted }}>Clique em "Montar Fila do Dia" para sincronizar indicações e carteira.</p>
-            <button onClick={montarFila} disabled={montando}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
-              {montando ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Montar agora
-            </button>
+            {modo === 'fila' && !busca && dataFiltro === hoje() ? (
+              <>
+                <Zap className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
+                <p className="font-semibold" style={{ color: AURORA.text }}>Fila vazia para hoje</p>
+                <p className="text-sm mt-1 mb-4" style={{ color: AURORA.textMuted }}>Clique em "Montar Fila do Dia" para sincronizar indicações e carteira.</p>
+                <button onClick={montarFila} disabled={montando}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  {montando ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Montar agora
+                </button>
+              </>
+            ) : (
+              <>
+                <Search className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
+                <p className="font-semibold" style={{ color: AURORA.text }}>Nenhum contato encontrado</p>
+                <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>
+                  {modo === 'agendados' ? `Sem agendamentos para ${dataFiltro.split('-').reverse().join('/')}` : 'Ajuste a busca ou a data selecionada.'}
+                </p>
+              </>
+            )}
           </div>
         ) : (
-          <FilaContatoKanban itens={fila} onSelectItem={setPopup} />
+          <FilaContatoKanban itens={filaFiltrada} onSelectItem={setPopup} />
         )}
       </div>
 
