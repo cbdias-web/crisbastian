@@ -211,7 +211,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           {/* Coluna principal */}
           <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: `1px solid ${AURORA.border}` }}>
             {view === 'capa' && (
-              <div className="p-6 flex flex-col items-center gap-5">
+              <div className="p-5 flex flex-col items-center gap-3">
                 {/* Negociação em andamento — produto + valor (pré-preenchido p/ indicações) */}
                 <NegociacaoLeadBlock
                   produto={produtoNeg}
@@ -221,10 +221,10 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   onSave={salvarNegociacao}
                   saving={salvandoNeg}
                 />
-                {/* QR codes brancos, elegantes e espaçados */}
-                <div className="w-full rounded-2xl py-6 px-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-center mb-5" style={{ color: AURORA.accent, opacity: 0.7 }}>Escaneie para contato</p>
-                  <div className="flex justify-center" style={{ gap: 56 }}>
+                {/* QR codes — botões de ação rápidos (WhatsApp Web / Discador) */}
+                <div className="w-full rounded-2xl py-3.5 px-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-center mb-2.5" style={{ color: AURORA.accent, opacity: 0.7 }}>Toque para contato</p>
+                  <div className="flex justify-center" style={{ gap: 16 }}>
                     {(() => {
                       const wa = waLink(fila.telefone);
                       const tel = telParaTel(fila.telefone);
@@ -232,21 +232,23 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                         <>
                           <a href={wa || undefined} target="_blank" rel="noopener noreferrer"
                             title={wa ? 'Abrir no WhatsApp' : 'Telefone não informado'}
-                            className="text-center transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl"
-                            style={{ cursor: wa ? 'pointer' : 'not-allowed', opacity: wa ? 1 : 0.5 }}>
-                            <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
-                              <img src={qrUrl(wa || ' ', 118)} alt="QR WhatsApp" className="rounded-md" style={{ width: 118, height: 118 }} />
+                            className="group flex flex-col items-center transition hover:scale-[1.03] focus:outline-none"
+                            style={{ cursor: wa ? 'pointer' : 'not-allowed', opacity: wa ? 1 : 0.45 }}>
+                            <div className="rounded-xl p-2 inline-flex items-center gap-2 transition group-hover:shadow-lg"
+                              style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.14), rgba(16,185,129,0.05))', border: '1px solid rgba(16,185,129,0.35)', boxShadow: '0 0 18px rgba(16,185,129,0.10)' }}>
+                              <img src={qrUrl(wa || ' ', 88)} alt="QR WhatsApp" className="rounded-md" style={{ width: 88, height: 88 }} />
                             </div>
-                            <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: AURORA.green }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
+                            <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#34d399' }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
                           </a>
                           <a href={tel || undefined}
                             title={tel ? 'Ligar agora' : 'Telefone não informado'}
-                            className="text-center transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl"
-                            style={{ cursor: tel ? 'pointer' : 'not-allowed', opacity: tel ? 1 : 0.5 }}>
-                            <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
-                              <img src={qrUrl(tel || ' ', 118)} alt="QR Ligação" className="rounded-md" style={{ width: 118, height: 118 }} />
+                            className="group flex flex-col items-center transition hover:scale-[1.03] focus:outline-none"
+                            style={{ cursor: tel ? 'pointer' : 'not-allowed', opacity: tel ? 1 : 0.45 }}>
+                            <div className="rounded-xl p-2 inline-flex items-center gap-2 transition group-hover:shadow-lg"
+                              style={{ background: 'linear-gradient(135deg, rgba(59,130,249,0.14), rgba(59,130,249,0.05))', border: '1px solid rgba(59,130,249,0.35)', boxShadow: '0 0 18px rgba(59,130,249,0.10)' }}>
+                              <img src={qrUrl(tel || ' ', 88)} alt="QR Ligação" className="rounded-md" style={{ width: 88, height: 88 }} />
                             </div>
-                            <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
+                            <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
                           </a>
                         </>
                       );
@@ -258,18 +260,18 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                 <div className="w-full" style={{ maxWidth: 420 }}>
                   <div className="flex gap-3">
                     <button onClick={registrarAtendeu} disabled={registrando}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
                       style={{ background: '#16a34a', color: '#fff' }}>
                       {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />} Atendeu
                     </button>
                     <button onClick={registrarNaoAtendeu} disabled={registrando}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
                       style={{ background: '#dc2626', color: '#fff' }}>
                       {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
                     </button>
                   </div>
                   <button onClick={() => setView('registro')}
-                    className="w-full mt-3 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
+                    className="w-full mt-2.5 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
                     style={{ color: AURORA.accent, border: '1px solid rgba(0,212,170,0.45)', background: 'rgba(0,212,170,0.04)' }}>
                     <History className="w-4 h-4" /> Registros do Contato
                   </button>

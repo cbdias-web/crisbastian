@@ -18,9 +18,9 @@ const PRODUTOS = [
 // valor que está sendo negociado com o lead. Para indicações já vem preenchido.
 export default function NegociacaoLeadBlock({ produto, valor, onProdutoChange, onValorChange, onSave, saving, readOnly }) {
   return (
-    <div className="w-full rounded-2xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-      <p className="text-[10px] uppercase tracking-[0.2em] mb-3" style={{ color: AURORA.accent, opacity: 0.7 }}>Negociação em andamento</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
+    <div className="w-full rounded-2xl p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+      <p className="text-[10px] uppercase tracking-[0.2em] mb-2" style={{ color: AURORA.accent, opacity: 0.7 }}>Negociação em andamento</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-end">
         <div>
           <label className="text-[10px] uppercase tracking-wider mb-1 block" style={{ color: AURORA.textMuted }}>Produto</label>
           <div className="relative">
