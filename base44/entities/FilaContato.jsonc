@@ -72,11 +72,12 @@
         "pendente",
         "atendeu",
         "nao_atendeu",
+        "qualificado",
         "convertido",
         "descartado"
       ],
       "default": "pendente",
-      "description": "Status do item na fila do dia"
+      "description": "Status do item na fila do dia (pendente=na fila, atendeu=em contato, qualificado=qualificado, convertido=convertido, descartado=desqualificado, nao_atendeu=reagendado)"
     },
     "ultima_tentativa_em": {
       "type": "string",
