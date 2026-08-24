@@ -107,7 +107,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       <div
         className="flex flex-col rounded-3xl overflow-hidden"
         style={{
-          width: view === 'cadastro' ? 980 : 720,
+          width: (view === 'cadastro' || view === 'registro') ? 1180 : 720,
           maxWidth: 'calc(100vw - 32px)',
           maxHeight: 'calc(100vh - 140px)',
           background: AURORA.surface,
@@ -254,7 +254,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           </div>
 
           {/* Coluna Pitch (fixa) */}
-          <div className="flex-shrink-0 overflow-y-auto" style={{ width: view === 'cadastro' ? 360 : 280, transition: 'width 0.28s ease' }}>
+          <div className="flex-shrink-0 overflow-y-auto" style={{ width: (view === 'cadastro' || view === 'registro') ? 420 : 280, transition: 'width 0.28s ease' }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
         </div>
