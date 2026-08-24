@@ -21,7 +21,7 @@ const AURORA = {
   green: '#34d399',
 };
 
-export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, onClose }) {
+export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, onClose, onProximo }) {
   // view: 'capa' | 'registro' | 'cadastro' — a área principal troca entre elas (sem coluna extra)
   const [view, setView] = useState('capa');
   const [registrando, setRegistrando] = useState(false);
@@ -77,9 +77,10 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
     setRegistrando(true);
     try {
       await base44.functions.invoke('registrarTentativaContato', { fila_id: fila.id, acao: 'nao_atendeu' });
-      toast.success('Não atendido — reagendado para o próximo dia útil.');
+      toast.success('Não atendido — reagendado. Avançando para o próximo lead da fila.');
       onAtualizado?.();
-      onClose?.();
+      if (onProximo) onProximo(fila);
+      else onClose?.();
     } catch (e) {
       toast.error('Erro: ' + (e?.response?.data?.error || e.message));
     }
@@ -155,8 +156,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       <div
         className="flex flex-col rounded-3xl overflow-hidden"
         style={{
-          width: (view === 'cadastro' || view === 'registro') ? 1180 : 720,
-          maxWidth: 'calc(100vw - 32px)',
+          width: (view === 'cadastro' || view === 'registro') ? 1450 : 1180,
+          maxWidth: 'calc(100vw - 24px)',
           maxHeight: 'calc(100vh - 140px)',
           background: AURORA.surface,
           border: `1px solid ${AURORA.border}`,
@@ -312,7 +313,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           </div>
 
           {/* Coluna Pitch (fixa) */}
-          <div className="flex-shrink-0 overflow-y-auto" style={{ width: (view === 'cadastro' || view === 'registro') ? 420 : 280, transition: 'width 0.28s ease' }}>
+          <div className="flex-shrink-0 overflow-y-auto" style={{ width: (view === 'cadastro' || view === 'registro') ? 560 : 420, transition: 'width 0.28s ease' }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
         </div>

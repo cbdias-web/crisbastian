@@ -253,11 +253,22 @@ export default function FilaContato() {
 
       {popup && (
         <CapaContatoPopup
+          key={popup.id}
           fila={popup}
           user={user}
           vendedor={vendedor}
           onAtualizado={() => queryClient.invalidateQueries({ queryKey: ['fila-contato'] })}
           onClose={() => setPopup(null)}
+          onProximo={(atual) => {
+            const proximos = filaFiltrada
+              .filter(f => f.status === 'pendente' && f.id !== atual.id)
+              .sort((a, b) => (a.prioridade || 1) - (b.prioridade || 1) || (a.posicao || 1) - (b.posicao || 1));
+            if (proximos.length) {
+              setPopup(proximos[0]);
+            } else {
+              setPopup(null);
+            }
+          }}
         />
       )}
     </div>
