@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft } from 'lucide-react';
+import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
@@ -76,7 +76,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         style={{
           width: view === 'cadastro' ? 980 : 720,
           maxWidth: 'calc(100vw - 32px)',
-          maxHeight: 'calc(100vh - 80px)',
+          maxHeight: 'calc(100vh - 140px)',
           background: AURORA.surface,
           border: `1px solid ${AURORA.border}`,
           boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
@@ -97,6 +97,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
               {fila.telefone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{fila.telefone}</span>}
               {fila.produto && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{fila.produto}</span>}
               {fila.origem_label && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{fila.origem_label}</span>}
+              {fila.vendedor_nome && <span className="flex items-center gap-1"><User className="w-3 h-3" />Gerente: {fila.vendedor_nome}</span>}
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg flex-shrink-0 transition hover:bg-white/5" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
@@ -167,6 +168,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Cadastro</p>
                 </div>
                 <div className="p-5">
+                  <InfoOrigem fila={fila} user={user} vendedor={vendedor} />
                   {loadingConv ? (
                     <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>
                   ) : isIndicacao ? (
@@ -193,6 +195,39 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           <div className="flex-shrink-0 overflow-y-auto" style={{ width: view === 'cadastro' ? 360 : 280, transition: 'width 0.28s ease' }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Bloco de Origem & Atendimento — mostra quem indicou (indicação) ou o gerente (carteira)
+// e quem está atendendo o lead no momento.
+function InfoOrigem({ fila, user, vendedor }) {
+  const isInd = fila.tipo_origem === 'indicacao';
+  const parceiro = isInd && fila.origem_label
+    ? fila.origem_label.replace(/^Indic[aã]ç[aã]o\s*[-–]\s*/i, '').trim()
+    : null;
+  const gerente = fila.vendedor_nome || '—';
+  const atendendo = vendedor?.nome || user?.full_name || user?.nome_tratamento || '—';
+  return (
+    <div className="rounded-xl p-3 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: AURORA.textMuted }}>Origem</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: isInd ? 'rgba(0,212,170,0.12)' : 'rgba(99,102,241,0.12)', color: isInd ? AURORA.accent : '#818cf8' }}>
+            {isInd ? 'Indicação' : 'Carteira'}
+          </span>
+          <span className="text-xs font-medium" style={{ color: AURORA.text }}>
+            {isInd ? (parceiro ? `Indicado por ${parceiro}` : 'Sem indicador') : `Gerente: ${gerente}`}
+          </span>
+        </div>
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: AURORA.textMuted }}>Em Atendimento</p>
+        <div className="flex items-center gap-1.5">
+          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: 'rgba(0,212,170,0.15)', color: AURORA.accent }}>{(atendendo || '?').charAt(0).toUpperCase()}</span>
+          <span className="text-xs font-semibold" style={{ color: AURORA.accent }}>{atendendo}</span>
         </div>
       </div>
     </div>

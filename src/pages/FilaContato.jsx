@@ -6,6 +6,7 @@ import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X
 import { toast } from 'sonner';
 import FilaContatoKanban from '@/components/fila/FilaContatoKanban';
 import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
+import GerenteMultiSelect from '@/components/leads/GerenteMultiSelect';
 
 const AURORA = {
   bg: '#0d1117',
@@ -30,6 +31,7 @@ export default function FilaContato() {
   const [busca, setBusca] = useState('');
   const [dataFiltro, setDataFiltro] = useState(hoje());
   const [modo, setModo] = useState('fila'); // 'fila' (data_fila) | 'agendados' (proximo_contato)
+  const [gerentesSel, setGerentesSel] = useState([]);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -67,10 +69,15 @@ export default function FilaContato() {
     refetchInterval: 30000,
   });
 
-  // Filtro local por nome/telefone (aplicado sobre o resultado da query)
-  const filaFiltrada = busca.trim()
-    ? fila.filter(f => (f.nome || '').toLowerCase().includes(busca.trim().toLowerCase()) || (f.telefone || '').includes(busca.trim()))
-    : fila;
+  const { data: vendedores = [] } = useQuery({
+    queryKey: ['vendedores-ativos-fila'],
+    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+  });
+
+  // Filtro local por nome/telefone e gerentes selecionados (aplicado sobre o resultado da query)
+  const filaFiltrada = fila
+    .filter(f => !gerentesSel.length || gerentesSel.includes(f.vendedor_id))
+    .filter(f => !busca.trim() || (f.nome || '').toLowerCase().includes(busca.trim().toLowerCase()) || (f.telefone || '').includes(busca.trim()));
 
   const montarFila = async () => {
     setMontando(true);
@@ -170,6 +177,11 @@ export default function FilaContato() {
               className="bg-transparent text-xs flex-1 focus:outline-none" style={{ color: AURORA.text }} />
             {busca && <button onClick={() => setBusca('')} className="flex-shrink-0"><X className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} /></button>}
           </div>
+          {isAdmin && (
+            <div className="min-w-[220px] max-w-[300px]">
+              <GerenteMultiSelect vendedores={vendedores} selected={gerentesSel} onChange={setGerentesSel} />
+            </div>
+          )}
         </div>
 
         {/* KPIs */}
