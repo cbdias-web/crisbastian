@@ -28,6 +28,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [loadingConv, setLoadingConv] = useState(false);
   const [vendedores, setVendedores] = useState([]);
   const [agendaAberto, setAgendaAberto] = useState(false);
+  const [classificando, setClassificando] = useState(null);
 
   useEffect(() => {
     base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
@@ -64,6 +65,29 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       toast.error('Erro: ' + (e?.response?.data?.error || e.message));
     }
     setRegistrando(false);
+  };
+
+  const CLASSIFICACAO = [
+    { key: 'em_contato', label: 'Em Contato', status: 'atendeu', color: '#fbbf24' },
+    { key: 'qualificado', label: 'Qualificado', status: 'qualificado', color: '#60a5fa' },
+    { key: 'desqualificado', label: 'Desqualificado', status: 'descartado', color: '#f87171' },
+    { key: 'convertido', label: 'Convertido', status: 'convertido', color: '#34d399' },
+    { key: 'voltar', label: 'Voltar à Fila', status: 'pendente', color: AURORA.accent },
+  ];
+
+  const classificar = async (c) => {
+    if (c.key === 'voltar' && fila.status === 'pendente') return;
+    if (c.key !== 'voltar' && fila.status === c.status) return;
+    setClassificando(c.key);
+    try {
+      await base44.entities.FilaContato.update(fila.id, { status: c.status });
+      toast.success(`Lead classificado como "${c.label}".`);
+      onAtualizado?.();
+      onClose?.();
+    } catch (e) {
+      toast.error('Erro: ' + (e?.message || e));
+    }
+    setClassificando(null);
   };
 
   const verCadastro = async () => {
@@ -110,6 +134,26 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg flex-shrink-0 transition hover:bg-white/5" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
+        </div>
+
+        {/* Barra de classificação rápida — move o lead para a coluna respectiva */}
+        <div className="px-6 py-2.5 flex items-center gap-1.5 flex-wrap flex-shrink-0" style={{ borderBottom: `1px solid ${AURORA.border}`, background: AURORA.surface2 }}>
+          <span className="text-[10px] uppercase tracking-wider mr-1" style={{ color: AURORA.textMuted }}>Classificar:</span>
+          {CLASSIFICACAO.map(c => {
+            const ativo = c.key === 'voltar' ? fila.status === 'pendente' : fila.status === c.status;
+            return (
+              <button key={c.key} onClick={() => classificar(c)} disabled={classificando !== null}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-40"
+                style={{
+                  background: ativo ? c.color : `${c.color}1a`,
+                  color: ativo ? '#0d1117' : c.color,
+                  border: `1px solid ${ativo ? c.color : `${c.color}55`}`,
+                }}>
+                {classificando === c.key && <Loader2 className="w-3 h-3 animate-spin" />}
+                {c.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Body — 2 colunas fixas: principal (capa/registro/cadastro) + pitch */}
