@@ -48,7 +48,9 @@ export default function FilaContato() {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
-  const temPermissao = isAdmin || (user?.menus_acesso || []).includes('FilaContato') || (user?.menus_acesso || []).includes('CentralLeads');
+  // O menu "Fila de Contatos" é alwaysVisible no Layout (visível a todos os
+  // gerentes), então a página libera qualquer usuário autenticado.
+  const temPermissao = !!user;
 
   const { data: fila = [], isLoading, refetch } = useQuery({
     queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataFiltro, modo],
