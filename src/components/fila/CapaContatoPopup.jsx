@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
+import NegociacaoLeadBlock from './NegociacaoLeadBlock';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
 import CadastroCarteiraPanel from './CadastroCarteiraPanel';
 import HistoricoInteracoes from './HistoricoInteracoes';
@@ -30,6 +31,9 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [agendaAberto, setAgendaAberto] = useState(false);
   const [classificando, setClassificando] = useState(null);
   const [leadIndicacao, setLeadIndicacao] = useState(null);
+  const [produtoNeg, setProdutoNeg] = useState(fila.produto || '');
+  const [valorNeg, setValorNeg] = useState(fila.valor_estimado != null ? fila.valor_estimado : '');
+  const [salvandoNeg, setSalvandoNeg] = useState(false);
 
   useEffect(() => {
     base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
@@ -42,6 +46,14 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       base44.entities.LeadIndicacao.get(fila.lead_indicacao_id).then(setLeadIndicacao).catch(() => setLeadIndicacao(null));
     }
   }, [fila.lead_indicacao_id, isIndicacao]);
+
+  // Pré-preenche produto/valor da indicação quando ainda não informados na fila
+  useEffect(() => {
+    if (leadIndicacao) {
+      setProdutoNeg((p) => p || leadIndicacao.produto || '');
+      setValorNeg((v) => (v !== '' ? v : (leadIndicacao.valor_estimado != null ? leadIndicacao.valor_estimado : '')));
+    }
+  }, [leadIndicacao]);
 
   const registrarAtendeu = async () => {
     setRegistrando(true);
@@ -82,13 +94,42 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
     { key: 'voltar', label: 'Voltar à Fila', status: 'pendente', color: AURORA.accent },
   ];
 
+  const salvarNegociacao = async () => {
+    setSalvandoNeg(true);
+    try {
+      await base44.entities.FilaContato.update(fila.id, {
+        produto: produtoNeg,
+        valor_estimado: valorNeg !== '' ? Number(valorNeg) : null,
+      });
+      toast.success('Negociação salva.');
+      onAtualizado?.();
+    } catch (e) {
+      toast.error('Erro: ' + (e?.message || e));
+    }
+    setSalvandoNeg(false);
+  };
+
   const classificar = async (c) => {
     if (c.key === 'voltar' && fila.status === 'pendente') return;
     if (c.key !== 'voltar' && fila.status === c.status) return;
     setClassificando(c.key);
     try {
-      await base44.entities.FilaContato.update(fila.id, { status: c.status });
-      toast.success(`Lead classificado como "${c.label}".`);
+      if (c.status === 'qualificado' || c.status === 'convertido') {
+        // Qualificado → Pipeline | Convertido → Contrato + Pipeline
+        const res = await base44.functions.invoke('classificarLeadFila', {
+          fila_id: fila.id,
+          status: c.status,
+          produto: produtoNeg,
+          valor: valorNeg !== '' ? Number(valorNeg) : null,
+        });
+        if (res?.data?.error) throw new Error(res.data.error);
+        toast.success(c.status === 'convertido'
+          ? 'Lead convertido — contrato e pipeline criados.'
+          : 'Lead qualificado e enviado para o Pipeline.');
+      } else {
+        await base44.entities.FilaContato.update(fila.id, { status: c.status });
+        toast.success(`Lead classificado como "${c.label}".`);
+      }
       onAtualizado?.();
       onClose?.();
     } catch (e) {
@@ -170,6 +211,15 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           <div className="flex-1 min-w-0 overflow-y-auto" style={{ borderRight: `1px solid ${AURORA.border}` }}>
             {view === 'capa' && (
               <div className="p-6 flex flex-col items-center gap-5">
+                {/* Negociação em andamento — produto + valor (pré-preenchido p/ indicações) */}
+                <NegociacaoLeadBlock
+                  produto={produtoNeg}
+                  valor={valorNeg}
+                  onProdutoChange={setProdutoNeg}
+                  onValorChange={setValorNeg}
+                  onSave={salvarNegociacao}
+                  saving={salvandoNeg}
+                />
                 {/* QR codes brancos, elegantes e espaçados */}
                 <div className="w-full rounded-2xl py-6 px-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-center mb-5" style={{ color: AURORA.accent, opacity: 0.7 }}>Escaneie para contato</p>
