@@ -225,18 +225,32 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                 <div className="w-full rounded-2xl py-6 px-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                   <p className="text-[10px] uppercase tracking-[0.2em] text-center mb-5" style={{ color: AURORA.accent, opacity: 0.7 }}>Escaneie para contato</p>
                   <div className="flex justify-center" style={{ gap: 56 }}>
-                    <div className="text-center">
-                      <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
-                        <img src={qrUrl(waLink(fila.telefone) || ' ', 118)} alt="QR WhatsApp" className="rounded-md" style={{ width: 118, height: 118 }} />
-                      </div>
-                      <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: AURORA.green }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
-                        <img src={qrUrl(telParaTel(fila.telefone) || ' ', 118)} alt="QR Ligação" className="rounded-md" style={{ width: 118, height: 118 }} />
-                      </div>
-                      <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
-                    </div>
+                    {(() => {
+                      const wa = waLink(fila.telefone);
+                      const tel = telParaTel(fila.telefone);
+                      return (
+                        <>
+                          <a href={wa || undefined} target="_blank" rel="noopener noreferrer"
+                            title={wa ? 'Abrir no WhatsApp' : 'Telefone não informado'}
+                            className="text-center transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl"
+                            style={{ cursor: wa ? 'pointer' : 'not-allowed', opacity: wa ? 1 : 0.5 }}>
+                            <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
+                              <img src={qrUrl(wa || ' ', 118)} alt="QR WhatsApp" className="rounded-md" style={{ width: 118, height: 118 }} />
+                            </div>
+                            <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: AURORA.green }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
+                          </a>
+                          <a href={tel || undefined}
+                            title={tel ? 'Ligar agora' : 'Telefone não informado'}
+                            className="text-center transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded-xl"
+                            style={{ cursor: tel ? 'pointer' : 'not-allowed', opacity: tel ? 1 : 0.5 }}>
+                            <div className="rounded-xl p-2.5 inline-block" style={{ background: '#0d1117', border: `1px solid ${AURORA.border}` }}>
+                              <img src={qrUrl(tel || ' ', 118)} alt="QR Ligação" className="rounded-md" style={{ width: 118, height: 118 }} />
+                            </div>
+                            <p className="text-[11px] mt-2.5 flex items-center justify-center gap-1 font-medium" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
+                          </a>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
 
