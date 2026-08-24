@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User } from 'lucide-react';
@@ -6,6 +6,7 @@ import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
 import CadastroCarteiraPanel from './CadastroCarteiraPanel';
+import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 
 const AURORA = {
   surface: '#161b22',
@@ -24,6 +25,12 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [registrando, setRegistrando] = useState(false);
   const [conversa, setConversa] = useState(null);
   const [loadingConv, setLoadingConv] = useState(false);
+  const [vendedores, setVendedores] = useState([]);
+  const [agendaAberto, setAgendaAberto] = useState(false);
+
+  useEffect(() => {
+    base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
+  }, []);
 
   const isIndicacao = fila.tipo_origem === 'indicacao';
 
@@ -35,9 +42,9 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         acao: 'atendeu',
         interacao: { tipo: 'Ligação', descricao: 'Atendeu — contato telefônico realizado', resultado: 'Positivo' },
       });
-      toast.success('Atendimento registrado.');
+      toast.success('Atendimento registrado. Agende a reunião e inclua outros gerentes.');
       onAtualizado?.();
-      onClose?.();
+      setAgendaAberto(true);
     } catch (e) {
       toast.error('Erro: ' + (e?.response?.data?.error || e.message));
     }
@@ -70,6 +77,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   };
 
   return (
+    <>
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)' }} onClick={onClose}>
       <div
         className="flex flex-col rounded-3xl overflow-hidden"
@@ -198,6 +206,20 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         </div>
       </div>
     </div>
+    {agendaAberto && (
+      <AgendaMeetModal
+        user={user}
+        vendedorId={vendedor?.id || ''}
+        vendedorNome={vendedor?.nome || ''}
+        clienteNome={fila.nome}
+        clienteId={fila.cliente_id || ''}
+        clienteTelefone={fila.telefone || ''}
+        todosVendedores={vendedores}
+        onClose={() => { setAgendaAberto(false); onClose?.(); }}
+        onSaved={() => { setAgendaAberto(false); onAtualizado?.(); onClose?.(); }}
+      />
+    )}
+    </>
   );
 }
 
