@@ -2,8 +2,8 @@
 // Gera URL de QR code para um payload (tel: ou https://wa.me/...).
 
 export function qrUrl(payload, size = 140) {
-  // QR branco sobre fundo escuro — elegante e com ótimo contraste para leitura.
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(payload)}&bgcolor=0d1117&color=ffffff&qzone=1`;
+  // QR preto sobre fundo branco — máximo contraste, leitura rápida e visual limpo.
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(payload)}&bgcolor=ffffff&color=0d1117&qzone=1`;
 }
 
 // Normaliza telefone brasileiro para wa.me (apenas dígitos, com DDI 55).
