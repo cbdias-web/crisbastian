@@ -121,7 +121,51 @@ export default async function(req: Request): Promise<Response> {
     //  na página de Contratos, pelo botão "Enviar para Vendas", que então
     //  atualiza a LeadIndicacao para 'convertido_venda' e dispara a segunda
     //  notificação ao indicador — "Venda concluída".)
-    // 3) Atualiza ConversaWhatsapp + Lead + LeadIndicacao
+    // 3) Sincroniza a FilaContato → coluna "Convertido" (o lead PERMANECE na esteira)
+    try {
+      const existentes = await base44.asServiceRole.entities.FilaContato.filter({ tipo_origem: 'indicacao', ref_id: conversa_id });
+      if (existentes.length > 0) {
+        for (const f of existentes) {
+          if (f.status !== 'convertido') {
+            const hist = Array.isArray(f.historico) ? f.historico : [];
+            hist.push({ status: 'convertido', observacao: 'Lead convertido em contrato', data: new Date().toISOString() });
+            await base44.asServiceRole.entities.FilaContato.update(f.id, {
+              status: 'convertido',
+              cliente_id: cliente.id,
+              produto,
+              valor_estimado: valorNum || null,
+              historico: hist,
+            });
+          }
+        }
+      } else {
+        // Cria FilaContato na coluna "Convertido" se não existir
+        await base44.asServiceRole.entities.FilaContato.create({
+          tipo_origem: 'indicacao',
+          ref_id: conversa_id,
+          lead_indicacao_id: leadIndicacao?.id || '',
+          cliente_id: cliente.id,
+          nome,
+          telefone: telefoneFinal || telefone,
+          cpf_cnpj: doc,
+          produto,
+          valor_estimado: valorNum || null,
+          parceiro_nome: indicador?.nome || '',
+          parceiro_percentual: indicador?.percentual ?? null,
+          vendedor_id,
+          vendedor_nome,
+          data_fila: new Date().toISOString().split('T')[0],
+          prioridade: 0,
+          posicao: 1,
+          tentativas: 0,
+          status: 'convertido',
+          origem_label: indicador?.nome ? `Indicação · ${indicador.nome}` : 'Indicação',
+          historico: [{ status: 'convertido', observacao: 'Lead convertido em contrato', data: new Date().toISOString() }],
+        });
+      }
+    } catch (e) { console.log('Falha ao sincronizar FilaContato da conversão:', e.message); }
+
+    // 4) Atualiza ConversaWhatsapp + Lead + LeadIndicacao
     try { await base44.asServiceRole.entities.ConversaWhatsapp.update(conversa_id, { status: 'convertido' }); } catch (e) {}
     if (lead) {
       try {

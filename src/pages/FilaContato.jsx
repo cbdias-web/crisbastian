@@ -54,16 +54,37 @@ export default function FilaContato() {
     queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataFiltro, modo],
     queryFn: async () => {
       if (!user) return [];
-      const filtro = modo === 'agendados'
+      // Pendentes: vinculados ao dia selecionado (fila/agendados).
+      // Tratados (atendeu/qualificado/convertido/descartado/nao_atendeu):
+      // persistem na esteira independente da data — o lead "se move" entre
+      // colunas e permanece visível conforme as interações.
+      const filtroPend = modo === 'agendados'
         ? { proximo_contato: dataFiltro, status: 'pendente' }
-        : { data_fila: dataFiltro };
-      if (isAdmin && !getImpersonatedVendedor() && !vendedor) {
-        return base44.entities.FilaContato.filter(filtro, 'prioridade');
-      }
+        : { data_fila: dataFiltro, status: 'pendente' };
       const vid = vendedor?.id;
-      if (!vid) return [];
-      const todos = await base44.entities.FilaContato.filter(filtro, 'prioridade');
-      return todos.filter(f => f.vendedor_id === vid);
+      const isAdminAll = isAdmin && !getImpersonatedVendedor() && !vendedor;
+      const filtrarVendedor = (lista) => isAdminAll ? lista : lista.filter(f => f.vendedor_id === vid);
+
+      if (modo === 'agendados') {
+        // Modo agendados: só pendentes agendados para a data
+        const todos = await base44.entities.FilaContato.filter(filtroPend, 'prioridade');
+        return filtrarVendedor(todos);
+      }
+
+      // Modo fila: pendentes do dia + todos os tratados (persistem)
+      const [pendentes, tratados] = await Promise.all([
+        base44.entities.FilaContato.filter(filtroPend, 'prioridade'),
+        base44.entities.FilaContato.filter({ status: 'atendeu' }, '-updated_date', 300),
+      ]);
+      // Tratados também incluem qualificado/convertido/descartado/nao_atendeu
+      const outrosStatus = ['qualificado', 'convertido', 'descartado', 'nao_atendeu'];
+      const outros = [];
+      for (const s of outrosStatus) {
+        const items = await base44.entities.FilaContato.filter({ status: s }, '-updated_date', 300);
+        outros.push(...items);
+      }
+      const todosTratados = [...tratados, ...outros];
+      return [...filtrarVendedor(pendentes), ...filtrarVendedor(todosTratados)];
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
