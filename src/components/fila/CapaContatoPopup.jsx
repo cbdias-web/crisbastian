@@ -27,6 +27,23 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
 
   const isIndicacao = fila.tipo_origem === 'indicacao';
 
+  const registrarAtendeu = async () => {
+    setRegistrando(true);
+    try {
+      await base44.functions.invoke('registrarTentativaContato', {
+        fila_id: fila.id,
+        acao: 'atendeu',
+        interacao: { tipo: 'Ligação', descricao: 'Atendeu — contato telefônico realizado', resultado: 'Positivo' },
+      });
+      toast.success('Atendimento registrado.');
+      onAtualizado?.();
+      onClose?.();
+    } catch (e) {
+      toast.error('Erro: ' + (e?.response?.data?.error || e.message));
+    }
+    setRegistrando(false);
+  };
+
   const registrarNaoAtendeu = async () => {
     if (!confirm('Confirmar: cliente NÃO atendeu. O lead vai para o fim da fila e é reagendado para o próximo dia útil.')) return;
     setRegistrando(true);
@@ -57,12 +74,13 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       <div
         className="flex flex-col rounded-3xl overflow-hidden"
         style={{
-          width: 720,
+          width: view === 'cadastro' ? 980 : 720,
           maxWidth: 'calc(100vw - 32px)',
           maxHeight: 'calc(100vh - 80px)',
           background: AURORA.surface,
           border: `1px solid ${AURORA.border}`,
           boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
+          transition: 'width 0.28s ease',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -109,17 +127,24 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   </div>
                 </div>
 
-                {/* Botões refinados em pílulas */}
-                <div className="flex items-center justify-center gap-3">
+                {/* Botões de desfecho (chapados) + registro — simétricos e centralizados */}
+                <div className="w-full" style={{ maxWidth: 420 }}>
+                  <div className="flex gap-3">
+                    <button onClick={registrarAtendeu} disabled={registrando}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
+                      style={{ background: '#16a34a', color: '#fff' }}>
+                      {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />} Atendeu
+                    </button>
+                    <button onClick={registrarNaoAtendeu} disabled={registrando}
+                      className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
+                      style={{ background: '#dc2626', color: '#fff' }}>
+                      {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
+                    </button>
+                  </div>
                   <button onClick={() => setView('registro')}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition hover:brightness-110"
-                    style={{ background: AURORA.accent, color: '#0d1117', boxShadow: '0 4px 16px rgba(0,212,170,0.25)' }}>
-                    <PhoneCall className="w-4 h-4" /> Atendeu
-                  </button>
-                  <button onClick={registrarNaoAtendeu} disabled={registrando}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-semibold transition hover:bg-red-500/10 disabled:opacity-40"
-                    style={{ background: 'transparent', color: AURORA.danger, border: '1px solid rgba(248,113,113,0.35)' }}>
-                    {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
+                    className="w-full mt-3 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
+                    style={{ color: AURORA.accent, border: '1px solid rgba(0,212,170,0.45)', background: 'rgba(0,212,170,0.04)' }}>
+                    <FileText className="w-4 h-4" /> Registrar Contato
                   </button>
                 </div>
 
@@ -165,7 +190,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           </div>
 
           {/* Coluna Pitch (fixa) */}
-          <div className="flex-shrink-0 overflow-y-auto" style={{ width: 280 }}>
+          <div className="flex-shrink-0 overflow-y-auto" style={{ width: view === 'cadastro' ? 360 : 280, transition: 'width 0.28s ease' }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
         </div>
