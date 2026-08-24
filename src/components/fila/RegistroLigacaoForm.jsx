@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Save, X, Phone, MessageSquare, Mail, Users, MapPin, Video, Copy, CheckCircle2 } from 'lucide-react';
+import { Loader2, Save, X, Phone, Video, Copy, CheckCircle2, Users, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 
@@ -15,24 +15,61 @@ const AURORA = {
 
 const today = () => new Date().toISOString().split('T')[0];
 
-export default function RegistroLigacaoForm({ fila, onConcluido, onCancelar }) {
+export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCancelar }) {
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Positivo' });
   const [meet, setMeet] = useState({ gerar: false, horario: '09:00', link: '', loading: false });
   const [salvando, setSalvando] = useState(false);
+  const [vendedores, setVendedores] = useState([]);
+  const [user, setUser] = useState(null);
+  const [gerentesAdicionais, setGerentesAdicionais] = useState([]);
+  const [searchGerente, setSearchGerente] = useState('');
+  const [dropdownGerente, setDropdownGerente] = useState(false);
+
+  useEffect(() => {
+    base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
+    base44.auth.me().then(setUser).catch(() => {});
+  }, []);
+
+  const vendedorPrincipal = vendedores.find(v => v.id === (vendedor?.id || fila?.vendedor_id)) || null;
+
+  const gerentesFiltrados = vendedores.filter(v =>
+    v.id !== (vendedor?.id || fila?.vendedor_id) &&
+    (!searchGerente || v.nome?.toLowerCase().includes(searchGerente.toLowerCase()))
+  );
+
+  const toggleGerente = (v) => {
+    setGerentesAdicionais(prev =>
+      prev.find(g => g.id === v.id) ? prev.filter(g => g.id !== v.id) : [...prev, v]
+    );
+  };
 
   const gerarMeet = async () => {
     setMeet(p => ({ ...p, loading: true }));
     try {
+      const targetEmail = vendedorPrincipal?.email && vendedorPrincipal.email !== user?.email ? vendedorPrincipal.email : '';
+      const adicionaisEmails = gerentesAdicionais.map(g => g.email).filter(e => e && e !== user?.email && e !== targetEmail);
+      const adicionaisNomes = gerentesAdicionais.map(g => g.nome).filter(Boolean);
+
+      const [h, m] = (meet.horario || '09:00').split(':').map(Number);
+      const fimH = String(h + 1 > 23 ? 23 : h + 1).padStart(2, '0');
+      const fimM = String(m).padStart(2, '0');
+
       const res = await base44.functions.invoke('criarMeetAgenda', {
         agenda_id: fila.ref_id,
         lead_nome: fila.nome,
         data_agendada: form.proximo_contato || form.data_interacao,
         horario_inicio: meet.horario || '09:00',
+        horario_fim: `${fimH}:${fimM}`,
         com_meet: true,
+        target_user_email: targetEmail,
+        target_vendedor_nome: vendedorPrincipal?.nome || fila?.vendedor_nome || '',
+        organizer_email: user?.email || '',
+        attendees_emails: adicionaisEmails,
+        adicionais_nomes: adicionaisNomes,
       });
       const data = res?.data || res;
       setMeet(p => ({ ...p, link: data.meet_link, loading: false }));
-      toast.success('Link Meet gerado!');
+      toast.success('Link Meet gerado!' + (gerentesAdicionais.length ? ` ${gerentesAdicionais.length} gerente(s) convidado(s).` : ''));
     } catch (e) {
       const msg = e?.response?.data?.error || e?.message || '';
       if (msg.toLowerCase().includes('connection') || msg.toLowerCase().includes('no active')) {
@@ -113,34 +150,87 @@ export default function RegistroLigacaoForm({ fila, onConcluido, onCancelar }) {
           rows={3} autoFocus placeholder="O que foi tratado, próximos passos, interesses do cliente..."
           className="w-full px-3 py-2 rounded-lg text-sm resize-none focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
       </div>
-      {/* Meet */}
-      <div className="rounded-lg p-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
+      {/* Meet + Gerentes adicionais */}
+      <div className="rounded-lg p-3 space-y-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={meet.gerar} onChange={e => setMeet(p => ({ ...p, gerar: e.target.checked, link: '' }))} className="w-4 h-4" style={{ accentColor: '#818cf8' }} />
           <Video className="w-3.5 h-3.5" style={{ color: '#818cf8' }} />
           <span className="text-xs font-semibold" style={{ color: '#818cf8' }}>Agendar Google Meet</span>
         </label>
         {meet.gerar && (
-          <div className="mt-2 flex items-end gap-2 flex-wrap">
+          <>
+            {/* Gerentes adicionais */}
             <div>
-              <label className="text-[10px] block mb-0.5" style={{ color: AURORA.textMuted }}>Horário</label>
-              <input type="time" value={meet.horario} onChange={e => setMeet(p => ({ ...p, horario: e.target.value }))}
-                className="px-2 py-1.5 text-sm rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
-            </div>
-            {!meet.link && (
-              <button onClick={gerarMeet} disabled={meet.loading}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition disabled:opacity-40" style={{ background: '#6366f1' }}>
-                {meet.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />} Gerar Link
-              </button>
-            )}
-            {meet.link && (
-              <div className="flex items-center gap-1.5 p-2 rounded-lg flex-wrap" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#34d399' }} />
-                <a href={meet.link} target="_blank" rel="noreferrer" className="text-[11px] truncate" style={{ color: '#818cf8', maxWidth: 180 }}>{meet.link}</a>
-                <button onClick={() => { navigator.clipboard.writeText(meet.link); toast.success('Copiado!'); }} className="p-1 rounded" style={{ color: AURORA.textMuted }}><Copy className="w-3 h-3" /></button>
+              <label className="text-[11px] mb-1 flex items-center gap-1.5" style={{ color: AURORA.textMuted }}>
+                <Users className="w-3 h-3" /> Outros gerentes participantes
+              </label>
+              {gerentesAdicionais.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {gerentesAdicionais.map(g => (
+                    <span key={g.id} className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg" style={{ background: 'rgba(99,102,241,0.2)', color: '#c7d2fe' }}>
+                      {g.nome}
+                      <button type="button" onClick={() => toggleGerente(g)} className="opacity-60 hover:opacity-100"><X className="w-3 h-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="relative">
+                <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                  <Search className="w-3 h-3 flex-shrink-0" style={{ color: AURORA.textMuted }} />
+                  <input type="text" placeholder="Buscar gerente para incluir..."
+                    value={searchGerente}
+                    onFocus={() => setDropdownGerente(true)}
+                    onChange={e => { setSearchGerente(e.target.value); setDropdownGerente(true); }}
+                    className="bg-transparent text-xs flex-1 focus:outline-none" style={{ color: AURORA.text }} />
+                </div>
+                {dropdownGerente && (
+                  <>
+                    <div className="fixed inset-0 z-[9]" onClick={() => setDropdownGerente(false)} />
+                    <div className="absolute z-10 w-full mt-1 rounded-xl shadow-2xl max-h-40 overflow-y-auto py-1" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                      {gerentesFiltrados.length === 0 && <p className="text-xs text-center py-2" style={{ color: AURORA.textMuted }}>Nenhum gerente</p>}
+                      {gerentesFiltrados.map(v => {
+                        const sel = gerentesAdicionais.find(g => g.id === v.id);
+                        return (
+                          <button type="button" key={v.id} onClick={() => { toggleGerente(v); setSearchGerente(''); }}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition"
+                            style={{ color: sel ? AURORA.accent : AURORA.text }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ background: sel ? AURORA.accent : 'transparent', borderColor: sel ? AURORA.accent : AURORA.border }}>
+                              {sel && <CheckCircle2 className="w-2.5 h-2.5" style={{ color: '#0d1117' }} />}
+                            </div>
+                            <span className="font-medium">{v.nome}</span>
+                          </button>
+                        );
+                      })}
+                      <button type="button" onClick={() => setDropdownGerente(false)} className="w-full text-center text-[10px] py-1.5" style={{ color: AURORA.textMuted, borderTop: `1px solid ${AURORA.border}` }}>Fechar</button>
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+            {/* Horário + gerar link */}
+            <div className="flex items-end gap-2 flex-wrap">
+              <div>
+                <label className="text-[10px] block mb-0.5" style={{ color: AURORA.textMuted }}>Horário</label>
+                <input type="time" value={meet.horario} onChange={e => setMeet(p => ({ ...p, horario: e.target.value }))}
+                  className="px-2 py-1.5 text-sm rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+              </div>
+              {!meet.link && (
+                <button onClick={gerarMeet} disabled={meet.loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition disabled:opacity-40" style={{ background: '#6366f1' }}>
+                  {meet.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />} Gerar Link
+                </button>
+              )}
+              {meet.link && (
+                <div className="flex items-center gap-1.5 p-2 rounded-lg flex-wrap" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                  <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#34d399' }} />
+                  <a href={meet.link} target="_blank" rel="noreferrer" className="text-[11px] truncate" style={{ color: '#818cf8', maxWidth: 180 }}>{meet.link}</a>
+                  <button onClick={() => { navigator.clipboard.writeText(meet.link); toast.success('Copiado!'); }} className="p-1 rounded" style={{ color: AURORA.textMuted }}><Copy className="w-3 h-3" /></button>
+                </div>
+              )}
+            </div>
+          </>
         )}
       </div>
       <div className="flex gap-2">
