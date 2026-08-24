@@ -61,8 +61,23 @@ function useDetalheJornada(lead) {
       }
 
       let interacoes = [];
+      // Busca por cliente_id (lead já convertido) — chave primária de vínculo.
       if (lead.cliente_id) {
         try { interacoes = await base44.entities.InteracaoCliente.filter({ cliente_id: lead.cliente_id }, '-data_interacao', 50); } catch {}
+      }
+      // Fallback por nome: a Fila de Contatos grava a interação com cliente_nome = nome do lead
+      // (mesmo antes da conversão em Cliente), então o histórico aparece no portal desde o 1º contato.
+      const nomeLead = (lead.tipo === 'PF' ? lead.pf_nome : lead.pj_razao_social) || lead.pf_nome || lead.pj_razao_social || '';
+      if (nomeLead && nomeLead.trim().length >= 3) {
+        try {
+          const porNome = await base44.entities.InteracaoCliente.filter({ cliente_nome: nomeLead.trim() }, '-data_interacao', 50);
+          // merge + dedupe por id
+          const seen = new Set(interacoes.map(i => i.id));
+          for (const it of porNome) {
+            if (!seen.has(it.id)) { interacoes.push(it); seen.add(it.id); }
+          }
+          interacoes.sort((a, b) => new Date(b.data_interacao || b.created_date || 0) - new Date(a.data_interacao || a.created_date || 0));
+        } catch {}
       }
 
       let conversa = null;
