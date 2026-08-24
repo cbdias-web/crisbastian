@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import {
   BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users,
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
   TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
-  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake
+  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake, Download, Loader2
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -337,6 +339,47 @@ const sections = [
         'Usuários padrão veem apenas leads direcionados ao seu perfil.',
         'Gerentes sem permissão não visualizam o menu "Central de Leads".',
       ]},
+    ],
+  },
+  {
+    id: 'fila-contatos-popup', icon: Zap, title: 'Fila de Contatos — Popup & Pitch IA',
+    color: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-100',
+    content: [
+      { subtitle: 'O que é?', text: 'A Fila de Contatos (Agenda do Dia) é a esteira diária de atendimento do gerente. Cada lead da carteira ou indicação entra na fila do dia; ao abrir o popup de atendimento, o gerente tem QR codes de ação, botões de desfecho, classificação rápida e um painel de Pitch com IA para tratar objeções em tempo real.' },
+      { subtitle: '🤳 QR Codes de Ação (WhatsApp e Ligação)', items: [
+        'O popup exibe **dois QR codes em contêineres brancos** (borda verde = WhatsApp, azul = Ligação).',
+        '**Toque para contato:** cada QR funciona como botão de ação — abre o WhatsApp Web (wa.me) ou o discador do sistema (tel:).',
+        '**Alto contraste:** códigos em preto sobre fundo branco para máxima legibilidade.',
+        'Se o telefone não estiver informado, o QR aparece esmaecido e sem ação.',
+      ]},
+      { subtitle: '🤖 Painel de Pitch com IA', items: [
+        'Coluna direita do popup com **roteiro específico por produto** (Dolarize, Conta Internacional, Offshore, Rating, Canal Bancário, História do Grupo).',
+        '**Objeções comuns** como botões rápidos — clique para enviar à IA.',
+        '**Chat com IA:** digite a objeção do lead e receba uma sugestão curta e consultiva de como responder/conduzir.',
+        'O campo de digitação fica **fixo na base do painel** (não é cortado) e o histórico rola internamente.',
+        'Aba **FAQ** com busca e acordeão de perguntas frequentes por categoria.',
+      ]},
+      { subtitle: '✅ Botões de desfecho', items: [
+        '**Atendeu (verde chapado):** registra contato positivo e abre o agendamento de reunião (Meet/Calendar).',
+        '**Não Atendeu (vermelho chapado):** o lead vai para o fim da fila e é reagendado para o próximo dia útil — o sistema avança automaticamente para o próximo lead pendente.',
+        '**Registros do Contato:** histórico de tentativas, interações e agendamentos do lead.',
+      ]},
+      { subtitle: '🏷️ Classificação rápida', items: [
+        'Barra superior classifica o lead: **Em Contato, Qualificado, Desqualificado, Convertido, Voltar à Fila**.',
+        '**Qualificado** envia o lead para o Pipeline.',
+        '**Convertido** gera Contrato + Venda e fecha o Pipeline automaticamente.',
+      ]},
+      { subtitle: '🧭 Jornada do Lead até a Conversão', items: [
+        '**1. Captação:** webhook (Make/Zapier) ou Portal do Indicador cria o lead.',
+        '**2. Central de Leads:** conversa de WhatsApp criada + Kanban de funil.',
+        '**3. Distribuição Round-Robin:** gerente disponível selecionado por roleta justa.',
+        '**4. Fila de Contatos:** lead entra na esteira do dia do gerente.',
+        '**5. Popup de Atendimento:** QR + Pitch IA + registros.',
+        '**6. Qualificação:** lead classificado e enviado ao Pipeline.',
+        '**7. Conversão:** Contrato + Venda gerados automaticamente.',
+        '**8. Implantação:** checklist de fases + notificações Jarvis (vendas do tipo "nova").',
+      ]},
+      { subtitle: '📄 PDF da Jornada', text: 'Use o botão "Baixar PDF da Jornada" no topo do Manual para gerar um documento ilustrado (paleta Aurora) com o fluxograma da jornada completa, o diagrama do popup e o fluxo de conversão.' },
     ],
   },
   {
@@ -779,7 +822,7 @@ const categories = [
     id: 'vendas', label: 'Vendas', icon: BarChart2,
     gradFrom: '#00b09b', gradTo: '#007b6e',
     color: 'from-[#00b09b] to-[#007b6e]',
-    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'implantacoes'],
+    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'implantacoes'],
   },
   {
     id: 'financas', label: 'Finanças', icon: DollarSign,
@@ -861,6 +904,28 @@ function SectionBlock({ section, isOpen, onToggle }) {
 export default function Manual() {
   const [openSections, setOpenSections] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [baixandoPdf, setBaixandoPdf] = useState(false);
+
+  const baixarPdfJornada = async () => {
+    setBaixandoPdf(true);
+    try {
+      const res = await base44.functions.invoke('gerarManualJornadaLeadPDF', {});
+      // res.data pode ser o PDF binário (arraybuffer no backend) ou um erro
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'manual-jornada-lead.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('PDF da jornada gerado com sucesso.');
+    } catch (e) {
+      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
+    }
+    setBaixandoPdf(false);
+  };
 
   const toggle = (id) => setOpenSections(prev =>
     prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
@@ -941,6 +1006,14 @@ export default function Manual() {
           <p className="text-white/55 text-xs leading-relaxed mt-4 max-w-2xl border-t border-white/10 pt-4">
             Documentação de todas as funcionalidades: Vendas, Contratos, Pipeline, Comissões, Relatórios, Prospecção, Capacitação e mais.
           </p>
+
+          {/* botão PDF da jornada */}
+          <button onClick={baixarPdfJornada} disabled={baixandoPdf}
+            className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
+            style={{ background: 'linear-gradient(135deg, #00D4AA 0%, #0066cc 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(0,212,170,0.35)' }}>
+            {baixandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Baixar PDF da Jornada do Lead
+          </button>
         </div>
       </div>
 
