@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User } from 'lucide-react';
+import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
@@ -198,7 +198,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <button onClick={() => setView('registro')}
                     className="w-full mt-3 flex items-center justify-center gap-2 py-3.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
                     style={{ color: AURORA.accent, border: '1px solid rgba(0,212,170,0.45)', background: 'rgba(0,212,170,0.04)' }}>
-                    <FileText className="w-4 h-4" /> Registrar Contato
+                    <History className="w-4 h-4" /> Registros do Contato
                   </button>
                 </div>
 
@@ -208,8 +208,6 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <FileText className="w-3.5 h-3.5" /> Ver cadastro do cliente
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-
-                <HistoricoInteracoes fila={fila} />
               </div>
             )}
 
@@ -236,13 +234,21 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
             )}
 
             {view === 'registro' && (
-              <div className="p-5 space-y-4">
-                <HistoricoInteracoes fila={fila} />
-                <RegistroLigacaoForm
-                  fila={fila}
-                  onConcluido={() => { onAtualizado?.(); onClose?.(); }}
-                  onCancelar={() => setView('capa')}
-                />
+              <div>
+                <div className="flex items-center gap-2 px-5 py-3 sticky top-0 z-10" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
+                  <button onClick={() => setView('capa')} className="flex items-center gap-1.5 text-xs font-semibold transition hover:opacity-80" style={{ color: AURORA.textMuted }}>
+                    <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+                  </button>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Registros do Contato</p>
+                </div>
+                <div className="p-5 space-y-4">
+                  <HistoricoInteracoes fila={fila} />
+                  <RegistroLigacaoForm
+                    fila={fila}
+                    onConcluido={() => { onAtualizado?.(); onClose?.(); }}
+                    onCancelar={() => setView('capa')}
+                  />
+                </div>
               </div>
             )}
           </div>
