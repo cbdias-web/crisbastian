@@ -329,7 +329,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           </div>
 
           {/* Coluna Pitch (fixa) */}
-          <div className="flex-shrink-0 overflow-y-auto" style={{ width: (view === 'cadastro' || view === 'registro') ? 560 : 420, transition: 'width 0.28s ease' }}>
+          <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: (view === 'cadastro' || view === 'registro') ? 560 : 420, transition: 'width 0.28s ease' }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
         </div>
