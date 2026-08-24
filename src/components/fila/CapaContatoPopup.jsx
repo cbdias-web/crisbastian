@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, User, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare } from 'lucide-react';
+import { X, Phone, User, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
@@ -42,8 +42,9 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   };
 
   const abrirCadastro = async () => {
-    setShowCadastro(s => !s);
-    if (showCadastro) return;
+    const next = !showCadastro;
+    setShowCadastro(next);
+    if (!next) return;
     if (fila.tipo_origem === 'indicacao' && !conversa) {
       setLoadingConv(true);
       try {
@@ -57,7 +58,19 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
-      <div className="w-full max-w-3xl max-h-[calc(100vh-140px)] flex flex-col rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
+      <div
+        className="flex flex-col rounded-2xl overflow-hidden"
+        style={{
+          width: showCadastro ? 960 : 640,
+          maxWidth: 'calc(100vw - 32px)',
+          maxHeight: 'calc(100vh - 80px)',
+          background: AURORA.surface,
+          border: `1px solid ${AURORA.border}`,
+          boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+          transition: 'width 320ms ease',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="px-5 py-3 flex items-start justify-between flex-shrink-0" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex-1 min-w-0">
@@ -76,51 +89,49 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           <button onClick={onClose} className="p-1.5 rounded-lg flex-shrink-0" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
         </div>
 
-        {/* Body — 2 colunas: esquerda capa/cadastro, direita pitch */}
-        <div className="flex-1 overflow-y-auto flex flex-col md:flex-row">
-          <div className="flex-1 p-5 space-y-4 min-w-0">
+        {/* Body — colunas: capa (fixa) | cadastro (expande quando aberta) | pitch (fixa) */}
+        <div className="flex-1 flex flex-row overflow-hidden">
+          {/* Coluna Capa */}
+          <div
+            className="flex-shrink-0 overflow-y-auto p-4 space-y-3"
+            style={{ width: 300, borderRight: `1px solid ${AURORA.border}` }}
+          >
             {etapa === 'capa' && (
               <>
-                {/* QR codes */}
+                {/* QR codes brandos e espaçados */}
                 <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <p className="text-[11px] font-bold uppercase tracking-wider mb-3" style={{ color: AURORA.accent }}>Escaneie para iniciar o contato</p>
-                  <div className="flex gap-4 justify-center">
-                    <div className="text-center">
-                      <img src={qrUrl(waLink(fila.telefone) || ' ', 140)} alt="QR WhatsApp" className="rounded-lg" style={{ width: 140, height: 140, background: '#0d1117' }} />
-                      <p className="text-[10px] mt-1 flex items-center justify-center gap-1" style={{ color: AURORA.green }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-3 text-center" style={{ color: AURORA.accent, opacity: 0.8 }}>Escaneie para contato</p>
+                  <div className="flex justify-between items-start" style={{ gap: 28 }}>
+                    <div className="text-center flex-1">
+                      <img src={qrUrl(waLink(fila.telefone) || ' ', 132)} alt="QR WhatsApp" className="rounded-lg mx-auto" style={{ width: 132, height: 132, background: '#0d1117', opacity: 0.82 }} />
+                      <p className="text-[10px] mt-1.5 flex items-center justify-center gap-1 font-semibold" style={{ color: AURORA.green }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
                     </div>
-                    <div className="text-center">
-                      <img src={qrUrl(telParaTel(fila.telefone) || ' ', 140)} alt="QR Ligação" className="rounded-lg" style={{ width: 140, height: 140, background: '#0d1117' }} />
-                      <p className="text-[10px] mt-1 flex items-center justify-center gap-1" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
+                    <div className="text-center flex-1">
+                      <img src={qrUrl(telParaTel(fila.telefone) || ' ', 132)} alt="QR Ligação" className="rounded-lg mx-auto" style={{ width: 132, height: 132, background: '#0d1117', opacity: 0.82 }} />
+                      <p className="text-[10px] mt-1.5 flex items-center justify-center gap-1 font-semibold" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Botões Atendeu / Não Atendeu */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => setEtapa('registro')}
-                    className="flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-bold transition" style={{ background: AURORA.accent, color: '#0d1117' }}>
+                    className="flex items-center justify-center gap-1.5 px-2 py-3 rounded-xl text-sm font-bold transition hover:brightness-110" style={{ background: AURORA.accent, color: '#0d1117' }}>
                     <PhoneCall className="w-4 h-4" /> Atendeu
                   </button>
                   <button onClick={registrarNaoAtendeu} disabled={registrando}
-                    className="flex items-center justify-center gap-2 px-4 py-4 rounded-xl text-sm font-bold transition disabled:opacity-40" style={{ background: 'rgba(239,68,68,0.15)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }}>
+                    className="flex items-center justify-center gap-1.5 px-2 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40 hover:brightness-110" style={{ background: 'rgba(239,68,68,0.15)', color: AURORA.danger, border: '1px solid rgba(239,68,68,0.3)' }}>
                     {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
                   </button>
                 </div>
 
-                {/* Botão Cadastro */}
+                {/* Toggle Cadastro */}
                 <button onClick={abrirCadastro}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition"
-                  style={{ background: 'rgba(0,212,170,0.08)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
-                  <FileText className="w-4 h-4" /> {showCadastro ? 'Ocultar Cadastro' : 'Ver Cadastro'}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition"
+                  style={{ background: showCadastro ? 'rgba(0,212,170,0.14)' : 'rgba(0,212,170,0.06)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+                  <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> {showCadastro ? 'Ocultar Cadastro' : 'Ver Cadastro'}</span>
+                  <ChevronRight className="w-4 h-4 transition-transform" style={{ transform: showCadastro ? 'rotate(90deg)' : 'none' }} />
                 </button>
-
-                {showCadastro && (
-                  loadingConv ? <div className="py-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>
-                  : isIndicacao
-                    ? <CadastroIndicacao conversa={conversa} fila={fila} />
-                    : <CadastroCarteiraPanel clienteId={fila.cliente_id || fila.ref_id} fila={fila} />
-                )}
               </>
             )}
 
@@ -133,8 +144,21 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
             )}
           </div>
 
-          {/* Lateral: Pitch */}
-          <div className="md:w-64 flex-shrink-0 p-3 md:border-l" style={{ borderColor: AURORA.border }}>
+          {/* Coluna Cadastro — expande quando ativada */}
+          {showCadastro && (
+            <div className="flex-1 min-w-0 overflow-y-auto p-4" style={{ borderRight: `1px solid ${AURORA.border}` }}>
+              {loadingConv ? (
+                <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>
+              ) : isIndicacao ? (
+                <CadastroIndicacao conversa={conversa} fila={fila} />
+              ) : (
+                <CadastroCarteiraPanel clienteId={fila.cliente_id || fila.ref_id} fila={fila} />
+              )}
+            </div>
+          )}
+
+          {/* Coluna Pitch */}
+          <div className="flex-shrink-0 overflow-y-auto" style={{ width: 280 }}>
             <PitchAbordagemPanel produto={fila.produto} nomeLead={fila.nome} />
           </div>
         </div>

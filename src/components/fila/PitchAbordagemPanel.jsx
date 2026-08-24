@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Send, Bot, User, Sparkles } from 'lucide-react';
+import { Loader2, Send, Bot, User, Sparkles, MessageCircle } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -25,7 +25,7 @@ const ROTEIROS = {
   },
   OFFSHORE: {
     nome: 'Offshore',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.\n\nVocê foi indicado para estruturação Offshore — proteção patrimonial e planejamento sucessório internacional.\n\nDiferenciais:\n• Estrutura em jurisdição segura\n• Holding patrimonial / sucessória\n• Confidencialidade e proteção de ativos\n• Acompanhamento jurídico e contábil\n\nGanchos: proteção patrimonial, sucessão facilitada,隔离 de risco, dolarização de estrutura.`,
+    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.\n\nVocê foi indicado para estruturação Offshore — proteção patrimonial e planejamento sucessório internacional.\n\nDiferenciais:\n• Estrutura em jurisdição segura\n• Holding patrimonial / sucessória\n• Confidencialidade e proteção de ativos\n• Acompanhamento jurídico e contábil\n\nGanchos: proteção patrimonial, sucessão facilitada, isolamento de risco, dolarização de estrutura.`,
     objecoes: ['"É legal?"', '"Qual custo?"', '"Preciso declarar?"', '"Quanto tempo para estruturar?"'],
   },
   RATING: {
@@ -77,43 +77,57 @@ export default function PitchAbordagemPanel({ produto, nomeLead }) {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-      <div className="px-3 py-2 flex items-center gap-2" style={{ borderBottom: `1px solid ${AURORA.border}`, background: AURORA.surface2 }}>
+    <div className="flex flex-col h-full" style={{ background: AURORA.surface }}>
+      {/* Header compacto */}
+      <div className="px-3 py-2.5 flex items-center gap-2" style={{ borderBottom: `1px solid ${AURORA.border}`, background: 'rgba(0,212,170,0.06)' }}>
         <Sparkles className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
-        <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Pitch · {rot.nome}</p>
+        <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Pitch</p>
+        <span className="text-[10px] px-1.5 py-0.5 rounded-full ml-auto" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{rot.nome}</span>
       </div>
-      <div className="p-3 overflow-y-auto" style={{ maxHeight: 200 }}>
-        <pre className="text-[11px] leading-relaxed whitespace-pre-wrap" style={{ color: AURORA.text }}>{rot.pitch}</pre>
-        <div className="flex flex-wrap gap-1 mt-2">
+
+      {/* Roteiro */}
+      <div className="p-3" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+        <pre className="text-[10.5px] leading-relaxed whitespace-pre-wrap font-sans" style={{ color: AURORA.text, opacity: 0.88 }}>{rot.pitch}</pre>
+      </div>
+
+      {/* Objeções rápidas */}
+      <div className="px-3 py-2.5" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+        <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1" style={{ color: AURORA.textMuted }}>
+          <MessageCircle className="w-2.5 h-2.5" /> Objeções comuns
+        </p>
+        <div className="flex flex-wrap gap-1.5">
           {rot.objecoes.map((o, i) => (
             <button key={i} onClick={() => perguntar(o)} disabled={enviando}
-              className="text-[10px] px-2 py-1 rounded-full transition disabled:opacity-40"
-              style={{ background: 'rgba(0,212,170,0.10)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+              className="text-[10px] px-2 py-1 rounded-full transition hover:brightness-125 disabled:opacity-40"
+              style={{ background: 'rgba(0,212,170,0.08)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
               {o}
             </button>
           ))}
         </div>
       </div>
-      <div className="px-3 py-2 flex-1 overflow-y-auto space-y-2" style={{ borderTop: `1px solid ${AURORA.border}` }}>
-        {msgs.length === 0 && <p className="text-[10px] italic" style={{ color: AURORA.textMuted }}>Trabalhe objeções em tempo real — clique numa objeção acima ou digite a sua.</p>}
+
+      {/* Chat IA */}
+      <div className="flex-1 overflow-y-auto px-3 py-2.5 space-y-2 min-h-[100px]">
+        {msgs.length === 0 && <p className="text-[10px] italic text-center pt-2" style={{ color: AURORA.textMuted }}>Trabalhe objeções em tempo real — clique acima ou digite a sua.</p>}
         {msgs.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.de === 'user' ? 'flex-row-reverse' : ''}`}>
             <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.15)' : 'rgba(0,212,170,0.15)' }}>
               {m.de === 'user' ? <User className="w-3 h-3" style={{ color: '#60a5fa' }} /> : <Bot className="w-3 h-3" style={{ color: AURORA.accent }} />}
             </div>
-            <div className="text-[11px] leading-relaxed max-w-[85%] p-2 rounded-lg" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.12)' : AURORA.surface2, color: AURORA.text }}>
+            <div className="text-[11px] leading-relaxed max-w-[82%] p-2 rounded-lg" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.10)' : AURORA.surface2, color: AURORA.text }}>
               {m.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : m.texto}
             </div>
           </div>
         ))}
       </div>
-      <div className="p-2 flex items-center gap-1" style={{ borderTop: `1px solid ${AURORA.border}` }}>
+
+      {/* Input */}
+      <div className="p-2.5 flex items-center gap-1.5" style={{ borderTop: `1px solid ${AURORA.border}`, background: AURORA.surface2 }}>
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') perguntar(); }}
           placeholder="Digite a objeção do lead..."
-          className="flex-1 px-2 py-1.5 rounded-lg text-[11px] focus:outline-none"
-          style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+          className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] focus:outline-none" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
         <button onClick={() => perguntar()} disabled={enviando || !input.trim()}
-          className="p-1.5 rounded-lg transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          className="p-1.5 rounded-lg transition disabled:opacity-40 hover:brightness-110" style={{ background: AURORA.accent, color: '#0d1117' }}>
           {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
         </button>
       </div>
