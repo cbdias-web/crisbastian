@@ -38,6 +38,24 @@ export default async function(req: Request): Promise<Response> {
     const filaExistente = await base44.asServiceRole.entities.FilaContato.filter({ data_fila: hoje });
     const existenteKey = new Set(filaExistente.map((f) => `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`));
 
+    // Cache de LeadIndicacao para denormalizar produto/valor/parceiro/comissao nas indicacoes
+    const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 500);
+    const resolverLeadIndicacao = (c: any) => {
+      const tel = (c.telefone || '').toString().replace(/\D/g, '');
+      if (tel) {
+        const byTel = todasIndicacoes.find((li) => {
+          const t = (li.tipo === 'PF' ? (li.pf_whatsapp || li.pf_telefone || '') : (li.pj_whatsapp || li.pj_telefone || '')).toString().replace(/\D/g, '');
+          return t && t === tel;
+        });
+        if (byTel) return byTel;
+      }
+      const nomeParceiro = (c.origem || '').replace(/^Indica[çc][aã]o\s*[·\-–]\s*/i, '').trim();
+      return todasIndicacoes.find((li) => li.parceiro_nome === nomeParceiro && (
+        (li.pf_nome && li.pf_nome === c.lead_nome) ||
+        (li.pj_razao_social && li.pj_razao_social === c.lead_nome)
+      )) || null;
+    };
+
     for (const v of vendedores) {
       if (v.ativo === false) continue;
 
@@ -61,12 +79,18 @@ export default async function(req: Request): Promise<Response> {
       for (const c of indicacoes) {
         const key = `indicacao|${c.id}|${v.id}`;
         if (existenteKey.has(key)) continue;
+        const li = resolverLeadIndicacao(c);
         const item = await base44.asServiceRole.entities.FilaContato.create({
           tipo_origem: 'indicacao',
           ref_id: c.id,
+          lead_indicacao_id: li?.id || '',
           nome: c.lead_nome || '',
           telefone: c.telefone || '',
-          produto: c.produto_interesse || '',
+          cpf_cnpj: li ? (li.tipo === 'PF' ? li.pf_cnpj : li.pj_cnpj) : '',
+          produto: c.produto_interesse || li?.produto || '',
+          valor_estimado: li?.valor_estimado ?? null,
+          parceiro_nome: li?.parceiro_nome || '',
+          parceiro_percentual: li?.parceiro_percentual ?? null,
           vendedor_id: v.id,
           vendedor_nome: v.nome || '',
           data_fila: hoje,
@@ -74,7 +98,7 @@ export default async function(req: Request): Promise<Response> {
           posicao: posInd++,
           tentativas: 0,
           status: 'pendente',
-          origem_label: c.origem || 'Indicação',
+          origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
           historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: new Date().toISOString() }],
         });
         filaCriada.push(item);

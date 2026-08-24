@@ -38,6 +38,18 @@
       "type": "string",
       "description": "Produto de interesse (denormalizado)"
     },
+    "valor_estimado": {
+      "type": "number",
+      "description": "Valor estimado da indicacao (denormalizado de LeadIndicacao)"
+    },
+    "parceiro_nome": {
+      "type": "string",
+      "description": "Nome do parceiro/indicador que indicou o lead (denormalizado de LeadIndicacao)"
+    },
+    "parceiro_percentual": {
+      "type": "number",
+      "description": "Percentual de comissionamento do parceiro (denormalizado de LeadIndicacao)"
+    },
     "vendedor_id": {
       "type": "string",
       "description": "ID do gerente responsavel pelo contato"

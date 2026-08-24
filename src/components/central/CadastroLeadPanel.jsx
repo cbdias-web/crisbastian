@@ -67,9 +67,10 @@ function Linha({ icon: Icon, label, value }) {
   );
 }
 
-export default function CadastroLeadPanel({ conversa, defaultOpen = true }) {
+export default function CadastroLeadPanel({ conversa, leadIndicacao, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
-  const { data: lead } = useLeadIndicacao(conversa);
+  const { data: leadFromConv } = useLeadIndicacao(conversa);
+  const lead = leadIndicacao || leadFromConv;
 
   if (!lead) return null;
 

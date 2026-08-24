@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History } from 'lucide-react';
+import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
@@ -29,12 +29,19 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [vendedores, setVendedores] = useState([]);
   const [agendaAberto, setAgendaAberto] = useState(false);
   const [classificando, setClassificando] = useState(null);
+  const [leadIndicacao, setLeadIndicacao] = useState(null);
 
   useEffect(() => {
     base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
   }, []);
 
   const isIndicacao = fila.tipo_origem === 'indicacao';
+
+  useEffect(() => {
+    if (isIndicacao && fila.lead_indicacao_id) {
+      base44.entities.LeadIndicacao.get(fila.lead_indicacao_id).then(setLeadIndicacao).catch(() => setLeadIndicacao(null));
+    }
+  }, [fila.lead_indicacao_id, isIndicacao]);
 
   const registrarAtendeu = async () => {
     setRegistrando(true);
@@ -128,7 +135,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
             </div>
             <div className="flex flex-wrap gap-4 text-xs" style={{ color: AURORA.textMuted }}>
               {fila.telefone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{fila.telefone}</span>}
-              {fila.produto && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{fila.produto}</span>}
+              {(fila.produto || leadIndicacao?.produto) && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{fila.produto || leadIndicacao.produto}</span>}
+              {(fila.valor_estimado != null || leadIndicacao?.valor_estimado != null) && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />R$ {(fila.valor_estimado ?? leadIndicacao?.valor_estimado ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
               {fila.origem_label && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{fila.origem_label}</span>}
               {fila.vendedor_nome && <span className="flex items-center gap-1"><User className="w-3 h-3" />Gerente: {fila.vendedor_nome}</span>}
             </div>
@@ -221,11 +229,11 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Cadastro</p>
                 </div>
                 <div className="p-5">
-                  <InfoOrigem fila={fila} user={user} vendedor={vendedor} />
+                  <InfoOrigem fila={fila} user={user} vendedor={vendedor} leadIndicacao={leadIndicacao} />
                   {loadingConv ? (
                     <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>
                   ) : isIndicacao ? (
-                    <CadastroIndicacao conversa={conversa} fila={fila} />
+                    <CadastroIndicacao conversa={conversa} fila={fila} leadIndicacao={leadIndicacao} />
                   ) : (
                     <CadastroCarteiraPanel clienteId={fila.cliente_id || fila.ref_id} fila={fila} />
                   )}
@@ -279,13 +287,15 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
 
 // Bloco de Origem & Atendimento — mostra quem indicou (indicação) ou o gerente (carteira)
 // e quem está atendendo o lead no momento.
-function InfoOrigem({ fila, user, vendedor }) {
+function InfoOrigem({ fila, user, vendedor, leadIndicacao }) {
   const isInd = fila.tipo_origem === 'indicacao';
-  const parceiro = isInd && fila.origem_label
-    ? fila.origem_label.replace(/^Indic[aã]ç[aã]o\s*[-–]\s*/i, '').trim()
-    : null;
+  const parceiro = fila.parceiro_nome || leadIndicacao?.parceiro_nome || (isInd && fila.origem_label
+    ? fila.origem_label.replace(/^Indic[aã]ç[aã]o\s*[-–·]\s*/i, '').trim()
+    : null);
   const gerente = fila.vendedor_nome || '—';
   const atendendo = vendedor?.nome || user?.full_name || user?.nome_tratamento || '—';
+  const percentual = fila.parceiro_percentual ?? leadIndicacao?.parceiro_percentual ?? null;
+  const valor = fila.valor_estimado ?? leadIndicacao?.valor_estimado ?? null;
   return (
     <div className="rounded-xl p-3 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
       <div>
@@ -298,6 +308,12 @@ function InfoOrigem({ fila, user, vendedor }) {
             {isInd ? (parceiro ? `Indicado por ${parceiro}` : 'Sem indicador') : `Gerente: ${gerente}`}
           </span>
         </div>
+        {isInd && (percentual != null || valor != null) && (
+          <div className="flex items-center gap-3 mt-1.5 text-[10px]" style={{ color: AURORA.textMuted }}>
+            {percentual != null && <span>Comissão: <b style={{ color: AURORA.accent }}>{percentual}%</b></span>}
+            {valor != null && <span>Valor est.: <b style={{ color: AURORA.accent }}>R$ {Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></span>}
+          </div>
+        )}
       </div>
       <div>
         <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: AURORA.textMuted }}>Em Atendimento</p>
@@ -310,11 +326,22 @@ function InfoOrigem({ fila, user, vendedor }) {
   );
 }
 
-// Wrapper leve para CadastroLeadPanel (indicação) — importa sob demanda.
-function CadastroIndicacao({ conversa, fila }) {
+// Wrapper leve para CadastroLeadPanel (indicação) — importa sob demanda e
+// resolve a LeadIndicacao completa pelo id (100% das informações da indicação).
+function CadastroIndicacao({ conversa, fila, leadIndicacao }) {
   const [Comp, setComp] = useState(null);
-  import('@/components/central/CadastroLeadPanel').then(m => setComp(() => m.default)).catch(() => {});
+  const [leadResolvido, setLeadResolvido] = useState(leadIndicacao);
+  useEffect(() => {
+    import('@/components/central/CadastroLeadPanel').then(m => setComp(() => m.default)).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!leadIndicacao && fila.lead_indicacao_id) {
+      base44.entities.LeadIndicacao.get(fila.lead_indicacao_id).then(setLeadResolvido).catch(() => setLeadResolvido(null));
+    } else {
+      setLeadResolvido(leadIndicacao);
+    }
+  }, [fila.lead_indicacao_id, leadIndicacao]);
   if (!Comp) return <div className="py-4 text-center"><Loader2 className="w-4 h-4 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>;
-  if (!conversa) return <p className="text-xs italic py-3" style={{ color: AURORA.textMuted }}>Conversa não encontrada.</p>;
-  return <Comp conversa={conversa} />;
+  if (!conversa && !leadResolvido) return <p className="text-xs italic py-3" style={{ color: AURORA.textMuted }}>Indicação não encontrada.</p>;
+  return <Comp conversa={conversa} leadIndicacao={leadResolvido} />;
 }
