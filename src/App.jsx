@@ -36,6 +36,7 @@ import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
 import PortalIndicador from './pages/PortalIndicador';
 import PortalIndicadorAdmin from './pages/PortalIndicadorAdmin';
+import FilaContato from './pages/FilaContato';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -319,6 +320,14 @@ const AuthenticatedAppInner = () => {
         element={
           <LayoutWrapper currentPageName="DashParceiro">
             <PortalIndicadorAdmin />
+          </LayoutWrapper>
+        }
+      />
+      <Route
+        path="/FilaContato"
+        element={
+          <LayoutWrapper currentPageName="FilaContato">
+            <FilaContato />
           </LayoutWrapper>
         }
       />
