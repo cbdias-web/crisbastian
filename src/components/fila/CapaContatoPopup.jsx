@@ -6,6 +6,7 @@ import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import RegistroLigacaoForm from './RegistroLigacaoForm';
 import CadastroCarteiraPanel from './CadastroCarteiraPanel';
+import HistoricoInteracoes from './HistoricoInteracoes';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 
 const AURORA = {
@@ -163,6 +164,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <FileText className="w-3.5 h-3.5" /> Ver cadastro do cliente
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
+
+                <HistoricoInteracoes fila={fila} />
               </div>
             )}
 
@@ -189,7 +192,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
             )}
 
             {view === 'registro' && (
-              <div className="p-5">
+              <div className="p-5 space-y-4">
+                <HistoricoInteracoes fila={fila} />
                 <RegistroLigacaoForm
                   fila={fila}
                   onConcluido={() => { onAtualizado?.(); onClose?.(); }}
