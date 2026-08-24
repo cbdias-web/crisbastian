@@ -1,0 +1,132 @@
+{
+  "name": "FilaContato",
+  "type": "object",
+  "properties": {
+    "tipo_origem": {
+      "type": "string",
+      "enum": [
+        "carteira",
+        "indicacao"
+      ],
+      "description": "Origem do contato: 'carteira' (Cliente/AgendaContato) ou 'indicacao' (ConversaWhatsapp/LeadIndicacao)"
+    },
+    "ref_id": {
+      "type": "string",
+      "description": "ID da entidade de origem: Cliente.id (carteira) ou ConversaWhatsapp.id (indicacao)"
+    },
+    "lead_indicacao_id": {
+      "type": "string",
+      "description": "ID da LeadIndicacao (quando tipo_origem=indicacao e houver indicacao de origem)"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do Cliente vinculado (carteira ou convertido de indicacao)"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome do contato (denormalizado)"
+    },
+    "telefone": {
+      "type": "string",
+      "description": "Telefone/WhatsApp do contato (denormalizado)"
+    },
+    "cpf_cnpj": {
+      "type": "string",
+      "description": "CPF/CNPJ (denormalizado)"
+    },
+    "produto": {
+      "type": "string",
+      "description": "Produto de interesse (denormalizado)"
+    },
+    "vendedor_id": {
+      "type": "string",
+      "description": "ID do gerente responsavel pelo contato"
+    },
+    "vendedor_nome": {
+      "type": "string",
+      "description": "Nome do gerente responsavel"
+    },
+    "data_fila": {
+      "type": "string",
+      "format": "date",
+      "description": "Dia a que pertence este item da fila"
+    },
+    "prioridade": {
+      "type": "number",
+      "description": "0=indicacao (topo), 1=carteira",
+      "default": 1
+    },
+    "posicao": {
+      "type": "number",
+      "description": "Ordem dentro do dia/prioridade (1 = primeiro)",
+      "default": 1
+    },
+    "tentativas": {
+      "type": "number",
+      "description": "Numero de 'nao atendeu' no dia",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "atendeu",
+        "nao_atendeu",
+        "convertido",
+        "descartado"
+      ],
+      "default": "pendente",
+      "description": "Status do item na fila do dia"
+    },
+    "ultima_tentativa_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da ultima tentativa de contato"
+    },
+    "proximo_contato": {
+      "type": "string",
+      "format": "date",
+      "description": "Data reagendada apos 'nao atendeu' (proximo dia util)"
+    },
+    "meet_link": {
+      "type": "string",
+      "description": "Link da reuniao Google Meet (vinculado)"
+    },
+    "google_event_id": {
+      "type": "string",
+      "description": "ID do evento no Google Calendar (vinculado)"
+    },
+    "historico": {
+      "type": "array",
+      "description": "Linha do tempo de tentativas/atualizacoes do item",
+      "items": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "observacao": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": []
+    },
+    "origem_label": {
+      "type": "string",
+      "description": "Label legivel da origem (ex: 'Indicacao - Nome do Parceiro', 'Carteira')"
+    }
+  },
+  "required": [
+    "tipo_origem",
+    "ref_id",
+    "nome",
+    "vendedor_id",
+    "data_fila",
+    "status"
+  ]
+}
