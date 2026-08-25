@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
+import { adicionarConversaNaFilaHoje } from '../../shared/filaContatoSync.ts';
 
 // Período comercial: 08:00 às 18:00 horário de Brasília (UTC-3), seg-sex
 function isHorarioComercial() {
@@ -98,6 +99,13 @@ Deno.serve(async (req) => {
     migracoes: [],
     alerta_sem_resposta: false,
   });
+
+  // Já inclui na FilaContato de hoje para o lead aparecer na esteira imediatamente
+  try {
+    await adicionarConversaNaFilaHoje(base44, conversa, null);
+  } catch (e) {
+    console.log('Falha ao adicionar na FilaContato:', e?.message || e);
+  }
 
   return Response.json({
     success: true,

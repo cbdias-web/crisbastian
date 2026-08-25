@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
+import { adicionarConversaNaFilaHoje } from '../../shared/filaContatoSync.ts';
 
 // Cria uma indicação a partir do painel autenticado do indicador.
 // Localiza o parceiro pelo e-mail do usuário logado (não exige link_token).
@@ -133,6 +134,12 @@ export default async function(req: Request): Promise<Response> {
             alerta_sem_resposta: false,
           });
           conversa_id = conversa.id;
+          // Já inclui na FilaContato de hoje para o lead aparecer na esteira imediatamente
+          try {
+            await adicionarConversaNaFilaHoje(base44, conversa, lead);
+          } catch (e) {
+            console.log('Falha ao adicionar na FilaContato:', e?.message || e);
+          }
         }
       } catch (e) {
         console.log('Falha ao criar card na Central de Leads:', e.message);
