@@ -493,7 +493,7 @@ export default function Layout({ children, currentPageName }) {
         }}
       >
         {/* Single row: Brand + Navigation + Actions */}
-        <div className="flex items-center px-6 py-2 gap-4">
+        <div className="flex items-center px-6 py-3 gap-4">
           <Link to={createPageUrl('Dashboard')} className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
@@ -737,7 +737,7 @@ export default function Layout({ children, currentPageName }) {
           zIndex: 1,
           paddingTop: isIndicador
             ? '0px'
-            : (impersonating ? '92px' : '56px'),
+            : (impersonating ? '104px' : '68px'),
           minHeight: '100vh',
           background: 'transparent',
         }}
