@@ -492,21 +492,77 @@ export default function Layout({ children, currentPageName }) {
           boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
         }}
       >
-        {/* Row 1: Brand + actions */}
-        <div className="flex items-center justify-between px-6 py-3">
-          <Link to={createPageUrl('Dashboard')} className="flex items-center gap-3">
+        {/* Single row: Brand + Navigation + Actions */}
+        <div className="flex items-center px-6 py-2 gap-4">
+          <Link to={createPageUrl('Dashboard')} className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
               VX
             </div>
             <div>
-              <div className="font-bold text-sm" style={{ color: AURORA.text }}>{isHenriqueStein ? 'PS JUNIOR' : 'Villela Exchange'}</div>
-              <div className="text-[10px] uppercase tracking-widest" style={{ color: AURORA.textMuted }}>{isHenriqueStein ? 'Colorada' : 'Gestão Comercial'}</div>
+              <div className="font-bold text-sm leading-tight" style={{ color: AURORA.text }}>{isHenriqueStein ? 'PS JUNIOR' : 'Villela Exchange'}</div>
+              <div className="text-[9px] uppercase tracking-widest leading-tight" style={{ color: AURORA.textMuted }}>{isHenriqueStein ? 'Colorada' : 'Gestão Comercial'}</div>
             </div>
           </Link>
 
+          {/* Divider between brand and navigation */}
+          <div className="hidden md:block h-7 w-px flex-shrink-0" style={{ background: AURORA.border }} />
+
+          {/* Navigation menus (desktop) — mesma linha da marca */}
+          {!isMobile && (
+            <div className="flex items-center gap-1 flex-1 min-w-0" ref={dropdownRef}>
+              {!isIndicador && (
+              <Link to={createPageUrl('Dashboard')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition flex-shrink-0"
+                style={{
+                  color: currentPageName === 'Dashboard' ? AURORA.accent : AURORA.textMuted,
+                  background: currentPageName === 'Dashboard' ? AURORA.accentDim : 'transparent',
+                  border: currentPageName === 'Dashboard' ? `1px solid ${AURORA.border}` : '1px solid transparent',
+                }}>
+                <BarChart3 className="w-3.5 h-3.5" />
+                Dashboard
+              </Link>
+              )}
+              {navGroups.map((group) => {
+                const isOpen = openDropdown === group.label;
+                const hasActive = group.items.some(i => i.page === currentPageName);
+                const groupBadge = group.items.reduce((sum, i) => sum + (i.badge || 0), 0);
+                return (
+                  <div key={group.label} className="relative flex-shrink-0">
+                    <button
+                      onClick={() => setOpenDropdown(isOpen ? null : group.label)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition relative"
+                      style={{
+                        color: hasActive || isOpen ? AURORA.accent : AURORA.textMuted,
+                        background: hasActive || isOpen ? AURORA.accentDim : 'transparent',
+                        border: hasActive || isOpen ? `1px solid ${AURORA.border}` : '1px solid transparent',
+                      }}>
+                      {group.label}
+                      {groupBadge > 0 && (
+                        <span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+                      )}
+                      <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="absolute top-full left-0 mt-2 rounded-xl shadow-2xl py-2 z-50 min-w-[200px]"
+                        style={{
+                          background: AURORA.surface2,
+                          border: `1px solid ${AURORA.border}`,
+                          boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${AURORA.border}`,
+                        }}>
+                        {group.items.map(item => (
+                          <NavLink key={item.page} item={item} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Right side actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {/* Notifications bell */}
             {isAdmin && totalPendentes > 0 && (
               <Link to={createPageUrl('Notificacoes')} className="relative p-2 rounded-lg transition"
@@ -612,63 +668,6 @@ export default function Layout({ children, currentPageName }) {
             )}
           </div>
         </div>
-
-        {/* Row 2: Navigation tabs (desktop) */}
-        {!isMobile && (
-          <div className="flex items-center px-6 pb-2 gap-1" ref={dropdownRef}>
-            {/* Dashboard quick link (hidden for indicadores — they only have Meu Painel) */}
-            {!isIndicador && (
-            <Link to={createPageUrl('Dashboard')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition"
-              style={{
-                color: currentPageName === 'Dashboard' ? AURORA.accent : AURORA.textMuted,
-                background: currentPageName === 'Dashboard' ? AURORA.accentDim : 'transparent',
-                border: currentPageName === 'Dashboard' ? `1px solid ${AURORA.border}` : '1px solid transparent',
-              }}>
-              <BarChart3 className="w-3.5 h-3.5" />
-              Dashboard
-            </Link>
-            )}
-
-            {navGroups.map((group) => {
-              const isOpen = openDropdown === group.label;
-              const hasActive = group.items.some(i => i.page === currentPageName);
-              const groupBadge = group.items.reduce((sum, i) => sum + (i.badge || 0), 0);
-
-              return (
-                <div key={group.label} className="relative">
-                  <button
-                    onClick={() => setOpenDropdown(isOpen ? null : group.label)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition relative"
-                    style={{
-                      color: hasActive || isOpen ? AURORA.accent : AURORA.textMuted,
-                      background: hasActive || isOpen ? AURORA.accentDim : 'transparent',
-                      border: hasActive || isOpen ? `1px solid ${AURORA.border}` : '1px solid transparent',
-                    }}>
-                    {group.label}
-                    {groupBadge > 0 && (
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
-                    )}
-                    <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {isOpen && (
-                    <div className="absolute top-full left-0 mt-2 rounded-xl shadow-2xl py-2 z-50 min-w-[200px]"
-                      style={{
-                        background: AURORA.surface2,
-                        border: `1px solid ${AURORA.border}`,
-                        boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${AURORA.border}`,
-                      }}>
-                      {group.items.map(item => (
-                        <NavLink key={item.page} item={item} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
       </header>
       )}
 
@@ -738,9 +737,7 @@ export default function Layout({ children, currentPageName }) {
           zIndex: 1,
           paddingTop: isIndicador
             ? '0px'
-            : (impersonating
-              ? (isMobile ? '150px' : '116px')
-              : (isMobile ? '110px' : '116px')),
+            : (impersonating ? '92px' : '56px'),
           minHeight: '100vh',
           background: 'transparent',
         }}

@@ -247,7 +247,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .fixed.inset-0.z-\[80\],
 .fixed.inset-0.z-\[100\] {
   align-items: flex-start !important;
-  padding-top: 116px !important;
+  padding-top: 64px !important;
 }
 
 /* ── Esconde o Jarvis quando um modal overlay estiver aberto ── */
