@@ -737,12 +737,16 @@ export default function Layout({ children, currentPageName }) {
           zIndex: 1,
           paddingTop: isIndicador
             ? '0px'
-            : (impersonating ? '104px' : '68px'),
+            : (impersonating ? '116px' : '80px'),
           minHeight: '100vh',
           background: 'transparent',
         }}
       >
-        {!isIndicador && <MarketTicker />}
+        {!isIndicador && (
+          <div style={{ marginBottom: 10 }}>
+            <MarketTicker />
+          </div>
+        )}
         <BannerAlertaSistema user={user} />
         {children}
       </main>
