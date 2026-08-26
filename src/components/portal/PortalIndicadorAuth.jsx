@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
-  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff,
+  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
@@ -74,9 +74,15 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
     else navigate('/DashParceiro');
   };
 
+  // Consulta geral: indicador liberado pelo admin vê TODAS as indicações (consolidado),
+  // não apenas as suas. Admin em modo visualização sempre filtra pelo parceiro específico.
+  const consultaGeral = !!parceiro?.acesso_consulta_geral && !modoAdmin;
+
   const { data: leads = [], isLoading } = useQuery({
-    queryKey: ['indicador-leads-auth', parceiro?.id],
-    queryFn: () => base44.entities.LeadIndicacao.filter({ parceiro_id: parceiro.id }, '-created_date', 200),
+    queryKey: ['indicador-leads-auth', parceiro?.id, consultaGeral],
+    queryFn: () => consultaGeral
+      ? base44.entities.LeadIndicacao.list('-created_date', 500)
+      : base44.entities.LeadIndicacao.filter({ parceiro_id: parceiro.id }, '-created_date', 200),
     enabled: !!parceiro?.id && (modoAdmin || !!parceiro?.termo_aceito),
   });
 
@@ -226,6 +232,10 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
                 <ArrowRight className="w-3.5 h-3.5 rotate-180" /> Voltar
               </button>
             </div>
+          ) : consultaGeral ? (
+            <span className="text-[10px] font-semibold px-2 py-1 rounded-full flex items-center gap-1" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}>
+              <Eye className="w-3 h-3" /> Consulta Geral · Todas as Indicações
+            </span>
           ) : (
             <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
               className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
@@ -242,7 +252,11 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-sm" style={{ color: AURORA.text }}>Bem-vindo, {nomePrimeiro}!</p>
-            <p className="text-xs" style={{ color: AURORA.textMuted }}>Cadastre indicações e acompanhe a jornada de cada lead. Comissão padrão: <strong style={{ color: AURORA.accent }}>{indicador.percentual_comissao ?? 0}%</strong></p>
+            <p className="text-xs" style={{ color: AURORA.textMuted }}>
+              {consultaGeral
+                ? 'Você tem acesso à consulta geral: visualize e acompanhe todas as indicações da plataforma. Suas novas indicações continuam vinculadas ao seu cadastro.'
+                : <>Cadastre indicações e acompanhe a jornada de cada lead. Comissão padrão: <strong style={{ color: AURORA.accent }}>{indicador.percentual_comissao ?? 0}%</strong></>}
+            </p>
           </div>
         </div>
 
@@ -291,7 +305,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
         {/* ─── Suas Indicações ─── */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.text }}>
-            <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> Suas Indicações
+            <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> {consultaGeral ? 'Todas as Indicações' : 'Suas Indicações'}
           </h2>
           <div className="flex items-center gap-2">
             <button onClick={() => queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] })}
@@ -311,7 +325,12 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
         {isLoading ? (
           <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
         ) : (
-          <IndicacoesTab parceiroIdFixo={indicador.id} modoIndicador parceiro={indicador} hideNovaButton />
+          <IndicacoesTab
+            parceiroIdFixo={consultaGeral ? null : indicador.id}
+            modoIndicador
+            parceiro={indicador}
+            hideNovaButton={false}
+          />
         )}
 
         {/* ─── Footer ─── */}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye } from 'lucide-react';
+import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import IndicadorBoxModal from './IndicadorBoxModal';
 
@@ -123,6 +123,17 @@ export default function ParceirosTab() {
     toast.success('Link do portal copiado!');
   };
 
+  const toggleConsultaGeral = async (p) => {
+    try {
+      const novo = !p.acesso_consulta_geral;
+      await base44.entities.Parceiro.update(p.id, { acesso_consulta_geral: novo });
+      queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
+      toast.success(novo
+        ? `Consulta geral liberada para ${p.nome} — agora vê todas as indicações`
+        : `Consulta geral desativada para ${p.nome}`);
+    } catch (e) { toast.error('Erro: ' + e.message); }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -194,6 +205,11 @@ export default function ParceirosTab() {
                 ) : (
                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(100,100,100,0.2)', color: '#9ca3af' }}>Sem convite</span>
                 )}
+                {p.acesso_consulta_geral && (
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1" style={{ background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }} title="Acesso liberado à consulta geral consolidada">
+                    <EyeIcon className="w-2.5 h-2.5" /> Consulta Geral
+                  </span>
+                )}
               </div>
               <button onClick={(e) => { e.stopPropagation(); setBoxAberto(p); }}
                 className="w-full flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-[11px] font-semibold transition mb-2"
@@ -204,11 +220,20 @@ export default function ParceirosTab() {
                 <Eye className="w-3 h-3" /> Abrir Indicações
               </button>
               <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                <button onClick={() => toggleConsultaGeral(p)}
+                  className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition"
+                  style={p.acesso_consulta_geral
+                    ? { background: 'rgba(99,102,241,0.16)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.35)' }
+                    : { background: AURORA.surface2, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
+                  title={p.acesso_consulta_geral ? 'Desativar consulta geral' : 'Liberar consulta geral (ver todas as indicações)'}>
+                  {p.acesso_consulta_geral ? <EyeIcon className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                  {p.acesso_consulta_geral ? 'Consulta Geral ON' : 'Consulta Geral'}
+                </button>
                 <button onClick={() => enviarConvite(p)} disabled={enviandoConvite === p.id}
                   className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-40"
                   style={{ background: 'rgba(59,130,249,0.14)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.3)' }}>
                   {enviandoConvite === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
-                  {p.convite_enviado ? 'Reenviar' : 'Enviar Convite'}
+                  {p.convite_enviado ? 'Reenviar' : 'Convite'}
                 </button>
                 <button onClick={() => copiarPortal(p)}
                   className="px-2 py-1.5 rounded-lg text-[11px] font-semibold transition"
