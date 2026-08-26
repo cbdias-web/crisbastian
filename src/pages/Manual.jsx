@@ -905,6 +905,7 @@ export default function Manual() {
   const [openSections, setOpenSections] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [baixandoPdf, setBaixandoPdf] = useState(false);
+  const [baixandoPdfIndicador, setBaixandoPdfIndicador] = useState(false);
 
   const baixarPdfJornada = async () => {
     setBaixandoPdf(true);
@@ -925,6 +926,26 @@ export default function Manual() {
       toast.error('Erro ao gerar PDF: ' + (e?.message || e));
     }
     setBaixandoPdf(false);
+  };
+
+  const baixarPdfIndicador = async () => {
+    setBaixandoPdfIndicador(true);
+    try {
+      const res = await base44.functions.invoke('gerarManualCadastroIndicadorPDF', {});
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'manual-cadastro-indicador.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('PDF de cadastro do indicador gerado com sucesso.');
+    } catch (e) {
+      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
+    }
+    setBaixandoPdfIndicador(false);
   };
 
   const toggle = (id) => setOpenSections(prev =>
@@ -1007,13 +1028,21 @@ export default function Manual() {
             Documentação de todas as funcionalidades: Vendas, Contratos, Pipeline, Comissões, Relatórios, Prospecção, Capacitação e mais.
           </p>
 
-          {/* botão PDF da jornada */}
-          <button onClick={baixarPdfJornada} disabled={baixandoPdf}
-            className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
-            style={{ background: 'linear-gradient(135deg, #00D4AA 0%, #0066cc 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(0,212,170,0.35)' }}>
-            {baixandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Baixar PDF da Jornada do Lead
-          </button>
+          {/* botões PDF */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button onClick={baixarPdfJornada} disabled={baixandoPdf}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #00D4AA 0%, #0066cc 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(0,212,170,0.35)' }}>
+              {baixandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Baixar PDF da Jornada do Lead
+            </button>
+            <button onClick={baixarPdfIndicador} disabled={baixandoPdfIndicador}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #db2777 0%, #b91c5c 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(219,39,119,0.35)' }}>
+              {baixandoPdfIndicador ? <Loader2 className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
+              Baixar PDF do Cadastro do Indicador
+            </button>
+          </div>
         </div>
       </div>
 
