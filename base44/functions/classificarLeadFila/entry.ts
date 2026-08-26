@@ -151,6 +151,13 @@ export default async function(req: Request): Promise<Response> {
       ? [{ id: leadIndicacao.parceiro_id, nome: indicadorNome, percentual: indicadorPct ?? 0 }]
       : [];
 
+    // Observações do contrato: preserva o texto do indicador do formulário do lead
+    // (o que ele digitou em "observacoes" ao enviar a indicação).
+    const obsIndicador = (leadIndicacao?.observacoes || '').trim();
+    const obsContrato = obsIndicador
+      ? `Convertido da Fila de Contatos${isInd && indicadorNome ? '. Indicação de ' + indicadorNome : ''}.\n\nObservações do indicador:\n${obsIndicador}`
+      : `Convertido da Fila de Contatos${isInd && indicadorNome ? '. Indicação de ' + indicadorNome : ''}.`;
+
     // Contrato (tipo = produto em negociação, preserva dados da indicação)
     const contrato = await base44.asServiceRole.entities.Contrato.create({
       tipo: prodFinal,
@@ -174,7 +181,7 @@ export default async function(req: Request): Promise<Response> {
       valor_total: valorFinal ?? null,
       status: 'rascunho',
       indicadores: indicadoresArr,
-      observacoes: `Convertido da Fila de Contatos${isInd && indicadorNome ? '. Indicação de ' + indicadorNome : ''}.`,
+      observacoes: obsContrato,
     });
 
     // Atualiza/cria Pipeline marcando "Fechado" e vinculando cliente

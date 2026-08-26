@@ -60,7 +60,11 @@ export default async function(req: Request): Promise<Response> {
     const valorNum = Number(valor) || leadIndicacao?.valor_estimado || 0;
     const dataVenda = data || new Date().toISOString().split('T')[0];
     const indicadoresArr = indicador ? [{ id: indicador.id, nome: indicador.nome, percentual: indicador.percentual }] : [];
-    const obsComum = `Convertido da Central de Leads${indicador ? '. Indicação de ' + indicador.nome : ''}. Produto de origem: ${produto}.`;
+    // Preserva as observações que o indicador digitou no formulário do lead.
+    const obsIndicador = (leadIndicacao?.observacoes || '').trim();
+    const obsComum = obsIndicador
+      ? `Convertido da Central de Leads${indicador ? '. Indicação de ' + indicador.nome : ''}. Produto de origem: ${produto}.\n\nObservações do indicador:\n${obsIndicador}`
+      : `Convertido da Central de Leads${indicador ? '. Indicação de ' + indicador.nome : ''}. Produto de origem: ${produto}.`;
 
     // 1) Cliente
     const cliente = await base44.asServiceRole.entities.Cliente.create({
