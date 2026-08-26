@@ -79,6 +79,28 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     .map(([key, cfg]) => ({ key, name: cfg.label, value: leadsFiltrados.filter(l => l.status === key).length, color: cfg.color }))
     .filter(d => d.value > 0);
 
+  // Ranking de indicadores (top 5) — total de indicações + vendas convertidas
+  const rankingMap = {};
+  leadsFiltrados.forEach(l => {
+    const key = l.parceiro_id || '_sem';
+    const nome = l.parceiro_nome || 'Sem parceiro';
+    if (!rankingMap[key]) rankingMap[key] = { nome, total: 0, vendas: 0, valor: 0 };
+    rankingMap[key].total++;
+  });
+  vendasIndicadas.forEach(v => {
+    (v.indicadores || []).forEach(i => {
+      if (!i || !parceiroIds.has(i.id)) return;
+      if (parceiroId !== 'todos' && parceiroId && i.id !== parceiroId) return;
+      const key = i.id;
+      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valor: 0 };
+      rankingMap[key].vendas++;
+      rankingMap[key].valor += valorVenda(v) * ((Number(i.percentual) || 0) / 100);
+    });
+  });
+  const ranking = Object.values(rankingMap)
+    .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valor - a.valor)
+    .slice(0, 5);
+
   const isLoading = loadingLeads || loadingVendas;
 
   return (
@@ -117,8 +139,8 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
         ) : total === 0 ? (
           <p className="text-xs text-center py-6" style={{ color: AURORA.textMuted }}>Nenhuma indicação registrada</p>
         ) : (
-          <div className="flex flex-col md:flex-row items-center gap-5">
-            <div className="relative" style={{ width: 180, height: 180 }}>
+          <div className="flex flex-col md:flex-row items-stretch gap-5">
+            <div className="relative flex-shrink-0" style={{ width: 180, height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2} stroke="none">
@@ -154,14 +176,51 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
                 <p className="text-[10px]" style={{ color: AURORA.textMuted }}>indicações</p>
               </div>
             </div>
-            <div className="flex-1 grid grid-cols-2 gap-2 w-full">
+
+            {/* Legenda compacta */}
+            <div className="flex flex-col justify-center gap-2 flex-shrink-0">
               {chartData.map(d => (
-                <div key={d.key} className="flex items-center gap-2">
+                <div key={d.key} className="flex items-center gap-2 whitespace-nowrap">
                   <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                  <span className="text-xs flex-1" style={{ color: AURORA.textMuted }}>{d.name}</span>
+                  <span className="text-xs" style={{ color: AURORA.textMuted }}>{d.name}</span>
                   <span className="text-xs font-bold" style={{ color: AURORA.text }}>{d.value}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Ranking de indicadores */}
+            <div className="flex-1 min-w-0">
+              <div className="rounded-xl h-full p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Trophy className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
+                  <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Top Indicadores</p>
+                </div>
+                {ranking.length === 0 ? (
+                  <p className="text-[11px] py-3 text-center" style={{ color: AURORA.textMuted }}>Sem indicadores no período</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {ranking.map((r, i) => {
+                      const medal = ['#fbbf24', '#cbd5e1', '#d97706'][i] || AURORA.textMuted;
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="w-5 text-center text-[11px] font-bold flex-shrink-0" style={{ color: medal }}>{i + 1}º</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: AURORA.text }}>{r.nome}</p>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{r.total} ind.</span>
+                              {r.vendas > 0 && (
+                                <span className="text-[10px] font-semibold" style={{ color: AURORA.green }}>
+                                  {r.vendas} venda{r.vendas > 1 ? 's' : ''} · {fmtMoeda(r.valor)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
