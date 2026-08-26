@@ -287,6 +287,17 @@ export default function Layout({ children, currentPageName }) {
     refetchInterval: 60000
   });
 
+  // Indicações novas (não visualizadas) — badge do link Dash Parceiro no cabeçalho
+  const { data: novasIndicacoes = [] } = useQuery({
+    queryKey: ['indicacoes-novas-badge'],
+    queryFn: async () => {
+      const all = await base44.entities.LeadIndicacao.list('-created_date', 200);
+      return all.filter(i => i.nova === true);
+    },
+    enabled: isAdmin,
+    refetchInterval: 60000
+  });
+
   const { data: todasMensagensChat = [] } = useQuery({
     queryKey: ['chat-unread-global'],
     queryFn: async () => {
@@ -374,7 +385,6 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Prospecção', icon: Users, page: 'Leads' },
         { name: 'Metas', icon: Target, page: 'Metas' },
         { name: 'Produtos', icon: Package, page: 'Produtos' },
-        { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro' },
         { name: 'Importar', icon: Upload, page: 'Importar' },
         { name: 'Usuários', icon: Users, page: 'Usuarios' },
       ]
@@ -521,6 +531,24 @@ export default function Layout({ children, currentPageName }) {
                 }}>
                 <BarChart3 className="w-3.5 h-3.5" />
                 Dashboard
+              </Link>
+              )}
+              {isAdmin && (
+              <Link to={createPageUrl('DashParceiro')}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition flex-shrink-0 relative"
+                style={{
+                  color: currentPageName === 'DashParceiro' ? AURORA.accent : AURORA.textMuted,
+                  background: currentPageName === 'DashParceiro' ? AURORA.accentDim : 'transparent',
+                  border: currentPageName === 'DashParceiro' ? `1px solid ${AURORA.border}` : '1px solid transparent',
+                }}>
+                <Handshake className="w-3.5 h-3.5" />
+                Dash Parceiro
+                {novasIndicacoes.length > 0 && (
+                  <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                    style={{ background: '#ef4444', color: '#fff' }}>
+                    {novasIndicacoes.length > 9 ? '9+' : novasIndicacoes.length}
+                  </span>
+                )}
               </Link>
               )}
               {navGroups.map((group) => {

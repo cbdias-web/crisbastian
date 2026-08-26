@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus } from 'lucide-react';
@@ -49,6 +49,24 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     queryKey: ['parceiros-indicacao'],
     queryFn: () => base44.entities.Parceiro.list('nome'),
   });
+
+  // Admin visualizou as indicações → limpa o flag "nova" (badge do cabeçalho).
+  // Não faz isso no modoIndicador (o parceiro vendo suas próprias indicações não
+  // deve limpar a notificação do admin).
+  useEffect(() => {
+    if (modoIndicador) return;
+    const novas = indicacoes.filter(i => i.nova === true);
+    if (novas.length === 0) return;
+    let cancelado = false;
+    (async () => {
+      for (const n of novas) {
+        if (cancelado) return;
+        try { await base44.entities.LeadIndicacao.update(n.id, { nova: false }); } catch (e) {}
+      }
+      if (!cancelado) queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
+    })();
+    return () => { cancelado = true; };
+  }, [indicacoes, modoIndicador, queryClient]);
 
   const filtradas = indicacoes.filter(i => {
     const matchStatus = filtroStatus === 'todos' || i.status === filtroStatus;
