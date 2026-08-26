@@ -34,6 +34,62 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [produtoNeg, setProdutoNeg] = useState(fila.produto || '');
   const [valorNeg, setValorNeg] = useState(fila.valor_estimado != null ? fila.valor_estimado : '');
   const [salvandoNeg, setSalvandoNeg] = useState(false);
+  const [trocarGerente, setTrocarGerente] = useState(false);
+  const [novoGerenteId, setNovoGerenteId] = useState('');
+  const [reatribuindo, setReatribuindo] = useState(false);
+
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+
+  const reatribuirGerente = async () => {
+    const novo = vendedores.find((v) => v.id === novoGerenteId);
+    if (!novo) return;
+    if (novo.id === fila.vendedor_id) { setTrocarGerente(false); return; }
+    setReatribuindo(true);
+    try {
+      // 1. FilaContato
+      await base44.entities.FilaContato.update(fila.id, {
+        vendedor_id: novo.id,
+        vendedor_nome: novo.nome,
+      });
+      // 2. ConversaWhatsapp (indicação) — migra o lead de gerente
+      if (isIndicacao && fila.ref_id) {
+        try {
+          const conv = await base44.entities.ConversaWhatsapp.get(fila.ref_id).catch(() => null);
+          const migracoes = Array.isArray(conv?.migracoes) ? conv.migracoes : [];
+          migracoes.push({
+            de_nome: fila.vendedor_nome || '',
+            para_nome: novo.nome,
+            motivo: 'Reatribuição manual pelo admin',
+            em: new Date().toISOString(),
+          });
+          await base44.entities.ConversaWhatsapp.update(fila.ref_id, {
+            vendedor_id: novo.id,
+            vendedor_nome: novo.nome,
+            migracoes,
+          });
+        } catch (e) {}
+      }
+      // 3. Lead de origem (se existir)
+      if (isIndicacao) {
+        try {
+          const leads = await base44.entities.Lead.filter({ telefone: fila.telefone });
+          if (leads.length) {
+            await base44.entities.Lead.update(leads[0].id, {
+              vendedor_id: novo.id,
+              vendedor_nome: novo.nome,
+            });
+          }
+        } catch (e) {}
+      }
+      toast.success(`Gerente alterado para ${novo.nome}.`);
+      setTrocarGerente(false);
+      onAtualizado?.();
+      onClose?.();
+    } catch (e) {
+      toast.error('Erro ao reatribuir: ' + (e?.message || e));
+    }
+    setReatribuindo(false);
+  };
 
   useEffect(() => {
     base44.entities.Vendedor.filter({ ativo: true }, 'nome').then(setVendedores).catch(() => {});
@@ -180,8 +236,42 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
               {(fila.produto || leadIndicacao?.produto) && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{fila.produto || leadIndicacao.produto}</span>}
               {(fila.valor_estimado != null || leadIndicacao?.valor_estimado != null) && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />R$ {(fila.valor_estimado ?? leadIndicacao?.valor_estimado ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
               {fila.origem_label && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{fila.origem_label}</span>}
-              {fila.vendedor_nome && <span className="flex items-center gap-1"><User className="w-3 h-3" />Gerente: {fila.vendedor_nome}</span>}
+              {fila.vendedor_nome && (
+                <span className="flex items-center gap-1">
+                  <User className="w-3 h-3" />Gerente: {fila.vendedor_nome}
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setTrocarGerente((p) => !p); setNovoGerenteId(''); }}
+                      className="ml-1 flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition"
+                      style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: '1px solid rgba(0,212,170,0.3)' }}
+                      title="Trocar gerente responsável">
+                      Trocar
+                    </button>
+                  )}
+                </span>
+              )}
             </div>
+            {isAdmin && trocarGerente && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, borderRadius: 12, padding: '8px 10px' }}>
+                <span className="text-[11px] font-semibold" style={{ color: AURORA.textMuted }}>Reatribuir para:</span>
+                <select value={novoGerenteId} onChange={(e) => setNovoGerenteId(e.target.value)}
+                  className="px-2 py-1 rounded-lg text-xs flex-1 min-w-[180px]" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+                  <option value="">Selecione um gerente...</option>
+                  {vendedores.filter((v) => v.id !== fila.vendedor_id).map((v) => (
+                    <option key={v.id} value={v.id}>{v.nome}</option>
+                  ))}
+                </select>
+                <button onClick={reatribuirGerente} disabled={!novoGerenteId || reatribuindo}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40"
+                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  {reatribuindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <User className="w-3 h-3" />} Confirmar
+                </button>
+                <button onClick={() => setTrocarGerente(false)}
+                  className="px-2 py-1.5 rounded-lg text-xs font-semibold" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
+                    Cancelar
+                  </button>
+              </div>
+            )}
           </div>
           <button onClick={onClose} className="p-2 rounded-lg flex-shrink-0 transition hover:bg-white/5" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
         </div>

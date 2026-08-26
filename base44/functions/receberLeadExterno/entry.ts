@@ -33,13 +33,16 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Nenhum vendedor habilitado na esteira de leads' }, { status: 500 });
   }
 
-  // Filtrar gerentes disponíveis (sem agenda bloqueada)
+  // Disponibilidade da agenda (StatusGerente) — usada como predicado da roleta.
+  // A roleta é CONSTANTE: gira sobre TODOS os gerentes ativos da esteira e
+  // escolhe o disponível mais antigo na fila (quem há mais tempo não recebe).
+  // Assim um gerente bloqueado temporariamente não sai da rotação.
   const agora = new Date();
   const statusGerentes = await base44.asServiceRole.entities.StatusGerente.list();
   const statusMap = {};
   for (const s of statusGerentes) statusMap[s.vendedor_id] = s;
 
-  const disponiveis = vendedores.filter(v => {
+  const isDisponivel = (v) => {
     const st = statusMap[v.id];
     if (!st) return true;
     if (!st.disponivel) {
@@ -47,13 +50,13 @@ Deno.serve(async (req) => {
       return false;
     }
     return true;
-  });
+  };
 
-  // Se nenhum disponível, usar todos da esteira (fallback)
-  const pool = disponiveis.length > 0 ? disponiveis : vendedores;
+  // Pool da roleta = todos os gerentes ativos da esteira (não filtra por disponibilidade)
+  const pool = vendedores;
 
-  // Roleta justa: um lead por gerente, obedecendo a sequência (quem há mais tempo não recebe)
-  const vendedor = await proximoDaRoleta(base44, pool);
+  // Roleta justa e constante: um lead por gerente, na sequência de quem há mais tempo não recebe
+  const vendedor = await proximoDaRoleta(base44, pool, isDisponivel);
 
   // Criar o lead
   const lead = await base44.asServiceRole.entities.Lead.create({

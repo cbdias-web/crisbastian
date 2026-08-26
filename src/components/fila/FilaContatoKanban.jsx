@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw } from 'lucide-react';
+import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -11,6 +11,13 @@ const AURORA = {
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
+};
+
+const fmtDataLead = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 
 const STATUS_LABEL = {
@@ -176,6 +183,11 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
                             </div>
                             {item.produto && (
                               <p className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mb-1" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{item.produto}</p>
+                            )}
+                            {(item.data_fila || item.created_date) && (
+                              <p className="text-[9px] flex items-center gap-0.5 mb-1" style={{ color: AURORA.textMuted }} title="Data do lead">
+                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />{fmtDataLead(item.created_date)}
+                              </p>
                             )}
                             <div className="flex items-center justify-between gap-1 flex-wrap">
                               {item.vendedor_nome && <span className="text-[9px] flex items-center gap-0.5 truncate" style={{ color: AURORA.textMuted }}><User className="w-2.5 h-2.5 flex-shrink-0" />{item.vendedor_nome.split(' ')[0]}</span>}
