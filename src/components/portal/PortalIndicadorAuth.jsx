@@ -86,6 +86,14 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
     enabled: !!parceiro?.id && (modoAdmin || !!parceiro?.termo_aceito),
   });
 
+  // Vendas reais vinculadas ao indicador (via espelhamento) — consolida as
+  // conversões efetivas dos leads enviados. Em consulta geral, todas as vendas.
+  const { data: vendas = [] } = useQuery({
+    queryKey: ['indicador-vendas-auth', parceiro?.id, consultaGeral],
+    queryFn: () => base44.entities.Venda.list('-created_date', 500),
+    enabled: !!parceiro?.id && (modoAdmin || !!parceiro?.termo_aceito),
+  });
+
   if (!parceiro) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
@@ -167,11 +175,22 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   // ─── KPIs ───
   const total = leads.length;
   const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
-  const convertidos = leads.filter(l => ['convertido_cliente', 'convertido_contrato', 'convertido_venda'].includes(l.status));
-  const vendasConvertidasValor = convertidos.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
-  const vendasEfetivas = leads.filter(l => l.status === 'convertido_venda');
-  const vendasEfetivasValor = vendasEfetivas.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
-  const comissaoGerada = vendasEfetivasValor * ((indicador.percentual_comissao ?? 0) / 100);
+
+  // Conversões reais (Venda vinculada ao indicador via espelhamento)
+  const minhasVendas = consultaGeral
+    ? vendas
+    : vendas.filter(v => Array.isArray(v.indicadores) && v.indicadores.some(i => i.id === parceiro.id));
+  const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
+  const percentualVenda = (v) => {
+    if (consultaGeral) {
+      return (v.indicadores || []).reduce((s, i) => s + (Number(i.percentual) || 0), 0);
+    }
+    const ind = (v.indicadores || []).find(i => i.id === parceiro.id);
+    return ind ? (Number(ind.percentual) || 0) : (indicador.percentual_comissao ?? 0);
+  };
+  const vendasConvertidasValor = minhasVendas.reduce((s, v) => s + valorVenda(v), 0);
+  const vendasEfetivasCount = minhasVendas.length;
+  const comissaoGerada = minhasVendas.reduce((s, v) => s + valorVenda(v) * (percentualVenda(v) / 100), 0);
 
   // ─── Dados do gráfico de rosca ───
   const chartData = Object.entries(STATUS_CHART)
@@ -265,7 +284,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
           <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
           <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
           <Kpi label="Vendas convertidas" value={fmtMoeda(vendasConvertidasValor)} icon={DollarSign} color={AURORA.green} />
-          <Kpi label="Vendas efetivas" value={vendasEfetivas.length} icon={Trophy} color={AURORA.green} />
+          <Kpi label="Vendas efetivas" value={vendasEfetivasCount} icon={Trophy} color={AURORA.green} />
           <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={DollarSign} color={AURORA.accent} />
         </div>
 
@@ -308,7 +327,10 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
             <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> {consultaGeral ? 'Todas as Indicações' : 'Suas Indicações'}
           </h2>
           <div className="flex items-center gap-2">
-            <button onClick={() => queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] })}
+            <button onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] });
+                queryClient.invalidateQueries({ queryKey: ['indicador-vendas-auth', indicador.id] });
+              }}
               className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
