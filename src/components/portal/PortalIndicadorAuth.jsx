@@ -4,12 +4,13 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
-  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye,
+  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye, Users,
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
+import ParceirosTab from '@/components/central/ParceirosTab';
 
 const AURORA = {
   bg: '#0d1117',
@@ -68,6 +69,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   const [concordo, setConcordo] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [view, setView] = useState('dash');
+  const [abaPortal, setAbaPortal] = useState('indicacoes');
 
   const sairPortal = () => {
     if (onSairAdmin) onSairAdmin();
@@ -92,6 +94,13 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
     queryKey: ['indicador-vendas-auth', parceiro?.id, consultaGeral],
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
     enabled: !!parceiro?.id && (modoAdmin || !!parceiro?.termo_aceito),
+  });
+
+  // Lista de parceiros para filtrar vendas originadas de indicação (consulta geral).
+  const { data: parceiros = [] } = useQuery({
+    queryKey: ['parceiros-consulta-geral-auth'],
+    queryFn: () => base44.entities.Parceiro.list('-created_date', 500),
+    enabled: !!parceiro?.id && consultaGeral,
   });
 
   if (!parceiro) {
@@ -177,8 +186,16 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
 
   // Conversões reais (Venda vinculada ao indicador via espelhamento)
+  // Em consulta geral: apenas vendas originadas de indicação (espelhamento aponta
+  // para um Parceiro cadastrado) e PAGAS (com comprovante) — soma o consolidado real,
+  // não todas as vendas do sistema.
+  const parceiroIds = new Set(parceiros.map(p => p.id));
   const minhasVendas = consultaGeral
-    ? vendas
+    ? vendas.filter(v =>
+        Array.isArray(v.indicadores) &&
+        v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
+        Array.isArray(v.comprovantes) && v.comprovantes.length > 0
+      )
     : vendas.filter(v => Array.isArray(v.indicadores) && v.indicadores.some(i => i.id === parceiro.id));
   const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
   const percentualVenda = (v) => {
@@ -321,38 +338,66 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
           )}
         </div>
 
-        {/* ─── Suas Indicações ─── */}
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.text }}>
-            <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> {consultaGeral ? 'Todas as Indicações' : 'Suas Indicações'}
-          </h2>
-          <div className="flex items-center gap-2">
-            <button onClick={() => {
-                queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] });
-                queryClient.invalidateQueries({ queryKey: ['indicador-vendas-auth', indicador.id] });
-              }}
-              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-            {!modoAdmin && (
-              <button onClick={() => setView('formulario')}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
-                <Plus className="w-3.5 h-3.5" /> Nova Indicação
+        {/* ─── Abas (Indicações / Indicadores) — só em consulta geral ─── */}
+        {consultaGeral && (
+          <div className="flex gap-1 mb-3 p-1 rounded-xl w-fit" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+            {[
+              { key: 'indicacoes', label: 'Indicações', icon: Send },
+              { key: 'indicadores', label: 'Indicadores', icon: Users },
+            ].map(aba => (
+              <button key={aba.key} onClick={() => setAbaPortal(aba.key)}
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
+                style={{
+                  background: abaPortal === aba.key ? AURORA.accent : 'transparent',
+                  color: abaPortal === aba.key ? '#0d1117' : AURORA.textMuted,
+                }}>
+                <aba.icon className="w-3.5 h-3.5" /> {aba.label}
               </button>
-            )}
+            ))}
           </div>
-        </div>
+        )}
 
-        {isLoading ? (
-          <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
-        ) : (
-          <IndicacoesTab
-            parceiroIdFixo={consultaGeral ? null : indicador.id}
-            modoIndicador
-            parceiro={indicador}
-            hideNovaButton={false}
-          />
+        {/* ─── Suas Indicações ─── */}
+        {(!consultaGeral || abaPortal === 'indicacoes') && (
+          <>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.text }}>
+                <Send className="w-4 h-4" style={{ color: AURORA.accent }} /> {consultaGeral ? 'Todas as Indicações' : 'Suas Indicações'}
+              </h2>
+              <div className="flex items-center gap-2">
+                <button onClick={() => {
+                    queryClient.invalidateQueries({ queryKey: ['indicador-leads-auth', indicador.id] });
+                    queryClient.invalidateQueries({ queryKey: ['indicador-vendas-auth', indicador.id] });
+                  }}
+                  className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }} title="Atualizar">
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+                {!modoAdmin && (
+                  <button onClick={() => setView('formulario')}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
+                    style={{ background: AURORA.accent, color: '#0d1117' }}>
+                    <Plus className="w-3.5 h-3.5" /> Nova Indicação
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-10"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
+            ) : (
+              <IndicacoesTab
+                parceiroIdFixo={consultaGeral ? null : indicador.id}
+                modoIndicador
+                parceiro={indicador}
+                hideNovaButton={false}
+              />
+            )}
+          </>
+        )}
+
+        {/* ─── Indicadores (lista consolidada — somente leitura) ─── */}
+        {consultaGeral && abaPortal === 'indicadores' && (
+          <ParceirosTab readOnly />
         )}
 
         {/* ─── Footer ─── */}

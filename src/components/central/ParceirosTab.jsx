@@ -21,7 +21,7 @@ const AURORA = {
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };
 const inputCls = "w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none";
 
-export default function ParceirosTab() {
+export default function ParceirosTab({ readOnly = false }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -158,11 +158,13 @@ export default function ParceirosTab() {
           <p className="text-sm font-bold" style={{ color: AURORA.text }}>Indicadores</p>
           <span className="text-xs" style={{ color: AURORA.textMuted }}>({indicadores.length})</span>
         </div>
-        <button onClick={openNovo}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-          style={{ background: AURORA.accent, color: '#0d1117' }}>
-          <Plus className="w-3.5 h-3.5" /> Novo Indicador
-        </button>
+        {!readOnly && (
+          <button onClick={openNovo}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+            style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <Plus className="w-3.5 h-3.5" /> Novo Indicador
+          </button>
+        )}
       </div>
 
       {isLoading ? (
@@ -235,6 +237,7 @@ export default function ParceirosTab() {
                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.10)'; e.currentTarget.style.borderColor = AURORA.border; }}>
                 <Eye className="w-3 h-3" /> Abrir Indicações
               </button>
+              {!readOnly && (
               <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                 <button onClick={() => toggleConsultaGeral(p)}
                   className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition"
@@ -274,6 +277,7 @@ export default function ParceirosTab() {
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
+              )}
             </div>
           ))}
         </div>
@@ -282,6 +286,7 @@ export default function ParceirosTab() {
       {boxAberto && (
         <IndicadorBoxModal
           parceiro={boxAberto}
+          readOnly={readOnly}
           onEntrarPortal={() => { const p = boxAberto; setBoxAberto(null); navigate(`/PortalIndicadorAdmin/${p.id}`); }}
           onClose={() => setBoxAberto(null)} />
       )}
