@@ -5,6 +5,7 @@ import { Handshake, Send, Users, Lock } from 'lucide-react';
 import ParceirosTab from '@/components/central/ParceirosTab';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
+import ConsolidadoIndicadores from '@/components/portal/ConsolidadoIndicadores';
 
 const AURORA = {
   bg: '#0d1117',
@@ -94,6 +95,8 @@ export default function DashParceiro() {
             </p>
           </div>
         </div>
+
+        <ConsolidadoIndicadores />
 
         <div className="flex gap-1 mb-4 p-1 rounded-xl w-fit" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
           {[
