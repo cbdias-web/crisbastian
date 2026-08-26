@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
   TrendingUp, FileText, DollarSign, Trophy, RefreshCw, Loader2,
 } from 'lucide-react';
@@ -124,6 +124,29 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
                   <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2} stroke="none">
                     {chartData.map((d, i) => <Cell key={i} fill={d.color} />)}
                   </Pie>
+                  <Tooltip
+                    cursor={{ fill: 'rgba(0,212,170,0.06)' }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const d = payload[0].payload;
+                      return (
+                        <div style={{
+                          background: AURORA.surface2,
+                          border: `1px solid ${AURORA.border}`,
+                          borderRadius: 10,
+                          padding: '8px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                        }}>
+                          <span style={{ width: 10, height: 10, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: AURORA.text }}>{d.name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: AURORA.accent }}>{d.value}</span>
+                        </div>
+                      );
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
