@@ -83,11 +83,27 @@ export default function ParceirosTab() {
   };
 
   const excluir = async (p) => {
-    if (!confirm(`Excluir o indicador "${p.nome}"?`)) return;
+    if (!confirm(`Excluir o indicador "${p.nome}"? O acesso ao portal também será removido.`)) return;
     try {
       await base44.entities.Parceiro.delete(p.id);
+      // Limpa o User correspondente criado no convite, se for um User indicador.
+      // (Evita que o indicador fique "órfão" na página Usuários com acesso ao portal.)
+      if (p.email) {
+        try {
+          const users = await base44.entities.User.filter({ email: p.email.trim() });
+          for (const u of users) {
+            if (u.role === 'indicador' || u.indicador === true) {
+              await base44.entities.User.delete(u.id);
+            } else if (u.ativo !== false) {
+              // Não era um User puramente indicador — apenas bloqueia por segurança
+              await base44.entities.User.update(u.id, { ativo: false });
+            }
+          }
+        } catch (e) { console.log('limpeza user indicador falhou:', e?.message || e); }
+      }
       queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
-      toast.success('Indicador excluído');
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+      toast.success('Indicador excluído e acesso ao portal removido');
     } catch (e) { toast.error('Erro: ' + e.message); }
   };
 

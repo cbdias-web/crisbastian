@@ -124,6 +124,11 @@ export default function Usuarios() {
   // Convites pendentes: usuários que nunca acessaram o sistema
   const convitesPendentes = usuarios.filter(u => !u.ultimo_acesso);
 
+  // Indicadores são gerenciados na aba "Indicadores" do Dash Parceiro.
+  // Escondemos da lista de Usuários do portal para evitar confusão e gestão duplicada.
+  const usuariosVisiveis = usuarios.filter(u => u.role !== 'indicador' && u.indicador !== true);
+  const indicadoresOcultos = usuarios.length - usuariosVisiveis.length;
+
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, data }) => base44.entities.User.update(id, data),
     onSuccess: () => {
@@ -329,7 +334,7 @@ export default function Usuarios() {
     );
   }
 
-  const onlineCount = usuarios.filter(u => getOnlineStatus(u.ultimo_acesso) === 'online').length;
+  const onlineCount = usuariosVisiveis.filter(u => getOnlineStatus(u.ultimo_acesso) === 'online').length;
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -339,7 +344,10 @@ export default function Usuarios() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Gerenciar Usuários</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{usuarios.length} usuário{usuarios.length !== 1 ? 's' : ''} cadastrado{usuarios.length !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {usuariosVisiveis.length} usuário{usuariosVisiveis.length !== 1 ? 's' : ''} cadastrado{usuariosVisiveis.length !== 1 ? 's' : ''}
+              {indicadoresOcultos > 0 && <span className="ml-2 text-xs text-gray-400">· {indicadoresOcultos} indicador{indicadoresOcultos !== 1 ? 'es' : ''} gerenciado{indicadoresOcultos !== 1 ? 's' : ''} na aba Indicadores</span>}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -417,7 +425,7 @@ export default function Usuarios() {
             <span className="text-xs text-gray-400 ml-auto">Atualiza a cada 30s</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {usuarios.map(u => {
+            {usuariosVisiveis.map(u => {
               const status = getOnlineStatus(u.ultimo_acesso);
               const label = getStatusLabel(u.ultimo_acesso);
               return (
@@ -526,8 +534,8 @@ export default function Usuarios() {
                 <th className="px-3 py-3 text-center w-10">
                   <input
                     type="checkbox"
-                    checked={selectedUserIds.length === usuarios.length && usuarios.length > 0}
-                    onChange={(e) => setSelectedUserIds(e.target.checked ? usuarios.map(u => u.id) : [])}
+                    checked={selectedUserIds.length === usuariosVisiveis.length && usuariosVisiveis.length > 0}
+                    onChange={(e) => setSelectedUserIds(e.target.checked ? usuariosVisiveis.map(u => u.id) : [])}
                     className="w-4 h-4 accent-[#00D4AA] cursor-pointer"
                     title="Selecionar todos"
                   />
@@ -542,7 +550,7 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {usuarios.map((usuario) => {
+              {usuariosVisiveis.map((usuario) => {
                 const isEditing = editingUser === usuario.id;
                 const menusUsuario = usuario.menus_acesso || menusDefault;
                 const isAdminUser = usuario.role === 'admin' || usuario.permissao_admin === true;
@@ -720,7 +728,7 @@ export default function Usuarios() {
                   </React.Fragment>
                 );
               })}
-              {usuarios.length === 0 && (
+              {usuariosVisiveis.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-gray-400">
                     <Users className="w-10 h-10 mx-auto mb-2 text-gray-200" />

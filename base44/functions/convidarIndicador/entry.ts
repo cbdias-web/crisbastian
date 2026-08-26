@@ -54,19 +54,34 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // 2) Promove o role para 'indicador' (busca o User pelo e-mail)
+    // 2) Promove o role para 'indicador' (busca o User pelo e-mail).
+    //    Logo após inviteUser o User pode ainda não estar propagado — fazemos
+    //    retry com delay. Setamos `indicador: true` PRIMEIRO (boolean sempre
+    //    permitido e é o sinal que o Layout usa para redirecionar ao DashParceiro),
+    //    e só depois tentamos `role: 'indicador'` (best-effort).
     let rolePromovido = false;
-    try {
-      const users = await base44.entities.User.filter({ email });
-      if (users.length > 0) {
-        // Sinal robusto (boolean sempre setável) + role 'indicador' (best-effort)
-        await base44.entities.User.update(users[0].id, { indicador: true, role: 'indicador' });
+    let userEncontrado = null;
+    for (let tentativa = 1; tentativa <= 4 && !userEncontrado; tentativa++) {
+      try {
+        const users = await base44.entities.User.filter({ email });
+        if (users.length > 0) userEncontrado = users[0];
+      } catch (e) {}
+      if (!userEncontrado) await new Promise(r => setTimeout(r, 600 * tentativa));
+    }
+    if (userEncontrado) {
+      try {
+        // Flag booleana — garantida, é o sinal principal do Layout
+        await base44.entities.User.update(userEncontrado.id, { indicador: true });
         rolePromovido = true;
+      } catch (e) {
+        console.log('indicador flag set failed:', e?.message || e);
       }
-    } catch (e) {
-      // Se a plataforma bloquear role custom no update, o usuário permanece 'user'.
-      // O admin pode ajustar manualmente em Usuários.
-      console.log('role promotion skipped:', e?.message || e);
+      try {
+        // Role custom — best-effort (enum do User já inclui 'indicador')
+        await base44.entities.User.update(userEncontrado.id, { role: 'indicador' });
+      } catch (e) {
+        console.log('role promotion skipped:', e?.message || e);
+      }
     }
 
     await base44.entities.Parceiro.update(indicador_id, {
