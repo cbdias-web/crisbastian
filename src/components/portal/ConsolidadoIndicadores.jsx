@@ -39,8 +39,17 @@ export default function ConsolidadoIndicadores() {
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
   });
 
-  // Vendas originadas de indicação (possuem espelhamento/indicadores vinculados)
-  const vendasIndicadas = vendas.filter(v => Array.isArray(v.indicadores) && v.indicadores.length > 0);
+  const { data: parceiros = [] } = useQuery({
+    queryKey: ['consolidado-parceiros-ids'],
+    queryFn: () => base44.entities.Parceiro.list('-created_date', 500),
+  });
+
+  // Vendas originadas de indicação: o espelhamento deve apontar para um
+  // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores).
+  const parceiroIds = new Set(parceiros.map(p => p.id));
+  const vendasIndicadas = vendas.filter(v =>
+    Array.isArray(v.indicadores) && v.indicadores.some(i => i && parceiroIds.has(i.id))
+  );
   const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
 
   const total = leads.length;
@@ -48,7 +57,9 @@ export default function ConsolidadoIndicadores() {
   const vendasConvertidasValor = vendasIndicadas.reduce((s, v) => s + valorVenda(v), 0);
   const vendasEfetivasCount = vendasIndicadas.length;
   const comissaoGerada = vendasIndicadas.reduce((s, v) => {
-    const pct = (v.indicadores || []).reduce((a, i) => a + (Number(i.percentual) || 0), 0);
+    const pct = (v.indicadores || [])
+      .filter(i => i && parceiroIds.has(i.id))
+      .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
     return s + valorVenda(v) * (pct / 100);
   }, 0);
 
