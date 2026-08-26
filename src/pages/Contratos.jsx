@@ -116,14 +116,25 @@ export default function Contratos() {
       }
       const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
-      // Vincula a venda à indicação de origem → dispara notificação "Venda concluída" ao indicador.
-      // Tudo aguardado antes do redirect para não abortar a atualização (race condition).
+      // Vincula a venda à indicação de origem.
+      // Só marca como 'convertido_venda' (badge "Venda Convertida" no Dash Parceiro) quando
+      // o contrato estiver ASSINADO e PAGO (comprovante anexado). Caso contrário, mantém o
+      // status anterior (geralmente 'convertido_contrato') e apenas vincula a venda_id.
+      const assinado = !!ct.contrato_assinado_url || ct.status === 'assinado' ||
+        ['assinado', 'aguardando_pagamento', 'pago'].includes(ct.status);
+      const pago = !!ct.comprovante_url || ct.status === 'pago';
+      const vendaConcluida = assinado && pago;
       try {
         const indicacoes = await base44.entities.LeadIndicacao.filter({ contrato_id: ct.id });
         for (const li of indicacoes) {
-          await base44.entities.LeadIndicacao.update(li.id, { venda_id: venda.id, status: 'convertido_venda' });
+          const payload = { venda_id: venda.id };
+          if (vendaConcluida) payload.status = 'convertido_venda';
+          await base44.entities.LeadIndicacao.update(li.id, payload);
         }
       } catch (e) { toast.warning('Venda criada, mas falha ao vincular indicação: ' + e.message); }
+      if (!vendaConcluida) {
+        toast.warning('Contrato ainda não está assinado/pago — indicação permanece como "Contrato" até a confirmação do pagamento.');
+      }
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
       toast.success('Venda criada! Indicador notificado. Redirecionando para Vendas...');
