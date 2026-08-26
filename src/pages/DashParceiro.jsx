@@ -20,7 +20,12 @@ const AURORA = {
 
 export default function DashParceiro() {
   const [user, setUser] = useState(null);
-  const [abaAtiva, setAbaAtiva] = useState('parceiros');
+  const [abaAtiva, setAbaAtiva] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search).get('aba');
+      return p === 'indicacoes' || p === 'parceiros' ? p : 'parceiros';
+    } catch { return 'parceiros'; }
+  });
   const [parceiroLogado, setParceiroLogado] = useState(null);
   const [checked, setChecked] = useState(false);
   const [periodo, setPeriodo] = useState('tudo');

@@ -66,7 +66,6 @@ export default function HeaderNav({ user, currentPageName, isIndicador, isAdmin,
   const baseItems = useMemo(() => {
     const arr = [];
     if (!isIndicador) arr.push({ key: 'Dashboard', type: 'link', page: 'Dashboard', name: 'Dashboard', icon: BarChart3 });
-    if (isAdmin) arr.push({ key: 'DashParceiro', type: 'link', page: 'DashParceiro', name: 'Dash Parceiro', icon: Handshake, badge: dashBadge });
     for (const g of groups) arr.push({ key: `grp:${g.label}`, type: 'group', group: g });
     return arr;
   }, [isIndicador, isAdmin, groups, dashBadge]);
@@ -146,33 +145,62 @@ export default function HeaderNav({ user, currentPageName, isIndicador, isAdmin,
     );
   };
 
+  const dashCtaTo = createPageUrl('DashParceiro') + (dashBadge > 0 ? '?aba=indicacoes' : '');
+
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <Droppable droppableId="header-nav" direction="horizontal">
-        {(provided) => (
-          <div ref={(el) => { provided.innerRef(el); containerRef.current = el; }}
-            {...provided.droppableProps}
-            className="flex items-center gap-1 flex-1 min-w-0">
-            {ordered.map((item, index) => (
-              <Draggable key={item.key} draggableId={item.key} index={index}>
-                {(prov, snapshot) => (
-                  <div
-                    ref={prov.innerRef}
-                    {...prov.draggableProps}
-                    {...prov.dragHandleProps}
-                    className="flex-shrink-0"
-                    style={{ ...prov.draggableProps.style, opacity: snapshot.isDragging ? 0.5 : 1, cursor: 'grab' }}
-                    title={isAdmin ? 'Arraste para reordenar' : undefined}
-                  >
-                    {renderItem(item)}
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
+    <div className="flex items-center gap-2">
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="header-nav" direction="horizontal">
+          {(provided) => (
+            <div ref={(el) => { provided.innerRef(el); containerRef.current = el; }}
+              {...provided.droppableProps}
+              className="flex items-center gap-1 min-w-0">
+              {ordered.map((item, index) => (
+                <Draggable key={item.key} draggableId={item.key} index={index}>
+                  {(prov, snapshot) => (
+                    <div
+                      ref={prov.innerRef}
+                      {...prov.draggableProps}
+                      {...prov.dragHandleProps}
+                      className="flex-shrink-0"
+                      style={{ ...prov.draggableProps.style, opacity: snapshot.isDragging ? 0.5 : 1, cursor: 'grab' }}
+                      title={isAdmin ? 'Arraste para reordenar' : undefined}
+                    >
+                      {renderItem(item)}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+
+      {/* CTA Dash Parceiro — fixo à direita dos menus (não arrastável) */}
+      {isAdmin && (
+        <Link
+          to={dashCtaTo}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition ml-1"
+          style={{
+            background: 'linear-gradient(135deg, rgba(0,212,170,0.20), rgba(0,102,204,0.20))',
+            color: AURORA.accent,
+            border: `1px solid ${AURORA.border}`,
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,170,0.32), rgba(0,102,204,0.32))'}
+          onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0,212,170,0.20), rgba(0,102,204,0.20))'}
+          title="Acompanhar indicações dos parceiros"
+        >
+          <Handshake className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>Dash Parceiro</span>
+          {dashBadge > 0 && (
+            <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+              style={{ background: '#ef4444', color: '#fff' }}>
+              {dashBadge > 9 ? '9+' : dashBadge}
+            </span>
+          )}
+        </Link>
+      )}
+    </div>
   );
 }

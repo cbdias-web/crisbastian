@@ -64,7 +64,10 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         if (cancelado) return;
         try { await base44.entities.LeadIndicacao.update(n.id, { nova: false }); } catch (e) {}
       }
-      if (!cancelado) queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
+      if (!cancelado) {
+        queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });
+        queryClient.invalidateQueries({ queryKey: ['indicacoes-novas-badge'] });
+      }
     })();
     return () => { cancelado = true; };
   }, [indicacoes, modoIndicador, queryClient]);
