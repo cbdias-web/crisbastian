@@ -31,6 +31,10 @@
       "type": "string",
       "description": "Nome do cliente"
     },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do Cliente vinculado (chave de v\u00ednculo do hist\u00f3rico de intera\u00e7\u00f5es)"
+    },
     "cpf_cnpj": {
       "type": "string",
       "description": "CPF/CNPJ do cliente"

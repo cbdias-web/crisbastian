@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import PainelInteracoesCliente from './PainelInteracoesCliente';
 
 const AURORA = {
   bg: '#0d1117',
@@ -385,6 +386,24 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
               <p className="text-sm" style={{ color: form.condicoes_implantacao ? AURORA.text : AURORA.textMuted }}>{form.condicoes_implantacao || 'Sem condições especiais'}</p>
             )}
           </div>
+
+          {/* Interações com o cliente (acompanha toda a jornada) */}
+          <PainelInteracoesCliente
+            clienteId={form.cliente_id}
+            clienteNome={form.cliente_nome}
+            cpfCnpj={form.cpf_cnpj}
+            vendedorId={form.vendedor_id}
+            vendedorNome={form.vendedor_nome}
+            user={user}
+            onVincularClienteId={async (cid) => {
+              // Persiste o cliente_id resolvido na implantação para vincular o histórico
+              try {
+                const updated = await base44.entities.Implantacao.update(implantacao.id, { cliente_id: cid });
+                setForm(f => ({ ...f, cliente_id: cid }));
+                onUpdate?.(updated);
+              } catch (e) {}
+            }}
+          />
 
           {/* Observações gerais */}
           <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
