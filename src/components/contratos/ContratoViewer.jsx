@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import ContratoForm from './ContratoForm';
 import FluxoContrato from './FluxoContrato';
 import BoletosParcelas from './BoletosParcelas';
+import IndicadoresEditor from './IndicadoresEditor';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -643,19 +644,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>Vendedor responsável</p>
                   </div>
                 </div>
-                {contrato.indicadores?.length > 0 ? contrato.indicadores.map((ind, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)' }}>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>{ind.nome}</p>
-                      <p className="text-[10px] capitalize" style={{ color: 'rgba(230,237,243,0.4)' }}>{ind.tipo || 'indicador'}</p>
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: '#fbbf24' }}>{ind.percentual}%</span>
-                  </div>
-                )) : (
-                  <div className="px-4 py-2.5 rounded-xl" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.12)' }}>
-                    <p className="text-xs italic" style={{ color: 'rgba(230,237,243,0.4)' }}>Nenhum indicador/espelhamento cadastrado</p>
-                  </div>
-                )}
+                <IndicadoresEditor contrato={contrato} onUpdate={handleUpdate} />
               </div>
             </div>
           </Section>
