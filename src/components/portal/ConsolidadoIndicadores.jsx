@@ -44,11 +44,14 @@ export default function ConsolidadoIndicadores() {
     queryFn: () => base44.entities.Parceiro.list('-created_date', 500),
   });
 
-  // Vendas originadas de indicação: o espelhamento deve apontar para um
-  // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores).
+  // Vendas originadas de indicação e PAGAS: o espelhamento deve apontar para um
+  // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores)
+  // e a venda precisa ter comprovante de pagamento (contrato assinado e pago).
   const parceiroIds = new Set(parceiros.map(p => p.id));
   const vendasIndicadas = vendas.filter(v =>
-    Array.isArray(v.indicadores) && v.indicadores.some(i => i && parceiroIds.has(i.id))
+    Array.isArray(v.indicadores) &&
+    v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
+    Array.isArray(v.comprovantes) && v.comprovantes.length > 0
   );
   const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
 
