@@ -16,6 +16,7 @@ import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import ProfileModal from '@/components/ProfileModal.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
+import HeaderNav from '@/components/layout/HeaderNav.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -46,7 +47,6 @@ export default function Layout({ children, currentPageName }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [comunicadoPendente, setComunicadoPendente] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState(null);
   const [impersonating, setImpersonating] = useState(() => getImpersonatedVendedor());
   const [vendedoresList, setVendedoresList] = useState([]);
   const [showImpersonateMenu, setShowImpersonateMenu] = useState(false);
@@ -54,7 +54,6 @@ export default function Layout({ children, currentPageName }) {
   const [userAvatar, setUserAvatar] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const dropdownRef = useRef(null);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -247,7 +246,6 @@ export default function Layout({ children, currentPageName }) {
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpenDropdown(null);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setShowUserMenu(false);
     };
     document.addEventListener('mousedown', handler);
@@ -395,34 +393,6 @@ export default function Layout({ children, currentPageName }) {
     if (confirm('Deseja realmente sair?')) base44.auth.logout();
   };
 
-  const NavLink = ({ item }) => {
-    const isActive = currentPageName === item.page;
-    const Icon = item.icon;
-    return (
-      <Link
-        to={createPageUrl(item.page)}
-        onClick={() => { setOpenDropdown(null); setMobileMenuOpen(false); }}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all relative group"
-        style={{
-          color: isActive ? AURORA.accent : AURORA.text,
-          background: isActive ? AURORA.accentDim : 'transparent',
-          border: isActive ? `1px solid ${AURORA.border}` : '1px solid transparent',
-        }}
-        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(0,212,170,0.07)'; }}
-        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
-      >
-        <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-        <span>{item.name}</span>
-        {item.badge > 0 && (
-          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-            style={{ background: '#ef4444', color: '#fff' }}>
-            {item.badge > 9 ? '9+' : item.badge}
-          </span>
-        )}
-      </Link>
-    );
-  };
-
   return (
     <div style={{ minHeight: '100vh', background: AURORA.bg, color: AURORA.text }}>
       {/* ═══ BACKGROUND WATERMARK (fixed, com overlay escuro) ═══ */}
@@ -518,75 +488,16 @@ export default function Layout({ children, currentPageName }) {
           {/* Divider between brand and navigation */}
           <div className="hidden md:block h-7 w-px flex-shrink-0" style={{ background: AURORA.border }} />
 
-          {/* Navigation menus (desktop) — mesma linha da marca */}
+          {/* Navigation menus (desktop) — drag-and-drop para admin reordenar */}
           {!isMobile && (
-            <div className="flex items-center gap-1 flex-1 min-w-0" ref={dropdownRef}>
-              {!isIndicador && (
-              <Link to={createPageUrl('Dashboard')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition flex-shrink-0"
-                style={{
-                  color: currentPageName === 'Dashboard' ? AURORA.accent : AURORA.textMuted,
-                  background: currentPageName === 'Dashboard' ? AURORA.accentDim : 'transparent',
-                  border: currentPageName === 'Dashboard' ? `1px solid ${AURORA.border}` : '1px solid transparent',
-                }}>
-                <BarChart3 className="w-3.5 h-3.5" />
-                Dashboard
-              </Link>
-              )}
-              {isAdmin && (
-              <Link to={createPageUrl('DashParceiro')}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition flex-shrink-0 relative"
-                style={{
-                  color: currentPageName === 'DashParceiro' ? AURORA.accent : AURORA.textMuted,
-                  background: currentPageName === 'DashParceiro' ? AURORA.accentDim : 'transparent',
-                  border: currentPageName === 'DashParceiro' ? `1px solid ${AURORA.border}` : '1px solid transparent',
-                }}>
-                <Handshake className="w-3.5 h-3.5" />
-                Dash Parceiro
-                {novasIndicacoes.length > 0 && (
-                  <span className="ml-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                    style={{ background: '#ef4444', color: '#fff' }}>
-                    {novasIndicacoes.length > 9 ? '9+' : novasIndicacoes.length}
-                  </span>
-                )}
-              </Link>
-              )}
-              {navGroups.map((group) => {
-                const isOpen = openDropdown === group.label;
-                const hasActive = group.items.some(i => i.page === currentPageName);
-                const groupBadge = group.items.reduce((sum, i) => sum + (i.badge || 0), 0);
-                return (
-                  <div key={group.label} className="relative flex-shrink-0">
-                    <button
-                      onClick={() => setOpenDropdown(isOpen ? null : group.label)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium transition relative"
-                      style={{
-                        color: hasActive || isOpen ? AURORA.accent : AURORA.textMuted,
-                        background: hasActive || isOpen ? AURORA.accentDim : 'transparent',
-                        border: hasActive || isOpen ? `1px solid ${AURORA.border}` : '1px solid transparent',
-                      }}>
-                      {group.label}
-                      {groupBadge > 0 && (
-                        <span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
-                      )}
-                      <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isOpen && (
-                      <div className="absolute top-full left-0 mt-2 rounded-xl shadow-2xl py-2 z-50 min-w-[200px]"
-                        style={{
-                          background: AURORA.surface2,
-                          border: `1px solid ${AURORA.border}`,
-                          boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${AURORA.border}`,
-                        }}>
-                        {group.items.map(item => (
-                          <NavLink key={item.page} item={item} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            <HeaderNav
+              user={user}
+              currentPageName={currentPageName}
+              isIndicador={isIndicador}
+              isAdmin={isAdmin}
+              groups={navGroups}
+              dashBadge={novasIndicacoes.length}
+            />
           )}
 
           {/* Right side actions */}
