@@ -31,6 +31,12 @@ const STATUS_CFG = {
 };
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtData = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '';
+  return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
 
 export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro, hideNovaButton, periodo, parceiroIdFiltro }) {
   const queryClient = useQueryClient();
@@ -284,6 +290,9 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                       <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{lead.produto}</span>
                       {lead.valor_estimado != null && <span className="text-[9px]" style={{ color: AURORA.textMuted }}>{fmtMoeda(lead.valor_estimado)}</span>}
                       <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.purple }}>🔗 {lead.parceiro_nome}</span>
+                      <span className="text-[9px] flex items-center gap-0.5 ml-auto" style={{ color: AURORA.textMuted }} title={`Recebida em ${fmtData(lead.link_preenchido_em || lead.created_date)}`}>
+                        🗓 {fmtData(lead.link_preenchido_em || lead.created_date)}
+                      </span>
                     </div>
                   </div>
                   {!modoIndicador && (
