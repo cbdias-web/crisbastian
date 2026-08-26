@@ -84,7 +84,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   leadsFiltrados.forEach(l => {
     const key = l.parceiro_id || '_sem';
     const nome = l.parceiro_nome || 'Sem parceiro';
-    if (!rankingMap[key]) rankingMap[key] = { nome, total: 0, vendas: 0, valor: 0 };
+    if (!rankingMap[key]) rankingMap[key] = { nome, total: 0, vendas: 0, valorVendas: 0, valor: 0 };
     rankingMap[key].total++;
   });
   vendasIndicadas.forEach(v => {
@@ -92,13 +92,14 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
       if (!i || !parceiroIds.has(i.id)) return;
       if (parceiroId !== 'todos' && parceiroId && i.id !== parceiroId) return;
       const key = i.id;
-      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valor: 0 };
+      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
       rankingMap[key].vendas++;
+      rankingMap[key].valorVendas += valorVenda(v);
       rankingMap[key].valor += valorVenda(v) * ((Number(i.percentual) || 0) / 100);
     });
   });
   const ranking = Object.values(rankingMap)
-    .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valor - a.valor)
+    .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valorVendas - a.valorVendas)
     .slice(0, 5);
 
   const isLoading = loadingLeads || loadingVendas;
@@ -206,11 +207,16 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
                           <span className="w-5 text-center text-[11px] font-bold flex-shrink-0" style={{ color: medal }}>{i + 1}º</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-semibold truncate" style={{ color: AURORA.text }}>{r.nome}</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{r.total} ind.</span>
                               {r.vendas > 0 && (
                                 <span className="text-[10px] font-semibold" style={{ color: AURORA.green }}>
-                                  {r.vendas} venda{r.vendas > 1 ? 's' : ''} · {fmtMoeda(r.valor)}
+                                  {r.vendas} venda{r.vendas > 1 ? 's' : ''} · {fmtMoeda(r.valorVendas)}
+                                </span>
+                              )}
+                              {r.vendas > 0 && r.valor > 0 && (
+                                <span className="text-[10px]" style={{ color: AURORA.textMuted }}>
+                                  · comissão <strong style={{ color: AURORA.accent }}>{fmtMoeda(r.valor)}</strong>
                                 </span>
                               )}
                             </div>
