@@ -6,6 +6,7 @@ import ParceirosTab from '@/components/central/ParceirosTab';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
 import ConsolidadoIndicadores from '@/components/portal/ConsolidadoIndicadores';
+import FiltroIndicadores from '@/components/portal/FiltroIndicadores';
 
 const AURORA = {
   bg: '#0d1117',
@@ -22,6 +23,8 @@ export default function DashParceiro() {
   const [abaAtiva, setAbaAtiva] = useState('parceiros');
   const [parceiroLogado, setParceiroLogado] = useState(null);
   const [checked, setChecked] = useState(false);
+  const [periodo, setPeriodo] = useState('tudo');
+  const [parceiroFiltro, setParceiroFiltro] = useState('todos');
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
@@ -45,6 +48,13 @@ export default function DashParceiro() {
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-dash-parceiro'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    enabled: !!user && isAdmin,
+  });
+
+  // Lista de indicadores para o filtro (compartilhado entre consolação e lista)
+  const { data: parceiros = [] } = useQuery({
+    queryKey: ['parceiros-dash-parceiro'],
+    queryFn: () => base44.entities.Parceiro.list('nome'),
     enabled: !!user && isAdmin,
   });
 
@@ -96,7 +106,15 @@ export default function DashParceiro() {
           </div>
         </div>
 
-        <ConsolidadoIndicadores />
+        <FiltroIndicadores
+          periodo={periodo}
+          setPeriodo={setPeriodo}
+          parceiroId={parceiroFiltro}
+          setParceiroId={setParceiroFiltro}
+          parceiros={parceiros}
+        />
+
+        <ConsolidadoIndicadores periodo={periodo} parceiroId={parceiroFiltro} parceiros={parceiros} />
 
         <div className="flex gap-1 mb-4 p-1 rounded-xl w-fit" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
           {[
@@ -115,7 +133,7 @@ export default function DashParceiro() {
         </div>
 
         {abaAtiva === 'parceiros' && <ParceirosTab />}
-        {abaAtiva === 'indicacoes' && <IndicacoesTab vendedores={vendedores} />}
+        {abaAtiva === 'indicacoes' && <IndicacoesTab vendedores={vendedores} periodo={periodo} parceiroIdFiltro={parceiroFiltro} />}
       </div>
     </div>
   );

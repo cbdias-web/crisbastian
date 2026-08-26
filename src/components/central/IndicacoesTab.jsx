@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus } from 'lucide-react';
+import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 import EditarIndicacaoModal from './EditarIndicacaoModal';
 import NovaIndicacaoModal from './NovaIndicacaoModal';
 import DetalheJornadaIndicacao from './DetalheJornadaIndicacao';
+import { periodoRange, dentroPeriodo } from '../portal/FiltroIndicadores';
 
 const AURORA = {
   surface: '#161b22',
@@ -25,13 +26,13 @@ const STATUS_CFG = {
   em_atendimento: { label: 'Em Atendimento', color: AURORA.warning, bg: 'rgba(251,191,36,0.12)' },
   convertido_cliente: { label: '→ Cliente', color: AURORA.green, bg: 'rgba(52,211,153,0.12)' },
   convertido_contrato: { label: '→ Contrato', color: AURORA.purple, bg: 'rgba(167,139,250,0.12)' },
-  convertido_venda: { label: '→ Venda', color: AURORA.green, bg: 'rgba(52,211,153,0.18)' },
+  convertido_venda: { label: 'Venda Convertida', color: '#0d1117', bg: 'linear-gradient(135deg, #34d399, #00D4AA)', glow: 'rgba(52,211,153,0.35)' },
   descartado: { label: 'Descartado', color: '#9ca3af', bg: 'rgba(100,100,100,0.2)' },
 };
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
-export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro, hideNovaButton }) {
+export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicador, parceiro, hideNovaButton, periodo, parceiroIdFiltro }) {
   const queryClient = useQueryClient();
   const [detalhe, setDetalhe] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -68,13 +69,18 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     return () => { cancelado = true; };
   }, [indicacoes, modoIndicador, queryClient]);
 
+  const range = periodoRange(periodo);
+  const useExternalParceiro = parceiroIdFiltro !== undefined;
   const filtradas = indicacoes.filter(i => {
     const matchStatus = filtroStatus === 'todos' || i.status === filtroStatus;
-    const matchParceiro = parceiroIdFixo ? i.parceiro_id === parceiroIdFixo : (filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro);
+    const matchParceiro = useExternalParceiro
+      ? (parceiroIdFiltro === 'todos' || i.parceiro_id === parceiroIdFiltro)
+      : (parceiroIdFixo ? i.parceiro_id === parceiroIdFixo : (filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro));
+    const matchPeriodo = dentroPeriodo(i.created_date, range);
     const nome = i.tipo === 'PF' ? i.pf_nome : i.pj_razao_social;
     const doc = i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj;
     const matchBusca = !busca || (nome?.toLowerCase().includes(busca.toLowerCase())) || (doc?.includes(busca));
-    return matchStatus && matchParceiro && matchBusca;
+    return matchStatus && matchParceiro && matchPeriodo && matchBusca;
   });
 
   const getNome = (i) => i.tipo === 'PF' ? i.pf_nome : i.pj_razao_social;
@@ -199,7 +205,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
           <option value="todos">Todos status</option>
           {Object.entries(STATUS_CFG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        {!parceiroIdFixo && (
+        {!parceiroIdFixo && !useExternalParceiro && (
           <select value={filtroParceiro} onChange={e => setFiltroParceiro(e.target.value)} className="px-3 py-2 rounded-xl text-xs" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
             <option value="todos">Todos parceiros</option>
             {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
@@ -235,20 +241,38 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         <div className="space-y-2">
           {filtradas.map(lead => {
             const st = STATUS_CFG[lead.status] || STATUS_CFG.novo;
+            const isVenda = lead.status === 'convertido_venda';
             return (
               <div key={lead.id} onClick={() => setDetalhe(lead)}
-                className="rounded-2xl p-4 cursor-pointer transition"
-                style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(0,212,170,0.3)'}
+                className="rounded-2xl p-4 cursor-pointer transition relative overflow-hidden"
+                style={{
+                  background: AURORA.surface,
+                  border: `1px solid ${AURORA.border}`,
+                  boxShadow: isVenda ? `0 0 0 1px rgba(52,211,153,0.25), 0 6px 20px ${st.glow}` : 'none',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = isVenda ? 'rgba(52,211,153,0.5)' : 'rgba(0,212,170,0.3)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = AURORA.border}>
+                {isVenda && (
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'linear-gradient(180deg, #34d399, #00D4AA)' }} />
+                )}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ background: 'linear-gradient(135deg, #00D4AA22, #0066cc22)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
-                    {getNome(lead)?.charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{
+                    background: isVenda ? 'linear-gradient(135deg, rgba(52,211,153,0.25), rgba(0,212,170,0.25))' : 'linear-gradient(135deg, #00D4AA22, #0066cc22)',
+                    color: isVenda ? AURORA.green : AURORA.accent,
+                    border: `1px solid ${isVenda ? 'rgba(52,211,153,0.4)' : AURORA.border}`,
+                  }}>
+                    {isVenda ? <Trophy className="w-4 h-4" /> : getNome(lead)?.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold text-sm truncate" style={{ color: AURORA.text }}>{getNome(lead)}</p>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1" style={{
+                        background: st.bg,
+                        color: st.color,
+                        ...(isVenda ? { boxShadow: `0 0 12px ${st.glow}` } : {}),
+                      }}>
+                        {isVenda && <Trophy className="w-3 h-3" />}{st.label}
+                      </span>
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: AURORA.textMuted }}>
                       {lead.tipo === 'PF' ? '👤 PF' : '🏢 PJ'} · {getDoc(lead) || '—'} · {getContato(lead) || '—'}

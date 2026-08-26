@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import {
   TrendingUp, FileText, DollarSign, Trophy, RefreshCw, Loader2,
 } from 'lucide-react';
+import { periodoRange, dentroPeriodo } from './FiltroIndicadores';
 
 const AURORA = {
   bg: '#0d1117',
@@ -27,7 +28,7 @@ const STATUS_CHART = {
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
-export default function ConsolidadoIndicadores() {
+export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros: parceirosProp }) {
   const queryClient = useQueryClient();
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ['consolidado-leads'],
@@ -39,10 +40,15 @@ export default function ConsolidadoIndicadores() {
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
   });
 
-  const { data: parceiros = [] } = useQuery({
+  const { data: parceirosQuery = [] } = useQuery({
     queryKey: ['consolidado-parceiros-ids'],
     queryFn: () => base44.entities.Parceiro.list('-created_date', 500),
+    enabled: !parceirosProp,
   });
+  const parceiros = parceirosProp || parceirosQuery;
+
+  const range = periodoRange(periodo);
+  const filtraParceiro = (parceiroIdItem) => !parceiroId || parceiroId === 'todos' || parceiroId === parceiroIdItem;
 
   // Vendas originadas de indicação e PAGAS: o espelhamento deve apontar para um
   // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores)
@@ -51,23 +57,26 @@ export default function ConsolidadoIndicadores() {
   const vendasIndicadas = vendas.filter(v =>
     Array.isArray(v.indicadores) &&
     v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
-    Array.isArray(v.comprovantes) && v.comprovantes.length > 0
+    Array.isArray(v.comprovantes) && v.comprovantes.length > 0 &&
+    dentroPeriodo(v.data, range) &&
+    (parceiroId === 'todos' || !parceiroId || (v.indicadores || []).some(i => i && i.id === parceiroId))
   );
   const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
 
-  const total = leads.length;
-  const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  const leadsFiltrados = leads.filter(l => dentroPeriodo(l.created_date, range) && filtraParceiro(l.parceiro_id));
+  const total = leadsFiltrados.length;
+  const volumeIndicado = leadsFiltrados.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
   const vendasConvertidasValor = vendasIndicadas.reduce((s, v) => s + valorVenda(v), 0);
   const vendasEfetivasCount = vendasIndicadas.length;
   const comissaoGerada = vendasIndicadas.reduce((s, v) => {
     const pct = (v.indicadores || [])
-      .filter(i => i && parceiroIds.has(i.id))
+      .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
       .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
     return s + valorVenda(v) * (pct / 100);
   }, 0);
 
   const chartData = Object.entries(STATUS_CHART)
-    .map(([key, cfg]) => ({ key, name: cfg.label, value: leads.filter(l => l.status === key).length, color: cfg.color }))
+    .map(([key, cfg]) => ({ key, name: cfg.label, value: leadsFiltrados.filter(l => l.status === key).length, color: cfg.color }))
     .filter(d => d.value > 0);
 
   const isLoading = loadingLeads || loadingVendas;
