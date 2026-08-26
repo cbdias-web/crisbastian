@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
 
     // Se veio de automação de entidade, o payload trará event + data
     const venda = venda_data || body.data || null;
-    const vId = venda_id || body.entity_id || null;
+    const vId = venda_id || body.event?.entity_id || body.entity_id || null;
 
     if (!venda || !vId) {
       return Response.json({ error: 'Dados da venda não fornecidos' }, { status: 400 });
