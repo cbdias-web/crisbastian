@@ -19,7 +19,18 @@ export default function Notificacoes() {
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
+  const [selecionados, setSelecionados] = useState(new Set());
   const queryClient = useQueryClient();
+
+  const toggleSelecionado = (id) => {
+    setSelecionados(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const selecionarTodos = () => setSelecionados(new Set(pendentesFiltrados.map(n => n.id)));
+  const limparSelecao = () => setSelecionados(new Set());
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -81,6 +92,28 @@ export default function Notificacoes() {
   const excluirMutation = useMutation({
     mutationFn: (id) => base44.entities.NotificacaoAutorizacao.delete(id),
     onSuccess: () => { invalidateAll(); toast.success('Notificação removida!'); }
+  });
+
+  const aprovarLoteMutation = useMutation({
+    mutationFn: async (ids) => {
+      const now = new Date().toISOString();
+      await base44.entities.NotificacaoAutorizacao.bulkUpdate(
+        ids.map(id => ({ id, status: 'aprovado', lida: true, aprovado_por: user?.email, data_aprovacao: now }))
+      );
+    },
+    onSuccess: (_data, ids) => { invalidateAll(); limparSelecao(); toast.success(`${ids.length} aprovação(ões) em lote!`); },
+    onError: (e) => toast.error('Erro no lote: ' + e.message)
+  });
+
+  const rejeitarLoteMutation = useMutation({
+    mutationFn: async (ids) => {
+      const now = new Date().toISOString();
+      await base44.entities.NotificacaoAutorizacao.bulkUpdate(
+        ids.map(id => ({ id, status: 'rejeitado', lida: true, aprovado_por: user?.email, data_aprovacao: now }))
+      );
+    },
+    onSuccess: (_data, ids) => { invalidateAll(); limparSelecao(); toast.success(`${ids.length} rejeição(ões) em lote!`); },
+    onError: (e) => toast.error('Erro no lote: ' + e.message)
   });
 
   // Separação
@@ -282,6 +315,44 @@ export default function Notificacoes() {
                 </div>
               </div>
             )}
+            {/* Barra de seleção em massa */}
+            {pendentesFiltrados.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-3 flex flex-wrap items-center gap-3 sticky top-2 z-10">
+                <button
+                  onClick={() => selecionados.size === pendentesFiltrados.length ? limparSelecao() : selecionarTodos()}
+                  className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition"
+                >
+                  <span className="w-4 h-4 rounded border-2 flex items-center justify-center" style={{ borderColor: selecionados.size === pendentesFiltrados.length ? '#10b981' : 'rgba(150,150,150,0.5)', background: selecionados.size === pendentesFiltrados.length ? '#10b981' : 'transparent' }}>
+                    {selecionados.size === pendentesFiltrados.length && <Check className="w-3 h-3 text-white" />}
+                  </span>
+                  {selecionados.size === pendentesFiltrados.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                </button>
+                <span className="text-xs text-gray-500 font-medium">
+                  {selecionados.size > 0 ? `${selecionados.size} selecionada${selecionados.size > 1 ? 's' : ''} de ${pendentesFiltrados.length}` : `${pendentesFiltrados.length} pendente${pendentesFiltrados.length > 1 ? 's' : ''}`}
+                </span>
+                <div className="flex-1" />
+                {selecionados.size > 0 && (
+                  <>
+                    <button
+                      onClick={() => aprovarLoteMutation.mutate([...selecionados])}
+                      disabled={aprovarLoteMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition disabled:opacity-50"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Aprovar em lote ({selecionados.size})
+                    </button>
+                    <button
+                      onClick={() => rejeitarLoteMutation.mutate([...selecionados])}
+                      disabled={rejeitarLoteMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 transition disabled:opacity-50"
+                    >
+                      <X className="w-3.5 h-3.5" /> Rejeitar em lote ({selecionados.size})
+                    </button>
+                    <button onClick={limparSelecao} className="text-xs text-gray-500 hover:text-gray-700 font-medium px-2 py-1">Limpar</button>
+                  </>
+                )}
+              </div>
+            )}
+
             {pendentesFiltrados.length === 0 ? (
               <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center">
                 <CheckCircle2 className="w-12 h-12 text-emerald-300 mx-auto mb-3" />
@@ -302,6 +373,9 @@ export default function Notificacoes() {
                         <Clock className="w-3.5 h-3.5" />
                         {formatDateTime(notif.created_date)}
                       </span>
+                      <button onClick={(e) => { e.stopPropagation(); toggleSelecionado(notif.id); }} className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition flex-shrink-0" style={{ borderColor: selecionados.has(notif.id) ? '#10b981' : 'rgba(150,150,150,0.5)', background: selecionados.has(notif.id) ? '#10b981' : 'transparent' }}>
+                        {selecionados.has(notif.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </button>
                     </div>
                     <div className="p-5">
                       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -340,6 +414,9 @@ export default function Notificacoes() {
                         <Clock className="w-3.5 h-3.5" />
                         {formatDateTime(notif.created_date)}
                       </span>
+                      <button onClick={(e) => { e.stopPropagation(); toggleSelecionado(notif.id); }} className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition flex-shrink-0" style={{ borderColor: selecionados.has(notif.id) ? '#10b981' : 'rgba(150,150,150,0.5)', background: selecionados.has(notif.id) ? '#10b981' : 'transparent' }}>
+                        {selecionados.has(notif.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </button>
                     </div>
                     <div className="p-5">
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -380,6 +457,9 @@ export default function Notificacoes() {
                         <Clock className="w-3.5 h-3.5" />
                         {formatDateTime(notif.created_date)}
                       </span>
+                      <button onClick={(e) => { e.stopPropagation(); toggleSelecionado(notif.id); }} className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition flex-shrink-0" style={{ borderColor: selecionados.has(notif.id) ? '#10b981' : 'rgba(150,150,150,0.5)', background: selecionados.has(notif.id) ? '#10b981' : 'transparent' }}>
+                        {selecionados.has(notif.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                      </button>
                     </div>
                     <div className="p-5">
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
@@ -419,6 +499,9 @@ export default function Notificacoes() {
                       <Clock className="w-3.5 h-3.5" />
                       {formatDateTime(notif.created_date)}
                     </span>
+                    <button onClick={(e) => { e.stopPropagation(); toggleSelecionado(notif.id); }} className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition flex-shrink-0" style={{ borderColor: selecionados.has(notif.id) ? '#10b981' : 'rgba(150,150,150,0.5)', background: selecionados.has(notif.id) ? '#10b981' : 'transparent' }}>
+                      {selecionados.has(notif.id) && <Check className="w-3.5 h-3.5 text-white" />}
+                    </button>
                   </div>
                   <div className="p-5">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
