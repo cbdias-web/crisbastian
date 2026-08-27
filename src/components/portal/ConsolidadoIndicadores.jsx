@@ -17,15 +17,6 @@ const AURORA = {
   green: '#34d399',
 };
 
-const STATUS_CHART = {
-  novo: { label: 'Novo', color: '#00D4AA' },
-  em_atendimento: { label: 'Em Atendimento', color: '#fbbf24' },
-  convertido_cliente: { label: '→ Cliente', color: '#34d399' },
-  convertido_contrato: { label: '→ Contrato', color: '#a78bfa' },
-  convertido_venda: { label: '→ Venda', color: '#22c55e' },
-  descartado: { label: 'Descartado', color: '#6b7280' },
-};
-
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
 
 export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros: parceirosProp }) {
@@ -75,9 +66,19 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     return s + valorVenda(v) * (pct / 100);
   }, 0);
 
-  const chartData = Object.entries(STATUS_CHART)
-    .map(([key, cfg]) => ({ key, name: cfg.label, value: leadsFiltrados.filter(l => l.status === key).length, color: cfg.color }))
-    .filter(d => d.value > 0);
+  // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de indicações):
+  //   Vendas Convertidas (verde) = virou venda paga originada de indicação
+  //   Contratos (roxo)           = virou contrato, mas ainda não virou venda paga
+  //   Indicações (verde-azulado) = continua como indicação (ainda não virou contrato)
+  const vendasCount = vendasIndicadas.length;
+  const leadsComContrato = leadsFiltrados.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
+  const contratosApenas = Math.max(0, leadsComContrato - vendasCount);
+  const indicacoesApenas = Math.max(0, total - leadsComContrato);
+  const chartData = [
+    { key: 'indicacoes', name: 'Indicações', value: indicacoesApenas, color: AURORA.accent },
+    { key: 'contratos', name: 'Contratos', value: contratosApenas, color: '#a78bfa' },
+    { key: 'vendas', name: 'Vendas Convertidas', value: vendasCount, color: AURORA.green },
+  ].filter(d => d.value > 0);
 
   // Ranking de indicadores (top 5) — total de indicações + vendas convertidas
   const rankingMap = {};
