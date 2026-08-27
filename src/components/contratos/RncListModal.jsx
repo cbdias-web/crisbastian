@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { X, Search, FileCheck2, Building2, User, Loader2, ChevronRight, CheckCircle2, Circle, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { X, Search, FileCheck2, Building2, User, Loader2, ChevronRight, CheckCircle2, Circle, Link2, Trash2 } from 'lucide-react';
 
 const AURORA = {
   bg: '#0d1117',
@@ -24,13 +25,30 @@ const STATUS_CFG = {
 };
 
 export default function RncListModal({ onClose, onOpenRnc }) {
+  const queryClient = useQueryClient();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [excluindo, setExcluindo] = useState(null);
 
   const { data: rncs = [], isLoading } = useQuery({
     queryKey: ['rnc-canal-bancario-lista'],
     queryFn: () => base44.entities.RncCanalBancario.list('-updated_date', 500),
   });
+
+  const excluir = async (rnc) => {
+    const nome = rnc.nome || 'este formulário';
+    if (!confirm(`Excluir permanentemente a RNC "${nome}"?\nEsta ação não pode ser desfeita.`)) return;
+    setExcluindo(rnc.id);
+    try {
+      await base44.entities.RncCanalBancario.delete(rnc.id);
+      queryClient.invalidateQueries({ queryKey: ['rnc-canal-bancario-lista'] });
+      queryClient.invalidateQueries({ queryKey: ['rnc-canal-bancario'] });
+      toast.success('RNC excluída com sucesso!');
+    } catch (e) {
+      toast.error('Erro ao excluir: ' + e.message);
+    }
+    setExcluindo(null);
+  };
 
   const rncsFiltrados = rncs.filter(r => {
     if (filtroStatus !== 'todos' && r.status !== filtroStatus) return false;
@@ -100,8 +118,11 @@ export default function RncListModal({ onClose, onOpenRnc }) {
                 const docsTotal = (r.documentos || []).length;
                 const preenchido = !!r.link_preenchido_em;
                 return (
-                  <div key={r.id} className="rounded-xl p-4 flex items-center gap-3 transition hover:shadow-lg"
-                    style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+                  <div key={r.id} onClick={() => onOpenRnc(r)}
+                    className="rounded-xl p-4 flex items-center gap-3 transition cursor-pointer group"
+                    style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = AURORA.borderActive; e.currentTarget.style.background = AURORA.surface2; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = AURORA.border; e.currentTarget.style.background = AURORA.surface; }}>
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ background: preenchido ? 'rgba(52,211,153,0.15)' : AURORA.accentDim }}>
                       {preenchido
@@ -128,11 +149,18 @@ export default function RncListModal({ onClose, onOpenRnc }) {
                         {r.pdf_url && ' · PDF gerado'}
                       </p>
                     </div>
-                    <button onClick={() => onOpenRnc(r)}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0"
-                      style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
-                      Abrir <ChevronRight className="w-3.5 h-3.5" />
+                    <button onClick={e => { e.stopPropagation(); excluir(r); }} disabled={excluindo === r.id}
+                      title="Excluir RNC"
+                      className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0 disabled:opacity-50"
+                      style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.08)', border: `1px solid rgba(248,113,113,0.2)` }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.18)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(248,113,113,0.08)'}>
+                      {excluindo === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                     </button>
+                    <div className="flex items-center gap-1 px-2 flex-shrink-0 opacity-60 group-hover:opacity-100 transition" style={{ color: AURORA.accent }}>
+                      <span className="text-[10px] font-semibold hidden sm:inline">Abrir</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
                   </div>
                 );
               })}
