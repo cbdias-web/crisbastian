@@ -56,6 +56,18 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     queryKey: ['parceiros-indicacao'],
     queryFn: () => base44.entities.Parceiro.list('nome'),
   });
+  // Vendas pagas (com comprovante) — para derivar o status "Venda Convertida"
+  // mesmo quando o LeadIndicacao ainda consta como "convertido_contrato".
+  const { data: vendas = [] } = useQuery({
+    queryKey: ['vendas-status-indicacoes'],
+    queryFn: () => base44.entities.Venda.list('-created_date', 500),
+  });
+  const paidDocs = new Set();
+  vendas.forEach(v => {
+    if (Array.isArray(v.comprovantes) && v.comprovantes.length > 0 && v.cpf_cnpj) {
+      paidDocs.add(v.cpf_cnpj.replace(/\D/g, ''));
+    }
+  });
 
   // Admin visualizou as indicações → limpa o flag "nova" (badge do cabeçalho).
   // Não faz isso no modoIndicador (o parceiro vendo suas próprias indicações não
@@ -249,28 +261,29 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
       ) : (
         <div className="space-y-2">
           {filtradas.map(lead => {
-            const st = STATUS_CFG[lead.status] || STATUS_CFG.novo;
-            const isVenda = lead.status === 'convertido_venda';
+            const docNorm = (getDoc(lead) || '').replace(/\D/g, '');
+            const vendaEfetivada = lead.status === 'convertido_venda' || (docNorm && paidDocs.has(docNorm));
+            const st = vendaEfetivada ? STATUS_CFG.convertido_venda : (STATUS_CFG[lead.status] || STATUS_CFG.novo);
             return (
               <div key={lead.id} onClick={() => setDetalhe(lead)}
                 className="rounded-2xl p-4 cursor-pointer transition relative overflow-hidden"
                 style={{
                   background: AURORA.surface,
                   border: `1px solid ${AURORA.border}`,
-                  boxShadow: isVenda ? `0 0 0 1px rgba(52,211,153,0.25), 0 6px 20px ${st.glow}` : 'none',
+                  boxShadow: vendaEfetivada ? `0 0 0 1px rgba(52,211,153,0.25), 0 6px 20px ${st.glow}` : 'none',
                 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = isVenda ? 'rgba(52,211,153,0.5)' : 'rgba(0,212,170,0.3)'}
+                onMouseEnter={e => e.currentTarget.style.borderColor = vendaEfetivada ? 'rgba(52,211,153,0.5)' : 'rgba(0,212,170,0.3)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = AURORA.border}>
-                {isVenda && (
+                {vendaEfetivada && (
                   <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'linear-gradient(180deg, #34d399, #00D4AA)' }} />
                 )}
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{
-                    background: isVenda ? 'linear-gradient(135deg, rgba(52,211,153,0.25), rgba(0,212,170,0.25))' : 'linear-gradient(135deg, #00D4AA22, #0066cc22)',
-                    color: isVenda ? AURORA.green : AURORA.accent,
-                    border: `1px solid ${isVenda ? 'rgba(52,211,153,0.4)' : AURORA.border}`,
+                    background: vendaEfetivada ? 'linear-gradient(135deg, rgba(52,211,153,0.25), rgba(0,212,170,0.25))' : 'linear-gradient(135deg, #00D4AA22, #0066cc22)',
+                    color: vendaEfetivada ? AURORA.green : AURORA.accent,
+                    border: `1px solid ${vendaEfetivada ? 'rgba(52,211,153,0.4)' : AURORA.border}`,
                   }}>
-                    {isVenda ? <Trophy className="w-4 h-4" /> : getNome(lead)?.charAt(0).toUpperCase()}
+                    {vendaEfetivada ? <Trophy className="w-4 h-4" /> : getNome(lead)?.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -278,9 +291,9 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 flex items-center gap-1" style={{
                         background: st.bg,
                         color: st.color,
-                        ...(isVenda ? { boxShadow: `0 0 12px ${st.glow}` } : {}),
+                        ...(vendaEfetivada ? { boxShadow: `0 0 12px ${st.glow}` } : {}),
                       }}>
-                        {isVenda && <Trophy className="w-3 h-3" />}{st.label}
+                        {vendaEfetivada && <Trophy className="w-3 h-3" />}{st.label}
                       </span>
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: AURORA.textMuted }}>
@@ -336,7 +349,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                 <Info label="Tipo" value={detalhe.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
                 <Info label="Produto" value={detalhe.produto} />
                 <Info label="Valor est." value={fmtMoeda(detalhe.valor_estimado)} />
-                <Info label="Status" value={STATUS_CFG[detalhe.status]?.label} />
+                <Info label="Status" value={(detalhe.status === 'convertido_venda' || paidDocs.has((getDoc(detalhe) || '').replace(/\D/g, ''))) ? STATUS_CFG.convertido_venda.label : (STATUS_CFG[detalhe.status]?.label || '—')} />
               </div>
 
               <DetalheJornadaIndicacao lead={detalhe} />
