@@ -31,6 +31,13 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
   });
 
+  // Parcelas futuras liquidadas (status='recebida') — somam à conversão/comissão
+  // da indicação conforme a jornada completa do lead (entrada + parcelas pagas).
+  const { data: parcelas = [], isLoading: loadingParcelas } = useQuery({
+    queryKey: ['consolidado-parcelas-recebidas'],
+    queryFn: () => base44.entities.ParcelaVenda.list('-created_date', 500),
+  });
+
   const { data: parceirosQuery = [] } = useQuery({
     queryKey: ['consolidado-parceiros-ids'],
     queryFn: () => base44.entities.Parceiro.list('-created_date', 500),
@@ -45,26 +52,49 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores)
   // e a venda precisa ter comprovante de pagamento (contrato assinado e pago).
   const parceiroIds = new Set(parceiros.map(p => p.id));
+  // Venda original (entrada paga) — exclui parcelas recorrentes, que entram via ParcelaVenda.
+  // Valor considerado = valor de entrada/adesão efetivamente pago (Venda.valor), não o total do contrato.
   const vendasIndicadas = vendas.filter(v =>
+    v.tipo_venda !== 'recorrencia' &&
     Array.isArray(v.indicadores) &&
     v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
     Array.isArray(v.comprovantes) && v.comprovantes.length > 0 &&
     dentroPeriodo(v.data, range) &&
     (parceiroId === 'todos' || !parceiroId || (v.indicadores || []).some(i => i && i.id === parceiroId))
   );
-  const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
+  const valorVenda = (v) => Number(v.valor) || 0;
+
+  // Parcelas liquidadas (recebidas) vinculadas a indicações — somam à jornada do lead.
+  const parcelasRecebidas = parcelas.filter(p =>
+    p.status === 'recebida' &&
+    Array.isArray(p.indicadores) &&
+    p.indicadores.some(i => i && parceiroIds.has(i.id)) &&
+    dentroPeriodo(p.data_recebimento, range) &&
+    (parceiroId === 'todos' || !parceiroId || (p.indicadores || []).some(i => i && i.id === parceiroId))
+  );
+  const valorParcela = (p) => Number(p.valor_parcela) || 0;
 
   const leadsFiltrados = leads.filter(l => dentroPeriodo(l.created_date, range) && filtraParceiro(l.parceiro_id));
   const total = leadsFiltrados.length;
   const volumeIndicado = leadsFiltrados.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
-  const vendasConvertidasValor = vendasIndicadas.reduce((s, v) => s + valorVenda(v), 0);
+
+  const totalEntradas = vendasIndicadas.reduce((s, v) => s + valorVenda(v), 0);
+  const totalParcelas = parcelasRecebidas.reduce((s, p) => s + valorParcela(p), 0);
+  const vendasConvertidasValor = totalEntradas + totalParcelas;
   const vendasEfetivasCount = vendasIndicadas.length;
-  const comissaoGerada = vendasIndicadas.reduce((s, v) => {
-    const pct = (v.indicadores || [])
-      .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
-      .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
-    return s + valorVenda(v) * (pct / 100);
-  }, 0);
+  const comissaoGerada =
+    vendasIndicadas.reduce((s, v) => {
+      const pct = (v.indicadores || [])
+        .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
+        .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
+      return s + valorVenda(v) * (pct / 100);
+    }, 0) +
+    parcelasRecebidas.reduce((s, p) => {
+      const pct = (p.indicadores || [])
+        .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
+        .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
+      return s + valorParcela(p) * (pct / 100);
+    }, 0);
 
   // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de indicações):
   //   Vendas Convertidas (verde) = virou venda paga originada de indicação
@@ -99,11 +129,22 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
       rankingMap[key].valor += valorVenda(v) * ((Number(i.percentual) || 0) / 100);
     });
   });
+  // Soma parcelas liquidadas ao valor acumulado e comissão de cada indicador.
+  parcelasRecebidas.forEach(p => {
+    (p.indicadores || []).forEach(i => {
+      if (!i || !parceiroIds.has(i.id)) return;
+      if (parceiroId !== 'todos' && parceiroId && i.id !== parceiroId) return;
+      const key = i.id;
+      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
+      rankingMap[key].valorVendas += valorParcela(p);
+      rankingMap[key].valor += valorParcela(p) * ((Number(i.percentual) || 0) / 100);
+    });
+  });
   const ranking = Object.values(rankingMap)
     .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valorVendas - a.valorVendas)
     .slice(0, 5);
 
-  const isLoading = loadingLeads || loadingVendas;
+  const isLoading = loadingLeads || loadingVendas || loadingParcelas;
 
   return (
     <div className="mb-5">
