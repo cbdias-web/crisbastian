@@ -628,11 +628,19 @@ export default function Dashboard() {
                     <XAxis dataKey="nome" tick={{ fontSize: 11, fill: A.textMuted }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: A.textMuted }} axisLine={false} tickLine={false}
                       tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip cursor={false} content={() => null} />
                     <Bar dataKey="volume" name="volume" radius={[6, 6, 0, 0]} maxBarSize={40}>
-                      {rankingData.map((entry, i) => (
-                        <Cell key={i} fill={entry.volume >= entry.meta && entry.meta > 0 ? '#10b981' : A.accent} />
-                      ))}
+                      {rankingData.map((entry, i) => {
+                        const baseFill = entry.volume >= entry.meta && entry.meta > 0 ? '#10b981' : A.accent;
+                        return (
+                          <Cell key={i}
+                            fill={baseFill}
+                            onMouseEnter={e => { e.target.setAttribute('fill', baseFill === '#10b981' ? '#34d399' : '#33e6cc'); e.target.style.transform = 'scaleY(1.18)'; e.target.style.transformOrigin = 'bottom'; }}
+                            onMouseLeave={e => { e.target.setAttribute('fill', baseFill); e.target.style.transform = 'scaleY(1)'; }}
+                            style={{ cursor: 'pointer', transition: 'transform 200ms ease, fill 200ms ease', transformOrigin: 'bottom' }}
+                          />
+                        );
+                      })}
                     </Bar>
                     <Bar dataKey="meta" name="meta" fill={A.gold} radius={[6, 6, 0, 0]} maxBarSize={40} opacity={0.4} />
                   </BarChart>
