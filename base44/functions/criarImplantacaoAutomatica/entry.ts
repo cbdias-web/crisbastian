@@ -116,15 +116,9 @@ Deno.serve(async (req) => {
       }],
     });
 
-    // Notificar envolvidos
-    try {
-      await base44.asServiceRole.functions.invoke('notificarImplantacao', {
-        tipo: 'novo',
-        implantacao_id: implantacao.id,
-      });
-    } catch (e) {
-      console.log('Erro ao notificar implantação:', e.message);
-    }
+    // Notificação automática de implantação removida por solicitação:
+    // o envio automático de e-mail/Jarvis foi desativado; permanecem apenas
+    // movimentações de leads, contratos e vendas para os envolvidos.
 
     return Response.json({ success: true, implantacao_id: implantacao.id });
   } catch (error) {
