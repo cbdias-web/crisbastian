@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   X, Building2, User, FileCheck2, Upload, CheckCircle2, Circle, Plus, Trash2,
   Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { todayBrasilia, isoNowBrasilia } from '@/lib/dateUtils';
+import { isoNowBrasilia } from '@/lib/dateUtils';
 
 const DOC_CONFIG = {
   PF: [
@@ -55,39 +55,26 @@ const AURORA = {
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };
 const labelStyle = { color: AURORA.textMuted, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' };
 
-export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }) {
-  const queryClient = useQueryClient();
-  const [rncExistente, setRncExistente] = useState(null);
-  const [buscaCliente, setBuscaCliente] = useState('');
-  const [resultadosBusca, setResultadosBusca] = useState([]);
-  const [buscandoCliente, setBuscandoCliente] = useState(false);
-  const [clienteVinculado, setClienteVinculado] = useState(null);
-  const [tipoCanal, setTipoCanal] = useState('PF');
-  const [operarAcima270k, setOperarAcima270k] = useState(false);
-  const [form, setForm] = useState({
-    nome: '', cpf_cnpj: '', rg_ie: '', nascimento_fundacao: '', nacionalidade: 'Brasileira',
-    profissao_natureza: '', estado_civil: '', dupla_nacionalidade: '', media_salarial: '', quantidade_funcionarios: '',
-    email: '', telefone: '',
-    cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacoes: '',
-  });
-  const [linkRnc, setLinkRnc] = useState('');
-  const [gerandoLink, setGerandoLink] = useState(false);
-  const [documentos, setDocumentos] = useState([]);
-  const [socios, setSocios] = useState([]);
-  const [salvando, setSalvando] = useState(false);
-  const [gerandoPdf, setGerandoPdf] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState(null);
-  const [uploadingSocio, setUploadingSocio] = useState(null);
-  const [secaoDadosOpen, setSecaoDadosOpen] = useState(true);
-  const [secaoDocsOpen, setSecaoDocsOpen] = useState(true);
-  const [secaoSociosOpen, setSecaoSociosOpen] = useState(true);
-  const [secaoObsOpen, setSecaoObsOpen] = useState(true);
+const emptySocio = () => ({ nome: '', cpf: '', documento_url: '', documento_nome: '', comprovante_url: '', comprovante_nome: '' });
+const emptyForm = () => ({
+  nome: '', cpf_cnpj: '', rg_ie: '', nascimento_fundacao: '', nacionalidade: 'Brasileira',
+  profissao_natureza: '', estado_civil: '', dupla_nacionalidade: '', media_salarial: '', quantidade_funcionarios: '',
+  email: '', telefone: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacoes: '',
+});
+const emptySlot = (tipo) => ({
+  rnc: null,
+  form: emptyForm(),
+  documentos: buildDocInicial(tipo, false),
+  socios: tipo === 'PJ' ? [emptySocio()] : [],
+  operarAcima270k: false,
+  link: '',
+});
 
-  const aplicarRnc = (rnc) => {
-    setRncExistente(rnc);
-    setTipoCanal(rnc.tipo_canal || 'PF');
-    setOperarAcima270k(rnc.operar_acima_270k || false);
-    setForm({
+function slotFromRnc(rnc) {
+  const tipo = rnc.tipo_canal || 'PF';
+  return {
+    rnc,
+    form: {
       nome: rnc.nome || '', cpf_cnpj: rnc.cpf_cnpj || '', rg_ie: rnc.rg_ie || '',
       nascimento_fundacao: rnc.nascimento_fundacao || '', nacionalidade: rnc.nacionalidade || '',
       profissao_natureza: rnc.profissao_natureza || '', estado_civil: rnc.estado_civil || '',
@@ -95,53 +82,82 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
       email: rnc.email || '', telefone: rnc.telefone || '',
       cep: rnc.cep || '', endereco: rnc.endereco || '', bairro: rnc.bairro || '',
       cidade: rnc.cidade || '', estado: rnc.estado || '', observacoes: rnc.observacoes || '',
-    });
-    setDocumentos(rnc.documentos || []);
-    setSocios(rnc.socios || []);
-    if (rnc.link_token) setLinkRnc(window.location.origin + '/rnc-publica/' + rnc.link_token);
+    },
+    documentos: rnc.documentos && rnc.documentos.length ? rnc.documentos : buildDocInicial(tipo, rnc.operar_acima_270k),
+    socios: rnc.socios && rnc.socios.length ? rnc.socios : (tipo === 'PJ' ? [emptySocio()] : []),
+    operarAcima270k: rnc.operar_acima_270k || false,
+    link: rnc.link_token ? window.location.origin + '/rnc-publica/' + rnc.link_token : '',
   };
+}
 
+export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }) {
+  const queryClient = useQueryClient();
+  const [tipoCanal, setTipoCanal] = useState('PF');
+  const [dadosPorTipo, setDadosPorTipo] = useState({ PF: emptySlot('PF'), PJ: emptySlot('PJ') });
+  const [buscaCliente, setBuscaCliente] = useState('');
+  const [resultadosBusca, setResultadosBusca] = useState([]);
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
+  const [clienteVinculado, setClienteVinculado] = useState(null);
+  const [salvando, setSalvando] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [gerandoLink, setGerandoLink] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [uploadingSocio, setUploadingSocio] = useState(null);
+  const [secaoDadosOpen, setSecaoDadosOpen] = useState(true);
+  const [secaoDocsOpen, setSecaoDocsOpen] = useState(true);
+  const [secaoSociosOpen, setSecaoSociosOpen] = useState(true);
+  const [secaoObsOpen, setSecaoObsOpen] = useState(true);
+
+  const slot = dadosPorTipo[tipoCanal];
+  const form = slot.form;
+  const documentos = slot.documentos;
+  const socios = slot.socios;
+  const operarAcima270k = slot.operarAcima270k;
+  const rncExistente = slot.rnc;
+  const linkRnc = slot.link;
+
+  // Carrega registros existentes (PF e PJ são independentes — pode haver um de cada por contrato)
   useEffect(() => {
     if (rncId) {
-      base44.entities.RncCanalBancario.get(rncId).then(aplicarRnc).catch(() => {});
+      base44.entities.RncCanalBancario.get(rncId).then(rnc => {
+        setTipoCanal(rnc.tipo_canal || 'PF');
+        setDadosPorTipo(prev => ({ ...prev, [rnc.tipo_canal || 'PF']: slotFromRnc(rnc) }));
+        if (rnc.contrato_id) {
+          base44.entities.RncCanalBancario.filter({ contrato_id: rnc.contrato_id })
+            .then(outros => {
+              setDadosPorTipo(prev => {
+                const next = { ...prev };
+                for (const r of outros) {
+                  if (r.id === rnc.id) continue;
+                  next[r.tipo_canal] = slotFromRnc(r);
+                }
+                return next;
+              });
+            }).catch(() => {});
+        }
+      }).catch(() => {});
       return;
     }
     if (!contrato?.id) return;
     base44.entities.RncCanalBancario.filter({ contrato_id: contrato.id })
       .then(rncs => {
-        if (rncs.length > 0) {
-          aplicarRnc(rncs[0]);
-        } else {
-          setForm(f => ({
-            ...f,
-            nome: contrato.nome || '',
-            cpf_cnpj: contrato.cpf_cnpj || '',
-            email: contrato.email || '',
-            telefone: contrato.telefone || '',
-            cep: contrato.cep || '',
-            endereco: contrato.endereco || '',
-            bairro: contrato.bairro || '',
-            cidade: contrato.cidade || '',
-            estado: contrato.estado || '',
-            nacionalidade: contrato.nacionalidade || 'Brasileira',
-            profissao_natureza: contrato.profissao || '',
-            estado_civil: contrato.estado_civil || '',
-            nascimento_fundacao: contrato.nascimento || '',
-          }));
-          setDocumentos(buildDocInicial('PF', false));
-        }
-      })
-      .catch(() => {});
+        const baseForm = {
+          ...emptyForm(),
+          nome: contrato.nome || '', cpf_cnpj: contrato.cpf_cnpj || '', email: contrato.email || '',
+          telefone: contrato.telefone || '', cep: contrato.cep || '', endereco: contrato.endereco || '',
+          bairro: contrato.bairro || '', cidade: contrato.cidade || '', estado: contrato.estado || '',
+          nacionalidade: contrato.nacionalidade || 'Brasileira', profissao_natureza: contrato.profissao || '',
+          estado_civil: contrato.estado_civil || '', nascimento_fundacao: contrato.nascimento || '',
+        };
+        setDadosPorTipo(prev => {
+          const next = { PF: { ...prev.PF, form: { ...baseForm } }, PJ: { ...prev.PJ, form: { ...baseForm } } };
+          for (const r of rncs) {
+            next[r.tipo_canal] = slotFromRnc(r);
+          }
+          return next;
+        });
+      }).catch(() => {});
   }, [contrato?.id, rncId]);
-
-  useEffect(() => {
-    if (rncExistente) return;
-    setDocumentos(buildDocInicial(tipoCanal, operarAcima270k));
-    if (tipoCanal === 'PJ' && socios.length === 0) {
-      setSocios([{ nome: '', cpf: '', documento_url: '', documento_nome: '', comprovante_url: '', comprovante_nome: '' }]);
-    }
-    if (tipoCanal === 'PF') setSocios([]);
-  }, [tipoCanal, operarAcima270k]);
 
   const docRecebidoCount = documentos.filter(d => d.recebido).length;
   const allObrigatoriosRecebidos = documentos.filter(d => d.obrigatorio).every(d => d.recebido);
@@ -164,11 +180,17 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
 
   const selecionarCliente = (cliente) => {
     setClienteVinculado(cliente);
-    setForm(f => ({
-      ...f,
-      nome: cliente.nome || '', cpf_cnpj: cliente.cpf_cnpj || '',
-      email: cliente.email || '', telefone: cliente.telefone || '',
-      cidade: cliente.cidade || '', estado: cliente.estado || '',
+    setDadosPorTipo(prev => ({
+      ...prev,
+      [tipoCanal]: {
+        ...prev[tipoCanal],
+        form: {
+          ...prev[tipoCanal].form,
+          nome: cliente.nome || '', cpf_cnpj: cliente.cpf_cnpj || '',
+          email: cliente.email || '', telefone: cliente.telefone || '',
+          cidade: cliente.cidade || '', estado: cliente.estado || '',
+        },
+      },
     }));
     setBuscaCliente(cliente.nome || '');
     setResultadosBusca([]);
@@ -184,19 +206,39 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
       };
       if (existentes.length > 0) {
         await base44.entities.Cliente.update(existentes[0].id, dadosCliente);
-        toast.success('Cadastro do cliente atualizado!');
       } else {
         await base44.entities.Cliente.create({ ...dadosCliente, cpf_cnpj: form.cpf_cnpj, origem: 'nativo' });
-        toast.success('Cliente cadastrado no sistema!');
       }
     } catch (e) {}
+  };
+
+  const updateSlot = (patch) => setDadosPorTipo(prev => ({ ...prev, [tipoCanal]: { ...prev[tipoCanal], ...patch } }));
+
+  const trocarTipo = (t) => {
+    setTipoCanal(t);
+    setDadosPorTipo(prev => {
+      const s = prev[t];
+      if (s.rnc) return prev;
+      let socios = s.socios;
+      if (t === 'PJ' && (!socios || socios.length === 0)) socios = [emptySocio()];
+      if (t === 'PF') socios = [];
+      return { ...prev, [t]: { ...s, socios, documentos: s.documentos.length ? s.documentos : buildDocInicial(t, s.operarAcima270k) } };
+    });
+  };
+
+  const toggle270k = () => {
+    const novo = !operarAcima270k;
+    updateSlot({
+      operarAcima270k: novo,
+      documentos: rncExistente ? documentos : buildDocInicial(tipoCanal, novo),
+    });
   };
 
   const handleUploadDoc = async (index, file) => {
     setUploadingDoc(index);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setDocumentos(docs => docs.map((d, i) => i === index ? { ...d, recebido: true, url: file_url, nome_arquivo: file.name } : d));
+      updateSlot({ documentos: documentos.map((d, i) => i === index ? { ...d, recebido: true, url: file_url, nome_arquivo: file.name } : d) });
       toast.success('Documento anexado!');
     } catch (e) {
       toast.error('Erro no upload: ' + e.message);
@@ -205,18 +247,20 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   };
 
   const handleRemoveDoc = (index) => {
-    setDocumentos(docs => docs.map((d, i) => i === index ? { ...d, recebido: false, url: '', nome_arquivo: '' } : d));
+    updateSlot({ documentos: documentos.map((d, i) => i === index ? { ...d, recebido: false, url: '', nome_arquivo: '' } : d) });
   };
 
   const handleUploadSocio = async (socioIndex, field, file) => {
     setUploadingSocio(`${socioIndex}-${field}`);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setSocios(ss => ss.map((s, i) => i === socioIndex ? {
-        ...s,
-        [field === 'documento' ? 'documento_url' : 'comprovante_url']: file_url,
-        [field === 'documento' ? 'documento_nome' : 'comprovante_nome']: file.name,
-      } : s));
+      updateSlot({
+        socios: socios.map((s, i) => i === socioIndex ? {
+          ...s,
+          [field === 'documento' ? 'documento_url' : 'comprovante_url']: file_url,
+          [field === 'documento' ? 'documento_nome' : 'comprovante_nome']: file.name,
+        } : s),
+      });
       toast.success('Documento anexado!');
     } catch (e) {
       toast.error('Erro no upload: ' + e.message);
@@ -225,24 +269,23 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   };
 
   const handleSocioChange = (index, field, value) => {
-    setSocios(ss => ss.map((s, i) => i === index ? { ...s, [field]: value } : s));
+    updateSlot({ socios: socios.map((s, i) => i === index ? { ...s, [field]: value } : s) });
   };
 
   const clearSocioDoc = (index, field) => {
-    setSocios(ss => ss.map((s, i) => i === index ? {
-      ...s,
-      [field === 'documento' ? 'documento_url' : 'comprovante_url']: '',
-      [field === 'documento' ? 'documento_nome' : 'comprovante_nome']: '',
-    } : s));
+    updateSlot({
+      socios: socios.map((s, i) => i === index ? {
+        ...s,
+        [field === 'documento' ? 'documento_url' : 'comprovante_url']: '',
+        [field === 'documento' ? 'documento_nome' : 'comprovante_nome']: '',
+      } : s),
+    });
   };
 
-  const addSocio = () => {
-    setSocios(ss => [...ss, { nome: '', cpf: '', documento_url: '', documento_nome: '', comprovante_url: '', comprovante_nome: '' }]);
-  };
+  const addSocio = () => updateSlot({ socios: [...socios, emptySocio()] });
+  const removeSocio = (index) => updateSlot({ socios: socios.filter((_, i) => i !== index) });
 
-  const removeSocio = (index) => {
-    setSocios(ss => ss.filter((_, i) => i !== index));
-  };
+  const updateForm = (field, value) => updateSlot({ form: { ...form, [field]: value } });
 
   const coletarDados = () => ({
     contrato_id: rncExistente?.contrato_id || contrato?.id || '',
@@ -266,13 +309,13 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     setSalvando(true);
     try {
       const dados = { ...coletarDados(), status };
+      let result;
       if (rncExistente) {
-        await base44.entities.RncCanalBancario.update(rncExistente.id, dados);
-        setRncExistente({ ...rncExistente, ...dados });
+        result = await base44.entities.RncCanalBancario.update(rncExistente.id, dados);
       } else {
-        const created = await base44.entities.RncCanalBancario.create(dados);
-        setRncExistente(created);
+        result = await base44.entities.RncCanalBancario.create(dados);
       }
+      updateSlot({ rnc: result });
       queryClient.invalidateQueries(['rnc-canal-bancario']);
       await sincronizarCliente();
       toast.success(status === 'concluido' ? 'RNC concluída e salva!' : 'RNC salva como rascunho.');
@@ -285,19 +328,17 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   const handleGerarPdf = async () => {
     setGerandoPdf(true);
     try {
-      let rncId = rncExistente?.id;
-      if (!rncId) {
-        const dados = { ...coletarDados(), status: 'rascunho' };
-        const created = await base44.entities.RncCanalBancario.create(dados);
-        rncId = created.id;
-        setRncExistente(created);
+      let id = rncExistente?.id;
+      if (!id) {
+        const created = await base44.entities.RncCanalBancario.create({ ...coletarDados(), status: 'rascunho' });
+        id = created.id;
+        updateSlot({ rnc: created });
       } else {
-        // Sempre atualizar antes de gerar — o usuário pode ter alterado tipo/fichas sem salvar
         const dados = { ...coletarDados(), status: rncExistente.status === 'concluido' ? 'concluido' : 'rascunho' };
-        await base44.entities.RncCanalBancario.update(rncId, dados);
-        setRncExistente(prev => ({ ...prev, ...dados }));
+        const updated = await base44.entities.RncCanalBancario.update(id, dados);
+        updateSlot({ rnc: updated });
       }
-      const res = await base44.functions.invoke('gerarRncCanalBancarioPDF', { rnc_id: rncId });
+      const res = await base44.functions.invoke('gerarRncCanalBancarioPDF', { rnc_id: id });
       if (res?.data?.pdf_base64) {
         const byteChars = atob(res.data.pdf_base64);
         const bytes = new Uint8Array(byteChars.length);
@@ -313,8 +354,8 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
         const file = new File([blob], res.data.filename, { type: 'application/pdf' });
         try {
           const { file_url } = await base44.integrations.Core.UploadFile({ file });
-          await base44.entities.RncCanalBancario.update(rncId, { pdf_url: file_url, pdf_nome: res.data.filename, status: 'concluido' });
-          setRncExistente(prev => ({ ...prev, pdf_url: file_url, pdf_nome: res.data.filename, status: 'concluido' }));
+          const updated = await base44.entities.RncCanalBancario.update(id, { pdf_url: file_url, pdf_nome: res.data.filename, status: 'concluido' });
+          updateSlot({ rnc: updated });
         } catch {}
         toast.success('PDF gerado e baixado!');
       } else {
@@ -326,30 +367,27 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     setGerandoPdf(false);
   };
 
-  const updateForm = (field, value) => setForm(f => ({ ...f, [field]: value }));
-
   const handleGerarLink = async () => {
     setSalvando(true);
-    let rncId = rncExistente?.id;
+    let id = rncExistente?.id;
     try {
       const dados = { ...coletarDados(), status: rncExistente?.status === 'concluido' ? 'concluido' : 'rascunho' };
-      if (rncId) {
-        // Sempre atualizar antes de gerar — o usuário pode ter alterado tipo/fichas sem salvar
-        await base44.entities.RncCanalBancario.update(rncId, dados);
-        setRncExistente(prev => ({ ...prev, ...dados }));
+      if (id) {
+        const updated = await base44.entities.RncCanalBancario.update(id, dados);
+        updateSlot({ rnc: updated });
       } else {
         const created = await base44.entities.RncCanalBancario.create(dados);
-        rncId = created.id;
-        setRncExistente(created);
+        id = created.id;
+        updateSlot({ rnc: created });
       }
     } catch (e) { toast.error('Erro ao salvar: ' + e.message); setSalvando(false); return; }
     setSalvando(false);
     setGerandoLink(true);
     try {
-      const res = await base44.functions.invoke('gerarLinkRnc', { rnc_id: rncId });
+      const res = await base44.functions.invoke('gerarLinkRnc', { rnc_id: id });
       if (res?.data?.link) {
         const fullUrl = window.location.origin + res.data.link;
-        setLinkRnc(fullUrl);
+        updateSlot({ link: fullUrl });
         navigator.clipboard?.writeText(fullUrl).catch(() => {});
         toast.success('Link gerado e copiado para a área de transferência!');
       } else {
@@ -401,7 +439,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
               <h2 className="text-lg font-bold" style={{ color: AURORA.text }}>RNC — Canal Bancário</h2>
               <p className="text-xs" style={{ color: AURORA.textMuted }}>
                 {rncExistente
-                  ? `Rascunho salvo · ${form.nome || contrato?.nome || ''}`
+                  ? `${tipoCanal === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} · ${form.nome || contrato?.nome || ''}`
                   : contrato?.id
                     ? `Contrato: ${contrato?.nome || '—'}`
                     : 'Formulário independente — preencha os dados do cliente'}
@@ -448,30 +486,36 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
             </div>
           )}
 
-          {/* Tipo de canal */}
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={() => setTipoCanal('PF')}
-              className="rounded-xl p-4 transition border-2"
-              style={tipoCanal === 'PF'
-                ? { background: 'rgba(0,212,170,0.12)', borderColor: AURORA.accent }
-                : { background: AURORA.surface, borderColor: AURORA.border }}>
-              <div className="flex items-center gap-2 mb-1">
-                <User className="w-4 h-4" style={{ color: tipoCanal === 'PF' ? AURORA.accent : AURORA.textMuted }} />
-                <span className="text-sm font-bold" style={{ color: AURORA.text }}>Pessoa Física</span>
-              </div>
-              <p className="text-[10px]" style={{ color: AURORA.textMuted }}>Canal bancário individual</p>
-            </button>
-            <button onClick={() => setTipoCanal('PJ')}
-              className="rounded-xl p-4 transition border-2"
-              style={tipoCanal === 'PJ'
-                ? { background: 'rgba(0,212,170,0.12)', borderColor: AURORA.accent }
-                : { background: AURORA.surface, borderColor: AURORA.border }}>
-              <div className="flex items-center gap-2 mb-1">
-                <Building2 className="w-4 h-4" style={{ color: tipoCanal === 'PJ' ? AURORA.accent : AURORA.textMuted }} />
-                <span className="text-sm font-bold" style={{ color: AURORA.text }}>Pessoa Jurídica</span>
-              </div>
-              <p className="text-[10px]" style={{ color: AURORA.textMuted }}>Canal bancário empresarial</p>
-            </button>
+          {/* Tipo de canal — seleção de visualização (PF e PJ são independentes) */}
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: AURORA.textMuted }}>
+              Selecione o formulário (PF e PJ são independentes — você pode preencher e gerar link para cada um)
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {['PF', 'PJ'].map(t => {
+                const sel = tipoCanal === t;
+                const hasRnc = !!dadosPorTipo[t].rnc;
+                const Icon = t === 'PF' ? User : Building2;
+                return (
+                  <button key={t} onClick={() => trocarTipo(t)}
+                    className="rounded-xl p-4 transition border-2 text-left relative"
+                    style={sel
+                      ? { background: 'rgba(0,212,170,0.12)', borderColor: AURORA.accent }
+                      : { background: AURORA.surface, borderColor: AURORA.border }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Icon className="w-4 h-4" style={{ color: sel ? AURORA.accent : AURORA.textMuted }} />
+                      <span className="text-sm font-bold" style={{ color: AURORA.text }}>{t === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}</span>
+                      {hasRnc && (
+                        <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399' }}>
+                          salvo
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px]" style={{ color: AURORA.textMuted }}>{t === 'PF' ? 'Canal bancário individual' : 'Canal bancário empresarial'}</p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Flag 270k */}
@@ -483,7 +527,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                 {tipoCanal === 'PF' ? 'Será necessário IRPF 2025/2026 + Recibo de Entrega.' : 'Será necessário DRE, Balanço 2025 e Faturamento dos últimos 12 meses.'}
               </p>
             </div>
-            <button onClick={() => setOperarAcima270k(p => !p)}
+            <button onClick={toggle270k}
               className="px-4 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0"
               style={operarAcima270k
                 ? { background: AURORA.gold, color: '#1c2333' }
@@ -493,7 +537,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
           </div>
 
           {/* Dados cadastrais */}
-          <CardSection title="Dados Cadastrais" icon={User}
+          <CardSection title={`Dados Cadastrais — ${tipoCanal === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}`} icon={User}
             open={secaoDadosOpen} onToggle={() => setSecaoDadosOpen(p => !p)}>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
@@ -687,11 +731,11 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                 <Download className="w-3.5 h-3.5" /> Ver PDF gerado
               </a>
             )}
-            <button onClick={handleGerarLink} disabled={gerandoLink || salvando}
+            <button onClick={handleGerarLink} disabled={gerandoPdf || salvando || gerandoLink}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0"
               style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)', color: '#a78bfa' }}>
-              {gerandoLink ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
-              Gerar Link p/ Cliente
+              {(salvando || gerandoLink) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+              Gerar Link p/ Cliente ({tipoCanal})
             </button>
             {linkRnc && (
               <div className="flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
@@ -704,13 +748,13 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
             )}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => handleSalvar('rascunho')} disabled={salvando}
+            <button onClick={() => handleSalvar('rascunho')} disabled={salvando || gerandoPdf || gerandoLink}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
               style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
               {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileText className="w-3.5 h-3.5" />}
               Salvar Rascunho
             </button>
-            <button onClick={handleGerarPdf} disabled={gerandoPdf || salvando}
+            <button onClick={handleGerarPdf} disabled={gerandoPdf || salvando || gerandoLink}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50"
               style={{ background: AURORA.accent, color: '#0d1117' }}>
               {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileCheck2 className="w-3.5 h-3.5" />}
