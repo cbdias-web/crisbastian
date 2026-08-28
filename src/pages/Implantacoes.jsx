@@ -84,18 +84,32 @@ export default function Implantacoes() {
     enabled: !!user?.email,
   });
 
-  // Padrinhos (não-admin) já visualizam o filtro aplicado ao seu próprio nome
-  useEffect(() => {
-    if (!isAdmin && meuPadrinhoNome && filtroPadrinho === 'Todos') {
-      setFiltroPadrinho(meuPadrinhoNome);
-    }
-  }, [meuPadrinhoNome, isAdmin, filtroPadrinho]);
+  // Vendedor vinculado ao usuário logado (para que gerentes acompanhem suas próprias vendas)
+  const { data: meuVendedor } = useQuery({
+    queryKey: ['meu-vendedor-implantacoes', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const vs = await base44.entities.Vendedor.filter({ email: user.email });
+      return vs[0] || null;
+    },
+    enabled: !!user?.email,
+  });
 
-  const produtosDisponiveis = [...new Set(implantacoes.map(i => i.produto).filter(Boolean))].sort();
-  const vendedoresDisponiveis = [...new Set(implantacoes.map(i => i.vendedor_nome).filter(Boolean))].sort();
-  const padrinhosDisponiveis = [...new Set(implantacoes.map(i => i.padrinho_nome).filter(Boolean))].sort();
+  // Visibilidade (não-admin): padrinho vê seus produtos (todos os vendedores);
+  // gerente/vendedor vê suas próprias vendas (todos os padrinhos). União dos dois.
+  const visiveis = isAdmin ? implantacoes : implantacoes.filter(imp => {
+    const souPadrinhoDeste = meusProdutosPadrinho.includes(imp.produto) && (!imp.padrinho_nome || imp.padrinho_nome === meuPadrinhoNome);
+    const souVendedorDeste =
+      (meuVendedor && (imp.vendedor_id === meuVendedor.id || imp.vendedor_nome === meuVendedor.nome)) ||
+      (user?.full_name && imp.vendedor_nome === user.full_name);
+    return souPadrinhoDeste || souVendedorDeste;
+  });
 
-  const filtradas = implantacoes.filter(imp => {
+  const produtosDisponiveis = [...new Set(visiveis.map(i => i.produto).filter(Boolean))].sort();
+  const vendedoresDisponiveis = [...new Set(visiveis.map(i => i.vendedor_nome).filter(Boolean))].sort();
+  const padrinhosDisponiveis = [...new Set(visiveis.map(i => i.padrinho_nome).filter(Boolean))].sort();
+
+  const filtradas = visiveis.filter(imp => {
     const matchBusca = !busca || imp.cliente_nome?.toLowerCase().includes(busca.toLowerCase()) || imp.cpf_cnpj?.includes(busca) || imp.produto?.toLowerCase().includes(busca.toLowerCase());
     const matchProduto = filtroProduto === 'Todos' || imp.produto === filtroProduto;
     const matchVendedor = filtroVendedor === 'Todos' || imp.vendedor_nome === filtroVendedor;
