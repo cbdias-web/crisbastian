@@ -620,10 +620,21 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                     )}
                   </div>
                   {doc.recebido ? (
-                    <button onClick={() => handleRemoveDoc(i)}
-                      className="p-1.5 rounded-lg transition" style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.1)' }}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {doc.url && (
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" download={doc.nome_arquivo || undefined}
+                          className="p-1.5 rounded-lg transition flex items-center"
+                          style={{ color: '#60a5fa', background: 'rgba(59,130,249,0.12)' }}
+                          title="Baixar / visualizar documento">
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <button onClick={() => handleRemoveDoc(i)}
+                        className="p-1.5 rounded-lg transition" style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.1)' }}
+                        title="Remover documento">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   ) : (
                     <label className="cursor-pointer p-1.5 rounded-lg transition flex items-center"
                       style={{ background: AURORA.accentDim, color: AURORA.accent }}>
@@ -670,8 +681,13 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                         {socio.documento_url ? (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] truncate flex-1" style={{ color: AURORA.accent }}>{socio.documento_nome}</span>
+                            <a href={socio.documento_url} target="_blank" rel="noopener noreferrer" download={socio.documento_nome || undefined}
+                              className="p-1 rounded transition flex-shrink-0" style={{ color: '#60a5fa', background: 'rgba(59,130,249,0.12)' }}
+                              title="Baixar / visualizar documento">
+                              <Download className="w-3 h-3" />
+                            </a>
                             <button onClick={() => clearSocioDoc(i, 'documento')}
-                              className="p-1 rounded" style={{ color: AURORA.danger }}><X className="w-3 h-3" /></button>
+                              className="p-1 rounded flex-shrink-0" style={{ color: AURORA.danger }} title="Remover documento"><X className="w-3 h-3" /></button>
                           </div>
                         ) : (
                           <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition"
@@ -687,8 +703,13 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                         {socio.comprovante_url ? (
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] truncate flex-1" style={{ color: AURORA.accent }}>{socio.comprovante_nome}</span>
+                            <a href={socio.comprovante_url} target="_blank" rel="noopener noreferrer" download={socio.comprovante_nome || undefined}
+                              className="p-1 rounded transition flex-shrink-0" style={{ color: '#60a5fa', background: 'rgba(59,130,249,0.12)' }}
+                              title="Baixar / visualizar comprovante">
+                              <Download className="w-3 h-3" />
+                            </a>
                             <button onClick={() => clearSocioDoc(i, 'comprovante')}
-                              className="p-1 rounded" style={{ color: AURORA.danger }}><X className="w-3 h-3" /></button>
+                              className="p-1 rounded flex-shrink-0" style={{ color: AURORA.danger }} title="Remover comprovante"><X className="w-3 h-3" /></button>
                           </div>
                         ) : (
                           <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer transition"
