@@ -67,6 +67,17 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
     colunas[col.key] = lista;
   }
 
+  // Mapeia destino do Kanban → status da ConversaWhatsapp (sincroniza a fonte
+  // para que a próxima montagem da fila não recriie o lead como pendente).
+  const CONVERSA_STATUS_BY_DESTINO = {
+    em_contato: 'aguardando',
+    qualificado: 'qualificado',
+    convertido: 'convertido',
+    desqualificado: 'desqualificado',
+    indicacao: 'ativa',
+    carteira: 'ativa',
+  };
+
   const mover = async (item, destinoKey) => {
     const patch = destinoPara(destinoKey);
     if (!patch) return;
@@ -76,6 +87,12 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
     setMovendo(true);
     try {
       await base44.entities.FilaContato.update(item.id, patch);
+      // Sincroniza a ConversaWhatsapp de origem (indicações) para evitar retrabalho
+      if (item.tipo_origem === 'indicacao' && item.ref_id && CONVERSA_STATUS_BY_DESTINO[destinoKey]) {
+        await base44.entities.ConversaWhatsapp.update(item.ref_id, {
+          status: CONVERSA_STATUS_BY_DESTINO[destinoKey],
+        }).catch(() => {});
+      }
       toast.success(`Lead movido para "${col.label}".`);
       onAtualizado?.();
     } catch (e) {

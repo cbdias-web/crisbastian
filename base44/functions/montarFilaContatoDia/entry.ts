@@ -2,18 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia } from '../../shared/diaUtil.ts';
 
 // Monta/sincroniza a FilaContato do dia para um vendedor (ou todos os ativos).
-// - Indicações (prioridade 0): ConversaWhatsapp do vendedor (qualquer status).
-//   * ativa/aguardando → pendente (cria novo item para hoje, idempotente por dia)
-//   * qualificado/convertido/desqualificado → sincroniza status (atualiza item
-//     existente ou cria novo) — o lead PERMANECE na esteira movendo-se entre
-//     colunas conforme as interações.
-// - Carteira (prioridade 1): AgendaContato pendente cuja data_agendada == hoje.
-// - LeadIndicações convertidas SEM ConversaWhatsapp (ex: indicações de portal
-//   convertidas direto em cliente/contrato) → cria FilaContato na coluna
-//   "Convertido" para que o lead não suma da esteira.
+//
+// Regras anti-retrabalho / oxigenação da carteira:
+// - Indicação (ConversaWhatsapp) resolvida (desqualificada/convertida) NUNCA volta
+//   como pendente. Itens pendentes antigos desses leads são limpos (movidos para
+//   a coluna de destino) para tirar o retrabalho da esteira.
+// - Indicação que já foi trabalhada (atendeu/qualificado/nao_atendeu) não reentra
+//   como pendente automaticamente (oxigenação). Para reverter, o gerente usa
+//   "Voltar à fila" (que resincroniza a conversa para 'ativa').
+// - Carteira (AgendaContato) resolvida (convertida/desqualificada) não reentra.
 //
 // Payload: { vendedor_id?: string }
-// Admin pode omitir vendedor_id para montar a fila de todos os ativos.
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -23,6 +22,7 @@ export default async function(req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({})) || {};
     const hoje = hojeBrasilia();
+    const agora = new Date().toISOString();
 
     // Determinar vendedores alvo
     let vendedores;
@@ -39,27 +39,83 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    // ── Índices de idempotência (sobre TODA a fila, não só hoje) ──
-    // Pendente: idempotente por dia (cria novo a cada dia).
-    // Não-pendente: um único item por (ref_id+vendedor), sincronizado.
+    // ── Cargas globais ──
     const todaFila = await base44.asServiceRole.entities.FilaContato.list('-created_date', 2000);
+    const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
+    const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
+
+    const conversaById = new Map(todasConversas.map((c) => [c.id, c]));
+
+    // ── Índices de idempotência ──
     const existenteHojeKey = new Set(
       todaFila.filter((f) => f.data_fila === hoje)
         .map((f) => `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`)
     );
-    // Mapa ref+vendedor → item mais recente (para sincronizar não-pendentes)
+    // Mapa ref+vendedor → item mais recente (lista já em ordem decrescente)
     const porRefMap = new Map();
     for (const f of todaFila) {
       const k = `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`;
-      if (!porRefMap.has(k)) porRefMap.set(k, f); // lista já em ordem decrescente
+      if (!porRefMap.has(k)) porRefMap.set(k, f);
     }
-    // Set de lead_indicacao_id já presentes na fila
     const leadIndicacaoJaNaFila = new Set(
       todaFila.filter((f) => f.lead_indicacao_id).map((f) => f.lead_indicacao_id)
     );
 
-    // Cache de LeadIndicacao para denormalizar produto/valor/parceiro/comissao
-    const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
+    // ── Leads resolvidos (anti-retrabalho) ──
+    // conversaId -> 'descartado' | 'convertido'
+    const resolvidoStatusPorConversa = new Map();
+    // a partir de itens da fila já marcados como resolvidos
+    for (const f of todaFila) {
+      if (f.tipo_origem !== 'indicacao' || !f.ref_id) continue;
+      if (f.status === 'descartado' || f.status === 'convertido') {
+        resolvidoStatusPorConversa.set(f.ref_id, f.status);
+      }
+    }
+    // a partir do status autoritativo da conversa
+    const statusConversaResolvido = (s: string): string | null => {
+      if (s === 'desqualificado' || s === 'encerrada') return 'descartado';
+      if (s === 'convertido') return 'convertido';
+      return null;
+    };
+    for (const c of todasConversas) {
+      const rs = statusConversaResolvido(c.status);
+      if (rs) resolvidoStatusPorConversa.set(c.id, rs);
+    }
+
+    // ── Clientes resolvidos (cross-origem) ──
+    // Permite que um lead convertido/desqualificado (via indicação) impeça o
+    // reaparecimento do mesmo cliente na carteira (Agenda do Dia) e vice-versa.
+    const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const resolvidoPorClienteId = new Map(); // cliente_id -> status
+    const resolvidoPorNome = new Map();      // nome normalizado -> status
+    for (const f of todaFila) {
+      if (f.status !== 'convertido' && f.status !== 'descartado') continue;
+      if (f.cliente_id) resolvidoPorClienteId.set(f.cliente_id, f.status);
+      if (f.nome) resolvidoPorNome.set(norm(f.nome), f.status);
+    }
+
+    // ── Limpeza: move itens pendentes antigos de leads resolvidos para a coluna de destino ──
+    // (tira da esteira ativa o retrabalho acumulado de leads já desqualificados/convertidos)
+    let itensLimpos = 0;
+    for (const f of todaFila) {
+      if (f.status !== 'pendente') continue;
+      let rs: string | null = null;
+      if (f.tipo_origem === 'indicacao' && f.ref_id) {
+        rs = resolvidoStatusPorConversa.get(f.ref_id) || null;
+      }
+      if (!rs && f.cliente_id) rs = resolvidoPorClienteId.get(f.cliente_id) || null;
+      if (!rs && f.nome) rs = resolvidoPorNome.get(norm(f.nome)) || null;
+      if (rs && rs !== 'pendente') {
+        // Protege "Voltar à fila" manual recente (não desfazer ação explícita do gerente)
+        const upd = new Date(f.updated_date || f.created_date || agora).getTime();
+        if (Date.now() - upd < 5 * 60 * 1000) continue;
+        const hist = Array.isArray(f.historico) ? f.historico : [];
+        hist.push({ status: rs, observacao: 'Limpeza automática: lead resolvido retirado da fila ativa', data: agora });
+        await base44.asServiceRole.entities.FilaContato.update(f.id, { status: rs, historico: hist }).catch(() => {});
+        itensLimpos++;
+      }
+    }
+
     const resolverLeadIndicacao = (c: any) => {
       const tel = (c.telefone || '').toString().replace(/\D/g, '');
       if (tel) {
@@ -105,6 +161,14 @@ export default async function(req: Request): Promise<Response> {
         if (target === 'pendente') {
           // Fila do dia: cria novo item pendente para hoje (idempotente por dia)
           if (existenteHojeKey.has(key)) continue;
+          // ── Guardas anti-retrabalho ──
+          // 1) Lead já resolvido (desqualificado/convertido) nunca volta como pendente
+          if (resolvidoStatusPorConversa.has(c.id)) continue;
+          // 2) Oxigenação: se o item mais recente do lead não é pendente (já foi
+          //    trabalhado — atendeu/qualificado/nao_atendeu), não recriar pendente.
+          const recente = porRefMap.get(key);
+          if (recente && recente.status !== 'pendente') continue;
+
           const li = resolverLeadIndicacao(c);
           await base44.asServiceRole.entities.FilaContato.create({
             tipo_origem: 'indicacao',
@@ -125,7 +189,7 @@ export default async function(req: Request): Promise<Response> {
             tentativas: 0,
             status: 'pendente',
             origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
-            historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: new Date().toISOString() }],
+            historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
           });
           itensCriados++;
         } else {
@@ -134,7 +198,7 @@ export default async function(req: Request): Promise<Response> {
           if (existente) {
             if (existente.status !== target) {
               const hist = Array.isArray(existente.historico) ? existente.historico : [];
-              hist.push({ status: target, observacao: `Status sincronizado (${c.status})`, data: new Date().toISOString() });
+              hist.push({ status: target, observacao: `Status sincronizado (${c.status})`, data: agora });
               await base44.asServiceRole.entities.FilaContato.update(existente.id, { status: target, historico: hist });
               itensAtualizados++;
             }
@@ -159,7 +223,7 @@ export default async function(req: Request): Promise<Response> {
               tentativas: 0,
               status: target,
               origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
-              historico: [{ status: target, observacao: `Item sincronizado (${c.status})`, data: new Date().toISOString() }],
+              historico: [{ status: target, observacao: `Item sincronizado (${c.status})`, data: agora }],
             });
             itensCriados++;
           }
@@ -175,6 +239,15 @@ export default async function(req: Request): Promise<Response> {
       for (const a of carteira) {
         const key = `carteira|${a.lead_id}|${v.id}`;
         if (existenteHojeKey.has(key)) continue;
+        // Guarda anti-retrabalho: carteira resolvida não reentra
+        const recenteCart = porRefMap.get(key);
+        if (recenteCart && (recenteCart.status === 'convertido' || recenteCart.status === 'descartado')) continue;
+        // Cross-origem: se o cliente já foi convertido/desqualificado (via indicação),
+        // não o trazer de volta para a Agenda do Dia.
+        const cid = a.cliente_id || a.lead_id || '';
+        if (cid && resolvidoPorClienteId.has(cid)) continue;
+        if (a.lead_nome && resolvidoPorNome.has(norm(a.lead_nome))) continue;
+
         await base44.asServiceRole.entities.FilaContato.create({
           tipo_origem: 'carteira',
           ref_id: a.lead_id || a.cliente_id || '',
@@ -192,27 +265,22 @@ export default async function(req: Request): Promise<Response> {
           origem_label: 'Carteira',
           meet_link: a.meet_link || '',
           google_event_id: a.google_event_id || '',
-          historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: new Date().toISOString() }],
+          historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
         });
         itensCriados++;
       }
     }
 
     // ── LeadIndicações convertidas SEM ConversaWhatsapp ──
-    // Garante que indicações de portal (que viraram cliente/contrato direto)
-    // também entrem na esteira na coluna "Convertido". Pula as que já têm
-    // ConversaWhatsapp (o sync da conversa já as trata) para evitar duplicatas.
-    const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
     const telConversaSet = new Set(todasConversas.map((c) => (c.telefone || '').toString().replace(/\D/g, '')).filter(Boolean));
     const convertidas = todasIndicacoes.filter((li) => {
       if (!['convertido_venda', 'convertido_contrato', 'convertido_cliente'].includes(li.status)) return false;
       if (leadIndicacaoJaNaFila.has(li.id)) return false;
       const tel = (li.tipo === 'PF' ? (li.pf_whatsapp || li.pf_telefone || '') : (li.pj_whatsapp || li.pj_telefone || '')).toString().replace(/\D/g, '');
-      if (tel && telConversaSet.has(tel)) return false; // conversa já trata este lead
+      if (tel && telConversaSet.has(tel)) return false;
       return true;
     });
     for (const li of convertidas) {
-      // Resolve vendedor pelo cliente (ou contrato) vinculado
       let vendedorId = '';
       let vendedorNome = '';
       if (li.cliente_id) {
@@ -223,8 +291,7 @@ export default async function(req: Request): Promise<Response> {
         const ctr = await base44.asServiceRole.entities.Contrato.get(li.contrato_id).catch(() => null);
         if (ctr?.vendedor_id) { vendedorId = ctr.vendedor_id; vendedorNome = ctr.vendedor_nome || ''; }
       }
-      if (!vendedorId) continue; // sem vendedor conhecido, não cria
-      // Se o sync for de um vendedor específico, só cria para ele
+      if (!vendedorId) continue;
       if (body.vendedor_id && vendedorId !== body.vendedor_id) continue;
 
       const nome = li.tipo === 'PF' ? li.pf_nome : li.pj_razao_social;
@@ -242,7 +309,7 @@ export default async function(req: Request): Promise<Response> {
         produto: li.produto || '',
         valor_estimado: li.valor_estimado ?? null,
         parceiro_nome: li.parceiro_nome || '',
-        parceiro_percentual: li.parceiro_percentual ?? null,
+        parceiro_percentual: li?.parceiro_percentual ?? null,
         vendedor_id: vendedorId,
         vendedor_nome: vendedorNome,
         data_fila: hoje,
@@ -251,7 +318,7 @@ export default async function(req: Request): Promise<Response> {
         tentativas: 0,
         status: 'convertido',
         origem_label: li.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : 'Indicação',
-        historico: [{ status: 'convertido', observacao: 'Indicação convertida sincronizada na esteira', data: new Date().toISOString() }],
+        historico: [{ status: 'convertido', observacao: 'Indicação convertida sincronizada na esteira', data: agora }],
       });
       itensCriados++;
     }
@@ -262,6 +329,7 @@ export default async function(req: Request): Promise<Response> {
       vendedores_processados: vendedores.length,
       itens_criados: itensCriados,
       itens_atualizados: itensAtualizados,
+      itens_limpos: itensLimpos,
     });
   } catch (error) {
     console.error('montarFilaContatoDia:', error);
