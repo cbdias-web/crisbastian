@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown, Percent, ExternalLink, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import PainelInteracoesCliente from './PainelInteracoesCliente';
@@ -85,6 +85,24 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
         data: new Date().toISOString(),
       };
 
+      // ── Trava de workflow: Rate + Link de Abertura CC ──
+      const rateVal = form.rate_custodia != null && form.rate_custodia !== '' ? Number(form.rate_custodia) : null;
+      const linkVal = (form.link_abertura_cc || '').trim();
+
+      // Rate obrigatório e dentro da faixa 0,01–4
+      if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
+        toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
+        setSalvando(false);
+        return;
+      }
+
+      // Mudança de status exige Link de Abertura CC preenchido
+      if (statusFinal !== implantacao.status && !linkVal) {
+        toast.error('Preencha o Link de Abertura CC para mover o lead de status/coluna.');
+        setSalvando(false);
+        return;
+      }
+
       const updateData = {
         status: statusFinal,
         prioridade: form.prioridade,
@@ -97,6 +115,8 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
         contrato_url_manual: form.contrato_url_manual || '',
         contrato_nome_manual: form.contrato_nome_manual || '',
         contrato_encontrado: form.contrato_encontrado,
+        rate_custodia: rateVal,
+        link_abertura_cc: linkVal,
         historico: [...(implantacao.historico || []), historicoEntry],
       };
 
@@ -261,6 +281,86 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
                 )}
               </div>
             )}
+          </div>
+
+          {/* Rate / Taxa de Custódia + Link de Abertura CC (trava de workflow) */}
+          <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Percent className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Abertura de Conta Corrente</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Rate / Taxa de Custódia */}
+              <div>
+                <label className="block mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>
+                  Rate / Taxa de Custódia <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                {editing ? (
+                  <div className="relative">
+                    <input type="number" min="0.01" max="4" step="0.01"
+                      value={form.rate_custodia != null && form.rate_custodia !== '' ? form.rate_custodia : ''}
+                      onChange={e => setForm(f => ({ ...f, rate_custodia: e.target.value === '' ? null : Number(e.target.value) }))}
+                      placeholder="0,01 a 4,00"
+                      className="w-full px-2 py-1.5 pr-7 text-sm rounded-lg focus:outline-none"
+                      style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold" style={{ color: AURORA.textMuted }}>%</span>
+                  </div>
+                ) : (
+                  <p className="text-sm font-semibold" style={{ color: form.rate_custodia != null ? AURORA.text : AURORA.textMuted }}>
+                    {form.rate_custodia != null && form.rate_custodia !== '' ? `${Number(form.rate_custodia).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}%` : 'Não informado'}
+                  </p>
+                )}
+                <p className="text-[9px] mt-1" style={{ color: AURORA.textMuted }}>Faixa: 0,01% a 4,00%</p>
+              </div>
+              {/* Link de Abertura CC */}
+              <div>
+                <label className="block mb-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>
+                  Link de Abertura CC <span style={{ color: '#f87171' }}>*</span>
+                </label>
+                {editing ? (
+                  (() => {
+                    const ratePreenchido = form.rate_custodia != null && form.rate_custodia !== '' && !isNaN(Number(form.rate_custodia)) && Number(form.rate_custodia) >= 0.01 && Number(form.rate_custodia) <= 4;
+                    const linkVal = (form.link_abertura_cc || '').trim();
+                    return (
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input type="url"
+                            value={form.link_abertura_cc || ''}
+                            onChange={e => setForm(f => ({ ...f, link_abertura_cc: e.target.value }))}
+                            placeholder={ratePreenchido ? 'https://...' : 'Preencha o Rate primeiro'}
+                            disabled={!ratePreenchido}
+                            className="w-full px-2 py-1.5 pr-7 text-sm rounded-lg focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{ background: AURORA.bg, border: `1px solid ${ratePreenchido ? AURORA.border : 'rgba(248,113,113,0.3)'}`, color: AURORA.text }} />
+                          {!ratePreenchido && (
+                            <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3" style={{ color: '#f87171' }} />
+                          )}
+                        </div>
+                        {linkVal && ratePreenchido && (
+                          <a href={linkVal} target="_blank" rel="noopener noreferrer"
+                            className="p-1.5 rounded-lg transition flex-shrink-0"
+                            style={{ background: AURORA.accentDim, color: AURORA.accent }}
+                            title="Abrir link externo">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })()
+                ) : (
+                  form.link_abertura_cc ? (
+                    <a href={form.link_abertura_cc} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm font-semibold truncate hover:underline"
+                      style={{ color: AURORA.accent }}>
+                      <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span className="truncate">{form.link_abertura_cc}</span>
+                    </a>
+                  ) : (
+                    <p className="text-sm" style={{ color: AURORA.textMuted }}>Não informado</p>
+                  )
+                )}
+                <p className="text-[9px] mt-1" style={{ color: '#fbbf24' }}>Obrigatório para mover o lead de status/coluna</p>
+              </div>
+            </div>
           </div>
 
           {/* Status e Prioridade */}

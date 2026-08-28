@@ -48,6 +48,14 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
 
     try {
       const impl = implantacoes.find(i => i.id === draggableId);
+
+      // ── Trava de workflow: não permite mover de coluna sem o Link de Abertura CC ──
+      if (!(impl.link_abertura_cc || '').trim()) {
+        toast.error('Preencha o Link de Abertura CC (e o Rate) antes de mover este lead de status.');
+        onRefresh();
+        return;
+      }
+
       const historicoEntry = {
         status_anterior: impl.status,
         status_novo: novoStatus,
