@@ -17,19 +17,15 @@ import MeusClientes from './pages/MeusClientes';
 import RelatorioInteracoes from './pages/RelatorioInteracoes';
 import Leads from './pages/Leads';
 import Comunicados from './pages/Comunicados';
-import NotasFiscais from './pages/NotasFiscais';
 import Treinamento from './pages/Treinamento';
 import TreinamentoAdmin from './pages/TreinamentoAdmin';
 import AssistenteTreinamentos from './pages/AssistenteTreinamentos';
 import Pipeline from './pages/Pipeline';
 import Contratos from './pages/Contratos';
-import ChatPage from './pages/ChatPage';
-import Precificacao from './pages/Precificacao';
 import Suporte from './pages/Suporte';
 import Desempenho from './pages/Desempenho';
 import CentralLeads from './pages/CentralLeads';
 import Implantacoes from './pages/Implantacoes';
-import MarketNews from './pages/MarketNews';
 import DashParceiro from './pages/DashParceiro';
 import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
@@ -204,14 +200,6 @@ const AuthenticatedAppInner = () => {
         }
       />
       <Route
-        path="/NotasFiscais"
-        element={
-          <LayoutWrapper currentPageName="NotasFiscais">
-            <NotasFiscais />
-          </LayoutWrapper>
-        }
-      />
-      <Route
         path="/Treinamento"
         element={
           <LayoutWrapper currentPageName="Treinamento">
@@ -252,22 +240,6 @@ const AuthenticatedAppInner = () => {
         }
       />
       <Route
-        path="/ChatPage"
-        element={
-          <LayoutWrapper currentPageName="ChatPage">
-            <ChatPage />
-          </LayoutWrapper>
-        }
-      />
-      <Route
-        path="/Precificacao"
-        element={
-          <LayoutWrapper currentPageName="Precificacao">
-            <Precificacao />
-          </LayoutWrapper>
-        }
-      />
-      <Route
         path="/Suporte"
         element={
           <LayoutWrapper currentPageName="Suporte">
@@ -296,14 +268,6 @@ const AuthenticatedAppInner = () => {
         element={
           <LayoutWrapper currentPageName="Implantacoes">
             <Implantacoes />
-          </LayoutWrapper>
-        }
-      />
-      <Route
-        path="/MarketNews"
-        element={
-          <LayoutWrapper currentPageName="MarketNews">
-            <MarketNews />
           </LayoutWrapper>
         }
       />
