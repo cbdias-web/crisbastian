@@ -31,13 +31,35 @@ export default async function(req: Request): Promise<Response> {
           (x.pf_nome && x.pf_nome === conv.lead_nome) ||
           (x.pj_razao_social && x.pj_razao_social === conv.lead_nome)
         ));
+        // Só promove para 'convertido_venda' quando existir uma Venda PAGA
+        // (com comprovante anexado) para o mesmo CPF/CNPJ. Mover a conversa para
+        // "convertido" no Kanban NÃO equivale a venda efetivada — pode ser apenas
+        // contrato gerado. A derivação visual no Dash Parceiro já usa o mesmo
+        // critério (comprovante anexado), evitando "Venda Convertida" sem pagamento.
         if (li && li.status !== 'convertido_venda') {
-          await base44.asServiceRole.entities.LeadIndicacao.update(li.id, {
-            status: 'convertido_venda',
-            convertido: true,
-            convertido_em: new Date().toISOString(),
-          });
-          console.log(`LeadIndicacao ${li.id} sincronizada para convertido_venda (Kanban).`);
+          const docNorm = (li.tipo === 'PF' ? (li.pf_cpf || '') : (li.pj_cnpj || '')).replace(/\D/g, '');
+          let vendaPaga = false;
+          if (docNorm) {
+            try {
+              const vendas = await base44.asServiceRole.entities.Venda.list('-created_date', 500);
+              vendaPaga = vendas.some((v) =>
+                (v.cpf_cnpj || '').replace(/\D/g, '') === docNorm &&
+                Array.isArray(v.comprovantes) && v.comprovantes.length > 0
+              );
+            } catch (e) {
+              console.log('Falha ao verificar venda paga para sync LeadIndicacao:', e.message);
+            }
+          }
+          if (vendaPaga) {
+            await base44.asServiceRole.entities.LeadIndicacao.update(li.id, {
+              status: 'convertido_venda',
+              convertido: true,
+              convertido_em: new Date().toISOString(),
+            });
+            console.log(`LeadIndicacao ${li.id} sincronizada para convertido_venda (venda paga confirmada).`);
+          } else {
+            console.log(`LeadIndicacao ${li.id} NÃO promovida — sem venda paga (comprovante) para o doc ${docNorm}.`);
+          }
         }
       } catch (e) {
         console.log('Falha ao sincronizar LeadIndicacao na conclusão do Kanban:', e.message);
