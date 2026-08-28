@@ -272,15 +272,23 @@ export default function Implantacoes() {
         )}
       </div>
 
-      {implantacaoAtiva && (
-        <ImplantacaoModal
-          implantacao={implantacaoAtiva}
-          isAdmin={isAdmin || meusProdutosPadrinho.includes(implantacaoAtiva.produto)}
-          user={user}
-          onClose={() => setImplantacaoAtiva(null)}
-          onUpdate={handleUpdate}
-        />
-      )}
+      {implantacaoAtiva && (() => {
+        const souPadrinho = meusProdutosPadrinho.includes(implantacaoAtiva.produto) && (!implantacaoAtiva.padrinho_nome || implantacaoAtiva.padrinho_nome === meuPadrinhoNome);
+        const souVendedor =
+          (meuVendedor && (implantacaoAtiva.vendedor_id === meuVendedor.id || implantacaoAtiva.vendedor_nome === meuVendedor.nome)) ||
+          (user?.full_name && implantacaoAtiva.vendedor_nome === user.full_name);
+        const canEdit = isAdmin || souPadrinho || souVendedor;
+        return (
+          <ImplantacaoModal
+            implantacao={implantacaoAtiva}
+            isAdmin={isAdmin}
+            canEdit={canEdit}
+            user={user}
+            onClose={() => setImplantacaoAtiva(null)}
+            onUpdate={handleUpdate}
+          />
+        );
+      })()}
 
       {showPadrinhos && <PadrinhosModal onClose={() => setShowPadrinhos(false)} />}
     </div>

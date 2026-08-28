@@ -36,7 +36,7 @@ const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'cu
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
 const fmtDateTime = (d) => d ? format(new Date(d), 'dd/MM/yyyy HH:mm') : '—';
 
-export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, onUpdate }) {
+export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, onClose, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(implantacao);
   const [novaEtapa, setNovaEtapa] = useState('');
@@ -191,7 +191,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, user, onClose, 
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {isAdmin && !editing && (
+            {(isAdmin || canEdit) && !editing && (
               <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
                 Editar
               </button>
