@@ -69,18 +69,31 @@ export default async function(req: Request): Promise<Response> {
       if (!userEncontrado) await new Promise(r => setTimeout(r, 600 * tentativa));
     }
     if (userEncontrado) {
+      // Usa asServiceRole para garantir a escrita mesmo se houver restrição de RLS
+      // e seta TODOS os sinais de restrição de uma vez: flag indicador, role e
+      // menus_acesso vazio (cinto de segurança — se o redirect falhar, ela não
+      // herda os menus padrão do Layout).
       try {
-        // Flag booleana — garantida, é o sinal principal do Layout
-        await base44.entities.User.update(userEncontrado.id, { indicador: true });
+        await base44.asServiceRole.entities.User.update(userEncontrado.id, {
+          indicador: true,
+          role: 'indicador',
+          menus_acesso: [],
+        });
         rolePromovido = true;
       } catch (e) {
-        console.log('indicador flag set failed:', e?.message || e);
-      }
-      try {
-        // Role custom — best-effort (enum do User já inclui 'indicador')
-        await base44.entities.User.update(userEncontrado.id, { role: 'indicador' });
-      } catch (e) {
-        console.log('role promotion skipped:', e?.message || e);
+        console.log('indicador promotion failed (service role):', e?.message || e);
+        // Fallback: client comum (admin logado)
+        try {
+          await base44.entities.User.update(userEncontrado.id, { indicador: true, menus_acesso: [] });
+          rolePromovido = true;
+        } catch (e2) {
+          console.log('indicador flag set failed (client):', e2?.message || e2);
+        }
+        try {
+          await base44.entities.User.update(userEncontrado.id, { role: 'indicador' });
+        } catch (e2) {
+          console.log('role promotion skipped:', e2?.message || e2);
+        }
       }
     }
 
@@ -118,7 +131,7 @@ export default async function(req: Request): Promise<Response> {
               <a href="${portalUrl}" style="display: inline-block; background: #00f5b4; color: #0d1b33; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Acessar Portal do Indicador</a>
             </div>
             <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 16px 0 0; text-align: center;">
-              Seu acesso está vinculado ao e-mail ${email}. Para entrar no sistema, use este e-mail e defina sua senha pelo link "Esqueci minha senha" na tela de login.
+              Seu acesso está vinculado ao e-mail ${email}. Para definir sua senha no primeiro acesso, clique no link de convite enviado pela plataforma (verifique também o spam/promoções). Em acessos posteriores, use este e-mail com sua senha — e o link "Esqueci minha senha" caso precise redefini-la.
             </p>
             <p style="color: #a0a0a0; font-size: 11px; text-align: center; margin: 22px 0 0;">Villela Exchange – Portal do Indicador</p>
           </div>
