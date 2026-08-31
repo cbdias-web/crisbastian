@@ -31,9 +31,17 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     queryFn: () => base44.entities.Espelhamento.filter({ ativo: true }, 'nome'),
   });
 
+  // Parceiros (indicadores do portal) — incluídos para que o indicador cadastrado
+  // no contrato (que pode ser um Parceiro externo) apareça no dropdown ao editar a venda.
+  const { data: parceiros = [] } = useQuery({
+    queryKey: ['parceiros-indicadores'],
+    queryFn: () => base44.entities.Parceiro.filter({ ativo: true }, 'nome'),
+  });
+
   const indicadoresDisponiveis = [
     ...vendedores.filter(v => v.ativo !== false).map(v => ({ id: v.id, nome: v.nome, tipo: 'vendedor', percentual_comissao: v.percentual_comissao || 10 })),
-    ...espelhamentos.map(e => ({ id: e.id, nome: e.nome, tipo: 'indicador', percentual_comissao: e.percentual_comissao || 10 }))
+    ...espelhamentos.map(e => ({ id: e.id, nome: e.nome, tipo: 'indicador', percentual_comissao: e.percentual_comissao || 10 })),
+    ...parceiros.map(p => ({ id: p.id, nome: p.nome, tipo: 'indicador', percentual_comissao: p.percentual_comissao || 10 }))
   ].sort((a, b) => a.nome.localeCompare(b.nome));
 
   const { data: clientes = [] } = useQuery({

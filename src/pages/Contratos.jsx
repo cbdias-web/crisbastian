@@ -95,6 +95,12 @@ export default function Contratos() {
     try {
       const contratoAtualizado = await base44.entities.Contrato.get(c.id);
       const ct = contratoAtualizado || c;
+      // Comprovante de pagamento do contrato → array comprovantes da venda
+      const comprovantes = [];
+      if (ct.comprovante_url) {
+        comprovantes.push({ url: ct.comprovante_url, nome: ct.comprovante_nome || 'Comprovante' });
+      }
+
       const vendaPayload = {
         produto: ct.tipo,
         assessor_comercial: ct.vendedor_nome || '',
@@ -107,12 +113,19 @@ export default function Contratos() {
         tipo_venda: 'nova',
         forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
         observacao: `Originado do Contrato ${ct.tipo}. Comprovante de pagamento anexado.`,
+        comprovantes,
       };
       if (ct.indicadores?.length > 0) {
-        vendaPayload.indicadores = ct.indicadores;
-        vendaPayload.espelhamento = ct.indicadores[0]?.nome || '';
-        vendaPayload.espelhamento_id = ct.indicadores[0]?.id || '';
-        vendaPayload.percentual_comissao_espelhamento = ct.indicadores[0]?.percentual || 0;
+        // Normaliza tipo (contratos antigos gravavam tipo null) para o dropdown do VendaForm
+        vendaPayload.indicadores = ct.indicadores.map(ind => ({
+          id: ind.id || '',
+          nome: ind.nome || '',
+          percentual: ind.percentual || 0,
+          tipo: ind.tipo || 'indicador',
+        }));
+        vendaPayload.espelhamento = vendaPayload.indicadores[0]?.nome || '';
+        vendaPayload.espelhamento_id = vendaPayload.indicadores[0]?.id || '';
+        vendaPayload.percentual_comissao_espelhamento = vendaPayload.indicadores[0]?.percentual || 0;
       }
       const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
