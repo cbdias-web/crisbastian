@@ -115,17 +115,36 @@ export default function Contratos() {
         observacao: `Originado do Contrato ${ct.tipo}. Comprovante de pagamento anexado.`,
         comprovantes,
       };
-      if (ct.indicadores?.length > 0) {
-        // Normaliza tipo (contratos antigos gravavam tipo null) para o dropdown do VendaForm
-        vendaPayload.indicadores = ct.indicadores.map(ind => ({
-          id: ind.id || '',
-          nome: ind.nome || '',
-          percentual: ind.percentual || 0,
-          tipo: ind.tipo || 'indicador',
-        }));
-        vendaPayload.espelhamento = vendaPayload.indicadores[0]?.nome || '';
-        vendaPayload.espelhamento_id = vendaPayload.indicadores[0]?.id || '';
-        vendaPayload.percentual_comissao_espelhamento = vendaPayload.indicadores[0]?.percentual || 0;
+      // Indicadores da venda: prioriza o Parceiro da indicação de origem (fonte de verdade
+      // do Dash Parceiro). Se o contrato veio de uma LeadIndicacao, o indicador da venda deve
+      // ser o Parceiro que indicou — mesmo que o contrato tenha um espelhamento interno diferente.
+      let indicadoresVenda = (ct.indicadores || []).map(ind => ({
+        id: ind.id || '',
+        nome: ind.nome || '',
+        percentual: ind.percentual || 0,
+        tipo: ind.tipo || 'indicador',
+      }));
+      let indicacaoOrigem = null;
+      try {
+        const indsOrigem = await base44.entities.LeadIndicacao.filter({ contrato_id: ct.id });
+        indicacaoOrigem = indsOrigem[0] || null;
+      } catch (e) {}
+      if (indicacaoOrigem?.parceiro_id) {
+        const pctContrato = indicadoresVenda.find(i => i.id === indicacaoOrigem.parceiro_id)?.percentual;
+        const parceiroInd = {
+          id: indicacaoOrigem.parceiro_id,
+          nome: indicacaoOrigem.parceiro_nome || '',
+          percentual: pctContrato != null ? pctContrato : (indicacaoOrigem.parceiro_percentual || 0),
+          tipo: 'indicador',
+        };
+        // Remove qualquer indicador que não seja o Parceiro da indicação e coloca o Parceiro no topo
+        indicadoresVenda = [parceiroInd, ...indicadoresVenda.filter(i => i.id !== parceiroInd.id)];
+      }
+      if (indicadoresVenda.length > 0) {
+        vendaPayload.indicadores = indicadoresVenda;
+        vendaPayload.espelhamento = indicadoresVenda[0]?.nome || '';
+        vendaPayload.espelhamento_id = indicadoresVenda[0]?.id || '';
+        vendaPayload.percentual_comissao_espelhamento = indicadoresVenda[0]?.percentual || 0;
       }
       const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
