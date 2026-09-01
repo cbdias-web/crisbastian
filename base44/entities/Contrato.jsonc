@@ -103,11 +103,27 @@
     },
     "comprovante_url": {
       "type": "string",
-      "description": "URL do comprovante de pagamento (anexado pelo gerente)"
+      "description": "URL do comprovante de pagamento principal (anexado pelo gerente). Mantido em sincronia com o primeiro item de 'comprovantes' (compatibilidade)."
     },
     "comprovante_nome": {
       "type": "string",
-      "description": "Nome do arquivo do comprovante"
+      "description": "Nome do arquivo do comprovante principal"
+    },
+    "comprovantes": {
+      "type": "array",
+      "description": "Comprovantes de pagamento anexados pelo gerente/admin (at\u00e9 3). O primeiro elemento equivale a comprovante_url/comprovante_nome (compatibilidade).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
     },
     "origem_pagamento": {
       "type": "string",

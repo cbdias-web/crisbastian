@@ -93,6 +93,72 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     toast.success('Arquivo removido.');
   };
 
+  // Lista normalizada de comprovantes (array + legado comprovante_url).
+  const comprovantesList = (() => {
+    const arr = Array.isArray(contrato.comprovantes) ? contrato.comprovantes.filter(c => c && c.url) : [];
+    const list = [];
+    const seen = new Set();
+    if (contrato.comprovante_url && !arr.some(c => c.url === contrato.comprovante_url)) {
+      list.push({ url: contrato.comprovante_url, nome: contrato.comprovante_nome || 'Comprovante' });
+      seen.add(contrato.comprovante_url);
+    }
+    for (const c of arr) {
+      if (c.url && !seen.has(c.url)) { list.push(c); seen.add(c.url); }
+    }
+    return list;
+  })();
+
+  const temComprovante = comprovantesList.length > 0;
+
+  const adicionarComprovante = async (file) => {
+    if (comprovantesList.length >= 3) {
+      toast.error('Máximo de 3 comprovantes atingido. Remova um para anexar outro.');
+      return;
+    }
+    setUploading('comprovante_novo');
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const arr = Array.isArray(contrato.comprovantes) ? [...contrato.comprovantes] : [];
+      // Evita duplicar o primário legado no array
+      const arrLimpo = contrato.comprovante_url && !arr.some(c => c.url === contrato.comprovante_url)
+        ? [{ url: contrato.comprovante_url, nome: contrato.comprovante_nome || 'Comprovante' }, ...arr]
+        : arr;
+      const novoArr = [...arrLimpo, { url: file_url, nome: file.name }];
+      const campos = { comprovantes: novoArr };
+      // Se ainda não há comprovante primário, define este + status=pago
+      if (!contrato.comprovante_url) {
+        campos.comprovante_url = file_url;
+        campos.comprovante_nome = file.name;
+        if (STATUS_ORDER.indexOf('pago') > ordemAtual) campos.status = 'pago';
+      }
+      await salvarCampo(campos);
+      toast.success('Comprovante anexado!');
+      notificar('comprovante_anexado', 'admins');
+    } catch (err) {
+      toast.error('Erro no upload: ' + err.message);
+    }
+    setUploading(null);
+  };
+
+  const removerComprovante = async (url) => {
+    if (!confirm('Remover este comprovante?')) return;
+    const arr = Array.isArray(contrato.comprovantes) ? contrato.comprovantes.filter(c => c.url !== url) : [];
+    const campos = { comprovantes: arr };
+    if (contrato.comprovante_url === url) {
+      const proximo = arr[0];
+      if (proximo) {
+        campos.comprovante_url = proximo.url;
+        campos.comprovante_nome = proximo.nome;
+      } else {
+        campos.comprovante_url = null;
+        campos.comprovante_nome = null;
+        if (statusAtual === 'pago') campos.status = 'aguardando_pagamento';
+      }
+    }
+    await salvarCampo(campos);
+    toast.success('Comprovante removido.');
+  };
+
   const salvarLinkPagamento = async () => {
     setSalvandoLinkPag(true);
     try {
@@ -200,7 +266,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   const podeVerCobranca = etapaAtingida(statusAtual, 'assinado') && !!contrato.contrato_assinado_url;
   const podeAnexarComprovante = etapaAtingida(statusAtual, 'aguardando_pagamento') &&
     (!!contrato.link_pagamento || !!contrato.boleto_url);
-  const podePipeline = etapaAtingida(statusAtual, 'pago') && !!contrato.comprovante_url;
+  const podePipeline = etapaAtingida(statusAtual, 'pago') && temComprovante;
 
   return (
     <div className="space-y-4 mb-5">
@@ -481,67 +547,65 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
         </EtapaCard>
       )}
 
-      {/* ETAPA 3: Comprovante de pagamento */}
+      {/* ETAPA 3: Comprovante de pagamento (até 3 comprovantes) */}
       {podeAnexarComprovante && (
-        <EtapaCard titulo="Comprovante de Pagamento" cor="violet" concluida={!!contrato.comprovante_url}>
-          {contrato.comprovante_url ? (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <ArquivoAnexado url={contrato.comprovante_url} nome={contrato.comprovante_nome} />
-                <UploadBtn label="Substituir" carregando={uploading === 'comprovante_url'}
-                  onChange={f => uploadArquivo(f, 'comprovante_url', 'comprovante_nome', 'pago')} small />
-                <BtnRemover onClick={() => removerArquivo('comprovante_url', 'comprovante_nome', 'aguardando_pagamento')} />
+        <EtapaCard titulo="Comprovante de Pagamento" cor="violet" concluida={temComprovante}>
+          <div className="space-y-3">
+            {/* Origem do pagamento */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 mb-1.5">Origem do pagamento</p>
+              <div className="flex flex-wrap gap-1.5">
+                {ORIGENS_PAGAMENTO.map(o => (
+                  <button key={o} onClick={() => { setOrigemPag(o); salvarOrigemPagamento(o); }} disabled={salvandoOrigem}
+                    className="text-xs px-3 py-1.5 rounded-lg border font-semibold transition"
+                    style={contrato.origem_pagamento === o
+                      ? { background: '#8b5cf6', color: '#fff', borderColor: '#8b5cf6' }
+                      : { background: '#1c2333', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>{o}</button>
+                ))}
               </div>
               {contrato.origem_pagamento && (
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-gray-600 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-violet-500" />
-                    Origem: <span className="font-semibold">{contrato.origem_pagamento}</span>
-                  </p>
-                  <button onClick={() => salvarOrigemPagamento(null)} className="text-[10px] text-red-400 hover:text-red-600 flex items-center gap-0.5">
-                    <X className="w-2.5 h-2.5" /> remover
-                  </button>
-                </div>
-              )}
-              {!contrato.origem_pagamento && (
-                <div className="flex flex-wrap gap-1.5">
-                  {ORIGENS_PAGAMENTO.map(o => (
-                    <button key={o} onClick={() => salvarOrigemPagamento(o)} disabled={salvandoOrigem}
-                      className="text-xs px-3 py-1.5 rounded-lg border font-semibold transition"
-                      style={{ background: '#1c2333', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>
-                      {o}
-                    </button>
-                  ))}
-                </div>
+                <button onClick={() => salvarOrigemPagamento(null)} className="mt-1.5 text-[10px] text-red-400 hover:text-red-600 flex items-center gap-0.5">
+                  <X className="w-2.5 h-2.5" /> remover origem
+                </button>
               )}
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">Origem do pagamento</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {ORIGENS_PAGAMENTO.map(o => (
-                    <button key={o} onClick={() => { setOrigemPag(o); salvarOrigemPagamento(o); }} disabled={salvandoOrigem}
-                      className="text-xs px-3 py-1.5 rounded-lg border font-semibold transition"
-                      style={origemPag === o
-                        ? { background: '#8b5cf6', color: '#fff', borderColor: '#8b5cf6' }
-                        : { background: '#1c2333', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>{o}</button>
-                  ))}
-                </div>
+
+            {/* Lista de comprovantes anexados */}
+            {temComprovante && (
+              <div className="space-y-2">
+                {comprovantesList.map((c, i) => (
+                  <div key={c.url} className="flex items-center gap-2 flex-wrap rounded-xl px-3 py-2.5"
+                    style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa' }}>#{i + 1}</span>
+                    <ArquivoAnexado url={c.url} nome={c.nome} />
+                    <BtnRemover onClick={() => removerComprovante(c.url)} />
+                  </div>
+                ))}
+                <p className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>
+                  {comprovantesList.length} de 3 comprovante{comprovantesList.length > 1 ? 's' : ''} anexado{comprovantesList.length > 1 ? 's' : ''}
+                </p>
               </div>
+            )}
+
+            {/* Drop zone — só aparece se houver espaço */}
+            {comprovantesList.length < 3 && (
               <div
                 onDragOver={e => { e.preventDefault(); setDragOver('comprovante_url'); }}
                 onDragLeave={() => setDragOver(null)}
-                onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'comprovante_url', 'comprovante_nome', 'pago'); }}
+                onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) adicionarComprovante(e.dataTransfer.files[0]); }}
                 className="p-4 rounded-xl border-2 border-dashed transition"
                 style={dragOver === 'comprovante_url' ? { borderColor: '#a78bfa', background: 'rgba(139,92,246,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#1c2333' }}
               >
-                <UploadBtn label="Anexar comprovante de pagamento" carregando={uploading === 'comprovante_url'}
-                  onChange={f => uploadArquivo(f, 'comprovante_url', 'comprovante_nome', 'pago')} 
-                  isDragOver={dragOver === 'comprovante_url'} />
+                <UploadBtn
+                  label={temComprovante ? 'Anexar mais um comprovante' : 'Anexar comprovante de pagamento'}
+                  carregando={uploading === 'comprovante_novo'}
+                  onChange={adicionarComprovante}
+                  isDragOver={dragOver === 'comprovante_url'}
+                />
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </EtapaCard>
       )}
 

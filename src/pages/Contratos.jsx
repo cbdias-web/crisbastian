@@ -95,10 +95,17 @@ export default function Contratos() {
     try {
       const contratoAtualizado = await base44.entities.Contrato.get(c.id);
       const ct = contratoAtualizado || c;
-      // Comprovante de pagamento do contrato → array comprovantes da venda
+      // Comprovantes de pagamento do contrato → array comprovantes da venda
+      // (até 3 comprovantes; preserva compatibilidade com o campo legado comprovante_url)
       const comprovantes = [];
-      if (ct.comprovante_url) {
+      const comprovantesArr = Array.isArray(ct.comprovantes) ? ct.comprovantes.filter(c => c && c.url) : [];
+      const seen = new Set();
+      if (ct.comprovante_url && !comprovantesArr.some(c => c.url === ct.comprovante_url)) {
         comprovantes.push({ url: ct.comprovante_url, nome: ct.comprovante_nome || 'Comprovante' });
+        seen.add(ct.comprovante_url);
+      }
+      for (const c of comprovantesArr) {
+        if (c.url && !seen.has(c.url)) { comprovantes.push({ url: c.url, nome: c.nome || 'Comprovante' }); seen.add(c.url); }
       }
 
       const vendaPayload = {
