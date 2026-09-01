@@ -108,10 +108,21 @@ export default function Contratos() {
         if (c.url && !seen.has(c.url)) { comprovantes.push({ url: c.url, nome: c.nome || 'Comprovante' }); seen.add(c.url); }
       }
 
+      // Resolve o vendedor_id correto pelo nome (case-insensitive), pois o contrato
+      // pode ter um vendedor_id desatualizado/inválido. Fallback: mantém o do contrato.
+      let vendedorIdResolvido = ct.vendedor_id || '';
+      try {
+        if (ct.vendedor_nome) {
+          const todosVends = await base44.entities.Vendedor.list();
+          const match = todosVends.find(v => v.nome && v.nome.toUpperCase() === ct.vendedor_nome.toUpperCase());
+          if (match) vendedorIdResolvido = match.id;
+        }
+      } catch (e) {}
+
       const vendaPayload = {
         produto: ct.tipo,
         assessor_comercial: ct.vendedor_nome || '',
-        vendedor_id: ct.vendedor_id || '',
+        vendedor_id: vendedorIdResolvido,
         cliente: ct.nome || '',
         cpf_cnpj: ct.cpf_cnpj || '',
         valor: ct.valor_adesao || ct.valor_total || 0,

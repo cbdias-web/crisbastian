@@ -389,7 +389,7 @@ export default function Dashboard() {
     : null;
   const producaoIndividualMes = vendedor
     ? vendas.filter(v => v.data && v.data >= periodoMesIni && v.data <= periodoMesFim &&
-        (v.vendedor_id === vendedor.id || v.assessor_comercial === vendedor.nome))
+        matchesVendedor(v, vendedor.id, vendedor.nome))
         .reduce((s, v) => s + (parseFloat(v.valor) || 0), 0)
     : 0;
   const faltaParaBonus = metaIndividual ? Math.max(0, metaIndividual.valor_meta - producaoIndividualMes) : 0;
@@ -397,7 +397,7 @@ export default function Dashboard() {
 
   const rankingData = vendedores.map(v => {
     const vol = vendasAcumulado
-      .filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome)
+      .filter(vd => matchesVendedor(vd, v.id, v.nome))
       .reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
     const metaRecord = metas.find(m => m.vendedor_id === v.id && m.mes === periodoMes && m.tipo === "individual");
     const temComissaoMes = comissoes.some(c => c.vendedor_id === v.id && c.data_venda && c.data_venda >= periodoMesIni && c.data_venda <= periodoMesFim);
@@ -413,7 +413,7 @@ export default function Dashboard() {
   const ranking = vendedores
     .filter(v => v.nome?.toUpperCase() !== 'CONSÓRCIO')
     .map(v => {
-      const vs = vendasFiltradas.filter(vd => vd.vendedor_id === v.id || vd.assessor_comercial === v.nome);
+      const vs = vendasFiltradas.filter(vd => matchesVendedor(vd, v.id, v.nome));
       const vol = vs.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
       const vincendas = parcelasPorVendedor(v.id);
       return { ...v, qtd: vs.length, vol, vincendas };
