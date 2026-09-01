@@ -117,17 +117,29 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     vendasIndicadas.reduce((s, v) => s + valorVenda(v) * (pctParceiroNaVenda(v) / 100), 0) +
     parcelasRecebidas.reduce((s, p) => s + valorParcela(p) * (pctParceiroNaParcela(p) / 100), 0);
 
-  // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de indicações):
+  // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de leads no período):
   //   Vendas Convertidas (verde)  = virou venda (originada de indicação de portal)
   //   Contratos (roxo)            = virou contrato, mas ainda não virou venda
   //   Indicações (verde-azulado)  = continua como indicação (ainda não virou contrato)
-  // Funil é lead-cêntrico (pela data da indicação): quantas indicações do período
-  // já viraram venda/contrato. O KPI "Vendas efetivas" (vendasIndicadas.length) é
-  // venda-cêntrico (pela data da venda) — métricas distintas, ambas corretas.
-  const vendasCount = leadsFiltrados.filter(l => l.venda_id || l.status === 'convertido_venda').length;
-  const leadsComContrato = leadsFiltrados.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
+  // O funil considera os leads RECEBIDOS no período OU cuja VENDA aconteceu no período
+  // — assim uma indicação recebida no mês passado que fechou venda neste mês aparece
+  // no funil do mês atual (a conversão é o marco que o indicador quer ver).
+  const vendaById = {};
+  vendas.forEach(v => { vendaById[v.id] = v; });
+  const leadsPeriodo = leads.filter(l => {
+    if (!filtraParceiro(l.parceiro_id)) return false;
+    if (dentroPeriodo(l.created_date, range)) return true;
+    if (l.venda_id) {
+      const vd = vendaById[l.venda_id];
+      if (vd && dentroPeriodo(vd.data, range)) return true;
+    }
+    return false;
+  });
+  const totalGrafico = leadsPeriodo.length;
+  const vendasCount = leadsPeriodo.filter(l => l.venda_id || l.status === 'convertido_venda').length;
+  const leadsComContrato = leadsPeriodo.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
   const contratosApenas = Math.max(0, leadsComContrato - vendasCount);
-  const indicacoesApenas = Math.max(0, total - leadsComContrato);
+  const indicacoesApenas = Math.max(0, totalGrafico - leadsComContrato);
   const chartData = [
     { key: 'indicacoes', name: 'Indicações', value: indicacoesApenas, color: AURORA.accent },
     { key: 'contratos', name: 'Contratos', value: contratosApenas, color: '#a78bfa' },
@@ -201,7 +213,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
         <p className="text-sm font-bold mb-3" style={{ color: AURORA.text }}>Distribuição por status</p>
         {isLoading ? (
           <div className="text-center py-8"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: AURORA.accent }} /></div>
-        ) : total === 0 ? (
+        ) : totalGrafico === 0 ? (
           <p className="text-xs text-center py-6" style={{ color: AURORA.textMuted }}>Nenhuma indicação registrada</p>
         ) : (
           <div className="flex flex-col md:flex-row items-stretch gap-5">
@@ -237,8 +249,8 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <p className="text-2xl font-bold" style={{ color: AURORA.text }}>{total}</p>
-                <p className="text-[10px]" style={{ color: AURORA.textMuted }}>indicações</p>
+                <p className="text-2xl font-bold" style={{ color: AURORA.text }}>{totalGrafico}</p>
+                <p className="text-[10px]" style={{ color: AURORA.textMuted }}>leads no período</p>
               </div>
             </div>
 
