@@ -6,7 +6,7 @@ import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
   TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye, Users, Calendar,
 } from 'lucide-react';
-import { periodoRange, dentroPeriodo, PERIODO_OPCOES } from '@/components/portal/FiltroIndicadores';
+import { periodoRange, dentroPeriodo, PeriodoSelector } from '@/components/portal/FiltroIndicadores';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
@@ -304,12 +304,10 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
         </div>
 
         {/* ─── Filtro de período (padrão: mês corrente) ─── */}
-        <div className="flex items-center gap-2 mb-4 p-3 rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-2xl flex-wrap" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
           <Calendar className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
           <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Período</span>
-          <select value={periodo} onChange={e => setPeriodo(e.target.value)} className="px-3 py-1.5 rounded-xl text-xs focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-            {PERIODO_OPCOES.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
-          </select>
+          <PeriodoSelector periodo={periodo} setPeriodo={setPeriodo} compact />
         </div>
 
         {/* ─── KPIs ─── */}
