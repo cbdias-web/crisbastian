@@ -50,7 +50,10 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       const impl = implantacoes.find(i => i.id === draggableId);
 
       // ── Trava de workflow: não permite mover de coluna sem o Link de Abertura CC ──
-      if (!(impl.link_abertura_cc || '').trim()) {
+      // Produtos sem abertura de conta corrente (RATING, SCORE, HORA TÉCNICA) são isentos.
+      const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
+      const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (impl.produto || '').toUpperCase().includes(p));
+      if (!isentoCC && !(impl.link_abertura_cc || '').trim()) {
         toast.error('Preencha o Link de Abertura CC (e o Rate) antes de mover este lead de status.');
         onRefresh();
         return;

@@ -86,21 +86,25 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       };
 
       // ── Trava de workflow: Rate + Link de Abertura CC ──
+      // Produtos sem abertura de conta corrente (RATING, SCORE, HORA TÉCNICA) são isentos.
+      const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
+      const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (form.produto || '').toUpperCase().includes(p));
       const rateVal = form.rate_custodia != null && form.rate_custodia !== '' ? Number(form.rate_custodia) : null;
       const linkVal = (form.link_abertura_cc || '').trim();
 
-      // Rate obrigatório e dentro da faixa 0,01–4
-      if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
-        toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
-        setSalvando(false);
-        return;
-      }
-
-      // Mudança de status exige Link de Abertura CC preenchido
-      if (statusFinal !== implantacao.status && !linkVal) {
-        toast.error('Preencha o Link de Abertura CC para mover o lead de status/coluna.');
-        setSalvando(false);
-        return;
+      if (!isentoCC) {
+        // Rate obrigatório e dentro da faixa 0,01–4
+        if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
+          toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
+          setSalvando(false);
+          return;
+        }
+        // Mudança de status exige Link de Abertura CC preenchido
+        if (statusFinal !== implantacao.status && !linkVal) {
+          toast.error('Preencha o Link de Abertura CC para mover o lead de status/coluna.');
+          setSalvando(false);
+          return;
+        }
       }
 
       const updateData = {
@@ -284,7 +288,23 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
           </div>
 
           {/* Rate / Taxa de Custódia + Link de Abertura CC (trava de workflow) */}
-          <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+          {(() => {
+            const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
+            const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (form.produto || '').toUpperCase().includes(p));
+            if (isentoCC) {
+              return (
+                <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                  <div className="flex items-center gap-2">
+                    <Percent className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
+                    <p className="text-xs font-semibold" style={{ color: AURORA.textMuted }}>
+                      Abertura de Conta Corrente não aplicável a {form.produto} — Rate e Link dispensados.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+            return (
+            <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
             <div className="flex items-center gap-2 mb-3">
               <Percent className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
               <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Abertura de Conta Corrente</p>
@@ -362,6 +382,8 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
               </div>
             </div>
           </div>
+            );
+          })()}
 
           {/* Status e Prioridade */}
           <div className="grid grid-cols-2 gap-3">

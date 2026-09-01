@@ -29,9 +29,12 @@ export default async function(req: Request): Promise<Response> {
 
     const fila = await base44.asServiceRole.entities.FilaContato.get(fila_id).catch(() => null);
     if (!fila) return Response.json({ error: 'Item da fila não encontrado' }, { status: 404 });
-    if (fila.status !== 'pendente') {
-      return Response.json({ error: 'Item já foi atendido nesta fila' }, { status: 400 });
-    }
+
+    // Permite registrar interações mesmo após o lead ter sido movido no Kanban
+    // (status != 'pendente'). Nesses casos, apenas registra a interação + histórico,
+    // preservando o status/coluna atual do lead.
+    const statusOriginal = fila.status;
+    const jaMovimentado = statusOriginal !== 'pendente';
 
     const agora = new Date().toISOString();
     const clienteId = fila.cliente_id || fila.ref_id;
@@ -91,15 +94,16 @@ export default async function(req: Request): Promise<Response> {
         }).catch(() => {});
       }
 
-      // 3) Atualiza FilaContato
-      await base44.asServiceRole.entities.FilaContato.update(fila_id, {
-        status: 'atendeu',
+      // 3) Atualiza FilaContato — só muda o status/coluna se o lead ainda estiver pendente.
+      const updateAtendeu = {
         ultima_tentativa_em: agora,
         historico: [
           ...(fila.historico || []),
-          { status: 'atendeu', observacao: descricao, data: agora },
+          { status: jaMovimentado ? statusOriginal : 'atendeu', observacao: descricao, data: agora },
         ],
-      });
+      };
+      if (!jaMovimentado) updateAtendeu.status = 'atendeu';
+      await base44.asServiceRole.entities.FilaContato.update(fila_id, updateAtendeu);
 
       return Response.json({
         success: true,
@@ -117,33 +121,40 @@ export default async function(req: Request): Promise<Response> {
     const novaData = proximoDiaUtil(amanhaStr);
     const tentativas = (fila.tentativas || 0) + 1;
 
-    // 1) Reagenda no proximo dia util (AgendaContato)
-    await base44.asServiceRole.entities.AgendaContato.create({
-      lead_id: clienteId,
-      lead_nome: fila.nome,
-      lead_telefone: fila.telefone,
-      lead_cpf_cnpj: fila.cpf_cnpj || '',
-      cliente_id: clienteId,
-      vendedor_id: fila.vendedor_id,
-      vendedor_nome: fila.vendedor_nome,
-      data_agendada: novaData,
-      posicao_dia: 0,
-      lote_id: '',
-      status: 'pendente',
-      resultado: 'Não atendeu',
-    }).catch(() => {});
+    // 1) Reagenda no proximo dia util (AgendaContato) — apenas se o lead ainda
+    //    estiver na fila ativa (pendente). Leads já movidos no Kanban apenas
+    //    registram a tentativa, sem reagendamento automático.
+    if (!jaMovimentado) {
+      await base44.asServiceRole.entities.AgendaContato.create({
+        lead_id: clienteId,
+        lead_nome: fila.nome,
+        lead_telefone: fila.telefone,
+        lead_cpf_cnpj: fila.cpf_cnpj || '',
+        cliente_id: clienteId,
+        vendedor_id: fila.vendedor_id,
+        vendedor_nome: fila.vendedor_nome,
+        data_agendada: novaData,
+        posicao_dia: 0,
+        lote_id: '',
+        status: 'pendente',
+        resultado: 'Não atendeu',
+      }).catch(() => {});
+    }
 
-    // 2) Atualiza FilaContato (sai da fila de hoje)
-    await base44.asServiceRole.entities.FilaContato.update(fila_id, {
-      status: 'nao_atendeu',
+    // 2) Atualiza FilaContato — só muda status/coluna e proximo_contato se pendente.
+    const updateNaoAtendeu = {
       tentativas,
       ultima_tentativa_em: agora,
-      proximo_contato: novaData,
       historico: [
         ...(fila.historico || []),
-        { status: 'nao_atendeu', observacao: `Tentativa ${tentativas} — reagendado para ${novaData}`, data: agora },
+        { status: jaMovimentado ? statusOriginal : 'nao_atendeu', observacao: `Tentativa ${tentativas}${jaMovimentado ? '' : ` — reagendado para ${novaData}`}`, data: agora },
       ],
-    });
+    };
+    if (!jaMovimentado) {
+      updateNaoAtendeu.status = 'nao_atendeu';
+      updateNaoAtendeu.proximo_contato = novaData;
+    }
+    await base44.asServiceRole.entities.FilaContato.update(fila_id, updateNaoAtendeu);
 
     return Response.json({
       success: true,
