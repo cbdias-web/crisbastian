@@ -137,6 +137,11 @@
       "type": "boolean",
       "default": true,
       "description": "Se true, a venda \u00e9 considerada no acumulado de vendas do Dashboard e relat\u00f3rios"
+    },
+    "selecionada_relatorio": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag de sele\u00e7\u00e3o manual: quando true, a venda comp\u00f5e a base do relat\u00f3rio PDF personalizado (gerado a partir das vendas selecionadas)"
     }
   },
   "required": [

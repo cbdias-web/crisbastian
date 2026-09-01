@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -42,6 +42,7 @@ export default function Vendas() {
   }, []);
 
   const [gerandoRelatorioPDF, setGerandoRelatorioPDF] = useState(false);
+  const [gerandoRelatorioSelecionadas, setGerandoRelatorioSelecionadas] = useState(false);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
@@ -464,6 +465,49 @@ export default function Vendas() {
     toast.success('Clientes exportados!');
   };
 
+  const toggleSelecaoMutation = useMutation({
+    mutationFn: async ({ id, selecionada }) => {
+      return base44.entities.Venda.update(id, { selecionada_relatorio: selecionada });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['vendas']);
+    },
+  });
+
+  const vendasSelecionadas = filteredVendas.filter(v => v.selecionada_relatorio === true);
+
+  const gerarRelatorioSelecionadasPDF = async () => {
+    if (vendasSelecionadas.length === 0) {
+      toast.error('Nenhuma venda selecionada. Marque o quadrado à esquerda da linha para incluir no relatório.');
+      return;
+    }
+    setGerandoRelatorioSelecionadas(true);
+    try {
+      const response = await base44.functions.invoke('gerarRelatorioVendasPDF', {
+        vendasIds: vendasSelecionadas.map(v => v.id),
+      });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-vendas-selecionadas-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Relatório gerado com ${vendasSelecionadas.length} venda(s) selecionada(s)!`);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Erro ao gerar relatório');
+    }
+    setGerandoRelatorioSelecionadas(false);
+  };
+
+  const limparSelecao = async () => {
+    if (vendasSelecionadas.length === 0) return;
+    if (!confirm(`Limpar a seleção de ${vendasSelecionadas.length} venda(s)?`)) return;
+    await Promise.all(vendasSelecionadas.map(v => base44.entities.Venda.update(v.id, { selecionada_relatorio: false })));
+    queryClient.invalidateQueries(['vendas']);
+    toast.success('Seleção limpa.');
+  };
+
   const gerarRelatorioVendasPDF = async () => {
     setGerandoRelatorioPDF(true);
     try {
@@ -533,6 +577,19 @@ export default function Vendas() {
                     <FileText className="w-4 h-4 mr-2" />
                   )}
                   Relatório PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={gerarRelatorioSelecionadasPDF}
+                  disabled={gerandoRelatorioSelecionadas}
+                  style={vendasSelecionadas.length > 0 ? { borderColor: '#00D4AA', color: '#00D4AA' } : undefined}
+                >
+                  {gerandoRelatorioSelecionadas ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                  ) : (
+                    <CheckSquare className="w-4 h-4 mr-2" />
+                  )}
+                  Selecionadas ({vendasSelecionadas.length})
                 </Button>
               </>
             )}
@@ -748,6 +805,12 @@ export default function Vendas() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {isAdmin && <TableHead className="w-10 text-center">
+                      <button onClick={limparSelecao} title="Limpar seleção" disabled={vendasSelecionadas.length === 0}
+                        className="inline-flex" style={{ opacity: vendasSelecionadas.length === 0 ? 0.4 : 1 }}>
+                        <CheckSquare className="w-4 h-4" style={{ color: vendasSelecionadas.length > 0 ? '#00D4AA' : undefined }} />
+                      </button>
+                    </TableHead>}
                     <TableHead>Data</TableHead>
                     <TableHead>Produto</TableHead>
                     <TableHead>Cliente</TableHead>
@@ -762,6 +825,13 @@ export default function Vendas() {
                 <TableBody>
                   {filteredVendas.map((venda) => (
                     <TableRow key={venda.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleEdit(venda)}>
+                      {isAdmin && (
+                        <TableCell className="text-center" onClick={e => { e.stopPropagation(); toggleSelecaoMutation.mutate({ id: venda.id, selecionada: !venda.selecionada_relatorio }); }}>
+                          {venda.selecionada_relatorio
+                            ? <CheckSquare className="w-4 h-4 inline-flex" style={{ color: '#00D4AA' }} />
+                            : <Square className="w-4 h-4 inline-flex text-gray-400" />}
+                        </TableCell>
+                      )}
                       <TableCell>
                         {venda.data ? format(parseISO(venda.data), 'dd/MM/yyyy') : '-'}
                       </TableCell>
@@ -837,7 +907,7 @@ export default function Vendas() {
                   ))}
                   {filteredVendas.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={isAdmin ? 10 : 9} className="text-center py-8 text-gray-500">
                         Nenhuma venda encontrada
                       </TableCell>
                     </TableRow>

@@ -14,16 +14,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { dataInicio, dataFim, vendedorFiltro, produtoFiltro } = await req.json();
+    const { dataInicio, dataFim, vendedorFiltro, produtoFiltro, vendasIds } = await req.json();
 
     const vendas = await base44.asServiceRole.entities.Venda.list('-data');
     
-    const vendasFiltradas = vendas.filter(v => {
-      const matchData = (!dataInicio || v.data >= dataInicio) && (!dataFim || v.data <= dataFim);
-      const matchVendedor = !vendedorFiltro || v.assessor_comercial === vendedorFiltro;
-      const matchProduto = !produtoFiltro || v.produto === produtoFiltro;
-      return matchData && matchVendedor && matchProduto;
-    });
+    // Modo seleção manual: quando a lista de vendasIds é informada, o relatório é
+    // composto apenas pelas vendas selecionadas (flag selecionada_relatorio),
+    // ignorando os filtros de período/vendedor/produto.
+    const modoSelecao = Array.isArray(vendasIds) && vendasIds.length > 0;
+    
+    const vendasFiltradas = modoSelecao
+      ? vendas.filter(v => vendasIds.includes(v.id))
+      : vendas.filter(v => {
+          const matchData = (!dataInicio || v.data >= dataInicio) && (!dataFim || v.data <= dataFim);
+          const matchVendedor = !vendedorFiltro || v.assessor_comercial === vendedorFiltro;
+          const matchProduto = !produtoFiltro || v.produto === produtoFiltro;
+          return matchData && matchVendedor && matchProduto;
+        });
 
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
@@ -39,7 +46,11 @@ Deno.serve(async (req) => {
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
     doc.text(removerAcentos('Relatorio de Vendas'), pageW / 2, 22, { align: 'center' });
-    doc.text(removerAcentos(`Periodo: ${new Date(dataInicio).toLocaleDateString('pt-BR')} ate ${new Date(dataFim).toLocaleDateString('pt-BR')}`), pageW / 2, 28, { align: 'center' });
+    if (modoSelecao) {
+      doc.text(removerAcentos(`Vendas selecionadas (${vendasFiltradas.length})`), pageW / 2, 28, { align: 'center' });
+    } else {
+      doc.text(removerAcentos(`Periodo: ${new Date(dataInicio).toLocaleDateString('pt-BR')} ate ${new Date(dataFim).toLocaleDateString('pt-BR')}`), pageW / 2, 28, { align: 'center' });
+    }
 
     // Resumo
     doc.setTextColor(0, 0, 0);
@@ -76,26 +87,27 @@ Deno.serve(async (req) => {
     doc.setTextColor(0, 0, 0);
     doc.setFont(undefined, 'normal');
 
+    const headerTabela = (yy) => {
+      doc.setFontSize(8);
+      doc.setFont(undefined, 'bold');
+      doc.setFillColor(15, 30, 53);
+      doc.rect(14, yy, pageW - 28, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.text('Data', 16, yy + 5);
+      doc.text('Produto', 35, yy + 5);
+      doc.text('Cliente', 70, yy + 5);
+      doc.text('Vendedor', 110, yy + 5);
+      doc.text('Valor', pageW - 30, yy + 5, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      doc.setFont(undefined, 'normal');
+    };
+
     vendasFiltradas.forEach((venda, idx) => {
       if (y > pageH - 30) {
         doc.addPage();
         y = 20;
-        
-        // Repetir header da tabela
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'bold');
-        doc.setFillColor(15, 30, 53);
-        doc.rect(14, y, pageW - 28, 8, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.text('Data', 16, y + 5);
-        doc.text('Produto', 35, y + 5);
-        doc.text('Cliente', 70, y + 5);
-        doc.text('Vendedor', 110, y + 5);
-        doc.text('Valor', pageW - 30, y + 5, { align: 'right' });
-        
+        headerTabela(y);
         y += 10;
-        doc.setTextColor(0, 0, 0);
-        doc.setFont(undefined, 'normal');
       }
 
       if (idx % 2 === 0) {
@@ -118,7 +130,7 @@ Deno.serve(async (req) => {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text(`Pagina ${i} de ${totalPages}`, pageW / 2, pageH - 10, { align: 'center' });
+      doc.text(removerAcentos(`Pagina ${i} de ${totalPages}`), pageW / 2, pageH - 10, { align: 'center' });
     }
 
     const pdfBytes = doc.output('arraybuffer');
