@@ -329,11 +329,15 @@ export default function Dashboard() {
   const produtoOptions = [...new Set(vendas.map(v => v.produto).filter(Boolean))].map(p => ({ value: p, label: p }));
   const vendedorOptions = vendedores.map(v => ({ value: v.id, label: v.nome }));
 
+  const nomeVendedorPorId = (id) => vendedores.find(vv => vv.id === id)?.nome;
+  const matchesVendedor = (v, id, nome) =>
+    v.vendedor_id === id || (v.assessor_comercial && nome && v.assessor_comercial.toUpperCase() === nome.toUpperCase());
+
   const vendasFiltradas = vendas.filter(v => {
     const d = v.data || "";
     const inDate = (!dataInicio || d >= dataInicio) && (!dataFim || d <= dataFim);
     const inVend = selectedVendedores.length === 0 || selectedVendedores.length === vendedores.length ||
-      selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some(id => vendedores.find(vv => vv.id === id)?.nome === v.assessor_comercial);
+      selectedVendedores.includes(v.vendedor_id) || selectedVendedores.some(id => matchesVendedor(v, id, nomeVendedorPorId(id)));
     const inProd = selectedProdutos.length === 0 || selectedProdutos.length === produtoOptions.length || selectedProdutos.includes(v.produto);
     return inDate && inVend && inProd;
   });
