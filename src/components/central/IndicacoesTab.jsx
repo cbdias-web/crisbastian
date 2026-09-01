@@ -56,14 +56,21 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     queryKey: ['parceiros-indicacao'],
     queryFn: () => base44.entities.Parceiro.list('nome'),
   });
-  // Vendas pagas (com comprovante) — para derivar o status "Venda Convertida"
-  // mesmo quando o LeadIndicacao ainda consta como "convertido_contrato".
+  // Vendas vinculadas a indicações — mapa por id e por CPF/CNPJ. O status
+  // "Venda Convertida" no acompanhamento do lead reflete que a conversão
+  // (lead → venda) aconteceu; o comprovante (pagamento) é um detalhe financeiro
+  // contabilizado à parte no Dashboard/Consolidado.
   const { data: vendas = [] } = useQuery({
     queryKey: ['vendas-status-indicacoes'],
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
   });
   const paidDocs = new Set();
+  const vendaPorId = {};
+  const vendaPorDoc = {};
   vendas.forEach(v => {
+    vendaPorId[v.id] = v;
+    const doc = (v.cpf_cnpj || '').replace(/\D/g, '');
+    if (doc && !vendaPorDoc[doc]) vendaPorDoc[doc] = v;
     if (Array.isArray(v.comprovantes) && v.comprovantes.length > 0 && v.cpf_cnpj) {
       paidDocs.add(v.cpf_cnpj.replace(/\D/g, ''));
     }
@@ -97,7 +104,13 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     const matchParceiro = useExternalParceiro
       ? (parceiroIdFiltro === 'todos' || i.parceiro_id === parceiroIdFiltro)
       : (parceiroIdFixo ? i.parceiro_id === parceiroIdFixo : (filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro));
-    const matchPeriodo = dentroPeriodo(i.created_date, range);
+    // Período: considera a data da indicação OU a data da venda vinculada — assim
+    // um lead indicado no mês passado cuja venda aconteceu neste mês aparece no
+    // mês atual (a venda é o marco recente que o indicador quer acompanhar).
+    const iDoc = (i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj || '').replace(/\D/g, '');
+    const vendaI = i.venda_id ? vendaPorId[i.venda_id] : vendaPorDoc[iDoc];
+    const vendaData = vendaI?.data;
+    const matchPeriodo = dentroPeriodo(i.created_date, range) || (vendaData && dentroPeriodo(vendaData, range));
     const nome = i.tipo === 'PF' ? i.pf_nome : i.pj_razao_social;
     const doc = i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj;
     const matchBusca = !busca || (nome?.toLowerCase().includes(busca.toLowerCase())) || (doc?.includes(busca));
@@ -262,8 +275,13 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
         <div className="space-y-2">
           {filtradas.map(lead => {
             const docNorm = (getDoc(lead) || '').replace(/\D/g, '');
-            const vendaEfetivada = lead.status === 'convertido_venda' || (docNorm && paidDocs.has(docNorm));
+            const vendaLead = lead.venda_id ? vendaPorId[lead.venda_id] : vendaPorDoc[docNorm];
+            const temVenda = !!vendaLead;
+            const vendaEfetivada = lead.status === 'convertido_venda' || temVenda || (docNorm && paidDocs.has(docNorm));
             const st = vendaEfetivada ? STATUS_CFG.convertido_venda : (STATUS_CFG[lead.status] || STATUS_CFG.novo);
+            const dataVenda = vendaLead?.data;
+            const dataExibicao = dataVenda || lead.link_preenchido_em || lead.created_date;
+            const titleLabel = dataVenda ? `Venda em ${fmtData(dataVenda)}` : `Recebida em ${fmtData(lead.link_preenchido_em || lead.created_date)}`;
             return (
               <div key={lead.id} onClick={() => setDetalhe(lead)}
                 className="rounded-2xl p-4 cursor-pointer transition relative overflow-hidden"
@@ -303,8 +321,8 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                       <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{lead.produto}</span>
                       {lead.valor_estimado != null && <span className="text-[9px]" style={{ color: AURORA.textMuted }}>{fmtMoeda(lead.valor_estimado)}</span>}
                       <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.purple }}>🔗 {lead.parceiro_nome}</span>
-                      <span className="text-[9px] flex items-center gap-0.5 ml-auto" style={{ color: AURORA.textMuted }} title={`Recebida em ${fmtData(lead.link_preenchido_em || lead.created_date)}`}>
-                        🗓 {fmtData(lead.link_preenchido_em || lead.created_date)}
+                      <span className="text-[9px] flex items-center gap-0.5 ml-auto" style={{ color: AURORA.textMuted }} title={titleLabel}>
+                        🗓 {fmtData(dataExibicao)}
                       </span>
                     </div>
                   </div>
@@ -349,7 +367,12 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                 <Info label="Tipo" value={detalhe.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
                 <Info label="Produto" value={detalhe.produto} />
                 <Info label="Valor est." value={fmtMoeda(detalhe.valor_estimado)} />
-                <Info label="Status" value={(detalhe.status === 'convertido_venda' || paidDocs.has((getDoc(detalhe) || '').replace(/\D/g, ''))) ? STATUS_CFG.convertido_venda.label : (STATUS_CFG[detalhe.status]?.label || '—')} />
+                <Info label="Status" value={(() => {
+                  const docD = (getDoc(detalhe) || '').replace(/\D/g, '');
+                  const vendaD = detalhe.venda_id ? vendaPorId[detalhe.venda_id] : vendaPorDoc[docD];
+                  const efetivada = detalhe.status === 'convertido_venda' || !!vendaD || paidDocs.has(docD);
+                  return efetivada ? STATUS_CFG.convertido_venda.label : (STATUS_CFG[detalhe.status]?.label || '—');
+                })()} />
               </div>
 
               <DetalheJornadaIndicacao lead={detalhe} />

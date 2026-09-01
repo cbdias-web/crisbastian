@@ -59,8 +59,12 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   const volumeIndicado = leadsFiltrados.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
 
   // venda_id (da venda) -> { parceiro_id, parceiro_nome, percentual }
+  // Construído a partir de TODOS os leads (não só os filtrados pelo período): o
+  // vínculo venda↔parceiro independe de quando a indicação foi recebida. Assim uma
+  // venda gerada hoje a partir de um lead do mês passado é contabilizada no mês
+  // da VENDA (v.data), não fica presa ao mês do lead nem cai entre os meses.
   const vendaParaParceiro = {};
-  leadsFiltrados.forEach(l => {
+  leads.forEach(l => {
     if (l.venda_id && !vendaParaParceiro[l.venda_id]) {
       vendaParaParceiro[l.venda_id] = {
         parceiro_id: l.parceiro_id,
@@ -117,7 +121,10 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   //   Vendas Convertidas (verde)  = virou venda (originada de indicação de portal)
   //   Contratos (roxo)            = virou contrato, mas ainda não virou venda
   //   Indicações (verde-azulado)  = continua como indicação (ainda não virou contrato)
-  const vendasCount = vendasIndicadas.length;
+  // Funil é lead-cêntrico (pela data da indicação): quantas indicações do período
+  // já viraram venda/contrato. O KPI "Vendas efetivas" (vendasIndicadas.length) é
+  // venda-cêntrico (pela data da venda) — métricas distintas, ambas corretas.
+  const vendasCount = leadsFiltrados.filter(l => l.venda_id || l.status === 'convertido_venda').length;
   const leadsComContrato = leadsFiltrados.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
   const contratosApenas = Math.max(0, leadsComContrato - vendasCount);
   const indicacoesApenas = Math.max(0, total - leadsComContrato);
