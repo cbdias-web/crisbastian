@@ -35,11 +35,17 @@ export function periodoRange(periodo) {
   return { start: start.toISOString(), end: now.toISOString() };
 }
 
-// Verifica se uma data ISO está dentro do range (null = sem restrição)
+// Verifica se uma data está dentro do range (null = sem restrição)
+// Strings de data (YYYY-MM-DD, ex: venda.data) são interpretadas pelo JS como
+// meia-noite UTC — o que as deixa atrás do início LOCAL do mês na virada, fazendo
+// uma venda de 01/09 "sumir" de Setembro. Tratamos data-only como início do dia
+// local para o filtro bater com o mês civil do usuário.
 export function dentroPeriodo(dataStr, range) {
   if (!range) return true;
   if (!dataStr) return false;
-  const t = new Date(dataStr).getTime();
+  let str = dataStr;
+  if (typeof str === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(str)) str = str + 'T00:00:00';
+  const t = new Date(str).getTime();
   return t >= new Date(range.start).getTime() && t <= new Date(range.end).getTime();
 }
 
