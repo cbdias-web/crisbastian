@@ -50,7 +50,8 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
 
   const { data: indicacoes = [], isLoading } = useQuery({
     queryKey: ['lead-indicacoes'],
-    queryFn: () => base44.entities.LeadIndicacao.list('-created_date', 200),
+    queryFn: () => base44.entities.LeadIndicacao.list('-created_date', 500),
+    refetchInterval: 30000,
   });
   const { data: parceiros = [] } = useQuery({
     queryKey: ['parceiros-indicacao'],
@@ -104,13 +105,8 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     const matchParceiro = useExternalParceiro
       ? (parceiroIdFiltro === 'todos' || i.parceiro_id === parceiroIdFiltro)
       : (parceiroIdFixo ? i.parceiro_id === parceiroIdFixo : (filtroParceiro === 'todos' || i.parceiro_id === filtroParceiro));
-    // Período: considera a data da indicação OU a data da venda vinculada — assim
-    // um lead indicado no mês passado cuja venda aconteceu neste mês aparece no
-    // mês atual (a venda é o marco recente que o indicador quer acompanhar).
-    const iDoc = ((i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj) || '').replace(/\D/g, '');
-    const vendaI = i.venda_id ? vendaPorId[i.venda_id] : vendaPorDoc[iDoc];
-    const vendaData = vendaI?.data;
-    const matchPeriodo = dentroPeriodo(i.created_date, range) || (vendaData && dentroPeriodo(vendaData, range));
+    // Período: a indicação aparece no mês da sua INSERÇÃO (created_date).
+    const matchPeriodo = dentroPeriodo(i.created_date, range);
     const nome = i.tipo === 'PF' ? i.pf_nome : i.pj_razao_social;
     const doc = i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj;
     const matchBusca = !busca || (nome?.toLowerCase().includes(busca.toLowerCase())) || (doc?.includes(busca));

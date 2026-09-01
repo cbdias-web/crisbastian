@@ -24,6 +24,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ['consolidado-leads'],
     queryFn: () => base44.entities.LeadIndicacao.list('-created_date', 500),
+    refetchInterval: 30000,
   });
 
   const { data: vendas = [], isLoading: loadingVendas } = useQuery({
@@ -124,17 +125,10 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   // O funil considera os leads RECEBIDOS no período OU cuja VENDA aconteceu no período
   // — assim uma indicação recebida no mês passado que fechou venda neste mês aparece
   // no funil do mês atual (a conversão é o marco que o indicador quer ver).
-  const vendaById = {};
-  vendas.forEach(v => { vendaById[v.id] = v; });
-  const leadsPeriodo = leads.filter(l => {
-    if (!filtraParceiro(l.parceiro_id)) return false;
-    if (dentroPeriodo(l.created_date, range)) return true;
-    if (l.venda_id) {
-      const vd = vendaById[l.venda_id];
-      if (vd && dentroPeriodo(vd.data, range)) return true;
-    }
-    return false;
-  });
+  // O funil/distribuição considera apenas os leads RECEBIDOS (created_date) no
+  // período — a indicação pertence ao mês da sua inserção, independentemente de
+  // quando a venda vinculada acontecer.
+  const leadsPeriodo = leads.filter(l => filtraParceiro(l.parceiro_id) && dentroPeriodo(l.created_date, range));
   const totalGrafico = leadsPeriodo.length;
   const vendasCount = leadsPeriodo.filter(l => l.venda_id || l.status === 'convertido_venda').length;
   const leadsComContrato = leadsPeriodo.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
