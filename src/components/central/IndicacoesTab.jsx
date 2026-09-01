@@ -107,7 +107,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     // Período: considera a data da indicação OU a data da venda vinculada — assim
     // um lead indicado no mês passado cuja venda aconteceu neste mês aparece no
     // mês atual (a venda é o marco recente que o indicador quer acompanhar).
-    const iDoc = (i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj || '').replace(/\D/g, '');
+    const iDoc = ((i.tipo === 'PF' ? i.pf_cpf : i.pj_cnpj) || '').replace(/\D/g, '');
     const vendaI = i.venda_id ? vendaPorId[i.venda_id] : vendaPorDoc[iDoc];
     const vendaData = vendaI?.data;
     const matchPeriodo = dentroPeriodo(i.created_date, range) || (vendaData && dentroPeriodo(vendaData, range));
