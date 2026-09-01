@@ -28,7 +28,7 @@ export default function DashParceiro() {
   });
   const [parceiroLogado, setParceiroLogado] = useState(null);
   const [checked, setChecked] = useState(false);
-  const [periodo, setPeriodo] = useState('tudo');
+  const [periodo, setPeriodo] = useState('mes');
   const [parceiroFiltro, setParceiroFiltro] = useState('todos');
 
   useEffect(() => {

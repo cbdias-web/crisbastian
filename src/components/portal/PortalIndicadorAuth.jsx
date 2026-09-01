@@ -4,8 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
-  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye, Users,
+  TrendingUp, FileText, DollarSign, Trophy, CheckCircle2, UserCircle, Handshake, LogOut, Mail, Bell, BellOff, Eye, Users, Calendar,
 } from 'lucide-react';
+import { periodoRange, dentroPeriodo, PERIODO_OPCOES } from '@/components/portal/FiltroIndicadores';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
@@ -70,6 +71,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   const [showWelcome, setShowWelcome] = useState(false);
   const [view, setView] = useState('dash');
   const [abaPortal, setAbaPortal] = useState('indicacoes');
+  const [periodo, setPeriodo] = useState('mes');
 
   const sairPortal = () => {
     if (onSairAdmin) onSairAdmin();
@@ -181,22 +183,27 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
     );
   }
 
-  // ─── KPIs ───
-  const total = leads.length;
-  const volumeIndicado = leads.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+  // ─── Filtro de período (padrão: mês corrente) ───
+  const range = periodoRange(periodo);
+  const leadsPeriodo = leads.filter(l => dentroPeriodo(l.created_date, range));
 
-  // Conversões reais (Venda vinculada ao indicador via espelhamento)
+  // ─── KPIs ───
+  const total = leadsPeriodo.length;
+  const volumeIndicado = leadsPeriodo.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+
+  // Conversões reais (Venda vinculada ao indicador via espelhamento) no período.
   // Em consulta geral: apenas vendas originadas de indicação (espelhamento aponta
   // para um Parceiro cadastrado) e PAGAS (com comprovante) — soma o consolidado real,
   // não todas as vendas do sistema.
   const parceiroIds = new Set(parceiros.map(p => p.id));
-  const minhasVendas = consultaGeral
+  const minhasVendas = (consultaGeral
     ? vendas.filter(v =>
         Array.isArray(v.indicadores) &&
         v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
         Array.isArray(v.comprovantes) && v.comprovantes.length > 0
       )
-    : vendas.filter(v => Array.isArray(v.indicadores) && v.indicadores.some(i => i.id === parceiro.id));
+    : vendas.filter(v => Array.isArray(v.indicadores) && v.indicadores.some(i => i.id === parceiro.id))
+  ).filter(v => dentroPeriodo(v.data, range));
   const valorVenda = (v) => Number(v.valor_total_contrato) || Number(v.valor) || 0;
   const percentualVenda = (v) => {
     if (consultaGeral) {
@@ -211,7 +218,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
 
   // ─── Dados do gráfico de rosca ───
   const chartData = Object.entries(STATUS_CHART)
-    .map(([key, cfg]) => ({ key, name: cfg.label, value: leads.filter(l => l.status === key).length, color: cfg.color }))
+    .map(([key, cfg]) => ({ key, name: cfg.label, value: leadsPeriodo.filter(l => l.status === key).length, color: cfg.color }))
     .filter(d => d.value > 0);
 
   if (view === 'formulario') {
@@ -294,6 +301,15 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
                 : <>Cadastre indicações e acompanhe a jornada de cada lead. Comissão padrão: <strong style={{ color: AURORA.accent }}>{indicador.percentual_comissao ?? 0}%</strong></>}
             </p>
           </div>
+        </div>
+
+        {/* ─── Filtro de período (padrão: mês corrente) ─── */}
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+          <Calendar className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Período</span>
+          <select value={periodo} onChange={e => setPeriodo(e.target.value)} className="px-3 py-1.5 rounded-xl text-xs focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+            {PERIODO_OPCOES.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+          </select>
         </div>
 
         {/* ─── KPIs ─── */}
@@ -390,6 +406,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
                 modoIndicador
                 parceiro={indicador}
                 hideNovaButton={false}
+                periodo={periodo}
               />
             )}
           </>
