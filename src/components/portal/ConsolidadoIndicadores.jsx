@@ -48,58 +48,75 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
   const range = periodoRange(periodo);
   const filtraParceiro = (parceiroIdItem) => !parceiroId || parceiroId === 'todos' || parceiroId === parceiroIdItem;
 
-  // Vendas originadas de indicação e PAGAS: o espelhamento deve apontar para um
-  // Parceiro/Indicador cadastrado (exclui espelhamentos internos entre vendedores)
-  // e a venda precisa ter comprovante de pagamento (contrato assinado e pago).
-  const parceiroIds = new Set(parceiros.map(p => p.id));
-  // Venda original (entrada paga) — exclui parcelas recorrentes, que entram via ParcelaVenda.
-  // Valor considerado = valor de entrada/adesão efetivamente pago (Venda.valor), não o total do contrato.
-  const vendasIndicadas = vendas.filter(v =>
-    v.tipo_venda !== 'recorrencia' &&
-    Array.isArray(v.indicadores) &&
-    v.indicadores.some(i => i && parceiroIds.has(i.id)) &&
-    Array.isArray(v.comprovantes) && v.comprovantes.length > 0 &&
-    dentroPeriodo(v.data, range) &&
-    (parceiroId === 'todos' || !parceiroId || (v.indicadores || []).some(i => i && i.id === parceiroId))
-  );
-  const valorVenda = (v) => Number(v.valor) || 0;
-
-  // Parcelas liquidadas (recebidas) vinculadas a indicações — somam à jornada do lead.
-  const parcelasRecebidas = parcelas.filter(p =>
-    p.status === 'recebida' &&
-    Array.isArray(p.indicadores) &&
-    p.indicadores.some(i => i && parceiroIds.has(i.id)) &&
-    dentroPeriodo(p.data_recebimento, range) &&
-    (parceiroId === 'todos' || !parceiroId || (p.indicadores || []).some(i => i && i.id === parceiroId))
-  );
-  const valorParcela = (p) => Number(p.valor_parcela) || 0;
-
+  // ── Fonte da verdade: a ORIGEM PORTAL (LeadIndicacao.venda_id) ──────────────
+  // O Dash Parceiro acompanha apenas leads que nasceram no portal do indicador.
+  // Uma venda feita pelo gerente (mesmo com espelhamento apontando para um Parceiro)
+  // NÃO entra aqui — é uma operação distinta. O vínculo venda_id na LeadIndicacao é
+  // estabelecido pela automação sincronizarJornadaIndicacaoVenda (e pela migração
+  // contrato→venda), então esta view apenas consome esse vínculo.
   const leadsFiltrados = leads.filter(l => dentroPeriodo(l.created_date, range) && filtraParceiro(l.parceiro_id));
   const total = leadsFiltrados.length;
   const volumeIndicado = leadsFiltrados.reduce((s, l) => s + (Number(l.valor_estimado) || 0), 0);
+
+  // venda_id (da venda) -> { parceiro_id, parceiro_nome, percentual }
+  const vendaParaParceiro = {};
+  leadsFiltrados.forEach(l => {
+    if (l.venda_id && !vendaParaParceiro[l.venda_id]) {
+      vendaParaParceiro[l.venda_id] = {
+        parceiro_id: l.parceiro_id,
+        parceiro_nome: l.parceiro_nome,
+        percentual: Number(l.parceiro_percentual) || 0,
+      };
+    }
+  });
+  const portalVendaIds = new Set(Object.keys(vendaParaParceiro));
+
+  // Vendas convertidas a partir de indicação de portal (pelo vínculo LeadIndicacao.venda_id).
+  // Não exige comprovante: a conversão (lead → venda) aconteceu; o pagamento é um detalhe
+  // financeiro, refletido no status da indicação pela automação.
+  const vendasIndicadas = vendas.filter(v =>
+    v.tipo_venda !== 'recorrencia' &&
+    portalVendaIds.has(v.id) &&
+    dentroPeriodo(v.data, range) &&
+    (parceiroId === 'todos' || !parceiroId || vendaParaParceiro[v.id]?.parceiro_id === parceiroId)
+  );
+  const valorVenda = (v) => Number(v.valor) || 0;
+  // Percentual do parceiro na venda: lê do espelhamento da própria venda (valor efetivo
+  // atribuído no ato); cai para o percentual da indicação se não houver.
+  const pctParceiroNaVenda = (v) => {
+    const info = vendaParaParceiro[v.id];
+    if (!info) return 0;
+    const ind = (v.indicadores || []).find(i => i && i.id === info.parceiro_id);
+    return ind ? (Number(ind.percentual) || 0) : info.percentual;
+  };
+
+  // Parcelas liquidadas (recebidas) cuja venda original veio de indicação de portal.
+  const parcelasRecebidas = parcelas.filter(p =>
+    p.status === 'recebida' &&
+    portalVendaIds.has(p.venda_id) &&
+    dentroPeriodo(p.data_recebimento, range) &&
+    (parceiroId === 'todos' || !parceiroId || vendaParaParceiro[p.venda_id]?.parceiro_id === parceiroId)
+  );
+  const valorParcela = (p) => Number(p.valor_parcela) || 0;
+  const pctParceiroNaParcela = (p) => {
+    const info = vendaParaParceiro[p.venda_id];
+    if (!info) return 0;
+    const ind = (p.indicadores || []).find(i => i && i.id === info.parceiro_id);
+    return ind ? (Number(ind.percentual) || 0) : info.percentual;
+  };
 
   const totalEntradas = vendasIndicadas.reduce((s, v) => s + valorVenda(v), 0);
   const totalParcelas = parcelasRecebidas.reduce((s, p) => s + valorParcela(p), 0);
   const vendasConvertidasValor = totalEntradas + totalParcelas;
   const vendasEfetivasCount = vendasIndicadas.length;
   const comissaoGerada =
-    vendasIndicadas.reduce((s, v) => {
-      const pct = (v.indicadores || [])
-        .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
-        .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
-      return s + valorVenda(v) * (pct / 100);
-    }, 0) +
-    parcelasRecebidas.reduce((s, p) => {
-      const pct = (p.indicadores || [])
-        .filter(i => i && parceiroIds.has(i.id) && (parceiroId === 'todos' || !parceiroId || i.id === parceiroId))
-        .reduce((a, i) => a + (Number(i.percentual) || 0), 0);
-      return s + valorParcela(p) * (pct / 100);
-    }, 0);
+    vendasIndicadas.reduce((s, v) => s + valorVenda(v) * (pctParceiroNaVenda(v) / 100), 0) +
+    parcelasRecebidas.reduce((s, p) => s + valorParcela(p) * (pctParceiroNaParcela(p) / 100), 0);
 
   // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de indicações):
-  //   Vendas Convertidas (verde) = virou venda paga originada de indicação
-  //   Contratos (roxo)           = virou contrato, mas ainda não virou venda paga
-  //   Indicações (verde-azulado) = continua como indicação (ainda não virou contrato)
+  //   Vendas Convertidas (verde)  = virou venda (originada de indicação de portal)
+  //   Contratos (roxo)            = virou contrato, mas ainda não virou venda
+  //   Indicações (verde-azulado)  = continua como indicação (ainda não virou contrato)
   const vendasCount = vendasIndicadas.length;
   const leadsComContrato = leadsFiltrados.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
   const contratosApenas = Math.max(0, leadsComContrato - vendasCount);
@@ -110,7 +127,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     { key: 'vendas', name: 'Vendas Convertidas', value: vendasCount, color: AURORA.green },
   ].filter(d => d.value > 0);
 
-  // Ranking de indicadores (top 5) — total de indicações + vendas convertidas
+  // Ranking de indicadores (top 5) — total de indicações + vendas convertidas (origem portal)
   const rankingMap = {};
   leadsFiltrados.forEach(l => {
     const key = l.parceiro_id || '_sem';
@@ -119,26 +136,24 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     rankingMap[key].total++;
   });
   vendasIndicadas.forEach(v => {
-    (v.indicadores || []).forEach(i => {
-      if (!i || !parceiroIds.has(i.id)) return;
-      if (parceiroId !== 'todos' && parceiroId && i.id !== parceiroId) return;
-      const key = i.id;
-      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
-      rankingMap[key].vendas++;
-      rankingMap[key].valorVendas += valorVenda(v);
-      rankingMap[key].valor += valorVenda(v) * ((Number(i.percentual) || 0) / 100);
-    });
+    const info = vendaParaParceiro[v.id];
+    if (!info) return;
+    const key = info.parceiro_id;
+    if (parceiroId !== 'todos' && parceiroId && key !== parceiroId) return;
+    if (!rankingMap[key]) rankingMap[key] = { nome: info.parceiro_nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
+    rankingMap[key].vendas++;
+    rankingMap[key].valorVendas += valorVenda(v);
+    rankingMap[key].valor += valorVenda(v) * (pctParceiroNaVenda(v) / 100);
   });
   // Soma parcelas liquidadas ao valor acumulado e comissão de cada indicador.
   parcelasRecebidas.forEach(p => {
-    (p.indicadores || []).forEach(i => {
-      if (!i || !parceiroIds.has(i.id)) return;
-      if (parceiroId !== 'todos' && parceiroId && i.id !== parceiroId) return;
-      const key = i.id;
-      if (!rankingMap[key]) rankingMap[key] = { nome: i.nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
-      rankingMap[key].valorVendas += valorParcela(p);
-      rankingMap[key].valor += valorParcela(p) * ((Number(i.percentual) || 0) / 100);
-    });
+    const info = vendaParaParceiro[p.venda_id];
+    if (!info) return;
+    const key = info.parceiro_id;
+    if (parceiroId !== 'todos' && parceiroId && key !== parceiroId) return;
+    if (!rankingMap[key]) rankingMap[key] = { nome: info.parceiro_nome || '—', total: 0, vendas: 0, valorVendas: 0, valor: 0 };
+    rankingMap[key].valorVendas += valorParcela(p);
+    rankingMap[key].valor += valorParcela(p) * (pctParceiroNaParcela(p) / 100);
   });
   const ranking = Object.values(rankingMap)
     .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valorVendas - a.valorVendas)
