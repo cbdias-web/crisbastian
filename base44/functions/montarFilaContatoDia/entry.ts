@@ -15,8 +15,9 @@ import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 // - Anti-retrabalho/oxigenação (mantidos): lead resolvido (desqualificado/
 //   convertido) nunca volta como pendente; lead já trabalhado não reentra
 //   automaticamente — apenas via "Voltar à fila".
-// - Administradores (ex.: Cris Bastian) não fazem agenda do dia nem têm
-//   carteira: ficam fora do processamento.
+// - Apenas perfis internos sem agenda/carteira (ex.: Cris Bastian) ficam fora;
+//   administradores que atuam como gerente/SDR (ex.: Jonathan Dutra)
+//   participam normalmente da esteira.
 //
 // Payload: { vendedor_id?: string }
 
@@ -49,20 +50,13 @@ export default async function(req: Request): Promise<Response> {
       vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
     }
 
-    // ── Exclusão de administradores (não fazem agenda do dia nem têm carteira) ──
-    const todosUsers = await base44.asServiceRole.entities.User.list(500).catch(() => []);
-    const adminEmails = new Set(
-      todosUsers
-        .filter((u) => u.role === 'admin' || u.permissao_admin === true)
-        .map((u) => (u.email || '').toLowerCase())
-        .filter(Boolean)
-    );
+    // ── Exclusão: perfis internos sem agenda/carteira (ex.: Cris Bastian) ──
     const semAcento = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
     const excluido = (v: any) => {
       const n = semAcento(v.nome);
       const e = (v.email || '').toLowerCase();
-      return adminEmails.has(e) || NOMES_EXCLUIDOS.some((x) => n.includes(x) || e.includes(x));
+      return NOMES_EXCLUIDOS.some((x) => n.includes(x) || e.includes(x));
     };
     const vendedoresAtivos = vendedores.filter((v) => v.ativo !== false && !excluido(v));
 
