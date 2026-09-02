@@ -56,37 +56,38 @@ export default function FilaContato() {
     queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataFiltro, modo],
     queryFn: async () => {
       if (!user) return [];
-      // Pendentes: vinculados ao dia selecionado (fila/agendados).
-      // Tratados (atendeu/qualificado/convertido/descartado/nao_atendeu):
-      // persistem na esteira independente da data — o lead "se move" entre
-      // colunas e permanece visível conforme as interações.
-      const filtroPend = modo === 'agendados'
-        ? { proximo_contato: dataFiltro, status: 'pendente' }
-        : { data_fila: dataFiltro, status: 'pendente' };
       const vid = vendedor?.id;
       const isAdminAll = isAdmin && !getImpersonatedVendedor() && !vendedor;
       const filtrarVendedor = (lista) => isAdminAll ? lista : lista.filter(f => f.vendedor_id === vid);
 
       if (modo === 'agendados') {
-        // Modo agendados: só pendentes agendados para a data
-        const todos = await base44.entities.FilaContato.filter(filtroPend, 'prioridade');
+        // Modo agendados: só pendentes reagendados para a data (proximo_contato)
+        const todos = await base44.entities.FilaContato.filter({ proximo_contato: dataFiltro, status: 'pendente' }, 'prioridade');
         return filtrarVendedor(todos);
       }
 
-      // Modo fila: pendentes do dia + todos os tratados (persistem)
-      const [pendentes, tratados] = await Promise.all([
-        base44.entities.FilaContato.filter(filtroPend, 'prioridade'),
+      // Modo fila:
+      // - Indicações: TODOS os pendentes de indicação, independente do dia
+      //   (a esteira acumula até o lead ser tratado).
+      // - Agenda do Dia (carteira): pendentes com data_fila <= data selecionada,
+      //   carregando os dias anteriores não resolvidos (carry-over) + os novos
+      //   promovidos diariamente pela automação distribuirContatosDiarios.
+      // - Tratados (atendeu/qualificado/convertido/descartado/nao_atendeu):
+      //   persistem na esteira independente da data.
+      const [indicacoes, carteira, tratados] = await Promise.all([
+        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'indicacao' }, 'prioridade', 500),
+        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'carteira' }, 'prioridade', 500),
         base44.entities.FilaContato.filter({ status: 'atendeu' }, '-updated_date', 300),
       ]);
-      // Tratados também incluem qualificado/convertido/descartado/nao_atendeu
       const outrosStatus = ['qualificado', 'convertido', 'descartado', 'nao_atendeu'];
       const outros = [];
       for (const s of outrosStatus) {
         const items = await base44.entities.FilaContato.filter({ status: s }, '-updated_date', 300);
         outros.push(...items);
       }
+      const carteiraCarry = carteira.filter(c => (c.data_fila || '') <= dataFiltro);
       const todosTratados = [...tratados, ...outros];
-      return [...filtrarVendedor(pendentes), ...filtrarVendedor(todosTratados)];
+      return [...filtrarVendedor(indicacoes), ...filtrarVendedor(carteiraCarry), ...filtrarVendedor(todosTratados)];
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
@@ -211,7 +212,7 @@ export default function FilaContato() {
         <div className="grid grid-cols-3 gap-3 mb-4">
           {[
             { label: 'Indicações na fila', value: totalIndicacao, icon: Zap, color: AURORA.accent },
-            { label: 'Carteira do dia', value: totalCarteira, icon: Users, color: '#818cf8' },
+            { label: 'Carteira pendente', value: totalCarteira, icon: Users, color: '#818cf8' },
             { label: 'Concluídos hoje', value: totalConcluidos, icon: Phone, color: '#34d399' },
           ].map(k => (
             <div key={k.label} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>

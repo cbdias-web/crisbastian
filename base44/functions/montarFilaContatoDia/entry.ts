@@ -17,8 +17,10 @@ import { hojeBrasilia } from '../../shared/diaUtil.ts';
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    // Tarefas agendadas invocam sem usuário autenticado: nesse caso roda como
+    // service role para todos os vendedores ativos (promoção diária automática
+    // da Agenda do Dia). Quando chamada por um usuário, respeita admin/não-admin.
+    const user = await base44.auth.me().catch(() => null);
 
     const body = await req.json().catch(() => ({})) || {};
     const hoje = hojeBrasilia();
@@ -29,7 +31,7 @@ export default async function(req: Request): Promise<Response> {
     if (body.vendedor_id) {
       const v = await base44.asServiceRole.entities.Vendedor.get(body.vendedor_id).catch(() => null);
       vendedores = v ? [v] : [];
-    } else {
+    } else if (user) {
       const isAdmin = user.role === 'admin' || user.permissao_admin === true;
       if (!isAdmin) {
         const meus = await base44.entities.Vendedor.filter({ email: user.email });
@@ -37,6 +39,9 @@ export default async function(req: Request): Promise<Response> {
       } else {
         vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
       }
+    } else {
+      // Scheduler (sem usuário): todos os vendedores ativos
+      vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
     }
 
     // ── Cargas globais ──
