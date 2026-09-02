@@ -1,16 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia } from '../../shared/diaUtil.ts';
+import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 
-// Monta/sincroniza a FilaContato do dia para um vendedor (ou todos os ativos).
+// Monta/sincroniza a esteira "Fila de Contatos / Agenda do Dia" de um vendedor
+// (ou de todos os ativos — chamada diária da automação).
 //
-// Regras anti-retrabalho / oxigenação da carteira:
-// - Indicação (ConversaWhatsapp) resolvida (desqualificada/convertida) NUNCA volta
-//   como pendente. Itens pendentes antigos desses leads são limpos (movidos para
-//   a coluna de destino) para tirar o retrabalho da esteira.
-// - Indicação que já foi trabalhada (atendeu/qualificado/nao_atendeu) não reentra
-//   como pendente automaticamente (oxigenação). Para reverter, o gerente usa
-//   "Voltar à fila" (que resincroniza a conversa para 'ativa').
-// - Carteira (AgendaContato) resolvida (convertida/desqualificada) não reentra.
+// Regras da esteira:
+// - CAP 10: máximo de 10 leads pendentes por gerente/SDR. Novos leads entram
+//   apenas enquanto houver vaga; a reposição diária completa até 10, em ordem
+//   de chegada (o lead que espera há mais tempo entra primeiro).
+// - 5 DIAS: lead pendente há mais de 5 dias sem contato sai da esteira
+//   (descartado). O "Voltar à fila" do gerente o traz de volta e reinicia a
+//   contagem (entrada reagendada para hoje, no fim da fila).
+// - Anti-retrabalho/oxigenação (mantidos): lead resolvido (desqualificado/
+//   convertido) nunca volta como pendente; lead já trabalhado não reentra
+//   automaticamente — apenas via "Voltar à fila".
+// - Administradores (ex.: Cris Bastian) não fazem agenda do dia nem têm
+//   carteira: ficam fora do processamento.
 //
 // Payload: { vendedor_id?: string }
 
@@ -26,7 +32,7 @@ export default async function(req: Request): Promise<Response> {
     const hoje = hojeBrasilia();
     const agora = new Date().toISOString();
 
-    // Determinar vendedores alvo
+    // ── Vendedores alvo ──
     let vendedores;
     if (body.vendedor_id) {
       const v = await base44.asServiceRole.entities.Vendedor.get(body.vendedor_id).catch(() => null);
@@ -34,8 +40,7 @@ export default async function(req: Request): Promise<Response> {
     } else if (user) {
       const isAdmin = user.role === 'admin' || user.permissao_admin === true;
       if (!isAdmin) {
-        const meus = await base44.entities.Vendedor.filter({ email: user.email });
-        vendedores = meus;
+        vendedores = await base44.entities.Vendedor.filter({ email: user.email });
       } else {
         vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
       }
@@ -44,39 +49,48 @@ export default async function(req: Request): Promise<Response> {
       vendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
     }
 
+    // ── Exclusão de administradores (não fazem agenda do dia nem têm carteira) ──
+    const todosUsers = await base44.asServiceRole.entities.User.list(500).catch(() => []);
+    const adminEmails = new Set(
+      todosUsers
+        .filter((u) => u.role === 'admin' || u.permissao_admin === true)
+        .map((u) => (u.email || '').toLowerCase())
+        .filter(Boolean)
+    );
+    const semAcento = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
+    const excluido = (v: any) => {
+      const n = semAcento(v.nome);
+      const e = (v.email || '').toLowerCase();
+      return adminEmails.has(e) || NOMES_EXCLUIDOS.some((x) => n.includes(x) || e.includes(x));
+    };
+    const vendedoresAtivos = vendedores.filter((v) => v.ativo !== false && !excluido(v));
+
     // ── Cargas globais ──
     const todaFila = await base44.asServiceRole.entities.FilaContato.list('-created_date', 2000);
     const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
     const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
 
-    const conversaById = new Map(todasConversas.map((c) => [c.id, c]));
+    const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const dataEntrada = (f: any) => f.data_fila || (f.created_date || '').slice(0, 10);
 
-    // ── Índices de idempotência ──
-    const existenteHojeKey = new Set(
-      todaFila.filter((f) => f.data_fila === hoje)
-        .map((f) => `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`)
-    );
-    // Mapa ref+vendedor → item mais recente (lista já em ordem decrescente)
+    // Item mais recente por (origem|ref|vendedor) — lista em ordem decrescente
     const porRefMap = new Map();
     for (const f of todaFila) {
       const k = `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`;
       if (!porRefMap.has(k)) porRefMap.set(k, f);
     }
-    const leadIndicacaoJaNaFila = new Set(
-      todaFila.filter((f) => f.lead_indicacao_id).map((f) => f.lead_indicacao_id)
-    );
 
     // ── Leads resolvidos (anti-retrabalho) ──
-    // conversaId -> 'descartado' | 'convertido'
+    // Considera o estado MAIS RECENTE do lead (por conversa / cliente / nome),
+    // permitindo que "Voltar à fila" desfaça um descarte anterior.
     const resolvidoStatusPorConversa = new Map();
-    // a partir de itens da fila já marcados como resolvidos
-    for (const f of todaFila) {
-      if (f.tipo_origem !== 'indicacao' || !f.ref_id) continue;
+    for (const [k, f] of porRefMap) {
+      if (!k.startsWith('indicacao|')) continue;
       if (f.status === 'descartado' || f.status === 'convertido') {
-        resolvidoStatusPorConversa.set(f.ref_id, f.status);
+        resolvidoStatusPorConversa.set(k.split('|')[1], f.status);
       }
     }
-    // a partir do status autoritativo da conversa
     const statusConversaResolvido = (s: string): string | null => {
       if (s === 'desqualificado' || s === 'encerrada') return 'descartado';
       if (s === 'convertido') return 'convertido';
@@ -87,37 +101,91 @@ export default async function(req: Request): Promise<Response> {
       if (rs) resolvidoStatusPorConversa.set(c.id, rs);
     }
 
-    // ── Clientes resolvidos (cross-origem) ──
-    // Permite que um lead convertido/desqualificado (via indicação) impeça o
-    // reaparecimento do mesmo cliente na carteira (Agenda do Dia) e vice-versa.
-    const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
-    const resolvidoPorClienteId = new Map(); // cliente_id -> status
-    const resolvidoPorNome = new Map();      // nome normalizado -> status
-    for (const f of todaFila) {
-      if (f.status !== 'convertido' && f.status !== 'descartado') continue;
-      if (f.cliente_id) resolvidoPorClienteId.set(f.cliente_id, f.status);
-      if (f.nome) resolvidoPorNome.set(norm(f.nome), f.status);
+    const ultimoPorCliente = new Map();
+    const ultimoPorNome = new Map();
+    for (const f of todaFila) { // mais recentes primeiro
+      if (f.cliente_id && !ultimoPorCliente.has(f.cliente_id)) ultimoPorCliente.set(f.cliente_id, f);
+      const nm = f.nome ? norm(f.nome) : '';
+      if (nm && !ultimoPorNome.has(nm)) ultimoPorNome.set(nm, f);
+    }
+    const resolvidoPorClienteId = new Map();
+    const resolvidoPorNome = new Map();
+    for (const [cid, f] of ultimoPorCliente) {
+      if (f.status === 'convertido' || f.status === 'descartado') resolvidoPorClienteId.set(cid, f.status);
+    }
+    for (const [nm, f] of ultimoPorNome) {
+      if (f.status === 'convertido' || f.status === 'descartado') resolvidoPorNome.set(nm, f.status);
     }
 
-    // ── Limpeza: move itens pendentes antigos de leads resolvidos para a coluna de destino ──
-    // (tira da esteira ativa o retrabalho acumulado de leads já desqualificados/convertidos)
+    // ── Limpeza 1: move itens pendentes de leads resolvidos para a coluna de destino ──
     let itensLimpos = 0;
     for (const f of todaFila) {
       if (f.status !== 'pendente') continue;
       let rs: string | null = null;
-      if (f.tipo_origem === 'indicacao' && f.ref_id) {
-        rs = resolvidoStatusPorConversa.get(f.ref_id) || null;
-      }
+      if (f.tipo_origem === 'indicacao' && f.ref_id) rs = resolvidoStatusPorConversa.get(f.ref_id) || null;
       if (!rs && f.cliente_id) rs = resolvidoPorClienteId.get(f.cliente_id) || null;
       if (!rs && f.nome) rs = resolvidoPorNome.get(norm(f.nome)) || null;
-      if (rs && rs !== 'pendente') {
-        // Protege "Voltar à fila" manual recente (não desfazer ação explícita do gerente)
-        const upd = new Date(f.updated_date || f.created_date || agora).getTime();
-        if (Date.now() - upd < 5 * 60 * 1000) continue;
-        const hist = Array.isArray(f.historico) ? f.historico : [];
-        hist.push({ status: rs, observacao: 'Limpeza automática: lead resolvido retirado da fila ativa', data: agora });
-        await base44.asServiceRole.entities.FilaContato.update(f.id, { status: rs, historico: hist }).catch(() => {});
-        itensLimpos++;
+      if (!rs) continue;
+      // Protege "Voltar à fila" manual recente (não desfazer ação explícita do gerente)
+      const upd = new Date(f.updated_date || f.created_date || agora).getTime();
+      if (Date.now() - upd < 5 * 60 * 1000) continue;
+      const hist = Array.isArray(f.historico) ? f.historico : [];
+      hist.push({ status: rs, observacao: 'Limpeza automática: lead resolvido retirado da fila ativa', data: agora });
+      await base44.asServiceRole.entities.FilaContato.update(f.id, { status: rs, historico: hist }).catch(() => {});
+      itensLimpos++;
+    }
+
+    // ── Limpeza 2 (regra dos 5 dias): pendente sem contato há mais de 5 dias sai da esteira ──
+    const [hy, hm, hdd] = hoje.split('-').map(Number);
+    const dCorte = new Date(hy, hm - 1, hdd - DIAS_SEM_CONTATO);
+    const dataCorte = `${dCorte.getFullYear()}-${String(dCorte.getMonth() + 1).padStart(2, '0')}-${String(dCorte.getDate()).padStart(2, '0')}`;
+    const foraDaEsteira = new Set(); // ids descartados nesta execução (fora da contagem de vagas)
+    let itensDescartados5d = 0;
+    for (const f of todaFila) {
+      if (f.status !== 'pendente') continue;
+      const entrada = dataEntrada(f);
+      if (!entrada || entrada >= dataCorte) continue;
+      const hist = Array.isArray(f.historico) ? f.historico : [];
+      hist.push({ status: 'descartado', observacao: `Limpeza automática: ${DIAS_SEM_CONTATO} dias sem contato`, data: agora });
+      await base44.asServiceRole.entities.FilaContato.update(f.id, { status: 'descartado', historico: hist }).catch(() => {});
+      foraDaEsteira.add(f.id);
+      if (f.tipo_origem === 'indicacao' && f.ref_id) resolvidoStatusPorConversa.set(f.ref_id, 'descartado');
+      if (f.cliente_id) resolvidoPorClienteId.set(f.cliente_id, 'descartado');
+      if (f.nome) resolvidoPorNome.set(norm(f.nome), 'descartado');
+      itensDescartados5d++;
+    }
+
+    // ── CAP 10: máximo de leads pendentes por gerente na esteira ──
+    // Mantém os 10 mais antigos (FIFO); os excedentes saem da esteira (itens
+    // pendentes removidos para que o lead possa reentrar pela reposição futura).
+    const pendentesEfetivos = todaFila.filter((f) => f.status === 'pendente' && !foraDaEsteira.has(f.id));
+    const grupos = new Map(); // (origem|ref|vendedor) -> itens pendentes
+    for (const f of pendentesEfetivos) {
+      const k = `${f.tipo_origem}|${f.ref_id}|${f.vendedor_id}`;
+      if (!grupos.has(k)) grupos.set(k, []);
+      grupos.get(k).push(f);
+    }
+    const gruposPorVendedor = new Map(); // vendedor_id -> [{k, entrada}]
+    for (const [k, itens] of grupos) {
+      const vid = itens[0].vendedor_id;
+      if (!gruposPorVendedor.has(vid)) gruposPorVendedor.set(vid, []);
+      gruposPorVendedor.get(vid).push({ k, entrada: itens.map((i) => dataEntrada(i)).sort()[0] });
+    }
+    const gruposDeletados = new Set();
+    let gruposRemovidosCap = 0;
+    for (const [vid, lista] of gruposPorVendedor) {
+      if (lista.length > CAP_FILA_DIA) {
+        lista.sort((a, b) => (a.entrada < b.entrada ? -1 : a.entrada > b.entrada ? 1 : 0));
+        for (const g of lista.slice(CAP_FILA_DIA)) {
+          gruposDeletados.add(g.k);
+          for (const it of grupos.get(g.k)) {
+            await base44.asServiceRole.entities.FilaContato.delete(it.id).catch(() => {});
+          }
+          gruposRemovidosCap++;
+        }
+        gruposPorVendedor.set(vid, lista.slice(0, CAP_FILA_DIA).map((g) => g.k));
+      } else {
+        gruposPorVendedor.set(vid, lista.map((g) => g.k));
       }
     }
 
@@ -149,56 +217,27 @@ export default async function(req: Request): Promise<Response> {
     let itensCriados = 0;
     let itensAtualizados = 0;
 
-    for (const v of vendedores) {
-      if (v.ativo === false) continue;
+    for (const v of vendedoresAtivos) {
+      const naEsteira = new Set(gruposPorVendedor.get(v.id) || []);
+      let vagas = Math.max(0, CAP_FILA_DIA - naEsteira.size);
+      let pos = 1 + pendentesEfetivos
+        .filter((f) => f.vendedor_id === v.id)
+        .reduce((m, f) => Math.max(m, f.posicao || 0), 0);
 
       // ── Indicações (ConversaWhatsapp — qualquer status) ──
       const conversas = await base44.asServiceRole.entities.ConversaWhatsapp.filter(
         { vendedor_id: v.id }, '-ultima_mensagem_em', 500
       );
-      let posInd = 1;
-
-      for (const c of conversas) {
+      // FIFO: o lead que espera há mais tempo é o primeiro a entrar na reposição
+      for (const c of [...conversas].reverse()) {
         const target = statusConversaParaFila(c.status || 'ativa');
         if (!target) continue;
         const key = `indicacao|${c.id}|${v.id}`;
+        const deletado = gruposDeletados.has(key);
 
-        if (target === 'pendente') {
-          // Fila do dia: cria novo item pendente para hoje (idempotente por dia)
-          if (existenteHojeKey.has(key)) continue;
-          // ── Guardas anti-retrabalho ──
-          // 1) Lead já resolvido (desqualificado/convertido) nunca volta como pendente
-          if (resolvidoStatusPorConversa.has(c.id)) continue;
-          // 2) Oxigenação: se o item mais recente do lead não é pendente (já foi
-          //    trabalhado — atendeu/qualificado/nao_atendeu), não recriar pendente.
-          const recente = porRefMap.get(key);
-          if (recente && recente.status !== 'pendente') continue;
-
-          const li = resolverLeadIndicacao(c);
-          await base44.asServiceRole.entities.FilaContato.create({
-            tipo_origem: 'indicacao',
-            ref_id: c.id,
-            lead_indicacao_id: li?.id || '',
-            nome: c.lead_nome || '',
-            telefone: c.telefone || '',
-            cpf_cnpj: li ? (li.tipo === 'PF' ? li.pf_cnpj : li.pj_cnpj) : '',
-            produto: c.produto_interesse || li?.produto || '',
-            valor_estimado: li?.valor_estimado ?? null,
-            parceiro_nome: li?.parceiro_nome || '',
-            parceiro_percentual: li?.parceiro_percentual ?? null,
-            vendedor_id: v.id,
-            vendedor_nome: v.nome || '',
-            data_fila: hoje,
-            prioridade: 0,
-            posicao: posInd++,
-            tentativas: 0,
-            status: 'pendente',
-            origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
-            historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
-          });
-          itensCriados++;
-        } else {
+        if (target !== 'pendente') {
           // Não-pendente: sincroniza (atualiza item existente ou cria novo)
+          if (deletado) continue;
           const existente = porRefMap.get(key);
           if (existente) {
             if (existente.status !== target) {
@@ -224,7 +263,7 @@ export default async function(req: Request): Promise<Response> {
               vendedor_nome: v.nome || '',
               data_fila: hoje,
               prioridade: 0,
-              posicao: posInd++,
+              posicao: pos++,
               tentativas: 0,
               status: target,
               origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
@@ -232,23 +271,58 @@ export default async function(req: Request): Promise<Response> {
             });
             itensCriados++;
           }
+          continue;
         }
+
+        // Pendente: entra apenas se houver vaga na esteira (cap 10) e passar
+        // nas guardas anti-retrabalho/oxigenação.
+        if (vagas <= 0) continue;
+        if (naEsteira.has(key)) continue; // já está na esteira
+        if (resolvidoStatusPorConversa.has(c.id)) continue; // resolvido nunca volta
+        const recente = deletado ? null : porRefMap.get(key);
+        if (recente && recente.status !== 'pendente') continue; // oxigenação: já foi trabalhado
+
+        const li = resolverLeadIndicacao(c);
+        await base44.asServiceRole.entities.FilaContato.create({
+          tipo_origem: 'indicacao',
+          ref_id: c.id,
+          lead_indicacao_id: li?.id || '',
+          nome: c.lead_nome || '',
+          telefone: c.telefone || '',
+          cpf_cnpj: li ? (li.tipo === 'PF' ? li.pf_cnpj : li.pj_cnpj) : '',
+          produto: c.produto_interesse || li?.produto || '',
+          valor_estimado: li?.valor_estimado ?? null,
+          parceiro_nome: li?.parceiro_nome || '',
+          parceiro_percentual: li?.parceiro_percentual ?? null,
+          vendedor_id: v.id,
+          vendedor_nome: v.nome || '',
+          data_fila: hoje,
+          prioridade: 0,
+          posicao: pos++,
+          tentativas: 0,
+          status: 'pendente',
+          origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (c.origem || 'Indicação'),
+          historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
+        });
+        naEsteira.add(key);
+        vagas--;
+        itensCriados++;
       }
 
       // ── Carteira (prioridade 1): agendas pendentes de hoje ──
       const agendas = await base44.asServiceRole.entities.AgendaContato.filter(
         { vendedor_id: v.id, data_agendada: hoje }, 'posicao_dia'
       );
-      const carteira = agendas.filter((a) => a.status === 'pendente' || !a.status);
-      let posCart = 1;
-      for (const a of carteira) {
+      for (const a of agendas) {
+        if (a.status !== 'pendente' && a.status) continue;
+        if (vagas <= 0) break;
         const key = `carteira|${a.lead_id}|${v.id}`;
-        if (existenteHojeKey.has(key)) continue;
+        if (naEsteira.has(key)) continue;
+        const deletado = gruposDeletados.has(key);
         // Guarda anti-retrabalho: carteira resolvida não reentra
-        const recenteCart = porRefMap.get(key);
+        const recenteCart = deletado ? null : porRefMap.get(key);
         if (recenteCart && (recenteCart.status === 'convertido' || recenteCart.status === 'descartado')) continue;
-        // Cross-origem: se o cliente já foi convertido/desqualificado (via indicação),
-        // não o trazer de volta para a Agenda do Dia.
+        // Cross-origem: cliente já convertido/desqualificado não volta
         const cid = a.cliente_id || a.lead_id || '';
         if (cid && resolvidoPorClienteId.has(cid)) continue;
         if (a.lead_nome && resolvidoPorNome.has(norm(a.lead_nome))) continue;
@@ -264,7 +338,7 @@ export default async function(req: Request): Promise<Response> {
           vendedor_nome: v.nome || '',
           data_fila: hoje,
           prioridade: 1,
-          posicao: posCart++,
+          posicao: pos++,
           tentativas: 0,
           status: 'pendente',
           origem_label: 'Carteira',
@@ -272,11 +346,16 @@ export default async function(req: Request): Promise<Response> {
           google_event_id: a.google_event_id || '',
           historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
         });
+        naEsteira.add(key);
+        vagas--;
         itensCriados++;
       }
     }
 
     // ── LeadIndicações convertidas SEM ConversaWhatsapp ──
+    const leadIndicacaoJaNaFila = new Set(
+      todaFila.filter((f) => f.lead_indicacao_id).map((f) => f.lead_indicacao_id)
+    );
     const telConversaSet = new Set(todasConversas.map((c) => (c.telefone || '').toString().replace(/\D/g, '')).filter(Boolean));
     const convertidas = todasIndicacoes.filter((li) => {
       if (!['convertido_venda', 'convertido_contrato', 'convertido_cliente'].includes(li.status)) return false;
@@ -331,10 +410,12 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({
       success: true,
       data_fila: hoje,
-      vendedores_processados: vendedores.length,
+      vendedores_processados: vendedoresAtivos.length,
       itens_criados: itensCriados,
       itens_atualizados: itensAtualizados,
       itens_limpos: itensLimpos,
+      itens_descartados_5dias: itensDescartados5d,
+      grupos_removidos_cap: gruposRemovidosCap,
     });
   } catch (error) {
     console.error('montarFilaContatoDia:', error);

@@ -84,6 +84,15 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
     const col = COLUNAS.find(c => c.key === destinoKey);
     const mesmaCol = col.statuses.includes(item.status) && (!col.origem || col.origem === item.tipo_origem);
     if (mesmaCol) { setMenuId(null); return; }
+    // Lead contatado voltando à fila: entra no FINAL da fila de reposição do
+    // gerente, com a contagem dos 5 dias reiniciada (entrada = hoje).
+    const isFilaDest = destinoKey === 'indicacao' || destinoKey === 'carteira';
+    if (isFilaDest && item.status !== 'pendente') {
+      const hojeStr = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+      const maxPos = itens.filter(i => i.status === 'pendente').reduce((m, i) => Math.max(m, i.posicao || 0), 0);
+      patch.data_fila = hojeStr;
+      patch.posicao = maxPos + 1;
+    }
     setMovendo(true);
     try {
       await base44.entities.FilaContato.update(item.id, patch);
