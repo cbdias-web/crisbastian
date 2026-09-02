@@ -146,7 +146,12 @@ export default function CentralLeads() {
   const agora = new Date();
   const statusMap = {};
   for (const s of statusGerentes) statusMap[s.vendedor_id] = s;
-  const gerentesInfo = vendedores.map(v => {
+  // Roleta/esteira: listam-se apenas vendedores que participam de algum canal de
+  // distribuição (esteira de leads ou roleta de indicações do Portal). Perfis
+  // fora dos dois pools não constam na roleta.
+  const gerentesInfo = vendedores
+    .filter(v => v.ativo_central_leads !== false || v.recebe_leads_indicacao !== false)
+    .map(v => {
     const st = statusMap[v.id];
     const disponivel = !st || st.disponivel || (st.bloqueado_ate && new Date(st.bloqueado_ate) < agora);
     const motivo = !disponivel ? (st?.motivo_bloqueio || 'bloqueado') : null;
