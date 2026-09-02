@@ -67,11 +67,22 @@ export function periodoRange(periodo) {
 // meia-noite UTC — o que as deixa atrás do início LOCAL do mês na virada, fazendo
 // uma venda de 01/09 "sumir" de Setembro. Tratamos data-only como início do dia
 // local para o filtro bater com o mês civil do usuário.
+//
+// Datetimes completos sem sufixo de fuso (ex: created_date "2026-09-02T12:25:00"
+// devolvido pelo SDK sem o 'Z'): o banco grava em UTC, mas o navegador interpreta
+// a string sem fuso como hora LOCAL. No Brasil (UTC-3) isso desloca o lead +3h
+// para o "futuro" — um lead criado há poucos minutos cai DEPOIS de `now` e é
+// erroneamente filtrado para fora do período. Por isso forçamos UTC ('Z') em
+// datetimes sem fuso, preservando o tratamento de date-only acima.
 export function dentroPeriodo(dataStr, range) {
   if (!range) return true;
   if (!dataStr) return false;
-  let str = dataStr;
-  if (typeof str === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(str)) str = str + 'T00:00:00';
+  let str = String(dataStr);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    str = str + 'T00:00:00';
+  } else if (str.includes('T') && !/[zZ]$/.test(str) && !/[+-]\d{2}:\d{2}$/.test(str)) {
+    str = str + 'Z';
+  }
   const t = new Date(str).getTime();
   return t >= new Date(range.start).getTime() && t <= new Date(range.end).getTime();
 }
