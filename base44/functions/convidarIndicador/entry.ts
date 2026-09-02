@@ -61,12 +61,15 @@ export default async function(req: Request): Promise<Response> {
     //    e só depois tentamos `role: 'indicador'` (best-effort).
     let rolePromovido = false;
     let userEncontrado = null;
-    for (let tentativa = 1; tentativa <= 4 && !userEncontrado; tentativa++) {
+    // Janela de retry mais ampla: logo após inviteUser o User pode demorar a
+    // propagar — se a promoção falhar aqui, a rede de segurança do Layout
+    // (casamento por e-mail no login) corrige na primeira sessão do indicador.
+    for (let tentativa = 1; tentativa <= 8 && !userEncontrado; tentativa++) {
       try {
         const users = await base44.entities.User.filter({ email });
         if (users.length > 0) userEncontrado = users[0];
       } catch (e) {}
-      if (!userEncontrado) await new Promise(r => setTimeout(r, 600 * tentativa));
+      if (!userEncontrado) await new Promise(r => setTimeout(r, Math.min(700 * tentativa, 2500)));
     }
     if (userEncontrado) {
       // Usa asServiceRole para garantir a escrita mesmo se houver restrição de RLS

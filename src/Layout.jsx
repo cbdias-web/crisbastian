@@ -71,7 +71,15 @@ export default function Layout({ children, currentPageName }) {
       try {
         if (u && u.role !== 'admin' && u.email) {
           const ps = await base44.entities.Parceiro.filter({ email: u.email });
-          if (ps.length > 0 && ps[0].ativo !== false) setParceiroByEmail(ps[0]);
+          if (ps.length > 0 && ps[0].ativo !== false) {
+            setParceiroByEmail(ps[0]);
+            // Auto-correção: grava a flag indicador no próprio usuário para que
+            // sessões futuras não dependam desta consulta (rede de segurança caso
+            // a promoção feita no convite tenha falhado silenciosamente).
+            if (u.indicador !== true && u.role !== 'indicador') {
+              try { await base44.auth.updateMe({ indicador: true }); } catch (e) {}
+            }
+          }
         }
       } catch (e) {}
       try {
