@@ -87,7 +87,23 @@ export default function FilaContato() {
       }
       const carteiraCarry = carteira.filter(c => (c.data_fila || '') <= dataFiltro);
       const todosTratados = [...tratados, ...outros];
-      return [...filtrarVendedor(indicacoes), ...filtrarVendedor(carteiraCarry), ...filtrarVendedor(todosTratados)];
+      const combinados = [...indicacoes, ...carteiraCarry, ...todosTratados];
+      // Dedup por (tipo_origem, ref_id, vendedor_id) mantendo o mais recente:
+      // montarFilaContatoDia cria um novo item pendente por dia para leads ainda
+      // pendentes, então sem dedup o mesmo lead apareceria várias vezes ao exibir
+      // todos os dias. A guarda de oxigenação impede recriar pendente de lead já
+      // trabalhado, mas o acúmulo diário de leads ainda pendentes precisa do dedup.
+      combinados.sort((a, b) => new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime());
+      const vistos = new Set();
+      const deduped = [];
+      for (const f of combinados) {
+        const ref = f.ref_id || '';
+        const k = ref ? `${f.tipo_origem}|${ref}|${f.vendedor_id || ''}` : `id|${f.id}`;
+        if (vistos.has(k)) continue;
+        vistos.add(k);
+        deduped.push(f);
+      }
+      return filtrarVendedor(deduped);
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
