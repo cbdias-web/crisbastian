@@ -7,6 +7,8 @@ import IndicacoesTab from '@/components/central/IndicacoesTab';
 import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
 import ConsolidadoIndicadores from '@/components/portal/ConsolidadoIndicadores';
 import FiltroIndicadores from '@/components/portal/FiltroIndicadores';
+import DashParceiroSomenteLeitura from '@/components/portal/DashParceiroSomenteLeitura';
+import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
 
 const AURORA = {
   bg: '#0d1117',
@@ -30,6 +32,8 @@ export default function DashParceiro() {
   const [checked, setChecked] = useState(false);
   const [periodo, setPeriodo] = useState('mes');
   const [parceiroFiltro, setParceiroFiltro] = useState('todos');
+  // Acesso somente leitura: gerentes/SDRs atuando na esteira (Fila de Contatos)
+  const { data: podeVerDash = false, isLoading: carregandoAcesso } = useAcessoDashParceiro(user);
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
@@ -65,7 +69,7 @@ export default function DashParceiro() {
 
   // Gateia até user + parceiroLogado estarem resolvidos (evita flash de "Acesso Restrito"
   // ou "Cadastro não encontrado" antes do filtro assíncrono concluir).
-  if (!user || !checked) {
+  if (!user || !checked || (!isAdmin && !isIndicador && carregandoAcesso)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: AURORA.bg }}>
         <div className="w-8 h-8 border-4 rounded-full animate-spin" style={{ borderColor: 'rgba(0,212,170,0.2)', borderTopColor: AURORA.accent }} />
@@ -73,7 +77,7 @@ export default function DashParceiro() {
     );
   }
 
-  if (!isAdmin && !isIndicador) {
+  if (!isAdmin && !isIndicador && !podeVerDash) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
         <div className="text-center max-w-sm">
@@ -91,6 +95,11 @@ export default function DashParceiro() {
   // termo de uso → boas-vindas → 2 menus (Indicar + Dash/acompanhar)
   if (isIndicador) {
     return <PortalIndicadorAuth user={user} parceiro={parceiroLogado} />;
+  }
+
+  // ─── Visão SOMENTE LEITURA (gerentes/SDRs atuando na esteira de contatos) ───
+  if (!isAdmin) {
+    return <DashParceiroSomenteLeitura />;
   }
 
   // ─── Visão do ADMIN ───

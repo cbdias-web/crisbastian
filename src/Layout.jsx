@@ -21,6 +21,7 @@ import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModa
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
+import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
 
 // Aurora Borealis color tokens
 const AURORA = {
@@ -263,6 +264,8 @@ export default function Layout({ children, currentPageName }) {
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
   const isIndicador = user?.role === 'indicador' || user?.indicador === true || !!parceiroByEmail;
   const isHenriqueStein = user?.email === 'henrique.stein@psjunior.com';
+  // Dash Parceiro (somente leitura): gerentes/SDRs atuando na Fila de Contatos
+  const { data: podeVerDashParceiro = false } = useAcessoDashParceiro(user);
 
   // Indicador: sempre cai no Dash Parceiro, que entrega a experiência completa do portal
   // (termo de uso → boas-vindas → 2 menus: Indicar + Dash/acompanhar).
@@ -369,12 +372,13 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Clientes', icon: UserCheck, page: 'Clientes', allowUser: false },
         { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
         { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
+        { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro', gateEsteira: true },
         { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', alwaysVisible: true },
         { name: 'Manual', icon: BookOpen, page: 'Manual', alwaysVisible: true },
         { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', alwaysVisible: true },
         { name: 'Assistente IA', icon: Bot, page: 'AssistenteTreinamentos', alwaysVisible: true },
         { name: 'Suporte', icon: LifeBuoy, page: 'Suporte', alwaysVisible: true, badge: chamadosPendentes.length },
-      ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
+      ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page) || (i.gateEsteira && podeVerDashParceiro))
     },
     ...(isAdmin ? [{
       label: 'Admin',
