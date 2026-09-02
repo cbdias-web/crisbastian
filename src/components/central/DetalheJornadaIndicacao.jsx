@@ -81,11 +81,28 @@ function useDetalheJornada(lead) {
       }
 
       let conversa = null;
+      // 1) Pela FilaContato vinculada: lead_indicacao_id → ref_id (id da conversa).
+      //    A ConversaWhatsapp é criada com lead_id = id da entidade Lead (não da
+      //    LeadIndicacao), então buscar direto por lead_id não casa. O vínculo
+      //    correto vive na FilaContato (lead_indicacao_id + ref_id = conversa).
       if (lead.id) {
+        try {
+          const filas = await base44.entities.FilaContato.filter({ lead_indicacao_id: lead.id });
+          const refId = filas.find(f => f.ref_id && f.tipo_origem === 'indicacao')?.ref_id;
+          if (refId) conversa = await base44.entities.ConversaWhatsapp.get(refId).catch(() => null);
+        } catch {}
+      }
+      // 2) Por lead_id (fallback — alguns fluxos antigos usam lead_id = LeadIndicacao id)
+      if (!conversa && lead.id) {
         try { const cs = await base44.entities.ConversaWhatsapp.filter({ lead_id: lead.id }); conversa = cs[0] || null; } catch {}
       }
+      // 3) Por telefone (fallback robusto — normaliza dígitos)
       if (!conversa && tel) {
-        try { const cs = await base44.entities.ConversaWhatsapp.filter({ telefone: tel }); conversa = cs[0] || null; } catch {}
+        const telNorm = String(tel).replace(/\D/g, '');
+        try {
+          const cs = await base44.entities.ConversaWhatsapp.filter({ telefone: telNorm });
+          conversa = cs.find(c => String(c.telefone || '').replace(/\D/g, '') === telNorm) || cs[0] || null;
+        } catch {}
       }
 
       let implantacao = null;

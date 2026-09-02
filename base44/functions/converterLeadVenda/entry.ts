@@ -182,12 +182,15 @@ export default async function(req: Request): Promise<Response> {
     }
     if (leadIndicacao) {
       try {
+        const hist = Array.isArray(leadIndicacao.historico) ? [...leadIndicacao.historico] : [];
+        hist.push({ status: 'convertido_contrato', label: 'Contrato gerado', data: new Date().toISOString(), contrato_id: contrato.id, cliente_id: cliente.id });
         await base44.asServiceRole.entities.LeadIndicacao.update(leadIndicacao.id, {
           status: 'convertido_contrato',
           cliente_id: cliente.id,
           contrato_id: contrato.id,
           convertido: true,
           convertido_em: new Date().toISOString(),
+          historico: hist,
         });
       } catch (e) {}
     }

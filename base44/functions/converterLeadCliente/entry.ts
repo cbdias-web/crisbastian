@@ -64,11 +64,14 @@ export default async function(req: Request): Promise<Response> {
           const existente = existentes[0];
           // Vincula o lead existente a este cliente já criado
           if (leadIndicacao && leadIndicacao.status !== 'convertido_cliente' && leadIndicacao.status !== 'convertido_venda') {
+            const hist = Array.isArray(leadIndicacao.historico) ? [...leadIndicacao.historico] : [];
+            hist.push({ status: 'convertido_cliente', label: 'Cliente criado', data: new Date().toISOString(), cliente_id: existente.id });
             await base44.asServiceRole.entities.LeadIndicacao.update(leadIndicacao.id, {
               status: 'convertido_cliente',
               cliente_id: existente.id,
               convertido: true,
               convertido_em: new Date().toISOString(),
+              historico: hist,
             });
           }
           return Response.json({
@@ -121,11 +124,14 @@ export default async function(req: Request): Promise<Response> {
     }
     if (leadIndicacao && leadIndicacao.status !== 'convertido_venda') {
       try {
+        const hist = Array.isArray(leadIndicacao.historico) ? [...leadIndicacao.historico] : [];
+        hist.push({ status: 'convertido_cliente', label: 'Cliente criado', data: new Date().toISOString(), cliente_id: cliente.id });
         await base44.asServiceRole.entities.LeadIndicacao.update(leadIndicacao.id, {
           status: 'convertido_cliente',
           cliente_id: cliente.id,
           convertido: true,
           convertido_em: new Date().toISOString(),
+          historico: hist,
         });
       } catch (e) {}
     }
