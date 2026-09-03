@@ -118,22 +118,25 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     vendasIndicadas.reduce((s, v) => s + valorVenda(v) * (pctParceiroNaVenda(v) / 100), 0) +
     parcelasRecebidas.reduce((s, p) => s + valorParcela(p) * (pctParceiroNaParcela(p) / 100), 0);
 
-  // Funil de conversão (3 estágios mutuamente exclusivos, somam = total de leads no período):
-  //   Vendas Convertidas (verde)  = virou venda (originada de indicação de portal)
-  //   Contratos (roxo)            = virou contrato, mas ainda não virou venda
-  //   Indicações (verde-azulado)  = continua como indicação (ainda não virou contrato)
-  // O funil considera os leads RECEBIDOS no período OU cuja VENDA aconteceu no período
-  // — assim uma indicação recebida no mês passado que fechou venda neste mês aparece
-  // no funil do mês atual (a conversão é o marco que o indicador quer ver).
-  // O funil/distribuição considera apenas os leads RECEBIDOS (created_date) no
-  // período — a indicação pertence ao mês da sua inserção, independentemente de
-  // quando a venda vinculada acontecer.
+  // Funil de conversão — OBJETOS DE CÁLCULO DISTINTOS:
+  //   Vendas Convertidas (verde)  = VENDAS com data (v.data) dentro do período,
+  //                                 originadas de indicação do portal. Contadas pela
+  //                                 DATA DA VENDA: uma venda fechada este mês entra
+  //                                 neste mês, mesmo que a indicação tenha nascido
+  //                                 em um mês anterior.
+  //   Contratos (roxo)            = indicações RECEBIDAS no período que viraram
+  //                                 contrato, mas ainda não viraram venda
+  //   Indicações (verde-azulado)  = indicações RECEBIDAS no período ainda sem contrato
+  // A indicação pertence ao mês em que foi recebida (created_date); a conversão em
+  // venda pertence ao mês da venda (v.data) — por isso a soma dos segmentos pode
+  // exceder o total de indicações recebidas no período.
   const leadsPeriodo = leads.filter(l => filtraParceiro(l.parceiro_id) && dentroPeriodo(l.created_date, range));
-  const totalGrafico = leadsPeriodo.length;
-  const vendasCount = leadsPeriodo.filter(l => l.venda_id || l.status === 'convertido_venda').length;
-  const leadsComContrato = leadsPeriodo.filter(l => l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status)).length;
-  const contratosApenas = Math.max(0, leadsComContrato - vendasCount);
-  const indicacoesApenas = Math.max(0, totalGrafico - leadsComContrato);
+  const vendaIdsNoPeriodo = new Set(vendasIndicadas.map(v => v.id));
+  const temContrato = (l) => !!(l.contrato_id || ['convertido_contrato', 'convertido_venda'].includes(l.status));
+  const contratosApenas = leadsPeriodo.filter(l => temContrato(l) && !vendaIdsNoPeriodo.has(l.venda_id)).length;
+  const indicacoesApenas = leadsPeriodo.filter(l => !temContrato(l) && !vendaIdsNoPeriodo.has(l.venda_id)).length;
+  const vendasCount = vendasIndicadas.length;
+  const totalGrafico = indicacoesApenas + contratosApenas + vendasCount;
   const chartData = [
     { key: 'indicacoes', name: 'Indicações', value: indicacoesApenas, color: AURORA.accent },
     { key: 'contratos', name: 'Contratos', value: contratosApenas, color: '#a78bfa' },
@@ -168,8 +171,11 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     rankingMap[key].valorVendas += valorParcela(p);
     rankingMap[key].valor += valorParcela(p) * (pctParceiroNaParcela(p) / 100);
   });
+  // Ranking ordenado pelo RESULTADO gerado no período (comissão → valor de vendas →
+  // nº de indicações): um indicador que fechou venda este mês aparece no topo, mesmo
+  // que a indicação de origem tenha nascido em mês anterior.
   const ranking = Object.values(rankingMap)
-    .sort((a, b) => b.total - a.total || b.vendas - a.vendas || b.valorVendas - a.valorVendas)
+    .sort((a, b) => b.valor - a.valor || b.valorVendas - a.valorVendas || b.total - a.total)
     .slice(0, 5);
 
   const isLoading = loadingLeads || loadingVendas || loadingParcelas;
@@ -244,7 +250,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <p className="text-2xl font-bold" style={{ color: AURORA.text }}>{totalGrafico}</p>
-                <p className="text-[10px]" style={{ color: AURORA.textMuted }}>leads no período</p>
+                <p className="text-[10px]" style={{ color: AURORA.textMuted }}>indicações e vendas no período</p>
               </div>
             </div>
 
