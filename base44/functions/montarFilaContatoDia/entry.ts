@@ -9,9 +9,9 @@ import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 // - CAP 10 (CARTEIRA): máximo de 10 leads pendentes da CARTEIRA por gerente/SDR.
 //   Indicações do Dash Parceiro entram 100% na esteira, sem limite de vagas —
 //   e permanecem registradas mesmo depois de convertidas em clientes.
-// - 5 DIAS: lead pendente há mais de 5 dias sem contato sai da esteira
-//   (descartado). O "Voltar à fila" do gerente o traz de volta e reinicia a
-//   contagem (entrada reagendada para hoje, no fim da fila).
+// - 5 DIAS (CARTEIRA): lead da Agenda do Dia pendente há mais de 5 dias sem
+//   contato sai da esteira (descartado). Não vale para indicações (esteira
+//   própria). O "Voltar à fila" do gerente traz o lead de volta.
 // - Anti-retrabalho/oxigenação (mantidos): lead resolvido (desqualificado/
 //   convertido) nunca volta como pendente; lead já trabalhado não reentra
 //   automaticamente — apenas via "Voltar à fila".
@@ -137,6 +137,9 @@ export default async function(req: Request): Promise<Response> {
     let itensDescartados5d = 0;
     for (const f of todaFila) {
       if (f.status !== 'pendente') continue;
+      // Regra da Agenda do Dia (carteira): indicações têm esteira própria e
+      // NÃO são descartadas por tempo — permanecem até serem trabalhadas.
+      if (f.tipo_origem === 'indicacao') continue;
       const entrada = dataEntrada(f);
       if (!entrada || entrada >= dataCorte) continue;
       const hist = Array.isArray(f.historico) ? f.historico : [];
