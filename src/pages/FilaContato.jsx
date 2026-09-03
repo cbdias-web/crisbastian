@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
@@ -108,6 +108,24 @@ export default function FilaContato() {
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
   });
+
+  // Sincronização automática ao abrir a página: repara qualquer indicação que
+  // tenha ficado fora da esteira por falha transitória na inclusão imediata
+  // (redeploy/congestionamento). Roda uma única vez por acesso à página.
+  const sincronizadoRef = useRef(false);
+  useEffect(() => {
+    if (!user || sincronizadoRef.current) return;
+    if (!isAdmin && !vendedor) return;
+    sincronizadoRef.current = true;
+    (async () => {
+      try {
+        const payload = (isAdmin && !getImpersonatedVendedor() && !vendedor) ? {} : { vendedor_id: vendedor.id };
+        const res = await base44.functions.invoke('montarFilaContatoDia', payload);
+        const data = res?.data || res;
+        if (data?.itens_criados > 0) queryClient.invalidateQueries({ queryKey: ['fila-contato'] });
+      } catch (e) {}
+    })();
+  }, [user, vendedor, isAdmin]);
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-ativos-fila'],

@@ -34,7 +34,7 @@ export async function adicionarConversaNaFilaHoje(base44, conversa, leadIndicaca
     ? (li.tipo === 'PF' ? li.pf_cpf || '' : li.pj_cnpj || '')
     : '';
 
-  return await base44.asServiceRole.entities.FilaContato.create({
+  const payload = {
     tipo_origem: 'indicacao',
     ref_id: refId,
     lead_indicacao_id: li?.id || '',
@@ -54,5 +54,20 @@ export async function adicionarConversaNaFilaHoje(base44, conversa, leadIndicaca
     status: 'pendente',
     origem_label: li?.parceiro_nome ? `Indicação · ${li.parceiro_nome}` : (conversa.origem || 'Indicação'),
     historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia (lead novo)', data: new Date().toISOString() }],
-  });
+  };
+
+  // Retry: falhas transitórias (redeploy/congestionamento) não podem deixar o
+  // lead fora da esteira — a inclusão imediata é a única via de entrada no dia.
+  let criado = null;
+  let ultimoErro = null;
+  for (let tentativa = 1; tentativa <= 3 && !criado; tentativa++) {
+    try {
+      criado = await base44.asServiceRole.entities.FilaContato.create(payload);
+    } catch (e) {
+      ultimoErro = e?.message || String(e);
+      if (tentativa < 3) await new Promise((r) => setTimeout(r, 500 * tentativa));
+    }
+  }
+  if (!criado) throw new Error(`Falha ao incluir lead na fila do dia: ${ultimoErro}`);
+  return criado;
 }
