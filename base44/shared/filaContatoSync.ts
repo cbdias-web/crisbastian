@@ -1,12 +1,10 @@
 import { hojeBrasilia } from './diaUtil.ts';
-import { CAP_FILA_DIA } from './regrasEsteira.ts';
 
 // Adiciona imediatamente uma ConversaWhatsapp recém-criada na FilaContato do
-// dia (coluna "pendente"), respeitando o CAP da esteira (máx. 10 pendentes por
-// gerente). Se a fila do gerente estiver cheia, o lead não entra agora: será
-// incluído pela reposição diária (montarFilaContatoDia) quando houver vaga.
-// Garante que leads vindos do portal/webhook apareçam na esteira de contatos
-// sem precisar esperar a sincronização diária (que roda apenas de manhã).
+// dia (coluna "pendente"). Leads de INDICAÇÃO (Dash Parceiro / webhook) entram
+// SEMPRE na esteira — 100% deles, sem limite de vagas (o CAP 10 vale apenas
+// para a carteira). Garante que leads vindos do portal/webhook apareçam na
+// esteira de contatos sem precisar esperar a sincronização diária.
 //
 // `conversa`  — registro recém-criado de ConversaWhatsapp
 // `leadIndicacao` — LeadIndicacao de origem (opcional; para denormalizar
@@ -27,10 +25,6 @@ export async function adicionarConversaNaFilaHoje(base44, conversa, leadIndicaca
   // Já está na esteira (pendente)? Não duplica.
   const jaNaFila = (pendentes || []).find((f) => f.tipo_origem === 'indicacao' && f.ref_id === refId);
   if (jaNaFila) return jaNaFila;
-
-  // Cap da esteira: fila cheia → o lead entra pela reposição do próximo dia.
-  const grupos = new Set((pendentes || []).map((f) => `${f.tipo_origem}|${f.ref_id}`));
-  if (grupos.size >= CAP_FILA_DIA) return null;
 
   // Entra no FINAL da fila do gerente
   const posicao = 1 + (pendentes || []).reduce((m, f) => Math.max(m, f.posicao || 0), 0);

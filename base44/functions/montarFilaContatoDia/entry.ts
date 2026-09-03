@@ -6,9 +6,9 @@ import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 // (ou de todos os ativos — chamada diária da automação).
 //
 // Regras da esteira:
-// - CAP 10: máximo de 10 leads pendentes por gerente/SDR. Novos leads entram
-//   apenas enquanto houver vaga; a reposição diária completa até 10, em ordem
-//   de chegada (o lead que espera há mais tempo entra primeiro).
+// - CAP 10 (CARTEIRA): máximo de 10 leads pendentes da CARTEIRA por gerente/SDR.
+//   Indicações do Dash Parceiro entram 100% na esteira, sem limite de vagas —
+//   e permanecem registradas mesmo depois de convertidas em clientes.
 // - 5 DIAS: lead pendente há mais de 5 dias sem contato sai da esteira
 //   (descartado). O "Voltar à fila" do gerente o traz de volta e reinicia a
 //   contagem (entrada reagendada para hoje, no fim da fila).
@@ -149,9 +149,11 @@ export default async function(req: Request): Promise<Response> {
       itensDescartados5d++;
     }
 
-    // ── CAP 10: máximo de leads pendentes por gerente na esteira ──
-    // Mantém os 10 mais antigos (FIFO); os excedentes saem da esteira (itens
-    // pendentes removidos para que o lead possa reentrar pela reposição futura).
+    // ── CAP 10 (CARTEIRA): máximo de leads pendentes da CARTEIRA por gerente ──
+    // Mantém os 10 mais antigos (FIFO); excedentes da CARTEIRA saem da esteira
+    // (itens pendentes removidos para que o lead possa reentrar pela reposição
+    // futura). Indicações do Dash Parceiro NÃO contam no cap e NUNCA são
+    // removidas: 100% dos leads de indicação devem constar na esteira.
     const pendentesEfetivos = todaFila.filter((f) => f.status === 'pendente' && !foraDaEsteira.has(f.id));
     const grupos = new Map(); // (origem|ref|vendedor) -> itens pendentes
     for (const f of pendentesEfetivos) {
@@ -168,19 +170,19 @@ export default async function(req: Request): Promise<Response> {
     const gruposDeletados = new Set();
     let gruposRemovidosCap = 0;
     for (const [vid, lista] of gruposPorVendedor) {
-      if (lista.length > CAP_FILA_DIA) {
-        lista.sort((a, b) => (a.entrada < b.entrada ? -1 : a.entrada > b.entrada ? 1 : 0));
-        for (const g of lista.slice(CAP_FILA_DIA)) {
+      // Cap vale apenas para a carteira
+      const listaCarteira = lista.filter((g) => g.k.startsWith('carteira|'));
+      if (listaCarteira.length > CAP_FILA_DIA) {
+        listaCarteira.sort((a, b) => (a.entrada < b.entrada ? -1 : a.entrada > b.entrada ? 1 : 0));
+        for (const g of listaCarteira.slice(CAP_FILA_DIA)) {
           gruposDeletados.add(g.k);
           for (const it of grupos.get(g.k)) {
             await base44.asServiceRole.entities.FilaContato.delete(it.id).catch(() => {});
           }
           gruposRemovidosCap++;
         }
-        gruposPorVendedor.set(vid, lista.slice(0, CAP_FILA_DIA).map((g) => g.k));
-      } else {
-        gruposPorVendedor.set(vid, lista.map((g) => g.k));
       }
+      gruposPorVendedor.set(vid, lista.map((g) => g.k));
     }
 
     const resolverLeadIndicacao = (c: any) => {
@@ -213,7 +215,9 @@ export default async function(req: Request): Promise<Response> {
 
     for (const v of vendedoresAtivos) {
       const naEsteira = new Set(gruposPorVendedor.get(v.id) || []);
-      let vagas = Math.max(0, CAP_FILA_DIA - naEsteira.size);
+      // Vagas do cap contam apenas itens da CARTEIRA (indicações não ocupam vagas)
+      const carteiraNaEsteira = [...naEsteira].filter((k) => k.startsWith('carteira|')).length;
+      let vagas = Math.max(0, CAP_FILA_DIA - carteiraNaEsteira);
       let pos = 1 + pendentesEfetivos
         .filter((f) => f.vendedor_id === v.id)
         .reduce((m, f) => Math.max(m, f.posicao || 0), 0);
@@ -268,9 +272,8 @@ export default async function(req: Request): Promise<Response> {
           continue;
         }
 
-        // Pendente: entra apenas se houver vaga na esteira (cap 10) e passar
-        // nas guardas anti-retrabalho/oxigenação.
-        if (vagas <= 0) continue;
+        // Pendente: indicações entram SEMPRE (sem cap — 100% na esteira),
+        // passando apenas pelas guardas anti-retrabalho/oxigenação.
         if (naEsteira.has(key)) continue; // já está na esteira
         if (resolvidoStatusPorConversa.has(c.id)) continue; // resolvido nunca volta
         const recente = deletado ? null : porRefMap.get(key);
@@ -299,7 +302,6 @@ export default async function(req: Request): Promise<Response> {
           historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],
         });
         naEsteira.add(key);
-        vagas--;
         itensCriados++;
       }
 
