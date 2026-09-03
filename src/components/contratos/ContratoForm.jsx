@@ -98,7 +98,9 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-contrato'],
-    queryFn: () => base44.entities.Cliente.list('nome', 500),
+    // Base completa: o limite de 500 escondia clientes além da 1ª fatia
+    // alfabética na busca do formulário (ex: JOSE ANTONIO DA SILVEIRA).
+    queryFn: () => base44.entities.Cliente.list('nome', 5000),
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
