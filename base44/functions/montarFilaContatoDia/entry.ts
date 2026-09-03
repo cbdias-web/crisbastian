@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { hojeBrasilia } from '../../shared/diaUtil.ts';
+import { hojeBrasilia, proximoDiaUtil } from '../../shared/diaUtil.ts';
 import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 
 // Monta/sincroniza a esteira "Fila de Contatos / Agenda do Dia" de um vendedor
@@ -10,8 +10,10 @@ import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
 //   Indicações do Dash Parceiro entram 100% na esteira, sem limite de vagas —
 //   e permanecem registradas mesmo depois de convertidas em clientes.
 // - 5 DIAS (CARTEIRA): lead da Agenda do Dia pendente há mais de 5 dias sem
-//   contato sai da esteira (descartado). Não vale para indicações (esteira
-//   própria). O "Voltar à fila" do gerente traz o lead de volta.
+//   contato sai da esteira SEM ser desqualificado — registra interação
+//   ("Esteve na agenda do dia do Gerente X por 5 dias sem receber atenção") e
+//   volta ao final da fila (reagenda via proximo_contato) para reentrar na
+//   Agenda do Dia em outro momento. Não vale para indicações (esteira própria).
 // - Anti-retrabalho/oxigenação (mantidos): lead resolvido (desqualificado/
 //   convertido) nunca volta como pendente; lead já trabalhado não reentra
 //   automaticamente — apenas via "Voltar à fila".
@@ -129,27 +131,43 @@ export default async function(req: Request): Promise<Response> {
       itensLimpos++;
     }
 
-    // ── Limpeza 2 (regra dos 5 dias): pendente sem contato há mais de 5 dias sai da esteira ──
+    // ── Limpeza 2 (regra dos 5 dias): pendente sem contato há mais de 5 dias ──
+    // NÃO desqualifica: o item apenas sai da esteira, uma interação registra que
+    // o lead ficou 5 dias na agenda do gerente sem receber atenção, e ele volta
+    // ao FINAL da fila (reagenda) para reentrar na Agenda do Dia em outro momento.
     const [hy, hm, hdd] = hoje.split('-').map(Number);
     const dCorte = new Date(hy, hm - 1, hdd - DIAS_SEM_CONTATO);
     const dataCorte = `${dCorte.getFullYear()}-${String(dCorte.getMonth() + 1).padStart(2, '0')}-${String(dCorte.getDate()).padStart(2, '0')}`;
-    const foraDaEsteira = new Set(); // ids descartados nesta execução (fora da contagem de vagas)
-    let itensDescartados5d = 0;
+    const dRetorno = new Date(hy, hm - 1, hdd + DIAS_SEM_CONTATO);
+    const dataRetorno = proximoDiaUtil(
+      `${dRetorno.getFullYear()}-${String(dRetorno.getMonth() + 1).padStart(2, '0')}-${String(dRetorno.getDate()).padStart(2, '0')}`
+    );
+    const foraDaEsteira = new Set(); // ids retirados nesta execução (fora da contagem de vagas)
+    let itensReagendados5d = 0;
     for (const f of todaFila) {
       if (f.status !== 'pendente') continue;
       // Regra da Agenda do Dia (carteira): indicações têm esteira própria e
-      // NÃO são descartadas por tempo — permanecem até serem trabalhadas.
+      // NÃO são retiradas por tempo — permanecem até serem trabalhadas.
       if (f.tipo_origem === 'indicacao') continue;
       const entrada = dataEntrada(f);
       if (!entrada || entrada >= dataCorte) continue;
-      const hist = Array.isArray(f.historico) ? f.historico : [];
-      hist.push({ status: 'descartado', observacao: `Limpeza automática: ${DIAS_SEM_CONTATO} dias sem contato`, data: agora });
-      await base44.asServiceRole.entities.FilaContato.update(f.id, { status: 'descartado', historico: hist }).catch(() => {});
+      // 1) Registra a interação na ficha do cliente (rastreabilidade)
+      await base44.asServiceRole.entities.InteracaoCliente.create({
+        cliente_id: f.cliente_id || f.ref_id || '',
+        cliente_nome: f.nome || '',
+        vendedor_id: f.vendedor_id,
+        vendedor_nome: f.vendedor_nome || '',
+        tipo: 'Outro',
+        descricao: `Esteve na agenda do dia do Gerente ${f.vendedor_nome || ''} por ${DIAS_SEM_CONTATO} dias sem receber atenção. Lead retornou ao final da fila para reentrar na agenda do dia em ${dataRetorno}.`,
+        data_interacao: hoje,
+        proximo_contato: dataRetorno,
+        resultado: 'Sem resposta',
+        status: 'realizada',
+      }).catch(() => {});
+      // 2) Retira da esteira (sem desqualificar) — o lead reentra pela reposição na data de retorno
+      await base44.asServiceRole.entities.FilaContato.delete(f.id).catch(() => {});
       foraDaEsteira.add(f.id);
-      if (f.tipo_origem === 'indicacao' && f.ref_id) resolvidoStatusPorConversa.set(f.ref_id, 'descartado');
-      if (f.cliente_id) resolvidoPorClienteId.set(f.cliente_id, 'descartado');
-      if (f.nome) resolvidoPorNome.set(norm(f.nome), 'descartado');
-      itensDescartados5d++;
+      itensReagendados5d++;
     }
 
     // ── CAP 10 (CARTEIRA): máximo de leads pendentes da CARTEIRA por gerente ──
@@ -413,7 +431,7 @@ export default async function(req: Request): Promise<Response> {
       itens_criados: itensCriados,
       itens_atualizados: itensAtualizados,
       itens_limpos: itensLimpos,
-      itens_descartados_5dias: itensDescartados5d,
+      itens_reagendados_5dias: itensReagendados5d,
       grupos_removidos_cap: gruposRemovidosCap,
     });
   } catch (error) {
