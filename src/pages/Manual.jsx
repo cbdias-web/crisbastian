@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import ManualSectionModal from '@/components/manual/ManualSectionModal';
 import {
   BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users,
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
@@ -846,55 +847,17 @@ const categories = [
 
 // ─── SECTION ACCORDION ───────────────────────────────────────────────────────
 
-function SectionBlock({ section, isOpen, onToggle }) {
+function SectionBlock({ section, onOpen }) {
   const Icon = section.icon;
   return (
-    <div className={`rounded-xl border ${section.border} overflow-hidden`}>
-      <button
-        onClick={onToggle}
-        className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${isOpen ? section.bg : 'bg-white hover:bg-gray-50'}`}
-      >
+    <div className={`rounded-xl border ${section.border} overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5`}>
+      <button onClick={onOpen} className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors bg-white hover:bg-gray-50">
         <div className={`p-1.5 rounded-lg bg-gradient-to-br ${section.color} shadow-sm flex-shrink-0`}>
           <Icon className="w-3.5 h-3.5 text-white" />
         </div>
-        <span className={`flex-1 font-semibold text-sm ${isOpen ? section.text : 'text-gray-800'}`}>{section.title}</span>
-        {isOpen
-          ? <ChevronDown className={`w-4 h-4 flex-shrink-0 ${section.text}`} />
-          : <ChevronDown className="w-4 h-4 flex-shrink-0 text-gray-400" style={{ transform: 'rotate(-90deg)' }} />}
+        <span className="flex-1 font-semibold text-sm text-gray-800 text-left">{section.title}</span>
+        <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400" />
       </button>
-      {isOpen && (
-        <div className="px-5 pb-5 pt-3 space-y-5 bg-white">
-          {section.content.map((block, i) => (
-            <div key={i}>
-              <h4 className={`font-semibold text-sm mb-2 flex items-center gap-2 ${section.text}`}>
-                <span className={`w-1 h-4 rounded-full bg-gradient-to-b ${section.color} flex-shrink-0`} />
-                {block.subtitle}
-              </h4>
-              {block.text && <p className="text-sm text-gray-600 leading-relaxed ml-3">{block.text}</p>}
-              {block.steps && (
-                <ol className="ml-3 space-y-1.5">
-                  {block.steps.map((step, si) => (
-                    <li key={si} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className={`flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br ${section.color} text-white text-[10px] font-bold flex items-center justify-center mt-0.5`}>{si + 1}</span>
-                      <span className="leading-relaxed">{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-              {block.items && (
-                <ul className="ml-3 space-y-1.5">
-                  {block.items.map((item, ii) => (
-                    <li key={ii} className="flex items-start gap-2 text-sm text-gray-600">
-                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 mt-0.5 ${section.text} opacity-60`} />
-                      <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: item.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-800">$1</strong>') }} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -902,7 +865,7 @@ function SectionBlock({ section, isOpen, onToggle }) {
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Manual() {
-  const [openSections, setOpenSections] = useState([]);
+  const [selectedSection, setSelectedSection] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
   const [baixandoPdf, setBaixandoPdf] = useState(false);
   const [baixandoPdfIndicador, setBaixandoPdfIndicador] = useState(false);
@@ -948,18 +911,12 @@ export default function Manual() {
     setBaixandoPdfIndicador(false);
   };
 
-  const toggle = (id) => setOpenSections(prev =>
-    prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-  );
-
   const handleCategory = (cat) => {
     if (activeCategory === cat.id) {
       setActiveCategory(null);
       return;
     }
     setActiveCategory(cat.id);
-    // open all sections of this category, close others
-    setOpenSections(cat.sections);
     setTimeout(() => {
       document.getElementById('sections-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
@@ -1052,19 +1009,12 @@ export default function Manual() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Navegação Rápida</p>
           <div className="flex flex-wrap gap-2">
-            {quickNavSections.map(s => {
-              const isOpen = openSections.includes(s.id);
-              return (
-                <button key={s.id} onClick={() => {
-                  if (!openSections.includes(s.id)) toggle(s.id);
-                  setActiveCategory(null);
-                  setTimeout(() => document.getElementById(`sec-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
-                }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${isOpen ? 'bg-[#1a3150] text-white border-[#1a3150]' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'}`}>
-                  {s.title}
-                </button>
-              );
-            })}
+            {quickNavSections.map(s => (
+              <button key={s.id} onClick={() => { setActiveCategory(null); setSelectedSection(s); }}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all bg-white text-gray-600 border-gray-200 hover:border-[#1a3150] hover:bg-gray-50">
+                {s.title}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1103,38 +1053,11 @@ export default function Manual() {
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* Col 1 */}
-            <div className="space-y-2">
-              {visibleSections.filter((_, i) => i % 4 === 0).map(s => (
-                <div key={s.id} id={`sec-${s.id}`}>
-                  <SectionBlock section={s} isOpen={openSections.includes(s.id)} onToggle={() => toggle(s.id)} />
-                </div>
-              ))}
-            </div>
-            {/* Col 2 */}
-            <div className="space-y-2">
-              {visibleSections.filter((_, i) => i % 4 === 1).map(s => (
-                <div key={s.id} id={`sec-${s.id}`}>
-                  <SectionBlock section={s} isOpen={openSections.includes(s.id)} onToggle={() => toggle(s.id)} />
-                </div>
-              ))}
-            </div>
-            {/* Col 3 */}
-            <div className="space-y-2">
-              {visibleSections.filter((_, i) => i % 4 === 2).map(s => (
-                <div key={s.id} id={`sec-${s.id}`}>
-                  <SectionBlock section={s} isOpen={openSections.includes(s.id)} onToggle={() => toggle(s.id)} />
-                </div>
-              ))}
-            </div>
-            {/* Col 4 */}
-            <div className="space-y-2">
-              {visibleSections.filter((_, i) => i % 4 === 3).map(s => (
-                <div key={s.id} id={`sec-${s.id}`}>
-                  <SectionBlock section={s} isOpen={openSections.includes(s.id)} onToggle={() => toggle(s.id)} />
-                </div>
-              ))}
-            </div>
+            {visibleSections.map(s => (
+              <div key={s.id} id={`sec-${s.id}`}>
+                <SectionBlock section={s} onOpen={() => setSelectedSection(s)} />
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1154,6 +1077,11 @@ export default function Manual() {
           Villela Exchange · Gestão Comercial · Manual da Plataforma · Ago/2026
         </div>
       </div>
+
+      {/* ── POPUP DE LEITURA DO TEMA ── */}
+      {selectedSection && (
+        <ManualSectionModal section={selectedSection} onClose={() => setSelectedSection(null)} />
+      )}
     </div>
   );
 }
