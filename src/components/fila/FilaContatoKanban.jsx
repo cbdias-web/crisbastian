@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar } from 'lucide-react';
+import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2 } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -53,7 +53,7 @@ const STATUS_MENU = [
   { key: 'desqualificado', label: 'Desqualificado' },
 ];
 
-export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado }) {
+export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, isAdmin }) {
   const [menuId, setMenuId] = useState(null);
   const [movendo, setMovendo] = useState(false);
 
@@ -109,6 +109,33 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
     }
     setMovendo(false);
     setMenuId(null);
+  };
+
+  // Exclusão (somente admin): remove o item da esteira definitivamente.
+  // Para indicações, encerra também a conversa de origem para que a
+  // sincronização contínua (10min) não traga o lead de volta à fila.
+  const excluirItem = async (item) => {
+    setMenuId(null);
+    const msg = item.tipo_origem === 'indicacao'
+      ? `Excluir "${item.nome}" da esteira?\n\nA conversa de origem na Central de Leads será encerrada para o lead não retornar à fila.`
+      : `Excluir "${item.nome}" da esteira?\n\nO agendamento de origem (Agenda do Dia) será marcado como realizado para o item não retornar.`;
+    if (!confirm(msg)) return;
+    try {
+      await base44.entities.FilaContato.delete(item.id);
+      if (item.tipo_origem === 'indicacao' && item.ref_id) {
+        await base44.entities.ConversaWhatsapp.update(item.ref_id, { status: 'encerrada' }).catch(() => {});
+      }
+      if (item.tipo_origem === 'carteira' && item.ref_id) {
+        await base44.entities.AgendaContato.updateMany(
+          { vendedor_id: item.vendedor_id, lead_id: item.ref_id, status: 'pendente' },
+          { $set: { status: 'realizado', resultado: 'Item excluído da esteira por administrador', realizado_em: new Date().toISOString() } }
+        ).catch(() => {});
+      }
+      toast.success('Item excluído da esteira.');
+      onAtualizado?.();
+    } catch (e) {
+      toast.error('Erro ao excluir: ' + (e?.message || e));
+    }
   };
 
   const onDragEnd = async (result) => {
@@ -193,6 +220,18 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado })
                                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                     <RotateCcw className="w-3 h-3" /> Voltar à fila
                                   </button>
+                                )}
+                                {isAdmin && (
+                                  <>
+                                    <div style={{ borderTop: `1px solid ${AURORA.border}`, margin: '2px 0' }} />
+                                    <button onClick={(e) => { e.stopPropagation(); excluirItem(item); }}
+                                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition"
+                                      style={{ color: '#f87171' }}
+                                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'}
+                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                      <Trash2 className="w-3 h-3" /> Excluir da esteira
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             )}
