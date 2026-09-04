@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2 } from 'lucide-react';
+import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2, GripVertical } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -33,10 +33,23 @@ const COLUNAS = [
   { key: 'indicacao', label: 'Indicações', icon: Zap, color: '#00D4AA', bg: 'rgba(0,212,170,0.08)', statuses: ['pendente'], origem: 'indicacao' },
   { key: 'carteira', label: 'Agenda do Dia', icon: Clock, color: '#818cf8', bg: 'rgba(99,102,241,0.08)', statuses: ['pendente'], origem: 'carteira' },
   { key: 'em_contato', label: 'Em Contato', icon: PhoneCall, color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', statuses: ['atendeu'] },
-  { key: 'desqualificado', label: 'Desqualificado', icon: XCircle, color: '#f87171', bg: 'rgba(248,113,113,0.08)', statuses: ['descartado'] },
   { key: 'qualificado', label: 'Qualificado', icon: BadgeCheck, color: '#60a5fa', bg: 'rgba(59,130,249,0.08)', statuses: ['qualificado'] },
   { key: 'convertido', label: 'Convertido', icon: Trophy, color: '#34d399', bg: 'rgba(52,211,153,0.08)', statuses: ['convertido'] },
+  { key: 'desqualificado', label: 'Desqualificado', icon: XCircle, color: '#f87171', bg: 'rgba(248,113,113,0.08)', statuses: ['descartado'] },
 ];
+
+// Ordem das colunas da esteira — personalizada pelo usuário (arrastar o
+// cabeçalho) e persistida no navegador. Padrão: Desqualificado por último.
+const ORDEN_STORAGE_KEY = 'fila_contato_ordem_colunas';
+const carregarOrdem = () => {
+  try {
+    const salvas = JSON.parse(localStorage.getItem(ORDEN_STORAGE_KEY) || '[]');
+    if (Array.isArray(salvas) && salvas.length === COLUNAS.length && salvas.every(k => COLUNAS.some(c => c.key === k))) {
+      return salvas.map(k => COLUNAS.find(c => c.key === k));
+    }
+  } catch {}
+  return [...COLUNAS];
+};
 
 const destinoPara = (colKey) => {
   const col = COLUNAS.find(c => c.key === colKey);
@@ -56,6 +69,7 @@ const STATUS_MENU = [
 export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, isAdmin }) {
   const [menuId, setMenuId] = useState(null);
   const [movendo, setMovendo] = useState(false);
+  const [colunasOrdem, setColunasOrdem] = useState(carregarOrdem);
 
   const colunas = {};
   for (const col of COLUNAS) {
@@ -139,8 +153,19 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
   };
 
   const onDragEnd = async (result) => {
-    const { source, destination } = result;
-    if (!destination || source.droppableId === destination.droppableId) return;
+    const { source, destination, type } = result;
+    if (!destination) return;
+    // Reordenação das colunas da esteira (arrastar pelo cabeçalho)
+    if (type === 'COLUNA') {
+      if (source.index === destination.index) return;
+      const nova = [...colunasOrdem];
+      const [movida] = nova.splice(source.index, 1);
+      nova.splice(destination.index, 0, movida);
+      setColunasOrdem(nova);
+      try { localStorage.setItem(ORDEN_STORAGE_KEY, JSON.stringify(nova.map(c => c.key))); } catch {}
+      return;
+    }
+    if (source.droppableId === destination.droppableId) return;
     const item = colunas[source.droppableId]?.[source.index];
     if (!item) return;
     await mover(item, destination.droppableId);
@@ -148,18 +173,29 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 pb-4" style={{ minHeight: 'calc(100vh - 280px)' }}>
-        {COLUNAS.map(col => {
-          const lista = colunas[col.key] || [];
-          const isPendenteCol = col.key === 'indicacao' || col.key === 'carteira';
-          return (
-            <Droppable droppableId={col.key} key={col.key}>
-              {(provided, snapshot) => (
-                <div ref={provided.innerRef} {...provided.droppableProps}
-                  className="flex flex-col rounded-2xl min-w-0 transition"
-                  style={{ background: col.bg, border: `1px solid ${snapshot.isDraggingOver ? col.color : `${col.color}33`}` }}>
-                  <div className="flex items-center justify-between px-3 py-2.5 rounded-t-2xl flex-shrink-0" style={{ borderBottom: `1px solid ${col.color}33` }}>
-                    <div className="flex items-center gap-1.5 min-w-0">
+      <Droppable droppableId="colunas-esteira" type="COLUNA" direction="horizontal">
+        {(pCol) => (
+          <div ref={pCol.innerRef} {...pCol.droppableProps}
+            className="flex items-stretch gap-3 pb-4 overflow-x-auto" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            {colunasOrdem.map((col, colIdx) => {
+              const lista = colunas[col.key] || [];
+              const isPendenteCol = col.key === 'indicacao' || col.key === 'carteira';
+              return (
+                <Draggable draggableId={`col-${col.key}`} index={colIdx} key={col.key} type="COLUNA">
+                  {(pC, sC) => (
+                    <div ref={pC.innerRef} {...pC.draggableProps}
+                      className="flex flex-col rounded-2xl min-w-0 flex-1"
+                      style={{ ...pC.draggableProps.style, minWidth: 220, opacity: sC.isDragging ? 0.7 : 1 }}>
+                      <Droppable droppableId={col.key} type="CARD">
+                        {(provided, snapshot) => (
+                          <div ref={provided.innerRef} {...provided.droppableProps}
+                            className="flex flex-col rounded-2xl min-w-0 flex-1 transition"
+                            style={{ background: col.bg, border: `1px solid ${snapshot.isDraggingOver ? col.color : `${col.color}33`}` }}>
+                            <div {...pC.dragHandleProps} title="Arraste para reordenar as colunas"
+                              className="flex items-center justify-between px-3 py-2.5 rounded-t-2xl flex-shrink-0 cursor-grab active:cursor-grabbing"
+                              style={{ borderBottom: `1px solid ${col.color}33` }}>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <GripVertical className="w-3 h-3 flex-shrink-0" style={{ color: col.color, opacity: 0.6 }} />
                       <col.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: col.color }} />
                       <p className="text-xs font-bold truncate" style={{ color: col.color }}>{col.label}</p>
                     </div>
@@ -172,7 +208,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
                       </p>
                     )}
                     {lista.map((item, index) => (
-                      <Draggable draggableId={item.id} index={index} key={item.id}>
+                      <Draggable draggableId={item.id} index={index} key={item.id} type="CARD">
                         {(p, s) => (
                           <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}
                             onClick={() => menuId !== item.id && onSelectItem(item)}
@@ -269,12 +305,18 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
                     ))}
                     {provided.placeholder}
                   </div>
-                </div>
-              )}
-            </Droppable>
-          );
-        })}
-      </div>
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
+                  )}
+                </Draggable>
+              );
+            })}
+            {pCol.placeholder}
+          </div>
+        )}
+      </Droppable>
       {menuId && <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />}
     </DragDropContext>
   );
