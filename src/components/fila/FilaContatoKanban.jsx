@@ -176,7 +176,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
       <Droppable droppableId="colunas-esteira" type="COLUNA" direction="horizontal">
         {(pCol) => (
           <div ref={pCol.innerRef} {...pCol.droppableProps}
-            className="flex items-stretch gap-3 pb-4 overflow-x-auto" style={{ minHeight: 'calc(100vh - 280px)' }}>
+            className="flex flex-wrap items-stretch gap-3 pb-4" style={{ minHeight: 'calc(100vh - 280px)' }}>
             {colunasOrdem.map((col, colIdx) => {
               const lista = colunas[col.key] || [];
               const isPendenteCol = col.key === 'indicacao' || col.key === 'carteira';
@@ -185,7 +185,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
                   {(pC, sC) => (
                     <div ref={pC.innerRef} {...pC.draggableProps}
                       className="flex flex-col rounded-2xl min-w-0 flex-1"
-                      style={{ ...pC.draggableProps.style, minWidth: 220, opacity: sC.isDragging ? 0.7 : 1 }}>
+                      style={{ ...pC.draggableProps.style, minWidth: 180, flex: '1 1 180px', opacity: sC.isDragging ? 0.7 : 1 }}>
                       <Droppable droppableId={col.key} type="CARD">
                         {(provided, snapshot) => (
                           <div ref={provided.innerRef} {...provided.droppableProps}
