@@ -13,6 +13,7 @@ import {
   Search, Zap, Rocket, Newspaper, Bot, User, Handshake
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
+import BarraNovaVersao from '@/components/BarraNovaVersao.jsx';
 import ProfileModal from '@/components/ProfileModal.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
@@ -697,6 +698,9 @@ export default function Layout({ children, currentPageName }) {
         <BannerAlertaSistema user={user} />
         {children}
       </main>
+
+      {/* ═══ BARRA DE NOVA VERSÃO (aparece quando o app é publicado) ═══ */}
+      <BarraNovaVersao />
 
       {/* Jarvis fora do <main> para não ser tapado pelo cabeçalho fixo (z-50) */}
       {!isIndicador && <AssistenteFloating />}

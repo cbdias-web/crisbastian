@@ -1,0 +1,41 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "aviso_nova_versao",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "registrar_versao": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "registrarNovaVersao",
+            "args": {
+              "published_at": "${ .trigger.occurred_at }",
+              "is_first_publish": "${ .trigger.is_first_publish }",
+              "published_by": "${ .trigger.published_by }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Registrar nova vers\u00e3o",
+            "description": "Avisa os usu\u00e1rios no rodap\u00e9"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Ao publicar uma nova vers\u00e3o do aplicativo, registra a publica\u00e7\u00e3o para que todos os usu\u00e1rios vejam a barra de atualiza\u00e7\u00e3o no rodap\u00e9",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "app_publish",
+      "events": [
+        "published"
+      ]
+    }
+  },
+  "name": "Aviso de Nova Vers\u00e3o do App"
+}
