@@ -8,6 +8,7 @@ import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
 import ConsolidadoIndicadores from '@/components/portal/ConsolidadoIndicadores';
 import FiltroIndicadores from '@/components/portal/FiltroIndicadores';
 import DashParceiroSomenteLeitura from '@/components/portal/DashParceiroSomenteLeitura';
+import AtualizarDashButton from '@/components/portal/AtualizarDashButton';
 import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
 
 const AURORA = {
@@ -118,6 +119,7 @@ export default function DashParceiro() {
               Gestão de Indicadores e suas indicações — indicações viram usuários do app (role "indicador")
             </p>
           </div>
+          <AtualizarDashButton />
         </div>
 
         <FiltroIndicadores

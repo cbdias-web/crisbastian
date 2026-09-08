@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
+import AtualizarDashButton from '@/components/portal/AtualizarDashButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ShieldCheck, PartyPopper, Plus, ArrowRight, Loader2, Send, RefreshCw,
@@ -280,11 +281,14 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
               <Eye className="w-3 h-3" /> Consulta Geral · Todas as Indicações
             </span>
           ) : (
-            <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
-              className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
-              title="Sair">
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <AtualizarDashButton compact />
+              <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
+                className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
+                title="Sair">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
 
