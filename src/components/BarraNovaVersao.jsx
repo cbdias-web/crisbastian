@@ -19,11 +19,21 @@ export default function BarraNovaVersao() {
   const [novaVersao, setNovaVersao] = useState(null);
   const [dispensada, setDispensada] = useState(false);
 
+  // Marca a versão como vista (atualizada/dispensada) para nunca reexibi-la
+  const VISTO_KEY = 'versao_app_vista_id';
+  const marcarVista = (id) => {
+    try { localStorage.setItem(VISTO_KEY, id); } catch (e) {}
+  };
+
   useEffect(() => {
     let ativo = true;
 
     const verificar = (versao) => {
       if (!versao || !ativo) return;
+      // Versão já vista/atualizada por este usuário → não mostrar novamente
+      try {
+        if (localStorage.getItem(VISTO_KEY) === versao.id) return;
+      } catch (e) {}
       const criadaEm = versao.created_date ? new Date(versao.created_date).getTime() : 0;
       // Só avisa se a versão foi publicada DEPOIS de a página atual ter sido carregada
       if (criadaEm > carregadoEm.current) setNovaVersao(versao);
@@ -74,14 +84,14 @@ export default function BarraNovaVersao() {
               </p>
             </div>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => { marcarVista(novaVersao.id); window.location.reload(); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition hover:brightness-110 flex-shrink-0"
               style={{ background: `linear-gradient(135deg, ${AURORA.accent}, #0099cc)`, color: '#fff' }}>
               <RefreshCw className="w-3.5 h-3.5" />
               Atualizar agora
             </button>
             <button
-              onClick={() => setDispensada(true)}
+              onClick={() => { marcarVista(novaVersao.id); setDispensada(true); }}
               className="p-2 rounded-lg flex-shrink-0 transition"
               style={{ color: 'rgba(230,237,243,0.5)' }}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(0,212,170,0.1)')}
