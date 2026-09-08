@@ -1,0 +1,44 @@
+{
+  "name": "Limpeza de Sess\u00f5es Stale",
+  "description": "Fecha sess\u00f5es marcadas como ativas mas sem heartbeat h\u00e1 mais de 10 minutos (usu\u00e1rio fechou o navegador sem disparar o beforeunload)",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-07-13T16:46:49.596000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "limpeza_de_sess_es_stale",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "limparSessoesStale",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "limparSessoesStale"
+  }
+}

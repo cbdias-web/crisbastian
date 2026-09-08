@@ -1,0 +1,37 @@
+{
+  "name": "Reverter Indica\u00e7\u00e3o ao Excluir Venda",
+  "description": "Reverte status da LeadIndicacao quando a Venda vinculada \u00e9 exclu\u00edda",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "delete"
+      ],
+      "entity_name": "Venda"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "reverter_indica_o_ao_excluir_venda",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "reverterIndicacaoExclusao",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "reverterIndicacaoExclusao"
+  }
+}

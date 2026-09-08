@@ -1,0 +1,44 @@
+{
+  "name": "Sincronizar Agenda Di\u00e1ria - 08:00 Bras\u00edlia",
+  "description": "Sincroniza automaticamente todos os compromissos agendados das intera\u00e7\u00f5es com clientes/leads para a data programada, todos os dias \u00e0s 08:00 de Bras\u00edlia",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 8 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sincronizar_agenda_di_ria_08_00_bras_lia",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sincronizarAgendaDiaria",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "sincronizarAgendaDiaria"
+  }
+}

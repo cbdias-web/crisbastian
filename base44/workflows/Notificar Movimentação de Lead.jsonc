@@ -1,0 +1,37 @@
+{
+  "name": "Notificar Movimenta\u00e7\u00e3o de Lead",
+  "description": "Notifica admins e gerente respons\u00e1vel via Jarvis + e-mail quando o status de um lead (ConversaWhatsapp) muda no Kanban da Central de Leads.",
+  "trigger": {
+    "condition": "${ (.trigger.changed_fields | index(\"status\") != null) }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "update"
+      ],
+      "entity_name": "ConversaWhatsapp"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "notificar_movimenta_o_de_lead",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notificarMovimentacaoLead",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "notificarMovimentacaoLead"
+  }
+}
