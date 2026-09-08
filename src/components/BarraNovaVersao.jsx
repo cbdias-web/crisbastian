@@ -15,38 +15,45 @@ const AURORA = {
  * versão do app é publicada. Ao clicar em "Atualizar agora", a página é recarregada.
  */
 export default function BarraNovaVersao() {
-  const carregadoEm = useRef(Date.now());
   const [novaVersao, setNovaVersao] = useState(null);
   const [dispensada, setDispensada] = useState(false);
 
-  // Marca a versão como vista (atualizada/dispensada) para nunca reexibi-la
+  // ID da última versão conhecida — nunca reexibimos o mesmo registro
+  const vistaIdRef = useRef(null);
   const VISTO_KEY = 'versao_app_vista_id';
   const marcarVista = (id) => {
+    vistaIdRef.current = id;
     try { localStorage.setItem(VISTO_KEY, id); } catch (e) {}
   };
 
   useEffect(() => {
     let ativo = true;
 
-    const verificar = (versao) => {
-      if (!versao || !ativo) return;
-      // Versão já vista/atualizada por este usuário → não mostrar novamente
-      try {
-        if (localStorage.getItem(VISTO_KEY) === versao.id) return;
-      } catch (e) {}
-      const criadaEm = versao.created_date ? new Date(versao.created_date).getTime() : 0;
-      // Só avisa se a versão foi publicada DEPOIS de a página atual ter sido carregada
-      if (criadaEm > carregadoEm.current) setNovaVersao(versao);
-    };
-
-    // Checagem inicial (cobertura caso a publicação aconteça antes do subscribe conectar)
+    // Linha de base: a versão mais recente que já estava publicada quando a
+    // página carregou é a versão que este código já é — nunca avisa sobre ela.
+    // (Comparação por ID, imune a fuso horário/relógio local.)
     base44.entities.VersaoApp.list('-created_date', 1)
-      .then((lista) => { if (lista.length > 0) verificar(lista[0]); })
+      .then((lista) => {
+        if (ativo && lista.length > 0 && vistaIdRef.current === null) {
+          vistaIdRef.current = lista[0].id;
+        }
+      })
       .catch(() => {});
 
-    // Tempo real: nova publicação dispara o aviso na hora
+    // Tempo real: avisa APENAS sobre registros criados depois do carregamento
     const unsub = base44.entities.VersaoApp.subscribe((event) => {
-      if (event?.type === 'create' && event.data) verificar(event.data);
+      if (!ativo || event?.type !== 'create' || !event.data?.id) return;
+      if (vistaIdRef.current === null) {
+        // Baseline ainda não carregou: assume como versão atual (evita falso aviso)
+        vistaIdRef.current = event.data.id;
+        return;
+      }
+      if (event.data.id === vistaIdRef.current) return;
+      try {
+        if (localStorage.getItem(VISTO_KEY) === event.data.id) return;
+      } catch (e) {}
+      vistaIdRef.current = event.data.id;
+      setNovaVersao(event.data);
     });
 
     return () => {
