@@ -166,6 +166,11 @@ export default function Contratos() {
       }
       const venda = await base44.entities.Venda.create(vendaPayload);
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
+      // Gera as parcelas vincendas do contrato na esteira (Pipeline e Dashboard)
+      try {
+        await base44.functions.invoke('criarParcelasContrato', { contrato_id: ct.id, venda_id: venda.id });
+        queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+      } catch (e) { toast.warning('Venda criada, mas falha ao gerar parcelas vincendas: ' + e.message); }
       // Vincula a venda à indicação de origem.
       // Só marca como 'convertido_venda' (badge "Venda Convertida" no Dash Parceiro) quando
       // o contrato estiver ASSINADO e PAGO (comprovante anexado). Caso contrário, mantém o

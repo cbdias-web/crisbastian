@@ -212,7 +212,12 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         vendaPayload.espelhamento_id = c.indicadores[0]?.id || '';
         vendaPayload.percentual_comissao_espelhamento = c.indicadores[0]?.percentual || 0;
       }
-      await base44.entities.Venda.create(vendaPayload);
+      const vendaGerada = await base44.entities.Venda.create(vendaPayload);
+      // Gera as parcelas vincendas do contrato na esteira (Pipeline e Dashboard)
+      try {
+        await base44.functions.invoke('criarParcelasContrato', { contrato_id: contrato.id, venda_id: vendaGerada.id });
+        queryClient.invalidateQueries(['parcelas-venda-pipeline']);
+      } catch (e) { toast.warning('Venda criada, mas falha ao gerar parcelas vincendas: ' + e.message); }
       await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline' });
       queryClient.invalidateQueries(['contratos']);
       queryClient.invalidateQueries(['vendas']);
