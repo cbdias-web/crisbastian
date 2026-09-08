@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
- * Envia notificações (JarvisMensagem + Email) para as partes envolvidas quando
+ * Envia notificações (apenas JarvisMensagem, sem e-mail) para as partes envolvidas quando
  * o status de um contrato muda ou uma ação relevante ocorre.
  *
  * Payload esperado:
@@ -121,32 +121,7 @@ Deno.serve(async (req) => {
           lida: false,
         });
 
-        // Email
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: alvo.email,
-          subject: `Villela Exchange — ${titulo}`,
-          body: `
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
-              <div style="background:linear-gradient(135deg,#0f1e35,#1a3150);padding:24px;color:white;">
-                <h2 style="margin:0;font-size:18px;font-weight:700;">Villela Exchange</h2>
-                <p style="margin:4px 0 0;font-size:11px;opacity:0.6;text-transform:uppercase;letter-spacing:0.1em;">Gestão de Contratos</p>
-              </div>
-              <div style="padding:24px;">
-                <h3 style="margin:0 0 12px;font-size:16px;color:#0f1e35;">${titulo}</h3>
-                <p style="margin:0 0 16px;color:#374151;font-size:14px;line-height:1.6;">${mensagem}</p>
-                <div style="background:#f8fafc;border-radius:8px;padding:12px;border-left:4px solid #1a3150;">
-                  <p style="margin:0;font-size:12px;color:#64748b;"><strong>Tipo:</strong> ${contrato.tipo}</p>
-                  <p style="margin:4px 0 0;font-size:12px;color:#64748b;"><strong>Cliente:</strong> ${contrato.nome}</p>
-                  ${contrato.cpf_cnpj ? `<p style="margin:4px 0 0;font-size:12px;color:#64748b;"><strong>CPF/CNPJ:</strong> ${contrato.cpf_cnpj}</p>` : ''}
-                  <p style="margin:4px 0 0;font-size:12px;color:#64748b;"><strong>Gerente:</strong> ${contrato.vendedor_nome || 'N/A'}</p>
-                </div>
-              </div>
-              <div style="padding:12px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;text-align:center;">
-                <p style="margin:0;font-size:10px;color:#94a3b8;">Villela Exchange — Sistema de Gestão Comercial</p>
-              </div>
-            </div>
-          `,
-        });
+        // Sem e-mail — notificação apenas interna (Jarvis), conforme combinado.
         enviados++;
       } catch (e) {
         console.error(`Erro ao notificar ${alvo.email}:`, e.message);

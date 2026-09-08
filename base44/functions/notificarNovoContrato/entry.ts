@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       lida: false,
     });
 
-    // Enviar via Jarvis (JarvisMensagem) + e-mail para cada admin
+    // Enviar via Jarvis (JarvisMensagem) apenas — sem e-mail
     let enviados = 0;
     for (const admin of admins) {
       try {
@@ -73,64 +73,15 @@ Deno.serve(async (req) => {
           lida: false,
         });
 
-        // E-mail
-        const subject = `📄 Novo Contrato — ${nomeTipo} · ${nomeCliente}`;
-        const body_html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #0f1e35, #1a3150); padding: 24px; border-radius: 12px 12px 0 0;">
-              <h2 style="color: white; margin: 0; font-size: 20px;">📄 Novo Contrato Gerado</h2>
-              <p style="color: rgba(255,255,255,0.6); margin: 6px 0 0; font-size: 13px;">Villela Exchange – Gestão Comercial</p>
-            </div>
-            <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-              <p style="color: #374151; font-size: 14px; margin: 0 0 16px;">Um novo contrato foi criado na plataforma e precisa de atenção:</p>
-              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <tr style="background: white; border: 1px solid #e5e7eb;">
-                  <td style="padding: 10px 14px; color: #6b7280; font-weight: 600; width: 40%;">Tipo</td>
-                  <td style="padding: 10px 14px; color: #111827; font-weight: 700;">${nomeTipo}</td>
-                </tr>
-                <tr style="background: #f9fafb; border: 1px solid #e5e7eb;">
-                  <td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Cliente</td>
-                  <td style="padding: 10px 14px; color: #111827;">${nomeCliente}</td>
-                </tr>
-                <tr style="background: white; border: 1px solid #e5e7eb;">
-                  <td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">CPF / CNPJ</td>
-                  <td style="padding: 10px 14px; color: #111827;">${cpfCnpj}</td>
-                </tr>
-                <tr style="background: #f9fafb; border: 1px solid #e5e7eb;">
-                  <td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Gerente</td>
-                  <td style="padding: 10px 14px; color: #111827;">${vendedor}</td>
-                </tr>
-                <tr style="background: white; border: 1px solid #e5e7eb;">
-                  <td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Valor Total</td>
-                  <td style="padding: 10px 14px; color: #1a3150; font-weight: 700; font-size: 15px;">${valorTotal}</td>
-                </tr>
-              </table>
-              <div style="margin-top: 20px; padding: 14px 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;">
-                <p style="margin: 0; color: #92400e; font-size: 13px; font-weight: 600;">⚠️ Ação necessária</p>
-                <p style="margin: 6px 0 0; color: #78350f; font-size: 13px;">
-                  Acesse a plataforma, abra este contrato e adicione o <strong>link de assinatura online</strong> para que o gerente possa enviar ao cliente.
-                </p>
-              </div>
-              <p style="margin: 20px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
-                Villela Exchange – Gestão Comercial · Notificação automática
-              </p>
-            </div>
-          </div>
-        `;
-
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: admin.email,
-          subject,
-          body: body_html,
-        });
-
+        // Sem e-mail — notificação apenas interna (Jarvis + aba Notificações),
+        // conforme combinado com a equipe.
         enviados++;
       } catch (e) {
         console.log(`Erro ao notificar ${admin.email}: ${e.message}`);
       }
     }
 
-    console.log(`Notificação de novo contrato enviada para ${enviados} admin(s) via Jarvis, Notificações e E-mail.`);
+    console.log(`Notificação de novo contrato enviada para ${enviados} admin(s) via Jarvis e aba Notificações (sem e-mail).`);
     return Response.json({ ok: true, admins_notificados: enviados });
 
   } catch (error) {
