@@ -7,7 +7,7 @@ import AgendaCalendario from '@/components/leads/AgendaCalendario';
 import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 import AgendaNotificacoes from '@/components/AgendaNotificacoes';
 import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarModal';
-import ClienteInteracaoModal from '@/components/leads/ClienteInteracaoModal';
+import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput, Video, Copy, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -57,7 +57,8 @@ export default function MeusClientes() {
   const [novoLeadForm, setNovoLeadForm] = useState({ nome: '', cpf_cnpj: '', telefone: '', email: '', subcarteira: '' });
   const [meetForm, setMeetForm] = useState({ horario: '', gerarMeet: false, link: '', loading: false });
   const [agendaGerenteId, setAgendaGerenteId] = useState('');
-  const [clienteModalId, setClienteModalId] = useState(null);
+  const [popupAgenda, setPopupAgenda] = useState(null); // { fila, agenda }
+  const [resolvendoPopup, setResolvendoPopup] = useState(false);
   const [criandoLead, setCriandoLead] = useState(false);
   const [mostrarClientes, setMostrarClientes] = useState(false);
   const dropdownRef = useRef(null);
@@ -584,6 +585,54 @@ export default function MeusClientes() {
     ? (vendedoresSelecionados.length === 1 ? todosVendedores.find(v => v.id === vendedoresSelecionados[0]) : null)
     : vendedor;
 
+  // Abre a Fila de Interações (mesma tela da Fila de Contatos) para um item da
+  // Agenda do Dia: reaproveita o item da esteira (FilaContato) do cliente ou
+  // cria um, garantindo histórico de interações e classificação no Kanban.
+  const abrirPopupAgenda = async (item) => {
+    if (!item) return;
+    setResolvendoPopup(true);
+    try {
+      const clienteId = item.cliente_id || item.lead_id || '';
+      const refId = item.lead_id || item.cliente_id || '';
+      const ordenarRecentes = (lista) => lista
+        .filter(f => (f.vendedor_id || '') === (item.vendedor_id || ''))
+        .sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+
+      let candidatas = ordenarRecentes(await base44.entities.FilaContato.filter({ tipo_origem: 'carteira', ref_id: refId }));
+      if (candidatas.length === 0 && clienteId) {
+        candidatas = ordenarRecentes(await base44.entities.FilaContato.filter({ tipo_origem: 'carteira', cliente_id: clienteId }));
+      }
+      let fila = candidatas[0] || null;
+
+      if (!fila) {
+        const hojeStr = new Date().toISOString().split('T')[0];
+        fila = await base44.entities.FilaContato.create({
+          tipo_origem: 'carteira',
+          ref_id: refId,
+          cliente_id: clienteId,
+          nome: item.lead_nome || '',
+          telefone: item.lead_telefone || '',
+          cpf_cnpj: item.lead_cpf_cnpj || '',
+          vendedor_id: item.vendedor_id || vendedor?.id || '',
+          vendedor_nome: item.vendedor_nome || vendedor?.nome || '',
+          data_fila: hojeStr,
+          prioridade: 1,
+          posicao: 999,
+          tentativas: 0,
+          status: 'pendente',
+          origem_label: 'Carteira',
+          meet_link: item.meet_link || '',
+          google_event_id: item.google_event_id || '',
+          historico: [{ status: 'pendente', observacao: 'Aberto a partir da Agenda do Dia', data: new Date().toISOString() }],
+        });
+      }
+      setPopupAgenda({ fila, agenda: item });
+    } catch (e) {
+      toast.error('Erro ao abrir o contato: ' + (e?.message || e));
+    }
+    setResolvendoPopup(false);
+  };
+
   const handleEditarInteracao = (interacao, e) => {
     e.stopPropagation();
     const podEditar = isAdmin || interacao.vendedor_id === vendedor?.id || interacao.created_by === user?.email;
@@ -695,7 +744,7 @@ export default function MeusClientes() {
             isAdmin={isAdmin}
             todosVendedores={todosVendedores}
             clientes={clientes}
-            onClienteClick={(leadId) => setClienteModalId(leadId)}
+            onClienteClick={(_leadId, item) => abrirPopupAgenda(item)}
           />
         )}
 
@@ -1177,14 +1226,28 @@ export default function MeusClientes() {
         </div>
       )}
 
-      {/* Modal Cliente (Agenda) */}
-      {clienteModalId && (
-        <ClienteInteracaoModal
-          clienteId={clienteModalId}
-          vendedor={vendedor}
+      {/* Fila de Interações (mesma tela da Fila de Contatos) — aberta pelo card da Agenda */}
+      {popupAgenda && (
+        <CapaContatoPopup
+          key={popupAgenda.fila.id}
+          fila={popupAgenda.fila}
+          agenda={popupAgenda.agenda}
           user={user}
-          onClose={() => setClienteModalId(null)}
+          vendedor={vendedor}
+          onAtualizado={() => {
+            queryClient.invalidateQueries({ queryKey: ['agenda-contatos'] });
+            queryClient.invalidateQueries({ queryKey: ['fila-contato'] });
+          }}
+          onClose={() => setPopupAgenda(null)}
         />
+      )}
+      {resolvendoPopup && (
+        <div className="fixed top-4 right-4 z-[90] flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
+          style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+          <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
+            style={{ borderColor: 'rgba(0,212,170,0.3)', borderTopColor: '#00D4AA' }} />
+          Abrindo contato...
+        </div>
       )}
 
       {/* Modal Nova Interação (pop-up suspenso) */}

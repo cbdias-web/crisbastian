@@ -15,7 +15,7 @@ const AURORA = {
 
 const today = () => new Date().toISOString().split('T')[0];
 
-export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCancelar }) {
+export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCancelar, agenda = null }) {
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Positivo' });
   const [meet, setMeet] = useState({ gerar: false, horario: '09:00', link: '', loading: false });
   const [salvando, setSalvando] = useState(false);
@@ -102,6 +102,14 @@ export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCan
       const data = res?.data || res;
       if (meet.link) {
         await base44.entities.FilaContato.update(fila.id, { meet_link: meet.link }).catch(() => {});
+      }
+      // Origem Agenda do Dia: encerra o agendamento do dia
+      if (agenda) {
+        await base44.entities.AgendaContato.update(agenda.id, {
+          status: 'realizado',
+          realizado_em: new Date().toISOString(),
+          resultado: `Interação registrada (${form.resultado})`,
+        }).catch(() => {});
       }
       toast.success('Ligação registrada!');
       onConcluido?.(data);

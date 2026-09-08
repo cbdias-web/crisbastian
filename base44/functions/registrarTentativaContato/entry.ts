@@ -125,6 +125,13 @@ export default async function(req: Request): Promise<Response> {
     //    estiver na fila ativa (pendente). Leads já movidos no Kanban apenas
     //    registram a tentativa, sem reagendamento automático.
     if (!jaMovimentado) {
+      // Final da fila: o reagendamento entra após o último contato já agendado
+      // do gerente naquele dia (posição máxima + 1).
+      const agsDoDia = await base44.asServiceRole.entities.AgendaContato.filter({
+        vendedor_id: fila.vendedor_id,
+        data_agendada: novaData,
+      }).catch(() => []);
+      const maxPos = (agsDoDia || []).reduce((m, a) => Math.max(m, a.posicao_dia || 0), 0);
       await base44.asServiceRole.entities.AgendaContato.create({
         lead_id: clienteId,
         lead_nome: fila.nome,
@@ -134,7 +141,7 @@ export default async function(req: Request): Promise<Response> {
         vendedor_id: fila.vendedor_id,
         vendedor_nome: fila.vendedor_nome,
         data_agendada: novaData,
-        posicao_dia: 0,
+        posicao_dia: maxPos + 1,
         lote_id: '',
         status: 'pendente',
         resultado: 'Não atendeu',

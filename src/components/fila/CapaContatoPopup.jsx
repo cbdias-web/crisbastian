@@ -21,7 +21,7 @@ const AURORA = {
   green: '#34d399',
 };
 
-export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, onClose, onProximo }) {
+export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, onClose, onProximo, agenda = null }) {
   // view: 'capa' | 'registro' | 'cadastro' — a área principal troca entre elas (sem coluna extra)
   const [view, setView] = useState('capa');
   const [registrando, setRegistrando] = useState(false);
@@ -119,6 +119,14 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         acao: 'atendeu',
         interacao: { tipo: 'Ligação', descricao: 'Atendeu — contato telefônico realizado', resultado: 'Positivo' },
       });
+      // Origem Agenda do Dia: marca o agendamento como realizado para sair da pendência do dia
+      if (agenda) {
+        await base44.entities.AgendaContato.update(agenda.id, {
+          status: 'realizado',
+          realizado_em: new Date().toISOString(),
+          resultado: 'Atendeu',
+        }).catch(() => {});
+      }
       toast.success('Atendimento registrado. Agende a reunião e inclua outros gerentes.');
       onAtualizado?.();
       setAgendaAberto(true);
@@ -133,6 +141,14 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
     setRegistrando(true);
     try {
       await base44.functions.invoke('registrarTentativaContato', { fila_id: fila.id, acao: 'nao_atendeu' });
+      // Origem Agenda do Dia: encerra o agendamento do dia (o reagendamento para o
+      // fim da fila do próximo dia útil é criado pela função registrarTentativaContato)
+      if (agenda) {
+        await base44.entities.AgendaContato.update(agenda.id, {
+          status: 'nao_atendeu',
+          resultado: 'Não atendeu — reagendado para o fim da fila no próximo dia útil',
+        }).catch(() => {});
+      }
       toast.success('Não atendido — reagendado. Avançando para o próximo lead da fila.');
       onAtualizado?.();
       if (onProximo) onProximo(fila);
@@ -186,6 +202,14 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       } else {
         await base44.entities.FilaContato.update(fila.id, { status: c.status });
         toast.success(`Lead classificado como "${c.label}".`);
+      }
+      // Origem Agenda do Dia: encerra o agendamento do dia e o lead passa a
+      // aparecer no Kanban da Fila de Contatos na coluna correspondente
+      if (agenda) {
+        await base44.entities.AgendaContato.update(agenda.id, c.key === 'voltar'
+          ? { status: 'pendente', resultado: '' }
+          : { status: 'realizado', realizado_em: new Date().toISOString(), resultado: c.label }
+        ).catch(() => {});
       }
       onAtualizado?.();
       onClose?.();
@@ -410,6 +434,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <HistoricoInteracoes fila={fila} />
                   <RegistroLigacaoForm
                     fila={fila}
+                    agenda={agenda}
                     onConcluido={() => { onAtualizado?.(); onClose?.(); }}
                     onCancelar={() => setView('capa')}
                   />

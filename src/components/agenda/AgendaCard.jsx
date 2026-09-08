@@ -99,7 +99,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
         opacity: updating === item.id ? 0.5 : 1,
         boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
       }}
-      onClick={() => { if (!isDragging) onClienteClick?.(item.cliente_id || item.lead_id); }}
+      onClick={() => { if (!isDragging) onClienteClick?.(item.cliente_id || item.lead_id, item); }}
       onMouseEnter={e => {
         if (isDragging) return;
         e.currentTarget.style.borderColor = 'rgba(0,212,170,0.45)';
