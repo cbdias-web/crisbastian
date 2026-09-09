@@ -12,6 +12,7 @@ import ClientesDraggableSidebar from '@/components/contratos/ClientesDraggableSi
 import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
 import RncListModal from '@/components/contratos/RncListModal';
 import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
+import CiListModal from '@/components/contratos/CiListModal';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -57,6 +58,7 @@ export default function Contratos() {
   const [rncContrato, setRncContrato] = useState(null);
   const [rncDirectId, setRncDirectId] = useState(null);
   const [showRncList, setShowRncList] = useState(false);
+  const [showCiList, setShowCiList] = useState(false);
   const [ciContrato, setCiContrato] = useState(null);
   const [ciDirectId, setCiDirectId] = useState(null);
   const vendedorDropdownRef = useRef(null);
@@ -268,6 +270,12 @@ export default function Contratos() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => setShowCiList(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
+              style={{ background: 'rgba(59,130,249,0.12)', border: '1px solid rgba(59,130,249,0.3)', color: '#60a5fa' }}>
+              <Globe className="w-4 h-4" />
+              Forms CI
+            </button>
             <button onClick={() => setShowRncList(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
               style={{ background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)', color: '#a78bfa' }}>
@@ -525,6 +533,16 @@ export default function Contratos() {
             rncId={rncDirectId}
             user={user}
             onClose={() => { setRncContrato(null); setRncDirectId(null); }}
+          />
+        )}
+        {showCiList && (
+          <CiListModal
+            onClose={() => setShowCiList(false)}
+            onOpenCi={(rnc) => {
+              setShowCiList(false);
+              setCiContrato(null);
+              setCiDirectId(rnc.id);
+            }}
           />
         )}
         {(ciContrato || ciDirectId) && (

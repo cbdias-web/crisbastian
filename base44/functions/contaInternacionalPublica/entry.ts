@@ -173,6 +173,13 @@ export default async function(req: Request): Promise<Response> {
       updateData.link_preenchido_em = new Date().toISOString();
       if (!updateData.data_preenchimento) updateData.data_preenchimento = new Date().toISOString();
 
+      // Formulário completo (sem pendências) sai do rascunho: status 'concluido'
+      // para que apareça como recebido no portal (lista de formulários CI).
+      const pendenciasNovas = calcularPendencias({ ...rnc, ...updateData });
+      if (pendenciasNovas.length === 0 && rnc.status === 'rascunho') {
+        updateData.status = 'concluido';
+      }
+
       await base44.asServiceRole.entities.RncContaInternacional.update(rnc.id, updateData);
       const updated = await base44.asServiceRole.entities.RncContaInternacional.get(rnc.id);
       return Response.json({
