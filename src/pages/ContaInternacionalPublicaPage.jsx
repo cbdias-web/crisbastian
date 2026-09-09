@@ -108,7 +108,7 @@ export default function ContaInternacionalPublicaPage() {
       if (!data || data.error) { setError(data?.error || 'Link inválido ou expirado.'); setLoading(false); return; }
       const r = data.rnc;
       setRnc(r);
-      setAbas(r.tipo_conta === 'PJ' ? 'pj' : 'pf');
+      setAbas(r.tipo_conta === 'PJ' ? 'pj' : 'conta');
       setPendencias(data.pendencias || []);
       setS1({
         secao1_tipo_conta: r.secao1_tipo_conta || '', secao1_proposito: r.secao1_proposito || '',
@@ -144,6 +144,10 @@ export default function ContaInternacionalPublicaPage() {
   });
 
   const handleDocUpload = async (docTipo, file) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Arquivo muito grande (máx. 10MB). Envie um arquivo menor.');
+      return;
+    }
     setUploadingKey(docTipo);
     try {
       const base64 = await fileToBase64(file);
@@ -175,8 +179,33 @@ export default function ContaInternacionalPublicaPage() {
         ...s3,
         secao3_beneficiarios: beneficiarios.filter(b => b.nome_completo),
       };
-      const res = await base44.functions.invoke('contaInternacionalPublica', { action: 'salvar', token, dados, uploads });
-      const data = res?.data;
+      // Tempo limite para nunca deixar o botão travado em "Enviando..."
+      const withTimeout = (p, ms) => Promise.race([
+        p,
+        new Promise((_, rej) => setTimeout(() =>
+          rej(new Error('Tempo esgotado no envio. Verifique o tamanho/internet dos arquivos e tente novamente.')), ms)),
+      ]);
+      // 1º salva os dados do formulário (payload leve)
+      const res = await withTimeout(
+        base44.functions.invoke('contaInternacionalPublica', { action: 'salvar', token, dados, uploads: [] }),
+        45000
+      );
+      // Depois envia cada documento em uma requisição separada (payload pequeno por arquivo)
+      for (const up of uploads) {
+        await withTimeout(
+          base44.functions.invoke('contaInternacionalPublica', { action: 'salvar', token, dados: {}, uploads: [up] }),
+          90000
+        );
+      }
+      // Recarrega o estado final (após uploads) para atualizar pendências e documentos
+      let data = res?.data;
+      if (uploads.length > 0) {
+        const resFinal = await withTimeout(
+          base44.functions.invoke('contaInternacionalPublica', { action: 'buscar', token }),
+          30000
+        );
+        data = resFinal?.data;
+      }
       if (data?.error) { toast.error(data.error); setSalvando(false); return; }
       setRnc(data.rnc);
       setPendencias(data.pendencias || []);
@@ -221,6 +250,7 @@ export default function ContaInternacionalPublicaPage() {
     TABS.push({ id: 'socio', label: `Seção ${_secN++} — Dados do Sócio` });
     TABS.push({ id: 'docs', label: 'Documentos' });
   } else {
+    TABS.push({ id: 'conta', label: 'Dados da Conta' });
     TABS.push({ id: 'pf', label: 'Cadastro Pessoa Física' });
     TABS.push({ id: 'docs', label: 'Documentos' });
   }
@@ -278,11 +308,11 @@ export default function ContaInternacionalPublicaPage() {
           ))}
         </div>
 
-        {/* Dados PJ */}
-        {abas === 'pj' && (
+        {/* Seção 1 — Dados da Conta (exibida para PJ e PF) */}
+        {(abas === 'pj' || abas === 'conta') && (
           <div className="rounded-2xl p-5 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: AURORA.accent }}>
-              <Building2 className="w-4 h-4" /> Dados PJ
+              {isPJ ? <Building2 className="w-4 h-4" /> : <Globe className="w-4 h-4" />} {isPJ ? 'Dados PJ' : 'Dados da Conta'}
             </h2>
             {isPJ && (
               <>
