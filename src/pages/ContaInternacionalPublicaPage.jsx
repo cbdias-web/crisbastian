@@ -59,6 +59,7 @@ export default function ContaInternacionalPublicaPage() {
   const [pendencias, setPendencias] = useState([]);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
+  const [enviado, setEnviado] = useState(false);
   const [arquivos, setArquivos] = useState({});
   const [uploadingKey, setUploadingKey] = useState(null);
   const [abas, setAbas] = useState('pf');
@@ -124,6 +125,7 @@ export default function ContaInternacionalPublicaPage() {
         secao1_pj_prospeccao_receita: r.secao1_pj_prospeccao_receita || '',
         secao1_pj_cnpj: r.secao1_pj_cnpj || '',
       });
+      if (r.status === 'concluido') setEnviado(true);
       setAssinantesNomes(r.secao1_assinantes?.length > 0 ? r.secao1_assinantes : ['']);
       setBancosExistentes(r.secao1_bancos_existentes?.length > 0 ? r.secao1_bancos_existentes : [{ nome_banco: '', pais: '', tipo_conta: '' }]);
       setClientesPJ(r.secao1_pj_clientes?.length > 0 ? r.secao1_pj_clientes : [{ nome: '', pais: '' }]);
@@ -214,6 +216,7 @@ export default function ContaInternacionalPublicaPage() {
       setPendencias(data.pendencias || []);
       setArquivos({});
       setSalvo(true);
+      if (data.rnc?.status === 'concluido') setEnviado(true);
       if (falhos.length > 0) {
         toast.error('Falha no envio de: ' + falhos.join(', ') + '. Tente reenviar na aba Documentos.');
       } else if ((data.pendencias || []).length === 0) {
@@ -293,7 +296,7 @@ export default function ContaInternacionalPublicaPage() {
           </div>
         )}
 
-        {salvo && pendencias.length === 0 && (
+        {(salvo || enviado) && pendencias.length === 0 && (
           <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}>
             <CheckCircle className="w-5 h-5" style={{ color: '#34d399' }} />
             <p className="text-sm font-semibold" style={{ color: '#34d399' }}>Formulário concluído! Todos os dados e documentos foram recebidos.</p>
@@ -563,14 +566,21 @@ export default function ContaInternacionalPublicaPage() {
         <div className="sticky bottom-4 rounded-2xl p-4 flex items-center justify-between gap-3"
           style={{ background: AURORA.surface, border: `1px solid ${AURORA.borderActive}`, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
           <p className="text-xs" style={{ color: AURORA.textMuted }}>
-            {pendencias.length === 0 ? '✓ Tudo preenchido!' : `${pendencias.length} pendência(s)`}
+            {(salvo || enviado) && pendencias.length === 0 ? 'Formulário enviado com sucesso.' : pendencias.length === 0 ? '✓ Tudo preenchido!' : `${pendencias.length} pendência(s)`}
           </p>
-          <button onClick={handleSubmit} disabled={salvando}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50"
-            style={{ background: AURORA.accent, color: '#0d1117' }}>
-            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-            {salvando ? 'Enviando...' : 'Enviar Formulário'}
-          </button>
+          {(salvo || enviado) && pendencias.length === 0 && !salvando ? (
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold"
+              style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.borderActive}` }}>
+              <CheckCircle2 className="w-4 h-4" /> ENVIADO
+            </div>
+          ) : (
+            <button onClick={handleSubmit} disabled={salvando}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50"
+              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              {salvando ? 'Enviando...' : 'Enviar Formulário'}
+            </button>
+          )}
         </div>
 
         <p className="text-center text-[10px] pb-4" style={{ color: AURORA.textMuted }}>
