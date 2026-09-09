@@ -151,6 +151,7 @@ export default async function(req: Request): Promise<Response> {
 
       // Upload de documentos (base64)
       const uploads = body.uploads || [];
+      const uploadsFalhos: string[] = [];
       if (uploads.length > 0) {
         const documentos = [...(rnc.documentos || [])];
         for (const up of uploads) {
@@ -164,7 +165,11 @@ export default async function(req: Request): Promise<Response> {
               const file = new File([blob], up.nome, { type: up.mime || 'application/octet-stream' });
               const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
               documentos[idx] = { ...documentos[idx], recebido: true, url: file_url, nome_arquivo: up.nome };
-            } catch (e) {}
+            } catch (e) {
+              uploadsFalhos.push(up.nome || up.tipo);
+            }
+          } else {
+            uploadsFalhos.push(up.nome || up.tipo);
           }
         }
         updateData.documentos = documentos;
@@ -186,6 +191,7 @@ export default async function(req: Request): Promise<Response> {
         rnc: sanitize(updated),
         pendencias: calcularPendencias(updated),
         pendencias_restantes: calcularPendencias(updated).length,
+        uploads_falhos: uploadsFalhos,
       });
     }
 

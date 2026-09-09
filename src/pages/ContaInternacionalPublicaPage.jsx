@@ -191,11 +191,14 @@ export default function ContaInternacionalPublicaPage() {
         45000
       );
       // Depois envia cada documento em uma requisição separada (payload pequeno por arquivo)
+      const falhos = [];
       for (const up of uploads) {
-        await withTimeout(
+        const resUp = await withTimeout(
           base44.functions.invoke('contaInternacionalPublica', { action: 'salvar', token, dados: {}, uploads: [up] }),
           90000
         );
+        const f = resUp?.data?.uploads_falhos || [];
+        if (f.length > 0) falhos.push(...f);
       }
       // Recarrega o estado final (após uploads) para atualizar pendências e documentos
       let data = res?.data;
@@ -211,7 +214,9 @@ export default function ContaInternacionalPublicaPage() {
       setPendencias(data.pendencias || []);
       setArquivos({});
       setSalvo(true);
-      if ((data.pendencias || []).length === 0) {
+      if (falhos.length > 0) {
+        toast.error('Falha no envio de: ' + falhos.join(', ') + '. Tente reenviar na aba Documentos.');
+      } else if ((data.pendencias || []).length === 0) {
         toast.success('Formulário concluído! Tudo certo.');
       } else {
         toast.success('Dados salvos! Confira os itens pendentes abaixo.');
@@ -337,6 +342,23 @@ export default function ContaInternacionalPublicaPage() {
               <LI label="Valor (USD)" value={s1.secao1_deposito_valor} onChange={v => setS1(f => ({ ...f, secao1_deposito_valor: v }))} />
             </div>
             <LI label="Origem dos Fundos" value={s1.secao1_origem_fundos} onChange={v => setS1(f => ({ ...f, secao1_origem_fundos: v }))} placeholder="Poupança, salário, herança..." />
+
+            <div className="h-px" style={{ background: AURORA.border }} />
+            <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Assinantes da Conta</p>
+            {assinantesNomes.map((nome, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input value={nome} onChange={e => setAssinantesNomes(ns => ns.map((x, j) => j === i ? e.target.value : x))}
+                  placeholder={`Assinante ${i + 1}`} style={inputStyle} className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none" />
+                {assinantesNomes.length > 1 && (
+                  <button onClick={() => setAssinantesNomes(ns => ns.filter((_, j) => j !== i))} style={{ color: AURORA.danger }}><Trash2 className="w-4 h-4" /></button>
+                )}
+              </div>
+            ))}
+            <button onClick={() => setAssinantesNomes(ns => [...ns, ''])}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg" style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+              <Plus className="w-3 h-3" /> Adicionar Assinante
+            </button>
+
             <div className="grid grid-cols-2 gap-3">
               <LI label="E-mail *" value={s1.secao1_email} onChange={v => setS1(f => ({ ...f, secao1_email: v }))} />
               <LI label="Celular" value={s1.secao1_celular} onChange={v => setS1(f => ({ ...f, secao1_celular: v }))} />
@@ -392,13 +414,20 @@ export default function ContaInternacionalPublicaPage() {
                     <div className="col-span-2"><LI label="Nome Completo *" value={a.nome} onChange={v => update('nome', v)} /></div>
                     <LI label="E-mail *" value={a.email} onChange={v => update('email', v)} />
                     <LI label="Celular" value={a.telefone_celular} onChange={v => update('telefone_celular', v)} />
+                    <LI label="Telefone Residência" value={a.telefone_residencia} onChange={v => update('telefone_residencia', v)} />
+                    <LI label="Telefone Escritório" value={a.telefone_escritorio} onChange={v => update('telefone_escritorio', v)} />
+                    <div className="col-span-2"><LI label="Endereço de Correspondência" value={a.endereco_correspondencia} onChange={v => update('endereco_correspondencia', v)} /></div>
                     <LI label="Nome da Empresa" value={a.nome_empresa} onChange={v => update('nome_empresa', v)} />
                     <LI label="Atividade da Empresa" value={a.atividade_empresa} onChange={v => update('atividade_empresa', v)} />
                     <div className="col-span-2">
                       <LI label="Título/Posição na Empresa" value={a.titulo_posicao} onChange={v => update('titulo_posicao', v)} />
                     </div>
+                    <RadioBtns label="Tipo de Emprego" value={a.tipo_emprego} onChange={v => update('tipo_emprego', v)}
+                      opts={[{ value: 'Empregado', label: 'Empregado' }, { value: 'Acionista', label: 'Acionista' }, { value: 'Aposentado', label: 'Aposentado' }]} />
                     <LI label="Salário Anual (USD) *" value={a.salario_anual_usd} onChange={v => update('salario_anual_usd', v)} placeholder="Ex: 50000" />
                     <LI label="Outra Fonte de Renda" value={a.outra_fonte_renda} onChange={v => update('outra_fonte_renda', v)} />
+                    <LI label="Valor Outra Renda (USD)" value={a.valor_outra_renda} onChange={v => update('valor_outra_renda', v)} />
+                    <div className="col-span-2"><LI label="Explicação de Herança (se aplicável)" value={a.explicacao_heranca} onChange={v => update('explicacao_heranca', v)} /></div>
                     <LI label="País de Nascimento *" value={a.pais_nascimento} onChange={v => update('pais_nascimento', v)} />
                     <LI label="Nº Passaporte" value={a.numero_passaporte} onChange={v => update('numero_passaporte', v)} />
                     <RadioBtns label="Dupla Nacionalidade?" value={a.dupla_nacionalidade} onChange={v => update('dupla_nacionalidade', v)}
@@ -443,8 +472,19 @@ export default function ContaInternacionalPublicaPage() {
             <div className="h-px" style={{ background: AURORA.border }} />
             <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Informações Financeiras e Residenciais</p>
             <div className="grid grid-cols-2 gap-3">
+              <LI label="Telefone Celular" value={(assinantes[0] || {}).telefone_celular} onChange={v => updateTitularField('telefone_celular', v)} />
+              <LI label="Telefone Residência" value={(assinantes[0] || {}).telefone_residencia} onChange={v => updateTitularField('telefone_residencia', v)} />
+              <LI label="Telefone Escritório" value={(assinantes[0] || {}).telefone_escritorio} onChange={v => updateTitularField('telefone_escritorio', v)} />
+              <div className="col-span-2"><LI label="Endereço de Correspondência" value={(assinantes[0] || {}).endereco_correspondencia} onChange={v => updateTitularField('endereco_correspondencia', v)} /></div>
+              <LI label="Nome da Empresa" value={(assinantes[0] || {}).nome_empresa} onChange={v => updateTitularField('nome_empresa', v)} />
+              <LI label="Atividade da Empresa" value={(assinantes[0] || {}).atividade_empresa} onChange={v => updateTitularField('atividade_empresa', v)} />
+              <div className="col-span-2"><LI label="Título/Posição na Empresa" value={(assinantes[0] || {}).titulo_posicao} onChange={v => updateTitularField('titulo_posicao', v)} /></div>
+              <RadioBtns label="Tipo de Emprego" value={(assinantes[0] || {}).tipo_emprego} onChange={v => updateTitularField('tipo_emprego', v)}
+                opts={[{ value: 'Empregado', label: 'Empregado' }, { value: 'Acionista', label: 'Acionista' }, { value: 'Aposentado', label: 'Aposentado' }]} />
               <LI label="Salário Anual (USD) *" value={(assinantes[0] || {}).salario_anual_usd} onChange={v => updateTitularField('salario_anual_usd', v)} placeholder="Ex: 50000" />
               <LI label="Outra Fonte de Renda" value={(assinantes[0] || {}).outra_fonte_renda} onChange={v => updateTitularField('outra_fonte_renda', v)} />
+              <LI label="Valor Outra Renda (USD)" value={(assinantes[0] || {}).valor_outra_renda} onChange={v => updateTitularField('valor_outra_renda', v)} />
+              <div className="col-span-2"><LI label="Explicação de Herança (se aplicável)" value={(assinantes[0] || {}).explicacao_heranca} onChange={v => updateTitularField('explicacao_heranca', v)} /></div>
               <LI label="País de Nascimento *" value={(assinantes[0] || {}).pais_nascimento} onChange={v => updateTitularField('pais_nascimento', v)} />
               <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
               <RadioBtns label="Dupla Nacionalidade?" value={(assinantes[0] || {}).dupla_nacionalidade} onChange={v => updateTitularField('dupla_nacionalidade', v)}
