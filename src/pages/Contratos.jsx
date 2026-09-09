@@ -13,6 +13,8 @@ import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal'
 import RncListModal from '@/components/contratos/RncListModal';
 import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
 import CiListModal from '@/components/contratos/CiListModal';
+import KanbanContratos from '@/components/contratos/KanbanContratos';
+import { Table2, Columns3 } from 'lucide-react';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -41,6 +43,7 @@ const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '�
 export default function Contratos() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('lista');
+  const [viewMode, setViewMode] = useState('lista');
   const [contratoAtivo, setContratoAtivo] = useState(null);
   const [tipoSelecionado, setTipoSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
@@ -409,11 +412,43 @@ export default function Contratos() {
               )}
             </div>
           )}
+          {/* Alternância Lista / Kanban */}
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <button onClick={() => setViewMode('lista')} title="Visão em Lista"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
+              style={viewMode === 'lista'
+                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }
+                : { color: 'rgba(230,237,243,0.55)' }}>
+              <Table2 className="w-3.5 h-3.5" /> Lista
+            </button>
+            <button onClick={() => setViewMode('kanban')} title="Visão em Kanban"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
+              style={viewMode === 'kanban'
+                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }
+                : { color: 'rgba(230,237,243,0.55)' }}>
+              <Columns3 className="w-3.5 h-3.5" /> Kanban
+            </button>
+          </div>
           <span className="text-xs text-gray-400 ml-auto">{contratosFiltrados.length} contrato(s)</span>
         </div>
 
-        {/* Lista */}
-        {contratosFiltrados.length === 0 ? (
+        {/* Lista / Kanban */}
+        {viewMode === 'kanban' ? (
+          contratosFiltrados.length === 0 ? (
+            <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+              <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
+              <p className="text-sm" style={{ color: 'rgba(230,237,243,0.55)' }}>Nenhum contrato encontrado</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Clique em um dos tipos acima para criar seu primeiro contrato</p>
+            </div>
+          ) : (
+            <KanbanContratos
+              contratos={contratosFiltrados}
+              onSelectContrato={(c) => { setContratoAtivo(c); setView('viewer'); }}
+              isAdmin={isAdmin}
+              onRefresh={() => queryClient.invalidateQueries(['contratos'])}
+            />
+          )
+        ) : contratosFiltrados.length === 0 ? (
           <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
             <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
             <p className="text-sm" style={{ color: 'rgba(230,237,243,0.55)' }}>Nenhum contrato encontrado</p>
