@@ -636,7 +636,17 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
                     {doc.recebido && doc.nome_arquivo && <p className="text-[10px] truncate" style={{ color: AURORA.accent }}>{doc.nome_arquivo}</p>}
                   </div>
                   {doc.recebido ? (
-                    <button onClick={() => handleRemoveDoc(i)} className="p-1.5 rounded-lg" style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.1)' }}><Trash2 className="w-3.5 h-3.5" /></button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {doc.url && (
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer" title="Abrir documento"
+                          className="p-1.5 rounded-lg transition"
+                          style={{ color: '#60a5fa', background: 'rgba(59,130,249,0.12)' }}>
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                      <button onClick={() => handleRemoveDoc(i)} title="Remover documento"
+                        className="p-1.5 rounded-lg" style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.1)' }}><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
                   ) : (
                     <label className="cursor-pointer p-1.5 rounded-lg flex items-center" style={{ background: AURORA.accentDim, color: AURORA.accent }}>
                       {uploadingDoc === i ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}

@@ -537,6 +537,7 @@ export default function Contratos() {
         )}
         {showCiList && (
           <CiListModal
+            user={user}
             onClose={() => setShowCiList(false)}
             onOpenCi={(rnc) => {
               setShowCiList(false);

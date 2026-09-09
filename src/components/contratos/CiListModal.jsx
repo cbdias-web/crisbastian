@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { X, Search, Globe, User, Building2, Loader2, ChevronRight, CheckCircle2, Circle, Link2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { X, Search, Globe, User, Building2, Loader2, ChevronRight, CheckCircle2, Circle, Link2, Trash2 } from 'lucide-react';
 
 const AURORA = {
   bg: '#0d1117',
@@ -22,14 +23,30 @@ const STATUS_CFG = {
   enviado: { label: 'Enviado', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
 };
 
-export default function CiListModal({ onClose, onOpenCi }) {
+export default function CiListModal({ onClose, onOpenCi, user }) {
+  const queryClient = useQueryClient();
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [excluindo, setExcluindo] = useState(null);
+
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const { data: rncs = [], isLoading } = useQuery({
     queryKey: ['rnc-conta-internacional-lista'],
     queryFn: () => base44.entities.RncContaInternacional.list('-updated_date', 500),
   });
+
+  const excluir = async (rnc) => {
+    const nome = rnc.secao3_nome || rnc.secao1_pj_razao_social || 'este formulário';
+    if (!confirm(`Excluir permanentemente o formulário de "${nome}"?\nEsta ação não pode ser desfeita.`)) return;
+    setExcluindo(rnc.id);
+    try {
+      await base44.entities.RncContaInternacional.delete(rnc.id);
+      queryClient.invalidateQueries({ queryKey: ['rnc-conta-internacional-lista'] });
+      toast.success('Formulário excluído com sucesso!');
+    } catch (e) { toast.error('Erro ao excluir: ' + e.message); }
+    setExcluindo(null);
+  };
 
   const rncsFiltrados = rncs.filter(r => {
     if (filtroStatus !== 'todos' && r.status !== filtroStatus) return false;
@@ -134,6 +151,16 @@ export default function CiListModal({ onClose, onOpenCi }) {
                         {r.pdf_url && ' · PDF gerado'}
                       </p>
                     </div>
+                    {isAdmin && (
+                      <button onClick={e => { e.stopPropagation(); excluir(r); }} disabled={excluindo === r.id}
+                        title="Excluir formulário"
+                        className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold transition flex-shrink-0 disabled:opacity-50"
+                        style={{ color: AURORA.danger, background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.18)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(248,113,113,0.08)'}>
+                        {excluindo === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
                     <div className="flex items-center gap-1 px-2 flex-shrink-0 opacity-60 group-hover:opacity-100 transition" style={{ color: AURORA.accent }}>
                       <span className="text-[10px] font-semibold hidden sm:inline">Abrir</span>
                       <ChevronRight className="w-4 h-4" />
