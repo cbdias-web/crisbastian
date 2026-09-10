@@ -25,6 +25,7 @@ const STATUS_CFG = {
   convertido_cliente: { label: '→ Cliente' },
   convertido_contrato: { label: '→ Contrato' },
   convertido_venda: { label: '→ Venda' },
+  rejeitado_compliance: { label: 'Rejeitado por Compliance' },
   descartado: { label: 'Descartado' },
 };
 

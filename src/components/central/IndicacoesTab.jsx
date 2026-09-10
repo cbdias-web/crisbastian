@@ -27,6 +27,7 @@ const STATUS_CFG = {
   convertido_cliente: { label: '→ Cliente', color: AURORA.green, bg: 'rgba(52,211,153,0.12)' },
   convertido_contrato: { label: '→ Contrato', color: AURORA.purple, bg: 'rgba(167,139,250,0.12)' },
   convertido_venda: { label: 'Venda Convertida', color: '#0d1117', bg: 'linear-gradient(135deg, #34d399, #00D4AA)', glow: 'rgba(52,211,153,0.35)' },
+  rejeitado_compliance: { label: 'Rejeitado por Compliance', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   descartado: { label: 'Descartado', color: '#9ca3af', bg: 'rgba(100,100,100,0.2)' },
 };
 
@@ -273,8 +274,10 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             const docNorm = (getDoc(lead) || '').replace(/\D/g, '');
             const vendaLead = lead.venda_id ? vendaPorId[lead.venda_id] : vendaPorDoc[docNorm];
             const temVenda = !!vendaLead;
-            const vendaEfetivada = lead.status === 'convertido_venda' || temVenda || (docNorm && paidDocs.has(docNorm));
-            const st = vendaEfetivada ? STATUS_CFG.convertido_venda : (STATUS_CFG[lead.status] || STATUS_CFG.novo);
+            // Rejeitado por Compliance: nunca conta como venda convertida
+            const rejeitada = lead.status === 'rejeitado_compliance';
+            const vendaEfetivada = !rejeitada && (lead.status === 'convertido_venda' || temVenda || (docNorm && paidDocs.has(docNorm)));
+            const st = rejeitada ? STATUS_CFG.rejeitado_compliance : (vendaEfetivada ? STATUS_CFG.convertido_venda : (STATUS_CFG[lead.status] || STATUS_CFG.novo));
             const dataVenda = vendaLead?.data;
             const dataExibicao = dataVenda || lead.link_preenchido_em || lead.created_date;
             const titleLabel = dataVenda ? `Venda em ${fmtData(dataVenda)}` : `Recebida em ${fmtData(lead.link_preenchido_em || lead.created_date)}`;
@@ -364,6 +367,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                 <Info label="Produto" value={detalhe.produto} />
                 <Info label="Valor est." value={fmtMoeda(detalhe.valor_estimado)} />
                 <Info label="Status" value={(() => {
+                  if (detalhe.status === 'rejeitado_compliance') return STATUS_CFG.rejeitado_compliance.label;
                   const docD = (getDoc(detalhe) || '').replace(/\D/g, '');
                   const vendaD = detalhe.venda_id ? vendaPorId[detalhe.venda_id] : vendaPorDoc[docD];
                   const efetivada = detalhe.status === 'convertido_venda' || !!vendaD || paidDocs.has(docD);

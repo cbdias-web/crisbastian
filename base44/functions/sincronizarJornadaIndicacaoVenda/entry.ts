@@ -59,7 +59,8 @@ async function sincronizar(b, venda) {
   const leads = await b.entities.LeadIndicacao.list('-created_date', 500);
   const matches = leads.filter(l => {
     if (!l || !l.parceiro_id) return false;
-    if (l.status === 'descartado') return false;
+    // Rejeitado por Compliance: o lead não volta a contar como convertido
+    if (l.status === 'descartado' || l.status === 'rejeitado_compliance') return false;
     const lDoc = normDoc(l.tipo === 'PF' ? l.pf_cpf : l.pj_cnpj);
     return lDoc && lDoc === doc;
   });

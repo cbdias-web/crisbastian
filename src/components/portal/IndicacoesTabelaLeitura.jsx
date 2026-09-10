@@ -18,6 +18,7 @@ const STATUS = {
   convertido_cliente: { label: 'Convertido · cliente', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
   convertido_contrato: { label: 'Convertido · contrato', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
   convertido_venda: { label: 'Convertido · venda', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
+  rejeitado_compliance: { label: 'Rejeitado por Compliance', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   descartado: { label: 'Descartado', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
 };
 

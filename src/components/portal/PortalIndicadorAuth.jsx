@@ -60,6 +60,7 @@ const STATUS_CHART = {
   convertido_cliente: { label: '→ Cliente', color: '#34d399' },
   convertido_contrato: { label: '→ Contrato', color: '#a78bfa' },
   convertido_venda: { label: '→ Venda', color: '#22c55e' },
+  rejeitado_compliance: { label: 'Rejeitado por Compliance', color: '#f87171' },
   descartado: { label: 'Descartado', color: '#6b7280' },
 };
 

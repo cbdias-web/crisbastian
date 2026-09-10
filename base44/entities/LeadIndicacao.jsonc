@@ -176,6 +176,7 @@
         "convertido_cliente",
         "convertido_contrato",
         "convertido_venda",
+        "rejeitado_compliance",
         "descartado"
       ],
       "default": "novo",
@@ -205,7 +206,7 @@
     },
     "venda_id": {
       "type": "string",
-      "description": "ID da venda gerada ap\u00f3s convers\u00e3o"
+      "description": "ID da venda gerada ap\u00f3s convers\u00e3o. Desfeito quando a implanta\u00e7\u00e3o \u00e9 rejeitada por Compliance (o lead deixa de contar como convertido/comiss\u00e3o para o indicador)"
     },
     "convertido": {
       "type": "boolean",
