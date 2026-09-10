@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { PDFDocument, rgb, degrees } from 'npm:pdf-lib@1.17.1';
+import { winAnsi } from '../../shared/pdfWinAnsi.ts';
 
 const MESES_PT = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
@@ -167,7 +168,7 @@ Deno.serve(async (req) => {
         addFooter(page, pageNum);
         y = PH - 62;
       }
-      page.drawText(String(text || ''), { x, y, size: sz, font: f, color: col });
+      page.drawText(winAnsi(String(text || '')), { x, y, size: sz, font: f, color: col });
     }
 
     // Título da seção — fundo colorido com barra teal esquerda
@@ -190,7 +191,7 @@ Deno.serve(async (req) => {
     // Campo: label bold + valor normal + linha separadora embaixo
     function campo(label: string, value: string | undefined | null) {
       const hasVal = value && String(value).trim();
-      const v = hasVal ? String(value) : '';
+      const v = hasVal ? winAnsi(String(value)) : '';
       const lbW = fontBold.widthOfTextAtSize(label + ': ', 9);
 
       dt(label + ':', ML, 9, fontBold, C.black);
@@ -277,7 +278,7 @@ Deno.serve(async (req) => {
         const statusTxt = recebido ? '[OK] RECEBIDO' : (d.obrigatorio ? '[!] PENDENTE (obrigatorio)' : '- Nao aplicavel');
         const statusCol = recebido ? C.ok : (d.obrigatorio ? C.gold : C.grayLt);
         const stW2 = fontBold.widthOfTextAtSize(statusTxt, 8);
-        const descLines = wrapText(d.descricao || '', font, 9, TW - stW2 - 16);
+        const descLines = wrapText(winAnsi(d.descricao || ''), font, 9, TW - stW2 - 16);
         dt(descLines[0] || '', ML + 4, 9, font, C.black);
         // Status alinhado à direita
         page.drawText(statusTxt, { x: MR - stW2, y, size: 8, font: fontBold, color: statusCol });
