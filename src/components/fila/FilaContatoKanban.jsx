@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
+import { waLink } from './QrCodeContato';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2, GripVertical } from 'lucide-react';
+import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2, GripVertical, Mail } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -296,6 +297,25 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
                             </div>
                             {item.produto && (
                               <p className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mb-1" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{item.produto}</p>
+                            )}
+                            {item.tipo_origem === 'indicacao' && (item.parceiro_nome || item.parceiro_telefone || item.parceiro_email) && (
+                              <div className="rounded-lg px-1.5 py-1 mb-1" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.18)' }}>
+                                <p className="text-[9px] font-semibold truncate" style={{ color: AURORA.accent }}>🔗 {item.parceiro_nome || 'Indicador'}</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {item.parceiro_telefone && (
+                                    <a href={waLink(item.parceiro_telefone) || undefined} target="_blank" rel="noopener noreferrer"
+                                      className="text-[9px] flex items-center gap-0.5 font-semibold underline" style={{ color: AURORA.textMuted }}>
+                                      <Phone className="w-2.5 h-2.5" /> {item.parceiro_telefone}
+                                    </a>
+                                  )}
+                                  {item.parceiro_email && (
+                                    <a href={`mailto:${item.parceiro_email}`}
+                                      className="text-[9px] flex items-center gap-0.5 font-semibold underline" style={{ color: AURORA.textMuted }}>
+                                      <Mail className="w-2.5 h-2.5" /> e-mail
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
                             )}
                             {(item.data_fila || item.created_date) && (
                               <p className="text-[9px] flex items-center gap-0.5 mb-1" style={{ color: AURORA.textMuted }} title="Data do lead">

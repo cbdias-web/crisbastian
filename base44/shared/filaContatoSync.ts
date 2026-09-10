@@ -34,6 +34,15 @@ export async function adicionarConversaNaFilaHoje(base44, conversa, leadIndicaca
     ? (li.tipo === 'PF' ? li.pf_cpf || '' : li.pj_cnpj || '')
     : '';
 
+  // Contato do indicador (telefone/e-mail) para o gerente interagir com o
+  // responsável pela indicação.
+  let parceiro: any = null;
+  if (li?.parceiro_id) {
+    parceiro = await base44.asServiceRole.entities.Parceiro.get(li.parceiro_id).catch(() => null);
+  }
+  const parceiroTelefone = parceiro?.telefone || '';
+  const parceiroEmail = parceiro?.email || li?.parceiro_email || '';
+
   const payload = {
     tipo_origem: 'indicacao',
     ref_id: refId,
@@ -45,6 +54,8 @@ export async function adicionarConversaNaFilaHoje(base44, conversa, leadIndicaca
     valor_estimado: li?.valor_estimado ?? null,
     parceiro_nome: li?.parceiro_nome || '',
     parceiro_percentual: li?.parceiro_percentual ?? null,
+    parceiro_telefone: parceiroTelefone,
+    parceiro_email: parceiroEmail,
     vendedor_id: vendedorId,
     vendedor_nome: conversa.vendedor_nome || '',
     data_fila: hoje,

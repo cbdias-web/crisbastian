@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign } from 'lucide-react';
+import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign, Handshake, Mail } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import NegociacaoLeadBlock from './NegociacaoLeadBlock';
@@ -260,6 +260,22 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
               {(fila.produto || leadIndicacao?.produto) && <span className="flex items-center gap-1"><Package className="w-3 h-3" />{fila.produto || leadIndicacao.produto}</span>}
               {(fila.valor_estimado != null || leadIndicacao?.valor_estimado != null) && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />R$ {(fila.valor_estimado ?? leadIndicacao?.valor_estimado ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
               {fila.origem_label && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{fila.origem_label}</span>}
+              {isIndicacao && fila.parceiro_nome && (
+                <span className="flex items-center gap-1.5 flex-wrap">
+                  <Handshake className="w-3 h-3" /> Indicador: <strong style={{ color: AURORA.accent }}>{fila.parceiro_nome}</strong>
+                  {fila.parceiro_telefone && (
+                    <a href={waLink(fila.parceiro_telefone) || undefined} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-0.5 underline" style={{ color: AURORA.accent }}>
+                      <Phone className="w-3 h-3" />{fila.parceiro_telefone}
+                    </a>
+                  )}
+                  {fila.parceiro_email && (
+                    <a href={`mailto:${fila.parceiro_email}`} className="flex items-center gap-0.5 underline" style={{ color: AURORA.accent }}>
+                      <Mail className="w-3 h-3" />{fila.parceiro_email}
+                    </a>
+                  )}
+                </span>
+              )}
               {fila.vendedor_nome && (
                 <span className="flex items-center gap-1">
                   <User className="w-3 h-3" />Gerente: {fila.vendedor_nome}
@@ -494,6 +510,21 @@ function InfoOrigem({ fila, user, vendedor, leadIndicacao }) {
           <div className="flex items-center gap-3 mt-1.5 text-[10px]" style={{ color: AURORA.textMuted }}>
             {percentual != null && <span>Comissão: <b style={{ color: AURORA.accent }}>{percentual}%</b></span>}
             {valor != null && <span>Valor est.: <b style={{ color: AURORA.accent }}>R$ {Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</b></span>}
+          </div>
+        )}
+        {isInd && (fila.parceiro_telefone || fila.parceiro_email) && (
+          <div className="flex items-center gap-2 mt-1.5 text-[10px]">
+            {fila.parceiro_telefone && (
+              <a href={waLink(fila.parceiro_telefone) || undefined} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-0.5 font-semibold" style={{ color: AURORA.accent }}>
+                <Phone className="w-2.5 h-2.5" /> {fila.parceiro_telefone}
+              </a>
+            )}
+            {fila.parceiro_email && (
+              <a href={`mailto:${fila.parceiro_email}`} className="flex items-center gap-0.5 font-semibold" style={{ color: AURORA.accent }}>
+                <Mail className="w-2.5 h-2.5" /> {fila.parceiro_email}
+              </a>
+            )}
           </div>
         )}
       </div>

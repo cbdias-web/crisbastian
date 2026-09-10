@@ -66,12 +66,21 @@ export default async function(req: Request): Promise<Response> {
     const todaFila = await base44.asServiceRole.entities.FilaContato.list('-created_date', 2000);
     const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
     const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
+    const todosParceiros = await base44.asServiceRole.entities.Parceiro.list('-created_date', 500);
 
     // Ids de conversas de indicação: usados para NUNCA ramificar um lead de
     // indicação (que já tem esteira própria) para a esteira de carteira.
     const conversaIdSet = new Set(todasConversas.map((c) => c.id));
 
     const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+
+    // Contato do indicador (telefone/e-mail) para o gerente interagir com o
+    // responsável pela indicação.
+    const parceiroPorId = new Map(todosParceiros.map((p: any) => [p.id, p]));
+    const contatoIndicador = (li: any) => {
+      const p = li?.parceiro_id ? parceiroPorId.get(li.parceiro_id) : null;
+      return { email: p?.email || li?.parceiro_email || '', telefone: p?.telefone || '' };
+    };
     const dataEntrada = (f: any) => f.data_fila || (f.created_date || '').slice(0, 10);
 
     // Item mais recente por (origem|ref|vendedor) — lista em ordem decrescente
@@ -282,6 +291,8 @@ export default async function(req: Request): Promise<Response> {
               valor_estimado: li?.valor_estimado ?? null,
               parceiro_nome: li?.parceiro_nome || '',
               parceiro_percentual: li?.parceiro_percentual ?? null,
+              parceiro_telefone: contatoIndicador(li).telefone,
+              parceiro_email: contatoIndicador(li).email,
               vendedor_id: v.id,
               vendedor_nome: v.nome || '',
               data_fila: hoje,
@@ -316,6 +327,8 @@ export default async function(req: Request): Promise<Response> {
           valor_estimado: li?.valor_estimado ?? null,
           parceiro_nome: li?.parceiro_nome || '',
           parceiro_percentual: li?.parceiro_percentual ?? null,
+          parceiro_telefone: contatoIndicador(li).telefone,
+          parceiro_email: contatoIndicador(li).email,
           vendedor_id: v.id,
           vendedor_nome: v.nome || '',
           data_fila: hoje,
@@ -420,6 +433,8 @@ export default async function(req: Request): Promise<Response> {
         valor_estimado: li.valor_estimado ?? null,
         parceiro_nome: li.parceiro_nome || '',
         parceiro_percentual: li?.parceiro_percentual ?? null,
+        parceiro_telefone: contatoIndicador(li).telefone,
+        parceiro_email: contatoIndicador(li).email,
         vendedor_id: vendedorId,
         vendedor_nome: vendedorNome,
         data_fila: hoje,
@@ -433,6 +448,21 @@ export default async function(req: Request): Promise<Response> {
       itensCriados++;
     }
 
+    // ── Backfill: preenche o contato do indicador em itens antigos que não têm ──
+    let itensBackfill = 0;
+    for (const f of todaFila) {
+      if (f.tipo_origem !== 'indicacao' || !f.lead_indicacao_id) continue;
+      if (f.parceiro_email || f.parceiro_telefone) continue;
+      const li = todasIndicacoes.find((x) => x.id === f.lead_indicacao_id) || null;
+      const ct = contatoIndicador(li);
+      if (!ct.email && !ct.telefone) continue;
+      await base44.asServiceRole.entities.FilaContato.update(f.id, {
+        parceiro_email: ct.email,
+        parceiro_telefone: ct.telefone,
+      }).catch(() => {});
+      itensBackfill++;
+    }
+
     return Response.json({
       success: true,
       data_fila: hoje,
@@ -442,6 +472,7 @@ export default async function(req: Request): Promise<Response> {
       itens_limpos: itensLimpos,
       itens_reagendados_5dias: itensReagendados5d,
       grupos_removidos_cap: gruposRemovidosCap,
+      itens_backfill: itensBackfill,
     });
   } catch (error) {
     console.error('montarFilaContatoDia:', error);
