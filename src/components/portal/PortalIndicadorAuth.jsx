@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 import ParceirosTab from '@/components/central/ParceirosTab';
+import VendasEfetivasModal from '@/components/portal/VendasEfetivasModal';
 
 const AURORA = {
   bg: '#0d1117',
@@ -74,6 +75,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   const [view, setView] = useState('dash');
   const [abaPortal, setAbaPortal] = useState('indicacoes');
   const [periodo, setPeriodo] = useState('mes');
+  const [showVendas, setShowVendas] = useState(false);
 
   const sairPortal = () => {
     if (onSairAdmin) onSairAdmin();
@@ -218,6 +220,25 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   const vendasEfetivasCount = minhasVendas.length;
   const comissaoGerada = minhasVendas.reduce((s, v) => s + valorVenda(v) * (percentualVenda(v) / 100), 0);
 
+  // Detalhe das vendas contabilizadas no KPI "Vendas efetivas" (popup ao clicar)
+  const vendasDetalhe = minhasVendas.map(v => {
+    const pct = percentualVenda(v);
+    const val = valorVenda(v);
+    const indNomes = consultaGeral
+      ? (v.indicadores || []).filter(i => i && parceiroIds.has(i.id)).map(i => i.nome).join(', ')
+      : indicador.nome;
+    return {
+      id: v.id,
+      cliente: v.cliente,
+      produto: v.produto,
+      data: v.data,
+      valor: val,
+      percentual: pct,
+      comissao: val * (pct / 100),
+      indicador: indNomes || '—',
+    };
+  });
+
   // ─── Dados do gráfico de rosca ───
   const chartData = Object.entries(STATUS_CHART)
     .map(([key, cfg]) => ({ key, name: cfg.label, value: leadsPeriodo.filter(l => l.status === key).length, color: cfg.color }))
@@ -320,9 +341,11 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
           <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
           <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
           <Kpi label="Vendas convertidas" value={fmtMoeda(vendasConvertidasValor)} icon={DollarSign} color={AURORA.green} />
-          <Kpi label="Vendas efetivas" value={vendasEfetivasCount} icon={Trophy} color={AURORA.green} />
+          <Kpi label="Vendas efetivas" value={vendasEfetivasCount} icon={Trophy} color={AURORA.green} onClick={() => setShowVendas(true)} />
           <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={DollarSign} color={AURORA.accent} />
         </div>
+
+        {showVendas && <VendasEfetivasModal vendas={vendasDetalhe} onClose={() => setShowVendas(false)} />}
 
         {/* ─── Gráfico de distribuição por status ─── */}
         <div className="rounded-2xl p-5 mb-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
@@ -437,9 +460,13 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
   );
 }
 
-function Kpi({ label, value, icon: Icon, color }) {
+function Kpi({ label, value, icon: Icon, color, onClick }) {
   return (
-    <div className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+    <div onClick={onClick} title={onClick ? 'Clique para ver o detalhe' : undefined}
+      className={`rounded-2xl p-4 transition${onClick ? ' cursor-pointer' : ''}`}
+      style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
+      onMouseEnter={e => { if (onClick) e.currentTarget.style.boxShadow = '0 8px 24px rgba(52,211,153,0.18)'; }}
+      onMouseLeave={e => { if (onClick) e.currentTarget.style.boxShadow = 'none'; }}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-4 h-4" style={{ color }} />
         <p className="text-[11px]" style={{ color: AURORA.textMuted }}>{label}</p>

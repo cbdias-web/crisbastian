@@ -322,13 +322,19 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
           </div>
         )}
       </div>
+
+      {showVendas && <VendasEfetivasModal vendas={vendasDetalhe} onClose={() => setShowVendas(false)} />}
     </div>
   );
 }
 
-function Kpi({ label, value, icon: Icon, color }) {
+function Kpi({ label, value, icon: Icon, color, onClick }) {
   return (
-    <div className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+    <div onClick={onClick} title={onClick ? 'Clique para ver o detalhe' : undefined}
+      className={`rounded-2xl p-4 transition${onClick ? ' cursor-pointer' : ''}`}
+      style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}
+      onMouseEnter={e => { if (onClick) e.currentTarget.style.boxShadow = '0 8px 24px rgba(52,211,153,0.18)'; }}
+      onMouseLeave={e => { if (onClick) e.currentTarget.style.boxShadow = 'none'; }}>
       <div className="flex items-center gap-2 mb-1">
         <Icon className="w-4 h-4" style={{ color }} />
         <p className="text-[11px]" style={{ color: AURORA.textMuted }}>{label}</p>
