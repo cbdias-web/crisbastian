@@ -66,6 +66,26 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
     queryKey: ['vendas-status-indicacoes'],
     queryFn: () => base44.entities.Venda.list('-created_date', 500),
   });
+  // Gerente que está atendendo cada lead (Fila de Contatos) — fallback: carteira do cliente
+  const { data: filaContatos = [] } = useQuery({
+    queryKey: ['fila-contatos-gerente-indicacoes'],
+    queryFn: () => base44.entities.FilaContato.list('-created_date', 500),
+  });
+  const { data: clientesLista = [] } = useQuery({
+    queryKey: ['clientes-gerente-indicacoes'],
+    queryFn: () => base44.entities.Cliente.list('-created_date', 500),
+  });
+  const gerentePorLead = {};
+  filaContatos.forEach(f => {
+    if (f.lead_indicacao_id && f.vendedor_nome && f.status !== 'descartado' && !gerentePorLead[f.lead_indicacao_id]) {
+      gerentePorLead[f.lead_indicacao_id] = f.vendedor_nome;
+    }
+  });
+  const clientePorId = {};
+  clientesLista.forEach(c => { clientePorId[c.id] = c; });
+  const getGerente = (lead) =>
+    gerentePorLead[lead.id] ||
+    (lead.cliente_id ? clientePorId[lead.cliente_id]?.vendedor_nome : null);
   const paidDocs = new Set();
   const vendaPorId = {};
   const vendaPorDoc = {};
@@ -320,6 +340,11 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
                       <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{lead.produto}</span>
                       {lead.valor_estimado != null && <span className="text-[9px]" style={{ color: AURORA.textMuted }}>{fmtMoeda(lead.valor_estimado)}</span>}
                       <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.purple }}>🔗 {lead.parceiro_nome}</span>
+                      {getGerente(lead) && (
+                        <span className="text-[9px] flex items-center gap-0.5" style={{ color: AURORA.accent }} title="Gerente que está atendendo o lead">
+                          <UserCheck className="w-3 h-3" /> {getGerente(lead)}
+                        </span>
+                      )}
                       <span className="text-[9px] flex items-center gap-0.5 ml-auto" style={{ color: AURORA.textMuted }} title={titleLabel}>
                         🗓 {fmtData(dataExibicao)}
                       </span>
@@ -365,7 +390,8 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <Info label="Tipo" value={detalhe.tipo === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} />
                 <Info label="Produto" value={detalhe.produto} />
-                <Info label="Valor est." value={fmtMoeda(detalhe.valor_estimado)} />
+                <Info label="Valor proposto" value={fmtMoeda(detalhe.valor_estimado)} />
+                <Info label="Gerente" value={getGerente(detalhe) || '—'} />
                 <Info label="Status" value={(() => {
                   if (detalhe.status === 'rejeitado_compliance') return STATUS_CFG.rejeitado_compliance.label;
                   const docD = (getDoc(detalhe) || '').replace(/\D/g, '');

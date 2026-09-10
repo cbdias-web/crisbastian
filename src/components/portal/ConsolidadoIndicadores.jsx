@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
@@ -5,6 +6,7 @@ import {
   TrendingUp, FileText, DollarSign, Trophy, RefreshCw, Loader2,
 } from 'lucide-react';
 import { periodoRange, dentroPeriodo } from './FiltroIndicadores';
+import VendasEfetivasModal from './VendasEfetivasModal';
 
 const AURORA = {
   bg: '#0d1117',
@@ -21,6 +23,7 @@ const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { mi
 
 export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros: parceirosProp }) {
   const queryClient = useQueryClient();
+  const [showVendas, setShowVendas] = useState(false);
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ['consolidado-leads'],
     queryFn: () => base44.entities.LeadIndicacao.list('-created_date', 500),
@@ -118,6 +121,18 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
     vendasIndicadas.reduce((s, v) => s + valorVenda(v) * (pctParceiroNaVenda(v) / 100), 0) +
     parcelasRecebidas.reduce((s, p) => s + valorParcela(p) * (pctParceiroNaParcela(p) / 100), 0);
 
+  // Detalhe das vendas contabilizadas no KPI "Vendas efetivas" (popup ao clicar)
+  const vendasDetalhe = vendasIndicadas.map(v => ({
+    id: v.id,
+    cliente: v.cliente,
+    produto: v.produto,
+    data: v.data,
+    valor: valorVenda(v),
+    percentual: pctParceiroNaVenda(v),
+    comissao: valorVenda(v) * (pctParceiroNaVenda(v) / 100),
+    indicador: vendaParaParceiro[v.id]?.parceiro_nome || '—',
+  }));
+
   // Funil de conversão — OBJETOS DE CÁLCULO DISTINTOS:
   //   Vendas Convertidas (verde)  = VENDAS com data (v.data) dentro do período,
   //                                 originadas de indicação do portal. Contadas pela
@@ -205,7 +220,7 @@ export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros:
         <Kpi label="Volume indicado" value={fmtMoeda(volumeIndicado)} icon={TrendingUp} color={AURORA.accent} />
         <Kpi label="Total de indicações" value={total} icon={FileText} color={AURORA.text} />
         <Kpi label="Vendas convertidas" value={fmtMoeda(vendasConvertidasValor)} icon={DollarSign} color={AURORA.green} />
-        <Kpi label="Vendas efetivas" value={vendasEfetivasCount} icon={Trophy} color={AURORA.green} />
+        <Kpi label="Vendas efetivas" value={vendasEfetivasCount} icon={Trophy} color={AURORA.green} onClick={() => setShowVendas(true)} />
         <Kpi label="Comissão gerada" value={fmtMoeda(comissaoGerada)} icon={DollarSign} color={AURORA.accent} />
       </div>
 
