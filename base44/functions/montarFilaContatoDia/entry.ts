@@ -67,6 +67,10 @@ export default async function(req: Request): Promise<Response> {
     const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
     const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
 
+    // Ids de conversas de indicação: usados para NUNCA ramificar um lead de
+    // indicação (que já tem esteira própria) para a esteira de carteira.
+    const conversaIdSet = new Set(todasConversas.map((c) => c.id));
+
     const norm = (s: string) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
     const dataEntrada = (f: any) => f.data_fila || (f.created_date || '').slice(0, 10);
 
@@ -335,6 +339,11 @@ export default async function(req: Request): Promise<Response> {
         if (vagas <= 0) break;
         const key = `carteira|${a.lead_id}|${v.id}`;
         if (naEsteira.has(key)) continue;
+        // Cross-origem: agendamento cujo "lead" é na verdade uma conversa de
+        // indicação (lead_id/cliente_id apontam para a ConversaWhatsapp) — o
+        // lead já tem esteira própria na coluna de Indicações; nunca ramificar.
+        const refCand = a.lead_id || a.cliente_id || '';
+        if (refCand && conversaIdSet.has(refCand)) continue;
         const deletado = gruposDeletados.has(key);
         // Guarda anti-retrabalho: carteira resolvida não reentra
         const recenteCart = deletado ? null : porRefMap.get(key);

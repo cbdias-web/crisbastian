@@ -30,6 +30,7 @@ export default function FilaContato() {
   const [montando, setMontando] = useState(false);
   const [busca, setBusca] = useState('');
   const [dataFiltro, setDataFiltro] = useState(hoje());
+  const [dataInicio, setDataInicio] = useState(hoje());
   const [modo, setModo] = useState('fila'); // 'fila' (data_fila) | 'agendados' (proximo_contato)
   const [gerentesSel, setGerentesSel] = useState([]);
   const queryClient = useQueryClient();
@@ -53,7 +54,7 @@ export default function FilaContato() {
   const temPermissao = !!user;
 
   const { data: fila = [], isLoading, refetch } = useQuery({
-    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataFiltro, modo],
+    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataInicio, dataFiltro, modo],
     queryFn: async () => {
       if (!user) return [];
       const vid = vendedor?.id;
@@ -61,9 +62,9 @@ export default function FilaContato() {
       const filtrarVendedor = (lista) => isAdminAll ? lista : lista.filter(f => f.vendedor_id === vid);
 
       if (modo === 'agendados') {
-        // Modo agendados: só pendentes reagendados para a data (proximo_contato)
-        const todos = await base44.entities.FilaContato.filter({ proximo_contato: dataFiltro, status: 'pendente' }, 'prioridade');
-        return filtrarVendedor(todos);
+        // Modo agendados: pendentes reagendados para o período (proximo_contato)
+        const todos = await base44.entities.FilaContato.filter({ status: 'pendente' }, 'prioridade', 500);
+        return filtrarVendedor(todos.filter(f => (f.proximo_contato || '') >= dataInicio && (f.proximo_contato || '') <= dataFiltro));
       }
 
       // Modo fila:
@@ -86,7 +87,14 @@ export default function FilaContato() {
         outros.push(...items);
       }
       const carteiraCarry = carteira.filter(c => (c.data_fila || '') <= dataFiltro);
-      const todosTratados = [...tratados, ...outros];
+      // Tratados: dentro do período selecionado (pela última atualização — o
+      // momento em que o lead foi movido na esteira)
+      const iniTrat = dataInicio + 'T00:00:00';
+      const fimTrat = dataFiltro + 'T23:59:59';
+      const todosTratados = [...tratados, ...outros].filter(t => {
+        const u = t.updated_date || t.created_date || '';
+        return u >= iniTrat && u <= fimTrat;
+      });
       const combinados = [...indicacoes, ...carteiraCarry, ...todosTratados];
       // Dedup por (tipo_origem, ref_id, vendedor_id) mantendo o mais recente:
       // montarFilaContatoDia cria um novo item pendente por dia para leads ainda
@@ -103,7 +111,18 @@ export default function FilaContato() {
         vistos.add(k);
         deduped.push(f);
       }
-      return filtrarVendedor(deduped);
+      // Dedup por PESSOA (mesmo gerente + mesmo nome): evita que o mesmo lead
+      // apareça ramificado em duas esteiras (ex.: indicação + carteira).
+      const porPessoa = new Set();
+      const semRamificados = [];
+      for (const f of deduped) {
+        const nm = (f.nome || '').toLowerCase().trim().replace(/\s+/g, ' ');
+        const k = `${nm}|${f.vendedor_id || ''}`;
+        if (nm && porPessoa.has(k)) continue;
+        if (nm) porPessoa.add(k);
+        semRamificados.push(f);
+      }
+      return filtrarVendedor(semRamificados);
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
@@ -189,7 +208,9 @@ export default function FilaContato() {
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Fila de Contatos</h1>
             </div>
             <p className="text-sm" style={{ color: AURORA.textMuted }}>
-              {isAdmin && !getImpersonatedVendedor() ? 'Visão geral · Admin' : vendedor?.nome || '—'} · {dataFiltro.split('-').reverse().join('/')}
+              {isAdmin && !getImpersonatedVendedor() ? 'Visão geral · Admin' : vendedor?.nome || '—'} · {dataInicio !== dataFiltro
+                ? `${dataInicio.split('-').reverse().join('/')} a ${dataFiltro.split('-').reverse().join('/')}`
+                : dataFiltro.split('-').reverse().join('/')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -219,13 +240,16 @@ export default function FilaContato() {
               <Clock className="w-3.5 h-3.5" /> Agendados
             </button>
           </div>
-          {/* Data */}
+          {/* Período */}
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <Calendar className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
-            <input type="date" value={dataFiltro} onChange={e => setDataFiltro(e.target.value)}
+            <input type="date" value={dataInicio} max={dataFiltro} onChange={e => setDataInicio(e.target.value)}
               className="bg-transparent text-xs focus:outline-none" style={{ color: AURORA.text }} />
-            {dataFiltro !== hoje() && (
-              <button onClick={() => setDataFiltro(hoje())} className="text-[10px] font-semibold" style={{ color: AURORA.accent }}>Hoje</button>
+            <span className="text-[10px]" style={{ color: AURORA.textMuted }}>até</span>
+            <input type="date" value={dataFiltro} min={dataInicio} onChange={e => setDataFiltro(e.target.value)}
+              className="bg-transparent text-xs focus:outline-none" style={{ color: AURORA.text }} />
+            {(dataInicio !== hoje() || dataFiltro !== hoje()) && (
+              <button onClick={() => { setDataInicio(hoje()); setDataFiltro(hoje()); }} className="text-[10px] font-semibold" style={{ color: AURORA.accent }}>Hoje</button>
             )}
           </div>
           {/* Busca */}
@@ -247,7 +271,7 @@ export default function FilaContato() {
           {[
             { label: 'Indicações na fila', value: totalIndicacao, icon: Zap, color: AURORA.accent },
             { label: 'Carteira pendente', value: totalCarteira, icon: Users, color: '#818cf8' },
-            { label: 'Concluídos hoje', value: totalConcluidos, icon: Phone, color: '#34d399' },
+            { label: dataInicio === dataFiltro ? 'Concluídos no dia' : 'Concluídos no período', value: totalConcluidos, icon: Phone, color: '#34d399' },
           ].map(k => (
             <div key={k.label} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
               <div className="flex items-center gap-2 mb-1">

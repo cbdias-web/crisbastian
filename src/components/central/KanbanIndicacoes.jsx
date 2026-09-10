@@ -19,7 +19,6 @@ const COLUNAS = [
   { key: 'convertido_contrato', label: '→ Contrato', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
   { key: 'convertido_venda', label: 'Venda Convertida', color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
   { key: 'rejeitado_compliance', label: 'Rejeitado Compliance', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
-  { key: 'descartado', label: 'Descartado', color: '#9ca3af', bg: 'rgba(100,100,100,0.2)' },
 ];
 
 const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
@@ -60,9 +59,9 @@ export default function KanbanIndicacoes({ leads = [], getNome, getDoc, getGeren
         </p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 pb-2">
         {COLUNAS.map(col => (
-          <div key={col.key} className="flex-shrink-0 w-[240px]">
+          <div key={col.key} className="flex flex-col min-w-0">
             {/* Header da coluna */}
             <div className="flex items-center justify-between px-3 py-2 rounded-xl mb-2" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
               <div className="flex items-center gap-1.5 min-w-0">

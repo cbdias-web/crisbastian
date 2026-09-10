@@ -116,6 +116,18 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
           status: CONVERSA_STATUS_BY_DESTINO[destinoKey],
         }).catch(() => {});
       }
+      // Jornada Dash Parceiro: lead contatado sai de "Novo" → "Em Atendimento"
+      if (item.tipo_origem === 'indicacao' && item.lead_indicacao_id && destinoKey === 'em_contato') {
+        try {
+          const li = await base44.entities.LeadIndicacao.get(item.lead_indicacao_id);
+          if (li && li.status === 'novo') {
+            await base44.entities.LeadIndicacao.update(li.id, {
+              status: 'em_atendimento',
+              historico: [...(li.historico || []), { status: 'em_atendimento', label: 'Em Atendimento', data: new Date().toISOString() }],
+            });
+          }
+        } catch (e) {}
+      }
       toast.success(`Lead movido para "${col.label}".`);
       onAtualizado?.();
     } catch (e) {
