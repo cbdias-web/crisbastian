@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus, Trophy } from 'lucide-react';
+import { Send, Loader2, Trash2, Pencil, X, UserCheck, FileText, Phone, Mail, MapPin, DollarSign, Filter, Plus, Trophy, List, LayoutGrid } from 'lucide-react';
 import { toast } from 'sonner';
 import EditarIndicacaoModal from './EditarIndicacaoModal';
 import NovaIndicacaoModal from './NovaIndicacaoModal';
 import DetalheJornadaIndicacao from './DetalheJornadaIndicacao';
+import KanbanIndicacoes from './KanbanIndicacoes';
 import { periodoRange, dentroPeriodo } from '../portal/FiltroIndicadores';
 
 const AURORA = {
@@ -48,6 +49,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
   const [convertendo, setConvertendo] = useState(null);
   const [editando, setEditando] = useState(null);
   const [showNova, setShowNova] = useState(false);
+  const [visao, setVisao] = useState('lista');
 
   const { data: indicacoes = [], isLoading } = useQuery({
     queryKey: ['lead-indicacoes'],
@@ -262,6 +264,19 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             {parceiros.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
         )}
+        {/* Alternância Lista / Kanban */}
+        <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+          <button onClick={() => setVisao('lista')}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
+            style={{ background: visao === 'lista' ? 'rgba(0,212,170,0.12)' : 'transparent', color: visao === 'lista' ? AURORA.accent : AURORA.textMuted }}>
+            <List className="w-3.5 h-3.5" /> Lista
+          </button>
+          <button onClick={() => setVisao('kanban')}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
+            style={{ background: visao === 'kanban' ? 'rgba(0,212,170,0.12)' : 'transparent', color: visao === 'kanban' ? AURORA.accent : AURORA.textMuted }}>
+            <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+          </button>
+        </div>
         {modoIndicador && !hideNovaButton && (
           <button onClick={() => setShowNova(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
@@ -288,6 +303,17 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             </button>
           )}
         </div>
+      ) : visao === 'kanban' ? (
+        <KanbanIndicacoes
+          leads={filtradas}
+          getNome={getNome}
+          getDoc={getDoc}
+          getGerente={getGerente}
+          onSelect={setDetalhe}
+          vendaPorId={vendaPorId}
+          vendaPorDoc={vendaPorDoc}
+          paidDocs={paidDocs}
+        />
       ) : (
         <div className="space-y-2">
           {filtradas.map(lead => {
