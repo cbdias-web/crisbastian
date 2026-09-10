@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { PDFDocument, rgb } from 'npm:pdf-lib@1.17.1';
+import { winAnsi } from '../../shared/pdfWinAnsi.ts';
 
 const MESES_PT = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 
@@ -140,7 +141,7 @@ Deno.serve(async (req) => {
         addFooter(page, pageNum);
         y = PH - 62;
       }
-      page.drawText(String(text || ''), { x, y, size: sz, font: f, color: col });
+      page.drawText(winAnsi(String(text || '')), { x, y, size: sz, font: f, color: col });
     }
 
     function secao(label: string) {
@@ -155,13 +156,13 @@ Deno.serve(async (req) => {
       y -= 8;
       page.drawRectangle({ x: ML, y: y - 5, width: TW, height: 17, color: C.sectionBg });
       page.drawRectangle({ x: ML, y: y - 5, width: 3, height: 17, color: C.teal });
-      page.drawText(label, { x: ML + 9, y: y + 2, size: 8.5, font: fontBold, color: C.dark });
+      page.drawText(winAnsi(label), { x: ML + 9, y: y + 2, size: 8.5, font: fontBold, color: C.dark });
       y -= 20;
     }
 
     function campo(label: string, value: string | undefined | null) {
       const hasVal = value && String(value).trim();
-      const v = hasVal ? String(value) : '';
+      const v = hasVal ? winAnsi(String(value)) : '';
       const lbW = fontBold.widthOfTextAtSize(label + ': ', 9);
       dt(label + ':', ML, 9, fontBold, C.black);
       if (hasVal) {
@@ -357,7 +358,7 @@ Deno.serve(async (req) => {
         const statusTxt = recebido ? '[OK] RECEBIDO' : (d.obrigatorio ? '[!] PENDENTE (obrigatorio)' : '- Nao aplicavel');
         const statusCol = recebido ? C.ok : (d.obrigatorio ? C.gold : C.grayLt);
         const stW2 = fontBold.widthOfTextAtSize(statusTxt, 8);
-        const descLines = wrapText(d.descricao || '', font, 9, TW - stW2 - 16);
+        const descLines = wrapText(winAnsi(d.descricao || ''), font, 9, TW - stW2 - 16);
         dt(descLines[0] || '', ML + 4, 9, font, C.black);
         page.drawText(statusTxt, { x: MR - stW2, y, size: 8, font: fontBold, color: statusCol });
         for (let i = 1; i < descLines.length; i++) { nextLine(2); dt(descLines[i], ML + 4, 9, font, C.black); }
