@@ -277,7 +277,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
             <LayoutGrid className="w-3.5 h-3.5" /> Kanban
           </button>
         </div>
-        {modoIndicador && !hideNovaButton && (
+        {!hideNovaButton && (
           <button onClick={() => setShowNova(true)}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
             style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
@@ -295,7 +295,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
           <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>
             {modoIndicador ? 'Cadastre uma nova indicação para começar a acompanhar o andamento.' : 'As indicações dos parceiros aparecerão aqui automaticamente'}
           </p>
-          {modoIndicador && !hideNovaButton && (
+          {!hideNovaButton && (
             <button onClick={() => setShowNova(true)}
               className="inline-flex items-center gap-1.5 px-4 py-2 mt-4 rounded-xl text-xs font-bold transition"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
@@ -397,7 +397,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
 
       {editando && <EditarIndicacaoModal lead={editando} onClose={() => setEditando(null)} />}
 
-      {showNova && <NovaIndicacaoModal parceiro={parceiro} onClose={() => setShowNova(false)} />}
+      {showNova && <NovaIndicacaoModal parceiro={parceiro} parceiros={modoIndicador ? undefined : parceiros} onClose={() => setShowNova(false)} />}
 
       {/* Modal de detalhe / conversão */}
       {detalhe && (

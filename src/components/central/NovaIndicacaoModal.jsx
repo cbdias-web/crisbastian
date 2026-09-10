@@ -32,7 +32,7 @@ function Field({ label, children, required }) {
   );
 }
 
-export default function NovaIndicacaoModal({ parceiro, onClose }) {
+export default function NovaIndicacaoModal({ parceiro, parceiros, onClose }) {
   const queryClient = useQueryClient();
   const [enviando, setEnviando] = useState(false);
   const [sucesso, setSucesso] = useState(null);
@@ -42,10 +42,17 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
   const [obs, setObs] = useState('');
   const [pf, setPf] = useState({});
   const [pj, setPj] = useState({});
+  // Seleção de indicador já cadastrado (modo admin no Dash Parceiro)
+  const selecionavel = Array.isArray(parceiros) && parceiros.length > 0;
+  const [parceiroSelecionado, setParceiroSelecionado] = useState(parceiro?.id || '');
+  const nomeParceiro = selecionavel
+    ? (parceiros.find(p => p.id === parceiroSelecionado)?.nome || '')
+    : parceiro?.nome;
 
   const setField = (setter) => (k) => (e) => setter(prev => ({ ...prev, [k]: e.target.value }));
 
   const salvar = async () => {
+    if (selecionavel && !parceiroSelecionado) { toast.error('Selecione o indicador'); return; }
     if (!produto) { toast.error('Selecione o produto'); return; }
     if (tipo === 'PF' && !pf.pf_nome?.trim()) { toast.error('Informe o nome do titular'); return; }
     if (tipo === 'PF' && !(pf.pf_whatsapp || pf.pf_telefone)?.trim()) { toast.error('Informe o WhatsApp/telefone do titular — é obrigatório para direcionar o lead à Central'); return; }
@@ -60,7 +67,10 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
         observacoes: obs,
         ...(tipo === 'PF' ? pf : pj),
       };
-      const res = await base44.functions.invoke('indicacaoParceiroAuth', { dados });
+      const res = await base44.functions.invoke('indicacaoParceiroAuth', {
+        dados,
+        ...(parceiroSelecionado ? { parceiro_id: parceiroSelecionado } : {}),
+      });
       const r = res?.data || res;
       if (r?.success) {
         toast.success('Indicação enviada com sucesso! 🙌');
@@ -85,7 +95,7 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
             </div>
             <div>
               <p className="font-bold text-sm" style={{ color: AURORA.text }}>Nova Indicação</p>
-              <p className="text-[11px]" style={{ color: AURORA.textMuted }}>Indicador: <strong style={{ color: AURORA.accent }}>{parceiro?.nome}</strong></p>
+              <p className="text-[11px]" style={{ color: AURORA.textMuted }}>Indicador: <strong style={{ color: AURORA.accent }}>{nomeParceiro || 'A selecionar'}</strong></p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
@@ -98,7 +108,7 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
                 <CheckCircle2 className="w-8 h-8" style={{ color: AURORA.accent }} />
               </div>
               <h3 className="text-lg font-bold mb-1" style={{ color: AURORA.text }}>Indicação enviada!</h3>
-              <p className="text-sm" style={{ color: AURORA.textMuted }}>Muito obrigado, <strong style={{ color: AURORA.accent }}>{parceiro?.nome?.split(' ')[0]}</strong>! 🙌</p>
+              <p className="text-sm" style={{ color: AURORA.textMuted }}>Indicação registrada para <strong style={{ color: AURORA.accent }}>{nomeParceiro}</strong>! 🙌</p>
             </div>
             <div className="rounded-2xl p-4" style={{ background: 'rgba(0,212,170,0.08)', border: `1px solid ${AURORA.border}` }}>
               <div className="flex items-start gap-3">
@@ -119,6 +129,16 @@ export default function NovaIndicacaoModal({ parceiro, onClose }) {
           </div>
         ) : (
           <div className="p-5 overflow-y-auto space-y-4 flex-1 min-h-0">
+            {/* Indicador dono da indicação (seleção — modo admin) */}
+            {selecionavel && (
+              <Field label="Indicador" required>
+                <select value={parceiroSelecionado} onChange={e => setParceiroSelecionado(e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Selecione o indicador...</option>
+                  {parceiros.filter(p => p.ativo !== false).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                </select>
+              </Field>
+            )}
+
             {/* Tipo */}
             <div>
               <p className="text-xs font-semibold mb-2" style={{ color: AURORA.textMuted }}>Tipo de cliente</p>

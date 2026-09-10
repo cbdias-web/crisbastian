@@ -14,11 +14,28 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    const parceiros = await base44.asServiceRole.entities.Parceiro.filter({ email: user.email, ativo: true });
-    if (parceiros.length === 0) {
-      return Response.json({ error: 'Nenhum cadastro de indicador ativo vinculado ao seu usuário' }, { status: 404 });
+    const body = await req.json();
+    const dados = body.dados || {};
+
+    // Admin pode criar a indicação em nome de um indicador já cadastrado
+    // (seleção no Dash Parceiro). Demais usuários permanecem vinculados ao
+    // próprio cadastro, localizado pelo e-mail logado.
+    let parceiro = null;
+    const isAdmin = user.role === 'admin' || user.permissao_admin === true;
+    if (isAdmin && body.parceiro_id) {
+      try {
+        parceiro = await base44.asServiceRole.entities.Parceiro.get(body.parceiro_id);
+      } catch (e) {}
+      if (!parceiro || parceiro.ativo === false) {
+        return Response.json({ error: 'Indicador selecionado não encontrado ou inativo' }, { status: 404 });
+      }
+    } else {
+      const parceiros = await base44.asServiceRole.entities.Parceiro.filter({ email: user.email, ativo: true });
+      if (parceiros.length === 0) {
+        return Response.json({ error: 'Nenhum cadastro de indicador ativo vinculado ao seu usuário' }, { status: 404 });
+      }
+      parceiro = parceiros[0];
     }
-    const parceiro = parceiros[0];
 
     // Garante link_token (necessário para o portal público e como referência)
     let token = parceiro.link_token;
@@ -29,9 +46,6 @@ export default async function(req: Request): Promise<Response> {
         link_gerado_em: new Date().toISOString(),
       });
     }
-
-    const body = await req.json();
-    const dados = body.dados || {};
 
     // Sanitiza campos numéricos
     const numFields = ['valor_estimado', 'pf_renda', 'pj_faturamento'];
