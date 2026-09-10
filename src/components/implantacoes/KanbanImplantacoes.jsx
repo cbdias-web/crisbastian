@@ -4,6 +4,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 import { User, Calendar, Link2, FileWarning, Clock, AlertTriangle, Crown } from 'lucide-react';
 import { format } from 'date-fns';
+import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
 
 const AURORA = {
   bg: '#0d1117',
@@ -21,6 +22,7 @@ const COLUNAS = [
   { key: 'aguardando_cliente', label: 'Aguard. Cliente', color: '#60a5fa', bg: 'rgba(96,165,250,0.10)' },
   { key: 'concluido', label: 'Concluído', color: '#22c55e', bg: 'rgba(34,197,94,0.10)' },
   { key: 'concluido_feedback', label: 'Concluído - Feedback Enviado', color: '#a78bfa', bg: 'rgba(167,139,250,0.10)' },
+  { key: 'rejeitado_compliance', label: 'Rejeitado por Compliance', color: '#ef4444', bg: 'rgba(239,68,68,0.10)' },
   { key: 'cancelado', label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.10)' },
 ];
 
@@ -53,7 +55,9 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       // Produtos sem abertura de conta corrente (RATING, SCORE, HORA TÉCNICA) são isentos.
       const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
       const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (impl.produto || '').toUpperCase().includes(p));
-      if (!isentoCC && !(impl.link_abertura_cc || '').trim()) {
+      // Rejeição por Compliance dispensa o Link de Abertura CC (implantação barrada)
+      const isentoTrava = isentoCC || novoStatus === 'rejeitado_compliance';
+      if (!isentoTrava && !(impl.link_abertura_cc || '').trim()) {
         toast.error('Preencha o Link de Abertura CC (e o Rate) antes de mover este lead de status.');
         onRefresh();
         return;
@@ -80,6 +84,11 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       }
 
       await base44.entities.Implantacao.update(draggableId, updateData);
+
+      // Registra o marco na jornada do lead de origem (Dash Parceiro)
+      if (novoStatus === 'rejeitado_compliance') {
+        try { await registrarRejeicaoComplianceLead(impl); } catch (e) {}
+      }
 
       // Notificar mudança de status
       try {
@@ -140,7 +149,7 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
                       const etapas = imp.etapas || [];
                       const concluidas = etapas.filter(e => e.concluida).length;
                       const progresso = etapas.length > 0 ? Math.round((concluidas / etapas.length) * 100) : 0;
-                      const atrasada = imp.status !== 'concluido' && imp.status !== 'concluido_feedback' && imp.status !== 'cancelado' && imp.data_prevista_conclusao && new Date(imp.data_prevista_conclusao) < new Date();
+                      const atrasada = imp.status !== 'concluido' && imp.status !== 'concluido_feedback' && imp.status !== 'cancelado' && imp.status !== 'rejeitado_compliance' && imp.data_prevista_conclusao && new Date(imp.data_prevista_conclusao) < new Date();
                       const priColor = PRIORIDADE_DOT[imp.prioridade] || PRIORIDADE_DOT.media;
 
                       return (

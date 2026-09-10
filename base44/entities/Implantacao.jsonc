@@ -79,6 +79,7 @@
         "aguardando_documentacao",
         "em_andamento",
         "aguardando_cliente",
+        "rejeitado_compliance",
         "concluido",
         "concluido_feedback",
         "cancelado"

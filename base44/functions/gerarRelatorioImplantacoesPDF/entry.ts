@@ -10,6 +10,7 @@ const STATUS_LABELS = {
   em_andamento: 'Em Andamento',
   aguardando_cliente: 'Aguard. Cliente',
   concluido: 'Concluído',
+  rejeitado_compliance: 'Rejeitado por Compliance',
   cancelado: 'Cancelado',
 };
 

@@ -25,6 +25,7 @@ const STATUS_CONFIG = {
   aguardando_cliente: { label: 'Aguard. Cliente', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
   concluido: { label: 'Concluído', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' },
   concluido_feedback: { label: 'Concluído - Feedback Enviado', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+  rejeitado_compliance: { label: 'Rejeitado por Compliance', color: '#ef4444', bg: 'rgba(239,68,68,0.15)' },
   cancelado: { label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.15)' },
 };
 
@@ -124,7 +125,7 @@ export default function Implantacoes() {
   const totalConcluidas = filtradas.filter(i => i.status === 'concluido' || i.status === 'concluido_feedback').length;
   const totalAndamento = filtradas.filter(i => i.status === 'em_andamento' || i.status === 'aguardando_documentacao').length;
   const totalAtrasadas = filtradas.filter(i => {
-    if (i.status === 'concluido' || i.status === 'concluido_feedback' || i.status === 'cancelado') return false;
+    if (i.status === 'concluido' || i.status === 'concluido_feedback' || i.status === 'cancelado' || i.status === 'rejeitado_compliance') return false;
     if (!i.data_prevista_conclusao) return false;
     return new Date(i.data_prevista_conclusao) < new Date();
   }).length;

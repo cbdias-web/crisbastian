@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     // Buscar todas as implantações não concluídas/canceladas
     const todasImplantacoes = await base44.asServiceRole.entities.Implantacao.list('-updated_date', 500);
     const ativas = todasImplantacoes.filter(imp =>
-      imp.status !== 'concluido' && imp.status !== 'cancelado'
+      imp.status !== 'concluido' && imp.status !== 'cancelado' && imp.status !== 'rejeitado_compliance'
     );
 
     const agora = new Date();

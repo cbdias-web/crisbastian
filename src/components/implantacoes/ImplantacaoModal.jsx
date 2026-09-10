@@ -4,6 +4,7 @@ import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, Fil
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import PainelInteracoesCliente from './PainelInteracoesCliente';
+import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
 
 const AURORA = {
   bg: '#0d1117',
@@ -22,6 +23,7 @@ const STATUS_OPTIONS = [
   { value: 'aguardando_cliente', label: 'Aguardando Cliente', color: '#60a5fa' },
   { value: 'concluido', label: 'Concluído', color: '#22c55e' },
   { value: 'concluido_feedback', label: 'Concluído - Feedback Enviado', color: '#a78bfa' },
+  { value: 'rejeitado_compliance', label: 'Rejeitado por Compliance', color: '#ef4444' },
   { value: 'cancelado', label: 'Cancelado', color: '#f87171' },
 ];
 
@@ -92,7 +94,8 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       const rateVal = form.rate_custodia != null && form.rate_custodia !== '' ? Number(form.rate_custodia) : null;
       const linkVal = (form.link_abertura_cc || '').trim();
 
-      if (!isentoCC) {
+      // Rejeição por Compliance dispensa Rate e Link (implantação barrada)
+      if (!isentoCC && statusFinal !== 'rejeitado_compliance') {
         // Rate obrigatório e dentro da faixa 0,01–4
         if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
           toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
@@ -100,7 +103,8 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
           return;
         }
         // Mudança de status exige Link de Abertura CC preenchido
-        if (statusFinal !== implantacao.status && !linkVal) {
+        // (rejeição por Compliance dispensa o link — implantação barrada)
+        if (statusFinal !== implantacao.status && statusFinal !== 'rejeitado_compliance' && !linkVal) {
           toast.error('Preencha o Link de Abertura CC para mover o lead de status/coluna.');
           setSalvando(false);
           return;
@@ -125,6 +129,11 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       };
 
       const updated = await base44.entities.Implantacao.update(implantacao.id, updateData);
+
+      // Registra o marco na jornada do lead de origem (Dash Parceiro)
+      if (statusFinal === 'rejeitado_compliance' && statusFinal !== implantacao.status) {
+        try { await registrarRejeicaoComplianceLead(form); } catch (e) {}
+      }
 
       // Notificar se status mudou
       if (statusFinal !== implantacao.status) {

@@ -28,6 +28,16 @@ const STATUS_CONTRATO = {
   no_pipeline: { label: 'No pipeline', color: AURORA.accent },
 };
 
+const STATUS_IMPLANTACAO = {
+  aguardando_documentacao: { label: 'Aguardando documentação', color: AURORA.warning },
+  em_andamento: { label: 'Em andamento', color: AURORA.accent },
+  aguardando_cliente: { label: 'Aguardando cliente', color: '#60a5fa' },
+  rejeitado_compliance: { label: 'Rejeitada por Compliance', color: AURORA.danger },
+  concluido: { label: 'Concluída', color: AURORA.green },
+  concluido_feedback: { label: 'Concluída — feedback enviado', color: AURORA.purple },
+  cancelado: { label: 'Cancelada', color: AURORA.danger },
+};
+
 const ST_PARCELA = {
   recebida: { color: AURORA.green, bg: 'rgba(52,211,153,0.12)', label: 'Recebida' },
   inadimplente: { color: AURORA.danger, bg: 'rgba(248,113,113,0.12)', label: 'Inadimplente' },
@@ -37,7 +47,7 @@ const ST_PARCELA = {
   pendente: { color: AURORA.warning, bg: 'rgba(251,191,36,0.12)', label: 'Pendente' },
 };
 
-function Milestone({ icon: Icon, titulo, sub, done, data }) {
+function Milestone({ icon: Icon, titulo, sub, subColor, done, data }) {
   return (
     <div className="flex items-start gap-2.5">
       <div className="flex flex-col items-center">
@@ -56,7 +66,7 @@ function Milestone({ icon: Icon, titulo, sub, done, data }) {
           <Icon className="w-3.5 h-3.5" style={{ color: done ? AURORA.accent : AURORA.textMuted }} />
           <p className="text-xs font-semibold" style={{ color: done ? AURORA.text : AURORA.textMuted }}>{titulo}</p>
         </div>
-        {sub && <p className="text-[11px] mt-0.5" style={{ color: AURORA.textMuted }}>{sub}</p>}
+        {sub && <p className="text-[11px] mt-0.5 font-semibold" style={{ color: subColor || AURORA.textMuted }}>{sub}</p>}
         {data && done && <p className="text-[10px] mt-0.5" style={{ color: AURORA.green }}>✓ {data}</p>}
       </div>
     </div>
@@ -126,6 +136,9 @@ export default function JornadaCliente({ detalhe }) {
     .sort((a, b) => a._ts - b._ts)[0] || null;
 
   const stContrato = contrato ? (STATUS_CONTRATO[contrato.status] || STATUS_CONTRATO.rascunho) : null;
+  const stImplantacao = implantacao
+    ? (STATUS_IMPLANTACAO[implantacao.status] || { label: implantacao.status, color: AURORA.textMuted })
+    : null;
 
   return (
     <div className="mb-4">
@@ -158,10 +171,22 @@ export default function JornadaCliente({ detalhe }) {
           icon={Rocket}
           titulo="Implantação"
           done={!!implantacao}
-          sub={implantacao ? `Status: ${implantacao.status || '—'}${implantacao.responsavel_implantacao ? ' · ' + implantacao.responsavel_implantacao : ''}` : 'Aguardando'}
+          sub={implantacao ? `Status: ${stImplantacao.label}${implantacao.responsavel_implantacao ? ' · ' + implantacao.responsavel_implantacao : ''}` : 'Aguardando'}
+          subColor={implantacao ? stImplantacao.color : undefined}
           data={implantacao ? fmtData(implantacao.data_conclusao || implantacao.data_entrada) : null}
         />
       </div>
+
+      {/* ─── Rejeição por Compliance (acompanha o lead na jornada) ─── */}
+      {implantacao?.status === 'rejeitado_compliance' && (
+        <div className="rounded-xl p-3 mt-2 flex items-center gap-2"
+          style={{ background: 'rgba(248,113,113,0.10)', border: '1px solid rgba(248,113,113,0.35)' }}>
+          <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: AURORA.danger }} />
+          <p className="text-xs font-semibold" style={{ color: AURORA.danger }}>
+            Implantação rejeitada por Compliance — o processo foi barrado pela área de compliance.
+          </p>
+        </div>
+      )}
 
       {/* ─── Parcelamento ─── */}
       <div className="rounded-xl p-3 mt-2"
