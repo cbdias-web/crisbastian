@@ -87,14 +87,11 @@ export default function FilaContato() {
         outros.push(...items);
       }
       const carteiraCarry = carteira.filter(c => (c.data_fila || '') <= dataFiltro);
-      // Tratados: dentro do período selecionado (pela última atualização — o
-      // momento em que o lead foi movido na esteira)
-      const iniTrat = dataInicio + 'T00:00:00';
-      const fimTrat = dataFiltro + 'T23:59:59';
-      const todosTratados = [...tratados, ...outros].filter(t => {
-        const u = t.updated_date || t.created_date || '';
-        return u >= iniTrat && u <= fimTrat;
-      });
+      // Tratados (atendeu/qualificado/convertido/descartado/nao_atendeu):
+      // SEM filtro de data — os leads trabalhados e seus status persistem no
+      // Kanban (histórico completo da esteira). Apenas a Agenda do Dia
+      // (carteira pendente) muda conforme a data selecionada.
+      const todosTratados = [...tratados, ...outros];
       const combinados = [...indicacoes, ...carteiraCarry, ...todosTratados];
       // Dedup por (tipo_origem, ref_id, vendedor_id) mantendo o mais recente:
       // montarFilaContatoDia cria um novo item pendente por dia para leads ainda
@@ -271,7 +268,7 @@ export default function FilaContato() {
           {[
             { label: 'Indicações na fila', value: totalIndicacao, icon: Zap, color: AURORA.accent },
             { label: 'Carteira pendente', value: totalCarteira, icon: Users, color: '#818cf8' },
-            { label: dataInicio === dataFiltro ? 'Concluídos no dia' : 'Concluídos no período', value: totalConcluidos, icon: Phone, color: '#34d399' },
+            { label: 'Concluídos', value: totalConcluidos, icon: Phone, color: '#34d399' },
           ].map(k => (
             <div key={k.label} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
               <div className="flex items-center gap-2 mb-1">
