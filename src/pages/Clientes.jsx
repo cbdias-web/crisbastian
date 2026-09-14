@@ -256,7 +256,7 @@ export default function Clientes() {
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes"],
-    queryFn: () => base44.entities.Cliente.list("nome"),
+    queryFn: () => base44.entities.Cliente.list("nome", 5000),
   });
 
   const { data: vendedores = [] } = useQuery({
