@@ -86,6 +86,11 @@
       "description": "Numero de 'nao atendeu' no dia",
       "default": 0
     },
+    "tentativas_contato": {
+      "type": "number",
+      "description": "Tentativas de contato registradas enquanto o lead est\u00e1 em 'Em Contato' (ex: liga\u00e7\u00e3o/WhatsApp sem retorno). A partir de 4 tentativas o lead \u00e9 sugerido para Nutri\u00e7\u00e3o (ghosting).",
+      "default": 0
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -94,10 +99,21 @@
         "nao_atendeu",
         "qualificado",
         "convertido",
-        "descartado"
+        "descartado",
+        "nutricao"
       ],
       "default": "pendente",
-      "description": "Status do item na fila do dia (pendente=na fila, atendeu=em contato, qualificado=qualificado, convertido=convertido, descartado=desqualificado, nao_atendeu=reagendado)"
+      "description": "Status do item na fila do dia (pendente=na fila, atendeu=em contato, qualificado=qualificado, convertido=convertido, descartado=desqualificado, nao_atendeu=reagendado, nutricao=desqualifica\u00e7\u00e3o tempor\u00e1ria para nutri\u00e7\u00e3o futura)"
+    },
+    "status_desde": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que o lead entrou no status atual \u2014 base do contador de dias parado e do alerta de in\u00e9rcia (SLA 48h em 'Em Contato')"
+    },
+    "alerta_stale": {
+      "type": "boolean",
+      "default": false,
+      "description": "Alerta de in\u00e9rcia j\u00e1 disparado pelo scheduler (lead >48h em 'Em Contato' sem intera\u00e7\u00e3o). Resetado a cada nova intera\u00e7\u00e3o/movimenta\u00e7\u00e3o."
     },
     "ultima_tentativa_em": {
       "type": "string",
@@ -107,7 +123,11 @@
     "proximo_contato": {
       "type": "string",
       "format": "date",
-      "description": "Data reagendada apos 'nao atendeu' (proximo dia util)"
+      "description": "Data reagendada apos 'nao atendeu' (proximo dia util) ou do retorno obrigat\u00f3rio agendado ao entrar em 'Em Contato'"
+    },
+    "proximo_contato_hora": {
+      "type": "string",
+      "description": "Hor\u00e1rio (HH:MM) do retorno obrigat\u00f3rio agendado ao mover o lead para 'Em Contato'"
     },
     "meet_link": {
       "type": "string",

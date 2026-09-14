@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
-import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X } from 'lucide-react';
+import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X, AlertTriangle, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import FilaContatoKanban from '@/components/fila/FilaContatoKanban';
 import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
 import GerenteMultiSelect from '@/components/leads/GerenteMultiSelect';
+import { isStaleItem } from '@/components/fila/filaContatoUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -33,6 +34,7 @@ export default function FilaContato() {
   const [dataInicio, setDataInicio] = useState(hoje());
   const [modo, setModo] = useState('fila'); // 'fila' (data_fila) | 'agendados' (proximo_contato)
   const [gerentesSel, setGerentesSel] = useState([]);
+  const [soAtrasados, setSoAtrasados] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -78,9 +80,9 @@ export default function FilaContato() {
       const [indicacoes, carteira, tratados] = await Promise.all([
         base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'indicacao' }, 'prioridade', 500),
         base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'carteira' }, 'prioridade', 500),
-        base44.entities.FilaContato.filter({ status: 'atendeu' }, '-updated_date', 300),
+        base44.entities.FilaContato.filter({ status: 'atendeu' }, '-updated_date', 500),
       ]);
-      const outrosStatus = ['qualificado', 'convertido', 'descartado', 'nao_atendeu'];
+      const outrosStatus = ['qualificado', 'convertido', 'descartado', 'nao_atendeu', 'nutricao'];
       const outros = [];
       for (const s of outrosStatus) {
         const items = await base44.entities.FilaContato.filter({ status: s }, '-updated_date', 300);
@@ -149,7 +151,9 @@ export default function FilaContato() {
   });
 
   // Filtro local por nome/telefone e gerentes selecionados (aplicado sobre o resultado da query)
+  const atrasadosCount = fila.filter(isStaleItem).length;
   const filaFiltrada = fila
+    .filter(f => !soAtrasados || isStaleItem(f))
     .filter(f => !gerentesSel.length || gerentesSel.includes(f.vendedor_id))
     .filter(f => !busca.trim() || (f.nome || '').toLowerCase().includes(busca.trim().toLowerCase()) || (f.telefone || '').includes(busca.trim()));
 
@@ -249,6 +253,14 @@ export default function FilaContato() {
               <button onClick={() => { setDataInicio(hoje()); setDataFiltro(hoje()); }} className="text-[10px] font-semibold" style={{ color: AURORA.accent }}>Hoje</button>
             )}
           </div>
+          {/* Apenas leads atrasados (>48h em Em Contato sem interação) */}
+          {modo === 'fila' && (
+            <button onClick={() => setSoAtrasados(p => !p)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition"
+              style={{ background: soAtrasados ? 'rgba(239,68,68,0.15)' : AURORA.surface, color: soAtrasados ? '#f87171' : AURORA.textMuted, border: `1px solid ${soAtrasados ? 'rgba(239,68,68,0.4)' : AURORA.border}` }}>
+              <AlertTriangle className="w-3.5 h-3.5" /> Só atrasados{atrasadosCount ? ` (${atrasadosCount})` : ''}
+            </button>
+          )}
           {/* Busca */}
           <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl flex-1 min-w-[200px]" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
             <Search className="w-3.5 h-3.5 flex-shrink-0" style={{ color: AURORA.textMuted }} />
@@ -305,7 +317,17 @@ export default function FilaContato() {
             )}
           </div>
         ) : (
-          <FilaContatoKanban itens={filaFiltrada} isAdmin={isAdmin} onSelectItem={setPopup} onAtualizado={() => queryClient.invalidateQueries({ queryKey: ['fila-contato'] })} />
+          <>
+            {modo === 'fila' && totalCarteira > 0 && (
+              <div className="flex items-center gap-2.5 mb-3 px-4 py-2.5 rounded-2xl" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.35)' }}>
+                <Target className="w-4 h-4 flex-shrink-0" style={{ color: '#fbbf24' }} />
+                <p className="text-xs" style={{ color: AURORA.text }}>
+                  <strong style={{ color: '#fbbf24' }}>Prioridade operacional:</strong> zere os <strong>{totalCarteira}</strong> compromissos da <strong>Agenda do Dia</strong> (carteira) antes de atacar {totalIndicacao > 0 ? `os ${totalIndicacao} leads novos` : 'os leads novos'} da fila geral.
+                </p>
+              </div>
+            )}
+            <FilaContatoKanban itens={filaFiltrada} isAdmin={isAdmin} onSelectItem={setPopup} onAtualizado={() => queryClient.invalidateQueries({ queryKey: ['fila-contato'] })} />
+          </>
         )}
       </div>
 

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { base44 } from '@/api/base44Client';
-import { waLink } from './QrCodeContato';
 import { toast } from 'sonner';
-import { Phone, Clock, ArrowRight, User, Zap, CheckCircle2, PhoneCall, XCircle, Trophy, BadgeCheck, MoreVertical, Pencil, RotateCcw, Calendar, Trash2, GripVertical, Mail } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
+import FilaContatoCard from './FilaContatoCard';
+import AgendarRetornoModal from './AgendarRetornoModal';
+import { COLUNAS, destinoPara, carregarOrdem, ORDEN_STORAGE_KEY } from './filaContatoUtils';
 
 const AURORA = {
   surface: '#161b22',
@@ -14,63 +16,11 @@ const AURORA = {
   textMuted: 'rgba(230,237,243,0.55)',
 };
 
-const fmtDataLead = (d) => {
-  if (!d) return '';
-  const dt = new Date(d);
-  if (isNaN(dt)) return '';
-  return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-};
-
-const STATUS_LABEL = {
-  pendente: 'Pendente',
-  atendeu: 'Em Contato',
-  nao_atendeu: 'Não Atendeu',
-  qualificado: 'Qualificado',
-  convertido: 'Convertido',
-  descartado: 'Desqualificado',
-};
-
-const COLUNAS = [
-  { key: 'indicacao', label: 'Indicações', icon: Zap, color: '#00D4AA', bg: 'rgba(0,212,170,0.08)', statuses: ['pendente'], origem: 'indicacao' },
-  { key: 'carteira', label: 'Agenda do Dia', icon: Clock, color: '#818cf8', bg: 'rgba(99,102,241,0.08)', statuses: ['pendente'], origem: 'carteira' },
-  { key: 'em_contato', label: 'Em Contato', icon: PhoneCall, color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', statuses: ['atendeu'] },
-  { key: 'qualificado', label: 'Qualificado', icon: BadgeCheck, color: '#60a5fa', bg: 'rgba(59,130,249,0.08)', statuses: ['qualificado'] },
-  { key: 'convertido', label: 'Convertido', icon: Trophy, color: '#34d399', bg: 'rgba(52,211,153,0.08)', statuses: ['convertido'] },
-  { key: 'desqualificado', label: 'Desqualificado', icon: XCircle, color: '#f87171', bg: 'rgba(248,113,113,0.08)', statuses: ['descartado'] },
-];
-
-// Ordem das colunas da esteira — personalizada pelo usuário (arrastar o
-// cabeçalho) e persistida no navegador. Padrão: Desqualificado por último.
-const ORDEN_STORAGE_KEY = 'fila_contato_ordem_colunas';
-const carregarOrdem = () => {
-  try {
-    const salvas = JSON.parse(localStorage.getItem(ORDEN_STORAGE_KEY) || '[]');
-    if (Array.isArray(salvas) && salvas.length === COLUNAS.length && salvas.every(k => COLUNAS.some(c => c.key === k))) {
-      return salvas.map(k => COLUNAS.find(c => c.key === k));
-    }
-  } catch {}
-  return [...COLUNAS];
-};
-
-const destinoPara = (colKey) => {
-  const col = COLUNAS.find(c => c.key === colKey);
-  if (!col) return null;
-  if (col.key === 'indicacao') return { status: 'pendente', tipo_origem: 'indicacao' };
-  if (col.key === 'carteira') return { status: 'pendente', tipo_origem: 'carteira' };
-  return { status: col.statuses[0] };
-};
-
-const STATUS_MENU = [
-  { key: 'em_contato', label: 'Em Contato' },
-  { key: 'qualificado', label: 'Qualificado' },
-  { key: 'convertido', label: 'Convertido' },
-  { key: 'desqualificado', label: 'Desqualificado' },
-];
-
 export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, isAdmin }) {
   const [menuId, setMenuId] = useState(null);
   const [movendo, setMovendo] = useState(false);
   const [colunasOrdem, setColunasOrdem] = useState(carregarOrdem);
+  const [agendarRetorno, setAgendarRetorno] = useState(null); // item aguardando agendamento obrigatório
 
   const colunas = {};
   for (const col of COLUNAS) {
@@ -93,7 +43,8 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
     carteira: 'ativa',
   };
 
-  const mover = async (item, destinoKey) => {
+  // Executa a movimentação de fato (drag, menu ou ação rápida)
+  const aplicarMovimento = async (item, destinoKey, extra = {}) => {
     const patch = destinoPara(destinoKey);
     if (!patch) return;
     const col = COLUNAS.find(c => c.key === destinoKey);
@@ -108,6 +59,11 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
       patch.data_fila = hojeStr;
       patch.posicao = maxPos + 1;
     }
+    // Relógio de inércia: reinicia a cada movimentação de status
+    const agoraIso = new Date().toISOString();
+    patch.status_desde = agoraIso;
+    patch.alerta_stale = false;
+    Object.assign(patch, extra);
     setMovendo(true);
     try {
       await base44.entities.FilaContato.update(item.id, patch);
@@ -124,7 +80,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
           if (li && li.status === 'novo') {
             await base44.entities.LeadIndicacao.update(li.id, {
               status: 'em_atendimento',
-              historico: [...(li.historico || []), { status: 'em_atendimento', label: 'Em Atendimento', data: new Date().toISOString() }],
+              historico: [...(li.historico || []), { status: 'em_atendimento', label: 'Em Atendimento', data: agoraIso }],
             });
           }
         } catch (e) {}
@@ -136,6 +92,104 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
     }
     setMovendo(false);
     setMenuId(null);
+  };
+
+  // Qualquer entrada em "Em Contato" exige o agendamento obrigatório do
+  // próximo retorno (data/hora) — nenhum card entra sem tarefa futura.
+  const mover = (item, destinoKey) => {
+    if (destinoKey === 'em_contato') {
+      setAgendarRetorno(item);
+      setMenuId(null);
+      return;
+    }
+    return aplicarMovimento(item, destinoKey);
+  };
+
+  const confirmarRetorno = async ({ data, hora }) => {
+    const item = agendarRetorno;
+    setAgendarRetorno(null);
+    if (!item) return;
+    const agoraIso = new Date().toISOString();
+    await aplicarMovimento(item, 'em_contato', {
+      proximo_contato: data,
+      proximo_contato_hora: hora,
+      tentativas_contato: 0,
+      historico: [...(item.historico || []), { status: 'atendeu', observacao: `Retorno agendado para ${data.split('-').reverse().join('/')} às ${hora}`, data: agoraIso }],
+    });
+  };
+
+  // Ação rápida: Em Contato → Qualificado (sem arrastar). Registra no Pipeline
+  // e dispara tarefa de proposta comercial com prazo máximo de 24h.
+  const qualificarQuick = async (item) => {
+    if (movendo) return;
+    setMovendo(true);
+    setMenuId(null);
+    try {
+      const res = await base44.functions.invoke('classificarLeadFila', {
+        fila_id: item.id,
+        status: 'qualificado',
+        produto: item.produto,
+        valor: item.valor_estimado ?? null,
+      });
+      const data = res?.data || res;
+      if (data?.error) throw new Error(data.error);
+      const agoraIso = new Date().toISOString();
+      await base44.entities.FilaContato.update(item.id, { status_desde: agoraIso, alerta_stale: false }).catch(() => {});
+      // Tarefa: proposta comercial com prazo máximo de 24h (agenda do gerente)
+      const amanhaStr = new Date(Date.now() + 24 * 3600 * 1000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+      await base44.entities.AgendaContato.create({
+        lead_id: item.cliente_id || item.ref_id,
+        lead_nome: item.nome,
+        lead_telefone: item.telefone || '',
+        lead_cpf_cnpj: item.cpf_cnpj || '',
+        cliente_id: item.cliente_id || '',
+        vendedor_id: item.vendedor_id,
+        vendedor_nome: item.vendedor_nome,
+        data_agendada: amanhaStr,
+        horario: '09:00',
+        posicao_dia: 0,
+        lote_id: '',
+        status: 'pendente',
+        resultado: 'Tarefa: Proposta comercial — prazo máximo 24h (gerada na qualificação do lead)',
+      }).catch(() => {});
+      toast.success('Lead qualificado! Tarefa de proposta criada (prazo 24h).');
+      onAtualizado?.();
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || String(e);
+      if (String(msg).includes('produto')) {
+        toast.error('Informe o produto da negociação antes de qualificar — abra o card e preencha a negociação.');
+      } else {
+        toast.error('Erro ao qualificar: ' + msg);
+      }
+    }
+    setMovendo(false);
+  };
+
+  // Registra uma tentativa de contato sem retorno do cliente (Em Contato):
+  // incrementa o contador de tentativas e reinicia o relógio de inércia.
+  // A partir da 4ª tentativa o lead é sugerido para Nutrição (ghosting).
+  const registrarTentativaSemRetorno = async (item) => {
+    if (movendo) return;
+    setMovendo(true);
+    setMenuId(null);
+    try {
+      const agoraIso = new Date().toISOString();
+      const novas = (item.tentativas_contato || 0) + 1;
+      await base44.entities.FilaContato.update(item.id, {
+        tentativas_contato: novas,
+        ultima_tentativa_em: agoraIso,
+        status_desde: agoraIso,
+        alerta_stale: false,
+        historico: [...(item.historico || []), { status: 'atendeu', observacao: `Tentativa ${novas} — sem retorno do cliente`, data: agoraIso }],
+      });
+      toast.success(novas >= 4
+        ? `Tentativa ${novas} registrada — lead sem retorno. Sugerimos mover para Nutrição.`
+        : `Tentativa ${novas} registrada.`);
+      onAtualizado?.();
+    } catch (e) {
+      toast.error('Erro ao registrar tentativa: ' + (e?.message || e));
+    }
+    setMovendo(false);
   };
 
   // Exclusão (somente admin): remove o item da esteira definitivamente.
@@ -209,134 +263,49 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
                               style={{ borderBottom: `1px solid ${col.color}33` }}>
                               <div className="flex items-center gap-1.5 min-w-0">
                                 <GripVertical className="w-3 h-3 flex-shrink-0" style={{ color: col.color, opacity: 0.6 }} />
-                      <col.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: col.color }} />
-                      <p className="text-xs font-bold truncate" style={{ color: col.color }}>{col.label}</p>
-                    </div>
-                    <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${col.color}22`, color: col.color }}>{lista.length}</span>
-                  </div>
-                  <div className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[140px]">
-                    {lista.length === 0 && (
-                      <p className="text-center text-[11px] py-6" style={{ color: AURORA.textMuted }}>
-                        {isPendenteCol ? 'Sem itens' : '—'}
-                      </p>
-                    )}
-                    {lista.map((item, index) => (
-                      <Draggable draggableId={item.id} index={index} key={item.id} type="CARD">
-                        {(p, s) => (
-                          <div ref={p.innerRef} {...p.draggableProps} {...p.dragHandleProps}
-                            onClick={() => menuId !== item.id && onSelectItem(item)}
-                            className="rounded-xl p-2.5 transition cursor-grab active:cursor-grabbing relative"
-                            style={{
-                              background: isPendenteCol ? AURORA.surface : `${col.color}0d`,
-                              border: `1px solid ${s.isDragging ? col.color : (isPendenteCol ? AURORA.border : `${col.color}33`)}`,
-                              ...p.draggableProps.style,
-                            }}>
-                            <button onClick={(e) => { e.stopPropagation(); setMenuId(menuId === item.id ? null : item.id); }}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              className="absolute top-1.5 right-1.5 p-1 rounded-md transition z-10"
-                              style={{ color: AURORA.textMuted, background: 'rgba(255,255,255,0.04)' }}
-                              onMouseEnter={e => e.currentTarget.style.color = AURORA.accent}
-                              onMouseLeave={e => e.currentTarget.style.color = AURORA.textMuted}>
-                              <MoreVertical className="w-3 h-3" />
-                            </button>
-                            {menuId === item.id && (
-                              <div className="absolute top-7 right-1 z-50 rounded-xl py-1 shadow-2xl min-w-[160px]"
-                                style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}
-                                onClick={e => e.stopPropagation()}>
-                                <button onClick={(e) => { e.stopPropagation(); setMenuId(null); onSelectItem(item); }}
-                                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition"
-                                  style={{ color: AURORA.text }}
-                                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
-                                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                  <Pencil className="w-3 h-3" /> Editar / Manutenção
-                                </button>
-                                <div style={{ borderTop: `1px solid ${AURORA.border}`, margin: '2px 0' }} />
-                                <p className="px-3 py-1 text-[9px] uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Mover para</p>
-                                {STATUS_MENU.map(sm => (
-                                  <button key={sm.key} disabled={movendo} onClick={(e) => { e.stopPropagation(); mover(item, sm.key); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition disabled:opacity-40"
-                                    style={{ color: AURORA.text }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                    <ArrowRight className="w-3 h-3" /> {sm.label}
-                                  </button>
-                                ))}
-                                {!isPendenteCol && (
-                                  <button disabled={movendo} onClick={(e) => { e.stopPropagation(); mover(item, item.tipo_origem === 'indicacao' ? 'indicacao' : 'carteira'); }}
-                                    className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition disabled:opacity-40"
-                                    style={{ color: AURORA.text }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                    <RotateCcw className="w-3 h-3" /> Voltar à fila
-                                  </button>
-                                )}
-                                {isAdmin && (
-                                  <>
-                                    <div style={{ borderTop: `1px solid ${AURORA.border}`, margin: '2px 0' }} />
-                                    <button onClick={(e) => { e.stopPropagation(); excluirItem(item); }}
-                                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs transition"
-                                      style={{ color: '#f87171' }}
-                                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.1)'}
-                                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                      <Trash2 className="w-3 h-3" /> Excluir da esteira
-                                    </button>
-                                  </>
+                                <col.icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: col.color }} />
+                                <p className="text-xs font-bold truncate" style={{ color: col.color }}>{col.label}</p>
+                                {col.key === 'carteira' && lista.length > 0 && (
+                                  <span title="Prioridade 1: zere os compromissos da Agenda do Dia antes de atacar novos leads"
+                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                    style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}>★ 1ª</span>
                                 )}
                               </div>
-                            )}
-                            <div className="flex items-start gap-2 mb-1.5 pr-5">
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: `${col.color}22`, color: col.color }}>
-                                {item.nome?.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate" style={{ color: AURORA.text }}>{item.nome}</p>
-                                <p className="text-[10px] flex items-center gap-1 truncate" style={{ color: AURORA.textMuted }}>
-                                  <Phone className="w-2.5 h-2.5 flex-shrink-0" />{item.telefone || '—'}
+                              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: `${col.color}22`, color: col.color }}>{lista.length}</span>
+                            </div>
+                            <div className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[140px]">
+                              {lista.length === 0 && (
+                                <p className="text-center text-[11px] py-6" style={{ color: AURORA.textMuted }}>
+                                  {isPendenteCol ? 'Sem itens' : '—'}
                                 </p>
-                              </div>
-                            </div>
-                            {item.produto && (
-                              <p className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mb-1" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{item.produto}</p>
-                            )}
-                            {item.tipo_origem === 'indicacao' && (item.parceiro_nome || item.parceiro_telefone || item.parceiro_email) && (
-                              <div className="rounded-lg px-1.5 py-1 mb-1" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.18)' }}>
-                                <p className="text-[9px] font-semibold truncate" style={{ color: AURORA.accent }}>🔗 {item.parceiro_nome || 'Indicador'}</p>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {item.parceiro_telefone && (
-                                    <a href={waLink(item.parceiro_telefone) || undefined} target="_blank" rel="noopener noreferrer"
-                                      className="text-[9px] flex items-center gap-0.5 font-semibold underline" style={{ color: AURORA.textMuted }}>
-                                      <Phone className="w-2.5 h-2.5" /> {item.parceiro_telefone}
-                                    </a>
-                                  )}
-                                  {item.parceiro_email && (
-                                    <a href={`mailto:${item.parceiro_email}`}
-                                      className="text-[9px] flex items-center gap-0.5 font-semibold underline" style={{ color: AURORA.textMuted }}>
-                                      <Mail className="w-2.5 h-2.5" /> e-mail
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                            {(item.data_fila || item.created_date) && (
-                              <p className="text-[9px] flex items-center gap-0.5 mb-1" style={{ color: AURORA.textMuted }} title="Data do lead">
-                                <Calendar className="w-2.5 h-2.5 flex-shrink-0" />{fmtDataLead(item.created_date)}
-                              </p>
-                            )}
-                            <div className="flex items-center justify-between gap-1 flex-wrap">
-                              {item.vendedor_nome && <span className="text-[9px] flex items-center gap-0.5 truncate" style={{ color: AURORA.textMuted }}><User className="w-2.5 h-2.5 flex-shrink-0" />{item.vendedor_nome.split(' ')[0]}</span>}
-                              {item.tentativas > 0 && <span className="text-[9px] flex items-center gap-0.5" style={{ color: '#fbbf24' }}><ArrowRight className="w-2.5 h-2.5" />{item.tentativas}x</span>}
-                              {!isPendenteCol && (
-                                <span className="text-[9px] font-semibold flex items-center gap-0.5" style={{ color: col.color }}>
-                                  <CheckCircle2 className="w-2.5 h-2.5" />{STATUS_LABEL[item.status] || item.status}
-                                </span>
                               )}
+                              {lista.map((item, index) => (
+                                <Draggable draggableId={item.id} index={index} key={item.id} type="CARD">
+                                  {(p, s) => (
+                                    <FilaContatoCard
+                                      item={item}
+                                      col={col}
+                                      isPendenteCol={isPendenteCol}
+                                      movendo={movendo}
+                                      menuAberto={menuId === item.id}
+                                      isAdmin={isAdmin}
+                                      innerRef={p.innerRef}
+                                      draggableProps={p.draggableProps}
+                                      dragHandleProps={p.dragHandleProps}
+                                      isDragging={s.isDragging}
+                                      style={p.draggableProps.style}
+                                      onMenuToggle={(it) => setMenuId(it ? it.id : null)}
+                                      onSelect={onSelectItem}
+                                      onMover={mover}
+                                      onQualificar={qualificarQuick}
+                                      onTentativa={registrarTentativaSemRetorno}
+                                      onExcluir={excluirItem}
+                                    />
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
                             </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
                           </div>
                         )}
                       </Droppable>
@@ -350,6 +319,13 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
         )}
       </Droppable>
       {menuId && <div className="fixed inset-0 z-40" onClick={() => setMenuId(null)} />}
+      {agendarRetorno && (
+        <AgendarRetornoModal
+          leadNome={agendarRetorno.nome}
+          onConfirm={confirmarRetorno}
+          onCancel={() => setAgendarRetorno(null)}
+        />
+      )}
     </DragDropContext>
   );
 }

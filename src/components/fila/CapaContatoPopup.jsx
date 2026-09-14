@@ -9,6 +9,7 @@ import RegistroLigacaoForm from './RegistroLigacaoForm';
 import CadastroCarteiraPanel from './CadastroCarteiraPanel';
 import HistoricoInteracoes from './HistoricoInteracoes';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
+import AgendarRetornoModal from './AgendarRetornoModal';
 
 const AURORA = {
   surface: '#161b22',
@@ -37,6 +38,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [trocarGerente, setTrocarGerente] = useState(false);
   const [novoGerenteId, setNovoGerenteId] = useState('');
   const [reatribuindo, setReatribuindo] = useState(false);
+  const [retornoModal, setRetornoModal] = useState(false); // retorno obrigatório ao entrar em "Em Contato"
+  const [retornoFluxo, setRetornoFluxo] = useState(null); // 'classificar' | 'atendeu'
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
@@ -127,9 +130,10 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           resultado: 'Atendeu',
         }).catch(() => {});
       }
-      toast.success('Atendimento registrado. Agende a reunião e inclua outros gerentes.');
+      toast.success('Atendimento registrado.');
       onAtualizado?.();
-      setAgendaAberto(true);
+      setRetornoFluxo('atendeu');
+      setRetornoModal(true);
     } catch (e) {
       toast.error('Erro: ' + (e?.response?.data?.error || e.message));
     }
@@ -163,6 +167,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
     { key: 'em_contato', label: 'Em Contato', status: 'atendeu', color: '#fbbf24' },
     { key: 'qualificado', label: 'Qualificado', status: 'qualificado', color: '#60a5fa' },
     { key: 'desqualificado', label: 'Desqualificado', status: 'descartado', color: '#f87171' },
+    { key: 'nutricao', label: 'Nutrição', status: 'nutricao', color: '#c084fc' },
     { key: 'convertido', label: 'Convertido', status: 'convertido', color: '#34d399' },
     { key: 'voltar', label: 'Voltar à Fila', status: 'pendente', color: AURORA.accent },
   ];
@@ -185,6 +190,8 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const classificar = async (c) => {
     if (c.key === 'voltar' && fila.status === 'pendente') return;
     if (c.key !== 'voltar' && fila.status === c.status) return;
+    // Entrada em "Em Contato" exige agendamento do próximo retorno (tarefa obrigatória)
+    if (c.key === 'em_contato') { setRetornoFluxo('classificar'); setRetornoModal(true); return; }
     setClassificando(c.key);
     try {
       if (c.status === 'qualificado' || c.status === 'convertido') {
@@ -196,11 +203,12 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           valor: valorNeg !== '' ? Number(valorNeg) : null,
         });
         if (res?.data?.error) throw new Error(res.data.error);
+        await base44.entities.FilaContato.update(fila.id, { status_desde: new Date().toISOString(), alerta_stale: false }).catch(() => {});
         toast.success(c.status === 'convertido'
           ? 'Lead convertido — contrato e pipeline criados.'
           : 'Lead qualificado e enviado para o Pipeline.');
       } else {
-        await base44.entities.FilaContato.update(fila.id, { status: c.status });
+        await base44.entities.FilaContato.update(fila.id, { status: c.status, status_desde: new Date().toISOString(), alerta_stale: false });
         toast.success(`Lead classificado como "${c.label}".`);
       }
       // Origem Agenda do Dia: encerra o agendamento do dia e o lead passa a
@@ -217,6 +225,41 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
       toast.error('Erro: ' + (e?.message || e));
     }
     setClassificando(null);
+  };
+
+  // Confirma o retorno obrigatório (modal aberto ao entrar em "Em Contato")
+  const confirmarRetorno = async ({ data, hora }) => {
+    const fluxo = retornoFluxo;
+    setRetornoModal(false);
+    setRetornoFluxo(null);
+    const agoraIso = new Date().toISOString();
+    const dataLabel = data.split('-').reverse().join('/');
+    try {
+      if (fluxo === 'classificar') {
+        await base44.entities.FilaContato.update(fila.id, {
+          status: 'atendeu',
+          proximo_contato: data,
+          proximo_contato_hora: hora,
+          status_desde: agoraIso,
+          tentativas_contato: 0,
+          alerta_stale: false,
+          historico: [...(fila.historico || []), { status: 'atendeu', observacao: `Retorno agendado para ${dataLabel} às ${hora}`, data: agoraIso }],
+        });
+        if (agenda) {
+          await base44.entities.AgendaContato.update(agenda.id, { status: 'realizado', realizado_em: agoraIso, resultado: 'Em Contato' }).catch(() => {});
+        }
+        toast.success(`Lead em contato — retorno agendado para ${dataLabel}.`);
+        onAtualizado?.();
+        onClose?.();
+      } else {
+        await base44.entities.FilaContato.update(fila.id, { proximo_contato: data, proximo_contato_hora: hora, status_desde: agoraIso });
+        toast.success(`Retorno agendado para ${dataLabel}.`);
+        onAtualizado?.();
+        setAgendaAberto(true); // segue o fluxo original de agendamento da reunião (Meet)
+      }
+    } catch (e) {
+      toast.error('Erro ao agendar retorno: ' + (e?.message || e));
+    }
   };
 
   const verCadastro = async () => {
@@ -466,6 +509,13 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         </div>
       </div>
     </div>
+    {retornoModal && (
+      <AgendarRetornoModal
+        leadNome={fila.nome}
+        onConfirm={confirmarRetorno}
+        onCancel={() => { setRetornoModal(false); setRetornoFluxo(null); }}
+      />
+    )}
     {agendaAberto && (
       <AgendaMeetModal
         user={user}
