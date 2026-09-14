@@ -380,7 +380,58 @@ const sections = [
         '**7. Conversão:** Contrato + Venda gerados automaticamente.',
         '**8. Implantação:** checklist de fases + notificações Jarvis (vendas do tipo "nova").',
       ]},
-      { subtitle: '📄 PDF da Jornada', text: 'Use o botão "Baixar PDF da Jornada" no topo do Manual para gerar um documento ilustrado (paleta Aurora) com o fluxograma da jornada completa, o diagrama do popup e o fluxo de conversão.' },
+      { subtitle: '🗣️ Abertura e IA personalizadas', items: [
+        'A abertura do roteiro identifica o lead automaticamente: **primeiro nome (PF)** ou **representante legal (PJ)**, além do **primeiro nome do gerente** responsável — ex.: "Oi Jefferson, aqui é Kauana da Villela Exchange".',
+        '**Roteiro, objeções comuns e sugestões da IA são vinculadas ao produto** selecionado na "Negociação em Andamento", em tempo real: a IA responde exclusivamente sobre o produto em negociação e não menciona outros produtos.',
+      ]},
+      { subtitle: '📄 PDFs ilustrados', text: 'Use o botão "Baixar PDF da Jornada" no topo do Manual para o documento da jornada completa, e o botão "Baixar PDF da Nova Esteira (Fila de Contatos)" para o guia ilustrado da nova esteira (Kanban, SLA, cadência e ações rápidas).' },
+    ],
+  },
+  {
+    id: 'fila-contatos-esteira', icon: KanbanSquare, title: 'Fila de Contatos — Nova Esteira (SLA & Cadência)',
+    color: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-100',
+    content: [
+      { subtitle: 'O que mudou?', text: 'A esteira de Fila de Contatos foi reestruturada com controle de tempo, cadência obrigatória e ações rápidas. O Kanban agora possui 7 colunas: Indicações, Agenda do Dia, Em Contato, Qualificado, Convertido, Nutrição (nova) e Desqualificado — reordenáveis arrastando o cabeçalho.' },
+      { subtitle: '⏱️ SLA de inércia (48h em Em Contato)', items: [
+        'Leads parados em **"Em Contato" por mais de 48h** sem interação recebem **borda vermelha pulsante** e o selo **"Xd sem interação"** no card.',
+        'O **contador de dias parado** também aparece nos cards da esteira **Qualificado**.',
+        'A verificação é automática, **a cada 5 minutos**, e registra a inércia no histórico do lead.',
+        'Cada nova interação ou movimentação **reinicia o relógio** de inércia.',
+      ]},
+      { subtitle: '📥 Retorno obrigatório em "Em Contato"', items: [
+        'Ao mover qualquer lead para **"Em Contato"** (arraste, menu do card ou classificação no popup), o sistema **abre um modal exigindo data e hora** do próximo retorno.',
+        '**Nenhum lead entra ou fica na esteira sem uma tarefa futura ativa** — o retorno agendado é exibido no card (ex.: "retorno 16/09 09:00").',
+        'Após registrar "Atendeu", o mesmo modal agenda o retorno e então abre o agendamento da reunião (Meet), como no fluxo original.',
+      ]},
+      { subtitle: '📵 Tentativas sem retorno e ghosting', items: [
+        'O botão de **tentativa no card** registra cada contato sem resposta do cliente (**T1, T2, T3...**) e reinicia o relógio de inércia.',
+        'A partir da **4ª tentativa sem retorno** o lead entra em **"ghosting"** (selo roxo "Sem retorno" no card).',
+        'Em ghosting, o sistema **sugere mover o lead para a esteira Nutrição** direto no menu do card.',
+      ]},
+      { subtitle: '🌱 Esteira Nutrição (nova coluna)', items: [
+        'Desqualificação **temporária** para leads em ghosting — o lead sai da visão do operador **sem ser perdido**.',
+        'Disponível na barra de classificação do popup e no menu "Mover para" do card.',
+        'O lead pode voltar à fila quando retomado pelo gerente.',
+      ]},
+      { subtitle: '⚡ Ação rápida "Qualificar" (tarefa de 24h)', items: [
+        'Botão direto no card de leads em **Em Contato** — qualifica **sem precisar arrastar**.',
+        'Registra o lead no **Pipeline** e cria automaticamente uma **tarefa de proposta comercial com prazo máximo de 24 horas** na agenda do gerente.',
+        'Requer produto informado na negociação (campo do popup "Negociação em Andamento").',
+      ]},
+      { subtitle: '🎯 Prioridade operacional', items: [
+        'Faixa amarela acima do Kanban: **zere os compromissos da Agenda do Dia (carteira) antes de atacar os leads novos** da fila geral.',
+        'Selo **"1ª"** na coluna Agenda do Dia reforça a prioridade.',
+        'Leads que não atendem (ou retornam de Em Contato) voltam ao **final da fila de reposição** do gerente.',
+      ]},
+      { subtitle: '🔎 Filtro "Só atrasados"', items: [
+        'Chip na barra de filtros que **isola em um clique os leads parados além do SLA** (>48h em Em Contato), com contador de atrasados.',
+        'Combinável com o **filtro por gerente** para acompanhamento individual por operador.',
+      ]},
+      { subtitle: '🔔 Notificações automáticas de inércia (Jarvis)', items: [
+        'Quando um lead estoura o SLA, o **gerente responsável recebe mensagem consolidada via Jarvis** com a lista dos seus leads parados.',
+        'Os **administradores recebem um resumo geral** de inércia por gerente.',
+        'Disparo apenas quando há **alertas novos** — sem repetição a cada verificação.',
+      ]},
     ],
   },
   {
@@ -823,7 +874,7 @@ const categories = [
     id: 'vendas', label: 'Vendas', icon: BarChart2,
     gradFrom: '#00b09b', gradTo: '#007b6e',
     color: 'from-[#00b09b] to-[#007b6e]',
-    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'implantacoes'],
+    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'fila-contatos-esteira', 'implantacoes'],
   },
   {
     id: 'financas', label: 'Finanças', icon: DollarSign,
@@ -981,7 +1032,7 @@ export default function Manual() {
                 </h1>
                 <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Ago/2026
+                  Guia completo de utilização — atualizado Set/2026
                 </p>
               </div>
             </div>
@@ -991,7 +1042,7 @@ export default function Manual() {
               {[
                 { v: sections.length, l: 'Seções', icon: '📋' },
                 { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
-                { v: 'Ago/2026', l: 'Atualizado', icon: '🗓' },
+                { v: 'Set/2026', l: 'Atualizado', icon: '🗓' },
               ].map((k, i) => (
                 <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
                   <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
@@ -1101,7 +1152,7 @@ export default function Manual() {
 
         {/* ── FOOTER ── */}
         <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Gestão Comercial · Manual da Plataforma · Ago/2026
+          Villela Exchange · Gestão Comercial · Manual da Plataforma · Set/2026
         </div>
       </div>
 
