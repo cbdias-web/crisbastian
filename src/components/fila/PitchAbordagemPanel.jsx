@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronDown, Search } from 'lucide-react';
 
@@ -149,7 +149,19 @@ const FAQ = [
   { cat: 'Rating', q: 'Serve para PJ pequena?', a: 'Sim, independente do porte — amplia credibilidade com fornecedores e bancos.' },
 ];
 
-export default function PitchAbordagemPanel({ produto, nomeLead }) {
+export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fila, leadIndicacao }) {
+  // Carteira (PJ): busca o representante legal do cliente para a abertura
+  const [responsavelCliente, setResponsavelCliente] = useState(null);
+  useEffect(() => {
+    let vivo = true;
+    const cid = fila?.cliente_id || (fila?.tipo_origem === 'carteira' ? fila?.ref_id : null);
+    if (!cid) { setResponsavelCliente(null); return; }
+    base44.entities.Cliente.get(cid)
+      .then(c => { if (vivo) setResponsavelCliente(c?.responsavel_legal || null); })
+      .catch(() => { if (vivo) setResponsavelCliente(null); });
+    return () => { vivo = false; };
+  }, [fila?.cliente_id, fila?.ref_id, fila?.tipo_origem]);
+
   const chave = (produto || '').toUpperCase().includes('DOLARIZE') ? 'DOLARIZE'
     : (produto || '').toUpperCase().includes('CONTA INTERNACIONAL') ? 'CONTA INTERNACIONAL'
     : (produto || '').toUpperCase().includes('OFFSHORE') ? 'OFFSHORE'
@@ -158,6 +170,18 @@ export default function PitchAbordagemPanel({ produto, nomeLead }) {
     : ROTEIROS[produto?.toUpperCase?.()] ? produto.toUpperCase()
     : 'HISTÓRIA DO GRUPO VILLELA';
   const rot = ROTEIROS[chave] || DEFAULT_ROTEIRO;
+
+  // Abertura personalizada: PF → primeiro nome do lead; PJ → representante legal
+  const nomeAbertura = useMemo(() => {
+    const rep = leadIndicacao?.tipo === 'PJ' ? leadIndicacao.pj_nome_responsavel : null;
+    const base = (rep || responsavelCliente || nomeLead || '').toString().trim();
+    return base.split(/\s+/)[0] || '—';
+  }, [leadIndicacao, responsavelCliente, nomeLead]);
+  const gerenteAbertura = (gerenteNome || '').toString().trim().split(/\s+/)[0] || 'gerente';
+  const pitchFinal = useMemo(() => rot.pitch
+    .replaceAll('[NOME]', nomeAbertura)
+    .replaceAll('[GERENTE]', gerenteAbertura), [rot.pitch, nomeAbertura, gerenteAbertura]);
+
   const [aba, setAba] = useState('pitch');
   const [msgs, setMsgs] = useState([]);
   const [input, setInput] = useState('');
@@ -173,7 +197,7 @@ export default function PitchAbordagemPanel({ produto, nomeLead }) {
     setMsgs([...novas, { de: 'ia', loading: true }]);
     setEnviando(true);
     try {
-      const prompt = `Você é o assistente comercial da Villela Exchange apoiando um gerente em uma ligação ativa.\nProduto: ${rot.nome}.\nNome do lead: ${nomeLead || '—'}.\nRoteiro base do produto:\n${rot.pitch}\n\nO lead apresentou a seguinte objeção/pergunta:\n"${pergunta}"\n\nResponda de forma curta, prática e consultiva, com 2 a 4 frases, sugerindo ao gerente o que responder e como conduzir. Não invente valores ou prazos não citados no roteiro.`;
+      const prompt = `Você é o assistente comercial da Villela Exchange apoiando um gerente em uma ligação ativa.\nProduto em negociação: ${rot.nome}.\nNome do lead: ${nomeLead || '—'} (trate-o por ${nomeAbertura}). Gerente em atendimento: ${gerenteAbertura}.\nRoteiro do produto "${rot.nome}":\n${pitchFinal}\n\nO lead apresentou a seguinte objeção/pergunta:\n"${pergunta}"\n\nResponda de forma curta, prática e consultiva, com 2 a 4 frases, sugerindo ao gerente o que responder e como conduzir. Vincule a resposta exclusivamente ao produto "${rot.nome}" em negociação — não mencione outros produtos e não invente valores ou prazos não citados no roteiro.`;
       const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
       const resposta = typeof res === 'string' ? res : res?.response || res?.text || JSON.stringify(res);
       setMsgs([...novas, { de: 'ia', texto: resposta }]);
@@ -204,7 +228,7 @@ export default function PitchAbordagemPanel({ produto, nomeLead }) {
         <>
           {/* Roteiro */}
           <div className="p-3" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
-            <pre className="text-[10.5px] leading-relaxed whitespace-pre-wrap font-sans" style={{ color: AURORA.text, opacity: 0.88 }}>{rot.pitch}</pre>
+            <pre className="text-[10.5px] leading-relaxed whitespace-pre-wrap font-sans" style={{ color: AURORA.text, opacity: 0.88 }}>{pitchFinal}</pre>
           </div>
 
           {/* Objeções rápidas */}
