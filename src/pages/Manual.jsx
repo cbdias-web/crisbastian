@@ -869,6 +869,7 @@ export default function Manual() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [baixandoPdf, setBaixandoPdf] = useState(false);
   const [baixandoPdfIndicador, setBaixandoPdfIndicador] = useState(false);
+  const [baixandoPdfEsteira, setBaixandoPdfEsteira] = useState(false);
 
   const baixarPdfJornada = async () => {
     setBaixandoPdf(true);
@@ -909,6 +910,26 @@ export default function Manual() {
       toast.error('Erro ao gerar PDF: ' + (e?.message || e));
     }
     setBaixandoPdfIndicador(false);
+  };
+
+  const baixarPdfEsteira = async () => {
+    setBaixandoPdfEsteira(true);
+    try {
+      const res = await base44.functions.invoke('gerarManualFilaContatosPDF', {});
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'estrutura-fila-contatos.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('PDF da Nova Esteira de Fila de Contatos gerado com sucesso.');
+    } catch (e) {
+      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
+    }
+    setBaixandoPdfEsteira(false);
   };
 
   const handleCategory = (cat) => {
@@ -998,6 +1019,12 @@ export default function Manual() {
               style={{ background: 'linear-gradient(135deg, #db2777 0%, #b91c5c 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(219,39,119,0.35)' }}>
               {baixandoPdfIndicador ? <Loader2 className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
               Baixar PDF do Cadastro do Indicador
+            </button>
+            <button onClick={baixarPdfEsteira} disabled={baixandoPdfEsteira}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
+              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(245,158,11,0.35)' }}>
+              {baixandoPdfEsteira ? <Loader2 className="w-4 h-4 animate-spin" /> : <KanbanSquare className="w-4 h-4" />}
+              Baixar PDF da Nova Esteira (Fila de Contatos)
             </button>
           </div>
         </div>
