@@ -193,9 +193,9 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-6" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)' }} onClick={onClose}>
-      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.55)' }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 55%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
+      <div className="w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.55)' }} onClick={e => e.stopPropagation()}>
+        {/* Header — barra fixa do cartão (não rola com o conteúdo) */}
+        <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 55%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.18), rgba(0,102,204,0.22))', border: `1px solid ${AURORA.border}` }}>
               <Rocket className="w-5 h-5" style={{ color: AURORA.accent }} />
@@ -243,7 +243,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
           {/* Contrato vinculado */}
           <div className="rounded-2xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? 'rgba(34,197,94,0.4)' : 'rgba(251,191,36,0.4)'}` }}>
             <div className="flex items-center justify-between gap-2 mb-3">
