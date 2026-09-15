@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown, Percent, ExternalLink, Lock } from 'lucide-react';
+import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown, Percent, ExternalLink, Lock, Edit3, Landmark, Info, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import PainelInteracoesCliente from './PainelInteracoesCliente';
 import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
+import { requerAberturaCC } from '@/lib/implantacaoCC';
 
 const AURORA = {
   bg: '#0d1117',
@@ -88,14 +89,14 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       };
 
       // ── Trava de workflow: Rate + Link de Abertura CC ──
-      // Produtos sem abertura de conta corrente (RATING, SCORE, HORA TÉCNICA) são isentos.
-      const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
-      const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (form.produto || '').toUpperCase().includes(p));
+      // Seleção por lead (requer_abertura_cc), definida no popup.
+      // Quando ausente, o padrão por produto decide (Câmbio, Hora Técnica etc. dispensam).
+      const requerCC = requerAberturaCC(form);
       const rateVal = form.rate_custodia != null && form.rate_custodia !== '' ? Number(form.rate_custodia) : null;
       const linkVal = (form.link_abertura_cc || '').trim();
 
       // Rejeição por Compliance dispensa Rate e Link (implantação barrada)
-      if (!isentoCC && statusFinal !== 'rejeitado_compliance') {
+      if (requerCC && statusFinal !== 'rejeitado_compliance') {
         // Rate obrigatório e dentro da faixa 0,01–4
         if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
           toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
@@ -125,6 +126,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
         contrato_encontrado: form.contrato_encontrado,
         rate_custodia: rateVal,
         link_abertura_cc: linkVal,
+        requer_abertura_cc: requerCC,
         historico: [...(implantacao.historico || []), historicoEntry],
       };
 
@@ -190,29 +192,50 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
   const progresso = totalEtapas > 0 ? Math.round((etapasConcluidas / totalEtapas) * 100) : 0;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={onClose}>
-      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-6" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)' }} onClick={onClose}>
+      <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.55)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: AURORA.accentDim }}>
-              <FileText className="w-5 h-5" style={{ color: AURORA.accent }} />
+        <div className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 55%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.18), rgba(0,102,204,0.22))', border: `1px solid ${AURORA.border}` }}>
+              <Rocket className="w-5 h-5" style={{ color: AURORA.accent }} />
             </div>
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: AURORA.text }}>{form.cliente_nome || 'Implantação'}</h2>
-              <p className="text-xs" style={{ color: AURORA.textMuted }}>{form.produto}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold truncate" style={{ color: AURORA.text }}>{form.cliente_nome || 'Implantação'}</h2>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>{form.produto}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: statusCfg.color }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: statusCfg.color }} />
+                  {statusCfg.label}
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: prioridadeCfg.color }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: prioridadeCfg.color }} />
+                  {prioridadeCfg.label}
+                </span>
+                {totalEtapas > 0 && (
+                  <span className="text-[11px]" style={{ color: AURORA.textMuted }}>{progresso}% concluído</span>
+                )}
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {(isAdmin || canEdit) && !editing && (
-              <button onClick={() => setEditing(true)} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
-                Editar
+              <button onClick={() => setEditing(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.accentDim, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+                <Edit3 className="w-3.5 h-3.5" /> Editar
               </button>
             )}
             {editing && (
-              <button onClick={handleSave} disabled={salvando} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' }}>
-                <Save className="w-3.5 h-3.5" /> {salvando ? 'Salvando...' : 'Salvar'}
-              </button>
+              <>
+                <button onClick={() => { setForm(implantacao); setEditing(false); setNovaObservacao(''); }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.surface2, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
+                  Cancelar
+                </button>
+                <button onClick={handleSave} disabled={salvando} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' }}>
+                  <Save className="w-3.5 h-3.5" /> {salvando ? 'Salvando...' : 'Salvar'}
+                </button>
+              </>
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg transition" style={{ color: AURORA.textMuted }}>
               <X className="w-4 h-4" />
@@ -222,13 +245,20 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
 
         <div className="p-6 space-y-5">
           {/* Contrato vinculado */}
-          <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <FileCheck2 className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Contrato</p>
+          <div className="rounded-2xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? 'rgba(34,197,94,0.4)' : 'rgba(251,191,36,0.4)'}` }}>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Contrato</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                style={{ background: form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.15)', color: form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? '#22c55e' : '#fbbf24' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? '#22c55e' : '#fbbf24' }} />
+                {form.contrato_encontrado && (form.contrato_id || form.contrato_url_manual) ? 'Vinculado' : 'Pendente'}
+              </span>
             </div>
             {form.contrato_encontrado ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(34,197,94,0.06)' }}>
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(34,197,94,0.15)' }}>
                   <Link2 className="w-4 h-4" style={{ color: '#22c55e' }} />
                 </div>
@@ -256,7 +286,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
               </div>
             ) : (
               <div>
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-3 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(251,191,36,0.07)' }}>
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(251,191,36,0.15)' }}>
                     <AlertTriangle className="w-4 h-4" style={{ color: '#fbbf24' }} />
                   </div>
@@ -298,26 +328,42 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
 
           {/* Rate / Taxa de Custódia + Link de Abertura CC (trava de workflow) */}
           {(() => {
-            const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
-            const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (form.produto || '').toUpperCase().includes(p));
-            if (isentoCC) {
-              return (
-                <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-                  <div className="flex items-center gap-2">
-                    <Percent className="w-3.5 h-3.5" style={{ color: AURORA.textMuted }} />
-                    <p className="text-xs font-semibold" style={{ color: AURORA.textMuted }}>
-                      Abertura de Conta Corrente não aplicável a {form.produto} — Rate e Link dispensados.
-                    </p>
-                  </div>
-                </div>
-              );
-            }
+            const requerCC = requerAberturaCC(form);
             return (
-            <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
-            <div className="flex items-center gap-2 mb-3">
-              <Percent className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />
-              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Abertura de Conta Corrente</p>
+            <div className="rounded-2xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${requerCC ? AURORA.border : 'rgba(96,165,250,0.25)'}` }}>
+            <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Landmark className="w-3.5 h-3.5" style={{ color: requerCC ? AURORA.accent : AURORA.textMuted }} />
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: requerCC ? AURORA.accent : AURORA.textMuted }}>Abertura de Conta Corrente</p>
+              </div>
+              {editing ? (
+                <div className="flex rounded-lg overflow-hidden" style={{ border: `1px solid ${AURORA.border}` }}>
+                  <button onClick={() => setForm(f => ({ ...f, requer_abertura_cc: true }))}
+                    className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition"
+                    style={{ background: requerCC ? 'rgba(0,212,170,0.2)' : 'transparent', color: requerCC ? AURORA.accent : AURORA.textMuted }}>
+                    Requer
+                  </button>
+                  <button onClick={() => setForm(f => ({ ...f, requer_abertura_cc: false }))}
+                    className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition"
+                    style={{ background: !requerCC ? 'rgba(96,165,250,0.2)' : 'transparent', color: !requerCC ? '#60a5fa' : AURORA.textMuted }}>
+                    Dispensado
+                  </button>
+                </div>
+              ) : (
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                  style={{ background: requerCC ? AURORA.accentDim : 'rgba(96,165,250,0.12)', color: requerCC ? AURORA.accent : '#60a5fa' }}>
+                  {requerCC ? 'Obrigatório' : 'Não aplicável'}
+                </span>
+              )}
             </div>
+            {!requerCC ? (
+              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'rgba(96,165,250,0.06)', border: '1px dashed rgba(96,165,250,0.35)' }}>
+                <Info className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#60a5fa' }} />
+                <p className="text-xs" style={{ color: AURORA.text }}>
+                  Rate / Taxa de Custódia e Link de Abertura CC <strong>não se aplicam</strong> a esta implantação — o lead pode ser movido livremente entre status.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 gap-3">
               {/* Rate / Taxa de Custódia */}
               <div>
@@ -390,6 +436,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
                 <p className="text-[9px] mt-1" style={{ color: '#fbbf24' }}>Obrigatório para mover o lead de status/coluna</p>
               </div>
             </div>
+            )}
           </div>
             );
           })()}

@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { User, Calendar, Link2, FileWarning, Clock, AlertTriangle, Crown } from 'lucide-react';
 import { format } from 'date-fns';
 import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
+import { requerAberturaCC } from '@/lib/implantacaoCC';
 
 const AURORA = {
   bg: '#0d1117',
@@ -52,11 +53,10 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       const impl = implantacoes.find(i => i.id === draggableId);
 
       // ── Trava de workflow: não permite mover de coluna sem o Link de Abertura CC ──
-      // Produtos sem abertura de conta corrente (RATING, SCORE, HORA TÉCNICA) são isentos.
-      const PRODUTOS_ISENTOS_CC = ['RATING', 'SCORE', 'HORA TÉCNICA'];
-      const isentoCC = PRODUTOS_ISENTOS_CC.some(p => (impl.produto || '').toUpperCase().includes(p));
+      // Seleção por lead (requer_abertura_cc); ausente, o padrão por produto decide
+      // (Câmbio, Hora Técnica, Rating etc. dispensam).
       // Rejeição por Compliance dispensa o Link de Abertura CC (implantação barrada)
-      const isentoTrava = isentoCC || novoStatus === 'rejeitado_compliance';
+      const isentoTrava = !requerAberturaCC(impl) || novoStatus === 'rejeitado_compliance';
       if (!isentoTrava && !(impl.link_abertura_cc || '').trim()) {
         toast.error('Preencha o Link de Abertura CC (e o Rate) antes de mover este lead de status.');
         onRefresh();
