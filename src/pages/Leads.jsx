@@ -38,6 +38,7 @@ export default function Leads() {
   // Seleção de vendedores por lote (distribuição e redistribuição)
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [showVendedoresModal, setShowVendedoresModal] = useState(null); // { lote, modo: 'distribuir'|'redistribuir' }
+  const [filtroDistribuicao, setFiltroDistribuicao] = useState(null); // { validos, removidos } — leads com telefone a distribuir
   const [distribuicaoTipo, setDistribuicaoTipo] = useState('coletivo'); // 'individual' | 'coletivo'
   const [subcarteira, setSubcarteira] = useState('');
   const fileRef = useRef();
@@ -135,10 +136,29 @@ export default function Leads() {
     setImportando(false);
   };
 
-  const abrirDistribuicao = (lote, modo) => {
+  const abrirDistribuicao = async (lote, modo) => {
     setSelectedVendedores(vendedores.map(v => v.id));
     setDistribuicaoTipo('coletivo');
     setSubcarteira('');
+
+    if (modo === 'distribuir') {
+      // Vasculha o lote e exclui leads sem telefone antes da distribuição
+      const leadsLote = leads.filter(l => l.lote_id === lote.id && l.status === 'pendente');
+      const semTelefone = leadsLote.filter(l => !(l.telefone || '').trim());
+      if (semTelefone.length > 0) {
+        toast.info(`Removendo ${semTelefone.length} lead(s) sem telefone do lote...`);
+        for (const lead of semTelefone) {
+          try { await base44.entities.Lead.delete(lead.id); } catch (e) {}
+        }
+        queryClient.invalidateQueries(['leads-todos']);
+        queryClient.invalidateQueries(['lotes-leads']);
+      }
+      setFiltroDistribuicao({ validos: leadsLote.length - semTelefone.length, removidos: semTelefone.length });
+    } else {
+      const naoConvertidos = leads.filter(l => l.lote_id === lote.id && l.status === 'distribuido' && !l.convertido);
+      setFiltroDistribuicao({ validos: naoConvertidos.filter(l => (l.telefone || '').trim()).length, removidos: 0 });
+    }
+
     setShowVendedoresModal({ lote, modo });
   };
 
@@ -155,9 +175,9 @@ export default function Leads() {
       // Pegar leads do lote diretamente da query (já em memória)
       let leadsParaDistribuir;
       if (modo === 'distribuir') {
-        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'pendente');
+        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'pendente' && (l.telefone || '').trim());
       } else {
-        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'distribuido' && !l.convertido);
+        leadsParaDistribuir = leads.filter(l => l.lote_id === lote.id && l.status === 'distribuido' && !l.convertido && (l.telefone || '').trim());
       }
 
       if (leadsParaDistribuir.length === 0) {
@@ -556,6 +576,22 @@ export default function Leads() {
               <button onClick={() => setShowVendedoresModal(null)} className="p-1.5 hover:bg-gray-100 rounded-lg"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-6 space-y-3">
+              {/* Resumo do filtro — quantidade de leads que serão distribuídos */}
+              {filtroDistribuicao && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                  <p className="text-xs text-blue-700">
+                    <strong>{filtroDistribuicao.validos}</strong> lead(s) com telefone serão distribuídos.
+                  </p>
+                  {filtroDistribuicao.removidos > 0 && (
+                    <p className="text-xs text-amber-600 mt-0.5">
+                      {filtroDistribuicao.removidos} lead(s) sem telefone foram descartados do lote.
+                    </p>
+                  )}
+                  {filtroDistribuicao.validos === 0 && (
+                    <p className="text-xs text-red-500 mt-0.5">Nenhum lead válido para distribuição.</p>
+                  )}
+                </div>
+              )}
               {/* Tipo de distribuição */}
               <div className="flex gap-2 mb-1">
                 <button
@@ -625,9 +661,9 @@ export default function Leads() {
             </div>
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setShowVendedoresModal(null)}>Cancelar</Button>
-              <Button onClick={executarDistribuicao} disabled={selectedVendedores.length === 0} className="bg-[#0f1e35] hover:bg-[#1a3150]">
+              <Button onClick={executarDistribuicao} disabled={selectedVendedores.length === 0 || (filtroDistribuicao?.validos ?? 1) === 0} className="bg-[#0f1e35] hover:bg-[#1a3150]">
                 <Shuffle className="w-4 h-4 mr-2" />
-                {showVendedoresModal.modo === 'distribuir' ? 'Distribuir' : 'Redistribuir'} para {selectedVendedores.length} gerente(s)
+                {showVendedoresModal.modo === 'distribuir' ? 'Distribuir' : 'Redistribuir'} {filtroDistribuicao?.validos ?? ''} lead(s) para {selectedVendedores.length} gerente(s)
               </Button>
             </div>
           </div>
