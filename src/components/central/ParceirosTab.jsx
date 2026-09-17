@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon } from 'lucide-react';
+import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import IndicadorBoxModal from './IndicadorBoxModal';
 
@@ -31,6 +31,8 @@ export default function ParceirosTab({ readOnly = false }) {
   const [salvando, setSalvando] = useState(false);
   const [enviandoConvite, setEnviandoConvite] = useState(null);
   const [enviandoLinks, setEnviandoLinks] = useState(false);
+  const [showEnviarLinks, setShowEnviarLinks] = useState(false);
+  const [selecionadosLinks, setSelecionadosLinks] = useState([]);
 
   const { data: indicadores = [], isLoading } = useQuery({
     queryKey: ['parceiros-indicacao'],
@@ -133,22 +135,34 @@ export default function ParceirosTab({ readOnly = false }) {
     setEnviandoConvite(null);
   };
 
-  const enviarLinksAtualizados = async () => {
+  const abrirEnviarLinks = () => {
     const comEmail = indicadores.filter(p => p.email && p.email.trim());
     if (comEmail.length === 0) { toast.error('Nenhum indicador com e-mail cadastrado'); return; }
-    if (!confirm(`Enviar o novo link de acesso por e-mail para ${comEmail.length} indicador(es)?\n\nA mensagem informa que o link anterior foi substituído pelo novo.`)) return;
+    setSelecionadosLinks(comEmail.map(p => p.id));
+    setShowEnviarLinks(true);
+  };
+
+  const toggleSelecionadoLink = (id) => {
+    setSelecionadosLinks(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const enviarLinksAtualizados = async () => {
+    if (selecionadosLinks.length === 0) { toast.error('Selecione pelo menos um indicador'); return; }
     setEnviandoLinks(true);
     try {
-      const res = await base44.functions.invoke('enviarLinkAtualizadoIndicadores', { app_origin: window.location.origin });
+      const res = await base44.functions.invoke('enviarLinkAtualizadoIndicadores', {
+        app_origin: window.location.origin,
+        parceiro_ids: selecionadosLinks,
+      });
       const ok = res?.enviados?.length ?? 0;
       const falhas = res?.falhas?.length ?? 0;
-      const semEmail = res?.sem_email?.length ?? 0;
       if (falhas > 0) {
         toast.warning(`Novo link enviado para ${ok} indicador(es) — ${falhas} falha(s) no envio.`);
       } else {
-        toast.success(`Novo link enviado para ${ok} indicador(es)${semEmail ? ` (${semEmail} sem e-mail ignorados)` : ''}.`);
+        toast.success(`Novo link enviado para ${ok} indicador(es).`);
       }
       queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
+      setShowEnviarLinks(false);
     } catch (e) {
       const detalhe = e?.response?.data?.error || e?.data?.error || e?.message || 'erro desconhecido';
       toast.error('Erro no envio em massa: ' + detalhe);
@@ -184,10 +198,10 @@ export default function ParceirosTab({ readOnly = false }) {
         </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
-            <button onClick={enviarLinksAtualizados} disabled={enviandoLinks}
+            <button onClick={abrirEnviarLinks} disabled={enviandoLinks}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-50"
               style={{ background: 'rgba(59,130,249,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.35)' }}
-              title="Dispara e-mail para todos os indicadores com o novo link do portal">
+              title="Dispara e-mail com o novo link do portal para os indicadores selecionados">
               {enviandoLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Enviar Novo Link
             </button>
             <button onClick={openNovo}
@@ -312,6 +326,71 @@ export default function ParceirosTab({ readOnly = false }) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Modal de seleção personalizada: quem recebe o novo link ── */}
+      {showEnviarLinks && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setShowEnviarLinks(false)}>
+          <div className="w-full max-w-md rounded-2xl overflow-hidden max-h-[80vh] flex flex-col" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-3" style={{ background: AURORA.surface2, borderBottom: `1px solid ${AURORA.border}` }}>
+              <div>
+                <p className="font-bold text-sm" style={{ color: AURORA.text }}>Enviar Novo Link de Acesso</p>
+                <p className="text-[10px]" style={{ color: AURORA.textMuted }}>Selecione quem receberá o novo link do portal por e-mail</p>
+              </div>
+              <button onClick={() => setShowEnviarLinks(false)} className="p-1.5 rounded-lg" style={{ color: AURORA.textMuted }}><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+              {indicadores.filter(p => p.email && p.email.trim()).map(p => {
+                const sel = selecionadosLinks.includes(p.id);
+                return (
+                  <button key={p.id} onClick={() => toggleSelecionadoLink(p.id)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition"
+                    style={{ background: sel ? 'rgba(0,212,170,0.10)' : AURORA.surface2, border: `1px solid ${sel ? 'rgba(0,212,170,0.4)' : AURORA.border}` }}>
+                    <div className="rounded flex items-center justify-center flex-shrink-0" style={{ width: 18, height: 18, background: sel ? AURORA.accent : 'transparent', border: `1px solid ${sel ? AURORA.accent : 'rgba(230,237,243,0.3)'}` }}>
+                      {sel && <Check className="w-3 h-3" style={{ color: '#0d1117' }} />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: AURORA.text }}>{p.nome}</p>
+                      <p className="text-[10px] truncate" style={{ color: AURORA.textMuted }}>{p.email}</p>
+                    </div>
+                    {p.ativo === false && (
+                      <span className="ml-auto text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(100,100,100,0.2)', color: '#9ca3af' }}>Inativo</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between gap-2 px-5 py-3" style={{ background: AURORA.surface2, borderTop: `1px solid ${AURORA.border}` }}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: AURORA.textMuted }}>{selecionadosLinks.length} selecionado(s)</span>
+                <button
+                  onClick={() => setSelecionadosLinks(indicadores.filter(p => p.email && p.email.trim()).map(p => p.id))}
+                  className="text-[10px] font-semibold px-2 py-1 rounded-lg transition"
+                  style={{ color: AURORA.accent, background: 'rgba(0,212,170,0.08)' }}>
+                  Todos
+                </button>
+                <button onClick={() => setSelecionadosLinks([])}
+                  className="text-[10px] font-semibold px-2 py-1 rounded-lg transition"
+                  style={{ color: AURORA.textMuted, background: AURORA.surface }}>
+                  Limpar
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowEnviarLinks(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold transition"
+                  style={{ color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
+                  Cancelar
+                </button>
+                <button onClick={enviarLinksAtualizados} disabled={enviandoLinks || selecionadosLinks.length === 0}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  {enviandoLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {enviandoLinks ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

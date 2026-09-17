@@ -17,7 +17,9 @@ export default async function(req: Request): Promise<Response> {
     const dryRun = body && body.dry_run === true;
 
     const parceiros = await base44.entities.Parceiro.list('nome', 500);
-    const comEmail = parceiros.filter(p => p.email && p.email.trim());
+    // Seleção personalizada: quando parceiro_ids é informado, envia apenas aos selecionados
+    const ids = body && Array.isArray(body.parceiro_ids) ? body.parceiro_ids : null;
+    const comEmail = parceiros.filter(p => p.email && p.email.trim() && (!ids || ids.includes(p.id)));
     const semEmail = parceiros.filter(p => !p.email || !p.email.trim()).map(p => p.nome);
 
     if (dryRun) {
