@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
-import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X, AlertTriangle, Target } from 'lucide-react';
+import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X, AlertTriangle, Target, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import FilaContatoKanban from '@/components/fila/FilaContatoKanban';
 import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
@@ -157,6 +157,31 @@ export default function FilaContato() {
     .filter(f => !gerentesSel.length || gerentesSel.includes(f.vendedor_id))
     .filter(f => !busca.trim() || (f.nome || '').toLowerCase().includes(busca.trim().toLowerCase()) || (f.telefone || '').includes(busca.trim()));
 
+  // Botão "Solicitar mais clientes": repõe a agenda do dia do gerente com novos
+  // leads da própria carteira, preenchendo as vagas liberadas pelos concluídos.
+  const [solicitando, setSolicitando] = useState(false);
+  const solicitarMaisContatos = async () => {
+    setSolicitando(true);
+    try {
+      const payload = (isAdmin && getImpersonatedVendedor()) ? { vendedor_id: vendedor.id } : {};
+      const res = await base44.functions.invoke('solicitarMaisContatos', payload);
+      const data = res?.data || res;
+      if (data?.adicionados > 0) {
+        toast.success(`${data.adicionados} novo(s) cliente(s) da sua carteira adicionados à agenda do dia.`);
+      } else if (data?.motivo === 'cheia') {
+        toast.info('Sua agenda do dia está cheia — conclua os contatos pendentes para liberar vagas.');
+      } else if (data?.motivo === 'sem_candidatos') {
+        toast.info('Não há mais clientes disponíveis na sua carteira para repor agora.');
+      } else {
+        toast.info('Nenhum novo contato adicionado.');
+      }
+      queryClient.invalidateQueries({ queryKey: ['fila-contato'] });
+    } catch (e) {
+      toast.error('Erro ao solicitar mais clientes: ' + (e?.response?.data?.error || e.message));
+    }
+    setSolicitando(false);
+  };
+
   const montarFila = async () => {
     setMontando(true);
     try {
@@ -215,6 +240,14 @@ export default function FilaContato() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {vendedor && (
+              <button onClick={solicitarMaisContatos} disabled={solicitando}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }}
+                title="Adiciona novos clientes da sua carteira às vagas livres da agenda do dia">
+                {solicitando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />} Solicitar mais clientes
+              </button>
+            )}
             <button onClick={montarFila} disabled={montando}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
               style={{ background: AURORA.accent, color: '#0d1117' }}>
