@@ -1,146 +1,182 @@
 {
   "name": "Contrato",
-  "type": "object",
   "properties": {
-    "tipo": {
-      "type": "string",
-      "enum": [
-        "CONTA GLOBAL",
-        "CONTA INTERNACIONAL",
-        "DOLARIZE",
-        "ROF",
-        "CANAL BANC\u00c1RIO",
-        "OFFSHORE",
-        "GARANTIAS",
-        "HORA T\u00c9CNICA",
-        "RATING"
-      ],
-      "description": "Tipo de contrato"
+    "administracao_debitos": {
+      "default": [],
+      "description": "Tipos de d\u00e9bitos administrados (espec\u00edfico para GARANTIAS)",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
     },
-    "status": {
-      "type": "string",
-      "enum": [
-        "rascunho",
-        "gerado",
-        "assinado",
-        "aguardando_pagamento",
-        "pago",
-        "no_pipeline"
-      ],
-      "default": "rascunho",
-      "description": "Status do contrato"
+    "agencia": {
+      "description": "Ag\u00eancia banc\u00e1ria",
+      "type": "string"
     },
-    "vendedor_id": {
-      "type": "string",
-      "description": "ID do vendedor respons\u00e1vel"
+    "bairro": {
+      "description": "Bairro",
+      "type": "string"
     },
-    "vendedor_nome": {
-      "type": "string",
-      "description": "Nome do vendedor respons\u00e1vel"
-    },
-    "cliente_id": {
-      "type": "string",
-      "description": "ID do cliente (se vinculado)"
-    },
-    "pipeline_id": {
-      "type": "string",
-      "description": "ID do registro no pipeline gerado"
-    },
-    "pdf_url": {
-      "type": "string",
-      "description": "URL do PDF gerado"
-    },
-    "link_assinatura": {
-      "type": "string",
-      "description": "Link de assinatura online do contrato (preenchido pelo administrador)"
-    },
-    "link_assinatura_aditivo": {
-      "type": "string",
-      "description": "Link de assinatura online do aditivo de contrato (preenchido pelo administrador)"
-    },
-    "contrato_assinado_url": {
-      "type": "string",
-      "description": "URL do contrato assinado (anexado pelo gerente)"
-    },
-    "contrato_assinado_nome": {
-      "type": "string",
-      "description": "Nome do arquivo do contrato assinado"
-    },
-    "link_pagamento": {
-      "type": "string",
-      "description": "Link de pagamento (preenchido pelo administrador)"
-    },
-    "boleto_url": {
-      "type": "string",
-      "description": "URL do boleto de pagamento (anexado pelo administrador)"
+    "banco": {
+      "description": "Banco para d\u00e9bito (se aplic\u00e1vel)",
+      "type": "string"
     },
     "boleto_nome": {
-      "type": "string",
-      "description": "Nome do arquivo do boleto"
+      "description": "Nome do arquivo do boleto",
+      "type": "string"
+    },
+    "boleto_url": {
+      "description": "URL do boleto de pagamento (anexado pelo administrador)",
+      "type": "string"
     },
     "boletos_parcelas": {
-      "type": "array",
+      "default": [],
       "description": "Boletos das parcelas vincendas anexados pelo gerente/admin para cobran\u00e7a do cliente",
       "items": {
-        "type": "object",
         "properties": {
-          "url": {
+          "descricao": {
             "type": "string"
           },
           "nome": {
+            "type": "string"
+          },
+          "url": {
             "type": "string"
           },
           "vencimento": {
-            "type": "string",
-            "format": "date"
-          },
-          "descricao": {
+            "format": "date",
             "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "default": []
+      "type": "array"
     },
-    "comprovante_url": {
-      "type": "string",
-      "description": "URL do comprovante de pagamento principal (anexado pelo gerente). Mantido em sincronia com o primeiro item de 'comprovantes' (compatibilidade)."
+    "cep": {
+      "description": "CEP",
+      "type": "string"
+    },
+    "cidade": {
+      "description": "Cidade",
+      "type": "string"
+    },
+    "cliente_id": {
+      "description": "ID do cliente (se vinculado)",
+      "type": "string"
     },
     "comprovante_nome": {
-      "type": "string",
-      "description": "Nome do arquivo do comprovante principal"
+      "description": "Nome do arquivo do comprovante principal",
+      "type": "string"
+    },
+    "comprovante_url": {
+      "description": "URL do comprovante de pagamento principal (anexado pelo gerente). Mantido em sincronia com o primeiro item de 'comprovantes' (compatibilidade).",
+      "type": "string"
     },
     "comprovantes": {
-      "type": "array",
+      "default": [],
       "description": "Comprovantes de pagamento anexados pelo gerente/admin (at\u00e9 3). O primeiro elemento equivale a comprovante_url/comprovante_nome (compatibilidade).",
       "items": {
-        "type": "object",
         "properties": {
-          "url": {
-            "type": "string"
-          },
           "nome": {
             "type": "string"
+          },
+          "url": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "default": []
+      "type": "array"
     },
-    "origem_pagamento": {
-      "type": "string",
+    "conta": {
+      "description": "Conta banc\u00e1ria",
+      "type": "string"
+    },
+    "contrato_assinado_nome": {
+      "description": "Nome do arquivo do contrato assinado",
+      "type": "string"
+    },
+    "contrato_assinado_url": {
+      "description": "URL do contrato assinado (anexado pelo gerente)",
+      "type": "string"
+    },
+    "cotacao": {
+      "description": "Cota\u00e7\u00e3o da moeda no momento da contrata\u00e7\u00e3o",
+      "type": "number"
+    },
+    "cpf_cnpj": {
+      "description": "CPF ou CNPJ",
+      "type": "string"
+    },
+    "cpf_responsavel": {
+      "description": "CPF do respons\u00e1vel legal",
+      "type": "string"
+    },
+    "data_contrato": {
+      "description": "Data do contrato",
+      "format": "date",
+      "type": "string"
+    },
+    "data_primeiro_pagamento": {
+      "description": "Data do primeiro pagamento",
+      "format": "date",
+      "type": "string"
+    },
+    "dia_vencimento": {
+      "description": "Dia do vencimento das parcelas",
+      "type": "number"
+    },
+    "email": {
+      "description": "E-mail",
+      "type": "string"
+    },
+    "endereco": {
+      "description": "Endere\u00e7o completo (Rua, n\u00famero, complemento)",
+      "type": "string"
+    },
+    "estado": {
+      "description": "Estado (UF)",
+      "type": "string"
+    },
+    "estado_civil": {
+      "description": "Estado civil",
       "enum": [
-        "Boleto",
-        "Link de Pagamento",
-        "PIX",
-        "TED",
-        "Outros"
+        "Solteiro(a)",
+        "Casado(a)",
+        "Divorciado(a)",
+        "Vi\u00favo(a)",
+        "Uni\u00e3o Est\u00e1vel"
       ],
-      "description": "Origem/forma do pagamento realizado"
+      "type": "string"
+    },
+    "estrutura_jurisdicao": {
+      "description": "Jurisdi\u00e7\u00e3o (pa\u00eds/estado) onde a estrutura internacional ser\u00e1 constitu\u00edda \u2014 espec\u00edfico para OFFSHORE",
+      "type": "string"
+    },
+    "estrutura_qtd_entidades": {
+      "description": "N\u00famero de entidades jur\u00eddicas na estrutura nacional \u2014 espec\u00edfico para OFFSHORE",
+      "type": "number"
+    },
+    "forma_pagamento": {
+      "description": "Forma de pagamento",
+      "enum": [
+        "PIX",
+        "TED/DOC",
+        "D\u00c9BITO EM CONTA",
+        "BOLETO",
+        "CART\u00c3O DE CR\u00c9DITO",
+        "Transfer\u00eancia Internacional"
+      ],
+      "type": "string"
+    },
+    "incluir_agente_juridico_ia": {
+      "default": false,
+      "description": "Inclui o m\u00f3dulo AGENTE JUR\u00cdDICO.IA nesta contrata\u00e7\u00e3o \u2014 espec\u00edfico para OFFSHORE",
+      "type": "boolean"
     },
     "indicadores": {
-      "type": "array",
       "description": "Indicadores/espelhamentos vinculados ao contrato",
       "items": {
-        "type": "object",
         "properties": {
           "id": {
             "type": "string"
@@ -154,174 +190,170 @@
           "tipo": {
             "type": "string"
           }
-        }
-      }
+        },
+        "type": "object"
+      },
+      "type": "array"
     },
-    "nome": {
-      "type": "string",
-      "description": "Nome completo / Raz\u00e3o Social"
+    "link_assinatura": {
+      "description": "Link de assinatura online do contrato (preenchido pelo administrador)",
+      "type": "string"
     },
-    "cpf_cnpj": {
-      "type": "string",
-      "description": "CPF ou CNPJ"
+    "link_assinatura_aditivo": {
+      "description": "Link de assinatura online do aditivo de contrato (preenchido pelo administrador)",
+      "type": "string"
     },
-    "responsavel_legal": {
-      "type": "string",
-      "description": "Nome do respons\u00e1vel legal"
-    },
-    "cpf_responsavel": {
-      "type": "string",
-      "description": "CPF do respons\u00e1vel legal"
-    },
-    "nascimento": {
-      "type": "string",
-      "format": "date",
-      "description": "Data de nascimento"
-    },
-    "nacionalidade": {
-      "type": "string",
-      "description": "Nacionalidade"
-    },
-    "profissao": {
-      "type": "string",
-      "description": "Profiss\u00e3o"
-    },
-    "estado_civil": {
-      "type": "string",
-      "enum": [
-        "Solteiro(a)",
-        "Casado(a)",
-        "Divorciado(a)",
-        "Vi\u00favo(a)",
-        "Uni\u00e3o Est\u00e1vel"
-      ],
-      "description": "Estado civil"
-    },
-    "email": {
-      "type": "string",
-      "description": "E-mail"
-    },
-    "telefone": {
-      "type": "string",
-      "description": "Telefone / WhatsApp"
-    },
-    "cep": {
-      "type": "string",
-      "description": "CEP"
-    },
-    "endereco": {
-      "type": "string",
-      "description": "Endere\u00e7o completo (Rua, n\u00famero, complemento)"
-    },
-    "bairro": {
-      "type": "string",
-      "description": "Bairro"
-    },
-    "cidade": {
-      "type": "string",
-      "description": "Cidade"
-    },
-    "estado": {
-      "type": "string",
-      "description": "Estado (UF)"
-    },
-    "valor_adesao": {
-      "type": "number",
-      "description": "Valor de ades\u00e3o / entrada"
-    },
-    "valor_parcela": {
-      "type": "number",
-      "description": "Valor de cada parcela"
-    },
-    "num_parcelas": {
-      "type": "number",
-      "description": "N\u00famero de parcelas"
-    },
-    "valor_total": {
-      "type": "number",
-      "description": "Valor total do contrato"
-    },
-    "forma_pagamento": {
-      "type": "string",
-      "enum": [
-        "PIX",
-        "TED/DOC",
-        "D\u00c9BITO EM CONTA",
-        "BOLETO",
-        "CART\u00c3O DE CR\u00c9DITO"
-      ],
-      "description": "Forma de pagamento"
-    },
-    "data_primeiro_pagamento": {
-      "type": "string",
-      "format": "date",
-      "description": "Data do primeiro pagamento"
-    },
-    "dia_vencimento": {
-      "type": "number",
-      "description": "Dia do vencimento das parcelas"
-    },
-    "banco": {
-      "type": "string",
-      "description": "Banco para d\u00e9bito (se aplic\u00e1vel)"
-    },
-    "agencia": {
-      "type": "string",
-      "description": "Ag\u00eancia banc\u00e1ria"
-    },
-    "conta": {
-      "type": "string",
-      "description": "Conta banc\u00e1ria"
-    },
-    "moeda": {
-      "type": "string",
-      "description": "Moeda do contrato (USD, EUR, etc.)"
-    },
-    "cotacao": {
-      "type": "number",
-      "description": "Cota\u00e7\u00e3o da moeda no momento da contrata\u00e7\u00e3o"
-    },
-    "valor_em_moeda": {
-      "type": "number",
-      "description": "Valor em moeda estrangeira"
-    },
-    "prazo_meses": {
-      "type": "number",
-      "description": "Prazo total em meses"
-    },
-    "observacoes": {
-      "type": "string",
-      "description": "Observa\u00e7\u00f5es adicionais"
-    },
-    "data_contrato": {
-      "type": "string",
-      "format": "date",
-      "description": "Data do contrato"
+    "link_pagamento": {
+      "description": "Link de pagamento (preenchido pelo administrador)",
+      "type": "string"
     },
     "mensalidade": {
-      "type": "number",
-      "description": "Mensalidade (espec\u00edfico para GARANTIAS e RATING)"
+      "description": "Mensalidade (espec\u00edfico para GARANTIAS e RATING)",
+      "type": "number"
     },
-    "valor_divida": {
-      "type": "number",
-      "description": "Valor da d\u00edvida (espec\u00edfico para GARANTIAS)"
+    "moeda": {
+      "description": "Moeda do contrato (USD, EUR, etc.)",
+      "type": "string"
+    },
+    "nacionalidade": {
+      "description": "Nacionalidade",
+      "type": "string"
+    },
+    "nascimento": {
+      "description": "Data de nascimento",
+      "format": "date",
+      "type": "string"
+    },
+    "nome": {
+      "description": "Nome completo / Raz\u00e3o Social",
+      "type": "string"
+    },
+    "num_parcelas": {
+      "description": "N\u00famero de parcelas",
+      "type": "number"
+    },
+    "numero_contrato": {
+      "description": "N\u00famero sequencial do contrato exibido no PDF (ex.: 00142/2026) \u2014 espec\u00edfico para OFFSHORE",
+      "type": "string"
+    },
+    "observacoes": {
+      "description": "Observa\u00e7\u00f5es adicionais",
+      "type": "string"
+    },
+    "origem_pagamento": {
+      "description": "Origem/forma do pagamento realizado",
+      "enum": [
+        "Boleto",
+        "Link de Pagamento",
+        "PIX",
+        "TED",
+        "Outros"
+      ],
+      "type": "string"
+    },
+    "pdf_url": {
+      "description": "URL do PDF gerado",
+      "type": "string"
     },
     "percentual_montante": {
-      "type": "number",
-      "description": "Percentual sobre o montante da d\u00edvida (espec\u00edfico para GARANTIAS)"
+      "description": "Percentual sobre o montante da d\u00edvida (espec\u00edfico para GARANTIAS)",
+      "type": "number"
     },
-    "administracao_debitos": {
-      "type": "array",
-      "description": "Tipos de d\u00e9bitos administrados (espec\u00edfico para GARANTIAS)",
-      "items": {
-        "type": "string"
-      },
-      "default": []
+    "pipeline_id": {
+      "description": "ID do registro no pipeline gerado",
+      "type": "string"
+    },
+    "prazo_implantacao_dias": {
+      "default": 90,
+      "description": "Prazo de implanta\u00e7\u00e3o da estrutura, em dias \u2014 espec\u00edfico para OFFSHORE",
+      "type": "number"
+    },
+    "prazo_meses": {
+      "description": "Prazo total em meses",
+      "type": "number"
+    },
+    "prazo_suspensao_dias": {
+      "default": 60,
+      "description": "Prazo de suspens\u00e3o do prazo de implanta\u00e7\u00e3o em caso de pend\u00eancia, em dias \u2014 espec\u00edfico para OFFSHORE",
+      "type": "number"
+    },
+    "profissao": {
+      "description": "Profiss\u00e3o",
+      "type": "string"
+    },
+    "responsavel_legal": {
+      "description": "Nome do respons\u00e1vel legal",
+      "type": "string"
+    },
+    "rg": {
+      "description": "RG ou documento de identidade (PF) \u2014 usado no contrato OFFSHORE",
+      "type": "string"
+    },
+    "status": {
+      "default": "rascunho",
+      "description": "Status do contrato",
+      "enum": [
+        "rascunho",
+        "gerado",
+        "assinado",
+        "aguardando_pagamento",
+        "pago",
+        "no_pipeline"
+      ],
+      "type": "string"
+    },
+    "telefone": {
+      "description": "Telefone / WhatsApp",
+      "type": "string"
+    },
+    "tipo": {
+      "description": "Tipo de contrato",
+      "enum": [
+        "CONTA GLOBAL",
+        "CONTA INTERNACIONAL",
+        "DOLARIZE",
+        "ROF",
+        "CANAL BANC\u00c1RIO",
+        "OFFSHORE",
+        "GARANTIAS",
+        "HORA T\u00c9CNICA",
+        "RATING"
+      ],
+      "type": "string"
+    },
+    "valor_adesao": {
+      "description": "Valor de ades\u00e3o / entrada",
+      "type": "number"
+    },
+    "valor_divida": {
+      "description": "Valor da d\u00edvida (espec\u00edfico para GARANTIAS)",
+      "type": "number"
+    },
+    "valor_em_moeda": {
+      "description": "Valor em moeda estrangeira",
+      "type": "number"
+    },
+    "valor_parcela": {
+      "description": "Valor de cada parcela",
+      "type": "number"
+    },
+    "valor_total": {
+      "description": "Valor total do contrato",
+      "type": "number"
+    },
+    "vendedor_id": {
+      "description": "ID do vendedor respons\u00e1vel",
+      "type": "string"
+    },
+    "vendedor_nome": {
+      "description": "Nome do vendedor respons\u00e1vel",
+      "type": "string"
     }
   },
   "required": [
     "tipo",
     "nome",
     "cpf_cnpj"
-  ]
+  ],
+  "type": "object"
 }
