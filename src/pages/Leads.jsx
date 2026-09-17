@@ -239,7 +239,13 @@ export default function Leads() {
 
       // Gerar agenda e finalizar lote
       const LEADS_POR_DIA = 5;
-      const hoje = new Date();
+      // Data de hoje no horário de Brasília (evita UTC adiantar o dia à noite)
+      const hojeBrasilia = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+      const somaDia = (dataStr, dias) => {
+        const [y, m, dd] = dataStr.split('-').map(Number);
+        const d = new Date(y, m - 1, dd + dias);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
       const leadsPorVendedor = {};
       assignments.forEach(a => {
         if (!leadsPorVendedor[a.vendedorId]) leadsPorVendedor[a.vendedorId] = { vendedorId: a.vendedorId, vendedorNome: a.vendedorNome, items: [] };
@@ -248,8 +254,6 @@ export default function Leads() {
       const agendaRecords = [];
       for (const { vendedorId, vendedorNome, items } of Object.values(leadsPorVendedor)) {
         items.forEach((a, i) => {
-          const d = new Date(hoje);
-          d.setDate(d.getDate() + Math.floor(i / LEADS_POR_DIA));
           agendaRecords.push({
             lead_id: a.leadId,
             lead_nome: a.leadNome,
@@ -258,7 +262,7 @@ export default function Leads() {
             cliente_id: '',
             vendedor_id: vendedorId,
             vendedor_nome: vendedorNome,
-            data_agendada: d.toISOString().split('T')[0],
+            data_agendada: somaDia(hojeBrasilia, Math.floor(i / LEADS_POR_DIA)),
             posicao_dia: (i % LEADS_POR_DIA) + 1,
             lote_id: lote.id,
             status: 'pendente'
@@ -272,6 +276,13 @@ export default function Leads() {
         loteId: lote.id,
         agendaRecords,
       });
+
+      // Sincroniza a esteira da Agenda do Dia imediatamente para os gerentes
+      // contemplados — os leads distribuídos já constam na fila sem esperar o
+      // ciclo automático de 10 minutos.
+      for (const vid of [...new Set(assignments.map(a => a.vendedorId))]) {
+        try { await base44.functions.invoke('montarFilaContatoDia', { vendedor_id: vid }); } catch (e) {}
+      }
 
       toast.success(`${assignments.length} leads distribuídos com sucesso!`);
       queryClient.invalidateQueries(['lotes-leads']);
