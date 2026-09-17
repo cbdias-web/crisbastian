@@ -30,6 +30,7 @@ export default function ParceirosTab({ readOnly = false }) {
   const [form, setForm] = useState({ nome: '', email: '', telefone: '', percentual_comissao: 10, receber_notificacoes: true, ativo: true, observacoes: '' });
   const [salvando, setSalvando] = useState(false);
   const [enviandoConvite, setEnviandoConvite] = useState(null);
+  const [enviandoLinks, setEnviandoLinks] = useState(false);
 
   const { data: indicadores = [], isLoading } = useQuery({
     queryKey: ['parceiros-indicacao'],
@@ -132,6 +133,29 @@ export default function ParceirosTab({ readOnly = false }) {
     setEnviandoConvite(null);
   };
 
+  const enviarLinksAtualizados = async () => {
+    const comEmail = indicadores.filter(p => p.email && p.email.trim());
+    if (comEmail.length === 0) { toast.error('Nenhum indicador com e-mail cadastrado'); return; }
+    if (!confirm(`Enviar o novo link de acesso por e-mail para ${comEmail.length} indicador(es)?\n\nA mensagem informa que o link anterior foi substituído pelo novo.`)) return;
+    setEnviandoLinks(true);
+    try {
+      const res = await base44.functions.invoke('enviarLinkAtualizadoIndicadores', { app_origin: window.location.origin });
+      const ok = res?.enviados?.length ?? 0;
+      const falhas = res?.falhas?.length ?? 0;
+      const semEmail = res?.sem_email?.length ?? 0;
+      if (falhas > 0) {
+        toast.warning(`Novo link enviado para ${ok} indicador(es) — ${falhas} falha(s) no envio.`);
+      } else {
+        toast.success(`Novo link enviado para ${ok} indicador(es)${semEmail ? ` (${semEmail} sem e-mail ignorados)` : ''}.`);
+      }
+      queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
+    } catch (e) {
+      const detalhe = e?.response?.data?.error || e?.data?.error || e?.message || 'erro desconhecido';
+      toast.error('Erro no envio em massa: ' + detalhe);
+    }
+    setEnviandoLinks(false);
+  };
+
   const copiarPortal = (p) => {
     if (!p.link_token) { toast.error('Envie o convite primeiro para gerar o link do portal'); return; }
     const url = `${window.location.origin}/portal-indicador/${p.link_token}`;
@@ -159,11 +183,19 @@ export default function ParceirosTab({ readOnly = false }) {
           <span className="text-xs" style={{ color: AURORA.textMuted }}>({indicadores.length})</span>
         </div>
         {!readOnly && (
-          <button onClick={openNovo}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-            style={{ background: AURORA.accent, color: '#0d1117' }}>
-            <Plus className="w-3.5 h-3.5" /> Novo Indicador
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={enviarLinksAtualizados} disabled={enviandoLinks}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-50"
+              style={{ background: 'rgba(59,130,249,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.35)' }}
+              title="Dispara e-mail para todos os indicadores com o novo link do portal">
+              {enviandoLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />} Enviar Novo Link
+            </button>
+            <button onClick={openNovo}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              <Plus className="w-3.5 h-3.5" /> Novo Indicador
+            </button>
+          </div>
         )}
       </div>
 
