@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { X, Upload } from 'lucide-react';
+import { X, Upload, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import AvatarPickerModal from '@/components/vendedores/AvatarPickerModal';
+import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarModal';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 
 const A = {
@@ -119,6 +120,11 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
             {avatarUrl && (
               <button type="button" onClick={() => applyAvatar('')} className="text-xs" style={{ color: '#f87171' }}>Remover foto</button>
             )}
+            <button type="button" onClick={() => { onClose(); abrirModalGoogleCalendar(); }}
+              className="flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition"
+              style={{ background: 'rgba(26,115,232,0.12)', border: '1px solid rgba(26,115,232,0.35)', color: '#60a5fa' }}>
+              <Calendar className="w-3.5 h-3.5" /> Conectar Google Agenda
+            </button>
           </div>
           {[
             { label: 'Nome completo', key: 'full_name', disabled: true },
