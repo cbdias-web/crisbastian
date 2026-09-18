@@ -58,16 +58,18 @@ Deno.serve(async (req) => {
       `• ${p.cliente_nome} — ${p.produto || '—'} | Responsável: ${p.responsavel_implantacao || p.vendedor_nome || '—'} | Parado há ${p.dias_parado} dia(s) | Status: ${p.status}`
     ).join('\n');
 
-    // Notificar cada admin via e-mail
+    // Notificar admins apenas via Jarvis (in-app) — disparos de e-mail desativados
     for (const email of adminEmails) {
       try {
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: email,
-          subject: `⚠️ ${paradas.length} implantação(ões) parada(s) há mais de 2 dias`,
-          body: `Olá,\n\nForam identificadas ${paradas.length} implantação(ões) sem atualização há mais de 2 dias:\n\n${listaHtml}\n\nAcesse a plataforma > Implantacoes para regularizar os processos.\n\nVillela Exchange — Gestão Comercial`,
+        await base44.asServiceRole.entities.JarvisMensagem.create({
+          destinatario_email: email,
+          remetente_nome: 'Sistema',
+          remetente_email: '',
+          mensagem: `⚠️ *Implantações Paradas*\n\n${paradas.length} implantação(ões) sem atualização há mais de 2 dias:\n\n${listaHtml}\n\nAcesse a página de *Implantações* para regularizar os processos.`,
+          lida: false,
         });
       } catch (e) {
-        console.log('Erro ao enviar e-mail para', email, ':', e.message);
+        console.log('Erro ao notificar', email, ':', e.message);
       }
     }
 

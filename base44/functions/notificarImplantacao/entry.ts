@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     // NOTIFICAÇÃO DE AUTORIZAÇÃO REMOVIDA:
     // A notificação na entidade NotificacaoAutorizacao (status: pendente) era criada
     // para TODA venda nova, poluindo a fila de aprovações dos administradores.
-    // Implantações são informativas (Jarvis + e-mail), não requerem autorização.
+    // Implantações são informativas (apenas Jarvis, sem e-mail), não requerem autorização.
     // NotificacaoAutorizacao deve ser reservada para casos que exigem aprovação
     // (ex: espelhamento acima de 30%, novo contrato para link de assinatura).
 
@@ -111,37 +111,7 @@ Deno.serve(async (req) => {
           lida: false,
         });
 
-        // E-mail
-        const subject = `${titulo} — ${produto} · ${nomeCliente}`;
-        const body_html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #0d1117, #16213e); padding: 24px; border-radius: 12px 12px 0 0;">
-              <h2 style="color: #00D4AA; margin: 0; font-size: 20px;">${titulo}</h2>
-              <p style="color: rgba(255,255,255,0.6); margin: 6px 0 0; font-size: 13px;">Villela Exchange – Implantação de Produtos</p>
-            </div>
-            <div style="background: #f8fafc; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-              <p style="color: #374151; font-size: 14px; margin: 0 0 16px;">${ehNovo ? 'Um novo processo de implantação foi iniciado:' : 'O status de uma implantação foi atualizado:'}</p>
-              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600; width: 40%;">Cliente</td><td style="padding: 10px 14px; color: #111827; font-weight: 700;">${nomeCliente}</td></tr>
-                <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Produto</td><td style="padding: 10px 14px; color: #111827;">${produto}</td></tr>
-                <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Vendedor</td><td style="padding: 10px 14px; color: #111827;">${vendedor}</td></tr>
-                <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Responsável</td><td style="padding: 10px 14px; color: #111827;">${responsavel}</td></tr>
-                <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Padrinho</td><td style="padding: 10px 14px; color: #111827;">${padrinhoNome || 'Não definido'}</td></tr>
-                <tr style="background: white; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Valor</td><td style="padding: 10px 14px; color: #0066cc; font-weight: 700;">${valor}</td></tr>
-                <tr style="background: #f9fafb; border: 1px solid #e5e7eb;"><td style="padding: 10px 14px; color: #6b7280; font-weight: 600;">Status</td><td style="padding: 10px 14px; color: #00D4AA; font-weight: 700;">${statusLabel}</td></tr>
-              </table>
-              ${observacao ? `<div style="margin-top: 16px; padding: 12px 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;"><p style="margin: 0; color: #92400e; font-size: 13px;"><strong>Observação:</strong> ${observacao}</p></div>` : ''}
-              <p style="margin: 20px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">Villela Exchange – Implantação de Produtos · Notificação automática</p>
-            </div>
-          </div>
-        `;
-
-        await base44.asServiceRole.integrations.Core.SendEmail({
-          to: dest.email,
-          subject,
-          body: body_html,
-        });
-
+        // Sem e-mail — notificação apenas interna (Jarvis), conforme combinado.
         enviados++;
       } catch (e) {
         console.log(`Erro ao notificar ${dest.email}: ${e.message}`);
