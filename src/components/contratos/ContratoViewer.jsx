@@ -278,15 +278,19 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
         notificar('pdf_gerado', 'admins');
       }
-      // ZapSign: cria o documento de assinatura, grava o link no contrato e envia ao cliente por e-mail
+      // ZapSign: o envio ao cliente agora é manual — o gerente decide após a geração do PDF
       let linkAssinatura = contrato.link_assinatura;
-      try {
-        const zres = await base44.functions.invoke('enviarContratoZapsign', { contrato_id: contrato.id, pdf_base64 });
-        linkAssinatura = zres.data.sign_url;
-        toast.success(`Assinatura eletrônica enviada para ${zres.data.enviado_para}!`);
-      } catch (zerr) {
-        const detalhe = zerr?.response?.data?.error || zerr?.data?.error || zerr.message;
-        toast.warning('Link de assinatura ZapSign não gerado: ' + detalhe);
+      if (window.confirm('Contrato gerado. Enviar link de assinatura ao cliente por e-mail?')) {
+        try {
+          const zres = await base44.functions.invoke('enviarContratoZapsign', { contrato_id: contrato.id, pdf_base64 });
+          linkAssinatura = zres.data.sign_url;
+          toast.success(`Link de assinatura enviado para ${zres.data.enviado_para}!`);
+        } catch (zerr) {
+          const detalhe = zerr?.response?.data?.error || zerr?.data?.error || zerr.message;
+          toast.warning('Link de assinatura ZapSign não gerado: ' + detalhe);
+        }
+      } else {
+        toast.info('Envio do link de assinatura cancelado.');
       }
       handleUpdate({ ...contrato, status: novoStatus, link_assinatura: linkAssinatura });
       queryClient.invalidateQueries(['contratos']);
