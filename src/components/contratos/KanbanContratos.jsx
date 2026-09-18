@@ -21,6 +21,7 @@ const COLUNAS = [
   { key: 'aguardando_pagamento', label: 'Aguard. Pagamento', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)' },
   { key: 'pago', label: 'Pago', color: '#a78bfa', bg: 'rgba(167,139,250,0.08)' },
   { key: 'no_pipeline', label: 'No Pipeline', color: '#e879f9', bg: 'rgba(232,121,249,0.08)' },
+  { key: 'cancelado', label: 'Cancelado', color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
 ];
 
 const TIPO_DOT = {
@@ -55,6 +56,14 @@ export default function KanbanContratos({ contratos, onSelectContrato, isAdmin, 
       return;
     }
     if (ct?.status === novoStatus) return;
+
+    // Cancelamento é irreversível nesta esteira — pede confirmação antes
+    if (novoStatus === 'cancelado' && ct?.status !== 'cancelado') {
+      if (!confirm(`Cancelar o contrato de "${ct?.nome}"? Contratos cancelados saem do fluxo comercial.`)) {
+        onRefresh();
+        return;
+      }
+    }
 
     try {
       await base44.entities.Contrato.update(draggableId, { status: novoStatus });

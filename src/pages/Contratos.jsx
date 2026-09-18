@@ -35,6 +35,7 @@ const STATUS_CONFIG = {
   aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-500/20 text-amber-300' },
   pago: { label: 'Pago', cls: 'bg-violet-500/20 text-violet-300' },
   no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-500/20 text-purple-300' },
+  cancelado: { label: 'Cancelado', cls: 'bg-red-500/20 text-red-300' },
 };
 
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';

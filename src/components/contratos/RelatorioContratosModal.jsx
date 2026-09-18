@@ -20,6 +20,7 @@ const STATUS_OPTS = [
   { key: 'aguardando_pagamento', label: 'Aguard. Pagamento', color: '#f59e0b' },
   { key: 'pago', label: 'Pago', color: '#8b5cf6' },
   { key: 'no_pipeline', label: 'No Pipeline', color: '#a855f7' },
+  { key: 'cancelado', label: 'Cancelado', color: '#ef4444' },
 ];
 
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';

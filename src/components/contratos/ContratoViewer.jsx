@@ -30,6 +30,7 @@ const STATUS_CONFIG = {
   aguardando_pagamento: { label: 'Aguard. Pagamento', cls: 'bg-amber-500/25 text-amber-200' },
   pago: { label: 'Pago', cls: 'bg-violet-500/25 text-violet-200' },
   no_pipeline: { label: 'No Pipeline', cls: 'bg-purple-500/25 text-purple-200' },
+  cancelado: { label: 'Cancelado', cls: 'bg-red-500/25 text-red-200' },
 };
 
 const STATUS_ORDER = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
@@ -397,7 +398,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                           key={key}
                           onClick={() => alterarStatus(key)}
                           className={`w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-gray-50 transition ${contrato.status === key ? 'font-bold text-[#1a3150] bg-blue-50' : 'text-gray-700'}`}>
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.cls.includes('gray') ? 'bg-gray-400' : cfg.cls.includes('blue') ? 'bg-blue-500' : cfg.cls.includes('emerald') ? 'bg-emerald-500' : cfg.cls.includes('amber') ? 'bg-amber-500' : cfg.cls.includes('violet') ? 'bg-violet-500' : 'bg-purple-500'}`} />
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.cls.includes('gray') ? 'bg-gray-400' : cfg.cls.includes('blue') ? 'bg-blue-500' : cfg.cls.includes('emerald') ? 'bg-emerald-500' : cfg.cls.includes('amber') ? 'bg-amber-500' : cfg.cls.includes('violet') ? 'bg-violet-500' : cfg.cls.includes('red') ? 'bg-red-500' : 'bg-purple-500'}`} />
                           {cfg.label}
                           {contrato.status === key && <span className="ml-auto text-[9px] text-[#1a3150]">atual</span>}
                         </button>

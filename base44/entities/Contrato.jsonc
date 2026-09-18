@@ -298,7 +298,8 @@
         "assinado",
         "aguardando_pagamento",
         "pago",
-        "no_pipeline"
+        "no_pipeline",
+        "cancelado"
       ],
       "type": "string"
     },

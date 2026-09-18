@@ -39,7 +39,7 @@ export default async function(req) {
     // Se o cliente já assinou e o contrato ainda não chegou ao status 'assinado', avança automaticamente
     let contratoAtualizado = false;
     const ordem = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
-    if (assinado && ordem.indexOf(contrato.status) < ordem.indexOf('assinado')) {
+    if (assinado && contrato.status !== 'cancelado' && ordem.indexOf(contrato.status) < ordem.indexOf('assinado')) {
       await base44.entities.Contrato.update(contrato.id, { status: 'assinado' });
       contratoAtualizado = true;
     }
