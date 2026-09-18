@@ -196,7 +196,7 @@
       "type": "array"
     },
     "link_assinatura": {
-      "description": "Link de assinatura online do contrato (preenchido pelo administrador)",
+      "description": "Link de assinatura online do contrato (gerado automaticamente via ZapSign ou preenchido manualmente)",
       "type": "string"
     },
     "link_assinatura_aditivo": {
@@ -347,6 +347,10 @@
     },
     "vendedor_nome": {
       "description": "Nome do vendedor respons\u00e1vel",
+      "type": "string"
+    },
+    "zapsign_doc_token": {
+      "description": "Token do documento de assinatura eletr\u00f4nica criado na ZapSign (rastreio do envio ao cliente)",
       "type": "string"
     }
   },

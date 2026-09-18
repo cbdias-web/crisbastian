@@ -272,13 +272,24 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       a.download = filename || `contrato_${contrato.tipo.replace(/ /g, '_')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success('PDF gerado e baixado!');
+      const novoStatus = contrato.status === 'rascunho' ? 'gerado' : contrato.status;
       if (contrato.status === 'rascunho') {
         await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
-        handleUpdate({ ...contrato, status: 'gerado' });
         notificar('pdf_gerado', 'admins');
       }
+      // ZapSign: cria o documento de assinatura, grava o link no contrato e envia ao cliente por e-mail
+      let linkAssinatura = contrato.link_assinatura;
+      try {
+        const zres = await base44.functions.invoke('enviarContratoZapsign', { contrato_id: contrato.id, pdf_base64 });
+        linkAssinatura = zres.data.sign_url;
+        toast.success(`Assinatura eletrônica enviada para ${zres.data.enviado_para}!`);
+      } catch (zerr) {
+        const detalhe = zerr?.response?.data?.error || zerr?.data?.error || zerr.message;
+        toast.warning('Link de assinatura ZapSign não gerado: ' + detalhe);
+      }
+      handleUpdate({ ...contrato, status: novoStatus, link_assinatura: linkAssinatura });
       queryClient.invalidateQueries(['contratos']);
-      toast.success('PDF gerado e baixado!');
     } catch (err) {
       toast.error('Erro ao gerar PDF: ' + err.message);
     }
