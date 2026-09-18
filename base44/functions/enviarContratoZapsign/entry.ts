@@ -32,10 +32,10 @@ export default async function(req) {
     // Cria o documento na ZapSign — o signatário é o cliente do contrato.
     // A própria ZapSign envia o e-mail de assinatura ao signatário (disable_signer_emails=false).
     const zapsignBody = {
-      name: `Contrato ${contrato.tipo} — ${contrato.nome}`.slice(0, 255),
+      name: `Contrato ${contrato.tipo} — ${contrato.nome.trim()}`.slice(0, 255),
       lang: 'pt-br',
       external_id: contrato.id,
-      signers: [{ name: contrato.nome, email: contrato.email.trim() }],
+      signers: [{ name: contrato.nome.trim(), email: contrato.email.trim() }],
       ...(temBase64 ? { base64_pdf: pdf_base64 } : { url_pdf: contrato.pdf_url }),
     };
 
@@ -48,10 +48,27 @@ export default async function(req) {
       body: JSON.stringify(zapsignBody),
     });
 
-    const zapsignData = await zapsignRes.json();
+    // A ZapSign pode responder em texto puro (não JSON) em erros de validação —
+    // ler como texto e só então tentar JSON evita "Unexpected token" sem detalhe.
+    const rawText = await zapsignRes.text();
+    let zapsignData;
+    try {
+      zapsignData = JSON.parse(rawText);
+    } catch (_) {
+      return Response.json(
+        { error: `ZapSign (HTTP ${zapsignRes.status}): ${rawText.slice(0, 300)}` },
+        { status: 502 },
+      );
+    }
     if (!zapsignRes.ok) {
-      const detalhe = zapsignData?.detail || zapsignData?.error || zapsignData?.message || `HTTP ${zapsignRes.status}`;
-      return Response.json({ error: `ZapSign: ${detalhe}` }, { status: 502 });
+      const detalhe = zapsignData?.detail || zapsignData?.error || zapsignData?.message || JSON.stringify(zapsignData).slice(0, 300);
+      if (zapsignRes.status === 402) {
+        return Response.json(
+          { error: 'A ZapSign exige um Plano de API ativo para envios automáticos. Contrate o plano na ZapSign ou, se preferir, crie o documento no painel da ZapSign e cole o link de assinatura manualmente neste contrato.' },
+          { status: 402 },
+        );
+      }
+      return Response.json({ error: `ZapSign (HTTP ${zapsignRes.status}): ${detalhe}` }, { status: 502 });
     }
 
     const signer = zapsignData?.signers?.[0];
