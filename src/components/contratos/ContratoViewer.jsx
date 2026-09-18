@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown, ScrollText } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown, ScrollText, Send } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,7 @@ import ContratoForm from './ContratoForm';
 import FluxoContrato from './FluxoContrato';
 import BoletosParcelas from './BoletosParcelas';
 import IndicadoresEditor from './IndicadoresEditor';
+import ZapsignEnviarModal from './ZapsignEnviarModal';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -51,6 +52,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [salvandoGerente, setSalvandoGerente] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [alterandoStatus, setAlterandoStatus] = useState(false);
+  const [showZapsignModal, setShowZapsignModal] = useState(false);
+  const [zapsignPdfBase64, setZapsignPdfBase64] = useState(null);
+  const [enviandoZapsign, setEnviandoZapsign] = useState(false);
+  const [zapsignStatus, setZapsignStatus] = useState(null);
+  const [consultandoZapsign, setConsultandoZapsign] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: vendedores = [] } = useQuery({
@@ -91,6 +97,42 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const handleUpdate = (c) => {
     setContrato(c);
     onUpdate(c);
+  };
+
+  // ZapSign: envio manual do link de assinatura (confirmado via popup padronizado)
+  const enviarLinkZapsign = async () => {
+    setEnviandoZapsign(true);
+    try {
+      const zres = await base44.functions.invoke('enviarContratoZapsign', {
+        contrato_id: contrato.id,
+        ...(zapsignPdfBase64 ? { pdf_base64: zapsignPdfBase64 } : {}),
+      });
+      handleUpdate({ ...contrato, link_assinatura: zres.data.sign_url, zapsign_doc_token: zres.data.doc_token });
+      queryClient.invalidateQueries(['contratos']);
+      setZapsignStatus(null);
+      toast.success(`Link de assinatura enviado para ${zres.data.enviado_para}!`);
+      setShowZapsignModal(false);
+      setZapsignPdfBase64(null);
+    } catch (err) {
+      const detalhe = err?.response?.data?.error || err?.data?.error || err.message;
+      toast.error('Erro ao enviar link de assinatura: ' + detalhe);
+    }
+    setEnviandoZapsign(false);
+  };
+
+  // ZapSign: consulta se o cliente já assinou o documento
+  const consultarStatusZapsign = async () => {
+    setConsultandoZapsign(true);
+    try {
+      const res = await base44.functions.invoke('verificarStatusZapsign', { contrato_id: contrato.id });
+      setZapsignStatus(res.data);
+      if (res.data.contrato_atualizado) handleUpdate({ ...contrato, status: 'assinado' });
+      toast.success(res.data.mensagem);
+    } catch (err) {
+      const detalhe = err?.response?.data?.error || err?.data?.error || err.message;
+      toast.error('Erro ao consultar ZapSign: ' + detalhe);
+    }
+    setConsultandoZapsign(false);
   };
 
   const salvarLink = async () => {
@@ -278,22 +320,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
         notificar('pdf_gerado', 'admins');
       }
-      // ZapSign: o envio ao cliente agora é manual — o gerente decide após a geração do PDF
-      let linkAssinatura = contrato.link_assinatura;
-      if (window.confirm('Contrato gerado. Enviar link de assinatura ao cliente por e-mail?')) {
-        try {
-          const zres = await base44.functions.invoke('enviarContratoZapsign', { contrato_id: contrato.id, pdf_base64 });
-          linkAssinatura = zres.data.sign_url;
-          toast.success(`Link de assinatura enviado para ${zres.data.enviado_para}!`);
-        } catch (zerr) {
-          const detalhe = zerr?.response?.data?.error || zerr?.data?.error || zerr.message;
-          toast.warning('Link de assinatura ZapSign não gerado: ' + detalhe);
-        }
-      } else {
-        toast.info('Envio do link de assinatura cancelado.');
-      }
-      handleUpdate({ ...contrato, status: novoStatus, link_assinatura: linkAssinatura });
+      // ZapSign: envio manual — abre o popup padronizado para o gerente decidir
+      handleUpdate({ ...contrato, status: novoStatus });
       queryClient.invalidateQueries(['contratos']);
+      setZapsignPdfBase64(pdf_base64);
+      setShowZapsignModal(true);
     } catch (err) {
       toast.error('Erro ao gerar PDF: ' + err.message);
     }
@@ -439,6 +470,16 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           </button>
         </div>
 
+        {/* Popup ZapSign — envio manual do link de assinatura ao cliente */}
+        <ZapsignEnviarModal
+          open={showZapsignModal}
+          contrato={contrato}
+          sending={enviandoZapsign}
+          usaPdfAnexado={!zapsignPdfBase64}
+          onConfirm={enviarLinkZapsign}
+          onCancel={() => { setShowZapsignModal(false); setZapsignPdfBase64(null); toast.info('Envio do link de assinatura adiado.'); }}
+        />
+
         {/* Upload de PDF externo */}
         <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
           <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#1c2333' }}>
@@ -511,6 +552,44 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   </button>
                   <button onClick={() => setEditandoLink(false)} className="px-3 py-2 text-xs text-gray-500 hover:bg-gray-100 rounded-xl">Cancelar</button>
                 </div>
+              ) : contrato.zapsign_doc_token ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
+                      className="flex-1 min-w-[180px] text-sm underline truncate flex items-center gap-1.5" style={{ color: '#00D4AA' }}>
+                      <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />{contrato.link_assinatura}
+                    </a>
+                    <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
+                      style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                      <Copy className="w-3 h-3" /> Copiar
+                    </button>
+                    <button onClick={consultarStatusZapsign} disabled={consultandoZapsign}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition disabled:opacity-50"
+                      style={{ background: 'rgba(0,212,170,0.12)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.3)' }}>
+                      {consultandoZapsign ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                      Consultar status
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'rgba(230,237,243,0.55)' }}>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
+                      style={{ background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }}>
+                      <Send className="w-2.5 h-2.5" /> Enviado via ZapSign
+                    </span>
+                    {contrato.email && <span>para {contrato.email}</span>}
+                  </div>
+                  {zapsignStatus && (
+                    <div className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold"
+                      style={zapsignStatus.assinado
+                        ? { background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#34d399' }
+                        : { background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', color: '#fbbf24' }}>
+                      {zapsignStatus.assinado
+                        ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                        : <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 animate-pulse" style={{ background: '#fbbf24' }} />}
+                      {zapsignStatus.mensagem}
+                    </div>
+                  )}
+                </div>
               ) : contrato.link_assinatura ? (
                 <div className="flex items-center gap-3">
                   <a href={contrato.link_assinatura} target="_blank" rel="noopener noreferrer"
@@ -524,10 +603,23 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   </button>
                 </div>
               ) : (
-                <p className="text-sm font-medium flex items-center gap-2" style={{ color: '#fbbf24' }}>
-                  <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: '#fbbf24' }} />
-                  Aguardando administrador adicionar o link de assinatura online.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium flex items-center gap-2" style={{ color: '#fbbf24' }}>
+                    <span className="w-2 h-2 rounded-full animate-pulse inline-block" style={{ background: '#fbbf24' }} />
+                    {contrato.pdf_url
+                      ? 'PDF anexado. O link de assinatura ainda não foi enviado ao cliente.'
+                      : contrato.status !== 'rascunho'
+                        ? 'Contrato gerado. Gere o PDF novamente para enviar o link de assinatura.'
+                        : 'Aguardando geração do contrato para enviar o link de assinatura.'}
+                  </p>
+                  {contrato.pdf_url && (
+                    <button onClick={() => { setZapsignPdfBase64(null); setShowZapsignModal(true); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
+                      style={{ background: 'rgba(0,212,170,0.12)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.3)' }}>
+                      <Send className="w-3 h-3" /> Enviar via ZapSign
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
