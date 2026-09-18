@@ -314,14 +314,24 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       a.download = filename || `contrato_${contrato.tipo.replace(/ /g, '_')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('PDF gerado e baixado!');
       const novoStatus = contrato.status === 'rascunho' ? 'gerado' : contrato.status;
-      if (contrato.status === 'rascunho') {
-        await base44.entities.Contrato.update(contrato.id, { status: 'gerado' });
-        notificar('pdf_gerado', 'admins');
+      // Persiste o PDF gerado no contrato: garante que o link de assinatura possa
+      // ser enviado (e copiado no box de Assinatura Online) a qualquer momento,
+      // sem precisar gerar o PDF novamente
+      let pdfUrl = contrato.pdf_url;
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({
+          file: new File([bytes], filename || `contrato_${contrato.tipo.replace(/ /g, '_')}.pdf`, { type: 'application/pdf' }),
+        });
+        pdfUrl = file_url;
+        await base44.entities.Contrato.update(contrato.id, { status: novoStatus, pdf_url: pdfUrl });
+      } catch (e) {
+        await base44.entities.Contrato.update(contrato.id, { status: novoStatus });
       }
+      if (contrato.status === 'rascunho') notificar('pdf_gerado', 'admins');
+      toast.success('PDF gerado e baixado!');
+      handleUpdate({ ...contrato, status: novoStatus, pdf_url: pdfUrl });
       // ZapSign: envio manual — abre o popup padronizado para o gerente decidir
-      handleUpdate({ ...contrato, status: novoStatus });
       queryClient.invalidateQueries(['contratos']);
       setZapsignPdfBase64(pdf_base64);
       setShowZapsignModal(true);
