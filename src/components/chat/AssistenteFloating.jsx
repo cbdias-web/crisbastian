@@ -378,18 +378,10 @@ export default function AssistenteFloating() {
     // Limpa o estado local IMEDIATAMENTE para evitar re-exibição
     setMensagensPendentes([]);
     const agora = new Date().toISOString();
-    const nome = nomeUsuario || userName || 'O destinatário';
+    // Sem e-mail de confirmação de leitura — notificações por e-mail desativadas
     for (const msg of msgs) {
       try {
         await base44.entities.JarvisMensagem.update(msg.id, { lida: true, lida_em: agora });
-        // Enviar confirmação de leitura ao remetente
-        if (msg.remetente_email) {
-          await base44.integrations.Core.SendEmail({
-            to: msg.remetente_email,
-            subject: `✅ Mensagem lida por ${nome}`,
-            body: `<p>Olá, <strong>${msg.remetente_nome || 'Admin'}</strong>!</p><p>Sua mensagem enviada pelo Jarvis foi lida por <strong>${nome}</strong> em ${new Date(agora).toLocaleString('pt-BR')}.</p><blockquote style="border-left:3px solid #1a3150;padding-left:12px;color:#555;">${msg.mensagem}</blockquote><p style="color:#888;font-size:12px;">— Jarvis · Villela Exchange</p>`
-          });
-        }
       } catch (e) {}
     }
   };
