@@ -13,6 +13,7 @@ import {
   Search, Zap, Rocket, Newspaper, Bot, User, Handshake
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
+import AcessoBloqueadoIndicador from '@/components/AcessoBloqueadoIndicador.jsx';
 import BarraNovaVersao from '@/components/BarraNovaVersao.jsx';
 import ProfileModal from '@/components/ProfileModal.jsx';
 import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
@@ -268,13 +269,8 @@ export default function Layout({ children, currentPageName }) {
   // Dash Parceiro (somente leitura): gerentes/SDRs atuando na Fila de Contatos
   const { data: podeVerDashParceiro = false } = useAcessoDashParceiro(user);
 
-  // Indicador: sempre cai no Dash Parceiro, que entrega a experiência completa do portal
-  // (termo de uso → boas-vindas → 2 menus: Indicar + Dash/acompanhar).
-  useEffect(() => {
-    if (isIndicador && currentPageName !== 'DashParceiro') {
-      navigate('/DashParceiro', { replace: true });
-    }
-  }, [isIndicador, currentPageName, navigate]);
+  // Indicador: acesso ao Dash Parceiro BLOQUEADO — exibe tela de bloqueio em
+  // qualquer página (o indicador não entra mais no portal).
 
   const { data: notificacoesPendentes = [] } = useQuery({
     queryKey: ['notificacoes-pendentes'],
@@ -401,6 +397,11 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = () => {
     if (confirm('Deseja realmente sair?')) base44.auth.logout();
   };
+
+  // Bloqueio: usuários com perfil de indicador não acessam mais o Dash Parceiro
+  if (user && isIndicador) {
+    return <AcessoBloqueadoIndicador user={user} onLogout={handleLogout} />;
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: AURORA.bg, color: AURORA.text }}>
