@@ -38,6 +38,16 @@
       "type": "string",
       "format": "date-time",
       "description": "Ultimo sinal de vida (atualizado a cada 2 min)"
+    },
+    "dispositivo": {
+      "type": "string",
+      "enum": [
+        "iPhone",
+        "Android",
+        "Desktop",
+        "Outro"
+      ],
+      "description": "Dispositivo de origem do acesso (detectado no navegador)"
     }
   },
   "required": [

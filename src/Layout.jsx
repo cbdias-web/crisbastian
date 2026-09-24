@@ -64,6 +64,15 @@ export default function Layout({ children, currentPageName }) {
     document.body.style.background = AURORA.bg;
   }, []);
 
+  // Dispositivo do acesso (iPod/iPhone/iPad → iPhone; Android → Android; demais → Desktop)
+  const detectarDispositivo = () => {
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'iPhone';
+    if (/Android/i.test(ua)) return 'Android';
+    if (/Macintosh|Windows|Linux/i.test(ua)) return 'Desktop';
+    return 'Outro';
+  };
+
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
@@ -159,6 +168,7 @@ export default function Layout({ children, currentPageName }) {
                 ativa: true,
                 ultimo_heartbeat: agora,
                 duracao_min: 0,
+                dispositivo: detectarDispositivo(),
               });
             } catch (e) {
               console.error(`[Layout] Tentativa ${tentativa} - Erro ao criar sessão:`, e?.message || e);
