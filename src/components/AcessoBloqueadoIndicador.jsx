@@ -23,13 +23,15 @@ export default function AcessoBloqueadoIndicador({ user, onLogout }) {
         <h2 className="text-lg font-bold mb-2" style={{ color: AURORA.text }}>Acesso Bloqueado</h2>
         <p className="text-sm leading-relaxed mb-6" style={{ color: AURORA.textMuted }}>
           O acesso ao Portal do Indicador está temporariamente indisponível.
-          Entre em contato com a equipe Villela Exchange para mais informações.
+          Para mais informações, contate <strong style={{ color: AURORA.text }}>Jader</strong> ou <strong style={{ color: AURORA.text }}>Nayara</strong>.
         </p>
-        <button onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
-          style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
-          <LogOut className="w-4 h-4" /> Sair
-        </button>
+        {onLogout && (
+          <button onClick={onLogout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
+            style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
+            <LogOut className="w-4 h-4" /> Sair
+          </button>
+        )}
       </div>
     </div>
   );

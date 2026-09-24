@@ -10,6 +10,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import JornadaCliente from '@/components/portal/JornadaCliente';
+import AcessoBloqueadoIndicador from '@/components/AcessoBloqueadoIndicador';
 
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
@@ -64,6 +65,10 @@ Ao aceitar, o Indicador concorda integralmente com os termos acima.
 `;
 
 export default function PortalIndicador() {
+  // Acesso bloqueado: qualquer tentativa de acessar o link do portal exibe
+  // a tela de bloqueio (contatar Jader ou Nayara)
+  return <AcessoBloqueadoIndicador />;
+
   const { token } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
