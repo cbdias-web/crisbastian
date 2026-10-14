@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Save, Plus, Trash2, CheckCircle2, Circle, Clock, User, Calendar, FileText, AlertTriangle, History, UploadCloud, Link2, FileCheck2, Crown, Percent, ExternalLink, Lock, Edit3, Landmark, Info, Rocket } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,6 +47,15 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
   const [novaObservacao, setNovaObservacao] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [uploadingContrato, setUploadingContrato] = useState(false);
+  const [vendedoresPadrinhos, setVendedoresPadrinhos] = useState([]);
+
+  // Lista de vendedores ativos para troca manual de padrinho/madrinha (admin)
+  useEffect(() => {
+    if (!isAdmin) return;
+    base44.entities.Vendedor.filter({ ativo: true }, 'nome')
+      .then(setVendedoresPadrinhos)
+      .catch(() => {});
+  }, [isAdmin]);
 
   const handleUploadContrato = async (file) => {
     if (!file) return;
@@ -80,10 +89,16 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
         dataConclusao = '';
       }
 
+      // Troca de padrinho/madrinha (admin)
+      const padrinhoMudou = (implantacao.padrinho_email || '') !== (form.padrinho_email || '');
+      const padrinhoTrocaObs = padrinhoMudou
+        ? `Troca de padrinho/madrinha: ${implantacao.padrinho_nome || 'não definido'} → ${form.padrinho_nome || 'não definido'}`
+        : '';
+
       const historicoEntry = {
         status_anterior: implantacao.status,
         status_novo: statusFinal,
-        observacao: novaObservacao || (todasConcluidas && statusFinal !== implantacao.status ? 'Todas as etapas concluídas' : ''),
+        observacao: padrinhoTrocaObs || novaObservacao || (todasConcluidas && statusFinal !== implantacao.status ? 'Todas as etapas concluídas' : ''),
         atualizado_por: user?.full_name || user?.email || 'Sistema',
         data: new Date().toISOString(),
       };
@@ -127,6 +142,9 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
         rate_custodia: rateVal,
         link_abertura_cc: linkVal,
         requer_abertura_cc: requerCC,
+        padrinho_id: form.padrinho_id || '',
+        padrinho_nome: form.padrinho_nome || '',
+        padrinho_email: form.padrinho_email || '',
         historico: [...(implantacao.historico || []), historicoEntry],
       };
 
@@ -475,7 +493,30 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
           <div className="grid grid-cols-2 gap-3">
             <InfoRow icon={User} label="Vendedor" value={form.vendedor_nome} />
             <InfoRow icon={User} label="Responsável" value={form.responsavel_implantacao || 'Não definido'} editable={editing} onChange={v => setForm(f => ({ ...f, responsavel_implantacao: v }))} />
-            <InfoRow icon={Crown} label="Padrinho" value={form.padrinho_nome || 'Não definido'} />
+            {isAdmin && editing ? (
+              <div className="rounded-xl p-3" style={{ background: AURORA.surface2, border: '1px solid rgba(168,85,247,0.35)' }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Crown className="w-3 h-3" style={{ color: '#a78bfa' }} />
+                  <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>Padrinho / Madrinha</p>
+                </div>
+                <select
+                  value={form.padrinho_email || ''}
+                  onChange={e => {
+                    const v = vendedoresPadrinhos.find(x => x.email === e.target.value);
+                    setForm(f => ({ ...f, padrinho_email: v?.email || '', padrinho_nome: v?.nome || '', padrinho_id: '' }));
+                  }}
+                  className="w-full text-sm rounded-lg px-2 py-1 focus:outline-none"
+                  style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }}
+                >
+                  <option value="">— Não definido —</option>
+                  {vendedoresPadrinhos.map(v => (
+                    <option key={v.id} value={v.email}>{v.nome}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <InfoRow icon={Crown} label="Padrinho" value={form.padrinho_nome || 'Não definido'} />
+            )}
             <InfoRow icon={Calendar} label="Entrada" value={fmtDate(form.data_entrada)} />
             <InfoRow icon={Calendar} label="Prev. Conclusão" value={fmtDate(form.data_prevista_conclusao)} editable={editing} type="date" onChange={v => setForm(f => ({ ...f, data_prevista_conclusao: v }))} />
             <InfoRow icon={Calendar} label="Conclusão" value={fmtDate(form.data_conclusao)} />
