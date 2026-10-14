@@ -490,9 +490,16 @@ const sections = [
     id: 'contratos', icon: ScrollText, title: 'Contratos',
     color: 'from-amber-700 to-amber-800', bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-200',
     content: [
-      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore, Garantias, Hora Técnica, Rating.**'] },
+      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore, Garantias, Hora Técnica, Rating, Diagnóstico, Score.**'] },
+      { subtitle: '🆕 Novos modelos de crédito (RATING, DIAGNÓSTICO e SCORE)', items: [
+        'Três novos modelos de contrato preenchem automaticamente o **PDF modelo** (formato AcroForm) com os dados digitados.',
+        '**RATING:** valor da adesão parcelado (nº de parcelas + valor da parcela calculado automaticamente), dia de vencimento das parcelas, valor **somente diagnóstico** com seu próprio dia de vencimento e o **Serviço Contratado** (Organização Financeira, Rating ou Rating + Organização Financeira) marcado como checkbox no PDF.',
+        '**DIAGNÓSTICO:** apenas o **valor do diagnóstico** e a data — sem parcelas, mensalidade ou checkboxes.',
+        '**SCORE:** valor da adesão parcelado + dia de vencimento das parcelas, além da **mensalidade** com seu dia de vencimento próprio.',
+        'Todos pedem **forma de pagamento** e **data do 1º pagamento**. O PDF gerado é salvo no contrato e pode ser enviado para assinatura (ZapSign) normalmente.',
+      ]},
       { subtitle: 'Criar contrato', steps: ['Acesse "Contratos" > selecione o tipo.', 'Busque cliente existente ou preencha manualmente.', 'Preencha Dados Pessoais, Endereço, Financeiro e Obs.', 'Clique em "Salvar". Admins são notificados automaticamente.'] },
-      { subtitle: 'Fluxo de etapas', items: ['**Rascunho → PDF Gerado → Assinado → Aguardando Pagamento → Pago → No Pipeline.**'] },
+      { subtitle: 'Fluxo de etapas', items: ['**Rascunho → PDF Gerado → Assinado → Aguardando Pagamento → Pago → No Pipeline** (contratos podem também ser marcados como **Cancelado**).'] },
       { subtitle: 'Enviar para Vendas', text: 'Após assinatura + pagamento confirmado, clique em "Enviar para Vendas". Cria venda pré-preenchida.' },
       { subtitle: '📎 Anexos de contrato e boletos', items: [
         '**Contrato assinado:** o gerente pode anexar o PDF do contrato assinado pelo cliente.',
@@ -527,6 +534,19 @@ const sections = [
         'No modal de detalhes, o responsável pode **anexar o contrato manualmente** (upload de PDF, DOC ou imagem).',
         'Também é possível especificar **condições especiais de implantação** (prazos, exigências técnicas, dependências externas).',
         'Após anexar, o status de "contrato não encontrado" é atualizado automaticamente.',
+      ]},
+      { subtitle: '🏦 Abertura de Conta Corrente (Rate + Link de Abertura)', items: [
+        'Na implantação, o lead indica se a operação **requer Abertura de Conta Corrente** (toggle Requer/Dispensado no modal).',
+        'Quando requerida, o gerente informa o **Rate / Taxa de Custódia** (entre 0,01% e 4,00%) — obrigatório antes do link.',
+        'O **Link de Abertura CC** (área externa de abertura) só é habilitado **após o preenchimento do Rate**.',
+        'Para mover o lead de status/coluna com a CC requerida, o link precisa estar preenchido (rejeição por Compliance dispensa).',
+        'Quando dispensada, o produto decide o padrão (Câmbio, Hora Técnica, Rating etc. dispensam) e o lead é movido livremente.',
+      ]},
+      { subtitle: '👑 Padrinho / Madrinha da implantação', items: [
+        'Cada produto tem um **padrinho/madrinha padrão** no cadastro mestre (Padrinho por Produto), responsável por acompanhar a implantação.',
+        'Administradores podem **trocar o padrinho pontualmente** em uma implantação específica, pelo modal de detalhes.',
+        'A troca pontual é **exceção**: vale apenas para aquela implantação e **não altera o cadastro mestre** do produto.',
+        'A troca fica registrada no histórico da implantação e o novo padrinho passa a visualizar o processo.',
       ]},
       { subtitle: 'Status e prioridade', items: [
         '**Status:** Aguardando Documentação → Em Andamento → Aguardando Cliente → Concluído / Concluído com Feedback / Cancelado.',
@@ -1032,7 +1052,7 @@ export default function Manual() {
                 </h1>
                 <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
                   <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Set/2026
+                  Guia completo de utilização — atualizado Out/2026
                 </p>
               </div>
             </div>
@@ -1042,7 +1062,7 @@ export default function Manual() {
               {[
                 { v: sections.length, l: 'Seções', icon: '📋' },
                 { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
-                { v: 'Set/2026', l: 'Atualizado', icon: '🗓' },
+                { v: 'Out/2026', l: 'Atualizado', icon: '🗓' },
               ].map((k, i) => (
                 <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
                   <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
@@ -1152,7 +1172,7 @@ export default function Manual() {
 
         {/* ── FOOTER ── */}
         <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Gestão Comercial · Manual da Plataforma · Set/2026
+          Villela Exchange · Gestão Comercial · Manual da Plataforma · Out/2026
         </div>
       </div>
 
