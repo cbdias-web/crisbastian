@@ -123,7 +123,15 @@
       "type": "string"
     },
     "dia_vencimento": {
-      "description": "Dia do vencimento das parcelas",
+      "description": "Dia do vencimento das parcelas (RATING/SCORE: parcelas de ades\u00e3o)",
+      "type": "number"
+    },
+    "dia_vencimento_diagnostico": {
+      "description": "Dia de vencimento do valor somente diagn\u00f3stico \u2014 espec\u00edfico para RATING",
+      "type": "number"
+    },
+    "dia_vencimento_mensalidade": {
+      "description": "Dia de vencimento da mensalidade \u2014 espec\u00edfico para SCORE",
       "type": "number"
     },
     "email": {
@@ -132,6 +140,15 @@
     },
     "endereco": {
       "description": "Endere\u00e7o completo (Rua, n\u00famero, complemento)",
+      "type": "string"
+    },
+    "escopo_rating": {
+      "description": "Servi\u00e7o contratado (checkbox do modelo) \u2014 espec\u00edfico para RATING",
+      "enum": [
+        "Organiza\u00e7\u00e3o Financeira",
+        "Rating",
+        "Rating + Organiza\u00e7\u00e3o Financeira"
+      ],
       "type": "string"
     },
     "estado": {
@@ -208,7 +225,7 @@
       "type": "string"
     },
     "mensalidade": {
-      "description": "Mensalidade (espec\u00edfico para GARANTIAS e RATING)",
+      "description": "Mensalidade (espec\u00edfico para GARANTIAS, RATING e SCORE)",
       "type": "number"
     },
     "moeda": {
@@ -318,12 +335,18 @@
         "OFFSHORE",
         "GARANTIAS",
         "HORA T\u00c9CNICA",
-        "RATING"
+        "RATING",
+        "DIAGN\u00d3STICO",
+        "SCORE"
       ],
       "type": "string"
     },
     "valor_adesao": {
       "description": "Valor de ades\u00e3o / entrada",
+      "type": "number"
+    },
+    "valor_diagnostico": {
+      "description": "Valor somente diagn\u00f3stico \u2014 espec\u00edfico para RATING",
       "type": "number"
     },
     "valor_divida": {
@@ -339,7 +362,7 @@
       "type": "number"
     },
     "valor_total": {
-      "description": "Valor total do contrato",
+      "description": "Valor total do contrato (RATING/SCORE: valor da ades\u00e3o; DIAGN\u00d3STICO: valor do diagn\u00f3stico)",
       "type": "number"
     },
     "vendedor_id": {

@@ -21,6 +21,9 @@ const TIPO_COLOR = {
   'OFFSHORE': '#0e7490',
   'GARANTIAS': '#be123c',
   'HORA TÉCNICA': '#0f766e',
+  'RATING': '#0369a1',
+  'DIAGNÓSTICO': '#4d7c0f',
+  'SCORE': '#1e293b',
 };
 
 const STATUS_CONFIG = {

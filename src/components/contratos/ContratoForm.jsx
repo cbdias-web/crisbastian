@@ -8,6 +8,7 @@ import {
   CheckCircle2, Circle, X, UserCheck, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import ContratoFinanceiroModelos from '@/components/contratos/ContratoFinanceiroModelos';
 
 const EMPTY = {
   nome: '', cpf_cnpj: '', responsavel_legal: '', cpf_responsavel: '',
@@ -18,6 +19,7 @@ const EMPTY = {
   banco: '', agencia: '', conta: '', moeda: 'USD', cotacao: '', valor_em_moeda: '',
   prazo_meses: '', observacoes: '', data_contrato: todayBrasilia(),
   mensalidade: '', valor_divida: '', percentual_montante: '', administracao_debitos: [],
+  valor_diagnostico: '', dia_vencimento_diagnostico: '', dia_vencimento_mensalidade: '',
 };
 
 const FORMAS = ['PIX', 'TED/DOC', 'DÉBITO EM CONTA', 'BOLETO', 'CARTÃO DE CRÉDITO'];
@@ -33,6 +35,8 @@ const TIPO_COLOR = {
   'GARANTIAS': '#be123c',
   'HORA TÉCNICA': '#0f766e',
   'RATING': '#0369a1',
+  'DIAGNÓSTICO': '#4d7c0f',
+  'SCORE': '#1e293b',
 };
 
 const TIPO_GRADIENT = {
@@ -45,6 +49,8 @@ const TIPO_GRADIENT = {
   'GARANTIAS': 'from-rose-700 to-rose-600',
   'HORA TÉCNICA': 'from-teal-700 to-teal-600',
   'RATING': 'from-sky-700 to-sky-600',
+  'DIAGNÓSTICO': 'from-lime-700 to-lime-600',
+  'SCORE': 'from-slate-800 to-slate-700',
 };
 
 function calcProgress(form, aba) {
@@ -272,6 +278,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         prazo_meses: parseInt(data.prazo_meses) || 0,
         dia_vencimento: parseInt(data.dia_vencimento) || 0,
         mensalidade: toNum(data.mensalidade),
+        valor_diagnostico: toNum(data.valor_diagnostico),
+        dia_vencimento_diagnostico: parseInt(data.dia_vencimento_diagnostico) || undefined,
+        dia_vencimento_mensalidade: parseInt(data.dia_vencimento_mensalidade) || undefined,
+        escopo_rating: data.escopo_rating || undefined,
         valor_divida: toNum(data.valor_divida),
         percentual_montante: toNum(data.percentual_montante),
       };
@@ -658,7 +668,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   </div>
                 )}
 
-                {tipo === 'GARANTIAS' ? (
+                {['RATING', 'DIAGNÓSTICO', 'SCORE'].includes(form._tipoOverride || tipo) ? (
+                  <ContratoFinanceiroModelos tipo={form._tipoOverride || tipo} form={form} set={set}
+                    selectField={selectField} campo={campo} formas={FORMAS} />
+                ) : tipo === 'GARANTIAS' ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
@@ -928,7 +941,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         onChange={e => setForm(f => ({ ...f, _tipoOverride: e.target.value }))}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all appearance-none cursor-pointer"
                       >
-                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA','RATING'].map(t => (
+                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA','RATING','DIAGNÓSTICO','SCORE'].map(t => (
                           <option key={t} value={t}>{t}</option>
                         ))}
                       </select>

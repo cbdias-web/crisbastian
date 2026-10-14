@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
 
     const resultado = {};
 
-    const { tipo } = await req.json().catch(() => ({}));
-    const pdfsToCheck = tipo ? { [tipo]: PDFs[tipo] } : PDFs;
+    const { tipo, url: urlCustom } = await req.json().catch(() => ({}));
+    const pdfsToCheck = urlCustom ? { custom: urlCustom } : (tipo ? { [tipo]: PDFs[tipo] } : PDFs);
     for (const [nome, url] of Object.entries(pdfsToCheck)) {
       try {
         const res = await fetch(url);
@@ -37,6 +37,10 @@ Deno.serve(async (req) => {
           pageRefToIndex.set(pg.ref.toString(), idx);
         });
 
+        if (urlCustom) {
+          resultado[nome] = fields.map(f => `${f.constructor.name}:${f.getName()}@p${(() => { try { return pageRefToIndex.get(f.acroField.getWidgets()[0].P().toString()); } catch (_) { return '?'; } })()}`);
+          continue;
+        }
         resultado[nome] = {
           total_campos: fields.length,
           page_sizes: pageInfo,

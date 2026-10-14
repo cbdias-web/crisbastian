@@ -25,7 +25,9 @@ const TIPO_CONFIG = {
   'OFFSHORE': { color: 'bg-cyan-700', light: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30', icon: Globe, desc: 'Estruturação de empresa e conta bancária offshore no exterior' },
   'GARANTIAS': { color: 'bg-rose-700', light: 'bg-rose-500/15 text-rose-300 border-rose-500/30', icon: FileText, desc: 'Contrato de garantias e seguros patrimoniais e financeiros' },
   'HORA TÉCNICA': { color: 'bg-teal-700', light: 'bg-teal-500/15 text-teal-300 border-teal-500/30', icon: FileText, desc: 'Contrato de prestação de serviços por hora técnica especializada' },
-  'RATING': { color: 'bg-sky-700', light: 'bg-sky-500/15 text-sky-300 border-sky-500/30', icon: BarChart3, desc: 'Contrato de serviços de rating e análise de crédito internacional' },
+  'RATING': { color: 'bg-sky-700', light: 'bg-sky-500/15 text-sky-300 border-sky-500/30', icon: BarChart3, desc: 'Consultoria de crédito empresarial: diagnóstico, reorganização e monitoramento do rating' },
+  'DIAGNÓSTICO': { color: 'bg-lime-700', light: 'bg-lime-500/15 text-lime-300 border-lime-500/30', icon: BarChart3, desc: 'Consultoria e diagnóstico de rating bancário para reorganização do perfil de crédito' },
+  'SCORE': { color: 'bg-slate-700', light: 'bg-slate-500/15 text-slate-300 border-slate-500/30', icon: BarChart3, desc: 'Reorganização financeira: remoção de apontamentos negativos (nada consta)' },
 };
 
 const STATUS_CONFIG = {

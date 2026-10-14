@@ -34,6 +34,8 @@ const TIPO_DOT = {
   'GARANTIAS': '#f43f5e',
   'HORA TÉCNICA': '#14b8a6',
   'RATING': '#0ea5e9',
+  'DIAGNÓSTICO': '#84cc16',
+  'SCORE': '#64748b',
 };
 
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
