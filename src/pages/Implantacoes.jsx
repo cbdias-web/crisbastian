@@ -99,10 +99,14 @@ export default function Implantacoes() {
   // Visibilidade (não-admin): padrinho vê seus produtos (todos os vendedores);
   // gerente/vendedor vê suas próprias vendas (todos os padrinhos). União dos dois.
   const visiveis = isAdmin ? implantacoes : implantacoes.filter(imp => {
-    const souPadrinhoDeste = meusProdutosPadrinho.includes(imp.produto) &&
-      (!imp.padrinho_nome ||
-        imp.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase() ||
-        (imp.padrinho_email && imp.padrinho_email === user?.email));
+    // Padrinho padrão vem do cadastro por produto (PadrinhoProduto). Exceção pontual:
+    // implantação pode ter padrinho próprio (padrinho_email) — nesse caso, ela é visível
+    // para quem está gravado na implantação, não para o padrinho padrão do produto.
+    const excecaoPontual = imp.padrinho_email && imp.padrinho_email === user?.email;
+    const souPadrinhoDeste = excecaoPontual || (
+      meusProdutosPadrinho.includes(imp.produto) &&
+      (!imp.padrinho_email || !imp.padrinho_nome || imp.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase())
+    );
     const souVendedorDeste =
       (meuVendedor && (imp.vendedor_id === meuVendedor.id || imp.vendedor_nome === meuVendedor.nome)) ||
       (user?.full_name && imp.vendedor_nome === user.full_name);
@@ -277,10 +281,10 @@ export default function Implantacoes() {
       </div>
 
       {implantacaoAtiva && (() => {
-        const souPadrinho = meusProdutosPadrinho.includes(implantacaoAtiva.produto) &&
-          (!implantacaoAtiva.padrinho_nome ||
-            implantacaoAtiva.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase() ||
-            (implantacaoAtiva.padrinho_email && implantacaoAtiva.padrinho_email === user?.email));
+        const souPadrinho = (implantacaoAtiva.padrinho_email && implantacaoAtiva.padrinho_email === user?.email) || (
+          meusProdutosPadrinho.includes(implantacaoAtiva.produto) &&
+          (!implantacaoAtiva.padrinho_email || !implantacaoAtiva.padrinho_nome || implantacaoAtiva.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase())
+        );
         const souVendedor =
           (meuVendedor && (implantacaoAtiva.vendedor_id === meuVendedor.id || implantacaoAtiva.vendedor_nome === meuVendedor.nome)) ||
           (user?.full_name && implantacaoAtiva.vendedor_nome === user.full_name);
