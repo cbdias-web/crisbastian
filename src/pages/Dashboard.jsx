@@ -632,7 +632,24 @@ export default function Dashboard() {
                     <XAxis dataKey="nome" tick={{ fontSize: 11, fill: A.textMuted }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: A.textMuted }} axisLine={false} tickLine={false}
                       tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                    <Tooltip cursor={false} content={() => null} />
+                    <Tooltip cursor={false} content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const item = payload.find(p => p.dataKey === 'volume') || payload[0];
+                      const metaItem = payload.find(p => p.dataKey === 'meta');
+                      return (
+                        <div style={{ background: A.surface2, border: `1px solid ${A.border}`, borderRadius: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+                          <p style={{ fontSize: 11, color: A.textMuted, marginBottom: 2 }}>{label}</p>
+                          <p style={{ fontSize: 14, fontWeight: 700, color: A.accent }}>
+                            Total: {formatCurrency(item?.value || 0)}
+                          </p>
+                          {metaItem?.value > 0 && (
+                            <p style={{ fontSize: 11, color: A.textMuted, marginTop: 2 }}>
+                              Meta: {formatCurrency(metaItem.value)}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }} />
                     <Bar dataKey="volume" name="volume" radius={[6, 6, 0, 0]} maxBarSize={40}>
                       {rankingData.map((entry, i) => {
                         const baseFill = entry.volume >= entry.meta && entry.meta > 0 ? '#10b981' : A.accent;
