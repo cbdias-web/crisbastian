@@ -96,6 +96,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   const [showBusca, setShowBusca] = useState(false);
   const [aba, setAba] = useState('dados');
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [criandoCliente, setCriandoCliente] = useState(false);
   const [indicadores, setIndicadores] = useState(() => {
     if (contratoExistente?.indicadores?.length > 0) return contratoExistente.indicadores;
     return [];
@@ -432,6 +433,72 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   ];
   const abaIdx = abas.findIndex(a => a.id === aba);
 
+  // ── Criação automática de cliente ao avançar da aba Dados Pessoais ──
+  // Se o cliente não existe na base (busca por CPF/CNPJ), é criado com os
+  // dados preenchidos e vinculado ao gerente que está preenchendo o contrato.
+  const criarClienteAntesAvancar = async () => {
+    if (!form.nome?.trim() || !form.cpf_cnpj?.trim() || form.cliente_id) return true;
+    setCriandoCliente(true);
+    try {
+      const existentes = await base44.entities.Cliente.filter({ cpf_cnpj: form.cpf_cnpj });
+      if (existentes.length > 0) {
+        setForm(f => ({ ...f, cliente_id: existentes[0].id }));
+      } else {
+        const vendedorId = contratoExistente ? (vendedorEditId || user?.id || '') : (user?.id || '');
+        const vendedorNome = contratoExistente
+          ? (vendedorEditNome || user?.nome_tratamento || user?.full_name || '')
+          : (user?.nome_tratamento || user?.full_name || user?.email || '');
+        const novo = await base44.entities.Cliente.create({
+          nome: form.nome,
+          cpf_cnpj: form.cpf_cnpj,
+          responsavel_legal: form.responsavel_legal || '',
+          cpf_responsavel: form.cpf_responsavel || '',
+          nascimento: form.nascimento || '',
+          nacionalidade: form.nacionalidade || '',
+          profissao: form.profissao || '',
+          estado_civil: form.estado_civil || '',
+          email: form.email || '',
+          telefone: form.telefone || '',
+          cep: form.cep || '', endereco: form.endereco || '', bairro: form.bairro || '',
+          cidade: form.cidade || '', estado: form.estado || '',
+          vendedor_id: vendedorId,
+          vendedor_nome: vendedorNome,
+          origem: 'nativo',
+          observacao: `Cliente gerado pelo contrato ${contratoExistente?._tipoOverride || tipo} (criado durante o preenchimento).`,
+        });
+        setForm(f => ({ ...f, cliente_id: novo.id }));
+        await queryClient.invalidateQueries(['clientes-contrato']);
+        toast.success(`Cliente "${novo.nome}" criado e vinculado à carteira de ${vendedorNome}.`);
+      }
+    } catch (e) {
+      toast.error('Erro ao criar cliente: ' + (e?.message || e));
+      setCriandoCliente(false);
+      return false;
+    }
+    setCriandoCliente(false);
+    return true;
+  };
+
+  const avancarAba = async () => {
+    const proxima = abas[abaIdx + 1];
+    if (!proxima) return;
+    if (proxima.bloqueada) { toast.error(proxima.motivoBloqueio); return; }
+    if (aba === 'dados') {
+      const ok = await criarClienteAntesAvancar();
+      if (!ok) return;
+    }
+    setAba(proxima.id);
+  };
+
+  const trocarAba = async (destino) => {
+    if (destino === aba) return;
+    if (aba === 'dados' && destino !== 'dados') {
+      const ok = await criarClienteAntesAvancar();
+      if (!ok) return;
+    }
+    setAba(destino);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
@@ -537,7 +604,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   <button key={a.id}
                     onClick={() => {
                       if (isBloqueada) { toast.error(a.motivoBloqueio); return; }
-                      setAba(a.id);
+                      trocarAba(a.id);
                     }}
                     title={isBloqueada ? a.motivoBloqueio : a.label}
                     className={`flex-1 relative flex flex-col items-center gap-1 pt-3.5 pb-2.5 text-xs font-semibold transition-all border-b-2 ${
@@ -576,6 +643,20 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
 
             {aba === 'dados' && (
               <div className="space-y-5">
+                {!form.cliente_id && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                    <UserCheck className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      <strong>Cliente novo?</strong> Preencha os dados acima e clique em <strong>Próxima</strong> — o cliente será criado automaticamente na base (com estes dados) e vinculado à sua carteira.
+                    </p>
+                  </div>
+                )}
+                {form.cliente_id && (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 flex items-center gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <p className="text-xs text-emerald-700">Cliente já vinculado ao contrato — os dados salvos serão atualizados nesta base existente.</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {campo('Nome Completo / Razão Social', 'nome', 'text', { required: true })}
                   {campo('CPF / CNPJ', 'cpf_cnpj', 'text', { required: true })}
@@ -1027,7 +1108,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
               {abas.map((a) => {
                 const prog = calcProgress(form, a.id);
                 return (
-                  <button key={a.id} onClick={() => setAba(a.id)}
+                  <button key={a.id} onClick={() => trocarAba(a.id)}
                     className={`transition-all rounded-full ${aba === a.id ? 'w-6 h-2' : 'w-2 h-2'} ${prog === 100 ? 'bg-emerald-400' : ''}`}
                     style={aba === a.id ? { background: cor } : prog < 100 ? { background: '#d1d5db' } : {}} />
                 );
@@ -1041,14 +1122,12 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   const bloqueada = proxima.bloqueada;
                   return (
                     <button
-                      onClick={() => {
-                        if (bloqueada) { toast.error(proxima.motivoBloqueio); return; }
-                        setAba(proxima.id);
-                      }}
+                      onClick={avancarAba}
+                      disabled={bloqueada || criandoCliente}
                       title={bloqueada ? proxima.motivoBloqueio : 'Próxima aba'}
                       className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition ${bloqueada ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'text-white hover:opacity-90'}`}
                       style={!bloqueada ? { background: cor } : {}}>
-                      Próxima <ChevronRight className="w-3.5 h-3.5" />
+                      {criandoCliente ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null} Próxima <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   );
                 })()
