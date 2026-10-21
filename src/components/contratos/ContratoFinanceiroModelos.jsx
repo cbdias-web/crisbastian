@@ -22,7 +22,7 @@ export default function ContratoFinanceiroModelos({ tipo, form, set, selectField
   const isRating = tipo === 'RATING';
   const isScore = tipo === 'SCORE';
   const isDiag = tipo === 'DIAGNÓSTICO';
-  const comParcelas = isRating || isScore;
+  const comParcelas = isRating || isScore || isDiag;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -32,7 +32,7 @@ export default function ContratoFinanceiroModelos({ tipo, form, set, selectField
       {comParcelas && (
         <>
           <div className="group">
-            <label className={LABEL}>{isScore ? 'Nº de Parcelas de Adesão' : 'Nº de Parcelas da Adesão'}</label>
+            <label className={LABEL}>{isDiag ? 'Nº de Parcelas' : isScore ? 'Nº de Parcelas de Adesão' : 'Nº de Parcelas da Adesão'}</label>
             <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
               className={`${INPUT} cursor-pointer`}>
               {PARCELAS.map(n => <option key={n} value={n}>{n}x</option>)}
