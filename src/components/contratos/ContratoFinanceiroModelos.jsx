@@ -31,6 +31,7 @@ export default function ContratoFinanceiroModelos({ tipo, form, set, selectField
 
       {comParcelas && (
         <>
+          <Num label="Valor de Entrada (R$)" k="valor_adesao" form={form} set={set} placeholder="Ex: 500,00" step="0.01" />
           <div className="group">
             <label className={LABEL}>{isDiag ? 'Nº de Parcelas' : isScore ? 'Nº de Parcelas de Adesão' : 'Nº de Parcelas da Adesão'}</label>
             <select value={form.num_parcelas} onChange={e => set('num_parcelas', e.target.value)}
@@ -45,6 +46,14 @@ export default function ContratoFinanceiroModelos({ tipo, form, set, selectField
           </div>
           <Num label={isScore ? 'Vencimento das Parcelas de Adesão (dia)' : 'Dia de Vencimento das Parcelas'}
             k="dia_vencimento" form={form} set={set} placeholder="Ex: 10" />
+          <div className="group">
+            <label className={LABEL}>
+              Data da 1ª Parcela
+              <span className="text-[9px] normal-case font-normal text-blue-400"> (início do parcelamento — negociável)</span>
+            </label>
+            <input type="date" value={form.data_primeira_parcela ?? ''} onChange={e => set('data_primeira_parcela', e.target.value)}
+              className={INPUT} />
+          </div>
         </>
       )}
 

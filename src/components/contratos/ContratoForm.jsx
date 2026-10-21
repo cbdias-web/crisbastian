@@ -20,6 +20,7 @@ const EMPTY = {
   prazo_meses: '', observacoes: '', data_contrato: todayBrasilia(),
   mensalidade: '', valor_divida: '', percentual_montante: '', administracao_debitos: [],
   valor_diagnostico: '', dia_vencimento_diagnostico: '', dia_vencimento_mensalidade: '',
+  data_primeira_parcela: '',
 };
 
 const FORMAS = ['PIX', 'TED/DOC', 'DÉBITO EM CONTA', 'BOLETO', 'CARTÃO DE CRÉDITO'];
@@ -283,6 +284,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         dia_vencimento_diagnostico: parseInt(data.dia_vencimento_diagnostico) || undefined,
         dia_vencimento_mensalidade: parseInt(data.dia_vencimento_mensalidade) || undefined,
         escopo_rating: data.escopo_rating || undefined,
+        data_primeira_parcela: data.data_primeira_parcela || undefined,
         valor_divida: toNum(data.valor_divida),
         percentual_montante: toNum(data.percentual_montante),
       };

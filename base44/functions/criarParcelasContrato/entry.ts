@@ -50,7 +50,10 @@ async function gerarParcelas(base44, contrato, vendaId) {
     ? contrato.valor_parcela
     : (restante > 0 ? restante / numParcelas : (contrato.valor_total || 0) / numParcelas);
 
-  const baseISO = contrato.data_primeiro_pagamento || contrato.data_contrato || todayBrasiliaISO();
+  // A 1ª parcela pode começar fora do intervalo padrão da entrada (negociação
+  // com entrada no ato + parcelamento iniciando depois): usa a data própria
+  // de início do parcelamento quando informada.
+  const baseISO = contrato.data_primeira_parcela || contrato.data_primeiro_pagamento || contrato.data_contrato || todayBrasiliaISO();
 
   let criadas = 0;
   for (let i = 1; i <= numParcelas; i++) {
