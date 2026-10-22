@@ -39,6 +39,9 @@ export default function ParceirosTab({ readOnly = false }) {
     queryFn: () => base44.entities.Parceiro.list('nome'),
   });
 
+  // No portal (somente leitura) exibimos apenas indicadores ativos.
+  const visiveis = readOnly ? indicadores.filter(p => p.ativo !== false) : indicadores;
+
   const openNovo = () => {
     setEditando(null);
     setForm({ nome: '', email: '', telefone: '', percentual_comissao: 10, receber_notificacoes: true, ativo: true, observacoes: '' });
@@ -194,7 +197,7 @@ export default function ParceirosTab({ readOnly = false }) {
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4" style={{ color: AURORA.accent }} />
           <p className="text-sm font-bold" style={{ color: AURORA.text }}>Indicadores</p>
-          <span className="text-xs" style={{ color: AURORA.textMuted }}>({indicadores.length})</span>
+          <span className="text-xs" style={{ color: AURORA.textMuted }}>({visiveis.length})</span>
         </div>
         {!readOnly && (
           <div className="flex items-center gap-2">
@@ -215,7 +218,7 @@ export default function ParceirosTab({ readOnly = false }) {
 
       {isLoading ? (
         <div className="text-center py-8"><Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: AURORA.textMuted }} /></div>
-      ) : indicadores.length === 0 ? (
+      ) : visiveis.length === 0 ? (
         <div className="text-center py-8 rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
           <Users className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted }} />
           <p className="font-semibold" style={{ color: AURORA.text }}>Nenhum indicador cadastrado</p>
@@ -223,7 +226,7 @@ export default function ParceirosTab({ readOnly = false }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {indicadores.map(p => (
+          {visiveis.map(p => (
             <div key={p.id} onClick={() => setBoxAberto(p)}
               className="rounded-2xl p-4 transition cursor-pointer"
               style={{

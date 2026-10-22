@@ -11,9 +11,11 @@ const AURORA = {
 
 // Tabela SOMENTE LEITURA dos indicadores (sem ações de editar/convite/link)
 export default function ParceirosTabelaLeitura({ parceiros, parceiroFiltro }) {
+  // No portal, apenas indicadores ativos ficam visíveis.
+  const base = parceiros.filter((p) => p.ativo !== false);
   const lista = parceiroFiltro && parceiroFiltro !== 'todos'
-    ? parceiros.filter((p) => p.id === parceiroFiltro)
-    : parceiros;
+    ? base.filter((p) => p.id === parceiroFiltro)
+    : base;
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
