@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import ContratoFinanceiroModelos from '@/components/contratos/ContratoFinanceiroModelos';
 import CampoMascara from '@/components/ui/campo-mascara';
+import { consultarCnpj } from '@/lib/autocomplete';
 import CampoMoeda from '@/components/ui/campo-moeda';
 
 const EMPTY = {
@@ -252,6 +253,29 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     setBuscandoCep(false);
   };
 
+  // CNPJ → preenche razão social, CEP e endereço (somente campos vazios)
+  const buscarCnpj = async (cnpj) => {
+    const digitos = String(cnpj || '').replace(/\D/g, '');
+    if (digitos.length !== 14) return;
+    try {
+      const dados = await consultarCnpj(digitos);
+      if (dados) {
+        setForm(f => ({
+          ...f,
+          nome: (!String(f.nome || '').trim() && dados.razao_social) ? dados.razao_social : f.nome,
+          cep: (!String(f.cep || '').trim() && dados.cep) ? dados.cep : f.cep,
+          endereco: (!String(f.endereco || '').trim() && dados.endereco) ? dados.endereco : f.endereco,
+          bairro: (!String(f.bairro || '').trim() && dados.bairro) ? dados.bairro : f.bairro,
+          cidade: (!String(f.cidade || '').trim() && dados.cidade) ? dados.cidade : f.cidade,
+          estado: (!String(f.estado || '').trim() && dados.estado) ? dados.estado : f.estado,
+        }));
+        toast.success('Dados da empresa preenchidos automaticamente!');
+      } else {
+        toast.error('CNPJ não encontrado na base pública');
+      }
+    } catch {}
+  };
+
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   const [vendedorEditId, setVendedorEditId] = useState(contratoExistente?.vendedor_id || '');
@@ -410,6 +434,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             set(key, e.target.value);
             if (key === 'cep') buscarCep(e.target.value.replace(/\D/g, ''));
           }}
+          onBlur={() => { if (key === 'cpf_cnpj') buscarCnpj(form[key]); }}
           required={opts.required}
           className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
         />
