@@ -30,6 +30,7 @@ import DashParceiro from './pages/DashParceiro';
 import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
+import IndicacaoGenericaPage from './pages/IndicacaoGenericaPage';
 import PortalIndicador from './pages/PortalIndicador';
 import PortalIndicadorAdmin from './pages/PortalIndicadorAdmin';
 import FilaContato from './pages/FilaContato';
@@ -63,6 +64,14 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/indicacao/:token" element={<IndicacaoPublicaPage />} />
+      </Routes>
+    );
+  }
+  // Link genérico de indicação (público, sem token)
+  if (location.pathname.startsWith('/indicar')) {
+    return (
+      <Routes>
+        <Route path="/indicar" element={<IndicacaoGenericaPage />} />
       </Routes>
     );
   }

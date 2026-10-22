@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
-import { Handshake, Send, Users, Lock } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Handshake, Send, Users, Lock, Link2, UserX } from 'lucide-react';
+import { toast } from 'sonner';
 import ParceirosTab from '@/components/central/ParceirosTab';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
@@ -9,6 +10,7 @@ import ConsolidadoIndicadores from '@/components/portal/ConsolidadoIndicadores';
 import FiltroIndicadores from '@/components/portal/FiltroIndicadores';
 import DashParceiroSomenteLeitura from '@/components/portal/DashParceiroSomenteLeitura';
 import AtualizarDashButton from '@/components/portal/AtualizarDashButton';
+import AcoesIndicadoresAdmin from '@/components/portal/AcoesIndicadoresAdmin';
 import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
 
 const AURORA = {
@@ -121,6 +123,8 @@ export default function DashParceiro() {
           </div>
           <AtualizarDashButton />
         </div>
+
+        <AcoesIndicadoresAdmin parceiros={parceiros} />
 
         <FiltroIndicadores
           periodo={periodo}
