@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Link2, UserX, Loader2 } from 'lucide-react';
+import { Link2, UserX, Loader2, QrCode as QrCodeIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import QrCodeIndicadoresModal from '@/components/portal/QrCodeIndicadoresModal.jsx';
 
 const AURORA = {
   surface2: '#1c2333',
@@ -17,6 +18,7 @@ const AURORA = {
 export default function AcoesIndicadoresAdmin({ parceiros = [] }) {
   const queryClient = useQueryClient();
   const [inativando, setInativando] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   const ativos = parceiros.filter(p => p.ativo !== false);
   // Sempre o domínio oficial publicado (nunca o endereço de preview) — mais confiança para os indicadores
@@ -54,12 +56,17 @@ export default function AcoesIndicadoresAdmin({ parceiros = [] }) {
         style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
         <Link2 className="w-3.5 h-3.5" /> Copiar link genérico de indicação
       </button>
+      <button onClick={() => setShowQr(true)} className={btn}
+        style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+        <QrCodeIcon className="w-3.5 h-3.5" /> QR Code
+      </button>
       <button onClick={inativarTodos} disabled={inativando} className={btn}
         style={{ background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}>
         {inativando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
         Inativar todos os indicadores ({ativos.length})
       </button>
       <span className="text-[11px]" style={{ color: 'rgba(230,237,243,0.55)' }}>{linkGenerico}</span>
+      {showQr && <QrCodeIndicadoresModal link={linkGenerico} onClose={() => setShowQr(false)} />}
     </div>
   );
 }
