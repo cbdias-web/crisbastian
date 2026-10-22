@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon, Check } from 'lucide-react';
+import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import IndicadorBoxModal from './IndicadorBoxModal';
 
@@ -32,6 +32,7 @@ export default function ParceirosTab({ readOnly = false }) {
   const [enviandoConvite, setEnviandoConvite] = useState(null);
   const [enviandoLinks, setEnviandoLinks] = useState(false);
   const [showEnviarLinks, setShowEnviarLinks] = useState(false);
+  const [showInativos, setShowInativos] = useState(false);
   const [selecionadosLinks, setSelecionadosLinks] = useState([]);
 
   const { data: indicadores = [], isLoading } = useQuery({
@@ -39,8 +40,11 @@ export default function ParceirosTab({ readOnly = false }) {
     queryFn: () => base44.entities.Parceiro.list('nome'),
   });
 
-  // No portal (somente leitura) exibimos apenas indicadores ativos.
-  const visiveis = readOnly ? indicadores.filter(p => p.ativo !== false) : indicadores;
+  // Lista principal: apenas indicadores ativos, para todos os usuários.
+  // Inativos ficam em uma seção oculta exclusiva do admin (com opção de reativação).
+  const ativos = indicadores.filter(p => p.ativo !== false);
+  const inativos = indicadores.filter(p => p.ativo === false);
+  const visiveis = ativos;
 
   const openNovo = () => {
     setEditando(null);
@@ -178,6 +182,14 @@ export default function ParceirosTab({ readOnly = false }) {
     const url = `${window.location.origin}/portal-indicador/${p.link_token}`;
     navigator.clipboard.writeText(url);
     toast.success('Link do portal copiado!');
+  };
+
+  const reativar = async (p) => {
+    try {
+      await base44.entities.Parceiro.update(p.id, { ativo: true });
+      queryClient.invalidateQueries({ queryKey: ['parceiros-indicacao'] });
+      toast.success(`${p.nome} reativado`);
+    } catch (e) { toast.error('Erro: ' + e.message); }
   };
 
   const toggleConsultaGeral = async (p) => {
@@ -329,6 +341,46 @@ export default function ParceirosTab({ readOnly = false }) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── Seção oculta de inativos (somente admin) ── */}
+      {!readOnly && inativos.length > 0 && (
+        <div className="mt-4">
+          <button onClick={() => setShowInativos(s => !s)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition"
+            style={{ background: 'rgba(100,100,100,0.12)', color: '#9ca3af', border: '1px solid rgba(230,237,243,0.15)' }}>
+            <EyeOff className="w-3.5 h-3.5" />
+            Indicadores inativos ({inativos.length})
+            <ChevronDown className="w-3.5 h-3.5 transition-transform" style={{ transform: showInativos ? 'rotate(0deg)' : 'rotate(-90deg)' }} />
+          </button>
+          {showInativos && (
+            <div className="mt-2 rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: '1px solid rgba(230,237,243,0.12)' }}>
+              <p className="px-4 py-2 text-[10px] uppercase tracking-wider" style={{ color: AURORA.textMuted, borderBottom: '1px solid rgba(230,237,243,0.12)' }}>
+                Ocultos da listagem principal — reative para devolvê-los ao painel
+              </p>
+              <div className="divide-y" style={{ borderColor: 'rgba(230,237,243,0.08)' }}>
+                {inativos.map(p => (
+                  <div key={p.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderTop: '1px solid rgba(230,237,243,0.08)' }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #00D4AA22, #0066cc22)', color: '#9ca3af', border: '1px solid rgba(230,237,243,0.15)' }}>
+                      {p.nome.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold truncate" style={{ color: AURORA.text }}>{p.nome}</p>
+                      {p.email && <p className="text-[10px] truncate" style={{ color: AURORA.textMuted }}>{p.email}</p>}
+                    </div>
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: 'rgba(100,100,100,0.2)', color: '#9ca3af' }}>Inativo</span>
+                    <button onClick={() => reativar(p)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex-shrink-0"
+                      style={{ background: 'rgba(52,211,153,0.12)', color: AURORA.green, border: '1px solid rgba(52,211,153,0.3)' }}>
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Reativar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
