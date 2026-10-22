@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Send, Handshake, ArrowRight } from 'lucide-react';
+import { Loader2, Send, Handshake, ArrowRight, Lock, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AURORA = {
@@ -33,19 +33,41 @@ function Field({ label, children, required }) {
 export default function IndicacaoGenericaPage() {
   const navigate = useNavigate();
   const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
+  const [emailLogado, setEmailLogado] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [telefone, setTelefone] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [checandoAcesso, setChecandoAcesso] = useState(true);
+
+  // O cadastro do indicador é SEMPRE vinculado ao e-mail da conta logada:
+  // é esse e-mail que o portal usa para reconhecer o indicador depois.
+  // Sem login ativo, a pessoa precisa entrar (ou criar conta) antes de continuar.
+  useEffect(() => {
+    base44.auth.me()
+      .then(u => {
+        if (u?.email) {
+          setEmailLogado(u.email);
+          setNome(u.full_name || '');
+        }
+        setChecandoAcesso(false);
+      })
+      .catch(() => setChecandoAcesso(false));
+  }, []);
+
+  const entrarComConta = () => {
+    try { localStorage.setItem('indicar_next', '/indicar'); } catch {}
+    base44.auth.redirectToLogin(window.location.origin + '/indicar');
+  };
 
   const continuar = async () => {
+    if (!emailLogado) { entrarComConta(); return; }
     if (!nome.trim()) { toast.error('Informe seu nome completo'); return; }
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast.error('Informe um e-mail válido'); return; }
     if (!telefone.trim()) { toast.error('Informe seu telefone/WhatsApp — é necessário para o comissionamento'); return; }
 
     setEnviando(true);
     try {
       const res = await base44.functions.invoke('indicacaoGenerica', {
-        action: 'registrar', nome, email, telefone,
+        action: 'registrar', nome, email: emailLogado, telefone,
       });
       const r = res?.data || res;
       if (r?.success && r?.token) {
@@ -80,26 +102,49 @@ export default function IndicacaoGenericaPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl p-5 md:p-6 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Seus dados</p>
-          <Field label="Nome completo" required>
-            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: João da Silva" className={inputCls} style={inputStyle} />
-          </Field>
-          <Field label="E-mail" required>
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Ex: joao@email.com" className={inputCls} style={inputStyle} />
-          </Field>
-          <Field label="Telefone / WhatsApp" required>
-            <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} />
-          </Field>
+        {checandoAcesso ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: AURORA.accent }} />
+          </div>
+        ) : !emailLogado ? (
+          <div className="rounded-2xl p-5 md:p-6 space-y-4 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <Lock className="w-8 h-8 mx-auto" style={{ color: AURORA.accent }} />
+            <p className="text-sm font-semibold" style={{ color: AURORA.text }}>Acesse sua conta para continuar</p>
+            <p className="text-xs" style={{ color: AURORA.textMuted }}>
+              Para garantir que suas indicações fiquem restritas ao seu perfil, entre com sua conta (ou crie uma) antes de se cadastrar como indicador.
+            </p>
+            <button onClick={entrarComConta}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+              <LogIn className="w-4 h-4" /> Entrar / Criar conta
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-2xl p-5 md:p-6 space-y-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Seus dados</p>
+            <Field label="Nome completo" required>
+              <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: João da Silva" className={inputCls} style={inputStyle} />
+            </Field>
+            <Field label="E-mail da conta (fixado)">
+              <input value={emailLogado} readOnly
+                className={`${inputCls} opacity-70 cursor-not-allowed`} style={inputStyle} />
+              <p className="text-[10px] mt-1" style={{ color: AURORA.textMuted }}>
+                Seu acesso ao portal é vinculado a este e-mail — é por ele que você volta a entrar depois.
+              </p>
+            </Field>
+            <Field label="Telefone / WhatsApp" required>
+              <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} />
+            </Field>
 
-          <button onClick={continuar} disabled={enviando}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
-            {enviando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
-            Continuar para a Indicação
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+            <button onClick={continuar} disabled={enviando}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
+              {enviando ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-4 h-4" />}
+              Continuar para a Indicação
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <p className="text-center text-[11px] mt-4" style={{ color: AURORA.textMuted }}>
           Ao continuar, seu cadastro de indicador é criado automaticamente, você recebe por e-mail o convite de acesso ao portal para acompanhar suas indicações e é levado ao formulário de indicação.

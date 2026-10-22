@@ -27,6 +27,16 @@ export default async function (req: Request): Promise<Response> {
 
       const sr = base44.asServiceRole;
 
+      // Identidade da conta logada (o frontend agora exige login antes do cadastro).
+      // O cadastro do indicador fica amarrado ao e-mail da CONTA — é por ele que o
+      // portal reconhece o indicador após logout/login.
+      let usuarioLogado: any = null;
+      try { usuarioLogado = await base44.auth.me(); } catch (e) {}
+      const emailConta = usuarioLogado?.email ? String(usuarioLogado.email).trim().toLowerCase() : null;
+      if (emailConta && emailConta !== emailLimpo) {
+        return Response.json({ error: 'O e-mail informado difere do e-mail da sua conta. Use o e-mail da conta logada.' }, { status: 400 });
+      }
+
       // Busca por e-mail (case-insensitive) — evita duplicar cadastros de indicador
       const todos = await sr.entities.Parceiro.list('nome');
       let parceiro = todos.find((p: any) => (p.email || '').trim().toLowerCase() === emailLimpo);
@@ -53,9 +63,29 @@ export default async function (req: Request): Promise<Response> {
         novo = true;
       }
 
-      // Convite de acesso ao portal (apenas na primeira vez — evita spam a cada acesso ao link)
+      // Usuário JÁ logado (Google/e-mail): promove a indicador na hora, para que o
+      // Layout o direcione ao Portal do Indicador e ele nunca veja a plataforma interna.
+      // Nunca rebaixa admin.
+      let usuario_promovido = false;
+      if (usuarioLogado?.id && usuarioLogado.role !== 'admin' && usuarioLogado.permissao_admin !== true) {
+        try {
+          await sr.entities.User.update(usuarioLogado.id, { indicador: true, role: 'indicador', menus_acesso: [] });
+          usuario_promovido = true;
+        } catch (e) {
+          console.log('promoção service role falhou:', e?.message || e);
+          try {
+            await sr.entities.User.update(usuarioLogado.id, { indicador: true, menus_acesso: [] });
+            usuario_promovido = true;
+          } catch (e2) {
+            console.log('flag indicador falhou:', e2?.message || e2);
+          }
+        }
+      }
+
+      // Convite de acesso ao portal (apenas na primeira vez — evita spam a cada acesso ao link).
+      // Se o usuário já está logado, ele já tem conta: não precisa de convite da plataforma.
       let convite_enviado = false;
-      if (!parceiro.convite_enviado) {
+      if (!parceiro.convite_enviado && !usuarioLogado) {
         try {
           // Entidades/integrações via service role; inviteUser via cliente padrão (service role não expõe `users`)
           const clienteConvite = { entities: sr.entities, integrations: sr.integrations, users: base44.users, asServiceRole: sr };
@@ -66,6 +96,16 @@ export default async function (req: Request): Promise<Response> {
         }
       }
 
+      if (usuarioLogado && !parceiro.convite_enviado) {
+        try {
+          await sr.entities.Parceiro.update(parceiro.id, {
+            convite_enviado: true,
+            convite_enviado_em: new Date().toISOString(),
+            convite_enviado_por: 'link-generico',
+          });
+        } catch (e) {}
+      }
+
       return Response.json({
         success: true,
         token: parceiro.link_token,
@@ -73,6 +113,7 @@ export default async function (req: Request): Promise<Response> {
         novo,
         reativado,
         convite_enviado,
+        usuario_promovido,
       });
     }
 
