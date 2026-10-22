@@ -5,6 +5,7 @@ import { Loader2, CheckCircle2, Send, User, Building2, ArrowLeft, ArrowRight, Za
 import { toast } from 'sonner';
 import CampoMascara from '@/components/ui/campo-mascara';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import { consultarCep, consultarCnpj, aplicarDados } from '@/lib/autocomplete';
 
 const AURORA = {
   bg: '#0d1117',
@@ -62,6 +63,28 @@ export default function IndicacaoPublicaPage() {
   }, [token]);
 
   const setField = (setter) => (k) => (e) => setter(prev => ({ ...prev, [k]: e.target.value }));
+
+  // Preenchimento automático: CEP → endereço | CNPJ → razão social + endereço
+  const completarCep = async (prefixo) => {
+    const cep = (prefixo === 'pf' ? pf : pj)[`${prefixo}_cep`];
+    const dados = await consultarCep(cep);
+    if (dados) {
+      aplicarDados(prefixo === 'pf' ? setPf : setPj, `${prefixo}_`, dados);
+      toast.success('Endereço preenchido automaticamente');
+    } else if (String(cep || '').replace(/\D/g, '').length === 8) {
+      toast.error('CEP não encontrado');
+    }
+  };
+
+  const completarCnpj = async () => {
+    const dados = await consultarCnpj(pj.pj_cnpj);
+    if (dados) {
+      aplicarDados(setPj, 'pj_', dados);
+      toast.success('Dados da empresa preenchidos automaticamente');
+    } else if (String(pj.pj_cnpj || '').replace(/\D/g, '').length === 14) {
+      toast.error('CNPJ não encontrado');
+    }
+  };
 
   const salvar = async () => {
     if (!produto) { toast.error('Selecione o produto'); return; }
@@ -189,7 +212,7 @@ export default function IndicacaoPublicaPage() {
                 <Field label="Telefone"><CampoMascara tipo="telefone" value={pf.pf_telefone} onChange={setField(setPf)('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="WhatsApp" required><CampoMascara tipo="telefone" value={pf.pf_whatsapp} onChange={setField(setPf)('pf_whatsapp')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Renda estimada (R$)"><CampoMoeda asString value={pf.pf_renda} onChange={v => setPf(prev => ({ ...prev, pf_renda: v }))} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CEP"><CampoMascara tipo="cep" value={pf.pf_cep} onChange={setField(setPf)('pf_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={pf.pf_cep} onChange={setField(setPf)('pf_cep')} onBlur={() => completarCep('pf')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Endereço"><input value={pf.pf_endereco || ''} onChange={setField(setPf)('pf_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={pf.pf_numero || ''} onChange={setField(setPf)('pf_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={pf.pf_complemento || ''} onChange={setField(setPf)('pf_complemento')} className={inputCls} style={inputStyle} /></Field>
@@ -206,7 +229,7 @@ export default function IndicacaoPublicaPage() {
               <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Dados Pessoa Jurídica</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Razão Social" required><input value={pj.pj_razao_social || ''} onChange={setField(setPj)('pj_razao_social')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CNPJ"><CampoMascara tipo="cnpj" value={pj.pj_cnpj} onChange={setField(setPj)('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CNPJ"><CampoMascara tipo="cnpj" value={pj.pj_cnpj} onChange={setField(setPj)('pj_cnpj')} onBlur={completarCnpj} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Nome do responsável"><input value={pj.pj_nome_responsavel || ''} onChange={setField(setPj)('pj_nome_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="CPF do responsável"><CampoMascara tipo="cpf" value={pj.pj_cpf_responsavel} onChange={setField(setPj)('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={pj.pj_email || ''} onChange={setField(setPj)('pj_email')} className={inputCls} style={inputStyle} /></Field>
@@ -214,7 +237,7 @@ export default function IndicacaoPublicaPage() {
                 <Field label="WhatsApp" required><CampoMascara tipo="telefone" value={pj.pj_whatsapp} onChange={setField(setPj)('pj_whatsapp')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Ramo de atividade"><input value={pj.pj_ramo_atividade || ''} onChange={setField(setPj)('pj_ramo_atividade')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Faturamento estimado (R$)"><CampoMoeda asString value={pj.pj_faturamento} onChange={v => setPj(prev => ({ ...prev, pj_faturamento: v }))} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CEP"><CampoMascara tipo="cep" value={pj.pj_cep} onChange={setField(setPj)('pj_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={pj.pj_cep} onChange={setField(setPj)('pj_cep')} onBlur={() => completarCep('pj')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Endereço"><input value={pj.pj_endereco || ''} onChange={setField(setPj)('pj_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={pj.pj_numero || ''} onChange={setField(setPj)('pj_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={pj.pj_complemento || ''} onChange={setField(setPj)('pj_complemento')} className={inputCls} style={inputStyle} /></Field>

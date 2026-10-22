@@ -5,6 +5,7 @@ import { X, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import CampoMascara from '@/components/ui/campo-mascara';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import { consultarCep, consultarCnpj, aplicarDados } from '@/lib/autocomplete';
 
 const AURORA = {
   surface: '#161b22',
@@ -107,6 +108,27 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
   const isPF = lead.tipo === 'PF';
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
+  // Preenchimento automático: CEP → endereço | CNPJ → razão social + endereço
+  const completarCep = async (prefixo) => {
+    const dados = await consultarCep(form[`${prefixo}_cep`]);
+    if (dados) {
+      aplicarDados(setForm, `${prefixo}_`, dados);
+      toast.success('Endereço preenchido automaticamente');
+    } else if (String(form[`${prefixo}_cep`] || '').replace(/\D/g, '').length === 8) {
+      toast.error('CEP não encontrado');
+    }
+  };
+
+  const completarCnpj = async () => {
+    const dados = await consultarCnpj(form.pj_cnpj);
+    if (dados) {
+      aplicarDados(setForm, 'pj_', dados);
+      toast.success('Dados da empresa preenchidos automaticamente');
+    } else if (String(form.pj_cnpj || '').replace(/\D/g, '').length === 14) {
+      toast.error('CNPJ não encontrado');
+    }
+  };
+
   const salvar = async () => {
     setSalvando(true);
     try {
@@ -207,7 +229,7 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
 
               <SectionTitle>Endereço</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="CEP"><CampoMascara tipo="cep" value={form.pf_cep} onChange={set('pf_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={form.pf_cep} onChange={set('pf_cep')} onBlur={() => completarCep('pf')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Logradouro"><input value={form.pf_endereco} onChange={set('pf_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={form.pf_numero} onChange={set('pf_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={form.pf_complemento} onChange={set('pf_complemento')} className={inputCls} style={inputStyle} /></Field>
@@ -226,7 +248,7 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
               <SectionTitle>Dados Pessoa Jurídica</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Razão Social"><input value={form.pj_razao_social} onChange={set('pj_razao_social')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CNPJ"><CampoMascara tipo="cnpj" value={form.pj_cnpj} onChange={set('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CNPJ"><CampoMascara tipo="cnpj" value={form.pj_cnpj} onChange={set('pj_cnpj')} onBlur={completarCnpj} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Responsável legal"><input value={form.pj_nome_responsavel} onChange={set('pj_nome_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="CPF do responsável"><CampoMascara tipo="cpf" value={form.pj_cpf_responsavel} onChange={set('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={form.pj_email} onChange={set('pj_email')} className={inputCls} style={inputStyle} /></Field>
@@ -238,7 +260,7 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
 
               <SectionTitle>Endereço</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="CEP"><CampoMascara tipo="cep" value={form.pj_cep} onChange={set('pj_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={form.pj_cep} onChange={set('pj_cep')} onBlur={() => completarCep('pj')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Logradouro"><input value={form.pj_endereco} onChange={set('pj_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={form.pj_numero} onChange={set('pj_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={form.pj_complemento} onChange={set('pj_complemento')} className={inputCls} style={inputStyle} /></Field>
