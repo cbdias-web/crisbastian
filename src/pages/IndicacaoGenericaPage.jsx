@@ -49,8 +49,10 @@ export default function IndicacaoGenericaPage() {
       });
       const r = res?.data || res;
       if (r?.success && r?.token) {
-        if (r?.novo) toast.success(`Cadastro criado! Bem-vindo(a), ${r.nome.split(' ')[0]}.`);
-        else if (r?.reativado) toast.success('Cadastro reativado! Vamos à sua indicação.');
+        const conviteMsg = r?.convite_enviado ? ' Enviamos um convite de acesso ao portal para o seu e-mail.' : '';
+        if (r?.novo) toast.success(`Cadastro criado! Bem-vindo(a), ${r.nome.split(' ')[0]}.${conviteMsg}`);
+        else if (r?.reativado) toast.success(`Cadastro reativado!${conviteMsg}`);
+        else if (conviteMsg) toast.success(conviteMsg.trim());
         navigate(`/indicacao/${r.token}`, { replace: true });
       } else {
         toast.error(r?.error || 'Erro ao registrar seus dados');
@@ -100,7 +102,7 @@ export default function IndicacaoGenericaPage() {
         </div>
 
         <p className="text-center text-[11px] mt-4" style={{ color: AURORA.textMuted }}>
-          Ao continuar, seu cadastro de indicador é criado automaticamente e você será levado ao formulário de indicação.
+          Ao continuar, seu cadastro de indicador é criado automaticamente, você recebe por e-mail o convite de acesso ao portal para acompanhar suas indicações e é levado ao formulário de indicação.
         </p>
       </div>
     </div>

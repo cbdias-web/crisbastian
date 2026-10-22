@@ -19,7 +19,8 @@ export default function AcoesIndicadoresAdmin({ parceiros = [] }) {
   const [inativando, setInativando] = useState(false);
 
   const ativos = parceiros.filter(p => p.ativo !== false);
-  const linkGenerico = `${window.location.origin}/indicar`;
+  // Sempre o domínio oficial publicado (nunca o endereço de preview) — mais confiança para os indicadores
+  const linkGenerico = 'https://villelaexchange.base44.app/indicar';
 
   const copiarLink = async () => {
     try {
