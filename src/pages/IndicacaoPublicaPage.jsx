@@ -21,8 +21,7 @@ const AURORA = {
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
 const PRODUTOS = [
-  'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF',
-  'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING',
+  'CONTA INTERNACIONAL', 'DOLARIZE', 'OFFSHORE', 'RATING', 'SCORE',
 ];
 
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };
