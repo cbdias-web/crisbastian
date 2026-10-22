@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Send, User, Building2, CheckCircle2, Zap, ArrowLeft } from 'lucide-react';
+import { Loader2, Send, User, Building2, CheckCircle2, Zap, ArrowLeft, Info } from 'lucide-react';
+import { VALOR_MINIMO_INDICACAO } from '@/lib/produtosMinimos';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import CampoMascara from '@/components/ui/campo-mascara';
@@ -49,6 +50,23 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
 
   const setField = (setter) => (k) => (e) => setter(prev => ({ ...prev, [k]: e.target.value }));
 
+  // Produtos com valor mínimo: pré-preenchem o campo e impedem valores menores
+  const selecionarProduto = (p) => {
+    setProduto(p);
+    const min = VALOR_MINIMO_INDICACAO[p];
+    if (min && (!valor || Number(valor) < min)) setValor(String(min));
+  };
+
+  const onChangeValor = (v) => {
+    const min = VALOR_MINIMO_INDICACAO[produto];
+    if (min && v !== '' && Number(v) < min) {
+      setValor(String(min));
+      toast.warning(`Valor mínimo para ${produto}: R$ ${min.toLocaleString('pt-BR')}`);
+      return;
+    }
+    setValor(v);
+  };
+
   // Preenchimento automático: CEP → endereço | CNPJ → razão social + endereço
   const completarCep = async (prefixo) => {
     const cep = (prefixo === 'pf' ? pf : pj)[`${prefixo}_cep`];
@@ -73,6 +91,8 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
 
   const salvar = async () => {
     if (!produto) { toast.error('Selecione o produto'); return; }
+    const minProduto = VALOR_MINIMO_INDICACAO[produto];
+    if (minProduto && Number(valor || 0) < minProduto) { toast.error(`Valor mínimo para ${produto}: R$ ${minProduto.toLocaleString('pt-BR')}`); return; }
     if (tipo === 'PF' && !pf.pf_nome?.trim()) { toast.error('Informe o nome do titular'); return; }
     if (tipo === 'PF' && !(pf.pf_whatsapp || pf.pf_telefone)?.trim()) { toast.error('Informe o WhatsApp/telefone do titular — é obrigatório para direcionar o lead à Central'); return; }
     if (tipo === 'PJ' && !pj.pj_razao_social?.trim()) { toast.error('Informe a razão social'); return; }
@@ -177,15 +197,24 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Produto de interesse" required>
-                  <select value={produto} onChange={e => setProduto(e.target.value)} className={inputCls} style={inputStyle}>
+                  <select value={produto} onChange={e => selecionarProduto(e.target.value)} className={inputCls} style={inputStyle}>
                     <option value="">Selecione...</option>
                     {PRODUTOS.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </Field>
                 <Field label="Valor estimado de adesão (R$)">
-                  <CampoMoeda asString value={valor} onChange={setValor} className={inputCls} style={inputStyle} />
+                  <CampoMoeda asString value={valor} onChange={onChangeValor} className={inputCls} style={inputStyle} />
                 </Field>
               </div>
+
+              {produto && VALOR_MINIMO_INDICACAO[produto] && (
+                <div className="flex items-start gap-2 rounded-xl p-3" style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid rgba(212,175,55,0.35)' }}>
+                  <Info className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#d4af37' }} />
+                  <p className="text-xs leading-relaxed" style={{ color: AURORA.textMuted }}>
+                    Valor mínimo para <strong style={{ color: '#d4af37' }}>{produto}</strong>: R$ {VALOR_MINIMO_INDICACAO[produto].toLocaleString('pt-BR')},00. Você pode informar um valor maior — valores diferentes serão tratados pela equipe comercial.
+                  </p>
+                </div>
+              )}
 
               {tipo === 'PF' && (
                 <div className="space-y-3 pt-3" style={{ borderTop: `1px solid ${AURORA.border}` }}>
