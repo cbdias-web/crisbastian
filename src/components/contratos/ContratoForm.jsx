@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoFinanceiroModelos from '@/components/contratos/ContratoFinanceiroModelos';
+import CampoMascara from '@/components/ui/campo-mascara';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const EMPTY = {
   nome: '', cpf_cnpj: '', responsavel_legal: '', cpf_responsavel: '',
@@ -388,22 +390,42 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     return updated;
   });
 
+  // Campos monetários / de documento usam máscara e padrão brasileiro
+  const CAMPOS_MOEDA = ['valor_total', 'valor_adesao', 'valor_parcela', 'mensalidade', 'valor_divida', 'valor_em_moeda', 'valor_diagnostico'];
+  const TIPO_MASCARA = { cpf_cnpj: 'cpfcnpj', cpf_responsavel: 'cpf', telefone: 'telefone', cep: 'cep' };
+
   const campo = (label, key, type = 'text', opts = {}) => (
     <div className="group">
       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
         {label}{opts.required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
-      <input
-        type={type}
-        value={form[key] || ''}
-        onChange={e => {
-          set(key, e.target.value);
-          if (key === 'cep') buscarCep(e.target.value);
-        }}
-        required={opts.required}
-        placeholder={opts.placeholder || ''}
-        className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
-      />
+      {CAMPOS_MOEDA.includes(key) ? (
+        <CampoMoeda asString value={form[key]} onChange={v => set(key, v)}
+          className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
+      ) : TIPO_MASCARA[key] ? (
+        <CampoMascara
+          tipo={TIPO_MASCARA[key]}
+          value={form[key] || ''}
+          onChange={e => {
+            set(key, e.target.value);
+            if (key === 'cep') buscarCep(e.target.value.replace(/\D/g, ''));
+          }}
+          required={opts.required}
+          className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
+        />
+      ) : (
+        <input
+          type={type}
+          value={form[key] || ''}
+          onChange={e => {
+            set(key, e.target.value);
+            if (key === 'cep') buscarCep(e.target.value.replace(/\D/g, ''));
+          }}
+          required={opts.required}
+          placeholder={opts.placeholder || ''}
+          className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
+        />
+      )}
     </div>
   );
 
@@ -682,12 +704,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       CEP <span className="text-[9px] normal-case font-normal text-blue-400">(preenchimento automático)</span>
                     </label>
                     <div className="relative">
-                      <input
-                        type="text"
+                      <CampoMascara
+                        tipo="cep"
                         value={form.cep || ''}
                         onChange={e => { set('cep', e.target.value); buscarCep(e.target.value); }}
-                        placeholder="00000-000"
-                        maxLength={9}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 pr-9"
                       />
                       {buscandoCep && (
@@ -760,24 +780,21 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor do Contrato (R$) <span className="text-red-400 ml-0.5">*</span>
                       </label>
-                      <input type="number" value={form.valor_total || ''} onChange={e => set('valor_total', e.target.value)}
-                        placeholder="Ex: 5500,00"
+                      <CampoMoeda asString value={form.valor_total} onChange={v => set('valor_total', v)}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
                     </div>
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Mensalidade (R$) <span className="text-red-400 ml-0.5">*</span>
                       </label>
-                      <input type="number" value={form.mensalidade || ''} onChange={e => set('mensalidade', e.target.value)}
-                        placeholder="Ex: 500,00"
+                      <CampoMoeda asString value={form.mensalidade} onChange={v => set('mensalidade', v)}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
                     </div>
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor da Dívida (R$)
                       </label>
-                      <input type="number" value={form.valor_divida || ''} onChange={e => set('valor_divida', e.target.value)}
-                        placeholder="Ex: 50000,00"
+                      <CampoMoeda asString value={form.valor_divida} onChange={v => set('valor_divida', v)}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300" />
                     </div>
                     <div className="group">
@@ -798,11 +815,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor de Adesão (R$) <span className="text-red-400 ml-0.5">*</span>
                       </label>
-                      <input
-                        type="number"
-                        value={form.valor_total || ''}
-                        onChange={e => set('valor_total', e.target.value)}
-                        placeholder="Valor total do contrato"
+                      <CampoMoeda
+                        asString
+                        value={form.valor_total}
+                        onChange={v => set('valor_total', v)}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300"
                       />
                     </div>
@@ -811,11 +827,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         Valor de Entrada (R$)
                         {parseInt(form.num_parcelas) === 0 && <span className="ml-1 text-[9px] text-emerald-500 normal-case font-normal">(igual ao total)</span>}
                       </label>
-                      <input
-                        type="number"
-                        value={form.valor_adesao || ''}
-                        onChange={e => set('valor_adesao', e.target.value)}
-                        placeholder={parseInt(form.num_parcelas) === 0 ? 'Igual ao valor total' : 'Ex: 5000,00'}
+                      <CampoMoeda
+                        asString
+                        value={form.valor_adesao}
+                        onChange={v => set('valor_adesao', v)}
                         disabled={parseInt(form.num_parcelas) === 0}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300 disabled:bg-gray-50 disabled:text-gray-400"
                       />
@@ -824,11 +839,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span>
                       </label>
-                      <input
-                        type="number"
-                        value={form.valor_parcela || ''}
-                        onChange={e => setForm(f => ({ ...f, valor_parcela: e.target.value }))}
-                        placeholder="Calculado automaticamente"
+                      <CampoMoeda
+                        asString
+                        value={form.valor_parcela}
+                        onChange={v => setForm(f => ({ ...f, valor_parcela: v }))}
                         className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all placeholder:text-blue-300"
                       />
                     </div>
@@ -900,7 +914,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                           placeholder="Nome *" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
                         <input value={novoIndicadorEmail} onChange={e => setNovoIndicadorEmail(e.target.value)}
                           placeholder="E-mail" type="email" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
-                        <input value={novoIndicadorTelefone} onChange={e => setNovoIndicadorTelefone(e.target.value)}
+                        <CampoMascara tipo="telefone" value={novoIndicadorTelefone} onChange={e => setNovoIndicadorTelefone(e.target.value)}
                           placeholder="Telefone" className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-400 bg-white" />
                         <div className="flex items-center gap-1">
                           <input type="number" step="0.1" min="0" max="50" value={novoIndicadorPercentual}

@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X, Loader2, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import CampoMascara from '@/components/ui/campo-mascara';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const AURORA = {
   surface: '#161b22',
@@ -183,7 +185,7 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
               </select>
             </Field>
             <Field label="Valor estimado (R$)">
-              <input type="number" value={form.valor_estimado} onChange={set('valor_estimado')} className={inputCls} style={inputStyle} />
+              <CampoMoeda asString value={form.valor_estimado} onChange={v => setForm(f => ({ ...f, valor_estimado: v }))} className={inputCls} style={inputStyle} />
             </Field>
           </div>
 
@@ -192,20 +194,20 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
               <SectionTitle>Dados Pessoa Física</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Nome completo"><input value={form.pf_nome} onChange={set('pf_nome')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CPF"><input value={form.pf_cpf} onChange={set('pf_cpf')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CPF"><CampoMascara tipo="cpf" value={form.pf_cpf} onChange={set('pf_cpf')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="RG"><input value={form.pf_rg} onChange={set('pf_rg')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Nascimento"><input type="date" value={form.pf_nascimento} onChange={set('pf_nascimento')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Nacionalidade"><input value={form.pf_nacionalidade} onChange={set('pf_nacionalidade')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Profissão"><input value={form.pf_profissao} onChange={set('pf_profissao')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={form.pf_email} onChange={set('pf_email')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="Telefone"><input value={form.pf_telefone} onChange={set('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="WhatsApp"><input value={form.pf_whatsapp} onChange={set('pf_whatsapp')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="Renda estimada (R$)"><input type="number" value={form.pf_renda} onChange={set('pf_renda')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="Telefone"><CampoMascara tipo="telefone" value={form.pf_telefone} onChange={set('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="WhatsApp"><CampoMascara tipo="telefone" value={form.pf_whatsapp} onChange={set('pf_whatsapp')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="Renda estimada (R$)"><CampoMoeda asString value={form.pf_renda} onChange={v => setForm(f => ({ ...f, pf_renda: v }))} className={inputCls} style={inputStyle} /></Field>
               </div>
 
               <SectionTitle>Endereço</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="CEP"><input value={form.pf_cep} onChange={set('pf_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={form.pf_cep} onChange={set('pf_cep')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Logradouro"><input value={form.pf_endereco} onChange={set('pf_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={form.pf_numero} onChange={set('pf_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={form.pf_complemento} onChange={set('pf_complemento')} className={inputCls} style={inputStyle} /></Field>
@@ -224,19 +226,19 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
               <SectionTitle>Dados Pessoa Jurídica</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Razão Social"><input value={form.pj_razao_social} onChange={set('pj_razao_social')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CNPJ"><input value={form.pj_cnpj} onChange={set('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CNPJ"><CampoMascara tipo="cnpj" value={form.pj_cnpj} onChange={set('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Responsável legal"><input value={form.pj_nome_responsavel} onChange={set('pj_nome_responsavel')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="CPF do responsável"><input value={form.pj_cpf_responsavel} onChange={set('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CPF do responsável"><CampoMascara tipo="cpf" value={form.pj_cpf_responsavel} onChange={set('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="E-mail"><input value={form.pj_email} onChange={set('pj_email')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="Telefone"><input value={form.pj_telefone} onChange={set('pj_telefone')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="WhatsApp"><input value={form.pj_whatsapp} onChange={set('pj_whatsapp')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="Telefone"><CampoMascara tipo="telefone" value={form.pj_telefone} onChange={set('pj_telefone')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="WhatsApp"><CampoMascara tipo="telefone" value={form.pj_whatsapp} onChange={set('pj_whatsapp')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Ramo de atividade"><input value={form.pj_ramo_atividade} onChange={set('pj_ramo_atividade')} className={inputCls} style={inputStyle} /></Field>
-                <Field label="Faturamento estimado (R$)"><input type="number" value={form.pj_faturamento} onChange={set('pj_faturamento')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="Faturamento estimado (R$)"><CampoMoeda asString value={form.pj_faturamento} onChange={v => setForm(f => ({ ...f, pj_faturamento: v }))} className={inputCls} style={inputStyle} /></Field>
               </div>
 
               <SectionTitle>Endereço</SectionTitle>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Field label="CEP"><input value={form.pj_cep} onChange={set('pj_cep')} className={inputCls} style={inputStyle} /></Field>
+                <Field label="CEP"><CampoMascara tipo="cep" value={form.pj_cep} onChange={set('pj_cep')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Logradouro"><input value={form.pj_endereco} onChange={set('pj_endereco')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Número"><input value={form.pj_numero} onChange={set('pj_numero')} className={inputCls} style={inputStyle} /></Field>
                 <Field label="Complemento"><input value={form.pj_complemento} onChange={set('pj_complemento')} className={inputCls} style={inputStyle} /></Field>

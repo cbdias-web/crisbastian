@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Send, Handshake, ArrowRight, Lock, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
   bg: '#0d1117',
@@ -133,7 +134,7 @@ export default function IndicacaoGenericaPage() {
               </p>
             </Field>
             <Field label="Telefone / WhatsApp" required>
-              <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} />
+              <CampoMascara tipo="telefone" value={telefone} onChange={e => setTelefone(e.target.value)} className={inputCls} style={inputStyle} />
             </Field>
 
             <button onClick={continuar} disabled={enviando}

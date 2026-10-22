@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { Loader2, Send, User, Building2, CheckCircle2, Zap, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import CampoMascara from '@/components/ui/campo-mascara';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const AURORA = {
   bg: '#0d1117',
@@ -158,7 +160,7 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
                   </select>
                 </Field>
                 <Field label="Valor estimado de adesão (R$)">
-                  <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="Ex: 5000" className={inputCls} style={inputStyle} />
+                  <CampoMoeda asString value={valor} onChange={setValor} className={inputCls} style={inputStyle} />
                 </Field>
               </div>
 
@@ -167,16 +169,16 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
                   <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Dados Pessoa Física</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Field label="Nome completo" required><input value={pf.pf_nome || ''} onChange={setField(setPf)('pf_nome')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="CPF"><input value={pf.pf_cpf || ''} onChange={setField(setPf)('pf_cpf')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="CPF"><CampoMascara tipo="cpf" value={pf.pf_cpf} onChange={setField(setPf)('pf_cpf')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="RG"><input value={pf.pf_rg || ''} onChange={setField(setPf)('pf_rg')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Data de nascimento"><input type="date" value={pf.pf_nascimento || ''} onChange={setField(setPf)('pf_nascimento')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Nacionalidade"><input value={pf.pf_nacionalidade || ''} onChange={setField(setPf)('pf_nacionalidade')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Profissão"><input value={pf.pf_profissao || ''} onChange={setField(setPf)('pf_profissao')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="E-mail"><input value={pf.pf_email || ''} onChange={setField(setPf)('pf_email')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="Telefone"><input value={pf.pf_telefone || ''} onChange={setField(setPf)('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="WhatsApp" required><input value={pf.pf_whatsapp || ''} onChange={setField(setPf)('pf_whatsapp')} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} /></Field>
-                    <Field label="Renda estimada (R$)"><input type="number" value={pf.pf_renda || ''} onChange={setField(setPf)('pf_renda')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="CEP"><input value={pf.pf_cep || ''} onChange={setField(setPf)('pf_cep')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="Telefone"><CampoMascara tipo="telefone" value={pf.pf_telefone} onChange={setField(setPf)('pf_telefone')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="WhatsApp" required><CampoMascara tipo="telefone" value={pf.pf_whatsapp} onChange={setField(setPf)('pf_whatsapp')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="Renda estimada (R$)"><CampoMoeda asString value={pf.pf_renda} onChange={v => setPf(prev => ({ ...prev, pf_renda: v }))} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="CEP"><CampoMascara tipo="cep" value={pf.pf_cep} onChange={setField(setPf)('pf_cep')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Endereço"><input value={pf.pf_endereco || ''} onChange={setField(setPf)('pf_endereco')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Número"><input value={pf.pf_numero || ''} onChange={setField(setPf)('pf_numero')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Complemento"><input value={pf.pf_complemento || ''} onChange={setField(setPf)('pf_complemento')} className={inputCls} style={inputStyle} /></Field>
@@ -192,15 +194,15 @@ export default function FormularioIndicacao({ parceiro, onVoltar }) {
                   <p className="text-xs font-bold uppercase tracking-wider" style={{ color: AURORA.accent }}>Dados Pessoa Jurídica</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <Field label="Razão Social" required><input value={pj.pj_razao_social || ''} onChange={setField(setPj)('pj_razao_social')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="CNPJ"><input value={pj.pj_cnpj || ''} onChange={setField(setPj)('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="CNPJ"><CampoMascara tipo="cnpj" value={pj.pj_cnpj} onChange={setField(setPj)('pj_cnpj')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Nome do responsável"><input value={pj.pj_nome_responsavel || ''} onChange={setField(setPj)('pj_nome_responsavel')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="CPF do responsável"><input value={pj.pj_cpf_responsavel || ''} onChange={setField(setPj)('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="CPF do responsável"><CampoMascara tipo="cpf" value={pj.pj_cpf_responsavel} onChange={setField(setPj)('pj_cpf_responsavel')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="E-mail"><input value={pj.pj_email || ''} onChange={setField(setPj)('pj_email')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="Telefone"><input value={pj.pj_telefone || ''} onChange={setField(setPj)('pj_telefone')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="WhatsApp" required><input value={pj.pj_whatsapp || ''} onChange={setField(setPj)('pj_whatsapp')} placeholder="Ex: 5511999998888" className={inputCls} style={inputStyle} /></Field>
+                    <Field label="Telefone"><CampoMascara tipo="telefone" value={pj.pj_telefone} onChange={setField(setPj)('pj_telefone')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="WhatsApp" required><CampoMascara tipo="telefone" value={pj.pj_whatsapp} onChange={setField(setPj)('pj_whatsapp')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Ramo de atividade"><input value={pj.pj_ramo_atividade || ''} onChange={setField(setPj)('pj_ramo_atividade')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="Faturamento estimado (R$)"><input type="number" value={pj.pj_faturamento || ''} onChange={setField(setPj)('pj_faturamento')} className={inputCls} style={inputStyle} /></Field>
-                    <Field label="CEP"><input value={pj.pj_cep || ''} onChange={setField(setPj)('pj_cep')} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="Faturamento estimado (R$)"><CampoMoeda asString value={pj.pj_faturamento} onChange={v => setPj(prev => ({ ...prev, pj_faturamento: v }))} className={inputCls} style={inputStyle} /></Field>
+                    <Field label="CEP"><CampoMascara tipo="cep" value={pj.pj_cep} onChange={setField(setPj)('pj_cep')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Endereço"><input value={pj.pj_endereco || ''} onChange={setField(setPj)('pj_endereco')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Número"><input value={pj.pj_numero || ''} onChange={setField(setPj)('pj_numero')} className={inputCls} style={inputStyle} /></Field>
                     <Field label="Complemento"><input value={pj.pj_complemento || ''} onChange={setField(setPj)('pj_complemento')} className={inputCls} style={inputStyle} /></Field>

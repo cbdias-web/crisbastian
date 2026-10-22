@@ -10,6 +10,8 @@ import { CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/
 import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus, ChevronDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import ComprovantesUpload from "./ComprovantesUpload";
+import CampoMascara from "@/components/ui/campo-mascara";
+import CampoMoeda from "@/components/ui/campo-moeda";
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -515,11 +517,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
             <div>
               <Label>Valor Total do Contrato *</Label>
-              <Input type="number" step="0.01" value={valorTotalContrato}
-                onChange={e => {
-                  setValorTotalContrato(e.target.value);
-                  if (semParcelas || numParcelas === 1) setValorEntradaCustom(e.target.value);
-                }} required placeholder="Ex: 150000,00" />
+              <CampoMoeda asString value={valorTotalContrato}
+                onChange={v => {
+                  setValorTotalContrato(v);
+                  if (semParcelas || numParcelas === 1) setValorEntradaCustom(v);
+                }}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
             </div>
 
             {/* Estrutura de pagamento */}
@@ -529,13 +532,12 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-gray-500 mb-1 block">Valor de Entrada</label>
-                    <Input
-                      type="number"
-                      step="0.01"
+                    <CampoMoeda
+                      asString
                       value={valorEntradaCustom}
-                      onChange={e => setValorEntradaCustom(e.target.value)}
-                      placeholder={semParcelas ? 'Igual ao total' : 'Ex: 50000,00'}
+                      onChange={setValorEntradaCustom}
                       disabled={semParcelas}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
                     />
                     <p className="text-[10px] text-gray-400 mt-0.5">
                       {semParcelas ? 'Igual ao total (à vista)' : 'Conta na meta do mês atual'}
@@ -612,16 +614,14 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                               {i + 1}/{numParcelas}
                             </span>
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <span className="text-[10px] text-gray-400">R$</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={p.valor || ''}
-                                onChange={e => updateValorParcela(i, e.target.value)}
-                                className="w-24 text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-[#1a3150] text-right"
-                                placeholder="0,00"
-                              />
+                              <div className="w-28">
+                                <CampoMoeda
+                                  prefixo=""
+                                  value={p.valor}
+                                  onChange={v => updateValorParcela(i, v)}
+                                  className="w-full text-xs border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-[#1a3150] text-right"
+                                />
+                              </div>
                             </div>
                             <span className="text-gray-300 text-xs">|</span>
                             <input
@@ -701,7 +701,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
 
             <div>
               <Label>CPF/CNPJ</Label>
-              <Input value={formData.cpf_cnpj || ''} onChange={e => setFormData({ ...formData, cpf_cnpj: e.target.value })} />
+              <CampoMascara tipo="cpfcnpj" value={formData.cpf_cnpj || ''} onChange={e => setFormData({ ...formData, cpf_cnpj: e.target.value })}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
             </div>
             <div>
               <Label>Time</Label>
@@ -871,8 +872,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</label>
-                <input value={novoIndicadorForm.telefone} onChange={e => setNovoIndicadorForm(p => ({ ...p, telefone: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="(00) 00000-0000" />
+                <CampoMascara tipo="telefone" value={novoIndicadorForm.telefone} onChange={e => setNovoIndicadorForm(p => ({ ...p, telefone: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Comissão Padrão (%)</label>
@@ -960,14 +961,14 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CPF / CNPJ</label>
-                <input value={novoCliente.cpf_cnpj} onChange={e => setNovoCliente(p => ({ ...p, cpf_cnpj: e.target.value }))}
-                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="000.000.000-00" />
+                <CampoMascara tipo="cpfcnpj" value={novoCliente.cpf_cnpj} onChange={e => setNovoCliente(p => ({ ...p, cpf_cnpj: e.target.value }))}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</label>
-                  <input value={novoCliente.telefone} onChange={e => setNovoCliente(p => ({ ...p, telefone: e.target.value }))}
-                    className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="(00) 00000-0000" />
+                  <CampoMascara tipo="telefone" value={novoCliente.telefone} onChange={e => setNovoCliente(p => ({ ...p, telefone: e.target.value }))}
+                    className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Email</label>

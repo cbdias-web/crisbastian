@@ -1,10 +1,16 @@
 // Campos financeiros dos contratos RATING, DIAGNÓSTICO e SCORE
 // (espelham exatamente os campos do PDF modelo de cada contrato)
+import CampoMoeda from '@/components/ui/campo-moeda';
+import { formatarMoeda } from '@/lib/mascaras';
+
 const ESCOPOS_RATING = ['Organização Financeira', 'Rating', 'Rating + Organização Financeira'];
 const PARCELAS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36];
 
 const LABEL = 'text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5';
 const INPUT = 'w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] transition-all bg-white hover:border-gray-300 placeholder:text-gray-300';
+
+// Campos "dia" (vencimento) continuam numéricos simples; demais são valores em R$
+const CAMPOS_DIA = ['dia_vencimento', 'dia_vencimento_diagnostico', 'dia_vencimento_mensalidade'];
 
 function Num({ label, k, form, set, placeholder, required, step }) {
   return (
@@ -12,8 +18,12 @@ function Num({ label, k, form, set, placeholder, required, step }) {
       <label className={LABEL}>
         {label}{required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
-      <input type="number" step={step} value={form[k] ?? ''} onChange={e => set(k, e.target.value)}
-        placeholder={placeholder} className={INPUT} />
+      {CAMPOS_DIA.includes(k) ? (
+        <input type="number" step={step} min="1" max="31" value={form[k] ?? ''} onChange={e => set(k, e.target.value)}
+          placeholder={placeholder} className={INPUT} />
+      ) : (
+        <CampoMoeda asString value={form[k]} onChange={v => set(k, v)} className={INPUT} />
+      )}
     </div>
   );
 }
@@ -41,7 +51,7 @@ export default function ContratoFinanceiroModelos({ tipo, form, set, selectField
           </div>
           <div className="group">
             <label className={LABEL}>Valor da Parcela (R$) <span className="text-[9px] normal-case font-normal text-blue-400">(auto)</span></label>
-            <input type="number" value={form.valor_parcela || ''} readOnly
+            <input type="text" value={form.valor_parcela ? formatarMoeda(form.valor_parcela) : ''} readOnly placeholder="0,00"
               className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl" />
           </div>
           <Num label={isScore ? 'Vencimento das Parcelas de Adesão (dia)' : 'Dia de Vencimento das Parcelas'}
