@@ -48,12 +48,12 @@ export default async function(req: Request): Promise<Response> {
 
     const html = `
       <div style="font-family: Arial, Helvetica, sans-serif; max-width: 560px; margin: 0 auto;">
-        <div style="background: #0d1b33; padding: 28px 24px; border-radius: 14px 14px 0 0; text-align: center;">
-          <h1 style="color: #00f5b4; margin: 0; font-size: 22px; font-weight: 700;">Bem-vindo ao Portal do Indicador 🎉</h1>
-          <p style="color: #ffffff; margin: 8px 0 0; font-size: 14px; letter-spacing: 0.5px;">Villela Exchange</p>
+        <div style="background: #1a3a6b; padding: 28px 24px; border-radius: 14px 14px 0 0; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 22px; font-weight: 700;">Bem-vindo ao Portal do Indicador 🎉</h1>
+          <p style="color: #ffffff; margin: 8px 0 0; font-size: 14px; letter-spacing: 0.5px;">VILLELA EXCHANGE</p>
         </div>
-        <div style="background: #f9f9f9; padding: 28px 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 14px 14px;">
-          <p style="color: #1f2937; font-size: 15px; margin: 0 0 16px;">Olá, <strong>${nome}</strong>!</p>
+        <div style="background: #ffffff; padding: 28px 24px; border: 1px solid #d9deea; border-top: 4px solid #d4af37; border-radius: 0 0 14px 14px;">
+          <p style="color: #1a3a6b; font-size: 15px; margin: 0 0 16px;">Olá, <strong>${nome}</strong>!</p>
           <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">${paragrafo1}</p>
           <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0 0 14px;">
             Agora você pode cadastrar novas indicações e acompanhar o status de cada lead em tempo real, direto pelo seu portal.
@@ -62,9 +62,9 @@ export default async function(req: Request): Promise<Response> {
             Você receberá notificações por e-mail sempre que houver movimentações nos seus leads.
           </p>
           <div style="text-align: center; margin: 24px 0;">
-            <a href="${portalUrl}" style="display: inline-block; background: #00f5b4; color: #0d1b33; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Acessar Portal do Indicador</a>
+            <a href="${portalUrl}" style="display: inline-block; background: #1a3a6b; color: #d4af37; font-weight: 700; font-size: 14px; padding: 12px 28px; border-radius: 10px; text-decoration: none;">Acessar Portal do Indicador</a>
           </div>
-          <p style="color: #a0a0a0; font-size: 11px; text-align: center; margin: 22px 0 0;">Villela Exchange – Portal do Indicador</p>
+          <p style="color: #8a94a6; font-size: 11px; text-align: center; margin: 22px 0 0;">Villela Exchange – Portal do Indicador</p>
         </div>
       </div>
     `;
