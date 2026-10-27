@@ -28,7 +28,11 @@
         "manual",
         "contrato"
       ],
-      "description": "Origem do registro: 'manual' (lan\u00e7ada na tela de Vendas \u2014 exige autoriza\u00e7\u00e3o da ger\u00eancia) ou 'contrato' (enviada de um contrato conclu\u00eddo)"
+      "description": "Origem do registro: 'manual' (lan\u00e7ada na tela de Vendas \u2014 exige c\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia) ou 'contrato' (enviada de um contrato conclu\u00eddo)"
+    },
+    "codigo_liberacao": {
+      "type": "string",
+      "description": "C\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia (uso \u00fanico) consumido por este lan\u00e7amento manual"
     },
     "autorizacao_status": {
       "type": "string",
@@ -38,7 +42,7 @@
         "autorizada",
         "rejeitada"
       ],
-      "description": "Autoriza\u00e7\u00e3o da ger\u00eancia para vendas lan\u00e7adas manualmente: pendente at\u00e9 um administrador autorizar. Vendas n\u00e3o autorizadas n\u00e3o contam na produ\u00e7\u00e3o"
+      "description": "Autoriza\u00e7\u00e3o da ger\u00eancia: pendente at\u00e9 a libera\u00e7\u00e3o. Vendas n\u00e3o autorizadas n\u00e3o contam na produ\u00e7\u00e3o"
     },
     "autorizada_por": {
       "type": "string",

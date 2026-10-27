@@ -1,0 +1,70 @@
+{
+  "name": "CodigoLiberacaoVenda",
+  "type": "object",
+  "properties": {
+    "codigo": {
+      "type": "string",
+      "description": "C\u00f3digo \u00fanico de libera\u00e7\u00e3o (cupom) que autoriza UM lan\u00e7amento manual de venda"
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "C\u00f3digo v\u00e1lido para uso"
+    },
+    "usado": {
+      "type": "boolean",
+      "default": false,
+      "description": "C\u00f3digo j\u00e1 consumido por um lan\u00e7amento de venda"
+    },
+    "usado_por": {
+      "type": "string",
+      "description": "E-mail do usu\u00e1rio que utilizou o c\u00f3digo"
+    },
+    "usado_por_nome": {
+      "type": "string",
+      "description": "Nome do usu\u00e1rio que utilizou o c\u00f3digo"
+    },
+    "usado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do uso do c\u00f3digo"
+    },
+    "venda_id": {
+      "type": "string",
+      "description": "ID da venda criada com este c\u00f3digo"
+    },
+    "criado_por": {
+      "type": "string",
+      "description": "E-mail do gerente/admin que gerou o c\u00f3digo"
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Observa\u00e7\u00e3o do gerente sobre a libera\u00e7\u00e3o (cliente, motivo etc.)"
+    }
+  },
+  "required": [
+    "codigo"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

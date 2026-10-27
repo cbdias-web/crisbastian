@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning } from 'lucide-react';
+import ModalCodigoLiberacao from '../components/vendas/ModalCodigoLiberacao';
+import GerenciarCodigosModal from '../components/vendas/GerenciarCodigosModal';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning, KeyRound } from 'lucide-react';
 import { vendaContaProducao, tipoContratoDoProduto } from '@/lib/vendaProducao';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -21,6 +23,9 @@ export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
   const [editingVenda, setEditingVenda] = useState(null);
   const [showImportar, setShowImportar] = useState(false);
+  const [showCodigo, setShowCodigo] = useState(false);
+  const [codigoLiberacao, setCodigoLiberacao] = useState('');
+  const [showCodigos, setShowCodigos] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [user, setUser] = useState(null);
   const now = new Date();
@@ -75,16 +80,35 @@ export default function Vendas() {
       if (!data.vendedor_id || !data.assessor_comercial) {
         throw new Error('Selecione o vendedor responsável pela venda.');
       }
+      // Venda manual bloqueada: exige código de liberação da gerência (uso único)
+      if (!isAdmin && !codigoLiberacao) {
+        throw new Error('É necessário um código de liberação da gerência para lançar uma venda manual.');
+      }
       const { _parcelasPreview, ...vendaData } = data;
       const venda = await base44.entities.Venda.create({
         ...vendaData,
         origem_registro: 'manual',
         exige_documentos: true,
-        autorizacao_status: isAdmin ? 'autorizada' : 'pendente',
-        autorizada_por: isAdmin ? (user?.email || '') : '',
-        autorizada_em: isAdmin ? new Date().toISOString() : null,
+        codigo_liberacao: codigoLiberacao || '',
+        autorizacao_status: 'autorizada',
+        autorizada_por: user?.email || '',
+        autorizada_em: new Date().toISOString(),
       });
       await sleep(400);
+
+      // Consome o código de liberação (uso único, vinculado a esta venda)
+      if (codigoLiberacao) {
+        try {
+          await base44.functions.invoke('codigoLiberacaoVenda', {
+            acao: 'consumir',
+            codigo: codigoLiberacao,
+            venda_id: venda.id,
+          });
+          setCodigoLiberacao('');
+        } catch (e) {
+          toast.warning('Venda criada, mas o código de liberação não foi marcado como usado: ' + e.message);
+        }
+      }
 
       // Comissão do vendedor (sobre o valor da entrada)
       if (data.vendedor_id && data.valor && data.percentual_comissao) {
@@ -212,7 +236,9 @@ export default function Vendas() {
       queryClient.invalidateQueries(['agenda-contatos']);
       queryClient.invalidateQueries(['implantacoes']);
       queryClient.invalidateQueries(['contratos']);
+      queryClient.invalidateQueries(['codigos-liberacao-venda']);
       setShowForm(false);
+      setCodigoLiberacao('');
       const np = data.num_parcelas || 1;
       toast.success(np > 1 ? `Venda criada! ${np - 1} parcela(s) adicionada(s) ao Pipeline.` : 'Venda criada com sucesso!');
     },
@@ -650,21 +676,48 @@ export default function Vendas() {
                 </Button>
               </>
             )}
-            <Button 
+            {isAdmin && (
+              <Button variant="outline" onClick={() => setShowCodigos(true)}>
+                <KeyRound className="w-4 h-4 mr-2" />
+                Códigos de liberação
+              </Button>
+            )}
+            <Button
               onClick={() => {
-                setEditingVenda(null);
-                setShowForm(true);
+                if (isAdmin) {
+                  setEditingVenda(null);
+                  setShowForm(true);
+                } else {
+                  setCodigoLiberacao('');
+                  setShowCodigo(true);
+                }
               }}
               className="bg-blue-600 hover:bg-blue-700"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Nova Venda
+              {isAdmin ? 'Nova Venda' : 'Nova Venda (com código)'}
             </Button>
           </div>
         </div>
 
         {showImportar && (
           <ImportarVendasModal onClose={() => setShowImportar(false)} />
+        )}
+
+        {showCodigo && (
+          <ModalCodigoLiberacao
+            onClose={() => setShowCodigo(false)}
+            onConfirm={(codigo) => {
+              setCodigoLiberacao(codigo);
+              setShowCodigo(false);
+              setEditingVenda(null);
+              setShowForm(true);
+            }}
+          />
+        )}
+
+        {showCodigos && user && (
+          <GerenciarCodigosModal user={user} onClose={() => setShowCodigos(false)} />
         )}
 
         {showForm && (
@@ -682,6 +735,7 @@ export default function Vendas() {
                 onCancel={() => {
                   setShowForm(false);
                   setEditingVenda(null);
+                  setCodigoLiberacao('');
                 }}
                 isLoading={createMutation.isPending || updateMutation.isPending}
                 isAdmin={isAdmin}
@@ -696,7 +750,7 @@ export default function Vendas() {
           <span className="font-bold uppercase tracking-wider" style={{ color: '#00D4AA' }}>Conta na produção:</span>
           <span>vendedor responsável definido</span>
           <span>· contrato gerado automaticamente</span>
-          <span>· autorização da gerência (lançamento manual)</span>
+          <span>· código de liberação da gerência (venda manual)</span>
           <span>· contrato assinado + comprovante de pagamento anexados</span>
         </div>
 

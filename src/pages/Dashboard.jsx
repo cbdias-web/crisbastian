@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
+import { vendaContaProducao } from "@/lib/vendaProducao";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -342,8 +343,8 @@ export default function Dashboard() {
     return inDate && inVend && inProd;
   });
 
-  // Vendas que contam no acumulado do time (flag considerar_acumulado)
-  const vendasAcumulado = vendasFiltradas.filter(v => v.considerar_acumulado !== false);
+  // Produção: somente vendas liberadas/autorizadas e com contrato assinado + comprovante
+  const vendasAcumulado = vendasFiltradas.filter(vendaContaProducao);
 
   const totalVendas = vendasAcumulado.length;
   const valorTotal = vendasAcumulado.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
