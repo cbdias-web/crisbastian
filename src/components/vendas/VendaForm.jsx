@@ -437,6 +437,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {!venda?.id && (
+            <div className="rounded-xl px-3 py-2.5 text-[11px] leading-relaxed"
+              style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.65)' }}>
+              Todo lançamento exige <strong style={{ color: '#00D4AA' }}>vendedor responsável</strong> e gera automaticamente o <strong style={{ color: '#00D4AA' }}>contrato vinculado</strong>.
+              Lançamentos manuais ficam <strong style={{ color: '#00D4AA' }}>pendentes de autorização da gerência</strong> e só contam na produção depois de anexar o contrato assinado e o comprovante de pagamento.
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Produto */}
             <div ref={produtoRef}>

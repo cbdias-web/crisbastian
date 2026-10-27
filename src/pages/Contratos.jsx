@@ -127,10 +127,26 @@ export default function Contratos() {
         }
       } catch (e) {}
 
+      // Travas: vendedor definido e documentação completa do contrato
+      if (!ct.vendedor_nome || !vendedorIdResolvido) {
+        toast.error('Defina o vendedor responsável no contrato antes de enviar para Vendas.', { duration: 6000 });
+        setEnviandoPipelineId(null);
+        return;
+      }
+      if (!ct.contrato_assinado_url || comprovantes.length === 0) {
+        const faltando = [];
+        if (!ct.contrato_assinado_url) faltando.push('o contrato assinado');
+        if (comprovantes.length === 0) faltando.push('o comprovante de pagamento');
+        toast.error(`Anexe ${faltando.join(' e ')} antes de enviar o contrato para Vendas.`, { duration: 6000 });
+        setEnviandoPipelineId(null);
+        return;
+      }
+
       const vendaPayload = {
         produto: ct.tipo,
         assessor_comercial: ct.vendedor_nome || '',
         vendedor_id: vendedorIdResolvido,
+        time: ct.time || '',
         cliente: ct.nome || '',
         cpf_cnpj: ct.cpf_cnpj || '',
         valor: ct.valor_adesao || ct.valor_total || 0,
@@ -138,8 +154,16 @@ export default function Contratos() {
         data: todayBrasilia(),
         tipo_venda: 'nova',
         forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
-        observacao: `Originado do Contrato ${ct.tipo}. Comprovante de pagamento anexado.`,
+        observacao: `Originado do Contrato ${ct.tipo}. Contrato assinado e comprovante de pagamento anexados.`,
         comprovantes,
+        contrato_id: ct.id,
+        contrato_assinado_url: ct.contrato_assinado_url || '',
+        contrato_assinado_nome: ct.contrato_assinado_nome || '',
+        boleto_url: ct.boleto_url || '',
+        boleto_nome: ct.boleto_nome || '',
+        origem_registro: 'contrato',
+        autorizacao_status: 'autorizada',
+        exige_documentos: true,
       };
       // Indicadores da venda: prioriza o Parceiro da indicação de origem (fonte de verdade
       // do Dash Parceiro). Se o contrato veio de uma LeadIndicacao, o indicador da venda deve

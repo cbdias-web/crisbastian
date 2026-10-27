@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { todayBrasilia } from '@/lib/dateUtils';
+import { comprovantesDoContrato } from '@/lib/vendaProducao';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Printer, CheckCircle2, ShoppingCart, Edit2, Loader2, Link2, Save, Copy, ExternalLink, Upload, FileUp, X, Trash2, UserCog, RefreshCw, ChevronDown, ScrollText, Send } from 'lucide-react';
@@ -233,6 +234,18 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error('Conclua todas as etapas do contrato antes de enviar para Vendas.');
       return;
     }
+    if (!contrato.vendedor_nome || !contrato.vendedor_id) {
+      toast.error('Defina o vendedor responsável no contrato antes de enviar para Vendas.', { duration: 6000 });
+      return;
+    }
+    const comprovantes = comprovantesDoContrato(contrato);
+    if (!contrato.contrato_assinado_url || comprovantes.length === 0) {
+      const faltando = [];
+      if (!contrato.contrato_assinado_url) faltando.push('o contrato assinado');
+      if (comprovantes.length === 0) faltando.push('o comprovante de pagamento');
+      toast.error(`Anexe ${faltando.join(' e ')} antes de enviar o contrato para Vendas.`, { duration: 6000 });
+      return;
+    }
     if (!confirm('Criar pré-venda a partir deste contrato e ir para a aba Vendas para finalizar?')) return;
     setEnviandoVenda(true);
     try {
@@ -242,6 +255,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         produto: c.tipo,
         assessor_comercial: c.vendedor_nome || '',
         vendedor_id: c.vendedor_id || '',
+        time: c.time || '',
         cliente: c.nome || '',
         cpf_cnpj: c.cpf_cnpj || '',
         valor: c.valor_adesao || c.valor_total || 0,
@@ -249,7 +263,16 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         data: todayBrasilia(),
         tipo_venda: 'nova',
         forma_pagamento: c.origem_pagamento || '',
-        observacao: `Originado do Contrato ${c.tipo}. Comprovante de pagamento anexado.`,
+        observacao: `Originado do Contrato ${c.tipo}. Contrato assinado e comprovante de pagamento anexados.`,
+        comprovantes,
+        contrato_id: c.id,
+        contrato_assinado_url: c.contrato_assinado_url || '',
+        contrato_assinado_nome: c.contrato_assinado_nome || '',
+        boleto_url: c.boleto_url || '',
+        boleto_nome: c.boleto_nome || '',
+        origem_registro: 'contrato',
+        autorizacao_status: 'autorizada',
+        exige_documentos: true,
       };
       // Preservar indicadores do contrato
       if (c.indicadores?.length > 0) {

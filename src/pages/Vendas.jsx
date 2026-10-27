@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning } from 'lucide-react';
+import { vendaContaProducao, tipoContratoDoProduto } from '@/lib/vendaProducao';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -70,8 +71,19 @@ export default function Vendas() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
+      // Trava: nenhuma venda sem vendedor responsável definido
+      if (!data.vendedor_id || !data.assessor_comercial) {
+        throw new Error('Selecione o vendedor responsável pela venda.');
+      }
       const { _parcelasPreview, ...vendaData } = data;
-      const venda = await base44.entities.Venda.create(vendaData);
+      const venda = await base44.entities.Venda.create({
+        ...vendaData,
+        origem_registro: 'manual',
+        exige_documentos: true,
+        autorizacao_status: isAdmin ? 'autorizada' : 'pendente',
+        autorizada_por: isAdmin ? (user?.email || '') : '',
+        autorizada_em: isAdmin ? new Date().toISOString() : null,
+      });
       await sleep(400);
 
       // Comissão do vendedor (sobre o valor da entrada)
@@ -163,9 +175,33 @@ export default function Vendas() {
         });
       }
 
+      // Contrato obrigatório: todo novo registro de venda já nasce com o contrato gerado
+      try {
+        const totalContrato = parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0;
+        const contrato = await base44.entities.Contrato.create({
+          tipo: tipoContratoDoProduto(data.produto),
+          nome: (data.cliente || '').trim() || 'Cliente a definir',
+          cpf_cnpj: data.cpf_cnpj || '',
+          valor_total: totalContrato,
+          valor_adesao: parseFloat(data.valor) || 0,
+          vendedor_id: data.vendedor_id,
+          vendedor_nome: data.assessor_comercial,
+          data_contrato: data.data,
+          status: 'rascunho',
+          observacoes: `Contrato gerado automaticamente a partir do lançamento de venda${data.observacao ? ` — ${data.observacao}` : ''}`,
+        });
+        await base44.entities.Venda.update(venda.id, { contrato_id: contrato.id });
+        venda.contrato_id = contrato.id;
+      } catch (e) {
+        toast.warning('Venda criada, mas não foi possível gerar o contrato vinculado: ' + e.message);
+      }
+
       // Implantação agora é criada automaticamente pela automação de entidade (criarImplantacaoAutomatica)
 
       return venda;
+    },
+    onError: (err) => {
+      toast.error(err?.message || 'Erro ao salvar a venda.');
     },
     onSuccess: (_, data) => {
       queryClient.invalidateQueries(['vendas']);
@@ -175,6 +211,7 @@ export default function Vendas() {
       queryClient.invalidateQueries(['pipeline']);
       queryClient.invalidateQueries(['agenda-contatos']);
       queryClient.invalidateQueries(['implantacoes']);
+      queryClient.invalidateQueries(['contratos']);
       setShowForm(false);
       const np = data.num_parcelas || 1;
       toast.success(np > 1 ? `Venda criada! ${np - 1} parcela(s) adicionada(s) ao Pipeline.` : 'Venda criada com sucesso!');
@@ -337,6 +374,20 @@ export default function Vendas() {
     },
   });
 
+  // Autorização da gerência para cada lançamento manual
+  const autorizarMutation = useMutation({
+    mutationFn: ({ venda, aprovada }) => base44.entities.Venda.update(venda.id, {
+      autorizacao_status: aprovada ? 'autorizada' : 'rejeitada',
+      autorizada_por: user?.email || '',
+      autorizada_em: new Date().toISOString(),
+    }),
+    onSuccess: (_, { aprovada }) => {
+      queryClient.invalidateQueries(['vendas']);
+      toast.success(aprovada ? 'Lançamento autorizado pela gerência.' : 'Lançamento não autorizado.');
+    },
+    onError: (err) => toast.error('Erro: ' + err.message),
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       // Busca todas entidades relacionadas em paralelo
@@ -419,9 +470,15 @@ export default function Vendas() {
     return matchSearch && matchData && matchProduto && matchVendedor;
   });
 
-  const totalAcumulado = filteredVendas
-    .filter(v => v.considerar_acumulado !== false)
-    .reduce((sum, v) => sum + (v.valor || 0), 0);
+  // Produção: somente vendas autorizadas e com contrato assinado + comprovante anexados
+  const vendasEmProducao = filteredVendas.filter(vendaContaProducao);
+  const vendasAguardandoAutorizacao = filteredVendas.filter(v => v.autorizacao_status === 'pendente').length;
+  const vendasSemDocumentos = filteredVendas.filter(v =>
+    v.autorizacao_status !== 'pendente' && v.autorizacao_status !== 'rejeitada' &&
+    v.exige_documentos && !vendaContaProducao(v)
+  ).length;
+
+  const totalAcumulado = vendasEmProducao.reduce((sum, v) => sum + (v.valor || 0), 0);
 
   const exportarVendas = () => {
     const csv = [
@@ -633,6 +690,16 @@ export default function Vendas() {
           </div>
         )}
 
+        {/* Regras de produção */}
+        <div className="rounded-2xl px-4 py-3 text-[11px] flex flex-wrap items-center gap-x-3 gap-y-1"
+          style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.6)' }}>
+          <span className="font-bold uppercase tracking-wider" style={{ color: '#00D4AA' }}>Conta na produção:</span>
+          <span>vendedor responsável definido</span>
+          <span>· contrato gerado automaticamente</span>
+          <span>· autorização da gerência (lançamento manual)</span>
+          <span>· contrato assinado + comprovante de pagamento anexados</span>
+        </div>
+
         {/* Contadores */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-4">
@@ -658,8 +725,13 @@ export default function Vendas() {
               <Search className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Volume do Período</p>
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Volume do Período (produção)</p>
               <p className="text-2xl font-bold text-emerald-600">{totalAcumulado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {vendasEmProducao.length} na produção
+                {vendasAguardandoAutorizacao > 0 && ` · ${vendasAguardandoAutorizacao} aguardando gerência`}
+                {vendasSemDocumentos > 0 && ` · ${vendasSemDocumentos} sem documentos`}
+              </p>
             </div>
           </div>
         </div>
@@ -858,9 +930,31 @@ export default function Vendas() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {venda.tipo_venda === 'nova' && <Badge className="bg-emerald-100 text-emerald-700">Nova</Badge>}
-                        {venda.tipo_venda === 'recorrencia' && <Badge className="bg-amber-100 text-amber-700">Recorrência</Badge>}
-                        {!venda.tipo_venda && <Badge className="bg-red-100 text-red-700">⚠ Sem tipo</Badge>}
+                        <div className="flex flex-col gap-1 items-start">
+                          {venda.tipo_venda === 'nova' && <Badge className="bg-emerald-100 text-emerald-700">Nova</Badge>}
+                          {venda.tipo_venda === 'recorrencia' && <Badge className="bg-amber-100 text-amber-700">Recorrência</Badge>}
+                          {!venda.tipo_venda && <Badge className="bg-red-100 text-red-700">⚠ Sem tipo</Badge>}
+                          {venda.autorizacao_status === 'pendente' && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>Aguardando gerência</span>
+                          )}
+                          {venda.autorizacao_status === 'rejeitada' && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
+                              style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>Não autorizada</span>
+                          )}
+                          {venda.exige_documentos && !venda.contrato_assinado_url && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1"
+                              style={{ background: 'rgba(239,68,68,0.12)', color: '#fca5a5' }}>
+                              <FileWarning className="w-2.5 h-2.5" /> Sem contrato assinado
+                            </span>
+                          )}
+                          {venda.exige_documentos && venda.contrato_assinado_url && (venda.comprovantes || []).length === 0 && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1"
+                              style={{ background: 'rgba(251,191,36,0.12)', color: '#fcd34d' }}>
+                              <FileWarning className="w-2.5 h-2.5" /> Sem comprovante
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-end gap-2">
@@ -874,6 +968,26 @@ export default function Vendas() {
                                 <ExternalLink className="w-4 h-4" />
                               </a>
                             </Button>
+                          )}
+                          {isAdmin && venda.autorizacao_status === 'pendente' && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => autorizarMutation.mutate({ venda, aprovada: true })}
+                                title="Autorizar lançamento"
+                              >
+                                <ShieldCheck className="w-4 h-4 text-green-600" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => autorizarMutation.mutate({ venda, aprovada: false })}
+                                title="Não autorizar lançamento"
+                              >
+                                <ShieldX className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </>
                           )}
                           {isAdmin && (
                             <>

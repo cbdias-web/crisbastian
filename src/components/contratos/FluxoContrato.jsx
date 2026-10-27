@@ -6,6 +6,8 @@ import {
   Trash2, RotateCcw, ChevronLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { pendenciasDoContrato } from '@/lib/vendaProducao';
+import { sincronizarDocumentosVenda } from '@/lib/vendaDocumentos';
 
 const ORIGENS_PAGAMENTO = ['Boleto', 'Link de Pagamento', 'PIX', 'TED', 'Outros'];
 
@@ -47,7 +49,10 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
 
   const salvarCampo = async (campos) => {
     await base44.entities.Contrato.update(contrato.id, campos);
-    onUpdate({ ...contrato, ...campos });
+    const atualizado = { ...contrato, ...campos };
+    onUpdate(atualizado);
+    // Contrato assinado, boleto e comprovantes também vão para o registro de Vendas
+    try { await sincronizarDocumentosVenda(atualizado); } catch (e) { console.warn('Sync documentos venda falhou:', e?.message); }
   };
 
   const notificar = async (evento, destinatarios) => {
@@ -610,15 +615,29 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
       )}
 
       {/* Pronto para Pipeline */}
-      {(isAdmin || podePipeline) && etapaAtingida(statusAtual, 'pago') && statusAtual !== 'no_pipeline' && (
-        <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)' }}>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: '#c4b5fd' }}>Pronto para enviar ao Pipeline!</p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(196,181,253,0.7)' }}>Todas as etapas foram concluídas.</p>
+      {(isAdmin || podePipeline) && etapaAtingida(statusAtual, 'pago') && statusAtual !== 'no_pipeline' && (() => {
+        const pendencias = pendenciasDoContrato(contrato);
+        const liberado = pendencias.length === 0;
+        return liberado ? (
+          <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.3)' }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#c4b5fd' }}>Pronto para enviar para Vendas!</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(196,181,253,0.7)' }}>Contrato assinado e comprovante de pagamento anexados — os arquivos seguem junto para a venda.</p>
+            </div>
+            <span className="text-xs font-medium" style={{ color: 'rgba(196,181,253,0.7)' }}>Use o botão "Enviar para Vendas" acima ↑</span>
           </div>
-          <span className="text-xs font-medium" style={{ color: 'rgba(196,181,253,0.7)' }}>Use o botão "Enviar para Vendas" acima ↑</span>
-        </div>
-      )}
+        ) : (
+          <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: '#fcd34d' }}>Envio para Vendas bloqueado</p>
+              <p className="text-xs mt-0.5" style={{ color: 'rgba(252,211,77,0.8)' }}>
+                Conclua a documentação do contrato: falta {pendencias.join(' e ')}.
+              </p>
+            </div>
+            <span className="text-xs font-medium" style={{ color: 'rgba(252,211,77,0.8)' }}>Somente contratos completos vão para a produção</span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
