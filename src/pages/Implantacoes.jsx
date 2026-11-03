@@ -37,12 +37,30 @@ const PRIORIDADE_CONFIG = {
   urgente: { color: '#ef4444' },
 };
 
+// Grupos de status disponíveis no filtro da esteira
+const STATUS_FILTROS = [
+  { value: 'Todos', label: 'Todos os status' },
+  { value: 'em_andamento', label: 'Em Andamento' },
+  { value: 'concluido', label: 'Concluídos' },
+  { value: 'atrasado', label: 'Atrasados' },
+  { value: 'aguardando_cliente', label: 'Aguard. Cliente' },
+  { value: 'rejeitado_compliance', label: 'Rejeitado por Compliance' },
+  { value: 'cancelado', label: 'Cancelados' },
+];
+
+const estaAtrasada = (i) => {
+  if (['concluido', 'concluido_feedback', 'cancelado', 'rejeitado_compliance'].includes(i.status)) return false;
+  if (!i.data_prevista_conclusao) return false;
+  return new Date(i.data_prevista_conclusao) < new Date();
+};
+
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
 
 export default function Implantacoes() {
   const [user, setUser] = useState(null);
   const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('Todos');
   const [filtroProduto, setFiltroProduto] = useState('Todos');
   const [filtroVendedor, setFiltroVendedor] = useState('Todos');
   const [filtroPadrinho, setFiltroPadrinho] = useState('Todos');
@@ -134,17 +152,22 @@ export default function Implantacoes() {
     const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
     const matchDataIni = !filtroDataInicio || dataRef >= filtroDataInicio;
     const matchDataFim = !filtroDataFim || dataRef <= filtroDataFim;
-    return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchTipoContrato && matchValorMin && matchValorMax && matchDataIni && matchDataFim;
+    const matchStatus = filtroStatus === 'Todos' || (
+      filtroStatus === 'em_andamento'
+        ? ['em_andamento', 'aguardando_documentacao'].includes(imp.status)
+        : filtroStatus === 'concluido'
+          ? ['concluido', 'concluido_feedback'].includes(imp.status)
+          : filtroStatus === 'atrasado'
+            ? estaAtrasada(imp)
+            : imp.status === filtroStatus
+    );
+    return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchTipoContrato && matchValorMin && matchValorMax && matchDataIni && matchDataFim && matchStatus;
   });
 
   const total = filtradas.length;
   const totalConcluidas = filtradas.filter(i => i.status === 'concluido' || i.status === 'concluido_feedback').length;
   const totalAndamento = filtradas.filter(i => i.status === 'em_andamento' || i.status === 'aguardando_documentacao').length;
-  const totalAtrasadas = filtradas.filter(i => {
-    if (i.status === 'concluido' || i.status === 'concluido_feedback' || i.status === 'cancelado' || i.status === 'rejeitado_compliance') return false;
-    if (!i.data_prevista_conclusao) return false;
-    return new Date(i.data_prevista_conclusao) < new Date();
-  }).length;
+  const totalAtrasadas = filtradas.filter(estaAtrasada).length;
 
   const gerarRelatorioPDF = async () => {
     setGerandoPDF(true);
@@ -221,19 +244,28 @@ export default function Implantacoes() {
         {/* KPIs */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: 'Total de Processos', value: total, icon: Rocket, color: AURORA.accent },
-            { label: 'Em Andamento', value: totalAndamento, icon: Clock, color: '#fbbf24' },
-            { label: 'Concluídos', value: totalConcluidas, icon: CheckCircle2, color: '#22c55e' },
-            { label: 'Atrasados', value: totalAtrasadas, icon: AlertTriangle, color: '#f87171' },
-          ].map(kpi => (
-            <div key={kpi.label} className="rounded-2xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-              <div className="flex items-center gap-2 mb-1">
-                <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} />
-                <p className="text-xs" style={{ color: AURORA.textMuted }}>{kpi.label}</p>
-              </div>
-              <p className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
-            </div>
-          ))}
+            { label: 'Total de Processos', value: total, icon: Rocket, color: AURORA.accent, statusKey: 'Todos' },
+            { label: 'Em Andamento', value: totalAndamento, icon: Clock, color: '#fbbf24', statusKey: 'em_andamento' },
+            { label: 'Concluídos', value: totalConcluidas, icon: CheckCircle2, color: '#22c55e', statusKey: 'concluido' },
+            { label: 'Atrasados', value: totalAtrasadas, icon: AlertTriangle, color: '#f87171', statusKey: 'atrasado' },
+          ].map(kpi => {
+            const ativo = filtroStatus === kpi.statusKey;
+            return (
+              <button key={kpi.label} onClick={() => setFiltroStatus(ativo ? 'Todos' : kpi.statusKey)}
+                className="rounded-2xl p-4 text-left transition"
+                style={{
+                  background: ativo ? `${kpi.color}18` : AURORA.surface,
+                  border: `1px solid ${ativo ? kpi.color : AURORA.border}`,
+                  boxShadow: ativo ? `0 0 20px ${kpi.color}33` : 'none',
+                }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} />
+                  <p className="text-xs" style={{ color: AURORA.textMuted }}>{kpi.label}</p>
+                </div>
+                <p className="text-2xl font-bold" style={{ color: kpi.color }}>{kpi.value}</p>
+              </button>
+            );
+          })}
         </div>
 
         {/* Filtros */}
@@ -243,6 +275,10 @@ export default function Implantacoes() {
             <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente, produto ou CPF/CNPJ..."
               className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
           </div>
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none font-medium" style={{ background: filtroStatus !== 'Todos' ? AURORA.accentDim : AURORA.surface2, border: `1px solid ${filtroStatus !== 'Todos' ? AURORA.accent : AURORA.border}`, color: filtroStatus !== 'Todos' ? AURORA.accent : AURORA.text }}>
+            {STATUS_FILTROS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
           <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
             <option value="Todos">Todos os produtos</option>
