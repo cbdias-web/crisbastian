@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import ImplantacaoModal from '@/components/implantacoes/ImplantacaoModal';
 import KanbanImplantacoes from '@/components/implantacoes/KanbanImplantacoes';
 import PadrinhosModal from '@/components/implantacoes/PadrinhosModal';
+import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 
 const AURORA = {
   bg: '#0d1117',
@@ -45,6 +46,9 @@ export default function Implantacoes() {
   const [filtroProduto, setFiltroProduto] = useState('Todos');
   const [filtroVendedor, setFiltroVendedor] = useState('Todos');
   const [filtroPadrinho, setFiltroPadrinho] = useState('Todos');
+  const [filtroTipoContrato, setFiltroTipoContrato] = useState('Todos');
+  const [filtroValorMin, setFiltroValorMin] = useState('');
+  const [filtroValorMax, setFiltroValorMax] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
   const [filtroDataFim, setFiltroDataFim] = useState('');
   const [implantacaoAtiva, setImplantacaoAtiva] = useState(null);
@@ -122,10 +126,15 @@ export default function Implantacoes() {
     const matchProduto = filtroProduto === 'Todos' || imp.produto === filtroProduto;
     const matchVendedor = filtroVendedor === 'Todos' || imp.vendedor_nome === filtroVendedor;
     const matchPadrinho = filtroPadrinho === 'Todos' || imp.padrinho_nome === filtroPadrinho;
+    const tipoContrato = imp.tipo_contrato || 'contrato';
+    const matchTipoContrato = filtroTipoContrato === 'Todos' || tipoContrato === filtroTipoContrato;
+    const valor = Number(imp.valor_contrato) || 0;
+    const matchValorMin = filtroValorMin === '' || valor >= Number(filtroValorMin);
+    const matchValorMax = filtroValorMax === '' || valor <= Number(filtroValorMax);
     const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
     const matchDataIni = !filtroDataInicio || dataRef >= filtroDataInicio;
     const matchDataFim = !filtroDataFim || dataRef <= filtroDataFim;
-    return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchDataIni && matchDataFim;
+    return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchTipoContrato && matchValorMin && matchValorMax && matchDataIni && matchDataFim;
   });
 
   const total = filtradas.length;
@@ -145,6 +154,10 @@ export default function Implantacoes() {
         dataFim: filtroDataFim || null,
         produtoFiltro: filtroProduto !== 'Todos' ? filtroProduto : null,
         statusFiltro: null,
+        padrinhoFiltro: filtroPadrinho !== 'Todos' ? filtroPadrinho : null,
+        tipoContratoFiltro: filtroTipoContrato !== 'Todos' ? filtroTipoContrato : null,
+        valorMin: filtroValorMin !== '' ? Number(filtroValorMin) : null,
+        valorMax: filtroValorMax !== '' ? Number(filtroValorMax) : null,
       });
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -245,6 +258,23 @@ export default function Implantacoes() {
             <option value="Todos">Todos os padrinhos</option>
             {padrinhosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
+          <select value={filtroTipoContrato} onChange={e => setFiltroTipoContrato(e.target.value)}
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+            <option value="Todos">Todos os tipos de contrato</option>
+            {TIPOS_CONTRATO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Valor:</span>
+            <input type="number" min="0" step="0.01" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)}
+              placeholder="mín." className="w-24 px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+            <span className="text-xs" style={{ color: AURORA.textMuted }}>até</span>
+            <input type="number" min="0" step="0.01" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)}
+              placeholder="máx." className="w-24 px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+            {(filtroValorMin !== '' || filtroValorMax !== '') && (
+              <button onClick={() => { setFiltroValorMin(''); setFiltroValorMax(''); }}
+                className="text-xs font-semibold px-1.5 py-1 rounded-lg transition" style={{ color: '#f87171' }}>✕</button>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Período:</span>
             <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}

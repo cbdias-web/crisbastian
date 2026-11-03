@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import PainelInteracoesCliente from './PainelInteracoesCliente';
 import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
 import { requerAberturaCC } from '@/lib/implantacaoCC';
+import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 
 const AURORA = {
   bg: '#0d1117',
@@ -142,6 +143,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
         rate_custodia: rateVal,
         link_abertura_cc: linkVal,
         requer_abertura_cc: requerCC,
+        tipo_contrato: form.tipo_contrato || 'contrato',
         padrinho_id: form.padrinho_id || '',
         padrinho_nome: form.padrinho_nome || '',
         padrinho_email: form.padrinho_email || '',
@@ -521,6 +523,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
             <InfoRow icon={Calendar} label="Prev. Conclusão" value={fmtDate(form.data_prevista_conclusao)} editable={editing} type="date" onChange={v => setForm(f => ({ ...f, data_prevista_conclusao: v }))} />
             <InfoRow icon={Calendar} label="Conclusão" value={fmtDate(form.data_conclusao)} />
             <InfoRow icon={FileText} label="Valor" value={fmtVal(form.valor_contrato)} />
+            <InfoRow icon={FileText} label="Tipo de contrato" value={form.tipo_contrato || 'contrato'} options={TIPOS_CONTRATO} editable={editing} onChange={v => setForm(f => ({ ...f, tipo_contrato: v }))} />
           </div>
 
           {/* Progresso */}
@@ -669,17 +672,22 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
   );
 }
 
-function InfoRow({ icon: Icon, label, value, editable, onChange, type }) {
+function InfoRow({ icon: Icon, label, value, editable, onChange, type, options }) {
+  const display = options ? (options.find(o => o.value === value)?.label || value) : value;
   return (
     <div className="rounded-xl p-3" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
       <div className="flex items-center gap-1.5 mb-1">
         <Icon className="w-3 h-3" style={{ color: AURORA.textMuted }} />
         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: AURORA.textMuted }}>{label}</p>
       </div>
-      {editable ? (
+      {editable && options ? (
+        <select value={value || ''} onChange={e => onChange(e.target.value)} className="w-full text-sm rounded-lg px-2 py-1 focus:outline-none" style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
+          {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      ) : editable ? (
         <input type={type || 'text'} value={type === 'date' ? (value === '—' ? '' : (typeof value === 'string' && value.includes('/') ? '' : value)) : value} onChange={e => onChange(e.target.value)} className="w-full text-sm rounded-lg px-2 py-1 focus:outline-none" style={{ background: AURORA.bg, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
       ) : (
-        <p className="text-sm font-medium" style={{ color: AURORA.text }}>{value}</p>
+        <p className="text-sm font-medium" style={{ color: AURORA.text }}>{display}</p>
       )}
     </div>
   );

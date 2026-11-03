@@ -97,6 +97,7 @@ Deno.serve(async (req) => {
       cliente_nome: venda.cliente || '',
       cpf_cnpj: venda.cpf_cnpj || '',
       produto: venda.produto || '',
+      tipo_contrato: Number(venda.num_parcelas) > 1 ? 'parcelamento' : 'contrato',
       vendedor_id: venda.vendedor_id || '',
       vendedor_nome: venda.assessor_comercial || '',
       padrinho_id: padrinhoId,
