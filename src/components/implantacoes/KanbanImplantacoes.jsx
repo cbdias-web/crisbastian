@@ -56,7 +56,8 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       // Seleção por lead (requer_abertura_cc); ausente, o padrão por produto decide
       // (Câmbio, Hora Técnica, Rating etc. dispensam).
       // Rejeição por Compliance dispensa o Link de Abertura CC (implantação barrada)
-      const isentoTrava = !requerAberturaCC(impl) || novoStatus === 'rejeitado_compliance';
+      // Admin move livremente, sem exigir Rate/Link de Abertura CC
+      const isentoTrava = isAdmin || !requerAberturaCC(impl) || novoStatus === 'rejeitado_compliance';
       if (!isentoTrava && !(impl.link_abertura_cc || '').trim()) {
         toast.error('Preencha o Link de Abertura CC (e o Rate) antes de mover este lead de status.');
         onRefresh();

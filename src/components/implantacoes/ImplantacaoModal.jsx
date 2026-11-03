@@ -112,7 +112,8 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       const linkVal = (form.link_abertura_cc || '').trim();
 
       // Rejeição por Compliance dispensa Rate e Link (implantação barrada)
-      if (requerCC && statusFinal !== 'rejeitado_compliance') {
+      // Admin pode mudar o status/coluna sem preencher Rate e Link
+      if (!isAdmin && requerCC && statusFinal !== 'rejeitado_compliance') {
         // Rate obrigatório e dentro da faixa 0,01–4
         if (rateVal == null || isNaN(rateVal) || rateVal < 0.01 || rateVal > 4) {
           toast.error('Informe o Rate / Taxa de Custódia entre 0,01% e 4,00%.');
@@ -453,7 +454,9 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
                     <p className="text-sm" style={{ color: AURORA.textMuted }}>Não informado</p>
                   )
                 )}
-                <p className="text-[9px] mt-1" style={{ color: '#fbbf24' }}>Obrigatório para mover o lead de status/coluna</p>
+                <p className="text-[9px] mt-1" style={{ color: '#fbbf24' }}>
+                  {isAdmin ? 'Obrigatório para os demais perfis — admin pode mover o lead sem preencher' : 'Obrigatório para mover o lead de status/coluna'}
+                </p>
               </div>
             </div>
             )}
