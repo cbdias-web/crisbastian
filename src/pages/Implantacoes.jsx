@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import ImplantacaoModal from '@/components/implantacoes/ImplantacaoModal';
 import KanbanImplantacoes from '@/components/implantacoes/KanbanImplantacoes';
 import PadrinhosModal from '@/components/implantacoes/PadrinhosModal';
+import MultiSelectFiltro from '@/components/ui/MultiSelectFiltro';
 import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 
 const AURORA = {
@@ -60,11 +61,11 @@ const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : 'â€
 export default function Implantacoes() {
   const [user, setUser] = useState(null);
   const [busca, setBusca] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('Todos');
+  const [filtroStatus, setFiltroStatus] = useState([]);
   const [filtroProduto, setFiltroProduto] = useState('Todos');
-  const [filtroVendedor, setFiltroVendedor] = useState('Todos');
+  const [filtroVendedor, setFiltroVendedor] = useState([]);
   const [filtroPadrinho, setFiltroPadrinho] = useState('Todos');
-  const [filtroTipoContrato, setFiltroTipoContrato] = useState('Todos');
+  const [filtroTipoContrato, setFiltroTipoContrato] = useState([]);
   const [filtroValorMin, setFiltroValorMin] = useState('');
   const [filtroValorMax, setFiltroValorMax] = useState('');
   const [filtroDataInicio, setFiltroDataInicio] = useState('');
@@ -142,24 +143,24 @@ export default function Implantacoes() {
   const filtradas = visiveis.filter(imp => {
     const matchBusca = !busca || imp.cliente_nome?.toLowerCase().includes(busca.toLowerCase()) || imp.cpf_cnpj?.includes(busca) || imp.produto?.toLowerCase().includes(busca.toLowerCase());
     const matchProduto = filtroProduto === 'Todos' || imp.produto === filtroProduto;
-    const matchVendedor = filtroVendedor === 'Todos' || imp.vendedor_nome === filtroVendedor;
+    const matchVendedor = filtroVendedor.length === 0 || filtroVendedor.includes(imp.vendedor_nome);
     const matchPadrinho = filtroPadrinho === 'Todos' || imp.padrinho_nome === filtroPadrinho;
     const tipoContrato = imp.tipo_contrato || 'contrato';
-    const matchTipoContrato = filtroTipoContrato === 'Todos' || tipoContrato === filtroTipoContrato;
+    const matchTipoContrato = filtroTipoContrato.length === 0 || filtroTipoContrato.includes(tipoContrato);
     const valor = Number(imp.valor_contrato) || 0;
     const matchValorMin = filtroValorMin === '' || valor >= Number(filtroValorMin);
     const matchValorMax = filtroValorMax === '' || valor <= Number(filtroValorMax);
     const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
     const matchDataIni = !filtroDataInicio || dataRef >= filtroDataInicio;
     const matchDataFim = !filtroDataFim || dataRef <= filtroDataFim;
-    const matchStatus = filtroStatus === 'Todos' || (
-      filtroStatus === 'em_andamento'
+    const matchStatus = filtroStatus.length === 0 || filtroStatus.some(s =>
+      s === 'em_andamento'
         ? ['em_andamento', 'aguardando_documentacao'].includes(imp.status)
-        : filtroStatus === 'concluido'
+        : s === 'concluido'
           ? ['concluido', 'concluido_feedback'].includes(imp.status)
-          : filtroStatus === 'atrasado'
+          : s === 'atrasado'
             ? estaAtrasada(imp)
-            : imp.status === filtroStatus
+            : imp.status === s
     );
     return matchBusca && matchProduto && matchVendedor && matchPadrinho && matchTipoContrato && matchValorMin && matchValorMax && matchDataIni && matchDataFim && matchStatus;
   });
@@ -176,9 +177,10 @@ export default function Implantacoes() {
         dataInicio: filtroDataInicio || null,
         dataFim: filtroDataFim || null,
         produtoFiltro: filtroProduto !== 'Todos' ? filtroProduto : null,
-        statusFiltro: null,
+        statusFiltro: filtroStatus.length > 0 ? filtroStatus : null,
         padrinhoFiltro: filtroPadrinho !== 'Todos' ? filtroPadrinho : null,
-        tipoContratoFiltro: filtroTipoContrato !== 'Todos' ? filtroTipoContrato : null,
+        tipoContratoFiltro: filtroTipoContrato.length > 0 ? filtroTipoContrato : null,
+        vendedorFiltro: filtroVendedor.length > 0 ? filtroVendedor : null,
         valorMin: filtroValorMin !== '' ? Number(filtroValorMin) : null,
         valorMax: filtroValorMax !== '' ? Number(filtroValorMax) : null,
       });
@@ -249,9 +251,12 @@ export default function Implantacoes() {
             { label: 'ConcluÃ­dos', value: totalConcluidas, icon: CheckCircle2, color: '#22c55e', statusKey: 'concluido' },
             { label: 'Atrasados', value: totalAtrasadas, icon: AlertTriangle, color: '#f87171', statusKey: 'atrasado' },
           ].map(kpi => {
-            const ativo = filtroStatus === kpi.statusKey;
+            const ativo = kpi.statusKey === 'Todos'
+              ? filtroStatus.length === 0
+              : filtroStatus.length === 1 && filtroStatus[0] === kpi.statusKey;
             return (
-              <button key={kpi.label} onClick={() => setFiltroStatus(ativo ? 'Todos' : kpi.statusKey)}
+              <button key={kpi.label}
+                onClick={() => setFiltroStatus(kpi.statusKey === 'Todos' || ativo ? [] : [kpi.statusKey])}
                 className="rounded-2xl p-4 text-left transition"
                 style={{
                   background: ativo ? `${kpi.color}18` : AURORA.surface,
@@ -275,30 +280,22 @@ export default function Implantacoes() {
             <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente, produto ou CPF/CNPJ..."
               className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
           </div>
-          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl focus:outline-none font-medium" style={{ background: filtroStatus !== 'Todos' ? AURORA.accentDim : AURORA.surface2, border: `1px solid ${filtroStatus !== 'Todos' ? AURORA.accent : AURORA.border}`, color: filtroStatus !== 'Todos' ? AURORA.accent : AURORA.text }}>
-            {STATUS_FILTROS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          <MultiSelectFiltro placeholder="Todos os status" selected={filtroStatus} onChange={setFiltroStatus}
+            options={STATUS_FILTROS.filter(s => s.value !== 'Todos')} />
           <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
             <option value="Todos">Todos os produtos</option>
             {produtosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-            <option value="Todos">Todos os gerentes</option>
-            {vendedoresDisponiveis.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+          <MultiSelectFiltro placeholder="Todos os gerentes" selected={filtroVendedor} onChange={setFiltroVendedor}
+            options={vendedoresDisponiveis.map(v => ({ value: v, label: v }))} />
           <select value={filtroPadrinho} onChange={e => setFiltroPadrinho(e.target.value)}
             className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
             <option value="Todos">Todos os padrinhos</option>
             {padrinhosDisponiveis.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <select value={filtroTipoContrato} onChange={e => setFiltroTipoContrato(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>
-            <option value="Todos">Todos os tipos de contrato</option>
-            {TIPOS_CONTRATO.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          <MultiSelectFiltro placeholder="Todos os tipos de contrato" selected={filtroTipoContrato} onChange={setFiltroTipoContrato}
+            options={TIPOS_CONTRATO} />
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Valor:</span>
             <input type="number" min="0" step="0.01" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)}

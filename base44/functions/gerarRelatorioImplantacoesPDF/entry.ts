@@ -31,8 +31,19 @@ Deno.serve(async (req) => {
 
     const {
       dataInicio, dataFim, produtoFiltro, statusFiltro,
-      padrinhoFiltro, tipoContratoFiltro, valorMin, valorMax,
+      padrinhoFiltro, tipoContratoFiltro, vendedorFiltro, valorMin, valorMax,
     } = await req.json();
+
+    const asLista = (v) => (Array.isArray(v) ? v : (v ? [v] : []));
+    const statusSel = asLista(statusFiltro);
+    const tipoSel = asLista(tipoContratoFiltro);
+    const vendedorSel = asLista(vendedorFiltro);
+
+    const estaAtrasada = (imp) => {
+      if (['concluido', 'concluido_feedback', 'cancelado', 'rejeitado_compliance'].includes(imp.status)) return false;
+      if (!imp.data_prevista_conclusao) return false;
+      return new Date(imp.data_prevista_conclusao) < new Date();
+    };
 
     const implantacoes = await base44.asServiceRole.entities.Implantacao.list('-data_entrada');
 
@@ -40,13 +51,22 @@ Deno.serve(async (req) => {
       const dataRef = imp.data_entrada || imp.created_date?.split('T')[0] || '';
       const matchData = (!dataInicio || dataRef >= dataInicio) && (!dataFim || dataRef <= dataFim);
       const matchProduto = !produtoFiltro || imp.produto === produtoFiltro;
-      const matchStatus = !statusFiltro || imp.status === statusFiltro;
+      const matchStatus = statusSel.length === 0 || statusSel.some(s =>
+        s === 'em_andamento'
+          ? ['em_andamento', 'aguardando_documentacao'].includes(imp.status)
+          : s === 'concluido'
+            ? ['concluido', 'concluido_feedback'].includes(imp.status)
+            : s === 'atrasado'
+              ? estaAtrasada(imp)
+              : imp.status === s
+      );
       const matchPadrinho = !padrinhoFiltro || imp.padrinho_nome === padrinhoFiltro;
-      const matchTipoContrato = !tipoContratoFiltro || (imp.tipo_contrato || 'contrato') === tipoContratoFiltro;
+      const matchVendedor = vendedorSel.length === 0 || vendedorSel.includes(imp.vendedor_nome);
+      const matchTipoContrato = tipoSel.length === 0 || tipoSel.includes(imp.tipo_contrato || 'contrato');
       const valor = Number(imp.valor_contrato) || 0;
       const matchValorMin = valorMin == null || valorMin === '' || valor >= Number(valorMin);
       const matchValorMax = valorMax == null || valorMax === '' || valor <= Number(valorMax);
-      return matchData && matchProduto && matchStatus && matchPadrinho && matchTipoContrato && matchValorMin && matchValorMax;
+      return matchData && matchProduto && matchStatus && matchPadrinho && matchVendedor && matchTipoContrato && matchValorMin && matchValorMax;
     });
 
     const doc = new jsPDF();
@@ -70,11 +90,21 @@ Deno.serve(async (req) => {
       : 'Todos os periodos';
     doc.text(removerAcentos(`Periodo: ${periodoTxt}`), pageW / 2, 27, { align: 'center' });
 
+    const STATUS_FILTRO_LABELS = {
+      em_andamento: 'Em Andamento',
+      concluido: 'Concluidos',
+      atrasado: 'Atrasados',
+      aguardando_cliente: 'Aguard. Cliente',
+      rejeitado_compliance: 'Rejeitado Compliance',
+      cancelado: 'Cancelados',
+    };
     const filtrosTxt = [
       `Produto: ${produtoFiltro || 'Todos'}`,
-      `Tipo: ${tipoContratoFiltro ? TIPO_CONTRATO_LABELS[tipoContratoFiltro] || tipoContratoFiltro : 'Todos'}`,
+      `Status: ${statusSel.length ? statusSel.map(s => STATUS_FILTRO_LABELS[s] || s).join(', ') : 'Todos'}`,
+      `Tipo: ${tipoSel.length ? tipoSel.map(t => TIPO_CONTRATO_LABELS[t] || t).join(', ') : 'Todos'}`,
+      `Gerente: ${vendedorSel.length ? vendedorSel.join(', ') : 'Todos'}`,
       `Padrinho: ${padrinhoFiltro || 'Todos'}`,
-    ].join('   |   ');
+    ].join('  |  ');
     const faixaTxt = (valorMin == null || valorMin === '') && (valorMax == null || valorMax === '')
       ? 'Valor: todos'
       : `Valor: ${valorMin != null && valorMin !== '' ? 'a partir de R$ ' + Number(valorMin).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 'sem minimo'} ${valorMax != null && valorMax !== '' ? 'ate R$ ' + Number(valorMax).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : ''}`.trim();
