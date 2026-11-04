@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     const supDoc = new Set(sup.map((s: any) => String(s.cpf_cnpj || '').replace(/\D/g, '')).filter(Boolean));
     const supTel = new Set(sup.map((s: any) => s.telefone_e164).filter(Boolean));
 
-    let liberados = 0; const porGerente: Record<string, number> = {}; let pos = 0;
+    let feitos = 0; let liberados = 0; const porGerente: Record<string, number> = {}; let pos = 0;
     for (const lote of lotes) {
       if (liberados >= totalPode) break;
       const faltam = totalPode - liberados;
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
           const cliente = await withRetry(() => sr.Cliente.create(clienteData));
           await withRetry(() => sr.Lead.update(lead.id, { status: 'distribuido', vendedor_id: v.id, vendedor_nome: v.nome, cliente_id: cliente.id, liberar_em: hoje }));
           await withRetry(() => sr.AgendaContato.create({ lead_id: lead.id, lead_nome: lead.nome, lead_cpf_cnpj: lead.cpf_cnpj || '', lead_telefone: lead.telefone || '', cliente_id: cliente.id, vendedor_id: v.id, vendedor_nome: v.nome, data_agendada: hoje, posicao_dia: ++pos, lote_id: lote.id, status: 'pendente', resultado: '' }));
-          if (plano.indexOf(plano.find((p) => p.lead === lead)!) % 10 === 9) await sleep(250);
+          if (++feitos % 10 === 0) await sleep(250);
         }
       }
       for (const { c } of plano) porGerente[c.v.id] = (porGerente[c.v.id] || 0) + 1;

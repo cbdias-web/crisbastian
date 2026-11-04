@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { listAll, getConfigFila } from '../../shared/listAll.ts';
 import { hojeBrasilia, isDiaUtil } from '../../shared/diaUtil.ts';
+import { calcularBacklog } from '../../shared/backlog.ts';
 
 // Reposição diária da Agenda (carteira). Antes: 5 clientes aleatórios por gerente e
 // leitura de TODA a base de clientes (50.000). Agora: usa o ritmo do ConfigFila
@@ -25,6 +26,8 @@ Deno.serve(async (req) => {
 
     let totalCriados = 0;
     for (const vendedor of vendedores) {
+      // Não reabastece quem ainda tem muito a tratar (mesma regra da liberação automática de leads)
+      if (cfg.backlog_max_por_gerente && (await calcularBacklog(base44.asServiceRole.entities, vendedor.id, hoje)) >= Number(cfg.backlog_max_por_gerente)) continue;
       const pendentes = await listAll(base44.asServiceRole.entities.AgendaContato, { vendedor_id: vendedor.id, status: 'pendente' }, 'data_agendada');
       const hojeQtd = pendentes.filter(a => a.data_agendada === hoje).length;
       const faltam = META_DIA - hojeQtd;
