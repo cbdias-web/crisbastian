@@ -19,7 +19,7 @@ describe('Página Fila de Contatos', () => {
   it('gerente: filtra no servidor por vendedor_id e mostra coluna Reunião Marcada; troca de visões', async () => {
     base44.auth.me.mockResolvedValue({ id: 'u1', email: 'a@x', role: 'user' });
     tables.Vendedor = [{ id: 'vA', nome: 'Ana', email: 'a@x', ativo: true }];
-    tables.FilaContato = [F({ id: 'k1', nome: 'Na agenda' }), F({ id: 'k2', nome: 'Com reunião', status: 'reuniao_marcada', reuniao_em: new Date().toISOString() }), F({ id: 'k3', nome: 'Outro gerente', vendedor_id: 'vB' })];
+    tables.FilaContato = [F({ id: 'k1', ref_id: 'R1', nome: 'Na agenda' }), F({ id: 'k2', ref_id: 'R2', nome: 'Com reunião', status: 'reuniao_marcada', reuniao_em: new Date().toISOString() }), F({ id: 'k3', ref_id: 'R3', nome: 'Outro gerente', vendedor_id: 'vB' })];
     wrap(<FilaContato />);
     await screen.findByText('Na agenda');
     expect(screen.getByText('Com reunião')).toBeTruthy();
@@ -38,7 +38,7 @@ describe('Página Fila de Contatos', () => {
     tables.FilaContato = [F({ id: 'k1', nome: 'Qualquer' })];
     wrap(<FilaContato />);
     await screen.findByText('Qualquer'); expect(screen.getByText('Importar leads')).toBeTruthy();
-    expect(calls.filters.filter(x => x.name === 'FilaContato' && x.q.status === 'pendente').every(x => !x.q.vendedor_id)).toBe(true);
+    const off = calls.filters.filter(x => x.name === 'FilaContato' && x.q.status === 'pendente' && x.q.vendedor_id); if (off.length) console.log('QUERIES COM vendedor_id:', JSON.stringify(off)); expect(off.length).toBe(0);
     fireEvent.click(screen.getByText('Modo Foco')); expect(await screen.findByText(/Use "Ver como"/)).toBeTruthy();
   });
   it('?fila=ID abre o popup do lead (vindo de um alerta)', async () => {
