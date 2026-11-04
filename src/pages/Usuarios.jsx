@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal';
 import RelatorioRoletaModal from '../components/roleta/RelatorioRoletaModal';
 import RoletaPreviewModal from '../components/roleta/RoletaPreviewModal';
+import { normalizarCelular, formatarCelular } from '@/lib/celular';
 
 const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
@@ -31,6 +32,9 @@ export default function Usuarios() {
   const [editingUser, setEditingUser] = useState(null);
   const [menusEditando, setMenusEditando] = useState([]);
   const [nomeEditando, setNomeEditando] = useState('');
+  const [celularEditando, setCelularEditando] = useState('');
+  const [operadoraEditando, setOperadoraEditando] = useState('Vivo');
+  const [vendedorEditandoId, setVendedorEditandoId] = useState(null);
   const [showConviteModal, setShowConviteModal] = useState(false);
   const [conviteForm, setConviteForm] = useState({ email: '', nome: '', role: 'user' });
   const [enviandoConvite, setEnviandoConvite] = useState(false);
@@ -88,6 +92,13 @@ export default function Usuarios() {
   const { data: vendedoresInativos = [] } = useQuery({
     queryKey: ['vendedores-inativos-lista'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: false }, 'nome'),
+    enabled: isAdmin
+  });
+
+  // Todos os vendedores (inclui inativos) — o celular/operadora vive no cadastro do vendedor
+  const { data: vendedoresTodos = [] } = useQuery({
+    queryKey: ['vendedores-todos'],
+    queryFn: () => base44.entities.Vendedor.list(),
     enabled: isAdmin
   });
 
@@ -149,17 +160,50 @@ export default function Usuarios() {
   });
 
   const iniciarEdicao = (usuario) => {
+    const vend = vendedoresTodos.find(v => v.email?.toLowerCase() === usuario.email?.toLowerCase());
     setEditingUser(usuario.id);
     setMenusEditando(usuario.menus_acesso || menusDefault);
     setNomeEditando(usuario.nome_tratamento || usuario.full_name || '');
+    setVendedorEditandoId(vend?.id || null);
+    setCelularEditando(formatarCelular(vend?.celular_operadora));
+    setOperadoraEditando(vend?.operadora || 'Vivo');
   };
 
   const cancelarEdicao = () => {
     setEditingUser(null);
     setMenusEditando([]);
+    setCelularEditando('');
+    setOperadoraEditando('Vivo');
+    setVendedorEditandoId(null);
   };
 
-  const salvarUsuario = (usuario) => {
+  const salvarUsuario = async (usuario) => {
+    const tel = normalizarCelular(celularEditando);
+    if (tel === null) {
+      toast.error('Celular inválido — informe DDD + número (ex.: 51 99999-8888)');
+      return;
+    }
+    try {
+      if (vendedorEditandoId) {
+        const vend = vendedoresTodos.find(v => v.id === vendedorEditandoId);
+        const dados = { celular_operadora: tel, operadora: operadoraEditando };
+        if (tel !== (vend?.celular_operadora || '')) dados.celular_validado_em = null;
+        await base44.entities.Vendedor.update(vendedorEditandoId, dados);
+      } else if (tel) {
+        await base44.entities.Vendedor.create({
+          nome: usuario.full_name || usuario.nome_tratamento || usuario.email,
+          email: usuario.email,
+          celular_operadora: tel,
+          operadora: operadoraEditando,
+          ativo: true,
+        });
+      }
+      queryClient.invalidateQueries(['vendedores-todos']);
+      queryClient.invalidateQueries(['vendedores-lista']);
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Erro ao salvar celular');
+      return;
+    }
     updateUserMutation.mutate({ id: usuario.id, data: { menus_acesso: menusEditando, role: usuario.role, nome_tratamento: nomeEditando.trim() } });
   };
 
@@ -700,6 +744,30 @@ export default function Usuarios() {
                                 placeholder="Nome de tratamento"
                                 className="w-64 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
                               />
+                            </div>
+                            <div className="flex flex-wrap items-end gap-3">
+                              <div>
+                                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Celular (com DDD)</p>
+                                <input
+                                  type="text"
+                                  value={celularEditando}
+                                  onChange={e => setCelularEditando(e.target.value)}
+                                  placeholder="(51) 99999-8888"
+                                  className="w-48 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
+                                />
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Operadora</p>
+                                <select
+                                  value={operadoraEditando}
+                                  onChange={e => setOperadoraEditando(e.target.value)}
+                                  className="w-32 px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                                  {['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                              </div>
+                              {!vendedorEditandoId && (
+                                <p className="text-[10px] text-gray-400 pb-2">Sem cadastro de vendedor — será criado ao salvar o celular</p>
+                              )}
                             </div>
                             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Menus de Acesso</p>
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">

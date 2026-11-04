@@ -6,8 +6,9 @@ import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
+import { normalizarCelular, formatarCelular } from "@/lib/celular";
 
-const EMPTY = { nome: "", email: "", time: "", percentual_comissao: 10, ativo: true };
+const EMPTY = { nome: "", email: "", time: "", percentual_comissao: 10, ativo: true, celular_operadora: "", operadora: "Vivo" };
 
 const exportCSV = (vendedores) => {
   const headers = ["Nome", "E-mail", "Time", "Comissão (%)", "Status"];
@@ -87,15 +88,25 @@ export default function Vendedores() {
   });
 
   const openCreate = () => { setForm(EMPTY); setModal("create"); };
-  const openEdit = (v) => { setForm({ ...v }); setModal(v); };
+  const openEdit = (v) => {
+    setForm({ operadora: "Vivo", ...v, celular_operadora: formatarCelular(v.celular_operadora) });
+    setModal(v);
+  };
 
   const save = async () => {
+    const tel = normalizarCelular(form.celular_operadora);
+    if (tel === null) {
+      toast.error("Celular inválido — informe DDD + número (ex.: 51 99999-8888)");
+      return;
+    }
     setSaving(true);
+    const dados = { ...form, celular_operadora: tel };
+    if (modal !== "create" && tel !== (modal.celular_operadora || "")) dados.celular_validado_em = null;
     if (modal === "create") {
-      await base44.entities.Vendedor.create(form);
+      await base44.entities.Vendedor.create(dados);
       toast.success("Vendedor criado!");
     } else {
-      await base44.entities.Vendedor.update(modal.id, form);
+      await base44.entities.Vendedor.update(modal.id, dados);
       toast.success("Vendedor atualizado!");
     }
     setSaving(false);
@@ -717,6 +728,19 @@ export default function Vendedores() {
                   <label className="text-xs font-medium text-gray-500 mb-1 block">Time</label>
                   <input value={form.time || ""} onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Celular (com DDD)</label>
+                  <input value={form.celular_operadora || ""} onChange={e => setForm(p => ({ ...p, celular_operadora: e.target.value }))}
+                    placeholder="(51) 99999-8888"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-1 block">Operadora</label>
+                  <select value={form.operadora || "Vivo"} onChange={e => setForm(p => ({ ...p, operadora: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150] bg-white">
+                    {["Vivo", "Claro", "TIM", "Oi", "Outra"].map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-1 block">Comissão (%)</label>
