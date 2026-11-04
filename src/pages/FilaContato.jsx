@@ -74,7 +74,7 @@ export default function FilaContato() {
   const temPermissao = !!user;
 
   const { data: fila = [], isLoading, refetch } = useQuery({
-    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataInicio, dataFiltro, modo],
+    queryKey: ['fila-contato', user?.id, vendedor?.id, isAdmin, dataInicio, dataFiltro, modo, visao === 'kanban'],
     queryFn: async () => {
       if (!user) return [];
       const vid = vendedor?.id;
@@ -133,7 +133,7 @@ export default function FilaContato() {
       // (Removido o dedupe por NOME: descartava homônimos. A chave é origem+ref+gerente.)
       return filtrarVendedor(deduped);
     },
-    enabled: !!user && (isAdmin || !!vendedor),
+    enabled: !!user && (isAdmin || !!vendedor) && visao === 'kanban',
     refetchInterval: 30000,
   });
 
@@ -155,6 +155,7 @@ export default function FilaContato() {
     })();
   }, [user, vendedor, isAdmin]);
 
+  const { data: cadencias = [] } = useQuery({ queryKey: ['cadencias-ativas'], queryFn: () => base44.entities.Cadencia.filter({ ativa: true }, 'nome', 50), staleTime: 300000 });
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-ativos-fila'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
@@ -249,7 +250,20 @@ export default function FilaContato() {
                 : dataFiltro.split('-').reverse().join('/')}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <AlertasSino vendedorId={vendedor?.id} />
+            {vendedor && (
+              <button onClick={() => setCelularModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }} title="Cadastre seu celular/operadora e pareie o app do celular">
+                <Smartphone className="w-3.5 h-3.5" /> Meu celular
+              </button>
+            )}
+            {isAdmin && (
+              <Link to="/Leads" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+                style={{ background: AURORA.surface2, color: AURORA.accent, border: `1px solid ${AURORA.border}` }} title="Importar e distribuir leads">
+                <Upload className="w-3.5 h-3.5" /> Importar leads
+              </Link>
+            )}
             {vendedor && (
               <button onClick={solicitarMaisContatos} disabled={solicitando}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
@@ -269,6 +283,24 @@ export default function FilaContato() {
           </div>
         </div>
 
+
+        {/* Visões */}
+        <div className="flex gap-1.5 mb-4 overflow-x-auto">
+          {[['kanban', 'Kanban', LayoutGrid], ['lista', 'Lista', List], ['agenda', 'Agenda', CalendarDays], ['foco', 'Modo Foco', Crosshair]].map(([k, l, Ic]) => (
+            <button key={k} onClick={() => setVisao(k)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition"
+              style={{ background: visao === k ? 'rgba(0,212,170,0.18)' : AURORA.surface, color: visao === k ? AURORA.accent : AURORA.textMuted, border: `1px solid ${visao === k ? AURORA.accent : AURORA.border}` }}>
+              <Ic className="w-3.5 h-3.5" /> {l}
+            </button>
+          ))}
+        </div>
+
+        {visao === 'lista' && <FilaLista vendedor={vendedor} isAdmin={isAdmin} adminTudo={adminTudo} vendedores={vendedores} cadencias={cadencias} onSelect={setPopup} />}
+        {visao === 'agenda' && <AgendaGerente vendedor={vendedor} user={user} adminTudo={adminTudo} onSelectFila={setPopup} />}
+        {visao === 'foco' && (vendedor
+          ? <ModoFoco vendedor={vendedor} user={user} />
+          : <div className="rounded-2xl py-14 text-center text-sm" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.textMuted }}>O Modo Foco trabalha a fila de um gerente. Use "Ver como" (menu superior) para escolher o gerente.</div>)}
+
+        {visao === 'kanban' && (<>
         {/* Barra de filtros */}
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           {/* Modo */}
@@ -372,7 +404,10 @@ export default function FilaContato() {
             <FilaContatoKanban itens={filaFiltrada} isAdmin={isAdmin} onSelectItem={setPopup} onAtualizado={() => queryClient.invalidateQueries({ queryKey: ['fila-contato'] })} />
           </>
         )}
+        </>)}
       </div>
+
+      {celularModal && <MeuCelularModal vendedorId={isAdmin && getImpersonatedVendedor() ? vendedor?.id : undefined} onClose={() => setCelularModal(false)} onSalvo={(v) => setVendedor(prev => ({ ...prev, ...v }))} />}
 
       {popup && (
         <CapaContatoPopup
