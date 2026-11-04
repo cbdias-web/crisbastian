@@ -6,7 +6,11 @@ Deno.serve(async (req) => {
 
     // Esta função é chamada por automação agendada — usa service role
     const agora = new Date();
-    const hojeStr = agora.toISOString().split('T')[0];
+    // Fuso Brasília (o servidor roda em UTC)
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
+    const bp: any = Object.fromEntries(fmt.formatToParts(agora).map((x) => [x.type, x.value]));
+    const hojeStr = `${bp.year}-${bp.month}-${bp.day}`;
+    const minutosAgora = (Number(bp.hour === '24' ? '0' : bp.hour)) * 60 + Number(bp.minute);
 
     // Busca todos os agendamentos pendentes de hoje com horário definido
     const agendas = await base44.asServiceRole.entities.AgendaContato.filter({
@@ -41,11 +45,7 @@ Deno.serve(async (req) => {
 
     for (const agenda of agendasComHorario) {
       const [hh, mm] = agenda.horario.split(':').map(Number);
-      const horarioCompromisso = new Date(agora);
-      horarioCompromisso.setHours(hh, mm, 0, 0);
-
-      const diffMs = horarioCompromisso - agora;
-      const diffMin = diffMs / 60000;
+      const diffMin = (hh * 60 + mm) - minutosAgora;
 
       // Janela: entre 9 e 11 minutos (para a execução da automação a cada 5 min pegar a janela de 10 min)
       if (diffMin >= 9 && diffMin <= 11) {

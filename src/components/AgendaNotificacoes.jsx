@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { brasiliaParts } from '@/lib/leadUtils';
 
 const NOTIFICADAS_KEY = 'agenda_notificadas_v1';
 const INTERVALO_MS = 60 * 1000; // verifica a cada 1 minuto
@@ -36,7 +37,9 @@ export default function AgendaNotificacoes({ vendedorId }) {
       if (!vId) return;
 
       const agora = new Date();
-      const hojeStr = agora.toISOString().split('T')[0];
+      const bp = brasiliaParts(agora); // fuso Brasília (não UTC)
+      const hojeStr = bp.data;
+      const minutosAgora = bp.hora * 60 + bp.minuto;
 
       let agendas = [];
       try {
@@ -49,7 +52,15 @@ export default function AgendaNotificacoes({ vendedorId }) {
         return;
       }
 
-      const agendasComHorario = agendas.filter(a => a.horario);
+      let agendasComHorario = agendas.filter(a => a.horario);
+      // Retornos obrigatórios da Fila de Contatos (proximo_contato + proximo_contato_hora)
+      try {
+        const retornos = await base44.entities.FilaContato.filter({ vendedor_id: vId, proximo_contato: hojeStr }, '-updated_date', 100);
+        agendasComHorario = agendasComHorario.concat(
+          retornos.filter(f => f.proximo_contato_hora && ['atendeu', 'reuniao_marcada'].includes(f.status))
+            .map(f => ({ id: `fila-${f.id}`, lead_nome: f.nome, horario: f.proximo_contato_hora }))
+        );
+      } catch {}
       if (agendasComHorario.length === 0) return;
 
       const notificadas = getNotificadas();
@@ -57,11 +68,7 @@ export default function AgendaNotificacoes({ vendedorId }) {
 
       for (const agenda of agendasComHorario) {
         const [hh, mm] = agenda.horario.split(':').map(Number);
-        const horarioCompromisso = new Date(agora);
-        horarioCompromisso.setHours(hh, mm, 0, 0);
-
-        const diffMs = horarioCompromisso - agora;
-        const diffMin = diffMs / 60000;
+        const diffMin = (hh * 60 + mm) - minutosAgora;
 
         // Janela: entre 14 e 16 minutos antes (para pegar a verificação do minuto)
         if (diffMin >= 14 && diffMin <= 16) {
