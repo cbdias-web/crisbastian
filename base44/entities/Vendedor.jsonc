@@ -1,50 +1,102 @@
 {
   "name": "Vendedor",
-  "type": "object",
   "properties": {
-    "nome": {
-      "type": "string",
-      "description": "Nome do vendedor"
-    },
-    "email": {
-      "type": "string",
-      "description": "Email do vendedor"
-    },
-    "time": {
-      "type": "string",
-      "description": "Time do vendedor"
-    },
-    "percentual_comissao": {
-      "type": "number",
-      "description": "Percentual de comiss\u00e3o padr\u00e3o (%)",
-      "default": 10
+    "alertas_silenciados": {
+      "default": false,
+      "description": "Silencia alertas nao criticos",
+      "type": "boolean"
     },
     "ativo": {
-      "type": "boolean",
       "default": true,
-      "description": "Vendedor ativo"
+      "description": "Vendedor ativo",
+      "type": "boolean"
     },
     "ativo_central_leads": {
-      "type": "boolean",
       "default": true,
-      "description": "Participa da esteira de distribui\u00e7\u00e3o de leads na Central de Leads (webhook/campanhas externas)"
-    },
-    "recebe_leads_indicacao": {
-      "type": "boolean",
-      "default": true,
-      "description": "Recebe leads originados do Portal do Indicador na roleta de distribui\u00e7\u00e3o"
-    },
-    "ultimo_lead_distribuido_em": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Data/hora do \u00faltimo lead distribu\u00eddo a este gerente (controle da roleta justa)"
+      "description": "Participa da esteira de distribuicao de leads na Central de Leads (webhook/campanhas externas)",
+      "type": "boolean"
     },
     "avatar_url": {
-      "type": "string",
-      "description": "URL da foto/avatar do colaborador"
+      "description": "URL da foto/avatar do colaborador",
+      "type": "string"
+    },
+    "canal_alerta": {
+      "default": "ambos",
+      "description": "Como o gerente quer receber alertas",
+      "enum": [
+        "push",
+        "email",
+        "ambos"
+      ],
+      "type": "string"
+    },
+    "celular_operadora": {
+      "description": "Celular do gerente (E.164, ex: +5551999998888) usado para ligar/WhatsApp pelo proprio chip",
+      "type": "string"
+    },
+    "celular_validado_em": {
+      "description": "Quando o gerente confirmou o teste do celular",
+      "format": "date-time",
+      "type": "string"
+    },
+    "email": {
+      "description": "Email do vendedor",
+      "type": "string"
+    },
+    "janela_fim": {
+      "description": "Fim da janela de contato (HH:MM) - sobrescreve ConfigFila",
+      "type": "string"
+    },
+    "janela_inicio": {
+      "description": "Inicio da janela de contato (HH:MM) - sobrescreve ConfigFila",
+      "type": "string"
+    },
+    "meta_diaria_toques": {
+      "description": "Meta diaria de toques - sobrescreve ConfigFila",
+      "type": "number"
+    },
+    "nome": {
+      "description": "Nome do vendedor",
+      "type": "string"
+    },
+    "operadora": {
+      "description": "Operadora do celular",
+      "enum": [
+        "Vivo",
+        "Claro",
+        "TIM",
+        "Oi",
+        "Outra"
+      ],
+      "type": "string"
+    },
+    "percentual_comissao": {
+      "default": 10,
+      "description": "Percentual de comissao padrao (%)",
+      "type": "number"
+    },
+    "recebe_leads_indicacao": {
+      "default": true,
+      "description": "Recebe leads originados do Portal do Indicador na roleta de distribuicao",
+      "type": "boolean"
+    },
+    "time": {
+      "description": "Time do vendedor",
+      "type": "string"
+    },
+    "ultimo_lead_distribuido_em": {
+      "description": "Data/hora do ultimo lead distribuido a este gerente (controle da roleta justa)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "whatsapp_no_mesmo_numero": {
+      "default": true,
+      "description": "O WhatsApp do gerente usa o mesmo numero",
+      "type": "boolean"
     }
   },
   "required": [
     "nome"
-  ]
+  ],
+  "type": "object"
 }
