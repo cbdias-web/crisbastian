@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import AlertasSino from '@/components/fila/AlertasSino';
 import OnboardingModal from '@/components/OnboardingModal';
 import ComunicadoModal from '@/components/ComunicadoModal';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -371,6 +372,8 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', alwaysVisible: true },
         { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
         { name: 'Fila de Contatos', icon: Zap, page: 'FilaContato', alwaysVisible: true },
+        { name: 'Painel Prospecção', icon: Activity, page: 'PainelProspeccao' },
+        { name: 'Config. Prospecção', icon: Zap, page: 'ConfigProspeccao' },
         { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
         { name: 'Implantações', icon: Rocket, page: 'Implantacoes', alwaysVisible: true },
         { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
@@ -521,6 +524,9 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Alertas do gerente (retornos, SLA, reuniões) */}
+            {!isIndicador && <AlertasSino />}
+
             {/* Notifications bell */}
             {isAdmin && totalPendentes > 0 && (
               <Link to={createPageUrl('Notificacoes')} className="relative p-2 rounded-lg transition"
