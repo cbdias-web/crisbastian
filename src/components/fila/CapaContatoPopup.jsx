@@ -405,7 +405,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   <div className="flex justify-center" style={{ gap: 16 }}>
                     {(() => {
                       const wa = waLink(fila.telefone);
-                      const tel = telParaTel(fila.telefone);
+                      const tel = telParaTel(fila.telefone, vendedor?.operadora);
                       return (
                         <>
                           <a href={wa || undefined} target="_blank" rel="noopener noreferrer"

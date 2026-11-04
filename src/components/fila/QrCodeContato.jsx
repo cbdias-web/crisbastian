@@ -1,6 +1,7 @@
 // Helper de QR code — geração 100% LOCAL (sem enviar telefone/dados a serviços externos).
 // Gera um SVG (data URI) para um payload (tel: ou https://wa.me/...).
 import QRCode from 'qrcode';
+import { numeroDiscagem } from '@/lib/operadora';
 
 const cache = new Map();
 
@@ -39,14 +40,17 @@ export function telParaWa(tel) {
   return digits;
 }
 
-export function telParaTel(tel) {
+export function telParaTel(tel, operadora) {
   if (!tel) return '';
   let d = String(tel).replace(/\D/g, '');
   if (!d) return '';
   if (d.startsWith('55') && (d.length === 12 || d.length === 13)) d = d.slice(2);
   // Celular no formato antigo (DDD + 8 dígitos começando em 6-9): a operadora exige o 9 na frente
   if (d.length === 10 && '6789'.includes(d[2])) d = d.slice(0, 2) + '9' + d.slice(2);
-  return d.length === 10 || d.length === 11 ? `tel:+55${d}` : `tel:${d}`;
+  if (d.length !== 10 && d.length !== 11) return `tel:${d}`;
+  // Com a operadora do gerente, disca com o código dela na frente (ligação sem custo)
+  const comCodigo = numeroDiscagem(d, operadora);
+  return comCodigo ? `tel:${comCodigo}` : `tel:+55${d}`;
 }
 
 export function waLink(tel, texto) {

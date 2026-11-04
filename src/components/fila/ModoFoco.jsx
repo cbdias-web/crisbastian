@@ -121,7 +121,7 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
   const ligar = async () => {
     if (!fila) return;
     if (fila.telefone_valido === false) { toast.error('Número marcado como inválido.'); return; }
-    if (mobile) { setAguardando('ligacao'); window.location.href = telParaTel(fila.telefone_e164 || fila.telefone); }
+    if (mobile) { setAguardando('ligacao'); window.location.href = telParaTel(fila.telefone_e164 || fila.telefone, vendedor?.operadora); }
     else { await criarComando('ligar'); setAguardando(null); }
   };
   const enviarWhatsApp = async () => {

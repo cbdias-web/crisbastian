@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Smartphone, Loader2, CheckCircle2, PhoneCall, MessageCircle } from 'lucide-react';
 import { qrUrl, telParaTel, waLink } from './QrCodeContato';
+import { codigoOperadora } from '@/lib/operadora';
 
 const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const inp = { background: A.surface2, color: A.text, border: `1px solid ${A.border}` };
@@ -54,7 +55,8 @@ export default function MeuCelularModal({ vendedorId, onClose, onSalvo }) {
               <div className="col-span-2 sm:col-span-1"><label className="block mb-1" style={{ color: A.muted }}>Celular (com DDD)</label>
                 <input value={form.celular_operadora} onChange={e => setForm(f => ({ ...f, celular_operadora: e.target.value }))} placeholder="(51) 99999-8888" className="w-full px-3 py-2 rounded-xl" style={inp} /></div>
               <div><label className="block mb-1" style={{ color: A.muted }}>Operadora</label>
-                <select value={form.operadora} onChange={e => setForm(f => ({ ...f, operadora: e.target.value }))} className="w-full px-3 py-2 rounded-xl" style={inp}>{['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o}>{o}</option>)}</select></div>
+                <select value={form.operadora} onChange={e => setForm(f => ({ ...f, operadora: e.target.value }))} className="w-full px-3 py-2 rounded-xl" style={inp}>{['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o}>{o}</option>)}</select>
+                {codigoOperadora(form.operadora) && <p className="mt-1" style={{ color: A.muted }}>Ligações saem com o código {codigoOperadora(form.operadora)}</p>}</div>
               <label className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={form.whatsapp_no_mesmo_numero} onChange={e => setForm(f => ({ ...f, whatsapp_no_mesmo_numero: e.target.checked }))} /> Meu WhatsApp usa este mesmo número</label>
               <div><label className="block mb-1" style={{ color: A.muted }}>Janela — início</label><input type="time" value={form.janela_inicio} onChange={e => setForm(f => ({ ...f, janela_inicio: e.target.value }))} className="w-full px-3 py-2 rounded-xl" style={inp} /></div>
               <div><label className="block mb-1" style={{ color: A.muted }}>Janela — fim</label><input type="time" value={form.janela_fim} onChange={e => setForm(f => ({ ...f, janela_fim: e.target.value }))} className="w-full px-3 py-2 rounded-xl" style={inp} /></div>

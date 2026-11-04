@@ -75,7 +75,7 @@ export default function ModoFocoMobile() {
     await base44.entities.ComandoDiscagem.update(c.id, { status: 'aberto' }).catch(() => {});
     aguardandoRef.current = { fila_id: c.fila_id, canal: c.canal === 'ligar' ? 'ligacao' : 'whatsapp' };
     qc.invalidateQueries({ queryKey: ['comandos-discagem', vid] });
-    if (c.canal === 'ligar') window.location.href = telParaTel(c.telefone_e164);
+    if (c.canal === 'ligar') window.location.href = telParaTel(c.telefone_e164, vendedor?.operadora);
     else window.open(waLink(c.telefone_e164, c.mensagem || ''), '_blank');
   };
   const dispensar = async (c) => { await base44.entities.ComandoDiscagem.update(c.id, { status: 'concluido' }).catch(() => {}); qc.invalidateQueries({ queryKey: ['comandos-discagem', vid] }); };

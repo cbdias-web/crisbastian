@@ -6,6 +6,7 @@ import AvatarPickerModal from '@/components/vendedores/AvatarPickerModal';
 import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarModal';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { formatarCelular, normalizarCelular } from '@/lib/celular';
+import { codigoOperadora } from '@/lib/operadora';
 
 const A = {
   bg: '#0d1117',
@@ -197,6 +198,9 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
                   style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.text }}>
                   {['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
+                <p className="text-[10px] mt-1" style={{ color: A.textMuted }}>
+                  {codigoOperadora(operadora) ? `Ligações saem com o código ${codigoOperadora(operadora)} (${operadora})` : 'Sem código de discagem para esta operadora'}
+                </p>
               </div>
           </div>
         </div>
