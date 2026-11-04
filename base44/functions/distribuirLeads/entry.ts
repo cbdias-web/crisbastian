@@ -65,6 +65,11 @@ Deno.serve(async (req) => {
           lead_id: a.leadId,
           observacao: `Lead importado — lote: ${loteNome}`
         };
+        // Propaga os campos enriquecidos do Lead (importacao v2) para o Cliente
+        const L = lead[0] || {};
+        const extras = ['id_externo','produto_contratado','valor_contrato','responsavel_origem','tipo_pessoa','endereco','cidade','email','cep','telefone_e164','telefone_valido','score','segmento','consentimento_status','cadencia_id'];
+        for (const k of extras) { if (L[k] !== undefined && L[k] !== null && L[k] !== '') clienteData[k] = L[k]; }
+        if (L.uf) clienteData.estado = L.uf;
         if (subcarteira) clienteData.subcarteira = subcarteira;
         const cliente = await withRetry(() => base44.asServiceRole.entities.Cliente.create(clienteData));
         await withRetry(() => base44.asServiceRole.entities.Lead.update(a.leadId, {
