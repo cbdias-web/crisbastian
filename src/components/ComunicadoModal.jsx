@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Megaphone, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function ComunicadoModal({ comunicado, user, onClose }) {
+export default function ComunicadoModal({ comunicado, user, onClose, onAbrirPerfil }) {
   const [confirming, setConfirming] = useState(false);
 
   const handleConfirmar = async () => {
@@ -47,7 +47,16 @@ export default function ComunicadoModal({ comunicado, user, onClose }) {
         </div>
 
         {/* Footer — fixo */}
-        <div className="px-5 py-4 border-t border-gray-100 flex justify-end flex-shrink-0">
+        <div className="px-5 py-4 border-t border-gray-100 flex items-center justify-end gap-2 flex-shrink-0">
+          {onAbrirPerfil && (
+            <button
+              onClick={onAbrirPerfil}
+              className="px-4 py-2.5 text-sm font-semibold rounded-xl transition"
+              style={{ color: '#60a5fa', background: 'rgba(59,130,249,0.12)', border: '1px solid rgba(59,130,249,0.35)' }}
+            >
+              Abrir Meu Perfil
+            </button>
+          )}
           <button
             onClick={handleConfirmar}
             disabled={confirming}

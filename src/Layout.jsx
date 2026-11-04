@@ -456,7 +456,8 @@ export default function Layout({ children, currentPageName }) {
         <OnboardingModal user={user} aceite={aceite} onComplete={() => setShowOnboarding(false)} />
       )}
       {!showOnboarding && comunicadoPendente && user && (
-        <ComunicadoModal comunicado={comunicadoPendente} user={user} onClose={() => setComunicadoPendente(null)} />
+        <ComunicadoModal comunicado={comunicadoPendente} user={user} onClose={() => setComunicadoPendente(null)}
+          onAbrirPerfil={() => { setComunicadoPendente(null); setShowProfileModal(true); }} />
       )}
       {!showOnboarding && user && <GoogleCalendarConectarModal />}
 

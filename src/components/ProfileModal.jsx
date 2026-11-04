@@ -7,6 +7,7 @@ import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarMod
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { formatarCelular, normalizarCelular } from '@/lib/celular';
 import { codigoOperadora } from '@/lib/operadora';
+import { carregarVendedorDoUsuario, salvarContatoDoUsuario } from '@/lib/perfilContato';
 
 const A = {
   bg: '#0d1117',
@@ -27,7 +28,6 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
   const [avatarUrl, setAvatarUrl] = useState(userAvatar);
   const [celular, setCelular] = useState('');
   const [operadora, setOperadora] = useState('Vivo');
-  const [vendedorId, setVendedorId] = useState(null);
 
   // Celular/operadora ficam no cadastro do gerente (Vendedor), casado pelo e-mail do usuário
   useEffect(() => {
@@ -35,13 +35,8 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
     (async () => {
       try {
         const imp = getImpersonatedVendedor();
-        let v = imp || null;
-        if (!v && user?.email) {
-          const todos = await base44.entities.Vendedor.list();
-          v = todos.find(x => x.email?.toLowerCase() === user.email.toLowerCase()) || null;
-        }
+        const v = imp || await carregarVendedorDoUsuario(user);
         if (cancel) return;
-        setVendedorId(v?.id || null);
         setCelular(formatarCelular(v?.celular_operadora));
         setOperadora(v?.operadora || 'Vivo');
       } catch (e) {}
@@ -79,18 +74,10 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
         return;
       }
       await base44.auth.updateMe({ nome_tratamento: profileForm.nome_tratamento });
-      if (vendedorId) {
-        await base44.entities.Vendedor.update(vendedorId, { celular_operadora: tel, operadora });
-      } else if (tel) {
-        await base44.entities.Vendedor.create({
-          nome: user?.full_name || user?.email,
-          email: user?.email,
-          celular_operadora: tel,
-          operadora,
-          ativo: true,
-          recebe_leads_indicacao: false,
-          ativo_central_leads: false,
-        });
+      if (impersonado?.id) {
+        await base44.entities.Vendedor.update(impersonado.id, { celular_operadora: tel, operadora });
+      } else {
+        await salvarContatoDoUsuario(user, { celular: tel, operadora });
       }
       const updatedUser = await base44.auth.me();
       onAvatarChange?.(avatarUrl, updatedUser);
