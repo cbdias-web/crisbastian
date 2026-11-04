@@ -1,0 +1,30 @@
+{
+  "name": "ListaSupressao",
+  "properties": {
+    "cpf_cnpj": {
+      "description": "Somente digitos",
+      "type": "string"
+    },
+    "criado_por": {
+      "type": "string"
+    },
+    "motivo": {
+      "default": "opt_out",
+      "enum": [
+        "opt_out",
+        "nao_perturbe",
+        "numero_errado",
+        "outro"
+      ],
+      "type": "string"
+    },
+    "nome": {
+      "type": "string"
+    },
+    "telefone_e164": {
+      "type": "string"
+    }
+  },
+  "type": "object",
+  "required": []
+}

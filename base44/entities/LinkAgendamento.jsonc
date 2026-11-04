@@ -1,0 +1,53 @@
+{
+  "name": "LinkAgendamento",
+  "properties": {
+    "agendado_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "duracao_min": {
+      "default": 30,
+      "type": "number"
+    },
+    "expira_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "fila_id": {
+      "type": "string"
+    },
+    "lead_nome": {
+      "type": "string"
+    },
+    "meet_link": {
+      "type": "string"
+    },
+    "slot_escolhido": {
+      "description": "Inicio escolhido (ISO com fuso -03:00)",
+      "type": "string"
+    },
+    "status": {
+      "default": "aberto",
+      "enum": [
+        "aberto",
+        "agendado",
+        "expirado"
+      ],
+      "type": "string"
+    },
+    "token": {
+      "type": "string"
+    },
+    "vendedor_id": {
+      "type": "string"
+    },
+    "vendedor_nome": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "token",
+    "vendedor_id"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,27 @@
+{
+  "name": "FaqItem",
+  "properties": {
+    "aprovado_compliance": {
+      "default": false,
+      "type": "boolean"
+    },
+    "ativo": {
+      "default": true,
+      "type": "boolean"
+    },
+    "categoria": {
+      "type": "string"
+    },
+    "pergunta": {
+      "type": "string"
+    },
+    "resposta": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "pergunta",
+    "resposta"
+  ],
+  "type": "object"
+}

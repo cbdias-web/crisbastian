@@ -1,0 +1,113 @@
+{
+  "name": "ConfigFila",
+  "properties": {
+    "afinidade_produtos": {
+      "default": [],
+      "description": "Produtos contratados que indicam maior afinidade (palavras-chave)",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "base_legal_padrao": {
+      "description": "Base legal LGPD padrao (definida pelo juridico)",
+      "type": "string"
+    },
+    "cap_carteira_dia": {
+      "default": 40,
+      "description": "Maximo de leads de carteira pendentes por gerente na fila (antes fixo em 10)",
+      "type": "number"
+    },
+    "chave": {
+      "default": "padrao",
+      "description": "Registro unico: use 'padrao'",
+      "type": "string"
+    },
+    "dias_sem_contato": {
+      "default": 5,
+      "description": "Dias na agenda sem atencao antes de reagendar",
+      "type": "number"
+    },
+    "dias_uteis": {
+      "default": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "description": "Dias da semana permitidos (0=dom ... 6=sab)",
+      "items": {
+        "type": "number"
+      },
+      "type": "array"
+    },
+    "email_plano_dia": {
+      "default": true,
+      "description": "Enviar e-mail Plano do Dia as 08:00",
+      "type": "boolean"
+    },
+    "feriados": {
+      "default": [],
+      "description": "Datas YYYY-MM-DD sem contato",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "horas_inercia": {
+      "default": 48,
+      "description": "Horas parado em Em Contato para alerta de inercia",
+      "type": "number"
+    },
+    "janela_fim": {
+      "default": "18:00",
+      "description": "Fim da janela de contato (HH:MM, Brasilia)",
+      "type": "string"
+    },
+    "janela_inicio": {
+      "default": "09:00",
+      "description": "Inicio da janela de contato (HH:MM, Brasilia)",
+      "type": "string"
+    },
+    "limite_primeiro_whatsapp_dia": {
+      "default": 40,
+      "description": "Maximo de primeiros WhatsApps por gerente por dia",
+      "type": "number"
+    },
+    "novos_por_dia": {
+      "default": 15,
+      "description": "Leads novos liberados por dia por gerente (ritmo de ondas)",
+      "type": "number"
+    },
+    "score_pesos": {
+      "default": {},
+      "description": "Pesos do score: valor_alto, valor_medio, pj, celular_valido, email, endereco, produto_afinidade, indicacao",
+      "type": "object"
+    },
+    "sla_inbound_alerta_min": {
+      "default": 5,
+      "description": "Minutos sem primeiro toque para alertar",
+      "type": "number"
+    },
+    "sla_inbound_escalonar_min": {
+      "default": 10,
+      "description": "Minutos sem primeiro toque para escalonar a outro gerente",
+      "type": "number"
+    },
+    "texto_descadastro": {
+      "default": "Se preferir nao receber contato, responda SAIR.",
+      "description": "Frase de descadastro anexada a mensagens de primeiro contato",
+      "type": "string"
+    },
+    "toques_dia": {
+      "default": 80,
+      "description": "Capacidade diaria de toques por gerente (ligacoes + WhatsApp)",
+      "type": "number"
+    }
+  },
+  "required": [
+    "chave"
+  ],
+  "type": "object"
+}

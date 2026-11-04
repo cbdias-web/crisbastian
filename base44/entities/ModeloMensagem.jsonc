@@ -1,0 +1,65 @@
+{
+  "name": "ModeloMensagem",
+  "properties": {
+    "aprovado_compliance": {
+      "default": false,
+      "type": "boolean"
+    },
+    "ativo": {
+      "default": true,
+      "type": "boolean"
+    },
+    "canal": {
+      "enum": [
+        "whatsapp",
+        "email",
+        "ligacao"
+      ],
+      "type": "string"
+    },
+    "envios": {
+      "default": 0,
+      "type": "number"
+    },
+    "nome": {
+      "type": "string"
+    },
+    "primeiro_contato": {
+      "default": false,
+      "description": "Conta no limite diario de primeiros WhatsApps e leva o texto de descadastro",
+      "type": "boolean"
+    },
+    "produto": {
+      "description": "Produto alvo (vazio = geral)",
+      "type": "string"
+    },
+    "publico": {
+      "enum": [
+        "base_clientes",
+        "indicacao",
+        "pos_reuniao",
+        "no_show",
+        "geral"
+      ],
+      "type": "string"
+    },
+    "respostas": {
+      "default": 0,
+      "type": "number"
+    },
+    "texto": {
+      "description": "Texto com variaveis {{primeiro_nome}} {{gerente}} {{produto_contratado}} {{responsavel_origem}} {{produto}}",
+      "type": "string"
+    },
+    "versao": {
+      "default": 1,
+      "type": "number"
+    }
+  },
+  "required": [
+    "nome",
+    "canal",
+    "texto"
+  ],
+  "type": "object"
+}

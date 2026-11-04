@@ -1,0 +1,79 @@
+{
+  "name": "RegistroContato",
+  "properties": {
+    "cadencia_id": {
+      "type": "string"
+    },
+    "canal": {
+      "enum": [
+        "ligacao",
+        "whatsapp",
+        "email",
+        "reuniao"
+      ],
+      "type": "string"
+    },
+    "cliente_id": {
+      "type": "string"
+    },
+    "data_dia": {
+      "description": "Dia (YYYY-MM-DD, Brasilia) do toque - facilita relatorios",
+      "type": "string"
+    },
+    "duracao_seg": {
+      "type": "number"
+    },
+    "fila_id": {
+      "type": "string"
+    },
+    "lead_nome": {
+      "type": "string"
+    },
+    "modelo_id": {
+      "description": "ModeloMensagem usado (WhatsApp/e-mail)",
+      "type": "string"
+    },
+    "observacao": {
+      "type": "string"
+    },
+    "passo_cadencia": {
+      "type": "number"
+    },
+    "primeiro_toque": {
+      "default": false,
+      "description": "Primeiro toque do lead",
+      "type": "boolean"
+    },
+    "resultado": {
+      "enum": [
+        "atendeu_interessado",
+        "atendeu_retorno",
+        "atendeu_sem_interesse",
+        "caixa_postal",
+        "nao_atendeu",
+        "numero_errado",
+        "opt_out",
+        "whatsapp_enviado",
+        "respondeu",
+        "reuniao_marcada",
+        "no_show"
+      ],
+      "type": "string"
+    },
+    "segundos_ate_primeiro_toque": {
+      "description": "Tempo de espera do lead inbound ate o primeiro toque",
+      "type": "number"
+    },
+    "vendedor_id": {
+      "type": "string"
+    },
+    "vendedor_nome": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "canal",
+    "resultado"
+  ],
+  "type": "object"
+}

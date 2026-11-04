@@ -1,0 +1,84 @@
+{
+  "name": "Cadencia",
+  "properties": {
+    "ao_final": {
+      "default": "nutricao",
+      "enum": [
+        "nutricao",
+        "descartado",
+        "manter"
+      ],
+      "type": "string"
+    },
+    "ativa": {
+      "default": true,
+      "type": "boolean"
+    },
+    "descricao": {
+      "type": "string"
+    },
+    "nome": {
+      "type": "string"
+    },
+    "padrao_para": {
+      "description": "Aplicada automaticamente a este publico",
+      "enum": [
+        "base_clientes",
+        "indicacao",
+        "pos_reuniao",
+        "no_show",
+        "nenhum"
+      ],
+      "type": "string"
+    },
+    "passos": {
+      "default": [],
+      "description": "Passos ordenados da cadencia",
+      "items": {
+        "properties": {
+          "canal": {
+            "enum": [
+              "ligacao",
+              "whatsapp",
+              "email",
+              "tarefa"
+            ],
+            "type": "string"
+          },
+          "dias_uteis": {
+            "description": "Offset em dias uteis desde o inicio (D+n)",
+            "type": "number"
+          },
+          "horas_apos_anterior": {
+            "description": "Para passos no mesmo dia: horas apos o passo anterior",
+            "type": "number"
+          },
+          "imediato": {
+            "description": "Dispara no momento da entrada (D0 sem esperar janela)",
+            "type": "boolean"
+          },
+          "modelo_id": {
+            "type": "string"
+          },
+          "periodo": {
+            "enum": [
+              "manha",
+              "tarde",
+              "qualquer"
+            ],
+            "type": "string"
+          },
+          "titulo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "nome"
+  ],
+  "type": "object"
+}

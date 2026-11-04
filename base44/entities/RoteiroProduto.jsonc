@@ -1,0 +1,41 @@
+{
+  "name": "RoteiroProduto",
+  "properties": {
+    "aprovado_compliance": {
+      "default": false,
+      "type": "boolean"
+    },
+    "ativo": {
+      "default": true,
+      "type": "boolean"
+    },
+    "chave": {
+      "description": "DOLARIZE, CONTA INTERNACIONAL, OFFSHORE, RATING, CANAL BANCARIO, HISTORIA, GERAL, REATIVACAO",
+      "type": "string"
+    },
+    "nome": {
+      "type": "string"
+    },
+    "objecoes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "pitch": {
+      "description": "Roteiro com [NOME] e [GERENTE]",
+      "type": "string"
+    },
+    "versao": {
+      "default": 1,
+      "type": "number"
+    }
+  },
+  "required": [
+    "chave",
+    "nome",
+    "pitch"
+  ],
+  "type": "object"
+}
