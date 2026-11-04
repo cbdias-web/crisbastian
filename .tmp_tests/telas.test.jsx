@@ -88,7 +88,7 @@ describe('ModoFoco', () => {
     tables.ModeloMensagem = [{ id: 'm1', nome: 'Indicação — 1º contato', canal: 'whatsapp', publico: 'indicacao', primeiro_contato: true, texto: 'Olá, {{primeiro_nome}}! Aqui é {{gerente}}.' }];
     wrap(<ModoFoco vendedor={{ id: 'vA', nome: 'ANA PAULA', celular_operadora: '+5551999998888' }} user={{ email: 'a@x' }} />);
     await screen.findByText('Inbound novo');
-    expect(screen.getByDisplayValue(/Olá, Fulano! Aqui é Ana\./)).toBeTruthy();
+    expect(screen.getByDisplayValue(/Olá, Inbound! Aqui é Ana\./)).toBeTruthy();
     fireEvent.click(screen.getByText('Ligar no meu celular'));
     await waitFor(() => expect((calls.creates.ComandoDiscagem || []).length).toBe(1));
     expect(calls.creates.ComandoDiscagem[0]).toMatchObject({ vendedor_id: 'vA', canal: 'ligar', telefone_e164: '+5551999990000' });
