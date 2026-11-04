@@ -404,6 +404,13 @@ export default async function(req: Request): Promise<Response> {
           }
           if (R.uf || R.estado) enr.uf = R.uf || R.estado;
         }
+        // Continuidade de cadência: herda o progresso do item anterior do mesmo lead
+        if (recenteCart) {
+          for (const k of ['cadencia_id', 'cadencia_passo', 'primeiro_toque_em', 'whatsapp_primeiro_em', 'tentativas_contato']) {
+            if (recenteCart[k] !== undefined && recenteCart[k] !== null && recenteCart[k] !== '') enr[k] = recenteCart[k];
+          }
+        }
+        if (enr.cadencia_id && enr.cadencia_passo === undefined) enr.cadencia_passo = 0;
         await base44.asServiceRole.entities.FilaContato.create({
           ...enr,
           tipo_origem: 'carteira',
