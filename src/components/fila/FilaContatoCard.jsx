@@ -119,6 +119,16 @@ export default function FilaContatoCard({ item, col, isPendenteCol, movendo, men
       {item.produto && (
         <p className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block mb-1" style={{ background: 'rgba(0,212,170,0.12)', color: AURORA.accent }}>{item.produto}</p>
       )}
+      {(item.produto_contratado || (item.origem_label || '').toLowerCase().includes('importada')) && (
+        <div className="flex flex-wrap items-center gap-1 mb-1">
+          {(item.origem_label || '').toLowerCase().includes('importada') && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,249,0.15)', color: '#93c5fd' }}>{item.origem_label}</span>
+          )}
+          {item.produto_contratado && (
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>Contratou: {item.produto_contratado}</span>
+          )}
+        </div>
+      )}
       {item.tipo_origem === 'indicacao' && (item.parceiro_nome || item.parceiro_telefone || item.parceiro_email) && (
         <div className="rounded-lg px-1.5 py-1 mb-1" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.18)' }}>
           <p className="text-[9px] font-semibold truncate" style={{ color: AURORA.accent }}>🔗 {item.parceiro_nome || 'Indicador'}</p>

@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia, proximoDiaUtil } from '../../shared/diaUtil.ts';
 import { CAP_FILA_DIA as CAP_PADRAO, DIAS_SEM_CONTATO as DIAS_PADRAO } from '../../shared/regrasEsteira.ts';
 import { listAll, getConfigFila } from '../../shared/listAll.ts';
+import { rotuloOrigem } from '../../shared/rotuloOrigem.ts';
 
 // Monta/sincroniza a esteira "Fila de Contatos / Agenda do Dia" de um vendedor
 // (ou de todos os ativos — chamada diária da automação).
@@ -428,7 +429,7 @@ export default async function(req: Request): Promise<Response> {
           posicao: pos++,
           tentativas: 0,
           status: 'pendente',
-          origem_label: 'Carteira',
+          origem_label: rotuloOrigem(R),
           meet_link: a.meet_link || '',
           google_event_id: a.google_event_id || '',
           historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia', data: agora }],

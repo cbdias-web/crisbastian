@@ -3,7 +3,7 @@
 export const ROTEIROS = {
   REATIVACAO: {
     nome: 'Cliente do Grupo (reativação)',
-    pitch: `Abertura: "Oi [NOME], tudo bem? Aqui é [GERENTE], da Villela Exchange, vertical do Grupo Villela — o mesmo grupo com quem você já tem contrato.
+    pitch: `Abertura: "Oi [NOME], tudo bem? Aqui é [GERENTE], da Villela Exchange, vertical do Grupo Villela — o mesmo grupo com quem você já tem contrato em [PRODUTO].
 
 Estou entrando em contato porque a Exchange cuida de proteção patrimonial e soluções em moeda forte para clientes do grupo, e achei que pode fazer sentido conversarmos rapidamente.
 
@@ -151,4 +151,3 @@ export const FAQ = [
   { cat: 'Rating', q: 'Para que serve o Rating?', a: 'Avaliação de crédito independente que fortalece o acesso a crédito e mercados.' },
   { cat: 'Rating', q: 'Serve para PJ pequena?', a: 'Sim, independente do porte — amplia credibilidade com fornecedores e bancos.' },
 ];
-

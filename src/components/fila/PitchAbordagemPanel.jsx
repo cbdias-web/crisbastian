@@ -52,9 +52,12 @@ export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fi
     return base.split(/\s+/)[0] || '—';
   }, [leadIndicacao, responsavelCliente, nomeLead]);
   const gerenteAbertura = (gerenteNome || '').toString().trim().split(/\s+/)[0] || 'gerente';
+  // Produto que o cliente já tem com o Grupo Villela (vem do cadastro importado)
+  const produtoContratado = (fila?.produto_contratado || '').toString().trim();
   const pitchFinal = useMemo(() => rot.pitch
     .replaceAll('[NOME]', nomeAbertura)
-    .replaceAll('[GERENTE]', gerenteAbertura), [rot.pitch, nomeAbertura, gerenteAbertura]);
+    .replaceAll('[GERENTE]', gerenteAbertura)
+    .replaceAll('[PRODUTO]', produtoContratado || 'um produto do Grupo'), [rot.pitch, nomeAbertura, gerenteAbertura, produtoContratado]);
 
   const [aba, setAba] = useState('pitch');
   const [msgs, setMsgs] = useState([]);
@@ -131,6 +134,16 @@ Responda em JSON.`;
         <>
           {/* Roteiro */}
           <div className="p-3" style={{ borderBottom: `1px solid ${AURORA.border}` }}>
+            {(produtoContratado || (fila?.origem_label || '').toLowerCase().includes('importada')) && (
+              <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                {(fila?.origem_label || '').toLowerCase().includes('importada') && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(59,130,249,0.15)', color: '#93c5fd' }}>{fila.origem_label}</span>
+                )}
+                {produtoContratado && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(251,191,36,0.15)', color: '#fbbf24' }}>Já contratou: {produtoContratado}</span>
+                )}
+              </div>
+            )}
             <pre className="text-[10.5px] leading-relaxed whitespace-pre-wrap font-sans" style={{ color: AURORA.text, opacity: 0.88 }}>{pitchFinal}</pre>
           </div>
 

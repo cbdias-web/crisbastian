@@ -93,7 +93,7 @@ const SINONIMOS = {
   cpf_cnpj: ['cpf cnpj', 'cpf/cnpj', 'cpf', 'cnpj', 'documento', 'cpf ou cnpj'],
   telefone: ['telefone', 'celular', 'fone', 'phone', 'whatsapp', 'contato'],
   valor_contrato: ['valor do contrato r', 'valor do contrato', 'valor', 'renda', 'valor total'],
-  produto_contratado: ['produto contratado', 'produto', 'produto texto'],
+  produto_contratado: ['produto contratado', 'produto contratado grupo', 'produto', 'produtos', 'produto texto', 'servico contratado'],
   responsavel_origem: ['responsavel', 'responsavel origem', 'responsavel pelo contrato', 'gerente'],
   endereco: ['endereco', 'logradouro', 'rua'],
   cidade: ['cidade', 'municipio'],

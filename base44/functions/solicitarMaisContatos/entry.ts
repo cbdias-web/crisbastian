@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia } from '../../shared/diaUtil.ts';
 import { CAP_FILA_DIA as CAP_PADRAO } from '../../shared/regrasEsteira.ts';
 import { listAll, getConfigFila } from '../../shared/listAll.ts';
+import { rotuloOrigem } from '../../shared/rotuloOrigem.ts';
 
 // Repõe a Agenda do Dia do gerente com novos leads da PRÓPRIA carteira, a pedido
 // dele (botão "Solicitar mais clientes" na Fila de Contatos). Respeita o CAP 10:
@@ -114,7 +115,7 @@ export default async function(req: Request): Promise<Response> {
         posicao: posFila++,
         tentativas: 0,
         status: 'pendente',
-        origem_label: 'Carteira',
+        origem_label: rotuloOrigem(c),
         historico: [{ status: 'pendente', observacao: 'Item incluído na fila do dia (solicitação do gerente)', data: agora }],
       });
     }
