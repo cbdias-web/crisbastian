@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     if (!isDiaUtil(hoje)) return Response.json({ success: true, data: hoje, total_criados: 0, motivo: 'nao_e_dia_util' });
 
     const cfg = await getConfigFila(base44);
-    const META_DIA = Math.max(1, Number(cfg.novos_por_dia) || 15);
+    const META_DIA = Math.max(1, Number(cfg.novos_por_dia) || 5);
 
     const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
     const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];

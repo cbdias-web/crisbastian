@@ -241,7 +241,7 @@ export default function Leads() {
 
       // Gerar agenda e finalizar lote
       const cfgFila = await getConfigFila(base44);
-      const LEADS_POR_DIA = Math.max(1, Number(cfgFila.novos_por_dia) || 15);
+      const LEADS_POR_DIA = Math.max(1, Number(cfgFila.novos_por_dia) || 5);
       // Data de hoje no horário de Brasília (evita UTC adiantar o dia à noite)
       const hojeBrasilia = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
       const somaDia = (dataStr, dias) => {
