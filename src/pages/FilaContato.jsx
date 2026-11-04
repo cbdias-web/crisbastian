@@ -52,10 +52,13 @@ export default function FilaContato() {
       const isAdm = u.role === 'admin' || u.permissao_admin === true;
       const impersonado = isAdm ? getImpersonatedVendedor() : null;
       if (impersonado) setVendedor(impersonado);
-      else {
+      else if (!isAdm) {
         const vends = await base44.entities.Vendedor.filter({ email: u.email });
         if (vends.length) setVendedor(vends[0]);
       }
+      // Admin sem espelhamento fica na VISÃO GERAL (esteira inteira), mesmo que
+      // tenha registro de gerente só para o celular. O recorte por pessoa é feito
+      // no filtro "Todos os gerentes".
     }).catch(() => {});
   }, []);
 
