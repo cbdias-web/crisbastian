@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Upload, Users, Shuffle, Trash2, CheckCircle2, Clock, FileText, AlertTriangle, X, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import ImportadorLeadsWizard from '@/components/leads/ImportadorLeadsWizard';
+import { listAll, getConfigFila } from '@/lib/listAll';
 
 const parseCSV = (text) => {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
@@ -59,7 +61,7 @@ export default function Leads() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads-todos'],
-    queryFn: () => base44.entities.Lead.list('nome', 10000),
+    queryFn: () => listAll(base44.entities.Lead, {}, 'nome', 500),
     enabled: isAdmin
   });
 
@@ -186,8 +188,8 @@ export default function Leads() {
         return;
       }
 
-      // Embaralhar e atribuir vendedor
-      const embaralhados = [...leadsParaDistribuir].sort(() => Math.random() - 0.5);
+      // Ordena por score (quentes primeiro) e atribui vendedor em rodízio
+      const embaralhados = [...leadsParaDistribuir].sort((a, b) => (b.score || 0) - (a.score || 0) || (b.valor_contrato || 0) - (a.valor_contrato || 0));
       let assignments;
       if (distribuicaoTipo === 'individual') {
         // Cada vendedor selecionado recebe TODOS os leads
@@ -238,7 +240,8 @@ export default function Leads() {
       }
 
       // Gerar agenda e finalizar lote
-      const LEADS_POR_DIA = 5;
+      const cfgFila = await getConfigFila(base44);
+      const LEADS_POR_DIA = Math.max(1, Number(cfgFila.novos_por_dia) || 15);
       // Data de hoje no horário de Brasília (evita UTC adiantar o dia à noite)
       const hojeBrasilia = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
       const somaDia = (dataStr, dias) => {
@@ -681,70 +684,13 @@ export default function Leads() {
         </div>
       )}
 
-      {/* Modal importação */}
+      {/* Assistente de importação */}
       {showImport && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Upload className="w-5 h-5 text-[#1a3150]" />
-                <h3 className="font-semibold text-gray-900">Importar Lista de Leads</h3>
-              </div>
-              <button onClick={() => { setShowImport(false); setPreview(null); setNomeLote(''); }} className="p-1.5 hover:bg-gray-100 rounded-lg">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-                <p className="text-xs text-blue-700">
-                  <strong>Formato:</strong> CSV ou Excel (.xlsx) com colunas <code className="bg-blue-100 px-1 rounded">nome</code>, <code className="bg-blue-100 px-1 rounded">cpf_cnpj</code> e <code className="bg-blue-100 px-1 rounded">telefone</code>. Separador: vírgula ou ponto-e-vírgula.
-                </p>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Nome do lote *</label>
-                <input type="text" value={nomeLote} onChange={e => setNomeLote(e.target.value)}
-                  placeholder="Ex: Lista SP - Março 2026"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 mb-1 block">Arquivo CSV ou Excel</label>
-                <div
-                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${dragging ? 'border-[#1a3150] bg-blue-50' : 'border-gray-200 hover:border-[#1a3150]'}`}
-                  onClick={() => fileRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setDragging(true); }}
-                  onDragLeave={() => setDragging(false)}
-                  onDrop={e => {
-                    e.preventDefault();
-                    setDragging(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) handleFileChange({ target: { files: [file], value: '' } });
-                  }}
-                >
-                  <Upload className={`w-8 h-8 mx-auto mb-2 ${dragging ? 'text-[#1a3150]' : 'text-gray-300'}`} />
-                  <p className="text-sm text-gray-500">{dragging ? 'Solte o arquivo aqui' : 'Clique ou arraste o arquivo aqui'}</p>
-                  <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" className="hidden" onChange={handleFileChange} />
-                </div>
-              </div>
-              {preview && (
-                <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                  <p className="text-sm font-semibold text-emerald-800">{preview.length} leads encontrados</p>
-                  <ul className="mt-1 space-y-0.5">
-                    {preview.slice(0, 3).map((r, i) => (
-                      <li key={i} className="text-xs text-emerald-700">• {r.nome}{r.cpf_cnpj ? ` · ${r.cpf_cnpj}` : ''}{r.telefone ? ` · ${r.telefone}` : ''}</li>
-                    ))}
-                    {preview.length > 3 && <li className="text-xs text-emerald-500">...e mais {preview.length - 3}</li>}
-                  </ul>
-                </div>
-              )}
-            </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setShowImport(false); setPreview(null); setNomeLote(''); }}>Cancelar</Button>
-              <Button onClick={importarLote} disabled={!preview || importando || !nomeLote.trim()} className="bg-[#0f1e35] hover:bg-[#1a3150]">
-                {importando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Importando...</> : <><Upload className="w-4 h-4 mr-2" />Importar {preview ? `${preview.length} leads` : ''}</>}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ImportadorLeadsWizard
+          leadsExistentes={leads}
+          onClose={() => setShowImport(false)}
+          onConcluido={() => { queryClient.invalidateQueries(['lotes-leads']); queryClient.invalidateQueries(['leads-todos']); }}
+        />
       )}
     </div>
   );
