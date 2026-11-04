@@ -64,7 +64,8 @@ Deno.serve(async (req) => {
       if (t0 < ini) t0 = ini;
       const espera = agora.getTime() - t0;
       if (espera < 0) continue;
-      if (espera < 3 * 60000 && dentroJanela) await alerta(f.vendedor_id, 'inbound_novo', `Lead novo: ${f.nome}`, `Indicação nova — ligue em até ${cfg.sla_inbound_alerta_min || 5} min. ${f.telefone || ''}`, f.id, `inbound|${f.id}`, 'alta');
+      const jaEscalonado = (f.historico || []).some((h: any) => /Escalonado/.test(h.observacao || ''));
+      if (espera < 3 * 60000 && dentroJanela && !jaEscalonado) await alerta(f.vendedor_id, 'inbound_novo', `Lead novo: ${f.nome}`, `Indicação nova — ligue em até ${cfg.sla_inbound_alerta_min || 5} min. ${f.telefone || ''}`, f.id, `inbound|${f.id}`, 'alta');
       if (!dentroJanela) continue;
       if (espera >= SLA_ALERTA) await alerta(f.vendedor_id, 'sla_inbound', `SLA: ${f.nome} sem primeiro toque`, `Lead inbound aguardando há ${Math.round(espera / 60000)} min. Faça o primeiro contato agora.`, f.id, `sla|${f.id}`, 'alta');
       if (espera >= SLA_ESCALONA && !(f.historico || []).some((h: any) => /Escalonado/.test(h.observacao || ''))) {
