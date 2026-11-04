@@ -116,56 +116,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
     }
   }, [leadIndicacao]);
 
-  const registrarAtendeu = async () => {
-    setRegistrando(true);
-    try {
-      await base44.functions.invoke('registrarTentativaContato', {
-        fila_id: fila.id,
-        acao: 'atendeu',
-        interacao: { tipo: 'Ligação', descricao: 'Atendeu — contato telefônico realizado', resultado: 'Positivo' },
-      });
-      // Origem Agenda do Dia: marca o agendamento como realizado para sair da pendência do dia
-      if (agenda) {
-        await base44.entities.AgendaContato.update(agenda.id, {
-          status: 'realizado',
-          realizado_em: new Date().toISOString(),
-          resultado: 'Atendeu',
-        }).catch(() => {});
-      }
-      base44.entities.RegistroContato.create({ fila_id: fila.id, cliente_id: fila.cliente_id || fila.ref_id, lead_nome: fila.nome, vendedor_id: fila.vendedor_id, vendedor_nome: fila.vendedor_nome || '', canal: 'ligacao', resultado: 'atendeu_interessado', data_dia: new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }), primeiro_toque: !fila.primeiro_toque_em }).catch(() => {});
-      toast.success('Atendimento registrado.');
-      onAtualizado?.();
-      setRetornoFluxo('atendeu');
-      setRetornoModal(true);
-    } catch (e) {
-      toast.error('Erro: ' + (e?.response?.data?.error || e.message));
-    }
-    setRegistrando(false);
-  };
 
-  const registrarNaoAtendeu = async () => {
-    if (!confirm('Confirmar: cliente NÃO atendeu. O lead vai para o fim da fila e é reagendado para o próximo dia útil.')) return;
-    setRegistrando(true);
-    try {
-      await base44.functions.invoke('registrarTentativaContato', { fila_id: fila.id, acao: 'nao_atendeu' });
-      // Origem Agenda do Dia: encerra o agendamento do dia (o reagendamento para o
-      // fim da fila do próximo dia útil é criado pela função registrarTentativaContato)
-      if (agenda) {
-        await base44.entities.AgendaContato.update(agenda.id, {
-          status: 'nao_atendeu',
-          resultado: 'Não atendeu — reagendado para o fim da fila no próximo dia útil',
-        }).catch(() => {});
-      }
-      base44.entities.RegistroContato.create({ fila_id: fila.id, cliente_id: fila.cliente_id || fila.ref_id, lead_nome: fila.nome, vendedor_id: fila.vendedor_id, vendedor_nome: fila.vendedor_nome || '', canal: 'ligacao', resultado: 'nao_atendeu', data_dia: new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }), primeiro_toque: !fila.primeiro_toque_em }).catch(() => {});
-      toast.success('Não atendido — reagendado. Avançando para o próximo lead da fila.');
-      onAtualizado?.();
-      if (onProximo) onProximo(fila);
-      else onClose?.();
-    } catch (e) {
-      toast.error('Erro: ' + (e?.response?.data?.error || e.message));
-    }
-    setRegistrando(false);
-  };
 
   const CLASSIFICACAO = [
     { key: 'em_contato', label: 'Em Contato', status: 'atendeu', color: '#fbbf24' },
@@ -441,22 +392,10 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
 
                 {/* Botões de desfecho (chapados) + registro — simétricos e centralizados */}
                 <div className="w-full" style={{ maxWidth: 420 }}>
-                  <div className="flex gap-3">
-                    <button onClick={registrarAtendeu} disabled={registrando}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
-                      style={{ background: '#16a34a', color: '#fff' }}>
-                      {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneCall className="w-4 h-4" />} Atendeu
-                    </button>
-                    <button onClick={registrarNaoAtendeu} disabled={registrando}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110 disabled:opacity-50"
-                      style={{ background: '#dc2626', color: '#fff' }}>
-                      {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
-                    </button>
-                  </div>
                   <button onClick={() => setPosChamada({ canal: 'ligacao' })}
-                    className="w-full mt-2.5 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition hover:brightness-110"
                     style={{ background: AURORA.accent, color: '#0d1117' }}>
-                    Registrar resultado (1 toque)
+                    <PhoneCall className="w-4 h-4" /> Registrar resultado do contato
                   </button>
                   <button onClick={() => setView('registro')}
                     className="w-full mt-2.5 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
@@ -530,7 +469,12 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         </div>
       </div>
     </div>
-    {posChamada && <PosChamadaSheet fila={fila} canal={posChamada.canal} onClose={() => setPosChamada(null)} onDone={() => { setPosChamada(null); onAtualizado?.(); onClose?.(); }} />}
+    {posChamada && <PosChamadaSheet fila={fila} canal={posChamada.canal} onClose={() => setPosChamada(null)} onDone={async (_d, resultado) => {
+      setPosChamada(null);
+      if (agenda) await base44.entities.AgendaContato.update(agenda.id, { status: ['nao_atendeu', 'caixa_postal'].includes(resultado) ? 'nao_atendeu' : 'realizado', resultado: 'Registrado na Fila de Contatos' }).catch(() => {});
+      onAtualizado?.();
+      if (onProximo) onProximo(fila); else onClose?.();
+    }} />}
     {retornoModal && (
       <AgendarRetornoModal
         leadNome={fila.nome}

@@ -24,6 +24,8 @@ const WHATS = [
   { k: 'opt_out', l: 'Pediu para sair (SAIR)', ic: Ban, c: '#ef4444' },
 ];
 
+const INSTANT = ['nao_atendeu', 'caixa_postal', 'whatsapp_enviado']; // sem campos extras: 1 toque já salva
+
 // Folha pós-chamada: 1 toque define o resultado e dispara a transição correta no servidor.
 export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onDone, onClose }) {
   const opcoes = canal === 'whatsapp' ? WHATS : LIGACAO;
@@ -68,20 +70,21 @@ export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onD
     setIa(false);
   };
 
-  const salvar = async () => {
-    if (!sel) return;
-    const op = opcoes.find(o => o.k === sel);
+  const salvar = async (escolha) => {
+    const resKey = typeof escolha === 'string' ? escolha : sel;
+    if (!resKey) return;
+    const op = opcoes.find(o => o.k === resKey);
     if (op.retorno && !data) { toast.error('Informe a data do retorno.'); return; }
     setEnviando(true);
     try {
-      const payload = { fila_id: fila.id, canal, resultado: sel, observacao: obs.trim(), modelo_id: modeloId || undefined };
+      const payload = { fila_id: fila.id, canal, resultado: resKey, observacao: obs.trim(), modelo_id: modeloId || undefined };
       if (op.retorno) payload.retorno = { data, hora };
       if (op.reuniao) payload.reuniao_em = new Date(`${reuniaoData}T${reuniaoHora}:00-03:00`).toISOString();
       const res = await base44.functions.invoke('registrarResultadoContato', payload);
       const d = res?.data || res;
       if (d?.error) throw new Error(d.error);
       toast.success(d.sugerir_nutricao ? 'Registrado. 4+ tentativas sem retorno — considere mover para Nutrição.' : 'Resultado registrado.');
-      onDone?.(d);
+      onDone?.(d, resKey);
     } catch (e) { toast.error('Erro: ' + (e?.response?.data?.error || e.message)); }
     setEnviando(false);
   };
@@ -100,7 +103,7 @@ export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onD
         <div className="p-4 overflow-y-auto space-y-3">
           <div className="grid grid-cols-2 gap-2">
             {opcoes.map(o => (
-              <button key={o.k} onClick={() => setSel(o.k)} className="flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-bold text-left transition"
+              <button key={o.k} onClick={() => { setSel(o.k); if (INSTANT.includes(o.k) && !obs.trim() && !enviando) salvar(o.k); }} className="flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-bold text-left transition"
                 style={{ background: sel === o.k ? o.c : `${o.c}1a`, color: sel === o.k ? '#0d1117' : o.c, border: `1px solid ${sel === o.k ? o.c : `${o.c}55`}` }}>
                 <o.ic className="w-4 h-4 flex-shrink-0" /> {o.l}
               </button>
@@ -137,9 +140,10 @@ export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onD
           </div>
         </div>
         <div className="p-4 flex-shrink-0" style={{ borderTop: `1px solid ${A.border}` }}>
-          <button onClick={salvar} disabled={!sel || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0d1117' }}>
+          <button onClick={() => salvar()} disabled={!sel || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0d1117' }}>
             {enviando && <Loader2 className="w-4 h-4 animate-spin" />} Salvar resultado
           </button>
+          <p className="text-[10px] text-center mt-2" style={{ color: A.muted }}>“Não atendeu”, “Caixa postal” e “WhatsApp enviado” salvam com um toque.</p>
         </div>
       </div>
     </div>
