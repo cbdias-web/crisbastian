@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronDown, Search } from 'lucide-react';
+import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronDown, Search, ShieldAlert } from 'lucide-react';
+import { ROTEIROS as ROTEIROS_PADRAO, DEFAULT_ROTEIRO, FAQ as FAQ_PADRAO } from './roteirosPadrao';
 
 const AURORA = {
   surface: '#161b22',
@@ -11,145 +13,16 @@ const AURORA = {
   textMuted: 'rgba(230,237,243,0.55)',
 };
 
-// Roteiros fixos por produto (placeholder editável — ajuste o conteúdo com o time comercial).
-const ROTEIROS = {
-  DOLARIZE: {
-    nome: 'Dolarize',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange. Tudo bem?
-
-Deixa eu te contextualizar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
-
-Você foi indicado para o Dolarize — a forma mais simples de investir em dólar sem complicação.
-
-Principais benefícios:
-• Acesso ao dólar com starting price justo
-• Sem burocracia de corretora tradicional
-• Liquidez diária
-• Ideal para proteger-se da volatilidade do real
-
-Ganchos: proteção cambial, reserva em moeda forte, simplicidade.`,
-    objecoes: ['"É seguro?"', '"Qual a rentabilidade?"', '"Qual o valor mínimo?"', '"Como funciona o resgate?"'],
-  },
-  'CONTA INTERNACIONAL': {
-    nome: 'Conta Internacional',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
-
-A Villela Exchange é a vertical do Grupo Villela que viabiliza soluções financeiras com engenharia técnica — o Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
-
-Você foi indicado para a Conta Internacional — abrir uma conta nos EUA como residente no Brasil.
-
-Diferenciais:
-• Conta corrente/poupança em dólar nos EUA
-• Cartão de débito internacional
-• Remessas simplificadas
-• Sem necessidade de ir aos EUA
-• Estrutura para PF e PJ
-
-Ganchos: dolarização de caixa, pagamentos internacionais, proteção patrimonial.`,
-    objecoes: ['"Precisa ir aos EUA?"', '"Qual o valor mínimo de depósito?"', '"Tenho que declarar no IR?"', '"Quanto tempo leva?"'],
-  },
-  OFFSHORE: {
-    nome: 'Offshore',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
-
-A Villela Exchange é a vertical do Grupo Villela que entrega soluções financeiras com engenharia técnica — e proteção patrimonial é o nosso foco. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
-
-Você foi indicado para estruturação Offshore — proteção patrimonial e planejamento sucessório internacional.
-
-Diferenciais:
-• Estrutura em jurisdição segura
-• Holding patrimonial / sucessória
-• Confidencialidade e proteção de ativos
-• Acompanhamento jurídico e contábil
-
-Ganchos: proteção patrimonial, sucessão facilitada, isolamento de risco, dolarização de estrutura.`,
-    objecoes: ['"É legal?"', '"Qual custo?"', '"Preciso declarar?"', '"Quanto tempo para estruturar?"'],
-  },
-  RATING: {
-    nome: 'Rating',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
-
-Você foi indicado para o Rating — avaliação de crédito e rating empresarial para fortalecer o seu acesso a crédito e mercados.
-
-Diferenciais:
-• Rating independente reconhecido
-• Relatório completo de análise
-• Suporte em captação e negociação
-
-Ganchos: acesso a crédito mais barato, credibilidade com fornecedores, negociação bancária.`,
-    objecoes: ['"Quanto custa?"', '"Serve pra PJ pequena?"', '"Qual o prazo?"', '"Como é usado?"'],
-  },
-  'CANAL BANCÁRIO': {
-    nome: 'Canal Bancário',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
-
-Você foi indicado para o Canal Bancário — estrutura para operar valores em reais (PF ou PJ).
-
-Diferenciais:
-• Operação acima de R$ 270.000 em 12 meses
-• Estrutura para PF e PJ
-• Acompanhamento completo
-
-Ganchos: capacidade operacional, proteção e estruturação financeira.`,
-    objecoes: ['"Qual o limite?"', '"PF ou PJ?"', '"Qual custo?"', '"Como funciona?"'],
-  },
-  'HISTÓRIA DO GRUPO VILLELA': {
-    nome: 'História do Grupo Villela',
-    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
-
-Deixa eu te contar quem somos: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas. Câmbio e soluções internacionais são a vertente de negócios da Exchange.
-
-Quem somos:
-• Especialistas em câmbio, remessas e investimentos no exterior
-• Atendimento consultivo e personalizado
-• Estrutura regulada e segura
-• Rede de parceiros internacionais
-
-Foco: proteção patrimonial — offshore, conta internacional e câmbio conversam diretamente com essa vertente.
-
-Ganchos: solidez, expertise, acompanhamento próximo, soluções sob medida.`,
-    objecoes: ['"Vocês são corretora?"', '"Têm selo do BC?"', '"Como ganham?"', '"Posso confiar?"'],
-  },
-};
-
-const DEFAULT_ROTEIRO = {
-  nome: 'Abordagem Geral',
-  pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange. Tudo bem?
-
-Deixa eu te apresentar: a Villela Exchange é a vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.
-
-Nosso foco é proteção patrimonial — offshore, conta internacional e câmbio conversam diretamente com essa vertente. A Exchange possui diversas possibilidades de produtos.
-
-Perguntas de qualificação:
-• Já investe no exterior hoje?
-• Qual o objetivo principal (proteção, pagamento, investimento)?
-• Qual o prazo e valor aproximado?`,
-  objecoes: ['"Já tenho corretora"', '"Não tenho urgência"', '"Quero pensar"', '"Qual o custo?"'],
-};
-
-// FAQ construído com base nos produtos e no material de capacitação do portal.
-const FAQ = [
-  { cat: 'Institucional', q: 'Quem é a Villela Exchange?', a: 'A vertical do Grupo Villela que viabiliza e entrega soluções financeiras com engenharia técnica para clientes dos mais diversos perfis. O Grupo Villela tem mais de 20 anos em soluções financeiras e recuperação de empresas — câmbio e soluções internacionais são a vertente de negócios da Exchange.' },
-  { cat: 'Institucional', q: 'Qual o foco da Exchange?', a: 'Câmbio e soluções internacionais são a vertente de negócios da Exchange, com foco em proteção patrimonial — offshore, conta internacional e câmbio conversam diretamente com essa vertente. A Exchange possui diversas possibilidades de produtos.' },
-  { cat: 'Institucional', q: 'Vocês são corretora?', a: 'Não. Somos uma vertical consultiva que estrutura soluções financeiras sob medida, com engenharia técnica e acompanhamento jurídico e contábil.' },
-  { cat: 'Institucional', q: 'É seguro? É regulado?', a: 'Atuamos com estrutura regulada e parceiros internacionais, sempre dentro da legalidade.' },
-  { cat: 'Dolarize', q: 'O que é o Dolarize?', a: 'A forma mais simples de investir em dólar sem complicação, com starting price justo e liquidez diária.' },
-  { cat: 'Dolarize', q: 'Preciso de corretora?', a: 'Não. Sem burocracia de corretora tradicional.' },
-  { cat: 'Dolarize', q: 'Qual a vantagem?', a: 'Proteção cambial e reserva em moeda forte, ideal para diversificar e proteger-se da volatilidade do real.' },
-  { cat: 'Conta Internacional', q: 'Precisa ir aos EUA?', a: 'Não. A abertura é feita do Brasil, para PF e PJ.' },
-  { cat: 'Conta Internacional', q: 'Tenho que declarar no IR?', a: 'Sim. Operações no exterior devem ser declaradas — sua equipe contábil orienta.' },
-  { cat: 'Conta Internacional', q: 'Quanto tempo leva?', a: 'Processo estruturado com acompanhamento completo do início ao fim.' },
-  { cat: 'Offshore', q: 'É legal?', a: 'Sim. Estruturação legítima em jurisdições seguras para proteção patrimonial e planejamento sucessório.' },
-  { cat: 'Offshore', q: 'Qual o custo?', a: 'Variável conforme a estrutura; apresentado em proposta personalizada.' },
-  { cat: 'Offshore', q: 'Preciso declarar?', a: 'Sim, as obrigações declaratórias aplicam-se e são orientadas pela equipe.' },
-  { cat: 'Canal Bancário', q: 'O que é?', a: 'Canal bancário para operar valores em reais, disponível para PF e PJ.' },
-  { cat: 'Canal Bancário', q: 'Quando preciso?', a: 'Para operações superiores a R$ 270.000 no período de 12 meses.' },
-  { cat: 'Garantias', q: 'O que é Garantias?', a: 'Administração de débitos com foco em proteção patrimonial.' },
-  { cat: 'Rating', q: 'Para que serve o Rating?', a: 'Avaliação de crédito independente que fortalece o acesso a crédito e mercados.' },
-  { cat: 'Rating', q: 'Serve para PJ pequena?', a: 'Sim, independente do porte — amplia credibilidade com fornecedores e bancos.' },
-];
-
-export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fila, leadIndicacao }) {
+export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fila, leadIndicacao, historicoResumo = [] }) {
+  // Roteiros/FAQ editáveis (entidades); se vazias, usa o padrão em código
+  const { data: roteirosDB = [] } = useQuery({ queryKey: ['roteiros-db'], queryFn: () => base44.entities.RoteiroProduto.filter({ ativo: true }, 'nome', 100), staleTime: 300000 });
+  const { data: faqDB = [] } = useQuery({ queryKey: ['faq-db'], queryFn: () => base44.entities.FaqItem.filter({ ativo: true }, 'categoria', 300), staleTime: 300000 });
+  const ROTEIROS = useMemo(() => {
+    const m = { ...ROTEIROS_PADRAO };
+    for (const r of roteirosDB) m[r.chave] = { nome: r.nome, pitch: r.pitch, objecoes: r.objecoes || [] };
+    return m;
+  }, [roteirosDB]);
+  const FAQ = useMemo(() => (faqDB.length ? faqDB.map(f => ({ cat: f.categoria || 'Geral', q: f.pergunta, a: f.resposta })) : FAQ_PADRAO), [faqDB]);
   // Carteira (PJ): busca o representante legal do cliente para a abertura
   const [responsavelCliente, setResponsavelCliente] = useState(null);
   useEffect(() => {
@@ -168,6 +41,7 @@ export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fi
     : (produto || '').toUpperCase().includes('RATING') ? 'RATING'
     : (produto || '').toUpperCase().includes('CANAL BANCÁRIO') ? 'CANAL BANCÁRIO'
     : ROTEIROS[produto?.toUpperCase?.()] ? produto.toUpperCase()
+    : (fila?.tipo_origem === 'carteira' && (fila?.produto_contratado || fila?.responsavel_origem)) ? 'REATIVACAO'
     : 'HISTÓRIA DO GRUPO VILLELA';
   const rot = ROTEIROS[chave] || DEFAULT_ROTEIRO;
 
@@ -197,9 +71,38 @@ export default function PitchAbordagemPanel({ produto, nomeLead, gerenteNome, fi
     setMsgs([...novas, { de: 'ia', loading: true }]);
     setEnviando(true);
     try {
-      const prompt = `Você é o assistente comercial da Villela Exchange apoiando um gerente em uma ligação ativa.\nProduto em negociação: ${rot.nome}.\nNome do lead: ${nomeLead || '—'} (trate-o por ${nomeAbertura}). Gerente em atendimento: ${gerenteAbertura}.\nRoteiro do produto "${rot.nome}":\n${pitchFinal}\n\nO lead apresentou a seguinte objeção/pergunta:\n"${pergunta}"\n\nResponda de forma curta, prática e consultiva, com 2 a 4 frases, sugerindo ao gerente o que responder e como conduzir. Vincule a resposta exclusivamente ao produto "${rot.nome}" em negociação — não mencione outros produtos e não invente valores ou prazos não citados no roteiro.`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
-      const resposta = typeof res === 'string' ? res : res?.response || res?.text || JSON.stringify(res);
+      const contexto = [
+        `Produto em negociação: ${rot.nome}.`,
+        fila?.produto_contratado ? `Produto que o cliente já contratou no Grupo Villela: ${fila.produto_contratado}.` : '',
+        fila?.valor_contrato ? `Faixa de valor do contrato original: ${fila.valor_contrato >= 5000 ? 'alta' : fila.valor_contrato >= 1500 ? 'média' : 'baixa'}.` : '',
+        fila?.cadencia_passo >= 0 && fila?.cadencia_id ? `Passo da cadência: ${(fila.cadencia_passo || 0) + 1}.` : '',
+        historicoResumo.length ? `Últimas interações: ${historicoResumo.join(' | ')}.` : '',
+      ].filter(Boolean).join('\n');
+      const faqTxt = FAQ.slice(0, 40).map(f => `- ${f.q}: ${f.a}`).join('\n');
+      const prompt = `Você é o copiloto comercial da Villela Exchange apoiando um gerente em uma ligação ativa.
+REGRAS OBRIGATÓRIAS (compliance):
+1) Responda SOMENTE com base no roteiro e no FAQ aprovados abaixo. Se a informação não estiver neles, diga que o gerente deve "confirmar com a equipe técnica e retornar" — não improvise.
+2) NUNCA prometa rentabilidade, retorno, prazo, isenção de impostos ou resultado. NUNCA invente valores.
+3) NUNCA dê parecer jurídico, tributário ou de investimento; oriente consultar a equipe técnica/jurídica.
+4) Se o cliente pedir para não ser contatado (ex.: "me tire da lista", "SAIR"), oriente registrar opt-out e encerrar com cortesia.
+5) Vincule a resposta apenas ao produto "${rot.nome}". Tom consultivo, 2 a 4 frases.
+Cliente (trate por ${nomeAbertura}). Gerente: ${gerenteAbertura}.
+${contexto}
+
+ROTEIRO APROVADO:
+${pitchFinal}
+
+FAQ APROVADO:
+${faqTxt}
+
+Objeção/pergunta do cliente: "${pergunta}"
+Responda em JSON.`;
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt, model: 'gemini_3_flash',
+        response_json_schema: { type: 'object', properties: { resposta_curta: { type: 'string' }, pergunta_de_avanco: { type: 'string' }, proximo_passo: { type: 'string' }, alerta_compliance: { type: 'string' } } },
+      });
+      const j = typeof res === 'string' ? (() => { try { return JSON.parse(res); } catch { return { resposta_curta: res }; } })() : res;
+      const resposta = [j.resposta_curta, j.pergunta_de_avanco ? `\n➡️ ${j.pergunta_de_avanco}` : '', j.proximo_passo ? `\n📌 ${j.proximo_passo}` : '', j.alerta_compliance ? `\n⚠️ ${j.alerta_compliance}` : ''].filter(Boolean).join('');
       setMsgs([...novas, { de: 'ia', texto: resposta }]);
     } catch (e) {
       setMsgs([...novas, { de: 'ia', texto: 'Erro ao consultar IA: ' + (e?.message || e) }]);
