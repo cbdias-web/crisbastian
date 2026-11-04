@@ -9,6 +9,11 @@
       },
       "type": "array"
     },
+    "backlog_max_por_gerente": {
+      "default": 60,
+      "description": "Maximo de itens abertos (pendentes + retornos vencidos) por gerente; acima disso a liberacao de novos leads pausa",
+      "type": "number"
+    },
     "base_legal_padrao": {
       "description": "Base legal LGPD padrao (definida pelo juridico)",
       "type": "string"
@@ -70,6 +75,11 @@
       "description": "Inicio da janela de contato (HH:MM, Brasilia)",
       "type": "string"
     },
+    "liberacao_automatica_ativa": {
+      "default": true,
+      "description": "Chave geral da liberacao automatica de leads",
+      "type": "boolean"
+    },
     "limite_primeiro_whatsapp_dia": {
       "default": 40,
       "description": "Maximo de primeiros WhatsApps por gerente por dia",
@@ -77,7 +87,7 @@
     },
     "novos_por_dia": {
       "default": 15,
-      "description": "Leads novos liberados por dia por gerente (ritmo de ondas)",
+      "description": "Leads novos liberados por dia por gerente (cota diaria)",
       "type": "number"
     },
     "score_pesos": {
@@ -106,8 +116,6 @@
       "type": "number"
     }
   },
-  "required": [
-    "chave"
-  ],
-  "type": "object"
+  "type": "object",
+  "required": []
 }
