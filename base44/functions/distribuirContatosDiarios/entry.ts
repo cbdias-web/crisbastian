@@ -1,15 +1,21 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { listAll, getConfigFila } from '../../shared/listAll.ts';
+import { hojeBrasilia, isDiaUtil } from '../../shared/diaUtil.ts';
 
+// Reposição diária da Agenda (carteira). Antes: 5 clientes aleatórios por gerente e
+// leitura de TODA a base de clientes (50.000). Agora: usa o ritmo do ConfigFila
+// (novos_por_dia), prioriza por score (quentes primeiro), respeita opt-out e não
+// repete quem já tem agenda pendente em qualquer data.
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const hoje = hojeBrasilia();
+    if (!isDiaUtil(hoje)) return Response.json({ success: true, data: hoje, total_criados: 0, motivo: 'nao_e_dia_util' });
 
-    const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-      .split('/').reverse().join('-'); // YYYY-MM-DD
+    const cfg = await getConfigFila(base44);
+    const META_DIA = Math.max(1, Number(cfg.novos_por_dia) || 15);
 
-    // Buscar todos os vendedores ativos (excluir o administrador Cris Bastian)
     const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
-    // Excluir administradores/responsáveis que não devem receber leads na agenda
     const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
     const vendedores = todosVendedores.filter(v => {
       const nomeMin = (v.nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -17,45 +23,25 @@ Deno.serve(async (req) => {
       return !NOMES_EXCLUIDOS.some(n => nomeMin.includes(n) || emailMin.includes(n));
     });
 
-    // Buscar todas as agendas de hoje
-    const todasAgendas = await base44.asServiceRole.entities.AgendaContato.list();
-    const agendasHoje = todasAgendas.filter(a => a.data_agendada === hoje);
-
-    // Buscar todos os clientes
-    const todosClientes = await base44.asServiceRole.entities.Cliente.list('nome', 50000);
-
     let totalCriados = 0;
-
     for (const vendedor of vendedores) {
-      // Contar agendas de hoje deste vendedor
-      const agendasVendedorHoje = agendasHoje.filter(a => a.vendedor_id === vendedor.id);
-      const faltam = 5 - agendasVendedorHoje.length;
-
+      const pendentes = await listAll(base44.asServiceRole.entities.AgendaContato, { vendedor_id: vendedor.id, status: 'pendente' }, 'data_agendada');
+      const hojeQtd = pendentes.filter(a => a.data_agendada === hoje).length;
+      const faltam = META_DIA - hojeQtd;
       if (faltam <= 0) continue;
 
-      // Buscar clientes da carteira deste vendedor
-      const clientesVendedor = todosClientes.filter(c => c.vendedor_id === vendedor.id);
+      const comAgenda = new Set(pendentes.flatMap(a => [a.lead_id, a.cliente_id].filter(Boolean)));
+      // Candidatos: carteira do gerente, melhores scores primeiro, sem agenda pendente e sem opt-out
+      const clientes = await base44.asServiceRole.entities.Cliente.filter({ vendedor_id: vendedor.id }, '-score', 400);
+      const candidatos = clientes.filter(c =>
+        !comAgenda.has(c.id) && !(c.lead_id && comAgenda.has(c.lead_id)) &&
+        c.consentimento_status !== 'opt_out' && c.consentimento_status !== 'nao_perturbe' &&
+        c.telefone_valido !== false && (c.telefone || '').trim()
+      );
+      if (!candidatos.length) continue;
 
-      if (clientesVendedor.length === 0) continue;
-
-      // IDs já agendados hoje para não repetir
-      const jaAgendadosHoje = new Set(agendasVendedorHoje.map(a => a.lead_id));
-
-      // Candidatos: clientes não agendados hoje
-      const candidatos = clientesVendedor.filter(c => !jaAgendadosHoje.has(c.id));
-
-      if (candidatos.length === 0) continue;
-
-      // Embaralhar aleatoriamente
-      const embaralhados = candidatos.sort(() => Math.random() - 0.5);
-
-      // Pegar os primeiros N necessários
-      const selecionados = embaralhados.slice(0, faltam);
-
-      // Determinar posição inicial (após os já agendados)
-      let posicao = agendasVendedorHoje.length + 1;
-
-      for (const cliente of selecionados) {
+      let posicao = hojeQtd + 1;
+      for (const cliente of candidatos.slice(0, faltam)) {
         await base44.asServiceRole.entities.AgendaContato.create({
           lead_id: cliente.id,
           lead_nome: cliente.nome,
@@ -68,19 +54,13 @@ Deno.serve(async (req) => {
           posicao_dia: posicao++,
           lote_id: '',
           status: 'pendente',
-          resultado: ''
+          resultado: '',
         });
         totalCriados++;
       }
     }
 
-    return Response.json({
-      success: true,
-      data: hoje,
-      total_criados: totalCriados,
-      vendedores_processados: vendedores.length
-    });
-
+    return Response.json({ success: true, data: hoje, total_criados: totalCriados, vendedores_processados: vendedores.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
