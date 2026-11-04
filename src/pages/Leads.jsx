@@ -7,6 +7,7 @@ import { Upload, Users, Shuffle, Trash2, CheckCircle2, Clock, FileText, AlertTri
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import ImportadorLeadsWizard from '@/components/leads/ImportadorLeadsWizard';
+import { Pause, Play, Zap as ZapIcon } from 'lucide-react';
 import { listAll, getConfigFila } from '@/lib/listAll';
 
 const parseCSV = (text) => {
@@ -344,6 +345,25 @@ export default function Leads() {
     setExcluindo(null);
   };
 
+  const [liberando, setLiberando] = useState(null);
+  const liberarAgora = async (lote) => {
+    setLiberando(lote.id);
+    try {
+      const r = await base44.functions.invoke('liberarLeadsAutomatico', { lote_id: lote.id });
+      const d = r?.data || r;
+      if (d?.error) throw new Error(d.error);
+      if (d.liberados > 0) toast.success(`${d.liberados} lead(s) liberados aos gerentes.`);
+      else toast.info(d.motivo === 'sem_capacidade' ? 'Nenhum gerente tem capacidade agora (cota do dia atingida ou fila cheia).' : `Nada liberado (${d.motivo || 'sem leads elegíveis'}).`);
+      queryClient.invalidateQueries(['lotes-leads']); queryClient.invalidateQueries(['leads-todos']);
+    } catch (e) { toast.error('Erro ao liberar: ' + (e?.response?.data?.error || e.message)); }
+    setLiberando(null);
+  };
+  const alternarPausa = async (lote) => {
+    await base44.entities.LoteLead.update(lote.id, { pausado: !lote.pausado });
+    queryClient.invalidateQueries(['lotes-leads']);
+    toast.success(lote.pausado ? 'Liberação retomada.' : 'Liberação pausada.');
+  };
+
   const getLoteStats = (loteId) => {
     const ls = leads.filter(l => l.lote_id === loteId);
     const distribuidos = ls.filter(l => l.status === 'distribuido');
@@ -457,7 +477,11 @@ export default function Leads() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                       <p className="font-semibold text-gray-900 text-sm">{lote.nome}</p>
-                      {lote.status === 'distribuido' ? (
+                      {lote.liberacao === 'automatica' && lote.status !== 'distribuido' ? (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${lote.pausado ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-700'}`}>
+                          <ZapIcon className="w-3 h-3" /> {lote.pausado ? 'Liberação pausada' : 'Liberação automática'} · {stats.distribuidos} de {stats.total} liberados
+                        </span>
+                      ) : lote.status === 'distribuido' ? (
                         <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Distribuído
                         </span>
@@ -501,7 +525,17 @@ export default function Leads() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {lote.status === 'pendente' && (
+                    {lote.liberacao === 'automatica' && lote.status !== 'distribuido' && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => liberarAgora(lote)} disabled={liberando === lote.id || lote.pausado} className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                          {liberando === lote.id ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mr-1.5" /> : <ZapIcon className="w-3.5 h-3.5 mr-1.5" />} Liberar agora
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => alternarPausa(lote)}>
+                          {lote.pausado ? <><Play className="w-3.5 h-3.5 mr-1.5" />Retomar</> : <><Pause className="w-3.5 h-3.5 mr-1.5" />Pausar</>}
+                        </Button>
+                      </>
+                    )}
+                    {lote.status === 'pendente' && lote.liberacao !== 'automatica' && (
                       <Button size="sm" onClick={() => abrirDistribuicao(lote, 'distribuir')} disabled={distribuindo === lote.id} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
                         {distribuindo === lote.id ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1.5" /> : <Shuffle className="w-3.5 h-3.5 mr-1.5" />}
                         Distribuir

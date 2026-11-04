@@ -75,7 +75,7 @@ function Parametros({ qc }) {
   const salvar = async () => {
     const { afinidade_txt, feriados_txt, id, created_date, updated_date, created_by, created_by_id, is_sample, ...resto } = f;
     const dados = { ...resto, chave: 'padrao', afinidade_produtos: afinidade_txt.split(',').map(s => s.trim()).filter(Boolean), feriados: feriados_txt.split(',').map(s => s.trim()).filter(Boolean) };
-    for (const k of ['cap_carteira_dia', 'novos_por_dia', 'toques_dia', 'limite_primeiro_whatsapp_dia', 'sla_inbound_alerta_min', 'sla_inbound_escalonar_min', 'horas_inercia', 'dias_sem_contato']) dados[k] = Number(dados[k]) || undefined;
+    for (const k of ['cap_carteira_dia', 'novos_por_dia', 'backlog_max_por_gerente', 'toques_dia', 'limite_primeiro_whatsapp_dia', 'sla_inbound_alerta_min', 'sla_inbound_escalonar_min', 'horas_inercia', 'dias_sem_contato']) dados[k] = Number(dados[k]) || undefined;
     try { cfg ? await base44.entities.ConfigFila.update(cfg.id, dados) : await base44.entities.ConfigFila.create(dados); toast.success('Parâmetros salvos.'); qc.invalidateQueries({ queryKey: ['cfg-fila-admin'] }); qc.invalidateQueries({ queryKey: ['cfg-fila'] }); } catch (e) { toast.error(e.message); }
   };
 
@@ -83,7 +83,7 @@ function Parametros({ qc }) {
     if (!confirm('Criar parâmetros, modelos de mensagem, cadências, roteiros e FAQ padrão? (Itens já existentes não são duplicados por nome.)')) return;
     setCarregando(true);
     try {
-      if (!cfg) await base44.entities.ConfigFila.create({ chave: 'padrao', cap_carteira_dia: 40, novos_por_dia: 15, toques_dia: 80, limite_primeiro_whatsapp_dia: 40, janela_inicio: '09:00', janela_fim: '18:00', sla_inbound_alerta_min: 5, sla_inbound_escalonar_min: 10, horas_inercia: 48, dias_sem_contato: 5, texto_descadastro: 'Se preferir não receber contato, responda SAIR.', score_pesos: PESOS_PADRAO, email_plano_dia: true });
+      if (!cfg) await base44.entities.ConfigFila.create({ chave: 'padrao', cap_carteira_dia: 40, novos_por_dia: 15, backlog_max_por_gerente: 60, liberacao_automatica_ativa: true, toques_dia: 80, limite_primeiro_whatsapp_dia: 40, janela_inicio: '09:00', janela_fim: '18:00', sla_inbound_alerta_min: 5, sla_inbound_escalonar_min: 10, horas_inercia: 48, dias_sem_contato: 5, texto_descadastro: 'Se preferir não receber contato, responda SAIR.', score_pesos: PESOS_PADRAO, email_plano_dia: true });
       const mExist = await base44.entities.ModeloMensagem.list('nome', 200); const ids = {};
       for (const m of MODELOS_PADRAO) { const ex = mExist.find(x => x.nome === m.nome); ids[m.k] = ex ? ex.id : (await base44.entities.ModeloMensagem.create({ nome: m.nome, canal: 'whatsapp', publico: m.publico, texto: m.texto, primeiro_contato: !!m.primeiro_contato, ativo: true, aprovado_compliance: false, versao: 1 })).id; }
       const cExist = await base44.entities.Cadencia.list('nome', 100);
@@ -108,7 +108,8 @@ function Parametros({ qc }) {
         <div className="rounded-2xl p-4 space-y-4" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Campo l="Capacidade da fila (carteira)/gerente"><input type="number" className={cls} style={inp} value={f.cap_carteira_dia ?? ''} onChange={e => set('cap_carteira_dia', e.target.value)} /></Campo>
-            <Campo l="Leads novos por dia/gerente (ondas)"><input type="number" className={cls} style={inp} value={f.novos_por_dia ?? ''} onChange={e => set('novos_por_dia', e.target.value)} /></Campo>
+            <Campo l="Pausa a liberação se o gerente tiver mais de (itens em aberto)"><input type="number" className={cls} style={inp} value={f.backlog_max_por_gerente ?? ''} onChange={e => set('backlog_max_por_gerente', e.target.value)} /></Campo>
+            <Campo l="Leads novos por dia/gerente (cota diária)"><input type="number" className={cls} style={inp} value={f.novos_por_dia ?? ''} onChange={e => set('novos_por_dia', e.target.value)} /></Campo>
             <Campo l="Toques por dia/gerente (meta)"><input type="number" className={cls} style={inp} value={f.toques_dia ?? ''} onChange={e => set('toques_dia', e.target.value)} /></Campo>
             <Campo l="Máx. primeiros WhatsApps/dia"><input type="number" className={cls} style={inp} value={f.limite_primeiro_whatsapp_dia ?? ''} onChange={e => set('limite_primeiro_whatsapp_dia', e.target.value)} /></Campo>
             <Campo l="Janela — início"><input type="time" className={cls} style={inp} value={f.janela_inicio || ''} onChange={e => set('janela_inicio', e.target.value)} /></Campo>
@@ -117,6 +118,7 @@ function Parametros({ qc }) {
             <Campo l="SLA inbound — escalonar (min)"><input type="number" className={cls} style={inp} value={f.sla_inbound_escalonar_min ?? ''} onChange={e => set('sla_inbound_escalonar_min', e.target.value)} /></Campo>
             <Campo l="Inércia em Em Contato (horas)"><input type="number" className={cls} style={inp} value={f.horas_inercia ?? ''} onChange={e => set('horas_inercia', e.target.value)} /></Campo>
             <Campo l="Dias na agenda sem atenção"><input type="number" className={cls} style={inp} value={f.dias_sem_contato ?? ''} onChange={e => set('dias_sem_contato', e.target.value)} /></Campo>
+            <label className="flex items-center gap-2 text-xs col-span-2 mt-4"><input type="checkbox" checked={f.liberacao_automatica_ativa !== false} onChange={e => set('liberacao_automatica_ativa', e.target.checked)} /> Liberação automática de leads ligada</label>
             <label className="flex items-center gap-2 text-xs col-span-2 mt-4"><input type="checkbox" checked={f.email_plano_dia !== false} onChange={e => set('email_plano_dia', e.target.checked)} /> Enviar e-mail “Plano do Dia” às 08:00</label>
           </div>
           <Campo l="Texto de descadastro (anexado ao 1º WhatsApp)"><input className={cls} style={inp} value={f.texto_descadastro || ''} onChange={e => set('texto_descadastro', e.target.value)} /></Campo>

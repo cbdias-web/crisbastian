@@ -42,6 +42,7 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
   const [mapa, setMapa] = useState({});
   const [nomeLote, setNomeLote] = useState('');
   const [cadenciaId, setCadenciaId] = useState('');
+  const [liberacao, setLiberacao] = useState('automatica'); // automatica | manual
   const [cadencias, setCadencias] = useState([]);
   const [cfg, setCfg] = useState({});
   const [supressao, setSupressao] = useState({ tel: new Set(), doc: new Set() });
@@ -141,7 +142,7 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
     pausadoRef.current = false; setPausado(false);
     let criados = 0, falhas = 0;
     try {
-      const lote = await base44.entities.LoteLead.create({ nome: nomeLote.trim(), total: validos.length, status: 'pendente' });
+      const lote = await base44.entities.LoteLead.create({ nome: nomeLote.trim(), total: validos.length, status: liberacao === 'automatica' ? 'em_liberacao' : 'pendente', liberacao, liberados: 0, pausado: false });
       // quentes primeiro: liberação por score
       const ordenados = [...validos].sort((a, b) => (b.score || 0) - (a.score || 0));
       for (let i = 0; i < ordenados.length; i += CHUNK) {
@@ -160,7 +161,9 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
         setProgresso({ atual: Math.min(i + CHUNK, ordenados.length), total: ordenados.length });
       }
       if (criados !== validos.length) await base44.entities.LoteLead.update(lote.id, { total: criados }).catch(() => {});
-      setResultado({ criados, falhas, lote: lote.nome });
+      let primeira = null;
+      if (liberacao === 'automatica') { try { const r = await base44.functions.invoke('liberarLeadsAutomatico', { lote_id: lote.id }); primeira = (r?.data || r)?.liberados ?? null; } catch (e) { /* o agendador libera depois */ } }
+      setResultado({ criados, falhas, lote: lote.nome, automatica: liberacao === 'automatica', primeira });
       toast.success(`${criados} leads importados!`);
       onConcluido?.();
     } catch (e) {
@@ -239,6 +242,13 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
                   </select>
                 </div>
               </div>
+              <div className="rounded-xl border border-gray-100 p-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-700">Como liberar os leads aos gerentes?</p>
+                <label className="flex items-start gap-2 text-xs cursor-pointer"><input type="radio" className="mt-0.5" checked={liberacao === 'automatica'} onChange={() => setLiberacao('automatica')} />
+                  <span><b>Automática (recomendado)</b> — importa tudo agora e libera aos poucos: cada gerente recebe uma cota diária ({cfg.novos_por_dia || 15} novos/dia) <b>somente se</b> tiver menos de {cfg.backlog_max_por_gerente || 60} itens em aberto. Os melhores leads (score) saem primeiro. Roda sozinho, de hora em hora, em dias úteis.</span></label>
+                <label className="flex items-start gap-2 text-xs cursor-pointer"><input type="radio" className="mt-0.5" checked={liberacao === 'manual'} onChange={() => setLiberacao('manual')} />
+                  <span><b>Manual</b> — importa e você distribui o lote depois pelo botão "Distribuir".</span></label>
+              </div>
               {!obrigatoriosOk && <p className="text-xs text-red-600 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> Mapeie Nome, CPF/CNPJ e Telefone para continuar.</p>}
             </>
           )}
@@ -283,7 +293,7 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
                 <div className={`rounded-xl p-3 text-sm ${resultado.falhas ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'}`}>
                   <p className="font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> {resultado.criados.toLocaleString('pt-BR')} leads importados no lote "{resultado.lote}".</p>
                   {resultado.falhas > 0 && <p className="text-xs mt-1">{resultado.falhas} não puderam ser gravados — reenvie o arquivo: os já importados serão ignorados como duplicados.</p>}
-                  <p className="text-xs mt-1">Próximo passo: distribuir o lote aos gerentes (botão "Distribuir" na lista de lotes).</p>
+                  <p className="text-xs mt-1">{resultado.automatica ? `Liberação automática ativada${resultado.primeira != null ? ` — primeira onda: ${resultado.primeira} lead(s) liberados agora` : ''}. O restante será liberado sozinho conforme a capacidade de cada gerente.` : 'Próximo passo: distribuir o lote aos gerentes (botão "Distribuir" na lista de lotes).'}</p>
                 </div>
               )}
             </div>
