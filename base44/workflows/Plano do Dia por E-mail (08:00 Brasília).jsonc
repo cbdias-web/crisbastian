@@ -1,0 +1,41 @@
+{
+  "name": "Plano do Dia por E-mail (08:00 Bras\u00edlia)",
+  "description": "Envia o plano do dia a cada gerente em dias \u00fateis (11:00 UTC = 08:00 Bras\u00edlia).",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 11 * * 1-5",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "timezone": "UTC",
+      "one_time_date": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "enviarplanododia",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "enviarPlanoDoDia",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
