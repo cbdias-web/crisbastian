@@ -371,13 +371,20 @@ export default function Layout({ children, currentPageName }) {
       items: [
         { name: 'Dashboard', icon: BarChart3, page: 'Dashboard', alwaysVisible: true },
         { name: 'Vendas', icon: Table2, page: 'Vendas', allowUser: true },
-        { name: 'Fila de Contatos', icon: Zap, page: 'FilaContato', alwaysVisible: true },
-        { name: 'Painel Prospecção', icon: Activity, page: 'PainelProspeccao' },
-        { name: 'Config. Prospecção', icon: Zap, page: 'ConfigProspeccao' },
         { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
         { name: 'Implantações', icon: Rocket, page: 'Implantacoes', alwaysVisible: true },
         { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
         { name: 'Desempenho', icon: Activity, page: 'Desempenho', alwaysVisible: true },
+      ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
+    },
+    {
+      label: 'Prospecção',
+      items: [
+        { name: 'Fila de Contatos', icon: Zap, page: 'FilaContato', alwaysVisible: true },
+        { name: 'Importar e Distribuir Leads', icon: Upload, page: 'Leads' },
+        { name: 'Painel de Prospecção', icon: Activity, page: 'PainelProspeccao' },
+        { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', alwaysVisible: true },
+        { name: 'Config. Prospecção', icon: Settings, page: 'ConfigProspeccao' },
       ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
     },
     {
@@ -387,7 +394,6 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Vendedores', icon: Users, page: 'Vendedores', allowUser: true },
         { name: 'Indicadores', icon: Users, page: 'Espelhamentos', allowUser: false },
         { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro', gateEsteira: true },
-        { name: 'Rel. Interações', icon: FileText, page: 'RelatorioInteracoes', alwaysVisible: true },
         { name: 'Manual', icon: BookOpen, page: 'Manual', alwaysVisible: true },
         { name: 'Capacitação', icon: GraduationCap, page: 'Treinamento', alwaysVisible: true },
         { name: 'Assistente IA', icon: Bot, page: 'AssistenteTreinamentos', alwaysVisible: true },
@@ -402,7 +408,6 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Comunicados', icon: Megaphone, page: 'Comunicados' },
         { name: 'Capacitação (Admin)', icon: GraduationCap, page: 'TreinamentoAdmin' },
         { name: 'Rel. Comissões', icon: FileText, page: 'RelatorioComissoes' },
-        { name: 'Prospecção', icon: Users, page: 'Leads' },
         { name: 'Metas', icon: Target, page: 'Metas' },
         { name: 'Produtos', icon: Package, page: 'Produtos' },
         { name: 'Importar', icon: Upload, page: 'Importar' },

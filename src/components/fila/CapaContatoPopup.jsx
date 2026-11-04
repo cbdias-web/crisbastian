@@ -418,16 +418,21 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                             </div>
                             <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#34d399' }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
                           </a>
-                          <div title={tel ? 'Escaneie com a câmera do celular para ligar' : 'Telefone não informado'}
-                            className="flex flex-col items-center select-none"
-                            style={{ opacity: tel ? 1 : 0.45 }}>
-                            <div className="rounded-xl p-2 inline-flex items-center gap-2"
+                          <a href={tel || undefined}
+                            onClick={() => {
+                              if (tel && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                toast.info('No computador, a ligação abre o discador do sistema (ex.: FaceTime/iPhone). Para ligar pelo chip do celular, escaneie o QR com a câmera.', { duration: 6000 });
+                              }
+                            }}
+                            title={tel ? 'Ligar agora (ou escaneie com a câmera do celular)' : 'Telefone não informado'}
+                            className="group flex flex-col items-center transition hover:scale-[1.03] focus:outline-none"
+                            style={{ cursor: tel ? 'pointer' : 'not-allowed', opacity: tel ? 1 : 0.45 }}>
+                            <div className="rounded-xl p-2 inline-flex items-center gap-2 transition group-hover:shadow-lg"
                               style={{ background: '#ffffff', border: '1px solid rgba(59,130,249,0.55)', boxShadow: '0 0 18px rgba(59,130,249,0.20)' }}>
                               <img src={qrUrl(tel || ' ', 88)} alt="QR Ligação" className="rounded-md" style={{ width: 88, height: 88 }} />
                             </div>
                             <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
-                            <p className="text-[9px]" style={{ color: AURORA.textMuted }}>aponte a câmera do celular</p>
-                          </div>
+                          </a>
                         </>
                       );
                     })()}
