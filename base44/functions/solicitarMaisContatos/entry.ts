@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia } from '../../shared/diaUtil.ts';
-import { CAP_FILA_DIA } from '../../shared/regrasEsteira.ts';
+import { CAP_FILA_DIA as CAP_PADRAO } from '../../shared/regrasEsteira.ts';
+import { listAll, getConfigFila } from '../../shared/listAll.ts';
 
 // Repõe a Agenda do Dia do gerente com novos leads da PRÓPRIA carteira, a pedido
 // dele (botão "Solicitar mais clientes" na Fila de Contatos). Respeita o CAP 10:
@@ -29,10 +30,12 @@ export default async function(req: Request): Promise<Response> {
 
     const hoje = hojeBrasilia();
     const agora = new Date().toISOString();
+    const cfg = await getConfigFila(base44);
+    const CAP_FILA_DIA = Number(cfg.cap_carteira_dia) || CAP_PADRAO;
 
     // Vagas livres da carteira (cap 10 menos pendentes atuais)
     const pendentes = await base44.asServiceRole.entities.FilaContato.filter(
-      { vendedor_id: vendedor.id, status: 'pendente', tipo_origem: 'carteira' }, '-created_date', 200
+      { vendedor_id: vendedor.id, status: 'pendente', tipo_origem: 'carteira' }, '-created_date', 1000
     );
     const vagas = CAP_FILA_DIA - pendentes.length;
     if (vagas <= 0) {
@@ -41,7 +44,7 @@ export default async function(req: Request): Promise<Response> {
 
     // Clientes da carteira ainda não na fila/agenda de hoje
     const clientes = await base44.asServiceRole.entities.Cliente.filter(
-      { vendedor_id: vendedor.id }, 'nome', 5000
+      { vendedor_id: vendedor.id }, '-score', 1500
     );
     const naFila = new Set(pendentes.map((f: any) => f.ref_id || f.cliente_id));
     const agendasHoje = await base44.asServiceRole.entities.AgendaContato.filter(
@@ -50,7 +53,9 @@ export default async function(req: Request): Promise<Response> {
     const agendadosHoje = new Set(agendasHoje.map((a: any) => a.lead_id || a.cliente_id));
 
     // Anti-retrabalho: último estado do lead por cliente — resolvido não volta
-    const todaFila = await base44.asServiceRole.entities.FilaContato.list('-created_date', 2000);
+    const todaFila = await listAll(base44.asServiceRole.entities.FilaContato, { vendedor_id: vendedor.id }, '-created_date');
+    const agPend = await listAll(base44.asServiceRole.entities.AgendaContato, { vendedor_id: vendedor.id, status: 'pendente' }, 'data_agendada');
+    const comAgendaPend = new Set(agPend.flatMap((a: any) => [a.lead_id, a.cliente_id].filter(Boolean)));
     const resolvidoPorCliente = new Map();
     for (const f of todaFila) {
       const cid = f.cliente_id || (f.tipo_origem === 'carteira' ? f.ref_id : '');
@@ -61,6 +66,8 @@ export default async function(req: Request): Promise<Response> {
       (c.telefone || '').replace(/\D/g, '').length >= 8 &&
       !naFila.has(c.id) &&
       !agendadosHoje.has(c.id) &&
+      !comAgendaPend.has(c.id) && !(c.lead_id && comAgendaPend.has(c.lead_id)) &&
+      c.consentimento_status !== 'opt_out' && c.consentimento_status !== 'nao_perturbe' &&
       !['convertido', 'descartado'].includes(resolvidoPorCliente.get(c.id) || '')
     );
     if (candidatos.length === 0) {
