@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import AvatarPickerModal from '@/components/vendedores/AvatarPickerModal';
 import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarModal';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
+import { formatarCelular } from '@/lib/celular';
 
 const A = {
   bg: '#0d1117',
@@ -23,6 +24,29 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [impersonado, setImpersonado] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(userAvatar);
+  const [celular, setCelular] = useState('');
+  const [operadora, setOperadora] = useState('Vivo');
+  const [vendedorId, setVendedorId] = useState(null);
+
+  // Celular/operadora ficam no cadastro do gerente (Vendedor) — só aparecem se ele existir
+  useEffect(() => {
+    let cancel = false;
+    const imp = getImpersonatedVendedor();
+    (async () => {
+      try {
+        const resp = await base44.functions.invoke('salvarPerfilGerente', {
+          apenas_ler: true,
+          ...(imp ? { vendedor_id: imp.id } : {}),
+        });
+        const v = resp?.data?.vendedor;
+        if (cancel || !v) return;
+        setVendedorId(v.id);
+        setCelular(formatarCelular(v.celular_operadora));
+        setOperadora(v.operadora || 'Vivo');
+      } catch (e) {}
+    })();
+    return () => { cancel = true; };
+  }, [user?.email]);
 
   useEffect(() => {
     setProfileForm({
@@ -48,6 +72,19 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
     setSavingProfile(true);
     try {
       await base44.auth.updateMe({ nome_tratamento: profileForm.nome_tratamento });
+      if (vendedorId) {
+        try {
+          await base44.functions.invoke('salvarPerfilGerente', {
+            celular_operadora: celular,
+            operadora,
+            ...(impersonado ? { vendedor_id: vendedorId } : {}),
+          });
+        } catch (e) {
+          toast.error(e?.response?.data?.error || 'Celular inválido — informe DDD + número');
+          setSavingProfile(false);
+          return;
+        }
+      }
       const updatedUser = await base44.auth.me();
       onAvatarChange?.(avatarUrl, updatedUser);
       toast.success('Perfil atualizado!');
@@ -139,6 +176,25 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
                 style={{ background: f.disabled ? 'rgba(0,0,0,0.2)' : A.accentDim, border: `1px solid ${A.border}`, color: f.disabled ? A.textMuted : A.text, cursor: f.disabled ? 'not-allowed' : 'text' }} />
             </div>
           ))}
+          {vendedorId && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: A.textMuted }}>Celular (com DDD)</label>
+                <input type="text" value={celular} onChange={e => setCelular(e.target.value)}
+                  placeholder="(51) 99999-8888"
+                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+                  style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.text }} />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: A.textMuted }}>Operadora</label>
+                <select value={operadora} onChange={e => setOperadora(e.target.value)}
+                  className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none"
+                  style={{ background: A.accentDim, border: `1px solid ${A.border}`, color: A.text }}>
+                  {['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
         </div>
         <div className="px-6 py-4 flex justify-end gap-2" style={{ borderTop: `1px solid ${A.border}` }}>
           <button onClick={onClose}
