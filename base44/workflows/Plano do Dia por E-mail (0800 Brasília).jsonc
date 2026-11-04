@@ -1,5 +1,5 @@
 {
-  "name": "Plano do Dia por E-mail (08:00 Bras\u00edlia)",
+  "name": "Plano do Dia por E-mail (0800 Bras\u00edlia)",
   "description": "Envia o plano do dia a cada gerente em dias \u00fateis (11:00 UTC = 08:00 Bras\u00edlia).",
   "trigger": {
     "condition": null,
