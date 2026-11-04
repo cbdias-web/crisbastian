@@ -159,3 +159,40 @@ export function brasiliaParts(date = new Date()) {
   return { data: `${o.year}-${o.month}-${o.day}`, hora: Number(o.hour === '24' ? '0' : o.hour), minuto: Number(o.minute) };
 }
 export const hojeBrasilia = () => brasiliaParts().data;
+
+// ---------- Mensagens / datas ----------
+export const primeiroNome = (n) => clean(n).split(' ')[0].replace(/^./, c => c.toUpperCase()).toLowerCase().replace(/^./, c => c.toUpperCase());
+
+export function renderModelo(texto, ctx = {}, opts = {}) {
+  let t = String(texto || '');
+  const vars = {
+    primeiro_nome: primeiroNome(ctx.nome || ''),
+    gerente: primeiroNome(ctx.gerente || ''),
+    produto_contratado: ctx.produto_contratado || ctx.produto || 'seu contrato com o Grupo Villela',
+    produto: ctx.produto || ctx.produto_contratado || 'nossas soluções',
+    responsavel_origem: ctx.responsavel_origem || 'nosso time',
+  };
+  for (const [k, v] of Object.entries(vars)) t = t.replaceAll(`{{${k}}}`, v);
+  if (opts.descadastro && !t.toUpperCase().includes('SAIR')) t += `\n\n${opts.descadastro}`;
+  return t;
+}
+
+export function somaDiasData(data, n) {
+  const [a, m, d] = data.split('-').map(Number);
+  const dt = new Date(a, m - 1, d + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+// Próximo dia útil simples (fins de semana); feriados são tratados no servidor.
+export function proximoDiaUtilBR(data) {
+  let d = data;
+  for (let i = 0; i < 8; i++) {
+    const [a, m, dia] = d.split('-').map(Number);
+    const w = new Date(a, m - 1, dia).getDay();
+    if (w !== 0 && w !== 6) return d;
+    d = somaDiasData(d, 1);
+  }
+  return d;
+}
+
+export const fmtDataBR = (d) => (d ? String(d).split('-').reverse().join('/') : '');

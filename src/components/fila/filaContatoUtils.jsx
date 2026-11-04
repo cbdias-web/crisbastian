@@ -1,4 +1,4 @@
-import { Zap, Clock, PhoneCall, BadgeCheck, Trophy, XCircle, Sprout } from 'lucide-react';
+import { Zap, Clock, PhoneCall, BadgeCheck, Trophy, XCircle, Sprout, CalendarCheck } from 'lucide-react';
 
 // Constantes e helpers compartilhados da esteira de Fila de Contatos
 // (Kanban + Card + página). Mantidos aqui para evitar duplicação.
@@ -6,6 +6,7 @@ import { Zap, Clock, PhoneCall, BadgeCheck, Trophy, XCircle, Sprout } from 'luci
 export const STATUS_LABEL = {
   pendente: 'Pendente',
   atendeu: 'Em Contato',
+  reuniao_marcada: 'Reunião Marcada',
   nao_atendeu: 'Não Atendeu',
   qualificado: 'Qualificado',
   convertido: 'Convertido',
@@ -17,6 +18,7 @@ export const COLUNAS = [
   { key: 'indicacao', label: 'Indicações', icon: Zap, color: '#00D4AA', bg: 'rgba(0,212,170,0.08)', statuses: ['pendente'], origem: 'indicacao' },
   { key: 'carteira', label: 'Agenda do Dia', icon: Clock, color: '#818cf8', bg: 'rgba(99,102,241,0.08)', statuses: ['pendente'], origem: 'carteira' },
   { key: 'em_contato', label: 'Em Contato', icon: PhoneCall, color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', statuses: ['atendeu'] },
+  { key: 'reuniao_marcada', label: 'Reunião Marcada', icon: CalendarCheck, color: '#2dd4bf', bg: 'rgba(45,212,191,0.08)', statuses: ['reuniao_marcada'] },
   { key: 'qualificado', label: 'Qualificado', icon: BadgeCheck, color: '#60a5fa', bg: 'rgba(59,130,249,0.08)', statuses: ['qualificado'] },
   { key: 'convertido', label: 'Convertido', icon: Trophy, color: '#34d399', bg: 'rgba(52,211,153,0.08)', statuses: ['convertido'] },
   { key: 'nutricao', label: 'Nutrição', icon: Sprout, color: '#c084fc', bg: 'rgba(192,132,252,0.08)', statuses: ['nutricao'] },
@@ -26,6 +28,7 @@ export const COLUNAS = [
 // Opções do menu "Mover para" no card
 export const STATUS_MENU = [
   { key: 'em_contato', label: 'Em Contato' },
+  { key: 'reuniao_marcada', label: 'Reunião Marcada' },
   { key: 'qualificado', label: 'Qualificado' },
   { key: 'nutricao', label: 'Nutrição' },
   { key: 'convertido', label: 'Convertido' },

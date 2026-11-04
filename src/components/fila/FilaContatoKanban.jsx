@@ -36,6 +36,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
   // para que a próxima montagem da fila não recriie o lead como pendente).
   const CONVERSA_STATUS_BY_DESTINO = {
     em_contato: 'aguardando',
+    reuniao_marcada: 'aguardando',
     qualificado: 'qualificado',
     convertido: 'convertido',
     desqualificado: 'desqualificado',
