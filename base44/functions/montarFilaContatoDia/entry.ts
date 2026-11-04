@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hojeBrasilia, proximoDiaUtil } from '../../shared/diaUtil.ts';
-import { CAP_FILA_DIA, DIAS_SEM_CONTATO } from '../../shared/regrasEsteira.ts';
+import { CAP_FILA_DIA as CAP_PADRAO, DIAS_SEM_CONTATO as DIAS_PADRAO } from '../../shared/regrasEsteira.ts';
+import { listAll, getConfigFila } from '../../shared/listAll.ts';
 
 // Monta/sincroniza a esteira "Fila de Contatos / Agenda do Dia" de um vendedor
 // (ou de todos os ativos — chamada diária da automação).
@@ -34,6 +35,10 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => ({})) || {};
     const hoje = hojeBrasilia();
     const agora = new Date().toISOString();
+    // Parâmetros configuráveis (ConfigFila) — antes fixos em 10 / 5 dias
+    const cfg = await getConfigFila(base44);
+    const CAP_FILA_DIA = Number(cfg.cap_carteira_dia) || CAP_PADRAO;
+    const DIAS_SEM_CONTATO = Number(cfg.dias_sem_contato) || DIAS_PADRAO;
 
     // ── Vendedores alvo ──
     let vendedores;
@@ -63,10 +68,12 @@ export default async function(req: Request): Promise<Response> {
     const vendedoresAtivos = vendedores.filter((v) => v.ativo !== false && !excluido(v));
 
     // ── Cargas globais ──
-    const todaFila = await base44.asServiceRole.entities.FilaContato.list('-created_date', 2000);
-    const todasConversas = await base44.asServiceRole.entities.ConversaWhatsapp.list('-created_date', 1000);
-    const todasIndicacoes = await base44.asServiceRole.entities.LeadIndicacao.list('-created_date', 1000);
-    const todosParceiros = await base44.asServiceRole.entities.Parceiro.list('-created_date', 500);
+    // Sem teto silencioso: pagina tudo. Quando chamada para 1 gerente, restringe a fila a ele.
+    const filtroFila = body.vendedor_id ? { vendedor_id: body.vendedor_id } : {};
+    const todaFila = await listAll(base44.asServiceRole.entities.FilaContato, filtroFila, '-created_date');
+    const todasConversas = await listAll(base44.asServiceRole.entities.ConversaWhatsapp, {}, '-created_date');
+    const todasIndicacoes = await listAll(base44.asServiceRole.entities.LeadIndicacao, {}, '-created_date');
+    const todosParceiros = await listAll(base44.asServiceRole.entities.Parceiro, {}, '-created_date');
 
     // Ids de conversas de indicação: usados para NUNCA ramificar um lead de
     // indicação (que já tem esteira própria) para a esteira de carteira.
@@ -257,9 +264,7 @@ export default async function(req: Request): Promise<Response> {
         .reduce((m, f) => Math.max(m, f.posicao || 0), 0);
 
       // ── Indicações (ConversaWhatsapp — qualquer status) ──
-      const conversas = await base44.asServiceRole.entities.ConversaWhatsapp.filter(
-        { vendedor_id: v.id }, '-ultima_mensagem_em', 500
-      );
+      const conversas = await listAll(base44.asServiceRole.entities.ConversaWhatsapp, { vendedor_id: v.id }, '-ultima_mensagem_em');
       // FIFO: o lead que espera há mais tempo é o primeiro a entrar na reposição
       for (const c of [...conversas].reverse()) {
         const target = statusConversaParaFila(c.status || 'ativa');
@@ -331,6 +336,8 @@ export default async function(req: Request): Promise<Response> {
           parceiro_email: contatoIndicador(li).email,
           vendedor_id: v.id,
           vendedor_nome: v.nome || '',
+          vendedor_email: v.email || '',
+          entrada_inbound_em: agora,
           data_fila: hoje,
           prioridade: 0,
           posicao: pos++,
@@ -344,9 +351,12 @@ export default async function(req: Request): Promise<Response> {
       }
 
       // ── Carteira (prioridade 1): agendas pendentes de hoje ──
-      const agendas = await base44.asServiceRole.entities.AgendaContato.filter(
-        { vendedor_id: v.id, data_agendada: hoje }, 'posicao_dia'
-      );
+      // Pendentes de hoje e de dias anteriores (carry-over), mais antigas primeiro; só o necessário p/ preencher as vagas
+      const agendas = vagas > 0
+        ? await base44.asServiceRole.entities.AgendaContato.filter(
+            { vendedor_id: v.id, status: 'pendente', data_agendada: { $lte: hoje } }, 'data_agendada', Math.min(300, vagas + 60)
+          )
+        : [];
       for (const a of agendas) {
         if (a.status !== 'pendente' && a.status) continue;
         if (vagas <= 0) break;
@@ -366,13 +376,34 @@ export default async function(req: Request): Promise<Response> {
         if (cid && resolvidoPorClienteId.has(cid)) continue;
         if (a.lead_nome && resolvidoPorNome.has(norm(a.lead_nome))) continue;
 
+        // Enriquecimento a partir do Lead (ou Cliente) de origem + trava de opt-out
+        const idOrigem = a.lead_id || a.cliente_id || '';
+        let R: any = null;
+        if (idOrigem) {
+          R = await base44.asServiceRole.entities.Lead.get(idOrigem).catch(() => null)
+            || await base44.asServiceRole.entities.Cliente.get(idOrigem).catch(() => null);
+        }
+        if (R && (R.consentimento_status === 'opt_out' || R.consentimento_status === 'nao_perturbe')) {
+          await base44.asServiceRole.entities.AgendaContato.update(a.id, { status: 'realizado', resultado: 'Opt-out — fora da fila' }).catch(() => {});
+          continue;
+        }
+        const enr: any = {};
+        if (R) {
+          for (const k of ['id_externo','produto_contratado','valor_contrato','responsavel_origem','tipo_pessoa','email','cidade','telefone_e164','telefone_valido','score','segmento','consentimento_status','cadencia_id']) {
+            if (R[k] !== undefined && R[k] !== null && R[k] !== '') enr[k] = R[k];
+          }
+          if (R.uf || R.estado) enr.uf = R.uf || R.estado;
+        }
         await base44.asServiceRole.entities.FilaContato.create({
+          ...enr,
           tipo_origem: 'carteira',
           ref_id: a.lead_id || a.cliente_id || '',
           cliente_id: a.cliente_id || a.lead_id || '',
           nome: a.lead_nome || '',
           telefone: a.lead_telefone || '',
           cpf_cnpj: a.lead_cpf_cnpj || '',
+          lote_id: a.lote_id || undefined,
+          vendedor_email: v.email || '',
           vendedor_id: v.id,
           vendedor_nome: v.nome || '',
           data_fila: hoje,

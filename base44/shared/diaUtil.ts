@@ -68,3 +68,25 @@ export function hojeBrasilia(): string {
   const brasilia = new Date(agora.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
   return `${brasilia.getFullYear()}-${String(brasilia.getMonth() + 1).padStart(2, '0')}-${String(brasilia.getDate()).padStart(2, '0')}`;
 }
+
+// Data, minutos desde 00:00 e dia da semana (0=dom) em Brasília.
+export function agoraBrasilia(d: Date = new Date()): { data: string; minutos: number; diaSemana: number } {
+  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'short' });
+  const o: any = Object.fromEntries(fmt.formatToParts(d).map((x) => [x.type, x.value]));
+  const hora = Number(o.hour === '24' ? '0' : o.hour);
+  const dias: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { data: `${o.year}-${o.month}-${o.day}`, minutos: hora * 60 + Number(o.minute), diaSemana: dias[o.weekday] ?? 0 };
+}
+
+// Soma n dias úteis (n >= 0) a partir de uma data yyyy-MM-dd.
+export function somarDiasUteis(inicio: string, n: number): string {
+  let atual = proximoDiaUtil(inicio);
+  let faltam = n;
+  while (faltam > 0) {
+    const [a, m, d] = atual.split('-').map(Number);
+    const dt = new Date(a, m - 1, d + 1);
+    atual = proximoDiaUtil(`${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`);
+    faltam--;
+  }
+  return atual;
+}
