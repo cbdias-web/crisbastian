@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronDown, Search, ShieldAlert } from 'lucide-react';
+import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronDown, Search } from 'lucide-react';
 import { ROTEIROS as ROTEIROS_PADRAO, DEFAULT_ROTEIRO, FAQ as FAQ_PADRAO } from './roteirosPadrao';
 
 const AURORA = {

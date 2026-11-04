@@ -10,6 +10,8 @@ import CadastroCarteiraPanel from './CadastroCarteiraPanel';
 import HistoricoInteracoes from './HistoricoInteracoes';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import AgendarRetornoModal from './AgendarRetornoModal';
+import PosChamadaSheet from './PosChamadaSheet';
+import { Smartphone } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -40,6 +42,18 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [reatribuindo, setReatribuindo] = useState(false);
   const [retornoModal, setRetornoModal] = useState(false); // retorno obrigatório ao entrar em "Em Contato"
   const [retornoFluxo, setRetornoFluxo] = useState(null); // 'classificar' | 'atendeu'
+  const [posChamada, setPosChamada] = useState(null); // { canal }
+  const [cmdEnviando, setCmdEnviando] = useState(false);
+
+  // Ponte Desktop → Celular: o botão aparece no celular pareado do gerente
+  const enviarAoCelular = async (canal) => {
+    setCmdEnviando(true);
+    try {
+      await base44.entities.ComandoDiscagem.create({ vendedor_id: vendedor?.id || fila.vendedor_id, canal, telefone_e164: fila.telefone_e164 || `+${String(fila.telefone || '').replace(/\D/g, '')}`, nome: fila.nome, fila_id: fila.id, produto_contratado: fila.produto_contratado || fila.produto || '', criado_em: new Date().toISOString(), status: 'enviado' });
+      toast.success('Enviado ao seu celular — toque no botão que apareceu lá.');
+    } catch (e) { toast.error('Falha ao enviar ao celular: ' + (e?.message || e)); }
+    setCmdEnviando(false);
+  };
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
@@ -130,6 +144,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           resultado: 'Atendeu',
         }).catch(() => {});
       }
+      base44.entities.RegistroContato.create({ fila_id: fila.id, cliente_id: fila.cliente_id || fila.ref_id, lead_nome: fila.nome, vendedor_id: fila.vendedor_id, vendedor_nome: fila.vendedor_nome || '', canal: 'ligacao', resultado: 'atendeu_interessado', data_dia: new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }), primeiro_toque: !fila.primeiro_toque_em }).catch(() => {});
       toast.success('Atendimento registrado.');
       onAtualizado?.();
       setRetornoFluxo('atendeu');
@@ -153,6 +168,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
           resultado: 'Não atendeu — reagendado para o fim da fila no próximo dia útil',
         }).catch(() => {});
       }
+      base44.entities.RegistroContato.create({ fila_id: fila.id, cliente_id: fila.cliente_id || fila.ref_id, lead_nome: fila.nome, vendedor_id: fila.vendedor_id, vendedor_nome: fila.vendedor_nome || '', canal: 'ligacao', resultado: 'nao_atendeu', data_dia: new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }), primeiro_toque: !fila.primeiro_toque_em }).catch(() => {});
       toast.success('Não atendido — reagendado. Avançando para o próximo lead da fila.');
       onAtualizado?.();
       if (onProximo) onProximo(fila);
@@ -165,6 +181,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
 
   const CLASSIFICACAO = [
     { key: 'em_contato', label: 'Em Contato', status: 'atendeu', color: '#fbbf24' },
+    { key: 'reuniao_marcada', label: 'Reunião Marcada', status: 'reuniao_marcada', color: '#2dd4bf' },
     { key: 'qualificado', label: 'Qualificado', status: 'qualificado', color: '#60a5fa' },
     { key: 'desqualificado', label: 'Desqualificado', status: 'descartado', color: '#f87171' },
     { key: 'nutricao', label: 'Nutrição', status: 'nutricao', color: '#c084fc' },
@@ -429,6 +446,10 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                   </div>
                 </div>
 
+                <div className="w-full flex gap-2" style={{ maxWidth: 420 }}>
+                  <button onClick={() => enviarAoCelular('ligar')} disabled={cmdEnviando} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold disabled:opacity-40" style={{ background: 'rgba(59,130,249,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.4)' }}><Smartphone className="w-3.5 h-3.5" /> Ligar no meu celular</button>
+                  <button onClick={() => enviarAoCelular('whatsapp')} disabled={cmdEnviando} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold disabled:opacity-40" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.4)' }}><Smartphone className="w-3.5 h-3.5" /> WhatsApp no meu celular</button>
+                </div>
                 {/* Botões de desfecho (chapados) + registro — simétricos e centralizados */}
                 <div className="w-full" style={{ maxWidth: 420 }}>
                   <div className="flex gap-3">
@@ -443,6 +464,11 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                       {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <PhoneMissed className="w-4 h-4" />} Não Atendeu
                     </button>
                   </div>
+                  <button onClick={() => setPosChamada({ canal: 'ligacao' })}
+                    className="w-full mt-2.5 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:brightness-110"
+                    style={{ background: AURORA.accent, color: '#0d1117' }}>
+                    Registrar resultado (1 toque)
+                  </button>
                   <button onClick={() => setView('registro')}
                     className="w-full mt-2.5 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition hover:bg-white/5"
                     style={{ color: AURORA.accent, border: '1px solid rgba(0,212,170,0.45)', background: 'rgba(0,212,170,0.04)' }}>
@@ -515,6 +541,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
         </div>
       </div>
     </div>
+    {posChamada && <PosChamadaSheet fila={fila} canal={posChamada.canal} onClose={() => setPosChamada(null)} onDone={() => { setPosChamada(null); onAtualizado?.(); onClose?.(); }} />}
     {retornoModal && (
       <AgendarRetornoModal
         leadNome={fila.nome}

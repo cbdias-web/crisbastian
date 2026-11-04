@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Loader2, PhoneCall, MessageCircle, SkipForward, CalendarPlus, Link2, Sparkles, ClipboardCheck, Smartphone, Package, DollarSign, User, Flame, Target, Clock, Copy } from 'lucide-react';
-import { qrUrl, telParaTel, waLink } from './QrCodeContato';
+import { telParaTel, waLink } from './QrCodeContato';
 import PosChamadaSheet from './PosChamadaSheet';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
