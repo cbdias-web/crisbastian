@@ -34,6 +34,10 @@ import IndicacaoGenericaPage from './pages/IndicacaoGenericaPage';
 import PortalIndicador from './pages/PortalIndicador';
 import PortalIndicadorAdmin from './pages/PortalIndicadorAdmin';
 import FilaContato from './pages/FilaContato';
+import ModoFocoMobile from './pages/ModoFocoMobile';
+import AgendarPublicaPage from './pages/AgendarPublicaPage';
+import ConfigProspeccao from './pages/ConfigProspeccao';
+import PainelProspeccao from './pages/PainelProspeccao';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -57,6 +61,13 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/conta-internacional-publica/:token" element={<ContaInternacionalPublicaPage />} />
+      </Routes>
+    );
+  }
+  if (location.pathname.startsWith('/agendar/')) {
+    return (
+      <Routes>
+        <Route path="/agendar/:token" element={<AgendarPublicaPage />} />
       </Routes>
     );
   }
@@ -144,6 +155,9 @@ const AuthenticatedAppInner = () => {
           }
         />
       ))}
+      <Route path="/m" element={<ModoFocoMobile />} />
+      <Route path="/ConfigProspeccao" element={<LayoutWrapper currentPageName="ConfigProspeccao"><ConfigProspeccao /></LayoutWrapper>} />
+      <Route path="/PainelProspeccao" element={<LayoutWrapper currentPageName="PainelProspeccao"><PainelProspeccao /></LayoutWrapper>} />
       <Route
         path="/RelatorioComissoes"
         element={
