@@ -1,165 +1,271 @@
 {
   "name": "FilaContato",
-  "type": "object",
   "properties": {
-    "tipo_origem": {
-      "type": "string",
-      "enum": [
-        "carteira",
-        "indicacao"
-      ],
-      "description": "Origem do contato: 'carteira' (Cliente/AgendaContato) ou 'indicacao' (ConversaWhatsapp/LeadIndicacao)"
+    "alerta_stale": {
+      "default": false,
+      "description": "Alerta de inercia ja disparado pelo scheduler (lead >48h em 'Em Contato' sem interacao). Resetado a cada nova interacao/movimentacao.",
+      "type": "boolean"
     },
-    "ref_id": {
-      "type": "string",
-      "description": "ID da entidade de origem: Cliente.id (carteira) ou ConversaWhatsapp.id (indicacao)"
+    "cadencia_id": {
+      "description": "Cadencia aplicada ao lead",
+      "type": "string"
     },
-    "lead_indicacao_id": {
-      "type": "string",
-      "description": "ID da LeadIndicacao (quando tipo_origem=indicacao e houver indicacao de origem)"
+    "cadencia_passo": {
+      "default": 0,
+      "description": "Indice do proximo passo da cadencia (0 = primeiro)",
+      "type": "number"
+    },
+    "cidade": {
+      "type": "string"
     },
     "cliente_id": {
-      "type": "string",
-      "description": "ID do Cliente vinculado (carteira ou convertido de indicacao)"
+      "description": "ID do Cliente vinculado (carteira ou convertido de indicacao)",
+      "type": "string"
     },
-    "nome": {
-      "type": "string",
-      "description": "Nome do contato (denormalizado)"
-    },
-    "telefone": {
-      "type": "string",
-      "description": "Telefone/WhatsApp do contato (denormalizado)"
+    "consentimento_status": {
+      "default": "base_cliente",
+      "enum": [
+        "base_cliente",
+        "opt_in",
+        "opt_out",
+        "nao_perturbe"
+      ],
+      "type": "string"
     },
     "cpf_cnpj": {
-      "type": "string",
-      "description": "CPF/CNPJ (denormalizado)"
-    },
-    "produto": {
-      "type": "string",
-      "description": "Produto de interesse (denormalizado)"
-    },
-    "valor_estimado": {
-      "type": "number",
-      "description": "Valor estimado da indicacao (denormalizado de LeadIndicacao)"
-    },
-    "parceiro_nome": {
-      "type": "string",
-      "description": "Nome do parceiro/indicador que indicou o lead (denormalizado de LeadIndicacao)"
-    },
-    "parceiro_percentual": {
-      "type": "number",
-      "description": "Percentual de comissionamento do parceiro (denormalizado de LeadIndicacao)"
-    },
-    "parceiro_telefone": {
-      "type": "string",
-      "description": "Telefone/WhatsApp do indicador (denormalizado de Parceiro) para o gerente interagir com o respons\u00e1vel pela indica\u00e7\u00e3o"
-    },
-    "parceiro_email": {
-      "type": "string",
-      "description": "E-mail do indicador (denormalizado de Parceiro/LeadIndicacao) para o gerente interagir com o respons\u00e1vel pela indica\u00e7\u00e3o"
-    },
-    "vendedor_id": {
-      "type": "string",
-      "description": "ID do gerente responsavel pelo contato"
-    },
-    "vendedor_nome": {
-      "type": "string",
-      "description": "Nome do gerente responsavel"
+      "description": "CPF/CNPJ (denormalizado)",
+      "type": "string"
     },
     "data_fila": {
-      "type": "string",
+      "description": "Dia a que pertence este item da fila",
       "format": "date",
-      "description": "Dia a que pertence este item da fila"
+      "type": "string"
     },
-    "prioridade": {
-      "type": "number",
-      "description": "0=indicacao (topo), 1=carteira",
-      "default": 1
+    "email": {
+      "description": "E-mail do contato",
+      "type": "string"
     },
-    "posicao": {
-      "type": "number",
-      "description": "Ordem dentro do dia/prioridade (1 = primeiro)",
-      "default": 1
-    },
-    "tentativas": {
-      "type": "number",
-      "description": "Numero de 'nao atendeu' no dia",
-      "default": 0
-    },
-    "tentativas_contato": {
-      "type": "number",
-      "description": "Tentativas de contato registradas enquanto o lead est\u00e1 em 'Em Contato' (ex: liga\u00e7\u00e3o/WhatsApp sem retorno). A partir de 4 tentativas o lead \u00e9 sugerido para Nutri\u00e7\u00e3o (ghosting).",
-      "default": 0
-    },
-    "status": {
-      "type": "string",
-      "enum": [
-        "pendente",
-        "atendeu",
-        "nao_atendeu",
-        "qualificado",
-        "convertido",
-        "descartado",
-        "nutricao"
-      ],
-      "default": "pendente",
-      "description": "Status do item na fila do dia (pendente=na fila, atendeu=em contato, qualificado=qualificado, convertido=convertido, descartado=desqualificado, nao_atendeu=reagendado, nutricao=desqualifica\u00e7\u00e3o tempor\u00e1ria para nutri\u00e7\u00e3o futura)"
-    },
-    "status_desde": {
-      "type": "string",
+    "entrada_inbound_em": {
+      "description": "Quando o lead inbound entrou na fila (base do SLA de primeiro toque)",
       "format": "date-time",
-      "description": "Data/hora em que o lead entrou no status atual \u2014 base do contador de dias parado e do alerta de in\u00e9rcia (SLA 48h em 'Em Contato')"
-    },
-    "alerta_stale": {
-      "type": "boolean",
-      "default": false,
-      "description": "Alerta de in\u00e9rcia j\u00e1 disparado pelo scheduler (lead >48h em 'Em Contato' sem intera\u00e7\u00e3o). Resetado a cada nova intera\u00e7\u00e3o/movimenta\u00e7\u00e3o."
-    },
-    "ultima_tentativa_em": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Data/hora da ultima tentativa de contato"
-    },
-    "proximo_contato": {
-      "type": "string",
-      "format": "date",
-      "description": "Data reagendada apos 'nao atendeu' (proximo dia util) ou do retorno obrigat\u00f3rio agendado ao entrar em 'Em Contato'"
-    },
-    "proximo_contato_hora": {
-      "type": "string",
-      "description": "Hor\u00e1rio (HH:MM) do retorno obrigat\u00f3rio agendado ao mover o lead para 'Em Contato'"
-    },
-    "meet_link": {
-      "type": "string",
-      "description": "Link da reuniao Google Meet (vinculado)"
+      "type": "string"
     },
     "google_event_id": {
-      "type": "string",
-      "description": "ID do evento no Google Calendar (vinculado)"
+      "description": "ID do evento no Google Calendar (vinculado)",
+      "type": "string"
     },
     "historico": {
-      "type": "array",
+      "default": [],
       "description": "Linha do tempo de tentativas/atualizacoes do item",
       "items": {
-        "type": "object",
         "properties": {
-          "status": {
+          "data": {
+            "format": "date-time",
             "type": "string"
           },
           "observacao": {
             "type": "string"
           },
-          "data": {
-            "type": "string",
-            "format": "date-time"
+          "status": {
+            "type": "string"
           }
-        }
+        },
+        "type": "object"
       },
-      "default": []
+      "type": "array"
+    },
+    "id_externo": {
+      "description": "ID do negocio na origem (ex: Bitrix) - evita duplicidade em reimportacoes",
+      "type": "string"
+    },
+    "lead_indicacao_id": {
+      "description": "ID da LeadIndicacao (quando tipo_origem=indicacao e houver indicacao de origem)",
+      "type": "string"
+    },
+    "lote_id": {
+      "description": "Lote de importacao de origem",
+      "type": "string"
+    },
+    "meet_link": {
+      "description": "Link da reuniao Google Meet (vinculado)",
+      "type": "string"
+    },
+    "nome": {
+      "description": "Nome do contato (denormalizado)",
+      "type": "string"
     },
     "origem_label": {
-      "type": "string",
-      "description": "Label legivel da origem (ex: 'Indicacao - Nome do Parceiro', 'Carteira')"
+      "description": "Label legivel da origem (ex: 'Indicacao - Nome do Parceiro', 'Carteira')",
+      "type": "string"
+    },
+    "parceiro_email": {
+      "description": "E-mail do indicador (denormalizado de Parceiro/LeadIndicacao) para o gerente interagir com o responsavel pela indicacao",
+      "type": "string"
+    },
+    "parceiro_nome": {
+      "description": "Nome do parceiro/indicador que indicou o lead (denormalizado de LeadIndicacao)",
+      "type": "string"
+    },
+    "parceiro_percentual": {
+      "description": "Percentual de comissionamento do parceiro (denormalizado de LeadIndicacao)",
+      "type": "number"
+    },
+    "parceiro_telefone": {
+      "description": "Telefone/WhatsApp do indicador (denormalizado de Parceiro) para o gerente interagir com o responsavel pela indicacao",
+      "type": "string"
+    },
+    "posicao": {
+      "default": 1,
+      "description": "Ordem dentro do dia/prioridade (1 = primeiro)",
+      "type": "number"
+    },
+    "primeiro_toque_em": {
+      "description": "Primeiro toque registrado (speed-to-lead)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "prioridade": {
+      "default": 1,
+      "description": "0=indicacao (topo), 1=carteira",
+      "type": "number"
+    },
+    "produto": {
+      "description": "Produto de interesse (denormalizado)",
+      "type": "string"
+    },
+    "produto_contratado": {
+      "description": "Produto ja contratado pelo cliente no Grupo Villela (gancho para venda cruzada)",
+      "type": "string"
+    },
+    "proximo_contato": {
+      "description": "Data reagendada apos 'nao atendeu' (proximo dia util) ou do retorno obrigatorio agendado ao entrar em 'Em Contato'",
+      "format": "date",
+      "type": "string"
+    },
+    "proximo_contato_hora": {
+      "description": "Horario (HH:MM) do retorno obrigatorio agendado ao mover o lead para 'Em Contato'",
+      "type": "string"
+    },
+    "proximo_toque_em": {
+      "description": "Quando vence o proximo toque da cadencia (UTC)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "ref_id": {
+      "description": "ID da entidade de origem: Cliente.id (carteira) ou ConversaWhatsapp.id (indicacao)",
+      "type": "string"
+    },
+    "responsavel_origem": {
+      "description": "Responsavel pelo contrato na origem (celula/advogado do Grupo)",
+      "type": "string"
+    },
+    "reuniao_em": {
+      "description": "Data/hora da reuniao marcada (UTC)",
+      "format": "date-time",
+      "type": "string"
+    },
+    "score": {
+      "description": "Score 0-100",
+      "type": "number"
+    },
+    "segmento": {
+      "description": "Segmento calculado pelo score",
+      "enum": [
+        "quente",
+        "morno",
+        "frio"
+      ],
+      "type": "string"
+    },
+    "status": {
+      "default": "pendente",
+      "description": "Status do item na fila (pendente=na fila, atendeu=em contato, reuniao_marcada=reuniao agendada, qualificado, convertido, descartado=desqualificado, nao_atendeu=reagendado, nutricao=desqualificacao temporaria)",
+      "enum": [
+        "pendente",
+        "atendeu",
+        "nao_atendeu",
+        "reuniao_marcada",
+        "qualificado",
+        "convertido",
+        "descartado",
+        "nutricao"
+      ],
+      "type": "string"
+    },
+    "status_desde": {
+      "description": "Data/hora em que o lead entrou no status atual - base do contador de dias parado e do alerta de inercia (SLA 48h em 'Em Contato')",
+      "format": "date-time",
+      "type": "string"
+    },
+    "telefone": {
+      "description": "Telefone/WhatsApp do contato (denormalizado)",
+      "type": "string"
+    },
+    "telefone_e164": {
+      "description": "Telefone normalizado E.164 (+55...)",
+      "type": "string"
+    },
+    "telefone_valido": {
+      "default": true,
+      "type": "boolean"
+    },
+    "tentativas": {
+      "default": 0,
+      "description": "Numero de 'nao atendeu' no dia",
+      "type": "number"
+    },
+    "tentativas_contato": {
+      "default": 0,
+      "description": "Tentativas de contato registradas enquanto o lead esta em 'Em Contato' (ex: ligacao/WhatsApp sem retorno). A partir de 4 tentativas o lead e sugerido para Nutricao (ghosting).",
+      "type": "number"
+    },
+    "tipo_origem": {
+      "description": "Origem do contato: 'carteira' (Cliente/AgendaContato) ou 'indicacao' (ConversaWhatsapp/LeadIndicacao)",
+      "enum": [
+        "carteira",
+        "indicacao"
+      ],
+      "type": "string"
+    },
+    "tipo_pessoa": {
+      "enum": [
+        "PF",
+        "PJ"
+      ],
+      "type": "string"
+    },
+    "uf": {
+      "type": "string"
+    },
+    "ultima_tentativa_em": {
+      "description": "Data/hora da ultima tentativa de contato",
+      "format": "date-time",
+      "type": "string"
+    },
+    "valor_contrato": {
+      "description": "Valor do contrato original",
+      "type": "number"
+    },
+    "valor_estimado": {
+      "description": "Valor estimado da indicacao (denormalizado de LeadIndicacao)",
+      "type": "number"
+    },
+    "vendedor_email": {
+      "description": "E-mail do gerente responsavel (denormalizado; base para regras de acesso por linha)",
+      "type": "string"
+    },
+    "vendedor_id": {
+      "description": "ID do gerente responsavel pelo contato",
+      "type": "string"
+    },
+    "vendedor_nome": {
+      "description": "Nome do gerente responsavel",
+      "type": "string"
+    },
+    "whatsapp_primeiro_em": {
+      "description": "Primeiro WhatsApp enviado ao lead (controle de limite diario)",
+      "format": "date-time",
+      "type": "string"
     }
   },
   "required": [
@@ -169,5 +275,6 @@
     "vendedor_id",
     "data_fila",
     "status"
-  ]
+  ],
+  "type": "object"
 }
