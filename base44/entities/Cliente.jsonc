@@ -1,100 +1,159 @@
 {
   "name": "Cliente",
-  "type": "object",
   "properties": {
-    "nome": {
-      "type": "string",
-      "description": "Nome completo do cliente"
+    "bairro": {
+      "description": "Bairro",
+      "type": "string"
     },
-    "cpf_cnpj": {
-      "type": "string",
-      "description": "CPF ou CNPJ"
-    },
-    "email": {
-      "type": "string",
-      "description": "Email do cliente"
-    },
-    "telefone": {
-      "type": "string",
-      "description": "Telefone de contato"
-    },
-    "responsavel_legal": {
-      "type": "string",
-      "description": "Nome do respons\u00e1vel legal (PJ)"
-    },
-    "cpf_responsavel": {
-      "type": "string",
-      "description": "CPF do respons\u00e1vel legal (PJ)"
-    },
-    "nascimento": {
-      "type": "string",
-      "format": "date",
-      "description": "Data de nascimento (PF)"
-    },
-    "nacionalidade": {
-      "type": "string",
-      "description": "Nacionalidade (PF)"
-    },
-    "profissao": {
-      "type": "string",
-      "description": "Profiss\u00e3o (PF)"
-    },
-    "estado_civil": {
-      "type": "string",
-      "description": "Estado civil (PF)"
+    "cadencia_id": {
+      "description": "Cadencia aplicada",
+      "type": "string"
     },
     "cep": {
-      "type": "string",
-      "description": "CEP do endere\u00e7o"
-    },
-    "endereco": {
-      "type": "string",
-      "description": "Logradouro (rua, n\u00famero, complemento)"
-    },
-    "bairro": {
-      "type": "string",
-      "description": "Bairro"
+      "description": "CEP do endereco",
+      "type": "string"
     },
     "cidade": {
-      "type": "string",
-      "description": "Cidade"
+      "description": "Cidade",
+      "type": "string"
+    },
+    "consentimento_status": {
+      "default": "base_cliente",
+      "enum": [
+        "base_cliente",
+        "opt_in",
+        "opt_out",
+        "nao_perturbe"
+      ],
+      "type": "string"
+    },
+    "cpf_cnpj": {
+      "description": "CPF ou CNPJ",
+      "type": "string"
+    },
+    "cpf_responsavel": {
+      "description": "CPF do responsavel legal (PJ)",
+      "type": "string"
+    },
+    "email": {
+      "description": "Email do cliente",
+      "type": "string"
+    },
+    "endereco": {
+      "description": "Logradouro (rua, numero, complemento)",
+      "type": "string"
     },
     "estado": {
-      "type": "string",
-      "description": "Estado (UF)"
+      "description": "Estado (UF)",
+      "type": "string"
     },
-    "vendedor_id": {
-      "type": "string",
-      "description": "ID do vendedor respons\u00e1vel (carteira)"
+    "estado_civil": {
+      "description": "Estado civil (PF)",
+      "type": "string"
     },
-    "vendedor_nome": {
-      "type": "string",
-      "description": "Nome do vendedor respons\u00e1vel (carteira)"
+    "id_externo": {
+      "description": "ID do negocio na origem",
+      "type": "string"
+    },
+    "lead_id": {
+      "description": "ID do lead de origem (quando aplicavel)",
+      "type": "string"
+    },
+    "liberar_em": {
+      "description": "Data de liberacao na fila",
+      "format": "date",
+      "type": "string"
+    },
+    "nacionalidade": {
+      "description": "Nacionalidade (PF)",
+      "type": "string"
+    },
+    "nascimento": {
+      "description": "Data de nascimento (PF)",
+      "format": "date",
+      "type": "string"
+    },
+    "nome": {
+      "description": "Nome completo do cliente",
+      "type": "string"
     },
     "observacao": {
-      "type": "string",
-      "description": "Observa\u00e7\u00f5es"
+      "description": "Observacoes",
+      "type": "string"
     },
     "origem": {
-      "type": "string",
+      "default": "nativo",
+      "description": "Origem do cliente",
       "enum": [
         "nativo",
         "lead",
         "lead_convertido"
       ],
-      "default": "nativo",
-      "description": "Origem do cliente"
+      "type": "string"
     },
-    "lead_id": {
-      "type": "string",
-      "description": "ID do lead de origem (quando aplic\u00e1vel)"
+    "produto_contratado": {
+      "description": "Produto ja contratado no Grupo Villela",
+      "type": "string"
+    },
+    "profissao": {
+      "description": "Profissao (PF)",
+      "type": "string"
+    },
+    "responsavel_legal": {
+      "description": "Nome do responsavel legal (PJ)",
+      "type": "string"
+    },
+    "responsavel_origem": {
+      "description": "Responsavel na origem (celula/advogado)",
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "segmento": {
+      "enum": [
+        "quente",
+        "morno",
+        "frio"
+      ],
+      "type": "string"
     },
     "subcarteira": {
-      "type": "string",
-      "description": "Nome da subcarteira/pasta para organizar grupos de leads"
+      "description": "Nome da subcarteira/pasta para organizar grupos de leads",
+      "type": "string"
+    },
+    "telefone": {
+      "description": "Telefone de contato",
+      "type": "string"
+    },
+    "telefone_e164": {
+      "type": "string"
+    },
+    "telefone_valido": {
+      "default": true,
+      "type": "boolean"
+    },
+    "tipo_pessoa": {
+      "enum": [
+        "PF",
+        "PJ"
+      ],
+      "type": "string"
+    },
+    "valor_contrato": {
+      "type": "number"
+    },
+    "vendedor_id": {
+      "description": "ID do vendedor responsavel (carteira)",
+      "type": "string"
+    },
+    "vendedor_nome": {
+      "description": "Nome do vendedor responsavel (carteira)",
+      "type": "string"
     }
   },
   "required": [
     "nome"
-  ]
+  ],
+  "type": "object"
 }
