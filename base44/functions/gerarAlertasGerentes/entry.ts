@@ -57,7 +57,9 @@ Deno.serve(async (req) => {
     let candidatos: any[] | null = null;
     for (const f of inbound) {
       if (f.primeiro_toque_em) continue;
-      const base = f.entrada_inbound_em || f.created_date; if (!base) continue;
+      // Só aplica SLA/escalonamento a itens que entraram pela nova regra (têm entrada_inbound_em).
+      // Itens antigos (sem esse campo) nunca são reatribuídos automaticamente.
+      const base = f.entrada_inbound_em; if (!base) continue;
       let t0 = new Date(String(base).endsWith('Z') || String(base).includes('+') ? base : base + 'Z').getTime();
       // relógio do SLA só corre dentro da janela de contato
       const ini = new Date(`${hoje}T${String(Math.floor(iniJ / 60)).padStart(2, '0')}:${String(iniJ % 60).padStart(2, '0')}:00-03:00`).getTime();
