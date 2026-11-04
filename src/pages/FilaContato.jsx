@@ -2,7 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
-import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X, AlertTriangle, Target, UserPlus } from 'lucide-react';
+import { Loader2, RefreshCw, Zap, Lock, Phone, Users, Search, Calendar, Clock, X, AlertTriangle, Target, UserPlus, LayoutGrid, List, CalendarDays, Crosshair, Smartphone, Upload } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import FilaLista from '@/components/fila/FilaLista';
+import AgendaGerente from '@/components/fila/AgendaGerente';
+import ModoFoco from '@/components/fila/ModoFoco';
+import MeuCelularModal from '@/components/fila/MeuCelularModal';
+import AlertasSino from '@/components/fila/AlertasSino';
 import { toast } from 'sonner';
 import FilaContatoKanban from '@/components/fila/FilaContatoKanban';
 import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
@@ -35,6 +41,9 @@ export default function FilaContato() {
   const [modo, setModo] = useState('fila'); // 'fila' (data_fila) | 'agendados' (proximo_contato)
   const [gerentesSel, setGerentesSel] = useState([]);
   const [soAtrasados, setSoAtrasados] = useState(false);
+  const [visao, setVisao] = useState('kanban'); // kanban | lista | agenda | foco
+  const [celularModal, setCelularModal] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -51,6 +60,15 @@ export default function FilaContato() {
   }, []);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+  const adminTudo = isAdmin && !getImpersonatedVendedor() && !vendedor;
+
+  // Abre o lead vindo de um alerta (?fila=ID)
+  useEffect(() => {
+    const id = searchParams.get('fila');
+    if (!id || !user) return;
+    base44.entities.FilaContato.get(id).then(f => { if (f) setPopup(f); }).catch(() => {});
+    searchParams.delete('fila'); setSearchParams(searchParams, { replace: true });
+  }, [user]); // eslint-disable-line
   // O menu "Fila de Contatos" é alwaysVisible no Layout (visível a todos os
   // gerentes), então a página libera qualquer usuário autenticado.
   const temPermissao = !!user;
@@ -62,10 +80,12 @@ export default function FilaContato() {
       const vid = vendedor?.id;
       const isAdminAll = isAdmin && !getImpersonatedVendedor() && !vendedor;
       const filtrarVendedor = (lista) => isAdminAll ? lista : lista.filter(f => f.vendedor_id === vid);
+      // Filtro no SERVIDOR (cada gerente só baixa os próprios itens)
+      const base = isAdminAll ? {} : { vendedor_id: vid };
 
       if (modo === 'agendados') {
         // Modo agendados: pendentes reagendados para o período (proximo_contato)
-        const todos = await base44.entities.FilaContato.filter({ status: 'pendente' }, 'prioridade', 500);
+        const todos = await base44.entities.FilaContato.filter({ status: 'pendente', ...base }, 'prioridade', 500);
         return filtrarVendedor(todos.filter(f => (f.proximo_contato || '') >= dataInicio && (f.proximo_contato || '') <= dataFiltro));
       }
 
@@ -78,14 +98,14 @@ export default function FilaContato() {
       // - Tratados (atendeu/qualificado/convertido/descartado/nao_atendeu):
       //   persistem na esteira independente da data.
       const [indicacoes, carteira, tratados] = await Promise.all([
-        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'indicacao' }, 'prioridade', 500),
-        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'carteira' }, 'prioridade', 500),
-        base44.entities.FilaContato.filter({ status: 'atendeu' }, '-updated_date', 500),
+        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'indicacao', ...base }, 'prioridade', 500),
+        base44.entities.FilaContato.filter({ status: 'pendente', tipo_origem: 'carteira', ...base }, 'prioridade', 500),
+        base44.entities.FilaContato.filter({ status: 'atendeu', ...base }, '-updated_date', 500),
       ]);
-      const outrosStatus = ['qualificado', 'convertido', 'descartado', 'nao_atendeu', 'nutricao'];
+      const outrosStatus = ['reuniao_marcada', 'qualificado', 'convertido', 'descartado', 'nao_atendeu', 'nutricao'];
       const outros = [];
       for (const s of outrosStatus) {
-        const items = await base44.entities.FilaContato.filter({ status: s }, '-updated_date', 300);
+        const items = await base44.entities.FilaContato.filter({ status: s, ...base }, '-updated_date', 300);
         outros.push(...items);
       }
       const carteiraCarry = carteira.filter(c => (c.data_fila || '') <= dataFiltro);
@@ -110,18 +130,8 @@ export default function FilaContato() {
         vistos.add(k);
         deduped.push(f);
       }
-      // Dedup por PESSOA (mesmo gerente + mesmo nome): evita que o mesmo lead
-      // apareça ramificado em duas esteiras (ex.: indicação + carteira).
-      const porPessoa = new Set();
-      const semRamificados = [];
-      for (const f of deduped) {
-        const nm = (f.nome || '').toLowerCase().trim().replace(/\s+/g, ' ');
-        const k = `${nm}|${f.vendedor_id || ''}`;
-        if (nm && porPessoa.has(k)) continue;
-        if (nm) porPessoa.add(k);
-        semRamificados.push(f);
-      }
-      return filtrarVendedor(semRamificados);
+      // (Removido o dedupe por NOME: descartava homônimos. A chave é origem+ref+gerente.)
+      return filtrarVendedor(deduped);
     },
     enabled: !!user && (isAdmin || !!vendedor),
     refetchInterval: 30000,
