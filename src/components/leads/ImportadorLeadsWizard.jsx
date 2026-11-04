@@ -101,8 +101,11 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
   const validar = () => {
     const get = (r, k) => (mapa[k] === undefined || mapa[k] === '' ? '' : clean(r[mapa[k]]));
     const validos = [], rejeitados = [];
-    const vistoExt = new Set(), vistoDoc = new Set(), vistoTel = new Set();
-    const cont = { sem_nome: 0, doc_invalido: 0, tel_invalido: 0, duplicado_arquivo: 0, ja_na_base: 0, suprimido: 0 };
+    const vistoExt = new Set(), vistoDoc = new Set();
+    const cont = { sem_nome: 0, doc_invalido: 0, tel_invalido: 0, duplicado_arquivo: 0, ja_na_base: 0, suprimido: 0, tel_compartilhado: 0 };
+    // Telefones que aparecem em mais de um cliente (CPF/CNPJ diferentes): são mantidos e marcados, não descartados
+    const freqTel = new Map();
+    for (const r of dados.rows) { const p = parsePhone(get(r, 'telefone')); if (p) freqTel.set(p.e164, (freqTel.get(p.e164) || 0) + 1); }
     dados.rows.forEach((r, idx) => {
       const rej = (motivo, chave) => { cont[chave]++; rejeitados.push({ linha: idx + 2, motivo, nome: get(r, 'nome'), cpf_cnpj: get(r, 'cpf_cnpj'), telefone: get(r, 'telefone') }); };
       const nome = cleanName(get(r, 'nome'));
@@ -113,9 +116,11 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
       if (!tel) return rej('Telefone ausente ou inválido', 'tel_invalido');
       const ext = get(r, 'id_externo');
       if (supressao.doc.has(doc.digitos) || supressao.tel.has(tel.e164)) return rej('Na lista de supressão (opt-out)', 'suprimido');
-      if ((ext && existentes.ext.has(ext)) || existentes.doc.has(doc.digitos) || existentes.tel.has(tel.e164)) return rej('Já existe na base', 'ja_na_base');
-      if ((ext && vistoExt.has(ext)) || vistoDoc.has(doc.digitos) || vistoTel.has(tel.e164)) return rej('Duplicado no arquivo', 'duplicado_arquivo');
-      if (ext) vistoExt.add(ext); vistoDoc.add(doc.digitos); vistoTel.add(tel.e164);
+      if ((ext && existentes.ext.has(ext)) || existentes.doc.has(doc.digitos)) return rej('Já existe na base', 'ja_na_base');
+      if ((ext && vistoExt.has(ext)) || vistoDoc.has(doc.digitos)) return rej('Duplicado no arquivo (mesmo CPF/CNPJ)', 'duplicado_arquivo');
+      if (ext) vistoExt.add(ext); vistoDoc.add(doc.digitos);
+      const compartilhado = (freqTel.get(tel.e164) || 0) > 1 || existentes.tel.has(tel.e164);
+      if (compartilhado) cont.tel_compartilhado++;
       const tipoArq = get(r, 'tipo_pessoa').toUpperCase();
       const lead = {
         nome, cpf_cnpj: doc.formatado, telefone: tel.formatado, telefone_e164: tel.e164, telefone_valido: true,
@@ -126,6 +131,7 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
         responsavel_origem: get(r, 'responsavel_origem') || undefined,
         endereco: get(r, 'endereco') || undefined, cidade: get(r, 'cidade') || undefined,
         uf: get(r, 'uf') || undefined, cep: get(r, 'cep') || undefined, email: get(r, 'email') || undefined,
+        observacao: compartilhado ? 'Telefone compartilhado com outro cliente da base (conferir antes de ligar)' : undefined,
       };
       Object.assign(lead, calcularScore(lead, cfg));
       validos.push(lead);
@@ -261,7 +267,7 @@ export default function ImportadorLeadsWizard({ leadsExistentes = [], onClose, o
                 <Cont rotulo="Linhas no arquivo" valor={validacao.total} cor="text-gray-700" />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
-                {[['Sem nome', 'sem_nome'], ['CPF/CNPJ inválido', 'doc_invalido'], ['Telefone inválido', 'tel_invalido'], ['Duplicado no arquivo', 'duplicado_arquivo'], ['Já existe na base', 'ja_na_base'], ['Opt-out / supressão', 'suprimido']].map(([r, k]) => (
+                {[['Sem nome', 'sem_nome'], ['CPF/CNPJ inválido', 'doc_invalido'], ['Telefone inválido', 'tel_invalido'], ['Mesmo CPF/CNPJ repetido', 'duplicado_arquivo'], ['Já existe na base', 'ja_na_base'], ['Opt-out / supressão', 'suprimido'], ['Telefone repetido (mantidos)', 'tel_compartilhado']].map(([r, k]) => (
                   <div key={k} className="flex justify-between border border-gray-100 rounded-lg px-2 py-1.5"><span className="text-gray-500">{r}</span><strong>{validacao.cont[k]}</strong></div>
                 ))}
               </div>
