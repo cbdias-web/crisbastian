@@ -85,7 +85,7 @@ describe('ModoFoco', () => {
       F({ id: 'in1', nome: 'Inbound novo', tipo_origem: 'indicacao', prioridade: 0 }),
     ];
     tables.ConfigFila = [{ chave: 'padrao', toques_dia: 80 }];
-    tables.ModeloMensagem = [{ id: 'm1', nome: 'Indicação — 1º contato', canal: 'whatsapp', publico: 'indicacao', primeiro_contato: true, texto: 'Olá, {{primeiro_nome}}! Aqui é {{gerente}}.' }];
+    tables.ModeloMensagem = [{ id: 'm1', ativo: true, nome: 'Indicação — 1º contato', canal: 'whatsapp', publico: 'indicacao', primeiro_contato: true, texto: 'Olá, {{primeiro_nome}}! Aqui é {{gerente}}.' }];
     wrap(<ModoFoco vendedor={{ id: 'vA', nome: 'ANA PAULA', celular_operadora: '+5551999998888' }} user={{ email: 'a@x' }} />);
     await screen.findByText('Inbound novo');
     expect(screen.getByDisplayValue(/Olá, Inbound! Aqui é Ana\./)).toBeTruthy();
@@ -100,7 +100,7 @@ describe('ModoFoco', () => {
   it('bloqueia 1º WhatsApp acima do limite diário', async () => {
     tables.FilaContato = [F({ id: 'x', nome: 'Sem WA ainda' })];
     tables.ConfigFila = [{ chave: 'padrao', limite_primeiro_whatsapp_dia: 2 }];
-    tables.RegistroContato = [{ canal: 'whatsapp' }, { canal: 'whatsapp' }, { canal: 'whatsapp' }];
+    tables.RegistroContato = [1, 2, 3].map(() => ({ canal: 'whatsapp', vendedor_id: 'vA', data_dia: hoje }));
     wrap(<ModoFoco vendedor={{ id: 'vA', nome: 'Ana' }} user={{}} />);
     await screen.findByText('Sem WA ainda');
     await waitFor(() => expect(screen.getByText(/3\/2 1ºs contatos/)).toBeTruthy());
