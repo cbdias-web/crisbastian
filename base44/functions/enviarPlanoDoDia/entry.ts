@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     if (!isDiaUtil(hoje) || (cfg.feriados || []).includes(hoje) || !(cfg.dias_uteis || [1, 2, 3, 4, 5]).includes(diaSemana)) {
       return Response.json({ success: true, motivo: 'fora_de_dia_util' });
     }
-    const vendedores = (await sr.Vendedor.filter({ ativo: true }, 'nome', 200)).filter((v: any) => v.email && !/cris\s*bastian|crisbastian/i.test(`${v.nome} ${v.email}`));
+    const vendedores = (await sr.Vendedor.filter({ ativo: true }, 'nome', 200)).filter((v: any) => v.email && !/cris[\s.]*(bastian|morais)/i.test(`${v.nome} ${v.email}`));
     let enviados = 0;
     for (const v of vendedores) {
       if (v.alertas_silenciados || v.canal_alerta === 'push') continue;

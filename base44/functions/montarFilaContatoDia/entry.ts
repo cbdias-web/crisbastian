@@ -25,6 +25,8 @@ import { rotuloOrigem } from '../../shared/rotuloOrigem.ts';
 //
 // Payload: { vendedor_id?: string }
 
+const dataMenosDias = (d: string, n: number) => { const [a, m, di] = d.split('-').map(Number); const x = new Date(a, m - 1, di - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; };
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -60,7 +62,7 @@ export default async function(req: Request): Promise<Response> {
 
     // ── Exclusão: perfis internos sem agenda/carteira (ex.: Cris Bastian) ──
     const semAcento = (s: string) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
+    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian', 'cris morais', 'cris.morais', 'crismorais'];
     const excluido = (v: any) => {
       const n = semAcento(v.nome);
       const e = (v.email || '').toLowerCase();
@@ -360,7 +362,7 @@ export default async function(req: Request): Promise<Response> {
       // Pendentes de hoje e de dias anteriores (carry-over), mais antigas primeiro; só o necessário p/ preencher as vagas
       const agendas = vagas > 0
         ? await base44.asServiceRole.entities.AgendaContato.filter(
-            { vendedor_id: v.id, status: 'pendente', data_agendada: { $lte: hoje } }, 'data_agendada', Math.min(500, CAP_FILA_DIA + vagas + 20)
+            { vendedor_id: v.id, status: 'pendente', data_agendada: { $lte: hoje, $gte: dataMenosDias(hoje, 3) } }, 'data_agendada', Math.min(500, CAP_FILA_DIA + vagas + 20)
           )
         : [];
       for (const a of agendas) {

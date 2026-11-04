@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const META_DIA = Math.max(1, Number(cfg.novos_por_dia) || 5);
 
     const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true });
-    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian'];
+    const NOMES_EXCLUIDOS = ['cris bastian', 'cris.bastian', 'crisbastian', 'cris morais', 'cris.morais', 'crismorais'];
     const vendedores = todosVendedores.filter(v => {
       const nomeMin = (v.nome || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const emailMin = (v.email || '').toLowerCase();

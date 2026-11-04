@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     const SLA_ALERTA = (cfg.sla_inbound_alerta_min || 5) * 60000;
     const SLA_ESCALONA = (cfg.sla_inbound_escalonar_min || 10) * 60000;
 
-    const vendedores = (await sr.Vendedor.filter({ ativo: true }, 'nome', 200)).filter((v: any) => !/cris\s*bastian|crisbastian/i.test(`${v.nome} ${v.email}`));
+    const vendedores = (await sr.Vendedor.filter({ ativo: true }, 'nome', 200)).filter((v: any) => !/cris[\s.]*(bastian|morais)/i.test(`${v.nome} ${v.email}`));
     const vPorId = new Map(vendedores.map((v: any) => [v.id, v]));
 
     const desde = new Date(agora.getTime() - 48 * 3600000).toISOString();
