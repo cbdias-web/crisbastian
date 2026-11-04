@@ -354,7 +354,7 @@ export default async function(req: Request): Promise<Response> {
       // Pendentes de hoje e de dias anteriores (carry-over), mais antigas primeiro; só o necessário p/ preencher as vagas
       const agendas = vagas > 0
         ? await base44.asServiceRole.entities.AgendaContato.filter(
-            { vendedor_id: v.id, status: 'pendente', data_agendada: { $lte: hoje } }, 'data_agendada', Math.min(300, vagas + 60)
+            { vendedor_id: v.id, status: 'pendente', data_agendada: { $lte: hoje } }, 'data_agendada', Math.min(500, CAP_FILA_DIA + vagas + 20)
           )
         : [];
       for (const a of agendas) {
@@ -371,6 +371,11 @@ export default async function(req: Request): Promise<Response> {
         // Guarda anti-retrabalho: carteira resolvida não reentra
         const recenteCart = deletado ? null : porRefMap.get(key);
         if (recenteCart && (recenteCart.status === 'convertido' || recenteCart.status === 'descartado')) continue;
+        // Agenda atrasada (carry-over) de lead que já foi tratado na fila: encerra a agenda velha e não repromove
+        if (a.data_agendada && a.data_agendada < hoje && recenteCart && recenteCart.status !== 'pendente') {
+          await base44.asServiceRole.entities.AgendaContato.update(a.id, { status: 'realizado', resultado: 'Já tratado na Fila de Contatos' }).catch(() => {});
+          continue;
+        }
         // Cross-origem: cliente já convertido/desqualificado não volta
         const cid = a.cliente_id || a.lead_id || '';
         if (cid && resolvidoPorClienteId.has(cid)) continue;
