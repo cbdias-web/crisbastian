@@ -49,6 +49,7 @@ export function parsePhone(raw, dddPadrao) {
   if ((d.length === 8 || d.length === 9) && dddPadrao) d = String(dddPadrao) + d;
   if (d.length !== 10 && d.length !== 11) return null;
   if (!DDDS.has(Number(d.slice(0, 2)))) return null;
+  if (d.length === 10 && '6789'.includes(d[2])) d = d.slice(0, 2) + '9' + d.slice(2); // celular antigo sem o 9
   const sub = d.slice(2);
   if (new Set(sub).size <= 2 && [...sub].filter(c => c === sub[0]).length >= sub.length - 1) return null;
   if (['987654321', '123456789', '12345678', '98765432'].includes(sub)) return null;

@@ -11,7 +11,6 @@ import HistoricoInteracoes from './HistoricoInteracoes';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import AgendarRetornoModal from './AgendarRetornoModal';
 import PosChamadaSheet from './PosChamadaSheet';
-import { Smartphone } from 'lucide-react';
 
 const AURORA = {
   surface: '#161b22',
@@ -43,17 +42,6 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
   const [retornoModal, setRetornoModal] = useState(false); // retorno obrigatório ao entrar em "Em Contato"
   const [retornoFluxo, setRetornoFluxo] = useState(null); // 'classificar' | 'atendeu'
   const [posChamada, setPosChamada] = useState(null); // { canal }
-  const [cmdEnviando, setCmdEnviando] = useState(false);
-
-  // Ponte Desktop → Celular: o botão aparece no celular pareado do gerente
-  const enviarAoCelular = async (canal) => {
-    setCmdEnviando(true);
-    try {
-      await base44.entities.ComandoDiscagem.create({ vendedor_id: vendedor?.id || fila.vendedor_id, canal, telefone_e164: fila.telefone_e164 || `+${String(fila.telefone || '').replace(/\D/g, '')}`, nome: fila.nome, fila_id: fila.id, produto_contratado: fila.produto_contratado || fila.produto || '', criado_em: new Date().toISOString(), status: 'enviado' });
-      toast.success('Enviado ao seu celular — toque no botão que apareceu lá.');
-    } catch (e) { toast.error('Falha ao enviar ao celular: ' + (e?.message || e)); }
-    setCmdEnviando(false);
-  };
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
@@ -430,26 +418,22 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                             </div>
                             <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#34d399' }}><MessageSquare className="w-3 h-3" /> WhatsApp</p>
                           </a>
-                          <a href={tel || undefined}
-                            title={tel ? 'Ligar agora' : 'Telefone não informado'}
-                            className="group flex flex-col items-center transition hover:scale-[1.03] focus:outline-none"
-                            style={{ cursor: tel ? 'pointer' : 'not-allowed', opacity: tel ? 1 : 0.45 }}>
-                            <div className="rounded-xl p-2 inline-flex items-center gap-2 transition group-hover:shadow-lg"
+                          <div title={tel ? 'Escaneie com a câmera do celular para ligar' : 'Telefone não informado'}
+                            className="flex flex-col items-center select-none"
+                            style={{ opacity: tel ? 1 : 0.45 }}>
+                            <div className="rounded-xl p-2 inline-flex items-center gap-2"
                               style={{ background: '#ffffff', border: '1px solid rgba(59,130,249,0.55)', boxShadow: '0 0 18px rgba(59,130,249,0.20)' }}>
                               <img src={qrUrl(tel || ' ', 88)} alt="QR Ligação" className="rounded-md" style={{ width: 88, height: 88 }} />
                             </div>
                             <p className="text-[11px] mt-2 flex items-center justify-center gap-1 font-bold" style={{ color: '#60a5fa' }}><PhoneIcon className="w-3 h-3" /> Ligação</p>
-                          </a>
+                            <p className="text-[9px]" style={{ color: AURORA.textMuted }}>aponte a câmera do celular</p>
+                          </div>
                         </>
                       );
                     })()}
                   </div>
                 </div>
 
-                <div className="w-full flex gap-2" style={{ maxWidth: 420 }}>
-                  <button onClick={() => enviarAoCelular('ligar')} disabled={cmdEnviando} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold disabled:opacity-40" style={{ background: 'rgba(59,130,249,0.12)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.4)' }}><Smartphone className="w-3.5 h-3.5" /> Ligar no meu celular</button>
-                  <button onClick={() => enviarAoCelular('whatsapp')} disabled={cmdEnviando} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-bold disabled:opacity-40" style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.4)' }}><Smartphone className="w-3.5 h-3.5" /> WhatsApp no meu celular</button>
-                </div>
                 {/* Botões de desfecho (chapados) + registro — simétricos e centralizados */}
                 <div className="w-full" style={{ maxWidth: 420 }}>
                   <div className="flex gap-3">

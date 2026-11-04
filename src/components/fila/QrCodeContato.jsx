@@ -41,10 +41,12 @@ export function telParaWa(tel) {
 
 export function telParaTel(tel) {
   if (!tel) return '';
-  const digits = String(tel).replace(/\D/g, '');
-  if (!digits) return '';
-  const completo = digits.startsWith('55') && digits.length >= 12 ? digits : (digits.length >= 10 && digits.length <= 11 ? `55${digits}` : digits);
-  return `tel:+${completo}`;
+  let d = String(tel).replace(/\D/g, '');
+  if (!d) return '';
+  if (d.startsWith('55') && (d.length === 12 || d.length === 13)) d = d.slice(2);
+  // Celular no formato antigo (DDD + 8 dígitos começando em 6-9): a operadora exige o 9 na frente
+  if (d.length === 10 && '6789'.includes(d[2])) d = d.slice(0, 2) + '9' + d.slice(2);
+  return d.length === 10 || d.length === 11 ? `tel:+55${d}` : `tel:${d}`;
 }
 
 export function waLink(tel, texto) {
