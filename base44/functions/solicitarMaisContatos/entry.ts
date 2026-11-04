@@ -93,7 +93,14 @@ export default async function(req: Request): Promise<Response> {
         status: 'pendente',
         resultado: '',
       });
+      const enr: any = {};
+      for (const k of ['id_externo','produto_contratado','valor_contrato','responsavel_origem','tipo_pessoa','email','cidade','telefone_e164','telefone_valido','score','segmento','consentimento_status','cadencia_id']) {
+        if (c[k] !== undefined && c[k] !== null && c[k] !== '') enr[k] = c[k];
+      }
+      if (c.estado) enr.uf = c.estado;
       await base44.asServiceRole.entities.FilaContato.create({
+        ...enr,
+        vendedor_email: vendedor.email || '',
         tipo_origem: 'carteira',
         ref_id: c.id,
         cliente_id: c.id,
