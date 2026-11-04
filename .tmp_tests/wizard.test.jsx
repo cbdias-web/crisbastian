@@ -14,7 +14,7 @@ function gerarCSV(N) {
   const rows = [hdr]; const esp = { validos: 0, docInv: 0, telInv: 0, dupArq: 0, semNome: 0 };
   for (let i = 1; i <= N; i++) {
     const pj = i % 5 === 0; const ddd = ['51', '11', '47', '31', '21'][i % 5];
-    let nome = pj ? `EMPRESA ${i}, COMERCIO & CIA LTDA` : `Cliente ${i}`; let doc = pj ? cnpj(i) : cpf(i); let tel = `(${ddd}) 9${String(80000000 + i).slice(0, 4)}-${String(1000 + (i % 9000)).padStart(4, '0')}`; let id = String(i);
+    let nome = pj ? `EMPRESA ${i}, COMERCIO & CIA LTDA` : `Cliente ${i}`; let doc = pj ? cnpj(i) : cpf(i); let tel = `(${ddd}) 9${String(1000 + Math.floor(i / 10000)).slice(-4)}-${String(i % 10000).padStart(4, '0')}`; let id = String(i);
     const k = i % 100;
     if (k === 1) { doc = '123.456.789-00'; esp.docInv++; }
     else if (k === 2) { tel = '99 99999999'; esp.telInv++; }
@@ -48,9 +48,9 @@ describe('Assistente de importação', () => {
     console.log('RESUMO PASSO 3 =>', txt.match(/Prontos para importar[\s\S]{0,200}/)?.[0].slice(0, 160));
     expect(txt).toContain('Prontos para importar');
     // números esperados
-    const prontos = Number((txt.match(/([\d.]+)Prontos para importar/) || [])[1]?.replace(/\./g, ''));
+    const prontos = Number(screen.getByText('Prontos para importar').previousSibling.textContent.replace(/\./g, ''));
     console.log('prontos', prontos, 'esperado ~', esp.validos);
-    expect(Math.abs(prontos - esp.validos)).toBeLessThanOrEqual(120); // duplicados por telefone/doc podem reduzir
+    expect(prontos).toBe(esp.validos);
     await act(async () => { fireEvent.click(screen.getByText(/^Importar [\d.]+ leads$/)); });
     await waitFor(() => expect(screen.getByText(/leads importados no lote/)).toBeTruthy(), { timeout: 60000 });
     expect(calls.bulk.length).toBe(prontos);
@@ -77,6 +77,6 @@ describe('Assistente de importação', () => {
     await act(async () => { fireEvent.click(screen.getByText('Validar dados')); });
     await screen.findByText(/passo 3 de 4/);
     const t = container.textContent;
-    expect(t).toMatch(/Já existe na base1/); expect(t).toMatch(/Opt-out \/ supressão1/); expect(t).toMatch(/1Prontos para importar/);
+    expect(t).toMatch(/Já existe na base1/); expect(t).toMatch(/Opt-out \/ supressão1/); expect(screen.getByText('Prontos para importar').previousSibling.textContent).toBe('1');
   });
 });

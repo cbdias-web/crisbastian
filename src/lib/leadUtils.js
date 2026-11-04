@@ -69,6 +69,7 @@ export function cleanName(n) {
   s = s.replace(/\s*[-–_:]*\s*MONITORE(\s+AQUI)?\s*(\(?\s*(PJ|PF)\s*\)?)?\s*$/i, '');
   s = s.replace(/^\s*(CPF|CNPJ)\s+/i, '');
   s = s.replace(/^[\s\-–_:.,]+|[\s\-–_:.,(]+$/g, '').replace(/\s+/g, ' ').trim();
+  if (!s) return ''; // só havia prefixo/documento: não é um nome
   return s.length >= 3 ? s : orig;
 }
 
