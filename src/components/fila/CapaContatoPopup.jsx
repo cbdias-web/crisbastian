@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Phone, Package, MapPin, Loader2, PhoneCall, PhoneMissed, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign, Handshake, Mail } from 'lucide-react';
+import { X, Phone, Package, MapPin, Loader2, PhoneCall, FileText, Phone as PhoneIcon, MessageSquare, ChevronRight, ArrowLeft, User, History, DollarSign, Handshake, Mail } from 'lucide-react';
 import { qrUrl, waLink, telParaTel } from './QrCodeContato';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import NegociacaoLeadBlock from './NegociacaoLeadBlock';
