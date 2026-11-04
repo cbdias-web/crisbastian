@@ -186,6 +186,11 @@ export default async function(req: Request): Promise<Response> {
       }).catch(() => {});
       // 2) Retira da esteira (sem desqualificar) — o lead reentra pela reposição na data de retorno
       await base44.asServiceRole.entities.FilaContato.delete(f.id).catch(() => {});
+      // Reagenda a(s) AgendaContato pendente(s) deste lead para a data de retorno (evita repromoção imediata no carry-over)
+      try {
+        const agsVelhas = await base44.asServiceRole.entities.AgendaContato.filter({ lead_id: f.ref_id, vendedor_id: f.vendedor_id, status: 'pendente' }, 'data_agendada', 5);
+        for (const ag of agsVelhas) await base44.asServiceRole.entities.AgendaContato.update(ag.id, { data_agendada: dataRetorno });
+      } catch (_) { /* melhor esforço */ }
       foraDaEsteira.add(f.id);
       itensReagendados5d++;
     }
