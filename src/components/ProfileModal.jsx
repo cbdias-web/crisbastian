@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import AvatarPickerModal from '@/components/vendedores/AvatarPickerModal';
 import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarModal';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
-import { formatarCelular } from '@/lib/celular';
+import { formatarCelular, normalizarCelular } from '@/lib/celular';
 
 const A = {
   bg: '#0d1117',
@@ -28,21 +28,21 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
   const [operadora, setOperadora] = useState('Vivo');
   const [vendedorId, setVendedorId] = useState(null);
 
-  // Celular/operadora ficam no cadastro do gerente (Vendedor) — só aparecem se ele existir
+  // Celular/operadora ficam no cadastro do gerente (Vendedor), casado pelo e-mail do usuário
   useEffect(() => {
     let cancel = false;
-    const imp = getImpersonatedVendedor();
     (async () => {
       try {
-        const resp = await base44.functions.invoke('salvarPerfilGerente', {
-          apenas_ler: true,
-          ...(imp ? { vendedor_id: imp.id } : {}),
-        });
-        const v = resp?.data?.vendedor;
-        if (cancel || !v) return;
-        setVendedorId(v.id);
-        setCelular(formatarCelular(v.celular_operadora));
-        setOperadora(v.operadora || 'Vivo');
+        const imp = getImpersonatedVendedor();
+        let v = imp || null;
+        if (!v && user?.email) {
+          const todos = await base44.entities.Vendedor.list();
+          v = todos.find(x => x.email?.toLowerCase() === user.email.toLowerCase()) || null;
+        }
+        if (cancel) return;
+        setVendedorId(v?.id || null);
+        setCelular(formatarCelular(v?.celular_operadora));
+        setOperadora(v?.operadora || 'Vivo');
       } catch (e) {}
     })();
     return () => { cancel = true; };
@@ -71,19 +71,25 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
+      const tel = normalizarCelular(celular);
+      if (tel === null) {
+        toast.error('Celular inválido — informe DDD + número (ex.: 51 99999-8888)');
+        setSavingProfile(false);
+        return;
+      }
       await base44.auth.updateMe({ nome_tratamento: profileForm.nome_tratamento });
       if (vendedorId) {
-        try {
-          await base44.functions.invoke('salvarPerfilGerente', {
-            celular_operadora: celular,
-            operadora,
-            ...(impersonado ? { vendedor_id: vendedorId } : {}),
-          });
-        } catch (e) {
-          toast.error(e?.response?.data?.error || 'Celular inválido — informe DDD + número');
-          setSavingProfile(false);
-          return;
-        }
+        await base44.entities.Vendedor.update(vendedorId, { celular_operadora: tel, operadora });
+      } else if (tel) {
+        await base44.entities.Vendedor.create({
+          nome: user?.full_name || user?.email,
+          email: user?.email,
+          celular_operadora: tel,
+          operadora,
+          ativo: true,
+          recebe_leads_indicacao: false,
+          ativo_central_leads: false,
+        });
       }
       const updatedUser = await base44.auth.me();
       onAvatarChange?.(avatarUrl, updatedUser);
@@ -176,8 +182,7 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
                 style={{ background: f.disabled ? 'rgba(0,0,0,0.2)' : A.accentDim, border: `1px solid ${A.border}`, color: f.disabled ? A.textMuted : A.text, cursor: f.disabled ? 'not-allowed' : 'text' }} />
             </div>
           ))}
-          {vendedorId && (
-            <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium mb-1 block" style={{ color: A.textMuted }}>Celular (com DDD)</label>
                 <input type="text" value={celular} onChange={e => setCelular(e.target.value)}
@@ -193,8 +198,7 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
                   {['Vivo', 'Claro', 'TIM', 'Oi', 'Outra'].map(o => <option key={o} value={o}>{o}</option>)}
                 </select>
               </div>
-            </div>
-          )}
+          </div>
         </div>
         <div className="px-6 py-4 flex justify-end gap-2" style={{ borderTop: `1px solid ${A.border}` }}>
           <button onClick={onClose}
