@@ -910,6 +910,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     </div>
                     {selectField('Forma de Pagamento', 'forma_pagamento', FORMAS)}
                     {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
+                    {parseInt(form.num_parcelas) > 0 && campo('Data da 1ª Parcela (vencimento)', 'data_primeira_parcela', 'date')}
                     {campo('Dia de Vencimento', 'dia_vencimento', 'number', { placeholder: 'Ex: 10' })}
                     {campo('Prazo (meses)', 'prazo_meses', 'number')}
                     {campo('Banco', 'banco')}
