@@ -12,7 +12,7 @@
     },
     "vendedor_id": {
       "type": "string",
-      "description": "ID do vendedor respons\u00e1vel (obrigat\u00f3rio para novas vendas)"
+      "description": "ID do vendedor responsável (obrigatório para novas vendas)"
     },
     "time": {
       "type": "string",
@@ -28,11 +28,11 @@
         "manual",
         "contrato"
       ],
-      "description": "Origem do registro: 'manual' (lan\u00e7ada na tela de Vendas \u2014 exige c\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia) ou 'contrato' (enviada de um contrato conclu\u00eddo)"
+      "description": "Origem do registro: 'manual' (lançada na tela de Vendas — exige código de liberação da gerência) ou 'contrato' (enviada de um contrato concluído)"
     },
     "codigo_liberacao": {
       "type": "string",
-      "description": "C\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia (uso \u00fanico) consumido por este lan\u00e7amento manual"
+      "description": "Código de liberação da gerência (uso único) consumido por este lançamento manual"
     },
     "autorizacao_status": {
       "type": "string",
@@ -42,21 +42,21 @@
         "autorizada",
         "rejeitada"
       ],
-      "description": "Autoriza\u00e7\u00e3o da ger\u00eancia: pendente at\u00e9 a libera\u00e7\u00e3o. Vendas n\u00e3o autorizadas n\u00e3o contam na produ\u00e7\u00e3o"
+      "description": "Autorização da gerência: pendente até a liberação. Vendas não autorizadas não contam na produção"
     },
     "autorizada_por": {
       "type": "string",
-      "description": "E-mail do gestor que autorizou o lan\u00e7amento manual"
+      "description": "E-mail do gestor que autorizou o lançamento manual"
     },
     "autorizada_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora da autoriza\u00e7\u00e3o"
+      "description": "Data/hora da autorização"
     },
     "exige_documentos": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, a venda s\u00f3 conta na produ\u00e7\u00e3o com contrato assinado e comprovante de pagamento anexados (padr\u00e3o para novos registros)"
+      "description": "Quando true, a venda só conta na produção com contrato assinado e comprovante de pagamento anexados (padrão para novos registros)"
     },
     "contrato_assinado_url": {
       "type": "string",
@@ -68,7 +68,7 @@
     },
     "boleto_url": {
       "type": "string",
-      "description": "URL do boleto de cobran\u00e7a, sincronizado do contrato vinculado"
+      "description": "URL do boleto de cobrança, sincronizado do contrato vinculado"
     },
     "boleto_nome": {
       "type": "string",
@@ -80,7 +80,7 @@
         "nova",
         "recorrencia"
       ],
-      "description": "Tipo da venda: 'nova' (venda nova \u2014 direcionada para implanta\u00e7\u00e3o) ou 'recorrencia' (pagamento de parcela \u2014 n\u00e3o gera implanta\u00e7\u00e3o)"
+      "description": "Tipo da venda: 'nova' (venda nova — direcionada para implantação) ou 'recorrencia' (pagamento de parcela — não gera implantação)"
     },
     "espelhamento": {
       "type": "string",
@@ -114,7 +114,7 @@
     },
     "valor": {
       "type": "number",
-      "description": "Valor da entrada/ades\u00e3o"
+      "description": "Valor da entrada/adesão"
     },
     "valor_total_contrato": {
       "type": "number",
@@ -122,7 +122,7 @@
     },
     "num_parcelas": {
       "type": "number",
-      "description": "N\u00famero de parcelas do saldo restante"
+      "description": "Número de parcelas do saldo restante"
     },
     "data": {
       "type": "string",
@@ -132,11 +132,11 @@
     "forma_pagamento": {
       "type": "string",
       "enum": [
-        "D\u00c9BITO EM CONTA",
-        "CART\u00c3O DE CR\u00c9DITO",
+        "DÉBITO EM CONTA",
+        "CARTÃO DE CRÉDITO",
         "BOLETO",
         "PIX",
-        "TRANSFER\u00caNCIA",
+        "TRANSFERÊNCIA",
         "DINHEIRO"
       ],
       "description": "Forma de pagamento utilizada"
@@ -176,11 +176,11 @@
     },
     "observacao": {
       "type": "string",
-      "description": "Observa\u00e7\u00f5es sobre a venda"
+      "description": "Observações sobre a venda"
     },
     "percentual_comissao": {
       "type": "number",
-      "description": "Percentual de comiss\u00e3o do vendedor"
+      "description": "Percentual de comissão do vendedor"
     },
     "vendedores_ids": {
       "type": "array",
@@ -192,12 +192,38 @@
     "considerar_acumulado": {
       "type": "boolean",
       "default": true,
-      "description": "Se true, a venda \u00e9 considerada no acumulado de vendas do Dashboard e relat\u00f3rios (ainda sujeita a autoriza\u00e7\u00e3o e documentos completos)"
+      "description": "Se true, a venda é considerada no acumulado de vendas do Dashboard e relatórios (ainda sujeita a autorização e documentos completos)"
     },
     "selecionada_relatorio": {
       "type": "boolean",
       "default": false,
-      "description": "Flag de sele\u00e7\u00e3o manual: quando true, a venda comp\u00f5e a base do relat\u00f3rio PDF personalizado (gerado a partir das vendas selecionadas)"
+      "description": "Flag de seleção manual: quando true, a venda compõe a base do relatório PDF personalizado (gerado a partir das vendas selecionadas)"
+    },
+    "venda_origem_id": {
+      "type": "string",
+      "description": "Recorrência: ID da venda original (nova) da qual esta parcela faz parte"
+    },
+    "parcela_id": {
+      "type": "string",
+      "description": "Recorrência: ID da ParcelaVenda recebida que gerou esta venda (vínculo 1:1, evita duplicidade)"
+    },
+    "numero_parcela": {
+      "type": "number",
+      "description": "Recorrência: número da parcela recebida"
+    },
+    "total_parcelas": {
+      "type": "number",
+      "description": "Recorrência: total de parcelas da venda original"
+    },
+    "estrutura_pagamento": {
+      "type": "string",
+      "enum": [
+        "a_vista",
+        "entrada_parcelas",
+        "somente_parcelas",
+        "parcela"
+      ],
+      "description": "Como o pagamento foi estruturado: a_vista, entrada_parcelas, somente_parcelas (nenhum valor na contratação) ou parcela (recorrência)"
     }
   },
   "required": [
