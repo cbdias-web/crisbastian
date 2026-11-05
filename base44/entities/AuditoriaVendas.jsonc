@@ -1,0 +1,32 @@
+{
+  "name": "AuditoriaVendas",
+  "properties": {
+    "acao": {
+      "description": "Ex.: parcela_excedente_removida",
+      "type": "string"
+    },
+    "dados_originais": {
+      "description": "Copia integral do registro antes da alteracao (permite restaurar)",
+      "type": "object"
+    },
+    "entidade": {
+      "type": "string"
+    },
+    "executado_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "motivo": {
+      "type": "string"
+    },
+    "registro_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "acao",
+    "entidade",
+    "registro_id"
+  ],
+  "type": "object"
+}
