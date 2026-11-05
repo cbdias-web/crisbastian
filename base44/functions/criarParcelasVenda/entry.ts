@@ -34,12 +34,22 @@ Deno.serve(async (req) => {
     const existentes = await base44.asServiceRole.entities.ParcelaVenda.filter({ venda_id });
     const numerosExistentes = new Set(existentes.map(p => p.numero_parcela));
 
+    // Número de cada parcela: respeita o "numero" informado (caso de reparo de parcelas faltantes,
+    // em que a lista traz só as que faltam). Sem ele, usa a posição na lista.
+    const numeroDe = (p, idx) => Number(p?.numero) || idx + 1;
+    // Total de parcelas da venda = maior número entre as existentes e as que estão sendo criadas
+    const totalParcelas = Math.max(
+      0,
+      ...existentes.map(p => Number(p.numero_parcela) || 0),
+      ...parcelas.map((p, idx) => numeroDe(p, idx)),
+    );
+
     const criadas = [];
     const puladas = [];
 
     for (let idx = 0; idx < parcelas.length; idx++) {
       const p = parcelas[idx];
-      const numeroParcela = idx + 1;
+      const numeroParcela = numeroDe(p, idx);
 
       // Pular se já existe parcela com este número para esta venda
       if (numerosExistentes.has(numeroParcela)) {
@@ -54,7 +64,7 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.ParcelaVenda.create({
           venda_id,
           numero_parcela: numeroParcela,
-          total_parcelas: parcelas.length,
+          total_parcelas: totalParcelas || parcelas.length,
           valor_parcela: p.valor,
           data_vencimento: p.vencimento,
           status: 'pendente',
@@ -79,7 +89,7 @@ Deno.serve(async (req) => {
           await createWithRetry(() =>
             base44.asServiceRole.entities.AgendaContato.create({
               lead_id: venda_id,
-              lead_nome: `${venda_data.cliente || 'Cliente'} — Parcela ${numeroParcela}/${parcelas.length}`,
+              lead_nome: `${venda_data.cliente || 'Cliente'} — Parcela ${numeroParcela}/${totalParcelas || parcelas.length}`,
               lead_cpf_cnpj: venda_data.cpf_cnpj || '',
               lead_telefone: '',
               cliente_id: '',
