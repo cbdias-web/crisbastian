@@ -380,55 +380,13 @@ export default function Pipeline() {
     if (!confirm(`Confirmar recebimento da parcela de ${fmtVal(n.valor_estimado)} de "${n.cliente_nome}"? Uma venda será criada e ela contará na meta do mês.`)) return;
     setRecebenndoParcela(n.id);
     try {
-      // Buscar a ParcelaVenda vinculada a este pipeline
+      // Buscar a ParcelaVenda vinculada a este pipeline e baixar pelo caminho único (servidor)
       const parcelas = await base44.entities.ParcelaVenda.filter({ pipeline_id: n.id });
       const parcela = parcelas[0];
-
-      const hoje = todayBrasilia();
-
-      // Criar venda para contar na meta
-      const novaVenda = await base44.entities.Venda.create({
-        produto: parcela?.produto || n.produto || '',
-        assessor_comercial: parcela?.vendedor_nome || n.vendedor_nome || '',
-        vendedor_id: parcela?.vendedor_id || n.vendedor_id || '',
-        cliente: n.cliente_nome || '',
-        cpf_cnpj: n.cliente_cpf_cnpj || parcela?.cliente_cpf_cnpj || '',
-        valor: n.valor_estimado || 0,
-        data: hoje,
-        tipo_venda: 'recorrencia',
-        forma_pagamento: parcela?.forma_pagamento || '',
-        percentual_comissao: parcela?.percentual_comissao || 0,
-        indicadores: parcela?.indicadores || [],
-        observacao: `Parcela recebida — ${n.produto}`,
-        num_parcelas: 1,
-        valor_total_contrato: n.valor_estimado,
-      });
-
-      // Criar comissão do vendedor sobre a parcela
-      if ((parcela?.vendedor_id || n.vendedor_id) && parcela?.percentual_comissao) {
-        await base44.entities.Comissao.create({
-          venda_id: novaVenda.id,
-          vendedor_id: parcela.vendedor_id,
-          vendedor_nome: parcela.vendedor_nome,
-          valor_venda: n.valor_estimado,
-          percentual: parcela.percentual_comissao,
-          valor_comissao: (n.valor_estimado * parcela.percentual_comissao) / 100,
-          data_venda: hoje,
-          pago: false,
-        });
-      }
-
-      // Atualizar ParcelaVenda como recebida
-      if (parcela) {
-        await base44.entities.ParcelaVenda.update(parcela.id, {
-          status: 'recebida',
-          data_recebimento: hoje,
-          venda_gerada_id: novaVenda.id,
-        });
-      }
-
-      // Marcar o pipeline como Fechado
-      await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
+      if (!parcela) throw new Error('Parcela vinculada a este item do Pipeline não encontrada.');
+      const r = await base44.functions.invoke('receberParcelaVenda', { parcela_id: parcela.id });
+      const d = r?.data || r;
+      if (d?.error) throw new Error(d.error);
 
       queryClient.invalidateQueries(['pipeline']);
       queryClient.invalidateQueries(['vendas']);
@@ -1057,42 +1015,9 @@ export default function Pipeline() {
                   const valorReceb = parseFloat(recebimentoForm.valor) || p.valor_parcela;
                   setRecebenndoParcela(p.id);
                   try {
-                    const novaVenda = await base44.entities.Venda.create({
-                      produto: p.produto || '',
-                      assessor_comercial: p.vendedor_nome || '',
-                      vendedor_id: p.vendedor_id || '',
-                      cliente: p.cliente_nome || '',
-                      cpf_cnpj: p.cliente_cpf_cnpj || '',
-                      valor: valorReceb,
-                      data: dataReceb,
-                      tipo_venda: 'recorrencia',
-                      forma_pagamento: p.forma_pagamento || '',
-                      percentual_comissao: p.percentual_comissao || 0,
-                      indicadores: p.indicadores || [],
-                      observacao: `Parcela ${p.numero_parcela}/${p.total_parcelas} recebida`,
-                      num_parcelas: 1,
-                      valor_total_contrato: valorReceb,
-                    });
-                    if (p.vendedor_id && p.percentual_comissao) {
-                      await base44.entities.Comissao.create({
-                        venda_id: novaVenda.id,
-                        vendedor_id: p.vendedor_id,
-                        vendedor_nome: p.vendedor_nome,
-                        valor_venda: valorReceb,
-                        percentual: p.percentual_comissao,
-                        valor_comissao: (valorReceb * p.percentual_comissao) / 100,
-                        data_venda: dataReceb,
-                        pago: false,
-                      });
-                    }
-                    await base44.entities.ParcelaVenda.update(p.id, {
-                      status: 'recebida',
-                      data_recebimento: dataReceb,
-                      venda_gerada_id: novaVenda.id,
-                    });
-                    if (p.pipeline_id) {
-                      await base44.entities.Pipeline.update(p.pipeline_id, { temperatura: 'Fechado' });
-                    }
+                    const r = await base44.functions.invoke('receberParcelaVenda', { parcela_id: p.id, data_recebimento: dataReceb, valor_recebido: valorReceb });
+                    const d = r?.data || r;
+                    if (d?.error) throw new Error(d.error);
                     queryClient.invalidateQueries(['parcelas-venda-pipeline']);
                     queryClient.invalidateQueries(['pipeline']);
                     queryClient.invalidateQueries(['vendas']);

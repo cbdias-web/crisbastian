@@ -105,54 +105,23 @@ export default function ParcelasVincendasModal({ onClose, user }) {
     },
   });
 
+  // Único caminho de recebimento (servidor): 1 parcela = 1 venda de recorrência vinculada, idempotente.
   const receberMutation = useMutation({
     mutationFn: async (parcela) => {
-      const hoje = new Date().toISOString().split('T')[0];
-      const novaVenda = await base44.entities.Venda.create({
-        produto: parcela.produto || '',
-        assessor_comercial: parcela.vendedor_nome || '',
-        vendedor_id: parcela.vendedor_id || '',
-        cliente: parcela.cliente_nome || '',
-        cpf_cnpj: parcela.cliente_cpf_cnpj || '',
-        valor: parcela.valor_parcela || 0,
-        data: hoje,
-        forma_pagamento: parcela.forma_pagamento || '',
-        percentual_comissao: parcela.percentual_comissao || 0,
-        indicadores: parcela.indicadores || [],
-        observacao: `Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} recebida`,
-        num_parcelas: 1,
-        valor_total_contrato: parcela.valor_parcela,
-        tipo_venda: 'recorrencia',
-      });
-      if (parcela.vendedor_id && parcela.percentual_comissao) {
-        await base44.entities.Comissao.create({
-          venda_id: novaVenda.id,
-          vendedor_id: parcela.vendedor_id,
-          vendedor_nome: parcela.vendedor_nome,
-          valor_venda: parcela.valor_parcela,
-          percentual: parcela.percentual_comissao,
-          valor_comissao: (parcela.valor_parcela * parcela.percentual_comissao) / 100,
-          data_venda: hoje,
-          pago: false,
-        });
-      }
-      await base44.entities.ParcelaVenda.update(parcela.id, {
-        status: 'recebida',
-        data_recebimento: hoje,
-        venda_gerada_id: novaVenda.id,
-      });
-      if (parcela.pipeline_id) {
-        await base44.entities.Pipeline.update(parcela.pipeline_id, { temperatura: 'Fechado' });
-      }
+      const r = await base44.functions.invoke('receberParcelaVenda', { parcela_id: parcela.id });
+      const d = r?.data || r;
+      if (d?.error) throw new Error(d.error);
+      return d;
     },
-    onSuccess: () => {
+    onSuccess: (d) => {
       queryClient.invalidateQueries(['parcelas-modal']);
       queryClient.invalidateQueries(['parcelas-venda-pipeline']);
       queryClient.invalidateQueries(['pipeline']);
       queryClient.invalidateQueries(['vendas']);
       queryClient.invalidateQueries(['comissoes']);
-      toast.success('Parcela recebida! Venda registrada.');
+      toast.success(d?.ja_recebida ? 'Esta parcela já estava recebida — nada foi duplicado.' : 'Parcela recebida! Venda de recorrência registrada.');
     },
+    onError: (e) => toast.error('Erro ao receber parcela: ' + (e?.message || e)),
   });
 
   const startEdit = (p) => {
