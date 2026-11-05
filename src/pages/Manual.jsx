@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ManualSectionModal from '@/components/manual/ManualSectionModal';
+import CategoriasManual from '@/components/manual/CategoriasManual';
 import {
   BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users,
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
@@ -1009,27 +1010,19 @@ const sections = [
 
 const categories = [
   {
-    id: 'vendas', label: 'Vendas', icon: BarChart2,
-    gradFrom: '#00b09b', gradTo: '#007b6e',
-    color: 'from-[#00b09b] to-[#007b6e]',
+    id: 'vendas', label: 'Vendas', icon: BarChart2, hue: '#00d4aa',
     sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'fila-contatos-esteira', 'liberacao-leads', 'discagem-operadora', 'config-prospeccao', 'implantacoes'],
   },
   {
-    id: 'financas', label: 'Finanças', icon: DollarSign,
-    gradFrom: '#36d1dc', gradTo: '#4a6fa5',
-    color: 'from-[#36d1dc] to-[#4a6fa5]',
+    id: 'financas', label: 'Finanças', icon: DollarSign, hue: '#38bdf8',
     sections: ['comissoes', 'metas', 'notas-fiscais', 'relatorios', 'importar'],
   },
   {
-    id: 'operacoes', label: 'Operações', icon: Settings,
-    gradFrom: '#56ab2f', gradTo: '#2d7a0f',
-    color: 'from-[#56ab2f] to-[#2d7a0f]',
+    id: 'operacoes', label: 'Operações', icon: Settings, hue: '#34d399',
     sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'portal-indicador', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
   },
   {
-    id: 'admin', label: 'Admin', icon: UserCheck,
-    gradFrom: '#9b59b6', gradTo: '#6c3483',
-    color: 'from-[#9b59b6] to-[#6c3483]',
+    id: 'admin', label: 'Admin', icon: UserCheck, hue: '#a78bfa',
     sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos', 'portal-indicador', 'config-prospeccao'],
   },
 ];
@@ -1234,26 +1227,16 @@ export default function Manual() {
           </div>
         </div>
 
-        {/* ── CATEGORY CARDS ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {categories.map(cat => {
-            const Icon = cat.icon;
-            const isActive = activeCategory === cat.id;
-            return (
-              <button key={cat.id} onClick={() => handleCategory(cat)}
-                className={`relative overflow-hidden rounded-2xl py-8 px-4 flex flex-col items-center justify-center gap-4 transition-all shadow-md hover:shadow-xl hover:-translate-y-1 active:scale-95 ${isActive ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-100' : ''}`}
-                style={{ background: `linear-gradient(145deg, var(--cat-from), var(--cat-to))`,
-                  '--cat-from': cat.gradFrom, '--cat-to': cat.gradTo }}
-              >
-                <div className="bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                  <Icon className="w-9 h-9 text-white" />
-                </div>
-                <span className="text-white font-bold text-xl tracking-wide drop-shadow">{cat.label}</span>
-                {isActive && <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-white/50 rounded-full" />}
-              </button>
-            );
-          })}
-        </div>
+        {/* ── CATEGORIAS ── */}
+        <CategoriasManual
+          categories={categories}
+          activeCategory={activeCategory}
+          totalSections={sections.length}
+          onSelect={(id) => {
+            if (!id) { setActiveCategory(null); return; }
+            handleCategory({ id });
+          }}
+        />
 
 
 
