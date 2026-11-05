@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import ComprovantesUpload from "./ComprovantesUpload";
 import CampoMascara from "@/components/ui/campo-mascara";
 import CampoMoeda from "@/components/ui/campo-moeda";
+import PainelRecorrencia from "./PainelRecorrencia";
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -142,6 +143,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [valorEntradaCustom, setValorEntradaCustom] = useState(
     venda?.valor ? String(venda.valor) : ''
   );
+
+  // Recorrência (pagamento de parcela): vínculo com a parcela/venda original
+  const [rec, setRec] = useState({ parcelaId: '', semParcela: false, origemTotal: null });
+  const onVinculo = (patch) => setRec(r => ({ ...r, ...patch }));
+  useEffect(() => {
+    if (formData.tipo_venda === 'recorrencia') { setSemParcelas(true); setNumParcelas(0); setParcelasEditaveis([]); }
+  }, [formData.tipo_venda]); // eslint-disable-line
 
   const valorTotal = parseFloat(valorTotalContrato) || 0;
   const valorEntrada = parseFloat(valorEntradaCustom) || 0;
@@ -359,10 +367,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     if (selectedProdutos.length === 0) { toast.error('Selecione ao menos um produto'); return; }
     if (selectedVendedores.length === 0) { toast.error('Selecione ao menos um vendedor'); return; }
     if (!formData.tipo_venda) { toast.error('Selecione o tipo de venda (Nova ou Recorrência)'); return; }
+    const ehRec = formData.tipo_venda === 'recorrencia';
+    if (ehRec && !venda?.id && !rec.parcelaId && !rec.semParcela) { toast.error('Recorrência: selecione a parcela que foi paga (ou marque que não há parcela cadastrada).'); return; }
+    if (ehRec && !venda?.id && rec.semParcela && !(formData.observacao || '').trim()) { toast.error('Recorrência sem parcela cadastrada: descreva na observação.'); return; }
 
     const primaryVendedor = selectedVendedores[0];
     const entradaFinal = parseFloat(valorEntradaCustom) || 0;
-    const totalFinal = parseFloat(valorTotalContrato) || entradaFinal;
+    const totalFinal = (formData.tipo_venda === 'recorrencia' && rec.origemTotal) ? rec.origemTotal : (parseFloat(valorTotalContrato) || entradaFinal);
 
     // Recorrência = pagamento de UMA parcela de venda existente: nunca gera novas parcelas
     const temParcelas = !semParcelas && numParcelas > 0 && formData.tipo_venda !== 'recorrencia';
@@ -397,7 +408,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       vendedores_ids: selectedVendedores,
       valor: entradaFinal,
       valor_total_contrato: totalFinal,
-      num_parcelas: semParcelas ? 0 : numParcelas,
+      num_parcelas: formData.tipo_venda === 'recorrencia' ? (venda?.num_parcelas ?? 0) : (semParcelas ? 0 : numParcelas),
+      ...(ehRec && !venda?.id && rec.parcelaId ? { _parcelaId: rec.parcelaId } : {}),
       indicadores,
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
@@ -523,6 +535,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 onChange={e => setFormData({ ...formData, percentual_comissao: e.target.value })} />
             </div>
 
+            {formData.tipo_venda !== 'recorrencia' && (
             <div>
               <Label>Valor Total do Contrato *</Label>
               <CampoMoeda asString value={valorTotalContrato}
@@ -532,7 +545,11 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 }}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
             </div>
+            )}
 
+            {formData.tipo_venda === 'recorrencia' ? (
+              <PainelRecorrencia venda={venda} formData={formData} valorRecebido={valorEntradaCustom} setValorRecebido={setValorEntradaCustom} setValorTotal={setValorTotalContrato} onVinculo={onVinculo} />
+            ) : (
             {/* Estrutura de pagamento */}
             <div className="md:col-span-2">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
@@ -652,6 +669,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                 })()}
               </div>
             </div>
+            )}
 
             <div>
               <Label>Data *</Label>

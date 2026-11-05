@@ -76,6 +76,16 @@ export default function Vendas() {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
+      // Recorrência vinculada a uma parcela: caminho único no servidor (1 parcela = 1 venda, sem duplicar)
+      if (data.tipo_venda === 'recorrencia' && data._parcelaId) {
+        const r = await base44.functions.invoke('receberParcelaVenda', {
+          parcela_id: data._parcelaId, valor_recebido: parseFloat(data.valor) || undefined, data_recebimento: data.data,
+          observacao: data.observacao || undefined,
+        });
+        const d = r?.data || r;
+        if (d?.error) throw new Error(d.error);
+        return { id: d.venda_id, ja_recebida: !!d.ja_recebida };
+      }
       // Trava: nenhuma venda sem vendedor responsável definido
       if (!data.vendedor_id || !data.assessor_comercial) {
         throw new Error('Selecione o vendedor responsável pela venda.');
@@ -84,7 +94,13 @@ export default function Vendas() {
       if (!isAdmin && !codigoLiberacao) {
         throw new Error('É necessário um código de liberação da gerência para lançar uma venda manual.');
       }
-      const { _parcelasPreview, ...vendaData } = data;
+      const { _parcelasPreview, _parcelaId, ...vendaData } = data;
+      // Trava anti-duplicidade: mesmo cliente + produto + valor + data já lançado (por qualquer vendedor)
+      if (vendaData.cpf_cnpj) {
+        const mesmoDia = await base44.entities.Venda.filter({ cpf_cnpj: vendaData.cpf_cnpj, data: vendaData.data });
+        const igual = mesmoDia.find(d => Math.abs((Number(d.valor) || 0) - (parseFloat(vendaData.valor) || 0)) < 0.005 && (d.produto || '') === (vendaData.produto || ''));
+        if (igual) throw new Error(`Já existe um lançamento igual: ${igual.produto}, ${Number(igual.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}, vendedor ${igual.assessor_comercial || '—'}, em ${String(vendaData.data).split('-').reverse().join('/')}. Para evitar lançamento e comissão em duplicidade, confirme com a gerência.`);
+      }
       const venda = await base44.entities.Venda.create({
         ...vendaData,
         origem_registro: 'manual',
