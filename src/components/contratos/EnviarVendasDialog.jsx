@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { X, Loader2, AlertTriangle, Info, CheckCircle2, Repeat, ShoppingBag } from 'lucide-react';
-import { calcularEstruturaPagamento, ROTULO_ESTRUTURA } from '@/lib/estruturaPagamento';
+import { calcularEstruturaPagamento, gerarCronograma, ROTULO_ESTRUTURA } from '@/lib/estruturaPagamento';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtData = (d) => (d ? String(d).split('-').reverse().join('/') : '—');
@@ -44,18 +45,25 @@ function EnviarVendasDialog({ contrato, onConfirm, onCancel }) {
     })();
   }, [contrato.id, contrato.cpf_cnpj]);
 
-  const est = calcularEstruturaPagamento(contrato, editouRecebido && recebido !== '' ? { valorRecebido: recebido } : {});
+  const est = useMemo(() => calcularEstruturaPagamento(contrato, editouRecebido && recebido !== '' ? { valorRecebido: recebido } : {}), [contrato, editouRecebido, recebido]);
+  // Cronograma vindo do contrato (datas + valores); editável antes de enviar. Segue para Vendas sem redigitar.
+  const cronBase = useMemo(() => gerarCronograma(contrato, est, todayBrasilia()), [contrato, est]);
+  const [cron, setCron] = useState([]);
+  useEffect(() => { setCron(cronBase.map(p => ({ ...p }))); }, [cronBase]);
+  const somaCron = cron.reduce((t, p) => t + (Number(p.valor) || 0), 0);
+  const cronOk = est.parcelas === 0 || (cron.length === est.parcelas && cron.every(p => /^\d{4}-\d{2}-\d{2}$/.test(p.vencimento || '') && Number(p.valor) > 0) && Math.abs(somaCron - est.saldo) <= 0.01);
+  const setParc = (i, k, v) => setCron(c => c.map((p, j) => (j === i ? { ...p, [k]: v } : p)));
   const parcela = parcelas.find(p => p.id === parcelaSel);
   const jaTemNova = vendasDoContrato.some(v => v.tipo_venda === 'nova');
 
   useEffect(() => { if (parcela) setValorParcela(String(parcela.valor_parcela ?? '')); }, [parcelaSel]); // eslint-disable-line
 
   const podeConfirmar = natureza === 'nova'
-    ? !jaTemNova
+    ? !jaTemNova && cronOk
     : !!parcela && Number(valorParcela) > 0;
 
   const confirmar = () => {
-    if (natureza === 'nova') onConfirm({ natureza: 'nova', estrutura: est, valorRecebido: est.recebido, parcelas: est.parcelas, overrideRecebido: editouRecebido && recebido !== '' });
+    if (natureza === 'nova') onConfirm({ natureza: 'nova', estrutura: est, valorRecebido: est.recebido, parcelas: est.parcelas, overrideRecebido: editouRecebido && recebido !== '', cronograma: cron.map((p, i) => ({ numero: i + 1, vencimento: p.vencimento, valor: Math.round(Number(p.valor) * 100) / 100 })) });
     else onConfirm({ natureza: 'recorrencia', parcela, valorRecebido: Number(valorParcela) });
   };
 
@@ -110,6 +118,23 @@ function EnviarVendasDialog({ contrato, onConfirm, onCancel }) {
                     onChange={e => { setRecebido(e.target.value); setEditouRecebido(e.target.value !== ''); }}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
+                {cron.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-semibold text-gray-600 mb-1.5">Cronograma de parcelas (segue para Vendas)</p>
+                    <div className="rounded-lg border border-gray-100 divide-y divide-gray-100">
+                      {cron.map((p, i) => (
+                        <div key={i} className="flex items-center gap-2 px-2.5 py-1.5">
+                          <span className="text-xs text-gray-500 w-14">Parcela {p.numero}</span>
+                          <input type="date" value={p.vencimento} onChange={e => setParc(i, 'vencimento', e.target.value)} className="px-2 py-1 text-xs border border-gray-200 rounded-lg" />
+                          <input type="number" step="0.01" min="0" value={p.valor} onChange={e => setParc(i, 'valor', e.target.value)} className="flex-1 px-2 py-1 text-xs border border-gray-200 rounded-lg text-right" />
+                        </div>
+                      ))}
+                    </div>
+                    <p className={`text-[11px] mt-1.5 ${cronOk ? 'text-gray-400' : 'text-red-600 font-medium'}`}>
+                      Soma das parcelas: {brl(somaCron)} {cronOk ? '— confere com o saldo.' : `— deve ser igual ao saldo (${brl(est.saldo)}).`}
+                    </p>
+                  </div>
+                )}
               </div>
               {est.tipo === 'somente_parcelas' && (
                 <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex gap-2">

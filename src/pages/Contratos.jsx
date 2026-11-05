@@ -174,6 +174,7 @@ export default function Contratos() {
         valor_total_contrato: ct.valor_total || 0,
         num_parcelas: opcoes.parcelas,
         estrutura_pagamento: opcoes.estrutura.tipo,
+        ...(opcoes.cronograma?.[0]?.vencimento ? { parcelamento: opcoes.cronograma[0].vencimento } : {}),
         data: todayBrasilia(),
         tipo_venda: 'nova',
         forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
@@ -223,7 +224,7 @@ export default function Contratos() {
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
       // Gera as parcelas vincendas do contrato na esteira (Pipeline e Dashboard)
       try {
-        await base44.functions.invoke('criarParcelasContrato', { contrato_id: ct.id, venda_id: venda.id, valor_recebido: opcoes.overrideRecebido ? opcoes.valorRecebido : undefined });
+        await base44.functions.invoke('criarParcelasContrato', { contrato_id: ct.id, venda_id: venda.id, valor_recebido: opcoes.overrideRecebido ? opcoes.valorRecebido : undefined, cronograma: opcoes.cronograma });
         queryClient.invalidateQueries(['parcelas-venda-pipeline']);
       } catch (e) { toast.warning('Venda criada, mas falha ao gerar parcelas vincendas: ' + e.message); }
       // Vincula a venda à indicação de origem.

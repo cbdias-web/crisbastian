@@ -22,22 +22,6 @@ function todayBrasiliaISO() {
     .split('/').reverse().join('-');
 }
 
-function daysInMonthUTC(y, mIdx) {
-  return new Date(Date.UTC(y, mIdx + 1, 0)).getUTCDate();
-}
-
-// Vencimento da parcela i (1-based): data-base + (i-1) meses,
-// aplicando o dia de vencimento fixo do contrato quando informado.
-function vencimentoParcela(isoBase, indiceParcela, diaVencimento) {
-  const [y, m, d] = isoBase.split('-').map(Number);
-  const totalMonths = (m - 1) + (indiceParcela - 1);
-  const ny = y + Math.floor(totalMonths / 12);
-  const nm = ((totalMonths % 12) + 12) % 12;
-  const diaAlvo = (diaVencimento >= 1 && diaVencimento <= 31) ? Math.round(diaVencimento) : d;
-  const dia = Math.min(diaAlvo, daysInMonthUTC(ny, nm));
-  return `${ny}-${String(nm + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-}
-
 // Gera as ParcelaVenda (parcelas vincendas) de um contrato para a venda informada.
 // Idempotente: pula parcelas cujo número já existe para a venda.
 // Estrutura de pagamento: só gera parcelas para o SALDO ainda não recebido.
