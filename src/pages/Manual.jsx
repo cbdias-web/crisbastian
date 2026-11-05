@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import ManualSectionModal from '@/components/manual/ManualSectionModal';
 import CategoriasManual from '@/components/manual/CategoriasManual';
+import ManualHero from '@/components/manual/ManualHero';
+import ManualSectionCard from '@/components/manual/ManualSectionCard';
 import {
   BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users,
   DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
@@ -1027,28 +1029,12 @@ const categories = [
   },
 ];
 
-// ─── SECTION ACCORDION ───────────────────────────────────────────────────────
-
-function SectionBlock({ section, onOpen }) {
-  const Icon = section.icon;
-  return (
-    <div className={`rounded-xl border ${section.border} overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5`}>
-      <button onClick={onOpen} className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors bg-white hover:bg-gray-50">
-        <div className={`p-1.5 rounded-lg bg-gradient-to-br ${section.color} shadow-sm flex-shrink-0`}>
-          <Icon className="w-3.5 h-3.5 text-white" />
-        </div>
-        <span className="flex-1 font-semibold text-sm text-gray-800 text-left">{section.title}</span>
-        <ChevronRight className="w-4 h-4 flex-shrink-0 text-gray-400" />
-      </button>
-    </div>
-  );
-}
-
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 
 export default function Manual() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [busca, setBusca] = useState('');
   const [baixandoPdf, setBaixandoPdf] = useState(false);
   const [baixandoPdfIndicador, setBaixandoPdfIndicador] = useState(false);
   const [baixandoPdfEsteira, setBaixandoPdfEsteira] = useState(false);
@@ -1125,109 +1111,44 @@ export default function Manual() {
     }, 80);
   };
 
-  // Quick nav tags: featured sections
-  const quickNavIds = ['introducao', 'dashboard', 'mercado', 'vendas', 'vendedores', 'prospecccao', 'pipeline', 'contratos', 'implantacoes', 'central-leads', 'meus-clientes', 'perfil-usuario', 'portal-indicador'];
-  const quickNavSections = sections.filter((s, i, arr) => quickNavIds.includes(s.id) && arr.findIndex(x => x.id === s.id) === i).slice(0, 13);
-
-  const visibleSections = activeCategory
+  const baseSections = activeCategory
     ? sections.filter(s => categories.find(c => c.id === activeCategory)?.sections.includes(s.id))
     : sections;
+
+  const termo = busca.trim().toLowerCase();
+  const visibleSections = termo
+    ? baseSections.filter(s => {
+        const texto = [
+          s.title,
+          ...s.content.map(c => [c.subtitle, c.text, ...(c.items || []), ...(c.steps || [])].filter(Boolean).join(' ')),
+        ].join(' ');
+        return texto.toLowerCase().includes(termo);
+      })
+    : baseSections;
+
+  const categoriaAtiva = categories.find(c => c.id === activeCategory)?.label;
 
   return (
     <div className="min-h-screen bg-gray-50">
 
-      {/* ── HERO HEADER ── */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #7f5c14 0%, #b8860b 22%, #1a3150 58%, #0f1e35 100%)' }}>
-        {/* decorative glows */}
-        <div className="absolute top-0 left-0 w-72 h-72 opacity-20 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, #f5c842 0%, transparent 70%)', transform: 'translate(-30%, -40%)' }} />
-        <div className="absolute bottom-0 right-0 w-96 h-96 opacity-10 rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, #4a90d9 0%, transparent 70%)', transform: 'translate(20%, 40%)' }} />
+      <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 space-y-4">
 
-        <div className="relative px-6 py-7 md:py-8 max-w-5xl mx-auto">
-          {/* top label */}
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-yellow-300/70 text-[10px] uppercase tracking-[0.25em] font-semibold">Villela Exchange</span>
-            <span className="w-1 h-1 rounded-full bg-white/20" />
-            <span className="text-white/40 text-[10px] uppercase tracking-[0.15em]">Gestão Comercial</span>
-          </div>
+        <ManualHero
+          stats={[
+            { value: sections.length, label: 'Seções' },
+            { value: sections.reduce((a, s) => a + s.content.length, 0), label: 'Tópicos' },
+            { value: 'Nov/2026', label: 'Atualizado' },
+          ]}
+          busca={busca}
+          onBusca={setBusca}
+          documentos={[
+            { label: 'Jornada do Lead', icon: Download, loading: baixandoPdf, onClick: baixarPdfJornada },
+            { label: 'Cadastro do Indicador', icon: Handshake, loading: baixandoPdfIndicador, onClick: baixarPdfIndicador },
+            { label: 'Esteira de Contatos', icon: KanbanSquare, loading: baixandoPdfEsteira, onClick: baixarPdfEsteira },
+          ]}
+        />
 
-          {/* main row: title left, stats right */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* left */}
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #f5c842 0%, #e09b15 100%)' }}>
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight leading-tight">
-                  Manual da Plataforma
-                </h1>
-                <p className="text-white/50 text-xs mt-0.5 flex items-center gap-1.5">
-                  <FileText className="w-3 h-3" />
-                  Guia completo de utilização — atualizado Out/2026
-                </p>
-              </div>
-            </div>
-
-            {/* right: stats inline */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {[
-                { v: sections.length, l: 'Seções', icon: '📋' },
-                { v: sections.reduce((a, s) => a + s.content.length, 0), l: 'Tópicos', icon: '📌' },
-                { v: 'Out/2026', l: 'Atualizado', icon: '🗓' },
-              ].map((k, i) => (
-                <div key={k.l} className={`flex flex-col items-center px-4 py-2.5 rounded-xl backdrop-blur-sm border transition-all ${i === 0 ? 'bg-yellow-400/15 border-yellow-400/25' : i === 1 ? 'bg-white/10 border-white/15' : 'bg-white/8 border-white/10'}`}>
-                  <span className="text-lg font-extrabold text-white leading-none">{k.v}</span>
-                  <span className="text-[9px] text-white/45 uppercase tracking-widest mt-0.5 whitespace-nowrap">{k.l}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* description — compact, below */}
-          <p className="text-white/55 text-xs leading-relaxed mt-4 max-w-2xl border-t border-white/10 pt-4">
-            Documentação de todas as funcionalidades: Vendas, Contratos, Pipeline, Comissões, Relatórios, Prospecção, Capacitação e mais.
-          </p>
-
-          {/* botões PDF */}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <button onClick={baixarPdfJornada} disabled={baixandoPdf}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #00D4AA 0%, #0066cc 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(0,212,170,0.35)' }}>
-              {baixandoPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              Baixar PDF da Jornada do Lead
-            </button>
-            <button onClick={baixarPdfIndicador} disabled={baixandoPdfIndicador}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #db2777 0%, #b91c5c 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(219,39,119,0.35)' }}>
-              {baixandoPdfIndicador ? <Loader2 className="w-4 h-4 animate-spin" /> : <Handshake className="w-4 h-4" />}
-              Baixar PDF do Cadastro do Indicador
-            </button>
-            <button onClick={baixarPdfEsteira} disabled={baixandoPdfEsteira}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: '#fff', boxShadow: '0 4px 18px rgba(245,158,11,0.35)' }}>
-              {baixandoPdfEsteira ? <Loader2 className="w-4 h-4 animate-spin" /> : <KanbanSquare className="w-4 h-4" />}
-              Baixar PDF da Nova Esteira (Fila de Contatos)
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6 space-y-6">
-
-        {/* ── QUICK NAV ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">Navegação Rápida</p>
-          <div className="flex flex-wrap gap-2">
-            {quickNavSections.map(s => (
-              <button key={s.id} onClick={() => { setActiveCategory(null); setSelectedSection(s); }}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all bg-white text-gray-600 border-gray-200 hover:border-[#1a3150] hover:bg-gray-50">
-                {s.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── CATEGORIAS ── */}
+        {/* ── ÁREAS ── */}
         <CategoriasManual
           categories={categories}
           activeCategory={activeCategory}
@@ -1238,42 +1159,58 @@ export default function Manual() {
           }}
         />
 
+        {/* ── CONTEÚDO ── */}
+        <div id="sections-list" className="space-y-3 scroll-mt-24">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px]" style={{ color: 'rgba(230,237,243,0.42)' }}>
+              {visibleSections.length} {visibleSections.length === 1 ? 'seção' : 'seções'}
+              {categoriaAtiva ? ` em ${categoriaAtiva}` : ''}
+              {termo ? ` para “${busca.trim()}”` : ''}
+            </p>
+            {(activeCategory || termo) && (
+              <button
+                onClick={() => { setActiveCategory(null); setBusca(''); }}
+                className="text-[11px] underline transition"
+                style={{ color: 'rgba(0,212,170,0.85)' }}
+              >
+                limpar filtros
+              </button>
+            )}
+          </div>
 
-
-        {/* ── ACCORDION GRID ── */}
-        <div id="sections-list">
-          {activeCategory && (
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Filtrando por:</span>
-              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#1a3150] text-white">
-                {categories.find(c => c.id === activeCategory)?.label}
-              </span>
-              <button onClick={() => setActiveCategory(null)} className="text-xs text-gray-400 hover:text-gray-600 underline">ver tudo</button>
+          {visibleSections.length === 0 ? (
+            <div
+              className="rounded-xl p-10 text-center"
+              style={{ background: 'rgba(22,27,34,0.7)', border: '1px dashed rgba(0,212,170,0.22)' }}
+            >
+              <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>Nada encontrado</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.45)' }}>
+                Tente outro termo ou selecione “Tudo” para ver todas as seções.
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {visibleSections.map(s => (
+                <ManualSectionCard key={s.id} section={s} onOpen={() => setSelectedSection(s)} />
+              ))}
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {visibleSections.map(s => (
-              <div key={s.id} id={`sec-${s.id}`}>
-                <SectionBlock section={s} onOpen={() => setSelectedSection(s)} />
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* ── TIP ── */}
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-white text-xs font-bold">i</span>
-          </div>
-          <p className="text-sm text-amber-800">
-            <strong>Dica:</strong> Usuários não-administradores visualizam apenas os menus liberados pelo admin e somente seus próprios dados de vendas e comissões.
-            Use a busca acima para encontrar rapidamente qualquer funcionalidade.
+        {/* ── NOTA ── */}
+        <div
+          className="flex items-start gap-2.5 rounded-lg px-4 py-3"
+          style={{ background: 'rgba(22,27,34,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}
+        >
+          <span className="text-[11px] font-bold flex-shrink-0" style={{ color: 'rgba(0,212,170,0.8)' }}>i</span>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(230,237,243,0.45)' }}>
+            Usuários não-administradores veem apenas os menus liberados pelo admin e somente seus próprios dados de vendas e comissões.
           </p>
         </div>
 
         {/* ── FOOTER ── */}
-        <div className="text-center py-4 text-[11px] text-gray-300 uppercase tracking-widest">
-          Villela Exchange · Gestão Comercial · Manual da Plataforma · Out/2026
+        <div className="text-center py-2 text-[10px] uppercase tracking-[0.2em]" style={{ color: 'rgba(230,237,243,0.22)' }}>
+          Villela Exchange · Manual da Plataforma · Nov/2026
         </div>
       </div>
 

@@ -24,8 +24,11 @@ export default function ManualSectionModal({ section, onClose }) {
             borderBottom: '1px solid rgba(0,212,170,0.18)',
           }}
         >
-          <div className={`p-2 rounded-lg bg-gradient-to-br ${section.color} shadow-sm flex-shrink-0`}>
-            <Icon className="w-5 h-5 text-white" />
+          <div
+            className="p-2 rounded-lg flex-shrink-0"
+            style={{ background: 'rgba(0,212,170,0.14)', border: '1px solid rgba(0,212,170,0.25)' }}
+          >
+            <Icon className="w-5 h-5" style={{ color: '#00D4AA' }} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[9px] uppercase tracking-widest" style={{ color: 'rgba(230,237,243,0.45)' }}>
