@@ -12,6 +12,7 @@ import FluxoContrato from './FluxoContrato';
 import BoletosParcelas from './BoletosParcelas';
 import IndicadoresEditor from './IndicadoresEditor';
 import ZapsignEnviarModal from './ZapsignEnviarModal';
+import { useEnvioVendasDialog } from './EnviarVendasDialog';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -44,6 +45,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const [editando, setEditando] = useState(false);
   const [gerando, setGerando] = useState(false);
   const [enviandoVenda, setEnviandoVenda] = useState(false);
+  const { dialog: envioDialog, pedirOpcoes } = useEnvioVendasDialog();
   const [editandoLink, setEditandoLink] = useState(false);
   const [editandoLinkAditivo, setEditandoLinkAditivo] = useState(false);
   const [linkAditivoInput, setLinkAditivoInput] = useState(contrato.link_assinatura_aditivo || '');
@@ -246,10 +248,28 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error(`Anexe ${faltando.join(' e ')} antes de enviar o contrato para Vendas.`, { duration: 6000 });
       return;
     }
-    if (!confirm('Criar pré-venda a partir deste contrato e ir para a aba Vendas para finalizar?')) return;
+    const opcoes = await pedirOpcoes(contrato);
+    if (!opcoes) return;
     setEnviandoVenda(true);
     try {
       const c = contrato;
+      // Pagamento de parcela: baixa a parcela como RECORRÊNCIA vinculada (sem venda nova, sem novas parcelas)
+      if (opcoes.natureza === 'recorrencia') {
+        const r = await base44.functions.invoke('receberParcelaVenda', {
+          parcela_id: opcoes.parcela.id, valor_recebido: opcoes.valorRecebido, contrato_id: c.id,
+          comprovantes, contrato_assinado_url: c.contrato_assinado_url || '', contrato_assinado_nome: c.contrato_assinado_nome || '',
+          boleto_url: c.boleto_url || '', boleto_nome: c.boleto_nome || '',
+        });
+        const d = r?.data || r;
+        if (d?.error) throw new Error(d.error);
+        await base44.entities.Contrato.update(c.id, { status: 'no_pipeline' });
+        queryClient.invalidateQueries(['contratos']); queryClient.invalidateQueries(['vendas']); queryClient.invalidateQueries(['parcelas-venda-pipeline']); queryClient.invalidateQueries(['comissoes']);
+        handleUpdate({ ...contrato, status: 'no_pipeline' });
+        toast.success(d.ja_recebida ? 'Esta parcela já havia sido recebida — nada foi duplicado.' : 'Pagamento de parcela registrado como recorrência! Redirecionando para Vendas...');
+        setTimeout(() => navigate('/Vendas'), 1200);
+        setEnviandoVenda(false);
+        return;
+      }
       // Criar venda pré-preenchida com dados do contrato
       const vendaPayload = {
         produto: c.tipo,
@@ -258,8 +278,10 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         time: c.time || '',
         cliente: c.nome || '',
         cpf_cnpj: c.cpf_cnpj || '',
-        valor: c.valor_adesao || c.valor_total || 0,
+        valor: opcoes.valorRecebido,
         valor_total_contrato: c.valor_total || 0,
+        num_parcelas: opcoes.parcelas,
+        estrutura_pagamento: opcoes.estrutura.tipo,
         data: todayBrasilia(),
         tipo_venda: 'nova',
         forma_pagamento: c.origem_pagamento || '',
@@ -284,7 +306,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       const vendaGerada = await base44.entities.Venda.create(vendaPayload);
       // Gera as parcelas vincendas do contrato na esteira (Pipeline e Dashboard)
       try {
-        await base44.functions.invoke('criarParcelasContrato', { contrato_id: contrato.id, venda_id: vendaGerada.id });
+        await base44.functions.invoke('criarParcelasContrato', { contrato_id: contrato.id, venda_id: vendaGerada.id, valor_recebido: opcoes.overrideRecebido ? opcoes.valorRecebido : undefined });
         queryClient.invalidateQueries(['parcelas-venda-pipeline']);
       } catch (e) { toast.warning('Venda criada, mas falha ao gerar parcelas vincendas: ' + e.message); }
       await base44.entities.Contrato.update(contrato.id, { status: 'no_pipeline' });

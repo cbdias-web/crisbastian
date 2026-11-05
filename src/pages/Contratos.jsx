@@ -14,6 +14,7 @@ import RncListModal from '@/components/contratos/RncListModal';
 import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
 import CiListModal from '@/components/contratos/CiListModal';
 import KanbanContratos from '@/components/contratos/KanbanContratos';
+import { useEnvioVendasDialog } from '@/components/contratos/EnviarVendasDialog';
 import { Table2, Columns3 } from 'lucide-react';
 
 const TIPO_CONFIG = {
@@ -69,6 +70,7 @@ export default function Contratos() {
   const [ciDirectId, setCiDirectId] = useState(null);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
+  const { dialog: envioDialog, pedirOpcoes } = useEnvioVendasDialog();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -98,7 +100,6 @@ export default function Contratos() {
   });
 
   const enviarParaVendas = async (c) => {
-    if (!confirm(`Criar venda a partir do contrato de "${c.nome}" e ir para Vendas?`)) return;
     setEnviandoPipelineId(c.id);
     try {
       const contratoAtualizado = await base44.entities.Contrato.get(c.id);
@@ -142,6 +143,26 @@ export default function Contratos() {
         return;
       }
 
+      // Confirma a natureza (venda nova x pagamento de parcela) e a estrutura do pagamento
+      const opcoes = await pedirOpcoes(ct);
+      if (!opcoes) { setEnviandoPipelineId(null); return; }
+
+      // Pagamento de parcela: baixa a parcela como RECORRÊNCIA vinculada (sem venda nova, sem novas parcelas)
+      if (opcoes.natureza === 'recorrencia') {
+        const r = await base44.functions.invoke('receberParcelaVenda', {
+          parcela_id: opcoes.parcela.id, valor_recebido: opcoes.valorRecebido, contrato_id: ct.id,
+          comprovantes, contrato_assinado_url: ct.contrato_assinado_url || '', contrato_assinado_nome: ct.contrato_assinado_nome || '',
+          boleto_url: ct.boleto_url || '', boleto_nome: ct.boleto_nome || '',
+        });
+        const d = r?.data || r;
+        if (d?.error) throw new Error(d.error);
+        await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
+        queryClient.invalidateQueries(['contratos']); queryClient.invalidateQueries(['vendas']); queryClient.invalidateQueries(['parcelas-venda-pipeline']); queryClient.invalidateQueries(['comissoes']);
+        toast.success(d.ja_recebida ? 'Esta parcela já havia sido recebida — nada foi duplicado.' : 'Pagamento de parcela registrado como recorrência! Redirecionando para Vendas...');
+        window.location.href = '/Vendas';
+        return;
+      }
+
       const vendaPayload = {
         produto: ct.tipo,
         assessor_comercial: ct.vendedor_nome || '',
@@ -149,8 +170,10 @@ export default function Contratos() {
         time: ct.time || '',
         cliente: ct.nome || '',
         cpf_cnpj: ct.cpf_cnpj || '',
-        valor: ct.valor_adesao || ct.valor_total || 0,
+        valor: opcoes.valorRecebido,
         valor_total_contrato: ct.valor_total || 0,
+        num_parcelas: opcoes.parcelas,
+        estrutura_pagamento: opcoes.estrutura.tipo,
         data: todayBrasilia(),
         tipo_venda: 'nova',
         forma_pagamento: ct.origem_pagamento || ct.forma_pagamento || '',
@@ -200,7 +223,7 @@ export default function Contratos() {
       await base44.entities.Contrato.update(ct.id, { status: 'no_pipeline' });
       // Gera as parcelas vincendas do contrato na esteira (Pipeline e Dashboard)
       try {
-        await base44.functions.invoke('criarParcelasContrato', { contrato_id: ct.id, venda_id: venda.id });
+        await base44.functions.invoke('criarParcelasContrato', { contrato_id: ct.id, venda_id: venda.id, valor_recebido: opcoes.overrideRecebido ? opcoes.valorRecebido : undefined });
         queryClient.invalidateQueries(['parcelas-venda-pipeline']);
       } catch (e) { toast.warning('Venda criada, mas falha ao gerar parcelas vincendas: ' + e.message); }
       // Vincula a venda à indicação de origem.
@@ -616,6 +639,7 @@ export default function Contratos() {
             onClose={() => { setCiContrato(null); setCiDirectId(null); }}
           />
         )}
+        {envioDialog}
       </div>
     </div>
   );
