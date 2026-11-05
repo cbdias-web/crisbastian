@@ -287,3 +287,17 @@ main > div[style*="161b22"] {
   border-color: rgba(239,68,68,0.7) !important;
   animation: stalePulse 1.8s ease-in-out infinite;
 }
+
+/* Manual: an opaque reading workspace, isolated from the app watermark. */
+.manual-page { min-height: calc(100vh - 150px); background: hsl(var(--background)); }
+.manual-hub { background: hsl(var(--background)); }
+.manual-search input { background: hsl(var(--card)) !important; border-color: transparent !important; }
+.manual-search input::placeholder { color: hsl(var(--muted-foreground)) !important; }
+.manual-search input::-webkit-search-cancel-button { display: none; }
+.manual-module > summary::-webkit-details-marker { display: none; }
+.manual-module[open] > summary .manual-module-chevron { transform: rotate(180deg); }
+.manual-markdown p { margin: 0; }
+.manual-markdown strong { font-weight: 600; color: hsl(var(--foreground)); }
+.manual-markdown a { color: hsl(var(--primary)); text-decoration: underline; }
+.manual-markdown > * + * { margin-top: 1rem; }
+.manual-collection:hover { box-shadow: 0 12px 32px -18px hsl(var(--primary) / 0.24); }
