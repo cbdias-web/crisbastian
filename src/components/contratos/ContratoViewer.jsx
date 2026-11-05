@@ -827,6 +827,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           )}
         </div>
       </div>
+      {envioDialog}
     </div>
   );
 }
