@@ -8,7 +8,7 @@ import {
   Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
   ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
   TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
-  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake, Download, Loader2
+  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake, Download, Loader2, Phone
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ const sections = [
       { subtitle: 'O que é o Villela Exchange – Gestão Comercial?', text: 'O sistema de Gestão Comercial da Villela Exchange é uma plataforma completa para registro, acompanhamento e análise de vendas, comissões, metas e indicadores da equipe comercial. Integra Contratos, Pipeline, Prospecção, Treinamentos e IA em um único ambiente.' },
       { subtitle: 'Acesso e Login', text: 'O acesso é feito por convite do administrador. Após receber o e-mail de convite, crie sua senha e entre na plataforma. Suas permissões de menu são definidas pelo administrador.' },
       { subtitle: 'Perfil e Menu de Usuário', text: 'No canto superior direito do cabeçalho (presente em todas as páginas), você vê "Bem Vindo" + seu nome completo + sua foto de avatar. Clique no avatar para abrir o menu dropdown com seu e-mail, "Meu Perfil" (editar nome de tratamento, enviar/trocar foto, escolher personagem) e "Sair".' },
-      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Dashboard, Mercado, Vendas, Agenda do Dia, Central de Leads, Contratos, Implantações, Pipeline, Precificação, Desempenho.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Chat Interno, Rel. Interações, Manual, Capacitação, Suporte.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação (Admin), Rel. Comissões, Prospecção, Metas, Produtos, Importar, Usuários.'] },
+      { subtitle: 'Menus da plataforma', items: ['**Bloco Comercial:** Dashboard, Mercado, Vendas, Agenda do Dia, Central de Leads, Contratos, Implantações, Pipeline, Precificação, Desempenho.', '**Bloco Prospecção:** Fila de Contatos (esteira + Modo Foco), Importar e Distribuir Leads, Painel de Prospecção, Rel. Interações, Config. Prospecção.', '**Bloco Apoio:** Clientes, Vendedores, Indicadores, Chat Interno, Rel. Interações, Manual, Capacitação, Suporte.', '**Bloco Administrativo (admins):** Comissões, Notificações, Comunicados, Notas Fiscais, Capacitação (Admin), Rel. Comissões, Metas, Produtos, Importar, Usuários.', 'O menu pode ser reordenado por arrastar e soltar, e cada usuário vê apenas os menus liberados no seu cadastro.'] },
     ],
   },
   {
@@ -198,6 +198,11 @@ const sections = [
       { subtitle: 'Como importar histórico', steps: ['Acesse "Importar" ou clique em "Importar Histórico" em Vendas.', 'Faça upload de CSV ou Excel.', 'Verifique o preview dos dados.', 'Clique em "Importar" e acompanhe em tempo real.'] },
       { subtitle: 'Colunas reconhecidas', items: ['Data (DD/MM/YYYY ou YYYY-MM-DD)', 'Produto, Vendedor / Assessor Comercial', 'Cliente, CPF/CNPJ', 'Valor, Forma de Pagamento, Observação, Bitrix'] },
       { subtitle: 'Deduplicação', text: 'O sistema verifica duplicatas (mesmo cliente, data e valor) automaticamente.' },
+      { subtitle: '📞 Telefones e produto já contratado', items: [
+        '**Telefones:** quando a mesma pessoa aparece em mais de uma linha do arquivo, o importador **não descarta o segundo número** — ele complementa o cadastro com o telefone alternativo.',
+        '**Produto já contratado:** mantenha a coluna de produto no arquivo (cabeçalhos aceitos: *produto contratado, produtos, serviço contratado*). Este dado é o gancho da venda cruzada exibido no pitch de abordagem.',
+        '**Lote:** nomeie o lote na importação. Ele é gravado em cada lead e virou o selo de origem **"Base importada · nome do lote"** na Fila de Contatos.',
+      ]},
     ],
   },
   {
@@ -215,6 +220,22 @@ const sections = [
     content: [
       { subtitle: 'Convidar usuário', steps: ['Acesse "Usuários" (apenas admins).', 'Clique em "Convidar Usuário".', 'Preencha nome, e-mail e tipo de acesso.', 'Clique em "Enviar Convite".'] },
       { subtitle: 'Permissões', items: ['**Administrador:** acesso total.', '**Usuário padrão:** apenas menus liberados pelo admin, somente seus dados.'] },
+      { subtitle: '🧩 Menus de acesso por usuário', items: [
+        'No cadastro do usuário o admin define **quais menus** ele enxerga ("Menus de acesso") — o cabeçalho mostra apenas o que foi liberado.',
+        'A função **"Liberar menus"** aplica a liberação em lote, sem editar usuário por usuário.',
+        'Menus administrativos continuam **exclusivos de admins**, independentemente do que estiver marcado.',
+      ]},
+      { subtitle: '🔀 Migração entre vendedores (Admin)', items: [
+        'Na página **Usuários** existe a migração de carteira: transfere **clientes, leads e vendas** de um vendedor para outro em um clique.',
+        'Use ao desligar ou remanejar um gerente — o histórico, as parcelas e as comissões acompanham o novo responsável.',
+        'Há também a migração de **vendedores inativos**, que move em lote tudo o que ficou órfão de quem saiu.',
+        'Sempre confirme o vendedor de destino: a ação não é reversível pela interface.',
+      ]},
+      { subtitle: '🎯 Participação na esteira de leads', items: [
+        'O cadastro do gerente tem duas chaves de distribuição: **"Participa da Central de Leads"** (leads de webhook/campanhas) e **"Recebe leads de indicação"** (roleta do Portal do Indicador).',
+        'Desmarcar uma das chaves tira o gerente **daquela** roleta, sem desativar o cadastro.',
+        'A roleta é **justa por tempo**: quem recebeu o último lead há mais tempo é o próximo da fila.',
+      ]},
     ],
   },
   {
@@ -432,6 +453,79 @@ const sections = [
         'Os **administradores recebem um resumo geral** de inércia por gerente.',
         'Disparo apenas quando há **alertas novos** — sem repetição a cada verificação.',
       ]},
+      { subtitle: '🏷️ Origem e produto contratado no card', items: [
+        'O card exibe o produto de interesse do lead e, abaixo dele, os selos **"Base importada · lote"** (azul) e **"Contratou: <produto>"** (âmbar) quando aplicáveis.',
+        'Esses selos vêm do mesmo dado usado no pitch, então o gerente identifica em segundos se o lead é **reativação de cliente** ou **lead novo de listagem**.',
+      ]},
+    ],
+  },
+  {
+    id: 'liberacao-leads', icon: Zap, title: 'Liberação Automática de Leads & Cota Diária',
+    color: 'from-amber-500 to-yellow-600', bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-100',
+    content: [
+      { subtitle: 'O que é?', text: 'Rotina automática horária que repõe a esteira de cada gerente respeitando cota diária e capacidade, para que nenhum operador fique sem lead e nenhum acumule além do limite.' },
+      { subtitle: '⚙️ Como a reposição funciona', items: [
+        'A rotina roda **de hora em hora** e verifica, gerente por gerente, quantas vagas ainda existem no dia.',
+        '**Cota diária:** limite de leads ativos por gerente no dia (definido na configuração da fila).',
+        '**Capacidade:** adicional de posições disponíveis na esteira — a rotina nunca ultrapassa o teto.',
+        '**Prioridade:** leads de indicação entram antes dos leads de carteira/importados.',
+        'Itens já resolvidos ou reagendados saem da conta e liberam vaga para reposição.',
+      ]},
+      { subtitle: '📆 Janela de 3 dias na promoção', items: [
+        'Um lead só é promovido para a esteira se estiver dentro da **janela de 3 dias** de liberação — evita puxar agendas antigas.',
+        'Agendas com data muito anterior são ignoradas na promoção e continuam apenas no histórico do cliente.',
+        'Leads que não atendem voltam para o **fim da fila de reposição**, atrás de quem ainda não foi trabalhado.',
+      ]},
+      { subtitle: '🧾 Backlog', items: [
+        'O **backlog** concentra leads elegíveis que ainda não entraram na esteira por falta de vaga.',
+        'Conforme as vagas do dia abrem, a rotina promove o backlog automaticamente — sem ação manual do gerente.',
+        'É possível consultar o backlog no **Painel de Prospecção** para prever o volume dos próximos dias.',
+      ]},
+      { subtitle: '📲 Pedir mais contatos', text: 'Dentro da Fila de Contatos, o gerente pode clicar em "Solicitar mais contatos" — a função respeita a cota e a capacidade restantes e só adiciona o que couber no dia.' },
+    ],
+  },
+  {
+    id: 'discagem-operadora', icon: Phone, title: 'Discagem Inteligente & App no Celular',
+    color: 'from-teal-500 to-emerald-600', bg: 'bg-teal-50', text: 'text-teal-800', border: 'border-teal-100',
+    content: [
+      { subtitle: 'O que é?', text: 'O sistema aprende o celular e a operadora do gerente para discar já com o código da operadora e reduzir custo por chamada — e oferece o app mobile (PWA) para trabalhar a fila pelo celular.' },
+      { subtitle: '📱 Cadastrar celular e operadora (Meu Perfil)', items: [
+        'Clique no seu avatar (canto superior direito) > **Meu Perfil**.',
+        'Preencha **Celular (com DDD)** e selecione a **Operadora**: Vivo, Claro, TIM, Oi ou Outra.',
+        'O dado é gravado no seu cadastro de gerente e vale para todas as telas do sistema.',
+        'Abaixo da operadora o sistema mostra o **código de discagem** aplicado (ex.: "Ligações saem com o código 15 (Vivo)").',
+      ]},
+      { subtitle: '☎️ Códigos de operadora usados', items: [
+        '**Vivo:** 15', '**Claro:** 21', '**TIM:** 41', '**Oi:** 31',
+        'A discagem monta o número com o prefixo da sua operadora automaticamente em **todos os botões de ligação** (Fila, Modo Foco, popup do lead e QR Code de contato).',
+        'Operadora "Outra" mantém a discagem direta, sem código.',
+      ]},
+      { subtitle: '📲 App no celular (PWA)', items: [
+        'Na Fila de Contatos há o **QR Code de contato**: aponte a câmera e abra o **Modo Foco** direto no celular.',
+        'O Modo Foco mobile mostra um lead por vez, com botões de ligar, WhatsApp, registrar resultado e agendar retorno.',
+        'É possível **instalar como app** no iPhone/Android (Adicionar à tela de início) usando o logo enviado na imagem PNG configurada.',
+      ]},
+      { subtitle: '🔔 Comunicado de atualização de dados', text: 'Quando o cadastro de celular/operadora estiver vazio, um comunicado no sistema orienta o gerente a atualizar o perfil — com botão "Abrir Meu Perfil" que leva direto ao modal.' },
+    ],
+  },
+  {
+    id: 'config-prospeccao', icon: Settings, title: 'Config. Prospecção & Painel de Prospecção',
+    color: 'from-indigo-500 to-violet-600', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100',
+    content: [
+      { subtitle: 'Config. Prospecção (Admin)', items: [
+        'Menu **"Config. Prospecção"** concentra os parâmetros da esteira: janela de contato, meta diária de toques, cota por gerente e regras de reposição.',
+        'Os parâmetros da configuração valem para todos; o cadastro do gerente pode **sobrescrever** janela, meta e percentual individualmente.',
+        'Também é aqui que se gerenciam as **cadências** (sequência de passos de tentativa/retorno) aplicáveis aos leads.',
+      ]},
+      { subtitle: 'Painel de Prospecção', items: [
+        'Menu **"Painel de Prospecção"**: visão consolidada de toques, atendimentos, reuniões e conversões por gerente.',
+        'Mostra **backlog e vagas** abertas em cada esteira, ajudando a decidir redistribuições.',
+        'Use para comparar produtividade entre turnos e identificar quem está com fila travada.',
+      ]},
+      { subtitle: '🔧 Permissões', items: [
+        'Visível para administradores e para usuários com o menu liberado no cadastro.',
+        'Gerentes comuns acessam apenas as leituras permitidas pela sua esteira.',
+      ]},
     ],
   },
   {
@@ -440,6 +534,16 @@ const sections = [
     content: [
       { subtitle: 'Importar lista de leads', steps: ['Clique em "Importar Lista".', 'Faça upload de CSV ou Excel (Nome, CPF/CNPJ, Telefone).', 'Nomeie o lote e verifique o preview.', 'Clique em "Importar".'] },
       { subtitle: 'Distribuir leads', steps: ['Selecione o lote e clique em "Distribuir".', 'Escolha os gerentes.', 'Sistema distribui automaticamente e gera agenda (até 5/dia por gerente).'] },
+      { subtitle: '🏷️ Origem do lead: Carteira x Base importada', items: [
+        'Todo item da Fila de Contatos carrega um **selo de origem**: **"Carteira"** para a base atual de clientes e **"Base importada · <lote>"** para quem entrou por listagem.',
+        'O selo aparece no card do Kanban e também no **painel de pitch**, para o gerente ajustar a abordagem (reativação x relacionamento).',
+        '**Produto já contratado:** se o lead importado tem produto no arquivo, o pitch exibe o selo **"Já contratou: …"** e o roteiro cita o produto na abertura — gancho direto de venda cruzada.',
+      ]},
+      { subtitle: '📄 Como o roteiro usa esses dados', items: [
+        'Com produto contratado: *"…o mesmo grupo com quem você já tem contrato em DOLARIZE"*.',
+        'Sem produto no arquivo: o texto usa *"um produto do Grupo"* — por isso vale preencher a coluna na importação.',
+        'A origem (carteira ou importada) também é gravada no item da fila, permanecendo visível em todo o histórico do lead.',
+      ]},
     ],
   },
   {
@@ -509,6 +613,11 @@ const sections = [
         '**Origem do pagamento:** selecione entre Boleto, Link de Pagamento, PIX, TED ou Outros.',
       ]},
       { subtitle: '🔄 Gestão manual de status', text: 'Administradores podem alterar manualmente o status do contrato em qualquer etapa do fluxo, permitindo correções e ajustes quando necessário.' },
+      { subtitle: '💵 Valor da mensalidade por produto', items: [
+        'O campo **Mensalidade** só aparece (e só entra no PDF) nos produtos que a cobram: **GARANTIAS, RATING e SCORE**.',
+        'Em **CONTA INTERNACIONAL, CONTA GLOBAL, DOLARIZE, ROF, CANAL BANCÁRIO, OFFSHORE, HORA TÉCNICA e DIAGNÓSTICO** o valor da mensalidade fica **vazio por padrão** — sem número pré-preenchido no documento.',
+        'Se o contrato já tiver sido salvo com valor antigo, basta abrir o contrato, limpar o campo e salvar novamente para o PDF sair sem a linha de mensalidade.',
+      ]},
     ],
   },
   {
@@ -547,6 +656,15 @@ const sections = [
         'Administradores podem **trocar o padrinho pontualmente** em uma implantação específica, pelo modal de detalhes.',
         'A troca pontual é **exceção**: vale apenas para aquela implantação e **não altera o cadastro mestre** do produto.',
         'A troca fica registrada no histórico da implantação e o novo padrinho passa a visualizar o processo.',
+      ]},
+      { subtitle: '🔎 Filtros múltiplos da esteira', items: [
+        'Os filtros de **status, gerente, padrinho e tipo de contrato** aceitam **múltipla seleção** (marque quantos quiser e veja a contagem).',
+        'As colunas do Kanban e a lista respeitam a combinação escolhida; "Limpar" volta à visão completa.',
+        '**Tipo de contrato:** a implantação é classificada como *contrato*, *termo com pagamento adiantado* ou *parcelamento* — usado nos filtros e relatórios.',
+      ]},
+      { subtitle: '🛡️ Regras para administradores', items: [
+        'Administradores podem mover leads na esteira **sem preencher Rate e link de abertura de CC** — a trava existe para o fluxo do gerente.',
+        'A troca de padrinho, a edição de condições especiais e o cancelamento também ficam liberados para admins em qualquer etapa.',
       ]},
       { subtitle: 'Status e prioridade', items: [
         '**Status:** Aguardando Documentação → Em Andamento → Aguardando Cliente → Concluído / Concluído com Feedback / Cancelado.',
@@ -894,7 +1012,7 @@ const categories = [
     id: 'vendas', label: 'Vendas', icon: BarChart2,
     gradFrom: '#00b09b', gradTo: '#007b6e',
     color: 'from-[#00b09b] to-[#007b6e]',
-    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'fila-contatos-esteira', 'implantacoes'],
+    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'fila-contatos-esteira', 'liberacao-leads', 'discagem-operadora', 'config-prospeccao', 'implantacoes'],
   },
   {
     id: 'financas', label: 'Finanças', icon: DollarSign,
@@ -912,7 +1030,7 @@ const categories = [
     id: 'admin', label: 'Admin', icon: UserCheck,
     gradFrom: '#9b59b6', gradTo: '#6c3483',
     color: 'from-[#9b59b6] to-[#6c3483]',
-    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos', 'portal-indicador'],
+    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos', 'portal-indicador', 'config-prospeccao'],
   },
 ];
 
