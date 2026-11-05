@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
-import { calcularEstruturaPagamento } from '../../shared/estruturaPagamento.ts';
+import { calcularEstruturaPagamento, gerarCronograma } from '../../shared/estruturaPagamento.ts';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -43,7 +43,7 @@ function vencimentoParcela(isoBase, indiceParcela, diaVencimento) {
 // Estrutura de pagamento: só gera parcelas para o SALDO ainda não recebido.
 // Pagamento à vista / pagamento único (entrada 0 + 1 parcela) NÃO gera parcela — antes gerava uma
 // parcela do mesmo valor já recebido, o que duplicava a produção ao "receber" a parcela.
-async function gerarParcelas(base44, contrato, vendaId, valorRecebido) {
+async function gerarParcelas(base44, contrato, vendaId, valorRecebido, cronogramaInformado) {
   if (!vendaId) return { criadas: 0, motivo: 'sem venda' };
   const est = calcularEstruturaPagamento(contrato, { valorRecebido });
   const numParcelas = est.parcelas;
@@ -52,24 +52,28 @@ async function gerarParcelas(base44, contrato, vendaId, valorRecebido) {
   const existentes = await base44.asServiceRole.entities.ParcelaVenda.filter({ venda_id: vendaId });
   const numerosExistentes = new Set(existentes.map((p) => p.numero_parcela));
 
-  const valorParcela = est.valorParcela;
-
-  // A 1ª parcela pode começar fora do intervalo padrão da entrada (negociação
-  // com entrada no ato + parcelamento iniciando depois): usa a data própria
-  // de início do parcelamento quando informada.
-  const baseISO = contrato.data_primeira_parcela || contrato.data_primeiro_pagamento || contrato.data_contrato || todayBrasiliaISO();
+  // Cronograma (datas + valores): usa o que foi confirmado no envio do contrato para Vendas, desde que
+  // seja consistente (mesma quantidade, datas válidas, soma = saldo). Senão, gera pelo contrato.
+  let cronograma = gerarCronograma(contrato, est, todayBrasiliaISO());
+  if (Array.isArray(cronogramaInformado) && cronogramaInformado.length === numParcelas) {
+    const valido = cronogramaInformado.every((p) => /^\d{4}-\d{2}-\d{2}$/.test(p?.vencimento || '') && Number(p?.valor) > 0);
+    const soma = cronogramaInformado.reduce((t, p) => t + Number(p?.valor || 0), 0);
+    if (valido && Math.abs(soma - est.saldo) <= 0.05) {
+      cronograma = cronogramaInformado.map((p, idx) => ({ numero: idx + 1, vencimento: p.vencimento, valor: Math.round(Number(p.valor) * 100) / 100 }));
+    }
+  }
 
   let criadas = 0;
-  for (let i = 1; i <= numParcelas; i++) {
-    if (numerosExistentes.has(i)) continue;
+  for (const parc of cronograma) {
+    if (numerosExistentes.has(parc.numero)) continue;
     if (criadas > 0) await sleep(400);
     await createWithRetry(() =>
       base44.asServiceRole.entities.ParcelaVenda.create({
         venda_id: vendaId,
-        numero_parcela: i,
+        numero_parcela: parc.numero,
         total_parcelas: numParcelas,
-        valor_parcela: Math.round(valorParcela * 100) / 100,
-        data_vencimento: vencimentoParcela(baseISO, i, contrato.dia_vencimento),
+        valor_parcela: parc.valor,
+        data_vencimento: parc.vencimento,
         status: 'pendente',
         pipeline_id: '',
         cliente_nome: contrato.nome || '',
@@ -98,7 +102,7 @@ export default async function (req) {
     // Modo individual: contrato acabou de gerar a venda — cria as parcelas dele
     if (body?.contrato_id && body?.venda_id) {
       const contrato = await base44.asServiceRole.entities.Contrato.get(body.contrato_id);
-      const res = await gerarParcelas(base44, contrato, body.venda_id, body.valor_recebido);
+      const res = await gerarParcelas(base44, contrato, body.venda_id, body.valor_recebido, body.cronograma);
       return Response.json({ success: true, ...res });
     }
 
