@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import ContratoFinanceiroModelos from '@/components/contratos/ContratoFinanceiroModelos';
+import { calcularEstruturaPagamento, gerarCronograma, ROTULO_ESTRUTURA } from '@/lib/estruturaPagamento';
 import CampoMascara from '@/components/ui/campo-mascara';
 import { consultarCnpj } from '@/lib/autocomplete';
 import CampoMoeda from '@/components/ui/campo-moeda';
@@ -795,6 +796,32 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     </div>
                   </div>
                 )}
+
+                {/* Estrutura do pagamento: o que será recebido na contratação e o cronograma que segue para Vendas */}
+                {tipo !== 'GARANTIAS' && parseFloat(form.valor_total) > 0 && (() => {
+                  const est = calcularEstruturaPagamento(form);
+                  const cron = gerarCronograma(form, est);
+                  const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                  return (
+                    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
+                      <div className="flex items-center justify-between flex-wrap gap-1">
+                        <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest">Estrutura do pagamento</p>
+                        <span className="text-xs font-semibold text-[#1a3150]">{ROTULO_ESTRUTURA[est.tipo]}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1.5">
+                        Recebido na contratação: <b>{brl(est.recebido)}</b>
+                        {est.parcelas > 0 ? <> · Saldo <b>{brl(est.saldo)}</b> em <b>{est.parcelas}× {brl(est.valorParcela)}</b></> : <> · Sem parcelas a receber</>}
+                      </p>
+                      {cron.length > 0 && (
+                        <p className="text-[11px] text-gray-500 mt-1">
+                          Vencimentos: {cron.slice(0, 6).map(p => p.vencimento.split('-').reverse().join('/')).join(' · ')}{cron.length > 6 ? ` … (+${cron.length - 6})` : ''}
+                          <span className="text-gray-400"> — este cronograma segue para Vendas ao enviar o contrato (você pode ajustar na hora).</span>
+                        </p>
+                      )}
+                      {est.tipo === 'somente_parcelas' && <p className="text-[11px] text-amber-700 mt-1.5">Sem entrada: a venda nova entra com R$ 0,00 e cada parcela recebida entra como recorrência.</p>}
+                    </div>
+                  );
+                })()}
 
                 {['RATING', 'DIAGNÓSTICO', 'SCORE'].includes(form._tipoOverride || tipo) ? (
                   <ContratoFinanceiroModelos tipo={form._tipoOverride || tipo} form={form} set={set}
