@@ -25,7 +25,7 @@ export function buildManualCatalog(sections, definitions) {
         articles.push(article);
         return article;
       });
-      return { ...section, href: sectionHref, articles: topics };
+      return { ...section, collectionId: definition.id, href: sectionHref, articles: topics };
     }).filter(Boolean);
     return { ...definition, href: collectionHref, modules, articleCount: modules.reduce((total, module) => total + module.articles.length, 0) };
   });

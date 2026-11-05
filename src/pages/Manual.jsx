@@ -1,17 +1,10 @@
-import { useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import { toast } from 'sonner';
-import ManualSectionModal from '@/components/manual/ManualSectionModal';
-import CategoriasManual from '@/components/manual/CategoriasManual';
-import ManualHero from '@/components/manual/ManualHero';
-import ManualSectionCard from '@/components/manual/ManualSectionCard';
+import ManualKnowledgeHub from '@/components/manual/ManualKnowledgeHub';
 import {
-  BookOpen, ChevronRight, ChevronDown, ShoppingCart, BarChart3, Package, Users,
-  DollarSign, Target, FileText, Upload, AlertTriangle, CheckCircle2, ArrowRight,
-  Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot, Megaphone, Receipt,
-  ScrollText, Search, LayoutDashboard, Layers, Zap, Settings, BarChart2,
-  TrendingDown, Bell, UserCheck, RefreshCw, Banknote, Globe, MessageSquare, LifeBuoy, Calculator,
-  Rocket, KanbanSquare, Activity, FileWarning, ShieldCheck, Newspaper, Handshake, Download, Loader2, Phone
+  BookOpen, ShoppingCart, Package, Users, DollarSign, Target, FileText, Upload,
+  AlertTriangle, Briefcase, CalendarClock, TrendingUp, GraduationCap, Bot,
+  Megaphone, Receipt, ScrollText, Search, LayoutDashboard, Zap, Settings, Bell,
+  UserCheck, Globe, MessageSquare, LifeBuoy, Calculator, Rocket, KanbanSquare,
+  Activity, Newspaper, Handshake, Phone,
 } from 'lucide-react';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -408,7 +401,7 @@ const sections = [
         'A abertura do roteiro identifica o lead automaticamente: **primeiro nome (PF)** ou **representante legal (PJ)**, além do **primeiro nome do gerente** responsável — ex.: "Oi Jefferson, aqui é Kauana da Villela Exchange".',
         '**Roteiro, objeções comuns e sugestões da IA são vinculadas ao produto** selecionado na "Negociação em Andamento", em tempo real: a IA responde exclusivamente sobre o produto em negociação e não menciona outros produtos.',
       ]},
-      { subtitle: '📄 PDFs ilustrados', text: 'Use o botão "Baixar PDF da Jornada" no topo do Manual para o documento da jornada completa, e o botão "Baixar PDF da Nova Esteira (Fila de Contatos)" para o guia ilustrado da nova esteira (Kanban, SLA, cadência e ações rápidas).' },
+      { subtitle: 'Consultar orientações por assunto', text: 'Pesquise a sua dúvida no Manual ou acesse CRM e prospecção para consultar os artigos deste módulo. As orientações podem ser abertas individualmente, sem baixar os antigos guias em PDF.' },
     ],
   },
   {
@@ -1008,216 +1001,6 @@ const sections = [
   },
 ];
 
-// ─── CATEGORY CARDS ──────────────────────────────────────────────────────────
-
-const categories = [
-  {
-    id: 'vendas', label: 'Vendas', icon: BarChart2, hue: '#00d4aa',
-    sections: ['mercado', 'vendas', 'pipeline', 'parcelas-vincendas', 'meus-clientes', 'prospecccao', 'central-leads', 'fila-contatos-popup', 'fila-contatos-esteira', 'liberacao-leads', 'discagem-operadora', 'config-prospeccao', 'implantacoes'],
-  },
-  {
-    id: 'financas', label: 'Finanças', icon: DollarSign, hue: '#38bdf8',
-    sections: ['comissoes', 'metas', 'notas-fiscais', 'relatorios', 'importar'],
-  },
-  {
-    id: 'operacoes', label: 'Operações', icon: Settings, hue: '#34d399',
-    sections: ['contratos', 'implantacoes', 'central-leads', 'indicadores', 'portal-indicador', 'treinamentos', 'relatorio-interacoes', 'comunicados', 'google-calendar', 'chat-interno', 'suporte', 'clientes', 'alertas-sistema', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos'],
-  },
-  {
-    id: 'admin', label: 'Admin', icon: UserCheck, hue: '#a78bfa',
-    sections: ['introducao', 'dashboard', 'mercado', 'vendedores', 'produtos', 'notificacoes', 'usuarios', 'assistente-ia', 'precificacao', 'desempenho', 'perfil-usuario', 'gamificacao-roleta', 'relatorio-acessos', 'portal-indicador', 'config-prospeccao'],
-  },
-];
-
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
-
 export default function Manual() {
-  const [selectedSection, setSelectedSection] = useState(null);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [busca, setBusca] = useState('');
-  const [baixandoPdf, setBaixandoPdf] = useState(false);
-  const [baixandoPdfIndicador, setBaixandoPdfIndicador] = useState(false);
-  const [baixandoPdfEsteira, setBaixandoPdfEsteira] = useState(false);
-
-  const baixarPdfJornada = async () => {
-    setBaixandoPdf(true);
-    try {
-      const res = await base44.functions.invoke('gerarManualJornadaLeadPDF', {});
-      // res.data pode ser o PDF binário (arraybuffer no backend) ou um erro
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'manual-jornada-lead.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success('PDF da jornada gerado com sucesso.');
-    } catch (e) {
-      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
-    }
-    setBaixandoPdf(false);
-  };
-
-  const baixarPdfIndicador = async () => {
-    setBaixandoPdfIndicador(true);
-    try {
-      const res = await base44.functions.invoke('gerarManualCadastroIndicadorPDF', {});
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'manual-cadastro-indicador.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success('PDF de cadastro do indicador gerado com sucesso.');
-    } catch (e) {
-      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
-    }
-    setBaixandoPdfIndicador(false);
-  };
-
-  const baixarPdfEsteira = async () => {
-    setBaixandoPdfEsteira(true);
-    try {
-      const res = await base44.functions.invoke('gerarManualFilaContatosPDF', {});
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'estrutura-fila-contatos.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success('PDF da Nova Esteira de Fila de Contatos gerado com sucesso.');
-    } catch (e) {
-      toast.error('Erro ao gerar PDF: ' + (e?.message || e));
-    }
-    setBaixandoPdfEsteira(false);
-  };
-
-  const handleCategory = (cat) => {
-    if (activeCategory === cat.id) {
-      setActiveCategory(null);
-      return;
-    }
-    setActiveCategory(cat.id);
-    setTimeout(() => {
-      document.getElementById('sections-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 80);
-  };
-
-  const baseSections = activeCategory
-    ? sections.filter(s => categories.find(c => c.id === activeCategory)?.sections.includes(s.id))
-    : sections;
-
-  const termo = busca.trim().toLowerCase();
-  const visibleSections = termo
-    ? baseSections.filter(s => {
-        const texto = [
-          s.title,
-          ...s.content.map(c => [c.subtitle, c.text, ...(c.items || []), ...(c.steps || [])].filter(Boolean).join(' ')),
-        ].join(' ');
-        return texto.toLowerCase().includes(termo);
-      })
-    : baseSections;
-
-  const categoriaAtiva = categories.find(c => c.id === activeCategory)?.label;
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-5 space-y-4">
-
-        <ManualHero
-          stats={[
-            { value: sections.length, label: 'Seções' },
-            { value: sections.reduce((a, s) => a + s.content.length, 0), label: 'Tópicos' },
-            { value: 'Nov/2026', label: 'Atualizado' },
-          ]}
-          busca={busca}
-          onBusca={setBusca}
-          documentos={[
-            { label: 'Jornada do Lead', icon: Download, loading: baixandoPdf, onClick: baixarPdfJornada },
-            { label: 'Cadastro do Indicador', icon: Handshake, loading: baixandoPdfIndicador, onClick: baixarPdfIndicador },
-            { label: 'Esteira de Contatos', icon: KanbanSquare, loading: baixandoPdfEsteira, onClick: baixarPdfEsteira },
-          ]}
-        />
-
-        {/* ── ÁREAS ── */}
-        <CategoriasManual
-          categories={categories}
-          activeCategory={activeCategory}
-          totalSections={sections.length}
-          onSelect={(id) => {
-            if (!id) { setActiveCategory(null); return; }
-            handleCategory({ id });
-          }}
-        />
-
-        {/* ── CONTEÚDO ── */}
-        <div id="sections-list" className="space-y-3 scroll-mt-24">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[11px]" style={{ color: 'rgba(230,237,243,0.42)' }}>
-              {visibleSections.length} {visibleSections.length === 1 ? 'seção' : 'seções'}
-              {categoriaAtiva ? ` em ${categoriaAtiva}` : ''}
-              {termo ? ` para “${busca.trim()}”` : ''}
-            </p>
-            {(activeCategory || termo) && (
-              <button
-                onClick={() => { setActiveCategory(null); setBusca(''); }}
-                className="text-[11px] underline transition"
-                style={{ color: 'rgba(0,212,170,0.85)' }}
-              >
-                limpar filtros
-              </button>
-            )}
-          </div>
-
-          {visibleSections.length === 0 ? (
-            <div
-              className="rounded-xl p-10 text-center"
-              style={{ background: 'rgba(22,27,34,0.7)', border: '1px dashed rgba(0,212,170,0.22)' }}
-            >
-              <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>Nada encontrado</p>
-              <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.45)' }}>
-                Tente outro termo ou selecione “Tudo” para ver todas as seções.
-              </p>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {visibleSections.map(s => (
-                <ManualSectionCard key={s.id} section={s} onOpen={() => setSelectedSection(s)} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── NOTA ── */}
-        <div
-          className="flex items-start gap-2.5 rounded-lg px-4 py-3"
-          style={{ background: 'rgba(22,27,34,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}
-        >
-          <span className="text-[11px] font-bold flex-shrink-0" style={{ color: 'rgba(0,212,170,0.8)' }}>i</span>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(230,237,243,0.45)' }}>
-            Usuários não-administradores veem apenas os menus liberados pelo admin e somente seus próprios dados de vendas e comissões.
-          </p>
-        </div>
-
-        {/* ── FOOTER ── */}
-        <div className="text-center py-2 text-[10px] uppercase tracking-[0.2em]" style={{ color: 'rgba(230,237,243,0.22)' }}>
-          Villela Exchange · Manual da Plataforma · Nov/2026
-        </div>
-      </div>
-
-      {/* ── POPUP DE LEITURA DO TEMA ── */}
-      {selectedSection && (
-        <ManualSectionModal section={selectedSection} onClose={() => setSelectedSection(null)} />
-      )}
-    </div>
-  );
+  return <ManualKnowledgeHub sections={sections} />;
 }
