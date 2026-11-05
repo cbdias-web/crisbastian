@@ -43,6 +43,14 @@
       "description": "Email do vendedor",
       "type": "string"
     },
+    "emails_alternativos": {
+      "default": [],
+      "description": "Outros e-mails/logins do mesmo gerente (ex.: conta pessoal). Usados para vincular o usuario logado ao vendedor correto",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "janela_fim": {
       "description": "Fim da janela de contato (HH:MM) - sobrescreve ConfigFila",
       "type": "string"
