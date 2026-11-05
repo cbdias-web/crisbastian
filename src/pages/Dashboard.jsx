@@ -346,9 +346,16 @@ export default function Dashboard() {
   // Produção: somente vendas liberadas/autorizadas e com contrato assinado + comprovante
   const vendasAcumulado = vendasFiltradas.filter(vendaContaProducao);
 
-  const totalVendas = vendasAcumulado.length;
-  const valorTotal = vendasAcumulado.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
-  const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+  // Separa venda NOVA de RECORRÊNCIA (pagamento de parcela). O valor total (meta/produção) segue somando os dois;
+  // a quantidade de vendas e o ticket médio consideram só vendas novas — parcela recebida não é "uma venda".
+  const vendasNovasAcum = vendasAcumulado.filter(v => v.tipo_venda !== 'recorrencia');
+  const vendasRecorrAcum = vendasAcumulado.filter(v => v.tipo_venda === 'recorrencia');
+  const totalVendas = vendasNovasAcum.length;
+  const totalRecorrencias = vendasRecorrAcum.length;
+  const valorNovas = vendasNovasAcum.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
+  const valorRecorrencia = vendasRecorrAcum.reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
+  const valorTotal = valorNovas + valorRecorrencia;
+  const ticketMedio = totalVendas > 0 ? valorNovas / totalVendas : 0;
   const vendedoresAtivos = new Set(vendasAcumulado.map(v => v.vendedor_id || v.assessor_comercial).filter(Boolean)).size;
 
   const vendasFiltradasIds = new Set(vendasAcumulado.map(v => v.id));
@@ -559,7 +566,10 @@ export default function Dashboard() {
               <p className="text-[10px] uppercase tracking-widest font-semibold mb-2" style={{ color: 'rgba(0,212,170,0.7)' }}>Total Vendido no Período</p>
               <p className="text-3xl font-bold" style={{ color: A.text }}>{formatCurrency(valorTotal)}</p>
               <p className="text-sm mt-1" style={{ color: A.textMuted }}>
-                {totalVendas} venda{totalVendas !== 1 ? "s" : ""} · ticket {formatCurrency(ticketMedio)}
+                {totalVendas} venda{totalVendas !== 1 ? "s" : ""} nova{totalVendas !== 1 ? "s" : ""} · ticket {formatCurrency(ticketMedio)}
+              </p>
+              <p className="text-xs mt-1.5" style={{ color: A.textMuted }}>
+                Novas {formatCurrency(valorNovas)} · Recorrência {formatCurrency(valorRecorrencia)} ({totalRecorrencias} parcela{totalRecorrencias !== 1 ? "s" : ""})
               </p>
             </div>
             <div className="flex items-center gap-2 mt-4 px-3 py-2 rounded-xl"
@@ -571,7 +581,7 @@ export default function Dashboard() {
 
           {/* KPI grid 2x2 */}
           <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <KpiCard label="Vendas no Período" value={totalVendas} sub={`${vendas.length} total`} icon={FileText} accentColor="#60a5fa" />
+            <KpiCard label="Vendas Novas no Período" value={totalVendas} sub={`+ ${totalRecorrencias} recorrência${totalRecorrencias !== 1 ? "s" : ""}`} icon={FileText} accentColor="#60a5fa" />
             <KpiCard label="Comissão Gerada" value={formatCurrency(comissaoGerada)} icon={DollarSign} accentColor={A.gold} />
             <KpiCard label="Ticket Médio" value={formatCurrency(ticketMedio)} icon={BarChart2} accentColor="#a78bfa" />
             <KpiCard label="Vendedores Ativos" value={vendedoresAtivos} icon={Users} accentColor={A.accent} />

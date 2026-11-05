@@ -986,7 +986,7 @@ export default function Vendas() {
                       <TableCell>
                         <div className="flex flex-col gap-1 items-start">
                           {venda.tipo_venda === 'nova' && <Badge className="bg-emerald-100 text-emerald-700">Nova</Badge>}
-                          {venda.tipo_venda === 'recorrencia' && <Badge className="bg-amber-100 text-amber-700">Recorrência</Badge>}
+                          {venda.tipo_venda === 'recorrencia' && <Badge className="bg-amber-100 text-amber-700" title={venda.venda_origem_id ? 'Vinculada à venda original' : 'Sem vínculo com a venda original (registro antigo)'}>Recorrência{venda.numero_parcela ? ` ${venda.numero_parcela}/${venda.total_parcelas || '?'}` : ''}</Badge>}
                           {!venda.tipo_venda && <Badge className="bg-red-100 text-red-700">⚠ Sem tipo</Badge>}
                           {venda.autorizacao_status === 'pendente' && (
                             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
