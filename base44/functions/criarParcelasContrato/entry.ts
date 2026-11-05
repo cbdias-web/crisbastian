@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
+import { calcularEstruturaPagamento } from '../../shared/estruturaPagamento.ts';
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function createWithRetry(fn, retries = 3, delay = 600) {
@@ -38,17 +40,19 @@ function vencimentoParcela(isoBase, indiceParcela, diaVencimento) {
 
 // Gera as ParcelaVenda (parcelas vincendas) de um contrato para a venda informada.
 // Idempotente: pula parcelas cujo número já existe para a venda.
-async function gerarParcelas(base44, contrato, vendaId) {
-  const numParcelas = Math.round(contrato.num_parcelas || 0);
-  if (numParcelas <= 0 || !vendaId) return { criadas: 0, motivo: 'sem parcelas' };
+// Estrutura de pagamento: só gera parcelas para o SALDO ainda não recebido.
+// Pagamento à vista / pagamento único (entrada 0 + 1 parcela) NÃO gera parcela — antes gerava uma
+// parcela do mesmo valor já recebido, o que duplicava a produção ao "receber" a parcela.
+async function gerarParcelas(base44, contrato, vendaId, valorRecebido) {
+  if (!vendaId) return { criadas: 0, motivo: 'sem venda' };
+  const est = calcularEstruturaPagamento(contrato, { valorRecebido });
+  const numParcelas = est.parcelas;
+  if (numParcelas <= 0) return { criadas: 0, motivo: 'sem saldo parcelado', estrutura: est.tipo };
 
   const existentes = await base44.asServiceRole.entities.ParcelaVenda.filter({ venda_id: vendaId });
   const numerosExistentes = new Set(existentes.map((p) => p.numero_parcela));
 
-  const restante = (contrato.valor_total || 0) - (contrato.valor_adesao || 0);
-  const valorParcela = contrato.valor_parcela > 0
-    ? contrato.valor_parcela
-    : (restante > 0 ? restante / numParcelas : (contrato.valor_total || 0) / numParcelas);
+  const valorParcela = est.valorParcela;
 
   // A 1ª parcela pode começar fora do intervalo padrão da entrada (negociação
   // com entrada no ato + parcelamento iniciando depois): usa a data própria
@@ -94,7 +98,7 @@ export default async function (req) {
     // Modo individual: contrato acabou de gerar a venda — cria as parcelas dele
     if (body?.contrato_id && body?.venda_id) {
       const contrato = await base44.asServiceRole.entities.Contrato.get(body.contrato_id);
-      const res = await gerarParcelas(base44, contrato, body.venda_id);
+      const res = await gerarParcelas(base44, contrato, body.venda_id, body.valor_recebido);
       return Response.json({ success: true, ...res });
     }
 
