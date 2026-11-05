@@ -1,104 +1,129 @@
 {
   "name": "Venda",
-  "type": "object",
   "properties": {
-    "produto": {
-      "type": "string",
-      "description": "Nome do produto vendido"
-    },
     "assessor_comercial": {
-      "type": "string",
-      "description": "Nome do assessor/vendedor"
-    },
-    "vendedor_id": {
-      "type": "string",
-      "description": "ID do vendedor responsável (obrigatório para novas vendas)"
-    },
-    "time": {
-      "type": "string",
-      "description": "Time do vendedor"
-    },
-    "contrato_id": {
-      "type": "string",
-      "description": "ID do contrato vinculado a esta venda (toda nova venda precisa de contrato gerado)"
-    },
-    "origem_registro": {
-      "type": "string",
-      "enum": [
-        "manual",
-        "contrato"
-      ],
-      "description": "Origem do registro: 'manual' (lançada na tela de Vendas — exige código de liberação da gerência) ou 'contrato' (enviada de um contrato concluído)"
-    },
-    "codigo_liberacao": {
-      "type": "string",
-      "description": "Código de liberação da gerência (uso único) consumido por este lançamento manual"
+      "description": "Nome do assessor/vendedor",
+      "type": "string"
     },
     "autorizacao_status": {
-      "type": "string",
+      "description": "Autoriza\u00e7\u00e3o da ger\u00eancia: pendente at\u00e9 a libera\u00e7\u00e3o. Vendas n\u00e3o autorizadas n\u00e3o contam na produ\u00e7\u00e3o",
       "enum": [
         "nao_requer",
         "pendente",
         "autorizada",
         "rejeitada"
       ],
-      "description": "Autorização da gerência: pendente até a liberação. Vendas não autorizadas não contam na produção"
-    },
-    "autorizada_por": {
-      "type": "string",
-      "description": "E-mail do gestor que autorizou o lançamento manual"
+      "type": "string"
     },
     "autorizada_em": {
-      "type": "string",
+      "description": "Data/hora da autoriza\u00e7\u00e3o",
       "format": "date-time",
-      "description": "Data/hora da autorização"
+      "type": "string"
     },
-    "exige_documentos": {
-      "type": "boolean",
-      "default": false,
-      "description": "Quando true, a venda só conta na produção com contrato assinado e comprovante de pagamento anexados (padrão para novos registros)"
+    "autorizada_por": {
+      "description": "E-mail do gestor que autorizou o lan\u00e7amento manual",
+      "type": "string"
     },
-    "contrato_assinado_url": {
-      "type": "string",
-      "description": "URL do contrato assinado, sincronizada do contrato vinculado"
-    },
-    "contrato_assinado_nome": {
-      "type": "string",
-      "description": "Nome do arquivo do contrato assinado"
-    },
-    "boleto_url": {
-      "type": "string",
-      "description": "URL do boleto de cobrança, sincronizado do contrato vinculado"
+    "bitrix": {
+      "description": "Link do Bitrix",
+      "type": "string"
     },
     "boleto_nome": {
-      "type": "string",
-      "description": "Nome do arquivo do boleto"
+      "description": "Nome do arquivo do boleto",
+      "type": "string"
     },
-    "tipo_venda": {
-      "type": "string",
-      "enum": [
-        "nova",
-        "recorrencia"
-      ],
-      "description": "Tipo da venda: 'nova' (venda nova — direcionada para implantação) ou 'recorrencia' (pagamento de parcela — não gera implantação)"
+    "boleto_url": {
+      "description": "URL do boleto de cobran\u00e7a, sincronizado do contrato vinculado",
+      "type": "string"
+    },
+    "cliente": {
+      "description": "Nome do cliente",
+      "type": "string"
+    },
+    "codigo_liberacao": {
+      "description": "C\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia (uso \u00fanico) consumido por este lan\u00e7amento manual",
+      "type": "string"
+    },
+    "comprovantes": {
+      "default": [],
+      "description": "Comprovantes de pagamento anexados",
+      "items": {
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "considerar_acumulado": {
+      "default": true,
+      "description": "Se true, a venda \u00e9 considerada no acumulado de vendas do Dashboard e relat\u00f3rios (ainda sujeita a autoriza\u00e7\u00e3o e documentos completos)",
+      "type": "boolean"
+    },
+    "contrato_assinado_nome": {
+      "description": "Nome do arquivo do contrato assinado",
+      "type": "string"
+    },
+    "contrato_assinado_url": {
+      "description": "URL do contrato assinado, sincronizada do contrato vinculado",
+      "type": "string"
+    },
+    "contrato_id": {
+      "description": "ID do contrato vinculado a esta venda (toda nova venda precisa de contrato gerado)",
+      "type": "string"
+    },
+    "cpf_cnpj": {
+      "description": "CPF ou CNPJ do cliente",
+      "type": "string"
+    },
+    "data": {
+      "description": "Data da venda",
+      "format": "date",
+      "type": "string"
     },
     "espelhamento": {
-      "type": "string",
-      "description": "Nome do primeiro indicador (backward compat)"
+      "description": "Nome do primeiro indicador (backward compat)",
+      "type": "string"
     },
     "espelhamento_id": {
-      "type": "string",
-      "description": "ID do primeiro indicador (backward compat)"
+      "description": "ID do primeiro indicador (backward compat)",
+      "type": "string"
     },
-    "percentual_comissao_espelhamento": {
-      "type": "number",
-      "description": "Percentual do primeiro indicador (backward compat)"
+    "estrutura_pagamento": {
+      "description": "Como o pagamento foi estruturado: a_vista, entrada_parcelas, somente_parcelas (nenhum valor recebido na contrata\u00e7\u00e3o) ou parcela (recorr\u00eancia)",
+      "enum": [
+        "a_vista",
+        "entrada_parcelas",
+        "somente_parcelas",
+        "parcela"
+      ],
+      "type": "string"
+    },
+    "exige_documentos": {
+      "default": false,
+      "description": "Quando true, a venda s\u00f3 conta na produ\u00e7\u00e3o com contrato assinado e comprovante de pagamento anexados (padr\u00e3o para novos registros)",
+      "type": "boolean"
+    },
+    "forma_pagamento": {
+      "description": "Forma de pagamento utilizada",
+      "enum": [
+        "D\u00c9BITO EM CONTA",
+        "CART\u00c3O DE CR\u00c9DITO",
+        "BOLETO",
+        "PIX",
+        "TRANSFER\u00caNCIA",
+        "DINHEIRO"
+      ],
+      "type": "string"
     },
     "indicadores": {
-      "type": "array",
       "description": "Lista de indicadores/espelhamentos da venda",
       "items": {
-        "type": "object",
         "properties": {
           "id": {
             "type": "string"
@@ -109,121 +134,95 @@
           "percentual": {
             "type": "number"
           }
-        }
-      }
-    },
-    "valor": {
-      "type": "number",
-      "description": "Valor da entrada/adesão"
-    },
-    "valor_total_contrato": {
-      "type": "number",
-      "description": "Valor total do contrato (entrada + parcelas)"
+        },
+        "type": "object"
+      },
+      "type": "array"
     },
     "num_parcelas": {
-      "type": "number",
-      "description": "Número de parcelas do saldo restante"
+      "description": "N\u00famero de parcelas do saldo restante",
+      "type": "number"
     },
-    "data": {
-      "type": "string",
-      "format": "date",
-      "description": "Data da venda"
-    },
-    "forma_pagamento": {
-      "type": "string",
-      "enum": [
-        "DÉBITO EM CONTA",
-        "CARTÃO DE CRÉDITO",
-        "BOLETO",
-        "PIX",
-        "TRANSFERÊNCIA",
-        "DINHEIRO"
-      ],
-      "description": "Forma de pagamento utilizada"
-    },
-    "parcelamento": {
-      "type": "string",
-      "format": "date",
-      "description": "Data de parcelamento"
-    },
-    "cpf_cnpj": {
-      "type": "string",
-      "description": "CPF ou CNPJ do cliente"
-    },
-    "cliente": {
-      "type": "string",
-      "description": "Nome do cliente"
-    },
-    "bitrix": {
-      "type": "string",
-      "description": "Link do Bitrix"
-    },
-    "comprovantes": {
-      "type": "array",
-      "description": "Comprovantes de pagamento anexados",
-      "items": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string"
-          },
-          "nome": {
-            "type": "string"
-          }
-        }
-      },
-      "default": []
+    "numero_parcela": {
+      "description": "Recorr\u00eancia: n\u00famero da parcela recebida",
+      "type": "number"
     },
     "observacao": {
-      "type": "string",
-      "description": "Observações sobre a venda"
+      "description": "Observa\u00e7\u00f5es sobre a venda",
+      "type": "string"
+    },
+    "origem_registro": {
+      "description": "Origem do registro: 'manual' (lan\u00e7ada na tela de Vendas \u2014 exige c\u00f3digo de libera\u00e7\u00e3o da ger\u00eancia) ou 'contrato' (enviada de um contrato conclu\u00eddo)",
+      "enum": [
+        "manual",
+        "contrato"
+      ],
+      "type": "string"
+    },
+    "parcela_id": {
+      "description": "Recorr\u00eancia: ID da ParcelaVenda recebida que gerou esta venda (v\u00ednculo 1:1, evita duplicidade)",
+      "type": "string"
+    },
+    "parcelamento": {
+      "description": "Data de parcelamento",
+      "format": "date",
+      "type": "string"
     },
     "percentual_comissao": {
-      "type": "number",
-      "description": "Percentual de comissão do vendedor"
+      "description": "Percentual de comiss\u00e3o do vendedor",
+      "type": "number"
+    },
+    "percentual_comissao_espelhamento": {
+      "description": "Percentual do primeiro indicador (backward compat)",
+      "type": "number"
+    },
+    "produto": {
+      "description": "Nome do produto vendido",
+      "type": "string"
+    },
+    "selecionada_relatorio": {
+      "default": false,
+      "description": "Flag de sele\u00e7\u00e3o manual: quando true, a venda comp\u00f5e a base do relat\u00f3rio PDF personalizado (gerado a partir das vendas selecionadas)",
+      "type": "boolean"
+    },
+    "time": {
+      "description": "Time do vendedor",
+      "type": "string"
+    },
+    "tipo_venda": {
+      "description": "Tipo da venda: 'nova' (venda nova \u2014 direcionada para implanta\u00e7\u00e3o) ou 'recorrencia' (pagamento de parcela \u2014 n\u00e3o gera implanta\u00e7\u00e3o)",
+      "enum": [
+        "nova",
+        "recorrencia"
+      ],
+      "type": "string"
+    },
+    "total_parcelas": {
+      "description": "Recorr\u00eancia: total de parcelas da venda original",
+      "type": "number"
+    },
+    "valor": {
+      "description": "Valor recebido na contrata\u00e7\u00e3o (entrada/ades\u00e3o ou \u00e0 vista). Em recorr\u00eancia: valor da parcela recebida",
+      "type": "number"
+    },
+    "valor_total_contrato": {
+      "description": "Valor total do contrato (entrada + parcelas)",
+      "type": "number"
+    },
+    "venda_origem_id": {
+      "description": "Recorr\u00eancia: ID da venda original (nova) da qual esta parcela faz parte",
+      "type": "string"
+    },
+    "vendedor_id": {
+      "description": "ID do vendedor respons\u00e1vel (obrigat\u00f3rio para novas vendas)",
+      "type": "string"
     },
     "vendedores_ids": {
-      "type": "array",
       "description": "Lista de vendedores da venda",
       "items": {
         "type": "object"
-      }
-    },
-    "considerar_acumulado": {
-      "type": "boolean",
-      "default": true,
-      "description": "Se true, a venda é considerada no acumulado de vendas do Dashboard e relatórios (ainda sujeita a autorização e documentos completos)"
-    },
-    "selecionada_relatorio": {
-      "type": "boolean",
-      "default": false,
-      "description": "Flag de seleção manual: quando true, a venda compõe a base do relatório PDF personalizado (gerado a partir das vendas selecionadas)"
-    },
-    "venda_origem_id": {
-      "type": "string",
-      "description": "Recorrência: ID da venda original (nova) da qual esta parcela faz parte"
-    },
-    "parcela_id": {
-      "type": "string",
-      "description": "Recorrência: ID da ParcelaVenda recebida que gerou esta venda (vínculo 1:1, evita duplicidade)"
-    },
-    "numero_parcela": {
-      "type": "number",
-      "description": "Recorrência: número da parcela recebida"
-    },
-    "total_parcelas": {
-      "type": "number",
-      "description": "Recorrência: total de parcelas da venda original"
-    },
-    "estrutura_pagamento": {
-      "type": "string",
-      "enum": [
-        "a_vista",
-        "entrada_parcelas",
-        "somente_parcelas",
-        "parcela"
-      ],
-      "description": "Como o pagamento foi estruturado: a_vista, entrada_parcelas, somente_parcelas (nenhum valor na contratação) ou parcela (recorrência)"
+      },
+      "type": "array"
     }
   },
   "required": [
@@ -232,5 +231,6 @@
     "valor",
     "data",
     "tipo_venda"
-  ]
+  ],
+  "type": "object"
 }
