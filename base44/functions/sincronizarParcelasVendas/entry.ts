@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
 
     // Buscar todas as vendas com num_parcelas > 1
     const todasVendas = await base44.asServiceRole.entities.Venda.list('-data', 1000);
-    const vendasParceladas = todasVendas.filter(v => v.num_parcelas > 1 && v.valor_total_contrato > v.valor);
+    // Recorrência (pagamento de parcela) nunca gera parcelas novas
+    const vendasParceladas = todasVendas.filter(v => v.tipo_venda !== 'recorrencia' && v.num_parcelas > 1 && v.valor_total_contrato > v.valor);
 
     // Buscar todas as parcelas existentes
     const todasParcelas = await base44.asServiceRole.entities.ParcelaVenda.list('-created_date', 5000);

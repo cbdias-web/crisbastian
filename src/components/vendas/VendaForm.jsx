@@ -364,7 +364,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     const entradaFinal = parseFloat(valorEntradaCustom) || 0;
     const totalFinal = parseFloat(valorTotalContrato) || entradaFinal;
 
-    const temParcelas = !semParcelas && numParcelas > 0;
+    // Recorrência = pagamento de UMA parcela de venda existente: nunca gera novas parcelas
+    const temParcelas = !semParcelas && numParcelas > 0 && formData.tipo_venda !== 'recorrencia';
     if (temParcelas) {
       if (totalFinal <= 0) { toast.error('Informe o valor total do contrato.'); return; }
       if (entradaFinal >= totalFinal) { toast.error('O valor de entrada deve ser menor que o total do contrato.'); return; }
