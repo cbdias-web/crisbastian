@@ -33,8 +33,8 @@ export default function ManualKnowledgeHub({ sections }) {
     : collection ? <ManualModuleDirectory key={collection.id} collection={collection} />
     : <ManualCollectionsDirectory collections={collections} />;
   return (
-    <div className="manual-page px-3 pb-10 pt-4 md:px-6">
-      <div id="manual-workspace" className="manual-hub mx-auto grid max-w-[1440px] scroll-mt-24 overflow-clip rounded-2xl border border-border/40 shadow-2xl lg:grid-cols-[250px_minmax(0,1fr)]">
+    <div className="manual-page px-3 pb-10 pt-4 md:px-6 md:pt-6">
+      <div id="manual-workspace" className="manual-hub mx-auto grid max-w-[1440px] scroll-mt-24 overflow-clip rounded-2xl lg:grid-cols-[252px_minmax(0,1fr)]">
         <CategoriasManual collections={collections} activeCollection={collection} moduleCount={modules.length} articleCount={articles.length} />
         <div className="min-w-0">
           <ManualHero busca={rawSearch} onBusca={(value) => setParams(value ? { busca: value } : {}, { replace: true })} moduleCount={modules.length} articleCount={articles.length} compact={!home} />
