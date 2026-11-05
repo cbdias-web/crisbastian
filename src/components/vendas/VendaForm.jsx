@@ -550,7 +550,6 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
             {formData.tipo_venda === 'recorrencia' ? (
               <PainelRecorrencia venda={venda} formData={formData} valorRecebido={valorEntradaCustom} setValorRecebido={setValorEntradaCustom} setValorTotal={setValorTotalContrato} onVinculo={onVinculo} />
             ) : (
-            {/* Estrutura de pagamento */}
             <div className="md:col-span-2">
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-3">
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider">Estrutura de Pagamento</p>
