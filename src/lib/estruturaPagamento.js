@@ -48,3 +48,38 @@ export const ROTULO_ESTRUTURA = {
   entrada_parcelas: 'Entrada + parcelas',
   somente_parcelas: 'Somente parcelas (nada recebido na contratação)',
 };
+
+
+// ---------- Cronograma de parcelas (datas + valores) ----------
+// Fonte única do parcelamento: o contrato define; o envio para Vendas leva o MESMO cronograma
+// (ParcelaVenda) — sem redigitar em Vendas e sem duplicar.
+const pad2 = (n) => String(n).padStart(2, '0');
+const diasNoMes = (y, mIdx) => new Date(Date.UTC(y, mIdx + 1, 0)).getUTCDate();
+function somaMeses(iso, meses, diaFixo) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const total = (m - 1) + meses;
+  const ny = y + Math.floor(total / 12);
+  const nm = ((total % 12) + 12) % 12;
+  const alvo = diaFixo >= 1 && diaFixo <= 31 ? Math.round(diaFixo) : d;
+  return `${ny}-${pad2(nm + 1)}-${pad2(Math.min(alvo, diasNoMes(ny, nm)))}`;
+}
+export function gerarCronograma(ct = {}, est, hojeISO) {
+  const e = est || calcularEstruturaPagamento(ct);
+  if (!e.parcelas || e.parcelas <= 0) return [];
+  const iso = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null);
+  const explicita = iso(ct.data_primeira_parcela);
+  const baseRef = iso(ct.data_primeiro_pagamento) || iso(ct.data_contrato) || hojeISO || new Date().toISOString().slice(0, 10);
+  // 1ª parcela: data informada; senão, com entrada paga na contratação ela vence 1 mês depois; sem entrada, na própria data-base
+  const primeira = explicita || (e.tipo === 'entrada_parcelas' ? somaMeses(baseRef, 1, Number(ct.dia_vencimento)) : somaMeses(baseRef, 0, Number(ct.dia_vencimento)));
+  const dia = Number(ct.dia_vencimento) >= 1 ? Number(ct.dia_vencimento) : null;
+  const out = [];
+  let acumulado = 0;
+  for (let i = 1; i <= e.parcelas; i++) {
+    const venc = somaMeses(primeira, i - 1, dia);
+    let valor = e.valorParcela;
+    if (i === e.parcelas) valor = r2(e.saldo - acumulado); // última absorve arredondamento
+    acumulado = r2(acumulado + valor);
+    out.push({ numero: i, vencimento: venc, valor });
+  }
+  return out;
+}
