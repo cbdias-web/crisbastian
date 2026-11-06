@@ -1,0 +1,41 @@
+{
+  "name": "Corre\u00e7\u00e3o \u00fanica: vendedores (aplicar)",
+  "description": "Aplica uma vez a fun\u00e7\u00e3o normalizarVendedoresRegistros.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "one_time",
+      "cron_expression": null,
+      "one_time_date": "2030-01-01T12:00:00Z",
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "normvend2",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "normalizarVendedoresRegistros",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
