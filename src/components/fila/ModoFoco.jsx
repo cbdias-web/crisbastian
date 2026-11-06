@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Loader2, PhoneCall, MessageCircle, SkipForward, CalendarPlus, Link2, Sparkles, ClipboardCheck, Smartphone, Package, DollarSign, User, Flame, Target, Clock, Copy } from 'lucide-react';
-import { telParaTel, waLink } from './QrCodeContato';
+import { telParaTel, waLink, qrUrl } from './QrCodeContato';
 import PosChamadaSheet from './PosChamadaSheet';
 import PitchAbordagemPanel from './PitchAbordagemPanel';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
@@ -104,7 +104,7 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
     if (mobile) return;
     const h = (e) => {
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName) || e.metaKey || e.ctrlKey || sheet || agenda) return;
-      if (e.key === 'c') ligar(); else if (e.key === 'w') enviarWhatsApp(); else if (e.key === 'n') pular(); else if (e.key === 'r') setSheet({ canal: 'ligacao' });
+      if (e.key === 'c') abrirTel(); else if (e.key === 'w') abrirWa(); else if (e.key === 'n') pular(); else if (e.key === 'r') setSheet({ canal: 'ligacao' });
     };
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
   }); // eslint-disable-line
@@ -118,17 +118,36 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
     setEnviandoCmd(false);
   };
 
+  // O prefixo da operadora só vale para quem DISCA: se um gestor está trabalhando a fila de outro gerente, não usa o código dele.
+  const emailsDoVendedor = [vendedor?.email, ...(vendedor?.emails_alternativos || [])].map(e => String(e || '').toLowerCase()).filter(Boolean);
+  const filaPropria = !!user?.email && emailsDoVendedor.includes(String(user.email).toLowerCase());
+  const telHref = fila ? telParaTel(fila.telefone_e164 || fila.telefone, filaPropria ? vendedor?.operadora : undefined) : '';
+  const waHref = fila ? waLink(fila.telefone_e164 || fila.telefone, wa.texto) : '';
+  const limiteWaAtingido = !!fila && !fila.whatsapp_primeiro_em && waHoje >= limiteWa;
+
+  const abrirTel = () => {
+    if (!fila || !telHref) return;
+    if (fila.telefone_valido === false) { toast.error('Número marcado como inválido.'); return; }
+    if (!mobile) toast.info('No computador, a ligação abre o discador do sistema (ex.: FaceTime). Para ligar pelo chip do celular, escaneie o QR com a câmera.', { duration: 6000 });
+    setAguardando('ligacao');
+    window.location.href = telHref;
+  };
+  const abrirWa = () => {
+    if (!fila || !waHref) return;
+    if (limiteWaAtingido) { toast.error(`Limite diário de primeiros WhatsApps atingido (${limiteWa}). Use ligação ou aguarde amanhã.`); return; }
+    setAguardando('whatsapp');
+    window.open(waHref, '_blank', 'noopener');
+  };
   const ligar = async () => {
     if (!fila) return;
     if (fila.telefone_valido === false) { toast.error('Número marcado como inválido.'); return; }
-    if (mobile) { setAguardando('ligacao'); window.location.href = telParaTel(fila.telefone_e164 || fila.telefone, vendedor?.operadora); }
-    else { await criarComando('ligar'); setAguardando(null); }
+    if (mobile) { setAguardando('ligacao'); window.location.href = telHref; }
+    else abrirTel();
   };
   const enviarWhatsApp = async () => {
     if (!fila) return;
     if (!fila.whatsapp_primeiro_em && waHoje >= limiteWa) { toast.error(`Limite diário de primeiros WhatsApps atingido (${limiteWa}). Use ligação ou aguarde amanhã.`); return; }
-    if (mobile) { setAguardando('whatsapp'); window.open(waLink(fila.telefone_e164 || fila.telefone, wa.texto), '_blank'); }
-    else await criarComando('whatsapp', wa.texto);
+    abrirWa();
   };
   const pular = () => { if (fila) setPulados(p => [...p, fila.id]); };
   const aposResultado = () => { setSheet(null); setPulados([]); refetch(); refetchRegs(); qc.invalidateQueries({ queryKey: ['fila-contato'] }); };
@@ -218,14 +237,39 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
               )}
 
               {/* Ações */}
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={ligar} disabled={enviandoCmd} className="py-4 rounded-2xl font-bold flex flex-col items-center gap-1 transition active:scale-95 disabled:opacity-50" style={{ background: 'rgba(59,130,249,0.18)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.45)' }}>
-                  {enviandoCmd ? <Loader2 className="w-6 h-6 animate-spin" /> : <PhoneCall className="w-6 h-6" />}<span className="text-sm">{mobile ? 'Ligar' : 'Ligar no meu celular'}</span>{!mobile && <span className="text-[9px] opacity-70">atalho C</span>}
-                </button>
-                <button onClick={enviarWhatsApp} disabled={enviandoCmd} className="py-4 rounded-2xl font-bold flex flex-col items-center gap-1 transition active:scale-95 disabled:opacity-50" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399', border: '1px solid rgba(52,211,153,0.45)' }}>
-                  <MessageCircle className="w-6 h-6" /><span className="text-sm">{mobile ? 'WhatsApp' : 'WhatsApp no meu celular'}</span>{!mobile && <span className="text-[9px] opacity-70">atalho W</span>}
-                </button>
-              </div>
+              {mobile ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={ligar} className="py-4 rounded-2xl font-bold flex flex-col items-center gap-1 transition active:scale-95" style={{ background: 'rgba(59,130,249,0.18)', color: '#60a5fa', border: '1px solid rgba(59,130,249,0.45)' }}>
+                    <PhoneCall className="w-6 h-6" /><span className="text-sm">Ligar</span>
+                  </button>
+                  <button onClick={abrirWa} className="py-4 rounded-2xl font-bold flex flex-col items-center gap-1 transition active:scale-95" style={{ background: 'rgba(52,211,153,0.18)', color: '#34d399', border: '1px solid rgba(52,211,153,0.45)' }}>
+                    <MessageCircle className="w-6 h-6" /><span className="text-sm">WhatsApp</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    {[{ k: 'wa', label: 'WhatsApp', atalho: 'W', href: waHref, cor: '#34d399', borda: 'rgba(52,211,153,0.55)', Ic: MessageCircle, onClick: (e) => { e.preventDefault(); abrirWa(); } },
+                      { k: 'tel', label: 'Ligação', atalho: 'C', href: telHref, cor: '#60a5fa', borda: 'rgba(59,130,249,0.55)', Ic: PhoneCall, onClick: (e) => { e.preventDefault(); abrirTel(); } }].map(q => (
+                      <a key={q.k} href={q.href || undefined} onClick={q.onClick} title={q.k === 'tel' ? 'Ligar agora (ou escaneie com a câmera do celular)' : 'Abrir WhatsApp (ou escaneie com a câmera do celular)'}
+                        className="flex flex-col items-center py-3 rounded-2xl transition hover:scale-[1.02]" style={{ background: A.surface2, border: `1px solid ${q.borda}`, opacity: q.href ? 1 : 0.45 }}>
+                        <div className="rounded-xl p-2 bg-white" style={{ boxShadow: `0 0 18px ${q.borda}` }}>
+                          <img src={qrUrl(q.href || ' ', 112)} alt={`QR ${q.label}`} style={{ width: 112, height: 112 }} />
+                        </div>
+                        <span className="mt-2 text-sm font-bold flex items-center gap-1.5" style={{ color: q.cor }}><q.Ic className="w-4 h-4" /> {q.label}</span>
+                        <span className="text-[9px] opacity-60" style={{ color: A.muted }}>clique ou escaneie · atalho {q.atalho}</span>
+                      </a>
+                    ))}
+                  </div>
+                  {filaPropria && vendedor?.celular_operadora && (
+                    <div className="flex items-center gap-2 text-[10px]" style={{ color: A.muted }}>
+                      <Smartphone className="w-3 h-3" /> Opcional — enviar ao app do meu celular pareado:
+                      <button onClick={() => criarComando('ligar')} disabled={enviandoCmd} className="underline" style={{ color: '#60a5fa' }}>Ligar</button>
+                      <button onClick={() => criarComando('whatsapp', wa.texto)} disabled={enviandoCmd} className="underline" style={{ color: '#34d399' }}>WhatsApp</button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Mensagem de WhatsApp */}
               <div className="rounded-xl p-3 space-y-2" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
