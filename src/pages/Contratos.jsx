@@ -15,6 +15,7 @@ import RncContaInternacionalModal from '@/components/contratos/RncContaInternaci
 import CiListModal from '@/components/contratos/CiListModal';
 import KanbanContratos from '@/components/contratos/KanbanContratos';
 import { useEnvioVendasDialog } from '@/components/contratos/EnviarVendasDialog';
+import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
 import { Table2, Columns3 } from 'lucide-react';
 
 const TIPO_CONFIG = {
@@ -117,20 +118,14 @@ export default function Contratos() {
         if (c.url && !seen.has(c.url)) { comprovantes.push({ url: c.url, nome: c.nome || 'Comprovante' }); seen.add(c.url); }
       }
 
-      // Resolve o vendedor_id correto pelo nome (case-insensitive), pois o contrato
-      // pode ter um vendedor_id desatualizado/inválido. Fallback: mantém o do contrato.
-      let vendedorIdResolvido = ct.vendedor_id || '';
-      try {
-        if (ct.vendedor_nome) {
-          const todosVends = await base44.entities.Vendedor.list();
-          const match = todosVends.find(v => v.nome && v.nome.toUpperCase() === ct.vendedor_nome.toUpperCase());
-          if (match) vendedorIdResolvido = match.id;
-        }
-      } catch (e) {}
+      // O contrato guarda o usuário criador (id e nome de exibição); a venda precisa do cadastro de VENDEDOR
+      // (id + nome canônico). Resolve por id → e-mail → nome normalizado; sem vínculo, não envia.
+      let vendedorResolvido = null;
+      try { vendedorResolvido = await resolverVendedorDoContrato(ct); } catch (e) {}
 
       // Travas: vendedor definido e documentação completa do contrato
-      if (!ct.vendedor_nome || !vendedorIdResolvido) {
-        toast.error('Defina o vendedor responsável no contrato antes de enviar para Vendas.', { duration: 6000 });
+      if (!ct.vendedor_nome || !vendedorResolvido) {
+        toast.error(!ct.vendedor_nome ? 'Defina o vendedor responsável no contrato antes de enviar para Vendas.' : MSG_VENDEDOR_NAO_VINCULADO, { duration: 8000 });
         setEnviandoPipelineId(null);
         return;
       }
@@ -165,9 +160,9 @@ export default function Contratos() {
 
       const vendaPayload = {
         produto: ct.tipo,
-        assessor_comercial: ct.vendedor_nome || '',
-        vendedor_id: vendedorIdResolvido,
-        time: ct.time || '',
+        assessor_comercial: vendedorResolvido.nome,
+        vendedor_id: vendedorResolvido.id,
+        time: ct.time || vendedorResolvido.time || '',
         cliente: ct.nome || '',
         cpf_cnpj: ct.cpf_cnpj || '',
         valor: opcoes.valorRecebido,

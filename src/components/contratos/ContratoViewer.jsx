@@ -13,6 +13,7 @@ import BoletosParcelas from './BoletosParcelas';
 import IndicadoresEditor from './IndicadoresEditor';
 import ZapsignEnviarModal from './ZapsignEnviarModal';
 import { useEnvioVendasDialog } from './EnviarVendasDialog';
+import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -248,6 +249,10 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error(`Anexe ${faltando.join(' e ')} antes de enviar o contrato para Vendas.`, { duration: 6000 });
       return;
     }
+    // Resolve o cadastro de Vendedor (id + nome canônico) — evita venda gravada com id de usuário / nome em caixa diferente
+    let vendedorResolvido = null;
+    try { vendedorResolvido = await resolverVendedorDoContrato(contrato); } catch (e) {}
+    if (!vendedorResolvido) { toast.error(MSG_VENDEDOR_NAO_VINCULADO, { duration: 8000 }); return; }
     const opcoes = await pedirOpcoes(contrato);
     if (!opcoes) return;
     setEnviandoVenda(true);
@@ -273,9 +278,9 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       // Criar venda pré-preenchida com dados do contrato
       const vendaPayload = {
         produto: c.tipo,
-        assessor_comercial: c.vendedor_nome || '',
-        vendedor_id: c.vendedor_id || '',
-        time: c.time || '',
+        assessor_comercial: vendedorResolvido.nome,
+        vendedor_id: vendedorResolvido.id,
+        time: c.time || vendedorResolvido.time || '',
         cliente: c.nome || '',
         cpf_cnpj: c.cpf_cnpj || '',
         valor: opcoes.valorRecebido,
