@@ -42,6 +42,7 @@ export default function FilaContato() {
   const [gerentesSel, setGerentesSel] = useState([]);
   const [soAtrasados, setSoAtrasados] = useState(false);
   const [visao, setVisao] = useState('kanban'); // kanban | lista | agenda | foco
+  const [focoGerenteId, setFocoGerenteId] = useState(''); // administrador: gerente cuja fila será trabalhada no Modo Foco
   const [celularModal, setCelularModal] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -299,13 +300,31 @@ export default function FilaContato() {
 
         {visao === 'lista' && <FilaLista vendedor={vendedor} isAdmin={isAdmin} adminTudo={adminTudo} vendedores={vendedores} cadencias={cadencias} onSelect={setPopup} />}
         {visao === 'agenda' && <AgendaGerente vendedor={vendedor} user={user} adminTudo={adminTudo} onSelectFila={setPopup} />}
-        {visao === 'foco' && (vendedor
-          ? <ModoFoco vendedor={vendedor} user={user} />
-          : <div className="rounded-2xl py-14 px-6 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-              <Crosshair className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
-              <p className="text-sm font-semibold" style={{ color: AURORA.text }}>O Modo Foco trabalha a fila de um gerente</p>
-              <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>Clique em <strong style={{ color: AURORA.accent }}>Espelhar</strong> (menu superior, ao lado do seu nome) e escolha o gerente.</p>
-            </div>)}
+        {visao === 'foco' && (() => {
+          // Administrador sem "Espelhar": escolhe o gerente aqui mesmo (uma fila por vez — o Modo Foco registra os toques em nome dele)
+          const gerenteFoco = vendedor || vendedores.find(v => v.id === focoGerenteId) || null;
+          return (
+            <>
+              {isAdmin && !vendedor && (
+                <div className="flex items-center gap-3 mb-3 flex-wrap rounded-xl px-3 py-2.5" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+                  <span className="text-xs font-semibold flex items-center gap-1.5" style={{ color: AURORA.accent }}><Crosshair className="w-3.5 h-3.5" /> Modo gestor · fila do gerente:</span>
+                  <select value={focoGerenteId} onChange={e => setFocoGerenteId(e.target.value)} className="px-3 py-1.5 rounded-lg text-xs focus:outline-none" style={{ background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}`, minWidth: 220 }}>
+                    <option value="">Escolha um gerente…</option>
+                    {vendedores.filter(v => !/^cris[\s.]*(bastian|morais)$/i.test((v.nome || '').trim())).map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
+                  </select>
+                  {gerenteFoco && <span className="text-[11px]" style={{ color: AURORA.textMuted }}>Os toques ficam registrados na fila e na meta de <b style={{ color: AURORA.text }}>{gerenteFoco.nome}</b>. Ligação e WhatsApp pelo seu próprio celular (QR).</span>}
+                </div>
+              )}
+              {gerenteFoco
+                ? <ModoFoco key={gerenteFoco.id} vendedor={gerenteFoco} user={user} />
+                : <div className="rounded-2xl py-14 px-6 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+                    <Crosshair className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
+                    <p className="text-sm font-semibold" style={{ color: AURORA.text }}>O Modo Foco trabalha a fila de um gerente</p>
+                    <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>{isAdmin ? 'Escolha o gerente no seletor acima.' : 'Seu usuário não está vinculado a um cadastro de gerente. Fale com o administrador.'}</p>
+                  </div>}
+            </>
+          );
+        })()}
 
         {visao === 'kanban' && (<>
         {/* Barra de filtros */}

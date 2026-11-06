@@ -28,7 +28,8 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
   const qc = useQueryClient();
   const [view, setView] = useState('ligar_hoje');
   const [segmento, setSegmento] = useState('');
-  const [gerente, setGerente] = useState('');
+  const [gerentes, setGerentes] = useState([]); // multisseleção (administrador)
+  const [menuGerentes, setMenuGerentes] = useState(false);
   const [busca, setBusca] = useState('');
   const [buscaAplicada, setBuscaAplicada] = useState('');
   const [pagina, setPagina] = useState(0);
@@ -39,17 +40,17 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
   const [destino, setDestino] = useState('');
   const hoje = hojeBrasilia();
 
-  useEffect(() => { setPagina(0); setSel(new Set()); }, [view, segmento, gerente, buscaAplicada]);
+  useEffect(() => { setPagina(0); setSel(new Set()); }, [view, segmento, gerentes, buscaAplicada]);
 
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['fila-lista', view, segmento, gerente, buscaAplicada, pagina, vendedor?.id, adminTudo],
+    queryKey: ['fila-lista', view, segmento, gerentes.join(','), buscaAplicada, pagina, vendedor?.id, adminTudo],
     keepPreviousData: true,
     queryFn: async () => {
       const v = VIEWS[view];
       const q = { ...v.q(hoje) };
       if (segmento) q.segmento = segmento;
-      const vid = adminTudo ? gerente : vendedor?.id;
-      if (vid) q.vendedor_id = vid;
+      if (adminTudo) { if (gerentes.length === 1) q.vendedor_id = gerentes[0]; else if (gerentes.length > 1) q.vendedor_id = { $in: gerentes }; }
+      else if (vendedor?.id) q.vendedor_id = vendedor.id;
       const comBusca = { ...q };
       const b = buscaAplicada.trim();
       const dig = b.replace(/\D/g, '');
@@ -73,10 +74,10 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
 
   const salvarVisao = () => {
     const nome = prompt('Nome da visão salva:'); if (!nome) return;
-    const nova = [...salvas.filter(s => s.nome !== nome), { nome, view, segmento, gerente }];
+    const nova = [...salvas.filter(s => s.nome !== nome), { nome, view, segmento, gerentes }];
     setSalvas(nova); localStorage.setItem(STORE, JSON.stringify(nova)); toast.success('Visão salva neste navegador.');
   };
-  const aplicarSalva = (s) => { setView(s.view); setSegmento(s.segmento || ''); setGerente(s.gerente || ''); };
+  const aplicarSalva = (s) => { setView(s.view); setSegmento(s.segmento || ''); setGerentes(s.gerentes || (s.gerente ? [s.gerente] : [])); };
   const apagarSalva = (nome) => { const nova = salvas.filter(s => s.nome !== nome); setSalvas(nova); localStorage.setItem(STORE, JSON.stringify(nova)); };
 
   const toggle = (id) => setSel(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -130,9 +131,25 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
           <option value="">Todos os segmentos</option><option value="quente">Quentes</option><option value="morno">Mornos</option><option value="frio">Frios</option>
         </select>
         {adminTudo && (
-          <select value={gerente} onChange={e => setGerente(e.target.value)} className="px-2 py-2 rounded-xl text-xs" style={{ background: A.surface, color: A.text, border: `1px solid ${A.border}` }}>
-            <option value="">Todos os gerentes</option>{vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}
-          </select>
+          <div className="relative">
+            <button type="button" onClick={() => setMenuGerentes(m => !m)} className="px-3 py-2 rounded-xl text-xs flex items-center gap-1.5" style={{ background: A.surface, color: A.text, border: `1px solid ${gerentes.length ? A.accent : A.border}`, minWidth: 170 }}>
+              {gerentes.length === 0 ? 'Todos os gerentes' : gerentes.length === 1 ? (vendedores.find(v => v.id === gerentes[0])?.nome || '1 gerente') : `${gerentes.length} gerentes`}
+              <span className="ml-auto opacity-60">▾</span>
+            </button>
+            {menuGerentes && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setMenuGerentes(false)} />
+                <div className="absolute z-40 mt-1 w-64 max-h-72 overflow-y-auto rounded-xl p-1.5 shadow-2xl" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+                  <button type="button" onClick={() => setGerentes([])} className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs hover:bg-white/5" style={{ color: A.accent }}>Limpar seleção (todos)</button>
+                  {vendedores.map(v => (
+                    <label key={v.id} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs cursor-pointer hover:bg-white/5" style={{ color: A.text }}>
+                      <input type="checkbox" checked={gerentes.includes(v.id)} onChange={() => setGerentes(g => g.includes(v.id) ? g.filter(x => x !== v.id) : [...g, v.id])} /> {v.nome}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         )}
         <button onClick={salvarVisao} className="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1" style={{ background: A.surface, color: A.accent, border: `1px solid ${A.border}` }}><Save className="w-3.5 h-3.5" /> Salvar visão</button>
       </div>

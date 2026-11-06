@@ -144,11 +144,6 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
     if (mobile) { setAguardando('ligacao'); window.location.href = telHref; }
     else abrirTel();
   };
-  const enviarWhatsApp = async () => {
-    if (!fila) return;
-    if (!fila.whatsapp_primeiro_em && waHoje >= limiteWa) { toast.error(`Limite diário de primeiros WhatsApps atingido (${limiteWa}). Use ligação ou aguarde amanhã.`); return; }
-    abrirWa();
-  };
   const pular = () => { if (fila) setPulados(p => [...p, fila.id]); };
   const aposResultado = () => { setSheet(null); setPulados([]); refetch(); refetchRegs(); qc.invalidateQueries({ queryKey: ['fila-contato'] }); };
 
