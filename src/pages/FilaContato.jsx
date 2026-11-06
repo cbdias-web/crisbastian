@@ -301,7 +301,11 @@ export default function FilaContato() {
         {visao === 'agenda' && <AgendaGerente vendedor={vendedor} user={user} adminTudo={adminTudo} onSelectFila={setPopup} />}
         {visao === 'foco' && (vendedor
           ? <ModoFoco vendedor={vendedor} user={user} />
-          : <div className="rounded-2xl py-14 text-center text-sm" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.textMuted }}>O Modo Foco trabalha a fila de um gerente. Use "Ver como" (menu superior) para escolher o gerente.</div>)}
+          : <div className="rounded-2xl py-14 px-6 text-center" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+              <Crosshair className="w-10 h-10 mx-auto mb-3" style={{ color: AURORA.textMuted, opacity: 0.4 }} />
+              <p className="text-sm font-semibold" style={{ color: AURORA.text }}>O Modo Foco trabalha a fila de um gerente</p>
+              <p className="text-sm mt-1" style={{ color: AURORA.textMuted }}>Clique em <strong style={{ color: AURORA.accent }}>Espelhar</strong> (menu superior, ao lado do seu nome) e escolha o gerente.</p>
+            </div>)}
 
         {visao === 'kanban' && (<>
         {/* Barra de filtros */}
