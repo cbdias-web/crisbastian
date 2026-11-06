@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import ContratoFinanceiroModelos from '@/components/contratos/ContratoFinanceiroModelos';
 import { calcularEstruturaPagamento, gerarCronograma, ROTULO_ESTRUTURA } from '@/lib/estruturaPagamento';
+import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 import CampoMascara from '@/components/ui/campo-mascara';
 import { consultarCnpj } from '@/lib/autocomplete';
 import CampoMoeda from '@/components/ui/campo-moeda';
@@ -291,6 +292,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       } else {
         vendedorId = user?.id || '';
         vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
+        // Nome canônico do cadastro de Vendedor (ex.: "JONATHAN DUTRA") — evita variações de caixa/apelido no contrato
+        try { const vv = await resolverVendedorDoUsuarioLogado(); if (vv?.nome) vendedorNome = vv.nome; } catch (e) { /* mantém o nome do usuário */ }
       }
       const toNum = (v) => { const n = parseFloat(v); return isNaN(n) ? undefined : n; };
       const payload = {
@@ -495,9 +498,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         setForm(f => ({ ...f, cliente_id: existentes[0].id }));
       } else {
         const vendedorId = contratoExistente ? (vendedorEditId || user?.id || '') : (user?.id || '');
-        const vendedorNome = contratoExistente
+        let vendedorNome = contratoExistente
           ? (vendedorEditNome || user?.nome_tratamento || user?.full_name || '')
           : (user?.nome_tratamento || user?.full_name || user?.email || '');
+        if (!contratoExistente) { try { const vv = await resolverVendedorDoUsuarioLogado(); if (vv?.nome) vendedorNome = vv.nome; } catch (e) { /* mantém */ } }
         const novo = await base44.entities.Cliente.create({
           nome: form.nome,
           cpf_cnpj: form.cpf_cnpj,
