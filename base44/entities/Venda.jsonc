@@ -122,7 +122,7 @@
       "type": "string"
     },
     "indicadores": {
-      "description": "Lista de indicadores/espelhamentos da venda",
+      "description": "Lista de indicadores/espelhamentos da venda (preservada do contrato/indica\u00e7\u00e3o de origem)",
       "items": {
         "properties": {
           "id": {
@@ -133,6 +133,10 @@
           },
           "percentual": {
             "type": "number"
+          },
+          "tipo": {
+            "description": "Origem do cadastro do indicador: 'indicador' (Espelhamento/Parceiro) ou 'vendedor' (Vendedor usado como espelhamento)",
+            "type": "string"
           }
         },
         "type": "object"

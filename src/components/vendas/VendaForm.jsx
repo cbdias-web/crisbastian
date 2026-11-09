@@ -278,6 +278,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const limiteExcedido = totalPctIndicadores > 50;
   const requerAutorizacao = !isAdmin && totalPctIndicadores > 30 && totalPctIndicadores <= 50;
 
+  // Tipo real do indicador: o cadastro (Vendedor/Espelhamento/Parceiro) é a fonte de
+  // verdade. Sem isso, um indicador salvo como vendedor aparece como "indicador" e o
+  // dropdown fica vazio ("Selecionar indicador...") mesmo com o percentual preenchido.
+  const tipoDoIndicador = (ind) =>
+    indicadoresDisponiveis.find(x => x.id === ind.id)?.tipo
+    || (ind.tipo === 'vendedor' ? 'vendedor' : 'indicador');
+
   const toggleProduto = (nomeProduto) => {
     setSelectedProdutos(prev =>
       prev.includes(nomeProduto) ? prev.filter(p => p !== nomeProduto) : [...prev, nomeProduto]
@@ -410,7 +417,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
       valor_total_contrato: totalFinal,
       num_parcelas: formData.tipo_venda === 'recorrencia' ? (venda?.num_parcelas ?? 0) : (semParcelas ? 0 : numParcelas),
       ...(ehRec && !venda?.id && rec.parcelaId ? { _parcelaId: rec.parcelaId } : {}),
-      indicadores,
+      indicadores: indicadores.map(i => ({ ...i, tipo: tipoDoIndicador(i) })),
       espelhamento: indicadores[0]?.nome || '',
       espelhamento_id: indicadores[0]?.id || '',
       percentual_comissao_espelhamento: indicadores[0]?.percentual || 0,
@@ -792,11 +799,15 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               <p className="text-xs text-gray-400 text-center py-2">Nenhum indicador adicionado</p>
             ) : (
               <div className="space-y-2">
-                {indicadores.map((ind, idx) => (
+                {indicadores.map((ind, idx) => {
+                  const tipoEfetivo = tipoDoIndicador(ind);
+                  const opcoes = indicadoresDisponiveis.filter(item => item.tipo === tipoEfetivo || (ind.id && item.id === ind.id));
+                  const foraDoCadastro = !!ind.id && !indicadoresDisponiveis.some(item => item.id === ind.id);
+                  return (
                   <div key={idx} className="flex items-center gap-2">
                     <div className="w-32">
                       <select
-                        value={ind.tipo}
+                        value={tipoEfetivo}
                         onChange={e => updateIndicadorTipo(idx, e.target.value)}
                         className="w-full h-9 px-2 border border-input rounded-md text-sm bg-background focus:outline-none"
                       >
@@ -810,12 +821,15 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                         onChange={e => updateIndicadorEsp(idx, e.target.value)}
                         className="w-full h-9 px-2 border border-input rounded-md text-sm bg-background focus:outline-none"
                       >
-                        <option value="">Selecionar {ind.tipo === 'indicador' ? 'indicador' : 'vendedor'}...</option>
-                        {indicadoresDisponiveis.filter(item => item.tipo === ind.tipo).map(item => (
+                        <option value="">Selecionar {tipoEfetivo === 'indicador' ? 'indicador' : 'vendedor'}...</option>
+                        {foraDoCadastro && (
+                          <option value={ind.id}>{ind.nome || 'Indicador'} (fora do cadastro ativo)</option>
+                        )}
+                        {opcoes.map(item => (
                           <option key={item.id} value={item.id}>{item.nome}</option>
                         ))}
-                        <option value={ind.tipo === 'indicador' ? '__novo_indicador__' : '__novo_vendedor__'}>
-                          + Cadastrar novo {ind.tipo}
+                        <option value={tipoEfetivo === 'indicador' ? '__novo_indicador__' : '__novo_vendedor__'}>
+                          + Cadastrar novo {tipoEfetivo === 'indicador' ? 'indicador' : 'vendedor'}
                         </option>
                       </select>
                     </div>
@@ -830,7 +844,8 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

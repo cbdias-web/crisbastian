@@ -229,6 +229,17 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             bairro: pick(f.bairro, isPF ? ind.pf_bairro : ind.pj_bairro),
           };
         });
+        // Indicador da indicação de origem acompanha a jornada: se o contrato
+        // ainda não tem espelhamento, o parceiro que indicou entra automaticamente.
+        if (ind.parceiro_id) {
+          setIndicadores(prev => prev.length > 0 ? prev : [{
+            id: ind.parceiro_id,
+            nome: ind.parceiro_nome || '',
+            percentual: ind.parceiro_percentual ?? 0,
+            tipo: 'indicador',
+          }]);
+          setBuscaIndicador(prev => (prev[0] ? prev : { ...prev, 0: ind.parceiro_nome || '' }));
+        }
       })
       .catch(() => {});
     return () => { active = false; };

@@ -59,7 +59,7 @@ export default async function(req: Request): Promise<Response> {
     const telefoneFinal = telefone || ricos.whatsapp || '';
     const valorNum = Number(valor) || leadIndicacao?.valor_estimado || 0;
     const dataVenda = data || new Date().toISOString().split('T')[0];
-    const indicadoresArr = indicador ? [{ id: indicador.id, nome: indicador.nome, percentual: indicador.percentual }] : [];
+    const indicadoresArr = indicador ? [{ id: indicador.id, nome: indicador.nome, percentual: indicador.percentual, tipo: 'indicador' }] : [];
     // Preserva as observações que o indicador digitou no formulário do lead.
     const obsIndicador = (leadIndicacao?.observacoes || '').trim();
     const obsComum = obsIndicador

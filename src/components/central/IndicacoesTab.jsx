@@ -228,7 +228,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
           id: lead.parceiro_id,
           nome: lead.parceiro_nome,
           percentual: lead.parceiro_percentual ?? 0,
-          tipo: lead.parceiro_email ? 'parceiro' : 'indicador',
+          tipo: 'indicador',
         }],
         observacoes: `Indicação de ${lead.parceiro_nome}. ${lead.observacoes || ''}`.trim(),
       });
