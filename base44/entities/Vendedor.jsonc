@@ -51,6 +51,25 @@
       },
       "type": "array"
     },
+    "em_ferias": {
+      "default": false,
+      "description": "Gerente em ferias: fica fora da roleta de distribuicao de leads enquanto o periodo estiver ativo",
+      "type": "boolean"
+    },
+    "ferias_inicio": {
+      "description": "Primeiro dia de ausencia (ferias)",
+      "format": "date",
+      "type": "string"
+    },
+    "ferias_fim": {
+      "description": "Ultimo dia de ausencia (ferias)",
+      "format": "date",
+      "type": "string"
+    },
+    "ferias_observacao": {
+      "description": "Observacao sobre as ferias (motivo, substituto combinado etc.)",
+      "type": "string"
+    },
     "janela_fim": {
       "description": "Fim da janela de contato (HH:MM) - sobrescreve ConfigFila",
       "type": "string"

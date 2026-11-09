@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
+import { estaDeFerias } from '../../shared/ferias.ts';
 import { adicionarConversaNaFilaHoje } from '../../shared/filaContatoSync.ts';
 
 // Período comercial: 08:00 às 18:00 horário de Brasília (UTC-3), seg-sex
@@ -27,10 +28,12 @@ Deno.serve(async (req) => {
 
   // Buscar vendedores ativos e habilitados na esteira de leads
   const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
-  const vendedores = todosVendedores.filter(v => v.ativo_central_leads !== false);
+  const vendedores = todosVendedores
+    .filter(v => v.ativo_central_leads !== false)
+    .filter(v => !estaDeFerias(v));
 
   if (!vendedores.length) {
-    return Response.json({ error: 'Nenhum vendedor habilitado na esteira de leads' }, { status: 500 });
+    return Response.json({ error: 'Nenhum gerente disponível na esteira (todos em férias ou desabilitados)' }, { status: 503 });
   }
 
   // Disponibilidade da agenda (StatusGerente) — usada como predicado da roleta.

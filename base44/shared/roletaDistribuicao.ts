@@ -12,9 +12,14 @@
 // fila (timestamp não atualizado) e recebe o próximo lead assim que fica livre.
 // Se ninguém estiver disponível, cai para o mais antigo (fallback).
 
+import { filtrarForaDeFerias } from './ferias.ts';
+
 export async function proximoDaRoleta(base44, pool, isDisponivel = null) {
   if (!pool || pool.length === 0) return null;
-  const sorted = [...pool].sort((a, b) => {
+  // Gerente em férias não entra na roleta: o lead nunca é enviado para quem está ausente.
+  const elegiveis = filtrarForaDeFerias(pool);
+  if (elegiveis.length === 0) return null;
+  const sorted = [...elegiveis].sort((a, b) => {
     const ta = a.ultimo_lead_distribuido_em ? new Date(a.ultimo_lead_distribuido_em).getTime() : 0;
     const tb = b.ultimo_lead_distribuido_em ? new Date(b.ultimo_lead_distribuido_em).getTime() : 0;
     if (ta !== tb) return ta - tb;

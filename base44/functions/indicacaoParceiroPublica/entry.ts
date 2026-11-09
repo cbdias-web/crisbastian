@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { proximoDaRoleta } from '../../shared/roletaDistribuicao.ts';
+import { estaDeFerias } from '../../shared/ferias.ts';
 import { adicionarConversaNaFilaHoje } from '../../shared/filaContatoSync.ts';
 
 // Handler público do formulário de indicação de parceiros.
@@ -72,7 +73,9 @@ export default async function(req: Request): Promise<Response> {
           const obsLead = ['Indicação de ' + parceiro.nome, valorTxt, resumoTxt].filter(Boolean).join(' · ');
 
           const todosVendedores = await base44.asServiceRole.entities.Vendedor.filter({ ativo: true }, 'nome');
-          const vendedores = todosVendedores.filter(v => v.recebe_leads_indicacao !== false);
+          const vendedores = todosVendedores
+            .filter(v => v.recebe_leads_indicacao !== false)
+            .filter(v => !estaDeFerias(v));
 
           if (vendedores.length > 0) {
             const agora = new Date();

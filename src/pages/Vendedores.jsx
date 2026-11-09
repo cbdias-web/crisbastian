@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import VendedorPerformancePopup from "@/components/vendedores/VendedorPerformancePopup";
 import { base44 } from "@/api/base44Client";
-import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload } from "lucide-react";
+import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload, Plane } from "lucide-react";
+import FeriasModal from "@/components/vendedores/FeriasModal";
+import { estaDeFerias, formatarPeriodoFerias } from "@/lib/ferias";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
@@ -34,6 +36,7 @@ export default function Vendedores() {
   const [geratingPDF, setGeratingPDF] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [feriasVendedor, setFeriasVendedor] = useState(null);
 
   const handleAvatarUpload = async (file) => {
     setUploadingAvatar(true);
@@ -317,6 +320,7 @@ export default function Vendedores() {
   const vendedoresFiltrados = vendedores.filter(v => {
     if (!isAdmin && user?.email && v.email !== user.email) return false;
     if (statusFilter === "todos") return true;
+    if (statusFilter === "em_ferias") return estaDeFerias(v);
     if (statusFilter === "ativo") return v.ativo !== false;
     return v.ativo === false;
   });
@@ -401,6 +405,7 @@ export default function Vendedores() {
               className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white text-gray-600">
               <option value="ativo">Ativos</option>
               <option value="inativo">Inativos</option>
+              <option value="em_ferias">Em férias</option>
               <option value="todos">Todos</option>
             </select>
           )}
@@ -454,9 +459,15 @@ export default function Vendedores() {
                               <p className="text-xs text-gray-400">{v.email || "—"}</p>
                             </div>
                           </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                            {v.ativo !== false ? "Ativo" : "Inativo"}
-                          </span>
+                          {estaDeFerias(v) ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-600" title={formatarPeriodoFerias(v)}>
+                              Férias
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                              {v.ativo !== false ? "Ativo" : "Inativo"}
+                            </span>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -536,6 +547,13 @@ export default function Vendedores() {
                                 >
                                   <DollarSign className="w-3.5 h-3.5 text-amber-500" />
                                 </button>
+                                <button
+                                  onClick={() => setFeriasVendedor(v)}
+                                  className="p-1.5 hover:bg-amber-50 rounded-lg transition"
+                                  title="Férias / redirecionar leads"
+                                >
+                                  <Plane className="w-3.5 h-3.5 text-amber-500" />
+                                </button>
                                 <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                                   <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                                 </button>
@@ -584,9 +602,15 @@ export default function Vendedores() {
                               <p className="text-xs text-gray-400">{v.email || "—"}</p>
                             </div>
                           </div>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
-                            {v.ativo !== false ? "Ativo" : "Inativo"}
-                          </span>
+                          {estaDeFerias(v) ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-600" title={formatarPeriodoFerias(v)}>
+                              Férias
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${v.ativo !== false ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>
+                              {v.ativo !== false ? "Ativo" : "Inativo"}
+                            </span>
+                          )}
                         </div>
                         <div className="grid grid-cols-3 gap-2 mb-4">
                           <div className="text-center p-2 bg-gray-50 rounded-xl">
@@ -616,6 +640,13 @@ export default function Vendedores() {
                           </div>
                           {isAdmin && (
                             <div className="flex gap-1">
+                              <button
+                                onClick={() => setFeriasVendedor(v)}
+                                className="p-1.5 hover:bg-amber-50 rounded-lg transition"
+                                title="Férias / redirecionar leads"
+                              >
+                                <Plane className="w-3.5 h-3.5 text-amber-500" />
+                              </button>
                               <button onClick={() => openEdit(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                                 <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                               </button>
@@ -667,6 +698,16 @@ export default function Vendedores() {
           <AvatarPickerModal
             onSelect={(url) => setForm(p => ({ ...p, avatar_url: url }))}
             onClose={() => setShowAvatarPicker(false)}
+          />
+        )}
+
+        {/* Férias do gerente + redirecionamento de leads */}
+        {feriasVendedor && (
+          <FeriasModal
+            vendedor={feriasVendedor}
+            vendedores={vendedores}
+            onClose={() => setFeriasVendedor(null)}
+            onSaved={() => { queryClient.invalidateQueries(["vendedores"]); setFeriasVendedor(null); }}
           />
         )}
 
