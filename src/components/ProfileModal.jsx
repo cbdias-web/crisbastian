@@ -7,7 +7,7 @@ import { abrirModalGoogleCalendar } from '@/components/GoogleCalendarConectarMod
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { formatarCelular, normalizarCelular } from '@/lib/celular';
 import { codigoOperadora } from '@/lib/operadora';
-import { carregarVendedorDoUsuario, salvarContatoDoUsuario } from '@/lib/perfilContato';
+import { carregarVendedorDoUsuario, carregarVendedoresDoUsuario, salvarContatoDoUsuario } from '@/lib/perfilContato';
 
 const A = {
   bg: '#0d1117',
@@ -95,10 +95,12 @@ export default function ProfileModal({ user, userAvatar, onAvatarChange, onClose
       await base44.entities.Vendedor.update(imp.id, { avatar_url: url });
       toast.success('Avatar de ' + imp.nome.split(' ')[0] + ' atualizado!');
     } else {
-      if (!user?.email) { toast.error('Usuário sem e-mail vinculado'); return; }
-      const vinculados = await base44.entities.Vendedor.filter({ email: user.email });
-      if (vinculados.length > 0) {
-        await base44.entities.Vendedor.update(vinculados[0].id, { avatar_url: url });
+      if (!user) { toast.error('Usuário sem e-mail vinculado'); return; }
+      // A foto do perfil é a fonte única: replica para todos os cadastros de
+      // vendedor ligados ao usuário (e-mail principal, alternativos ou nome).
+      const vinculados = await carregarVendedoresDoUsuario(user);
+      for (const v of vinculados) {
+        await base44.entities.Vendedor.update(v.id, { avatar_url: url });
       }
       await base44.auth.updateMe({ avatar_url: url });
       toast.success('Avatar atualizado!');

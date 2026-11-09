@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload, Plane } from "lucide-react";
 import FeriasModal from "@/components/vendedores/FeriasModal";
 import { estaDeFerias, formatarPeriodoFerias } from "@/lib/ferias";
+import { avatarDoVendedor, mapaAvataresUsuarios } from "@/lib/avatar";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
@@ -330,6 +331,10 @@ export default function Vendedores() {
     queryFn: () => base44.entities.Comissao.list(),
   });
 
+  // Foto definida em "Meu Perfil" vale para o cadastro do gerente em todas as telas
+  const avataresUsuarios = mapaAvataresUsuarios([...(usuarios || []), user].filter(Boolean));
+  const fotoDoVendedor = (v) => avatarDoVendedor(v, avataresUsuarios);
+
   const visibleVendedores = vendedoresFiltrados.map(v => {
     const vendasV = vendas.filter(vd =>
       (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
@@ -447,8 +452,8 @@ export default function Vendedores() {
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            {v.avatar_url ? (
-                              <img src={v.avatar_url} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
+                            {fotoDoVendedor(v) ? (
+                              <img src={fotoDoVendedor(v)} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
                             ) : (
                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0f1e35] to-[#1a3150] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                 {v.nome?.charAt(0).toUpperCase()}
@@ -590,8 +595,8 @@ export default function Vendedores() {
                       <div key={v.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            {v.avatar_url ? (
-                              <img src={v.avatar_url} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
+                            {fotoDoVendedor(v) ? (
+                              <img src={fotoDoVendedor(v)} alt={v.nome} className="w-10 h-10 rounded-full object-cover flex-shrink-0 border border-gray-100" />
                             ) : (
                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                 {v.nome?.charAt(0).toUpperCase()}

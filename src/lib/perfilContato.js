@@ -3,11 +3,28 @@ import { base44 } from '@/api/base44Client';
 // O celular/operadora do gerente vive no cadastro de Vendedor — o MESMO registro
 // lido em Usuários, Vendedores, Fila de Contatos e na discagem. Salvar sempre aqui
 // garante que a informação do Perfil acompanhe o usuário em todas as etapas.
-export async function carregarVendedorDoUsuario(user) {
-  if (!user?.email) return null;
-  const email = user.email.toLowerCase();
+// Todos os cadastros de Vendedor ligados ao usuário logado: e-mail principal,
+// e-mails alternativos ou nome igual ao do perfil. Garante que dados salvos no
+// Perfil (foto, celular, operadora) cheguem ao cadastro do gerente mesmo quando
+// o e-mail do usuário difere do e-mail cadastrado no vendedor.
+export async function carregarVendedoresDoUsuario(user) {
+  if (!user) return [];
+  const email = (user.email || '').toLowerCase();
+  const nomes = [user.full_name, user.nome_tratamento]
+    .filter(Boolean)
+    .map(n => n.trim().toLowerCase());
   const todos = await base44.entities.Vendedor.list();
-  return todos.find(v => v.email?.toLowerCase() === email) || null;
+  return todos.filter(v => {
+    const emails = [v.email, ...(v.emails_alternativos || [])].filter(Boolean).map(e => e.toLowerCase());
+    if (email && emails.includes(email)) return true;
+    const nome = (v.nome || '').trim().toLowerCase();
+    return !!nome && nomes.includes(nome);
+  });
+}
+
+export async function carregarVendedorDoUsuario(user) {
+  const vinculados = await carregarVendedoresDoUsuario(user);
+  return vinculados[0] || null;
 }
 
 export async function salvarContatoDoUsuario(user, { celular, operadora }) {
