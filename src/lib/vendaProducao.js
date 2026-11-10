@@ -21,6 +21,8 @@ export function vendaAutorizada(venda) {
 
 export function documentosDaVendaOk(venda) {
   if (!venda) return false;
+  // Câmbio não tem contrato: a venda se comprova pela NF e o pagamento
+  if (produtoSemContrato(venda.produto)) return true;
   if (!venda.exige_documentos) return true;
   const comprovantes = Array.isArray(venda.comprovantes) ? venda.comprovantes.filter(c => c && c.url) : [];
   return !!venda.contrato_assinado_url && comprovantes.length > 0;

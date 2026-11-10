@@ -1016,13 +1016,13 @@ export default function Vendas() {
                             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap"
                               style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>Não autorizada</span>
                           )}
-                          {venda.exige_documentos && !venda.contrato_assinado_url && (
+                          {venda.exige_documentos && !produtoSemContrato(venda.produto) && !venda.contrato_assinado_url && (
                             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1"
                               style={{ background: 'rgba(239,68,68,0.12)', color: '#fca5a5' }}>
                               <FileWarning className="w-2.5 h-2.5" /> Sem contrato assinado
                             </span>
                           )}
-                          {venda.exige_documentos && venda.contrato_assinado_url && (venda.comprovantes || []).length === 0 && (
+                          {venda.exige_documentos && !produtoSemContrato(venda.produto) && venda.contrato_assinado_url && (venda.comprovantes || []).length === 0 && (
                             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap flex items-center gap-1"
                               style={{ background: 'rgba(251,191,36,0.12)', color: '#fcd34d' }}>
                               <FileWarning className="w-2.5 h-2.5" /> Sem comprovante
