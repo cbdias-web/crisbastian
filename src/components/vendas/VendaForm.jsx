@@ -13,6 +13,7 @@ import ComprovantesUpload from "./ComprovantesUpload";
 import CampoMascara from "@/components/ui/campo-mascara";
 import CampoMoeda from "@/components/ui/campo-moeda";
 import PainelRecorrencia from "./PainelRecorrencia";
+import { produtoSemContrato } from "@/lib/vendaProducao";
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -462,6 +463,13 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
               style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.65)' }}>
               Todo lançamento exige <strong style={{ color: '#00D4AA' }}>vendedor responsável</strong> e gera automaticamente o <strong style={{ color: '#00D4AA' }}>contrato vinculado</strong>.
               A venda manual só é liberada com o <strong style={{ color: '#00D4AA' }}>código de liberação da gerência</strong> (uso único) e só conta na produção depois de anexar o contrato assinado e o comprovante de pagamento.
+            </div>
+          )}
+          {!venda?.id && produtoSemContrato(selectedProdutos.join(', ')) && (
+            <div className="rounded-xl px-3 py-2.5 text-[11px] leading-relaxed"
+              style={{ background: 'rgba(251,191,36,0.10)', border: '1px solid rgba(251,191,36,0.3)', color: '#fcd34d' }}>
+              <strong>Venda de Câmbio:</strong> não gera contrato nem implantação. A operação segue apenas com a
+              <strong> Nota Fiscal</strong> e o <strong>pagamento</strong>, contabilizando direto nas vendas do mês e no Dashboard.
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

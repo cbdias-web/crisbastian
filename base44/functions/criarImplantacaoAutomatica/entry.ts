@@ -22,6 +22,12 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'recorrencia' });
     }
 
+    // Produtos sem implantação (Câmbio: apenas NF e pagamento) não geram registro
+    const produtoVenda = String(venda.produto || '').toUpperCase();
+    if (produtoVenda.includes('CÂMBIO') || produtoVenda.includes('CAMBIO')) {
+      return Response.json({ skipped: true, reason: 'produto_sem_implantacao' });
+    }
+
     // Idempotência: verifica se já existe implantação para esta venda
     const existentes = await base44.asServiceRole.entities.Implantacao.filter({ venda_id: vId });
     if (existentes.length > 0) {

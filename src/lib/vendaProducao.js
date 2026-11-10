@@ -3,6 +3,17 @@
 // obrigatória anexada (contrato assinado + comprovante de pagamento).
 // Vendas antigas (sem a flag exige_documentos) seguem contando como antes.
 
+// Produtos que não geram contrato nem implantação: a venda existe apenas com a
+// Nota Fiscal e o pagamento, contando direto na produção do mês e no Dashboard.
+export const PRODUTOS_SEM_CONTRATO = ['CÂMBIO', 'CAMBIO'];
+
+export function produtoSemContrato(produto) {
+  return String(produto || '')
+    .split(',')
+    .map(p => p.trim().toUpperCase())
+    .some(p => PRODUTOS_SEM_CONTRATO.includes(p));
+}
+
 export function vendaAutorizada(venda) {
   if (!venda) return false;
   return !['pendente', 'rejeitada'].includes(venda.autorizacao_status);

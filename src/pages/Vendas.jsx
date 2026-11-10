@@ -11,7 +11,7 @@ import VendaForm from '../components/vendas/VendaForm';
 import ModalCodigoLiberacao from '../components/vendas/ModalCodigoLiberacao';
 import GerenciarCodigosModal from '../components/vendas/GerenciarCodigosModal';
 import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning, KeyRound } from 'lucide-react';
-import { vendaContaProducao, tipoContratoDoProduto } from '@/lib/vendaProducao';
+import { vendaContaProducao, tipoContratoDoProduto, produtoSemContrato } from '@/lib/vendaProducao';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -95,6 +95,7 @@ export default function Vendas() {
         throw new Error('É necessário um código de liberação da gerência para lançar uma venda manual.');
       }
       const { _parcelasPreview, _parcelaId, ...vendaData } = data;
+      // Câmbio: venda contabilizada apenas com a NF e o pagamento (sem contrato)
       // Trava anti-duplicidade: mesmo cliente + produto + valor + data já lançado (por qualquer vendedor)
       if (vendaData.cpf_cnpj) {
         const mesmoDia = await base44.entities.Venda.filter({ cpf_cnpj: vendaData.cpf_cnpj, data: vendaData.data });
@@ -104,7 +105,7 @@ export default function Vendas() {
       const venda = await base44.entities.Venda.create({
         ...vendaData,
         origem_registro: 'manual',
-        exige_documentos: true,
+        exige_documentos: !produtoSemContrato(data.produto),
         codigo_liberacao: codigoLiberacao || '',
         autorizacao_status: 'autorizada',
         autorizada_por: user?.email || '',
@@ -216,24 +217,27 @@ export default function Vendas() {
       }
 
       // Contrato obrigatório: todo novo registro de venda já nasce com o contrato gerado
-      try {
-        const totalContrato = parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0;
-        const contrato = await base44.entities.Contrato.create({
-          tipo: tipoContratoDoProduto(data.produto),
-          nome: (data.cliente || '').trim() || 'Cliente a definir',
-          cpf_cnpj: data.cpf_cnpj || '',
-          valor_total: totalContrato,
-          valor_adesao: parseFloat(data.valor) || 0,
-          vendedor_id: data.vendedor_id,
-          vendedor_nome: data.assessor_comercial,
-          data_contrato: data.data,
-          status: 'rascunho',
-          observacoes: `Contrato gerado automaticamente a partir do lançamento de venda${data.observacao ? ` — ${data.observacao}` : ''}`,
-        });
-        await base44.entities.Venda.update(venda.id, { contrato_id: contrato.id });
-        venda.contrato_id = contrato.id;
-      } catch (e) {
-        toast.warning('Venda criada, mas não foi possível gerar o contrato vinculado: ' + e.message);
+      // (Câmbio não gera contrato — apenas a NF e o pagamento)
+      if (!produtoSemContrato(data.produto)) {
+        try {
+          const totalContrato = parseFloat(data.valor_total_contrato) || parseFloat(data.valor) || 0;
+          const contrato = await base44.entities.Contrato.create({
+            tipo: tipoContratoDoProduto(data.produto),
+            nome: (data.cliente || '').trim() || 'Cliente a definir',
+            cpf_cnpj: data.cpf_cnpj || '',
+            valor_total: totalContrato,
+            valor_adesao: parseFloat(data.valor) || 0,
+            vendedor_id: data.vendedor_id,
+            vendedor_nome: data.assessor_comercial,
+            data_contrato: data.data,
+            status: 'rascunho',
+            observacoes: `Contrato gerado automaticamente a partir do lançamento de venda${data.observacao ? ` — ${data.observacao}` : ''}`,
+          });
+          await base44.entities.Venda.update(venda.id, { contrato_id: contrato.id });
+          venda.contrato_id = contrato.id;
+        } catch (e) {
+          toast.warning('Venda criada, mas não foi possível gerar o contrato vinculado: ' + e.message);
+        }
       }
 
       // Implantação agora é criada automaticamente pela automação de entidade (criarImplantacaoAutomatica)
