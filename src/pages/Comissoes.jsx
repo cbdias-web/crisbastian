@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save, Trash2, Calendar, FileText, Send } from "lucide-react";
 import { format, parseISO, startOfMonth } from "date-fns";
+import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { toast } from "sonner";
 
 const formatCurrency = (v) =>
@@ -390,7 +391,7 @@ export default function Comissoes() {
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ["vendedores"],
-    queryFn: () => base44.entities.Vendedor.list("nome"),
+    queryFn: async () => filtrarGerentesConsulta(await base44.entities.Vendedor.list("nome")),
   });
 
   const { data: indicadores = [] } = useQuery({

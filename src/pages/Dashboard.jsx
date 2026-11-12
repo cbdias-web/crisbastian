@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
 import { vendaContaProducao } from "@/lib/vendaProducao";
+import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -288,9 +289,10 @@ export default function Dashboard() {
       const coms = com.status === 'fulfilled' ? com.value : [];
       const usr = u.status === 'fulfilled' ? u.value : null;
       const parcelas = parc.status === 'fulfilled' ? parc.value : [];
-      setVendas(vendas); setVendedores(vends); setMetas(mts);
+      const vendsConsulta = filtrarGerentesConsulta(vends);
+      setVendas(vendas); setVendedores(vendsConsulta); setMetas(mts);
       setComissoes(coms); setParcelasMes(parcelas); setUser(usr);
-      setSelectedVendedores(vends.map(vv => vv.id));
+      setSelectedVendedores(vendsConsulta.map(vv => vv.id));
       const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
       if (usr) {

@@ -12,6 +12,7 @@ import ModalCodigoLiberacao from '../components/vendas/ModalCodigoLiberacao';
 import GerenciarCodigosModal from '../components/vendas/GerenciarCodigosModal';
 import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning, KeyRound } from 'lucide-react';
 import { vendaContaProducao, tipoContratoDoProduto, produtoSemContrato } from '@/lib/vendaProducao';
+import { filtrarGerentesConsulta } from '@/lib/gerentesConsulta';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { format, parseISO } from 'date-fns';
@@ -69,7 +70,7 @@ export default function Vendas() {
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores'],
-    queryFn: () => base44.entities.Vendedor.list('nome'),
+    queryFn: async () => filtrarGerentesConsulta(await base44.entities.Vendedor.list('nome')),
   });
 
   const sleep = (ms) => new Promise(r => setTimeout(r, ms));

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Target, ChevronDown, Check, Edit2, Save, X, Plus, Loader2, Trash2, DollarSign } from "lucide-react";
+import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { toast } from "sonner";
 
 const formatCurrency = (v) =>
@@ -165,11 +166,12 @@ export default function Metas() {
       base44.entities.Meta.list(),
       base44.auth.me(),
     ]).then(([v, vd, m, u]) => {
-      setVendedores(v);
+      const vendedoresConsulta = filtrarGerentesConsulta(v);
+      setVendedores(vendedoresConsulta);
       setVendas(vd);
       setMetas(m);
       setUser(u);
-      setSelectedIds(v.filter(vv => vv.ativo !== false).map(vv => vv.id));
+      setSelectedIds(vendedoresConsulta.filter(vv => vv.ativo !== false).map(vv => vv.id));
       setLoading(false);
     });
   };

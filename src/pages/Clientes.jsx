@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -261,7 +262,7 @@ export default function Clientes() {
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ["vendedores"],
-    queryFn: () => base44.entities.Vendedor.list("nome"),
+    queryFn: async () => filtrarGerentesConsulta(await base44.entities.Vendedor.list("nome")),
   });
 
   const { data: vendas = [] } = useQuery({

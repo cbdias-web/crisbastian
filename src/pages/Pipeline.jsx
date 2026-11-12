@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus, AlertTriangle } from 'lucide-react';
 import { gerarRelatorioVencidosPDF } from '@/lib/relatorioPipelineVencidos';
+import { filtrarGerentesConsulta, ehGerenteConsulta } from '@/lib/gerentesConsulta';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
@@ -176,8 +177,8 @@ export default function Pipeline() {
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-pipeline'],
-    queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
-    // (usado nos filtros da tela — somente ativos)
+    queryFn: async () => filtrarGerentesConsulta(await base44.entities.Vendedor.filter({ ativo: true }, 'nome')),
+    // (usado nos filtros da tela — somente ativos e gerentes de negócios)
   });
 
   // Todos os gerentes (inclui inativos) — usado para excluir inativos do relatório de vencidos
@@ -521,7 +522,8 @@ export default function Pipeline() {
   const valorTotal = baseKpiValor.filter(n => n.temperatura !== 'Perdido' && n.temperatura !== 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const valorFechado = negocios.filter(n => n.temperatura === 'Fechado').reduce((s, n) => s + (n.valor_estimado || 0), 0);
   const totalGeral = negocios.length;
-  const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))];
+  const vendedoresUnicos = [...new Set(negocios.map(n => n.vendedor_nome).filter(Boolean))]
+    .filter(nome => ehGerenteConsulta({ nome }));
 
   // KPIs do gerente selecionado
   const vendedorSelecionado = vendedores.find(v => v.nome === filtroVendedor);
