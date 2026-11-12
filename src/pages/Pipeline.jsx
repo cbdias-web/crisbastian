@@ -177,6 +177,13 @@ export default function Pipeline() {
   const { data: vendedores = [] } = useQuery({
     queryKey: ['vendedores-pipeline'],
     queryFn: () => base44.entities.Vendedor.filter({ ativo: true }, 'nome'),
+    // (usado nos filtros da tela — somente ativos)
+  });
+
+  // Todos os gerentes (inclui inativos) — usado para excluir inativos do relatório de vencidos
+  const { data: todosVendedores = [] } = useQuery({
+    queryKey: ['vendedores-todos-relatorio'],
+    queryFn: () => base44.entities.Vendedor.list('nome'),
     enabled: isAdmin,
   });
 
@@ -566,7 +573,7 @@ export default function Pipeline() {
 
   // Relatório enxuto das operações em pipeline com fechamento vencido / status desatualizado
   const gerarRelatorioVencidos = () => {
-    const res = gerarRelatorioVencidosPDF(negociosFiltrados);
+    const res = gerarRelatorioVencidosPDF(negociosFiltrados, todosVendedores);
     if (res.total === 0) toast.info('Nenhuma operação em pipeline com fechamento vencido ou status desatualizado.');
     else toast.success(`${res.total} operação(ões) no relatório de vencidos.`);
   };

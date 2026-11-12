@@ -32,9 +32,20 @@ export function diasEmAtraso(dataPrevista) {
   return Math.floor((hoje - alvo) / 86400000);
 }
 
-export function operacoesVencidas(negocios) {
+// Gerentes inativos (ou não cadastrados como ativos) ficam fora do relatório
+function gerenteInativo(n, vendedores) {
+  if (!vendedores || vendedores.length === 0) return false;
+  const inativos = vendedores.filter(v => v.ativo === false);
+  const nome = (n.vendedor_nome || '').trim().toLowerCase();
+  return inativos.some(v =>
+    (v.id && n.vendedor_id && v.id === n.vendedor_id) ||
+    (nome && (v.nome || '').trim().toLowerCase() === nome)
+  );
+}
+
+export function operacoesVencidas(negocios, vendedores = []) {
   return (negocios || [])
-    .filter(n => motivosDeAlerta(n).length > 0)
+    .filter(n => motivosDeAlerta(n).length > 0 && !gerenteInativo(n, vendedores))
     .sort((a, b) => {
       const da = diasEmAtraso(a.data_prevista);
       const db = diasEmAtraso(b.data_prevista);
@@ -45,8 +56,8 @@ export function operacoesVencidas(negocios) {
     });
 }
 
-export function gerarRelatorioVencidosPDF(negocios) {
-  const itens = operacoesVencidas(negocios);
+export function gerarRelatorioVencidosPDF(negocios, vendedores = []) {
+  const itens = operacoesVencidas(negocios, vendedores);
   const totalValor = itens.reduce((s, n) => s + (n.valor_estimado || 0), 0);
 
   const linhas = itens.map(n => {
