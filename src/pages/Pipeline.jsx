@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus } from 'lucide-react';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
+import CampoMoeda from '@/components/ui/campo-moeda';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -228,10 +229,12 @@ export default function Pipeline() {
     return true;
   });
 
-  // Set de pipeline_ids que são parcelas pendentes
-  const parcelaPipelineIds = new Set(parcelasVendaPendentes.map(p => p.pipeline_id).filter(Boolean));
+  // Cards do Pipeline gerados para parcelas vincendas: aparecem só na aba "Parcelas Vincendas",
+  // nunca no Kanban (não são negociações abertas).
+  const parcelaPipelineIds = new Set(parcelasVenda.map(p => p.pipeline_id).filter(Boolean));
 
   const negocios = negociosRaw.filter(n => {
+    if (parcelaPipelineIds.has(n.id)) return false;
     if (!isAdmin) return n.vendedor_id === user?.id || n.created_by === user?.email;
     return true;
   });
@@ -1124,8 +1127,11 @@ export default function Pipeline() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Valor Estimado</label>
-                  <input type="number" value={form.valor_estimado} onChange={e => setForm(f => ({ ...f, valor_estimado: e.target.value }))}
-                    placeholder="0,00" min="0" step="0.01"
+                  <CampoMoeda
+                    asString
+                    value={form.valor_estimado}
+                    onChange={v => setForm(f => ({ ...f, valor_estimado: v }))}
+                    placeholder="0,00"
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
               </div>
