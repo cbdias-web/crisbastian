@@ -1,5 +1,6 @@
 // Campos financeiros dos contratos RATING, DIAGNÓSTICO e SCORE
 // (espelham exatamente os campos do PDF modelo de cada contrato)
+import { useEffect } from 'react';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import { formatarMoeda } from '@/lib/mascaras';
 
@@ -29,6 +30,34 @@ function Num({ label, k, form, set, placeholder, required, step }) {
 }
 
 export default function ContratoFinanceiroModelos({ tipo, form, set, selectField, campo, formas }) {
+  const isMonitore = tipo === 'MONITORE';
+  // MONITORE: adesão paga de uma vez (sem parcelamento da adesão)
+  useEffect(() => {
+    if (isMonitore && String(form.num_parcelas) !== '0') set('num_parcelas', '0');
+  }, [isMonitore]);
+
+  if (isMonitore) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <Num label="Valor da Adesão (R$)" k="valor_total" form={form} set={set} placeholder="Ex: 1500,00" required step="0.01" />
+        <Num label="Pagamento Todo Dia" k="dia_vencimento" form={form} set={set} placeholder="Ex: 10" />
+        <div className="group">
+          <label className={LABEL}>1ª Mensalidade Dia</label>
+          <input type="date" value={form.data_primeira_parcela ?? ''} onChange={e => set('data_primeira_parcela', e.target.value)} className={INPUT} />
+        </div>
+        <div className="group">
+          <label className={LABEL}>Valor da Mensalidade <span className="text-[9px] normal-case font-normal text-blue-400">(fixo no modelo)</span></label>
+          <input type="text" value="R$ 299,90" readOnly className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl" />
+        </div>
+        <div className="group">
+          <label className={LABEL}>RATE <span className="text-[9px] normal-case font-normal text-blue-400">(fixo no modelo)</span></label>
+          <input type="text" value="0,89%" readOnly className="w-full px-3.5 py-2.5 text-sm border border-blue-200 bg-blue-50/50 rounded-xl" />
+        </div>
+        {selectField('Forma de Pagamento', 'forma_pagamento', formas)}
+        {campo('Data do 1º Pagamento', 'data_primeiro_pagamento', 'date')}
+      </div>
+    );
+  }
   const isRating = tipo === 'RATING';
   const isScore = tipo === 'SCORE';
   const isDiag = tipo === 'DIAGNÓSTICO';

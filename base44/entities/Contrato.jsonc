@@ -342,7 +342,8 @@
         "HORA TÉCNICA",
         "RATING",
         "DIAGNÓSTICO",
-        "SCORE"
+        "SCORE",
+        "MONITORE"
       ],
       "type": "string"
     },

@@ -43,6 +43,7 @@ const TIPO_COLOR = {
   'RATING': '#0369a1',
   'DIAGNÓSTICO': '#4d7c0f',
   'SCORE': '#1e293b',
+  'MONITORE': '#ea580c',
 };
 
 const TIPO_GRADIENT = {
@@ -57,6 +58,7 @@ const TIPO_GRADIENT = {
   'RATING': 'from-sky-700 to-sky-600',
   'DIAGNÓSTICO': 'from-lime-700 to-lime-600',
   'SCORE': 'from-slate-800 to-slate-700',
+  'MONITORE': 'from-orange-700 to-orange-600',
 };
 
 function calcProgress(form, aba) {
@@ -838,7 +840,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   );
                 })()}
 
-                {['RATING', 'DIAGNÓSTICO', 'SCORE'].includes(form._tipoOverride || tipo) ? (
+                {['RATING', 'DIAGNÓSTICO', 'SCORE', 'MONITORE'].includes(form._tipoOverride || tipo) ? (
                   <ContratoFinanceiroModelos tipo={form._tipoOverride || tipo} form={form} set={set}
                     selectField={selectField} campo={campo} formas={FORMAS} />
                 ) : tipo === 'GARANTIAS' ? (
@@ -1106,7 +1108,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                         onChange={e => setForm(f => ({ ...f, _tipoOverride: e.target.value }))}
                         className="w-full px-3.5 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a3150]/20 focus:border-[#1a3150] bg-white hover:border-gray-300 transition-all appearance-none cursor-pointer"
                       >
-                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA','RATING','DIAGNÓSTICO','SCORE'].map(t => (
+                        {['CONTA GLOBAL','CONTA INTERNACIONAL','DOLARIZE','ROF','CANAL BANCÁRIO','OFFSHORE','GARANTIAS','HORA TÉCNICA','RATING','DIAGNÓSTICO','SCORE','MONITORE'].map(t => (
                           <option key={t} value={t}>{t}</option>
                         ))}
                       </select>

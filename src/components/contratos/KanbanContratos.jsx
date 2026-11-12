@@ -36,6 +36,7 @@ const TIPO_DOT = {
   'RATING': '#0ea5e9',
   'DIAGNÓSTICO': '#84cc16',
   'SCORE': '#64748b',
+  'MONITORE': '#f97316',
 };
 
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';

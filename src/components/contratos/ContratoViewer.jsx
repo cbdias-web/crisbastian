@@ -27,6 +27,7 @@ const TIPO_COLOR = {
   'RATING': '#0369a1',
   'DIAGNÓSTICO': '#4d7c0f',
   'SCORE': '#1e293b',
+  'MONITORE': '#ea580c',
 };
 
 const STATUS_CONFIG = {

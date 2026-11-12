@@ -72,7 +72,7 @@ export function pendenciasDoContrato(contrato) {
 // Produtos da venda → tipo aceito no contrato
 const TIPOS_CONTRATO = [
   'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO',
-  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'DIAGNÓSTICO', 'SCORE',
+  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'DIAGNÓSTICO', 'SCORE', 'MONITORE',
 ];
 
 export function tipoContratoDoProduto(produto) {

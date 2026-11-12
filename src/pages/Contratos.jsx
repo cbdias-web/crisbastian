@@ -29,6 +29,7 @@ const TIPO_CONFIG = {
   'HORA TÉCNICA': { color: 'bg-teal-700', light: 'bg-teal-500/15 text-teal-300 border-teal-500/30', icon: FileText, desc: 'Contrato de prestação de serviços por hora técnica especializada' },
   'RATING': { color: 'bg-sky-700', light: 'bg-sky-500/15 text-sky-300 border-sky-500/30', icon: BarChart3, desc: 'Consultoria de crédito empresarial: diagnóstico, reorganização e monitoramento do rating' },
   'DIAGNÓSTICO': { color: 'bg-lime-700', light: 'bg-lime-500/15 text-lime-300 border-lime-500/30', icon: BarChart3, desc: 'Consultoria e diagnóstico de rating bancário para reorganização do perfil de crédito' },
+  'MONITORE': { color: 'bg-orange-700', light: 'bg-orange-500/15 text-orange-300 border-orange-500/30', icon: BarChart3, desc: 'Conta digital com monitoramento intensivo de riscos corporativos (mensalidade R$ 299,90 + RATE 0,89%)' },
   'SCORE': { color: 'bg-slate-700', light: 'bg-slate-500/15 text-slate-300 border-slate-500/30', icon: BarChart3, desc: 'Reorganização financeira: remoção de apontamentos negativos (nada consta)' },
 };
 

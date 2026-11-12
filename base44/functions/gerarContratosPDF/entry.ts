@@ -15,6 +15,7 @@ const PDF_URLS = {
   // Modelos em PDF (AcroForm) enviados pela empresa — preenchidos com os dados do contrato
   'RATING': 'https://media.base44.com/files/public/698a1739c50002e4d14fa547/006b68324_CONTRATORATING-1106261.pdf',
   'DIAGNÓSTICO': 'https://media.base44.com/files/public/698a1739c50002e4d14fa547/17c47f98f_Contrato_diagnostico.pdf',
+  'MONITORE': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/03e0c39b2_ContratoMonitore.pdf',
   'SCORE': 'https://media.base44.com/files/public/698a1739c50002e4d14fa547/1c95b7352_1791202629519_-_Contrato_Score_-_Reorganizacao_Financeira_-_05_10_261.pdf',
 };
 
@@ -42,6 +43,31 @@ function mapearModelosCredito(contrato) {
   const ddd = extrairDDD(contrato.telefone);
   const tel = extrairTelefone(contrato.telefone);
   const numParc = Math.round(contrato.num_parcelas || 0);
+
+  if (contrato.tipo === 'MONITORE') {
+    // Mensalidade (R$ 299,90) e RATE (0,89%) já vêm impressos no modelo
+    const pm = contrato.data_primeira_parcela ? new Date(contrato.data_primeira_parcela + 'T00:00:00') : null;
+    return {
+      'nome': contrato.nome || '',
+      'cpf/cnpj': contrato.cpf_cnpj || '',
+      'responsável': contrato.responsavel_legal || '',
+      'cpf': contrato.cpf_responsavel || '',
+      'endereço': contrato.endereco || '',
+      'cep': contrato.cep || '',
+      'bairro': contrato.bairro || '',
+      'municipio': contrato.cidade || '',
+      'uf': contrato.estado || '',
+      'ddd': ddd,
+      'telefone': tel,
+      'e-mail': contrato.email || '',
+      'valor_adesão': fmtVal(contrato.valor_total || 0),
+      'parcelas': diaStr(contrato.dia_vencimento),
+      'parcelas_dia': pm ? String(pm.getDate()).padStart(2, '0') : '',
+      'parcelas_mês': pm ? String(pm.getMonth() + 1).padStart(2, '0') : '',
+      'parcelas_ano': pm ? String(pm.getFullYear()) : '',
+      'dia': dia, 'mês': mes, 'ano': ano2,
+    };
+  }
 
   if (contrato.tipo === 'SCORE') {
     return {
@@ -571,7 +597,7 @@ Deno.serve(async (req) => {
     const camposDisponiveis = listarCampos(form);
     console.log(`[CAMPOS_PDF] ${contrato.tipo}: ${JSON.stringify(camposDisponiveis)}`);
 
-    const modeloCredito = ['RATING', 'DIAGNÓSTICO', 'SCORE'].includes(contrato.tipo);
+    const modeloCredito = ['RATING', 'DIAGNÓSTICO', 'SCORE', 'MONITORE'].includes(contrato.tipo);
     const campos = modeloCredito ? mapearModelosCredito(contrato) : mapearCampos(contrato);
     for (const [nome, valor] of Object.entries(campos)) {
       preencherCampo(form, nome, valor);
