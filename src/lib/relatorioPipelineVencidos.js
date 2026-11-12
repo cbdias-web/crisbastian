@@ -2,6 +2,7 @@
 // Formato enxuto: nome, valor, data de fechamento e status (sem histórico de interação).
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { jsPDF } from 'jspdf';
 import { todayBrasilia } from '@/lib/dateUtils';
 import { normNome } from '@/lib/nomes';
 
@@ -9,6 +10,15 @@ export const DIAS_DESATUALIZADO = 15;
 
 const fmtVal = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d) => (d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—');
+
+// Paleta padrão dos relatórios da plataforma (Aurora / azul institucional)
+const AZUL = [15, 30, 53];
+const AZUL_TABELA = [26, 49, 80];
+const AZUL_CLARO = [180, 200, 230];
+const CINZA_CARD = [245, 247, 250];
+const CINZA_LABEL = [100, 116, 139];
+const CINZA_LINHA = [248, 250, 252];
+const VERMELHO = [153, 27, 27];
 
 export function motivosDeAlerta(n) {
   if (!n) return [];
@@ -60,41 +70,168 @@ export function operacoesVencidas(negocios, vendedores = []) {
 export function gerarRelatorioVencidosPDF(negocios, vendedores = []) {
   const itens = operacoesVencidas(negocios, vendedores);
   const totalValor = itens.reduce((s, n) => s + (n.valor_estimado || 0), 0);
+  const hoje = todayBrasilia();
+  const vencidas = itens.filter(n => n.data_prevista && n.data_prevista < hoje).length;
+  const semData = itens.filter(n => !n.data_prevista).length;
 
-  const linhas = itens.map(n => {
-    const dias = diasEmAtraso(n.data_prevista);
-    const atraso = dias === null ? '—' : dias > 0 ? `${dias} dia${dias > 1 ? 's' : ''}` : '0 dia';
-    return `
-      <tr>
-        <td>${n.cliente_nome || '—'}</td>
-        <td>${n.produto || '—'}</td>
-        <td>${n.vendedor_nome || '—'}</td>
-        <td class="num">${fmtVal(n.valor_estimado)}</td>
-        <td>${fmtDate(n.data_prevista)}</td>
-        <td class="num atraso">${atraso}</td>
-        <td>${n.temperatura || '—'}</td>
-      </tr>`;
-  }).join('');
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const margin = 14;
+  const semAcento = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Operações Vencidas — Pipeline</title>
-<style>body{font-family:Arial,sans-serif;margin:0;padding:20px;color:#333}.header{background:linear-gradient(135deg,#7c2d12,#b45309);color:#fff;padding:20px 24px;border-radius:8px;margin-bottom:18px}.header h1{margin:0;font-size:19px}.header p{margin:4px 0 0;font-size:11px;opacity:.85}.kpis{display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap}.kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;flex:1;min-width:130px}.kpi .val{font-size:18px;font-weight:bold;color:#7c2d12}.kpi .lbl{font-size:10px;color:#64748b;margin-top:2px}table{width:100%;border-collapse:collapse;font-size:11px}thead tr{background:#7c2d12;color:#fff}th{padding:8px 10px;text-align:left;font-weight:600}th.num,td.num{text-align:right}td{padding:7px 10px;border-bottom:1px solid #f1f5f9}tr:nth-child(even) td{background:#fdfaf7}.footer{margin-top:18px;font-size:10px;color:#94a3b8;line-height:1.5}.vazio{padding:24px;text-align:center;font-size:12px;color:#94a3b8}td.atraso{color:#b91c1c;font-weight:bold}@media print{body{padding:10px}}</style>
-</head><body>
-<div class="header"><h1>Relatório de Operações Vencidas — Pipeline</h1><p>Villela Exchange — Gerado em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p></div>
-<div class="kpis">
-  <div class="kpi"><div class="val">${itens.length}</div><div class="lbl">Operações em atenção</div></div>
-  <div class="kpi"><div class="val">${fmtVal(totalValor)}</div><div class="lbl">Valor em negociação</div></div>
-</div>
-${itens.length === 0
-    ? '<div class="vazio">Nenhuma operação em pipeline com fechamento vencido ou status desatualizado.</div>'
-    : `<table><thead><tr><th>Nome</th><th>Produto</th><th>Gerente</th><th class="num">Valor</th><th>Fechamento previsto</th><th class="num">Vencido há</th><th>Status</th></tr></thead><tbody>${linhas}</tbody></table>`}
-<div class="footer">Critério: operações em pipeline (não fechadas nem perdidas) com data de fechamento vencida, sem data de fechamento definida, ou status sem atualização há mais de ${DIAS_DESATUALIZADO} dias.<br>Villela Exchange — Pipeline Comercial</div>
-</body></html>`;
+  const cortar = (txt, maxMM) => {
+    let s = semAcento(txt || '-') || '-';
+    if (doc.getTextWidth(s) <= maxMM) return s;
+    while (s.length > 1 && doc.getTextWidth(s + '.') > maxMM) s = s.slice(0, -1);
+    return s + '.';
+  };
 
-  const win = window.open('', '_blank');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-    setTimeout(() => win.print(), 500);
+  // Cabeçalho institucional
+  const cabecalho = (altura) => {
+    doc.setFillColor(...AZUL);
+    doc.rect(0, 0, W, altura, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('VILLELA EXCHANGE', margin, 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(...AZUL_CLARO);
+    doc.text('Relatório de Operações Vencidas - Pipeline', margin, altura - 6);
+  };
+
+  cabecalho(22);
+  doc.setTextColor(...AZUL_CLARO);
+  doc.setFontSize(9);
+  doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, W - margin, 10, { align: 'right' });
+  doc.text(`Critério: vencido, sem data ou parado há mais de ${DIAS_DESATUALIZADO} dias`, W - margin, 16, { align: 'right' });
+
+  // KPIs
+  let y = 30;
+  const kpis = [
+    { label: 'Operações em atenção', value: String(itens.length) },
+    { label: 'Valor em negociação', value: fmtVal(totalValor) },
+    { label: 'Fechamento vencido', value: String(vencidas) },
+    { label: 'Sem data de fechamento', value: String(semData) },
+  ];
+  const kpiW = (W - margin * 2) / kpis.length;
+  kpis.forEach((k, i) => {
+    const x = margin + i * kpiW;
+    doc.setFillColor(...CINZA_CARD);
+    doc.roundedRect(x, y, kpiW - 3, 16, 2, 2, 'F');
+    doc.setTextColor(...CINZA_LABEL);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.text(k.label, x + 4, y + 6);
+    doc.setTextColor(...AZUL);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(k.value, x + 4, y + 13);
+  });
+  doc.setTextColor(0, 0, 0);
+
+  y = 54;
+
+  if (itens.length === 0) {
+    doc.setFillColor(...CINZA_CARD);
+    doc.roundedRect(margin, y, W - margin * 2, 20, 2, 2, 'F');
+    doc.setTextColor(...CINZA_LABEL);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Nenhuma operação em pipeline com fechamento vencido ou status desatualizado.', W / 2, y + 12, { align: 'center' });
+  } else {
+    const cols = [
+      { titulo: 'Nome', largura: 56, alinhamento: 'left' },
+      { titulo: 'Produto', largura: 46, alinhamento: 'left' },
+      { titulo: 'Gerente', largura: 44, alinhamento: 'left' },
+      { titulo: 'Valor', largura: 30, alinhamento: 'right' },
+      { titulo: 'Fechamento', largura: 30, alinhamento: 'left' },
+      { titulo: 'Vencido há', largura: 24, alinhamento: 'right' },
+      { titulo: 'Status', largura: 39, alinhamento: 'left' },
+    ];
+    const totalCols = cols.reduce((s, c) => s + c.largura, 0);
+
+    const cabecalhoTabela = () => {
+      doc.setFillColor(...AZUL_TABELA);
+      doc.rect(margin, y, totalCols, 8, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      let x = margin;
+      cols.forEach((c) => {
+        const tx = c.alinhamento === 'right' ? x + c.largura - 2 : x + 2;
+        doc.text(c.titulo, tx, y + 5.5, { align: c.alinhamento });
+        x += c.largura;
+      });
+      y += 8;
+    };
+
+    const novaPagina = () => {
+      doc.addPage();
+      cabecalho(18);
+      y = 24;
+      cabecalhoTabela();
+    };
+
+    cabecalhoTabela();
+
+    itens.forEach((n, idx) => {
+      if (y > H - 24) novaPagina();
+
+      if (idx % 2 === 1) {
+        doc.setFillColor(...CINZA_LINHA);
+        doc.rect(margin, y, totalCols, 7, 'F');
+      }
+
+      const dias = diasEmAtraso(n.data_prevista);
+      const atraso = dias === null ? '-' : dias > 0 ? `${dias}d` : '0d';
+      const valores = [
+        n.cliente_nome || '-',
+        n.produto || '-',
+        n.vendedor_nome || '-',
+        fmtVal(n.valor_estimado),
+        fmtDate(n.data_prevista),
+        atraso,
+        n.temperatura || '-',
+      ];
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      let x = margin;
+      cols.forEach((c, i) => {
+        const tx = c.alinhamento === 'right' ? x + c.largura - 2 : x + 2;
+        if (i === 5 && dias !== null && dias > 0) doc.setTextColor(...VERMELHO);
+        doc.text(cortar(valores[i], c.largura - 4), tx, y + 4.8, { align: c.alinhamento });
+        doc.setTextColor(0, 0, 0);
+        x += c.largura;
+      });
+      y += 7;
+    });
+
+    // Total
+    if (y > H - 24) novaPagina();
+    doc.setFillColor(...CINZA_CARD);
+    doc.rect(margin, y, totalCols, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...AZUL);
+    doc.text(`TOTAL: ${itens.length} operação(ões)`, margin + 2, y + 5.5);
+    doc.text(fmtVal(totalValor), margin + cols[0].largura + cols[1].largura + cols[2].largura + cols[3].largura - 2, y + 5.5, { align: 'right' });
+    y += 8;
   }
+
+  // Rodapé com paginação
+  const totalPaginas = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPaginas; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...CINZA_LABEL);
+    doc.text(`Página ${p} de ${totalPaginas} - Villela Exchange - Pipeline Comercial`, W / 2, H - 6, { align: 'center' });
+  }
+
+  doc.save('operacoes-vencidas-pipeline.pdf');
   return { total: itens.length, valorTotal: totalValor };
 }
