@@ -3,7 +3,8 @@ import { todayBrasilia, isoNowBrasilia } from '@/lib/dateUtils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus, AlertTriangle } from 'lucide-react';
+import { gerarRelatorioVencidosPDF } from '@/lib/relatorioPipelineVencidos';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
@@ -563,6 +564,13 @@ export default function Pipeline() {
     setTimeout(() => win.print(), 500);
   };
 
+  // Relatório enxuto das operações em pipeline com fechamento vencido / status desatualizado
+  const gerarRelatorioVencidos = () => {
+    const res = gerarRelatorioVencidosPDF(negociosFiltrados);
+    if (res.total === 0) toast.info('Nenhuma operação em pipeline com fechamento vencido ou status desatualizado.');
+    else toast.success(`${res.total} operação(ões) no relatório de vencidos.`);
+  };
+
   if (!user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-7 h-7 border-2 border-[#1a3150] border-t-transparent rounded-full animate-spin" />
@@ -598,6 +606,10 @@ export default function Pipeline() {
             </div>
             <Button variant="outline" onClick={gerarRelatorio} className="border-gray-200 text-gray-600 hover:bg-gray-50">
               <FileText className="w-4 h-4 mr-2" /> Relatório PDF
+            </Button>
+            <Button variant="outline" onClick={gerarRelatorioVencidos}
+              className="border-amber-500/40 text-amber-500 hover:bg-amber-500/10">
+              <AlertTriangle className="w-4 h-4 mr-2" /> Vencidos
             </Button>
             <Button onClick={openNew} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
               <Plus className="w-4 h-4 mr-2" /> Nova Prospecção
