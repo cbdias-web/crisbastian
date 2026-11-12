@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { mesmoNome } from '@/lib/nomes';
 import { X, Download, Mail, Send, Loader2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -34,7 +35,7 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
 
       let vendasPessoa;
       if (isVendedorRole) {
-        vendasPessoa = vendasPeriodo.filter(v => v.vendedor_id === pessoa.id || v.assessor_comercial === pessoa.nome);
+        vendasPessoa = vendasPeriodo.filter(v => v.vendedor_id === pessoa.id || mesmoNome(v.assessor_comercial, pessoa.nome));
       } else {
         vendasPessoa = vendasPeriodo.filter(v =>
           v.indicadores?.some(i => i.id === pessoa.id) ||

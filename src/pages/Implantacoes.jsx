@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { mesmoNome } from '@/lib/nomes';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Rocket, Search, FileText, Loader2, RefreshCw, AlertTriangle, CheckCircle2, Clock, TrendingUp, Link2, FileWarning, Crown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -131,8 +132,8 @@ export default function Implantacoes() {
       (!imp.padrinho_email || !imp.padrinho_nome || imp.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase())
     );
     const souVendedorDeste =
-      (meuVendedor && (imp.vendedor_id === meuVendedor.id || imp.vendedor_nome === meuVendedor.nome)) ||
-      (user?.full_name && imp.vendedor_nome === user.full_name);
+      (meuVendedor && (imp.vendedor_id === meuVendedor.id || mesmoNome(imp.vendedor_nome, meuVendedor.nome))) ||
+      mesmoNome(imp.vendedor_nome, user?.full_name);
     return souPadrinhoDeste || souVendedorDeste;
   });
 
@@ -349,8 +350,8 @@ export default function Implantacoes() {
           (!implantacaoAtiva.padrinho_email || !implantacaoAtiva.padrinho_nome || implantacaoAtiva.padrinho_nome.toLowerCase() === (meuPadrinhoNome || '').toLowerCase())
         );
         const souVendedor =
-          (meuVendedor && (implantacaoAtiva.vendedor_id === meuVendedor.id || implantacaoAtiva.vendedor_nome === meuVendedor.nome)) ||
-          (user?.full_name && implantacaoAtiva.vendedor_nome === user.full_name);
+          (meuVendedor && (implantacaoAtiva.vendedor_id === meuVendedor.id || mesmoNome(implantacaoAtiva.vendedor_nome, meuVendedor.nome))) ||
+          mesmoNome(implantacaoAtiva.vendedor_nome, user?.full_name);
         const canEdit = isAdmin || souPadrinho || souVendedor;
         return (
           <ImplantacaoModal

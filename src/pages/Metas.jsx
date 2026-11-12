@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Target, ChevronDown, Check, Edit2, Save, X, Plus, Loader2, Trash2, DollarSign } from "lucide-react";
 import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
+import { mesmoNome } from "@/lib/nomes";
 import { toast } from "sonner";
 
 const formatCurrency = (v) =>
@@ -275,7 +276,7 @@ export default function Metas() {
       if (meta.tipo === "equipe") return true;
       if (meta.tipo === "time") return v.time === meta.time;
       if (v.vendedor_id && meta.vendedor_id) return v.vendedor_id === meta.vendedor_id;
-      return v.assessor_comercial === meta.vendedor_nome;
+      return mesmoNome(v.assessor_comercial, meta.vendedor_nome);
     }).reduce((s, v) => s + (parseFloat(v.valor) || 0), 0);
   };
 
@@ -284,7 +285,7 @@ export default function Metas() {
 
   const rows = vendedoresFiltrados.map(v => {
     const vendasV = vendas.filter(vd =>
-      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+      (vd.vendedor_id ? vd.vendedor_id === v.id : mesmoNome(vd.assessor_comercial, v.nome)) &&
       vd.data && vd.data >= dateFrom && vd.data <= dateTo
     );
     const volumeVendido = vendasV.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);

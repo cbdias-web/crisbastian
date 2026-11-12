@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, BarChart3, TrendingUp, Download, ChevronDown, Check, FileText, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { mesmoNome } from '@/lib/nomes';
 
 const fmt = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
@@ -68,7 +69,7 @@ export default function RelatorioConsolidadoModal({ vendedores, vendas, metas, o
       .filter(v => selectedIds.includes(v.id))
       .map(v => {
         const vendasV = vendas.filter(vd =>
-          (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+          (vd.vendedor_id ? vd.vendedor_id === v.id : mesmoNome(vd.assessor_comercial, v.nome)) &&
           vd.data && vd.data >= dataInicio && vd.data <= dataFim
         );
 

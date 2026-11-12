@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { normNome } from '@/lib/nomes';
 
 // O celular/operadora do gerente vive no cadastro de Vendedor — o MESMO registro
 // lido em Usuários, Vendedores, Fila de Contatos e na discagem. Salvar sempre aqui
@@ -10,14 +11,12 @@ import { base44 } from '@/api/base44Client';
 export async function carregarVendedoresDoUsuario(user) {
   if (!user) return [];
   const email = (user.email || '').toLowerCase();
-  const nomes = [user.full_name, user.nome_tratamento]
-    .filter(Boolean)
-    .map(n => n.trim().toLowerCase());
+  const nomes = [user.full_name, user.nome_tratamento].filter(Boolean).map(normNome);
   const todos = await base44.entities.Vendedor.list();
   return todos.filter(v => {
     const emails = [v.email, ...(v.emails_alternativos || [])].filter(Boolean).map(e => e.toLowerCase());
     if (email && emails.includes(email)) return true;
-    const nome = (v.nome || '').trim().toLowerCase();
+    const nome = normNome(v.nome);
     return !!nome && nomes.includes(nome);
   });
 }

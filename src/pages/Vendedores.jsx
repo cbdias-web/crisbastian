@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import VendedorPerformancePopup from "@/components/vendedores/VendedorPerformancePopup";
 import { base44 } from "@/api/base44Client";
+import { mesmoNome } from "@/lib/nomes";
 import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, DollarSign, Mail, Send, CheckCircle2, BarChart3, Upload, Plane } from "lucide-react";
 import FeriasModal from "@/components/vendedores/FeriasModal";
 import { estaDeFerias, formatarPeriodoFerias } from "@/lib/ferias";
@@ -337,7 +338,7 @@ export default function Vendedores() {
 
   const visibleVendedores = vendedoresFiltrados.map(v => {
     const vendasV = vendas.filter(vd =>
-      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+      (vd.vendedor_id ? vd.vendedor_id === v.id : mesmoNome(vd.assessor_comercial, v.nome)) &&
       vd.data && vd.data >= dateFrom && vd.data <= dateTo
     );
     const comissoesV = comissoes.filter(c =>
@@ -433,7 +434,7 @@ export default function Vendedores() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {comDados.map(v => {
                     const vendasDoMes = vendas.filter(vd =>
-                      (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+                      (vd.vendedor_id ? vd.vendedor_id === v.id : mesmoNome(vd.assessor_comercial, v.nome)) &&
                       vd.data && vd.data >= dateFrom && vd.data <= dateTo
                     );
                     const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
@@ -883,7 +884,7 @@ export default function Vendedores() {
                   <div className="space-y-2">
                     {comDados.filter(v => v.email).map(v => {
                       const vendasDoMes = vendas.filter(vd =>
-                        (vd.vendedor_id ? vd.vendedor_id === v.id : vd.assessor_comercial === v.nome) &&
+                        (vd.vendedor_id ? vd.vendedor_id === v.id : mesmoNome(vd.assessor_comercial, v.nome)) &&
                         vd.data && vd.data >= dateFrom && vd.data <= dateTo
                       );
                       const volume = vendasDoMes.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);

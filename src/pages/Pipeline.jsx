@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, DollarSign, CalendarClock, LayoutList, Settings, ScrollText, CalendarPlus, AlertTriangle } from 'lucide-react';
 import { gerarRelatorioVencidosPDF } from '@/lib/relatorioPipelineVencidos';
 import { filtrarGerentesConsulta, ehGerenteConsulta } from '@/lib/gerentesConsulta';
+import { mesmoNome } from '@/lib/nomes';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
@@ -223,8 +224,8 @@ export default function Pipeline() {
     if (p.status !== 'pendente') return false;
     if (!isAdmin) return true; // não-admin já vê só as suas pela query
     if (filtroVendedor !== 'Todos') {
-      const vend = vendedores.find(v => v.nome === filtroVendedor);
-      const vendOk = vend ? p.vendedor_id === vend.id : p.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase();
+      const vend = vendedores.find(v => mesmoNome(v.nome, filtroVendedor));
+      const vendOk = vend ? p.vendedor_id === vend.id : mesmoNome(p.vendedor_nome, filtroVendedor);
       if (!vendOk) return false;
     }
     return true;
@@ -253,8 +254,8 @@ export default function Pipeline() {
   const negociosFiltrados = negocios.filter(n => {
     const tempOk = filtroTemp === 'Todos' || n.temperatura === filtroTemp;
     const vendOk = filtroVendedor === 'Todos' ||
-      n.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase() ||
-      n.vendedor_id === vendedores.find(v => v.nome === filtroVendedor)?.id;
+      mesmoNome(n.vendedor_nome, filtroVendedor) ||
+      n.vendedor_id === vendedores.find(v => mesmoNome(v.nome, filtroVendedor))?.id;
     const prodOk = filtroProduto === 'Todos' || n.produto === filtroProduto;
     const dataOk = (!filtroDataInicio || (n.data_prevista && n.data_prevista >= filtroDataInicio)) &&
                    (!filtroDataFim || (n.data_prevista && n.data_prevista <= filtroDataFim));
@@ -526,7 +527,7 @@ export default function Pipeline() {
     .filter(nome => ehGerenteConsulta({ nome }));
 
   // KPIs do gerente selecionado
-  const vendedorSelecionado = vendedores.find(v => v.nome === filtroVendedor);
+  const vendedorSelecionado = vendedores.find(v => mesmoNome(v.nome, filtroVendedor));
   const negociosGerente = filtroVendedor !== 'Todos'
     ? negocios.filter(n =>
         n.vendedor_nome?.toLowerCase() === filtroVendedor.toLowerCase() ||

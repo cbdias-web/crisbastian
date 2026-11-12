@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { todayBrasilia } from '@/lib/dateUtils';
+import { normNome } from '@/lib/nomes';
 
 export const DIAS_DESATUALIZADO = 15;
 
@@ -36,10 +37,10 @@ export function diasEmAtraso(dataPrevista) {
 function gerenteInativo(n, vendedores) {
   if (!vendedores || vendedores.length === 0) return false;
   const inativos = vendedores.filter(v => v.ativo === false);
-  const nome = (n.vendedor_nome || '').trim().toLowerCase();
+  const nome = normNome(n.vendedor_nome);
   return inativos.some(v =>
     (v.id && n.vendedor_id && v.id === n.vendedor_id) ||
-    (nome && (v.nome || '').trim().toLowerCase() === nome)
+    (nome && normNome(v.nome) === nome)
   );
 }
 

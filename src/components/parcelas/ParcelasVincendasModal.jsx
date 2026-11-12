@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { mesmoNome } from '@/lib/nomes';
 import { X, Pencil, Trash2, Save, Check, DollarSign, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -35,12 +36,12 @@ export default function ParcelasVincendasModal({ onClose, user }) {
     if (!isAdmin) {
       const vendedorDoUsuario = p.vendedor_id === user?.id ||
         p.created_by === user?.email ||
-        p.vendedor_nome?.toLowerCase() === (user?.nome_tratamento || user?.full_name || '').toLowerCase();
+        mesmoNome(p.vendedor_nome, user?.nome_tratamento || user?.full_name);
       if (!vendedorDoUsuario) return false;
     }
 
     const statusOk = filtroStatus === 'todos' || p.status === filtroStatus;
-    const vendedorOk = !isAdmin || filtroVendedor === 'Todos' || p.vendedor_nome === filtroVendedor;
+    const vendedorOk = !isAdmin || filtroVendedor === 'Todos' || mesmoNome(p.vendedor_nome, filtroVendedor);
     return statusOk && vendedorOk;
   }).sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || ''));
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { mesmoNome } from '@/lib/nomes';
 
 const fmtFull = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const fmtK = (v) => v >= 1000000 ? `R$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : fmtFull(v);
@@ -17,7 +18,7 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
       const ini = `${mes}-01`;
       const fim = `${mes}-${String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0')}`;
       const vs = vendas.filter(vd =>
-        (vd.vendedor_id ? vd.vendedor_id === vendedor.id : vd.assessor_comercial === vendedor.nome) &&
+        (vd.vendedor_id ? vd.vendedor_id === vendedor.id : mesmoNome(vd.assessor_comercial, vendedor.nome)) &&
         vd.data && vd.data >= ini && vd.data <= fim
       );
       return {
@@ -29,7 +30,7 @@ export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesF
 
     // Período filtrado
     const vendasPeriodo = vendas.filter(vd =>
-      (vd.vendedor_id ? vd.vendedor_id === vendedor.id : vd.assessor_comercial === vendedor.nome) &&
+      (vd.vendedor_id ? vd.vendedor_id === vendedor.id : mesmoNome(vd.assessor_comercial, vendedor.nome)) &&
       vd.data && vd.data >= dateFrom && vd.data <= dateTo
     );
     const volume = vendasPeriodo.reduce((s, vd) => s + (parseFloat(vd.valor) || 0), 0);
