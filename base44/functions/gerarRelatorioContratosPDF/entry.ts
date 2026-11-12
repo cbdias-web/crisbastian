@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     };
 
-    const TIPOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCARIO', 'OFFSHORE', 'GARANTIAS', 'HORA TECNICA'];
+    const TIPOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCARIO', 'OFFSHORE', 'GARANTIAS', 'HORA TECNICA', 'RATING', 'DIAGNOSTICO', 'SCORE', 'MONITORE'];
     const STATUS_LIST = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
     const STATUS_LABELS = {
       rascunho: 'Rascunho', gerado: 'PDF Gerado', assinado: 'Assinado',

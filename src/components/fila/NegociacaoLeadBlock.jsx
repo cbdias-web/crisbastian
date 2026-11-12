@@ -11,7 +11,7 @@ const AURORA = {
 
 const PRODUTOS = [
   'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO',
-  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING',
+  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'MONITORE',
 ];
 
 // Bloco de "Negociação em andamento" — onde o gerente informa o produto e o

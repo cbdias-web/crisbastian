@@ -18,7 +18,7 @@ const AURORA = {
 
 const PRODUTOS = [
   'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO',
-  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING',
+  'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'MONITORE',
 ];
 
 const PRODUTO_DESC = {
@@ -31,6 +31,7 @@ const PRODUTO_DESC = {
   'GARANTIAS': 'Contrato de garantias e seguros',
   'HORA TÉCNICA': 'Prestação de serviços por hora técnica',
   'RATING': 'Serviços de rating e análise de crédito',
+  'MONITORE': 'Conta digital com monitoramento de riscos corporativos',
 };
 
 export default function PadrinhosModal({ onClose }) {

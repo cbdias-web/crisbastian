@@ -368,8 +368,8 @@ export default function Clientes() {
   const exportarBaseProdutos = async () => {
     setExportandoBase(true);
     try {
-      const tiposContrato = ["CONTA GLOBAL", "CONTA INTERNACIONAL", "DOLARIZE", "CANAL BANCÁRIO", "RATING"];
-      const produtosVenda = ["DOLARIZE", "CONTA GLOBAL", "SCORE", "RATING", "CONTA INTERNACIONAL", "CANAL BANCÁRIO", "CANAL BANCARIO"];
+      const tiposContrato = ["CONTA GLOBAL", "CONTA INTERNACIONAL", "DOLARIZE", "CANAL BANCÁRIO", "RATING", "MONITORE"];
+      const produtosVenda = ["DOLARIZE", "CONTA GLOBAL", "SCORE", "RATING", "CONTA INTERNACIONAL", "CANAL BANCÁRIO", "CANAL BANCARIO", "MONITORE"];
 
       // 1. Contratos — têm todos os campos (nome, cpf_cnpj, responsavel_legal, telefone, email)
       const todosContratos = await base44.entities.Contrato.list("-created_date", 5000);

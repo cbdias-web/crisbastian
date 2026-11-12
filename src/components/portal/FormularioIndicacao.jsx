@@ -19,7 +19,7 @@ const AURORA = {
 };
 
 const PRODUTOS = [
-  'CONTA INTERNACIONAL', 'DOLARIZE', 'OFFSHORE', 'RATING', 'SCORE',
+  'CONTA INTERNACIONAL', 'DOLARIZE', 'OFFSHORE', 'RATING', 'SCORE', 'MONITORE',
 ];
 
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };

@@ -36,7 +36,7 @@ const CADENCIAS_PADRAO = [
   { nome: 'No-show', padrao_para: 'no_show', descricao: 'Remarcar reunião.', passos: [
     { canal: 'whatsapp', dias_uteis: 0, m: 'm8', titulo: 'WhatsApp para remarcar' }, { canal: 'ligacao', dias_uteis: 1, titulo: 'Ligar para remarcar' }] },
 ];
-const CHAVE_ROTEIRO = { DOLARIZE: 'DOLARIZE', 'CONTA INTERNACIONAL': 'CONTA INTERNACIONAL', OFFSHORE: 'OFFSHORE', RATING: 'RATING', 'CANAL BANCÁRIO': 'CANAL BANCÁRIO', 'HISTÓRIA DO GRUPO VILLELA': 'HISTÓRIA DO GRUPO VILLELA', REATIVACAO: 'REATIVACAO' };
+const CHAVE_ROTEIRO = { DOLARIZE: 'DOLARIZE', 'CONTA INTERNACIONAL': 'CONTA INTERNACIONAL', OFFSHORE: 'OFFSHORE', RATING: 'RATING', MONITORE: 'MONITORE', 'CANAL BANCÁRIO': 'CANAL BANCÁRIO', 'HISTÓRIA DO GRUPO VILLELA': 'HISTÓRIA DO GRUPO VILLELA', REATIVACAO: 'REATIVACAO' };
 
 function Campo({ l, children }) { return <div><label className="block text-[10px] mb-0.5" style={{ color: A.muted }}>{l}</label>{children}</div>; }
 

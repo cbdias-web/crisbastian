@@ -416,7 +416,7 @@ export default function Pipeline() {
   const isProdutoContrato = (produto) => {
     if (!produto) return false;
     const p = produto.toUpperCase().trim();
-    return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE') || p.includes('ROF') || p.includes('CANAL BANC') || p.includes('OFFSHORE') || p.includes('GARANTIA');
+    return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE') || p.includes('ROF') || p.includes('CANAL BANC') || p.includes('OFFSHORE') || p.includes('GARANTIA') || p.includes('MONITORE');
   };
 
   // Converter prospecção: produtos de contrato → aba Contratos; demais → aba Vendas
@@ -451,6 +451,7 @@ export default function Pipeline() {
           : prodUp.includes('CANAL BANC') ? 'CANAL BANCÁRIO'
           : prodUp.includes('OFFSHORE') ? 'OFFSHORE'
           : prodUp.includes('GARANTIA') ? 'GARANTIAS'
+          : prodUp.includes('MONITORE') ? 'MONITORE'
           : n.produto;
         // Criar contrato em rascunho com dados do pipeline
         await base44.entities.Contrato.create({

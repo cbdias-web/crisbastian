@@ -38,7 +38,8 @@
         "GARANTIAS",
         "HORA T\u00c9CNICA",
         "RATING",
-        "SCORE"
+        "SCORE",
+        "MONITORE"
       ],
       "description": "Produto de interesse"
     },

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 const PRODUTOS_SUGESTAO = [
   'DOLARIZE', 'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'CANAL BANCÁRIO',
-  'OFFSHORE', 'ROF', 'GARANTIAS', 'RATING', 'HORA TÉCNICA',
+  'OFFSHORE', 'ROF', 'GARANTIAS', 'RATING', 'HORA TÉCNICA', 'MONITORE',
 ];
 const ORIGENS_SUGESTAO = [
   'campanha_externa', 'base_clientes', 'organica', 'indicacao', 'webhook_make', 'manual',

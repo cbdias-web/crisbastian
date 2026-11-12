@@ -18,7 +18,7 @@ const AURORA = {
 
 const PRODUTOS = [
   'CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF',
-  'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING',
+  'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'MONITORE',
 ];
 
 const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };

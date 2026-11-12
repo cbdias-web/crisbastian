@@ -17,7 +17,7 @@ const AURORA = {
   sectionLabel: 'rgba(0,212,170,0.9)',
 };
 
-const PRODUTOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING'];
+const PRODUTOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'RATING', 'MONITORE'];
 const STATUS = [
   { v: 'novo', l: 'Novo' },
   { v: 'em_atendimento', l: 'Em Atendimento' },

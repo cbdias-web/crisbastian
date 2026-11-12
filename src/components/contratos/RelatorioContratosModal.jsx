@@ -12,7 +12,7 @@ const AURORA = {
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)', textDim: 'rgba(230,237,243,0.35)',
 };
 
-const TIPOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA'];
+const TIPOS = ['CONTA GLOBAL', 'CONTA INTERNACIONAL', 'DOLARIZE', 'ROF', 'CANAL BANCÁRIO', 'OFFSHORE', 'GARANTIAS', 'HORA TÉCNICA', 'MONITORE'];
 const STATUS_OPTS = [
   { key: 'rascunho', label: 'Rascunho', color: '#6b7280' },
   { key: 'gerado', label: 'PDF Gerado', color: '#3b82f6' },

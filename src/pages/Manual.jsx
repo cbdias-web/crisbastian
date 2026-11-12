@@ -572,7 +572,7 @@ const sections = [
     color: 'from-indigo-600 to-indigo-700', bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-100',
     content: [
       { subtitle: 'Temperaturas', items: ['🧊 **Frio:** prospecção inicial.', '🌤️ **Morno:** interesse demonstrado.', '🔥 **Quente:** alta probabilidade de fechamento.', '✅ **Fechado:** negócio concluído.', '❌ **Perdido:** encerrado sem resultado.'] },
-      { subtitle: 'Converter prospecção', items: ['**Produtos sem contrato:** ícone de carrinho (🛒) → cria rascunho de venda.', '**CONTA GLOBAL / CONTA INTERNACIONAL / DOLARIZE AQUI:** ícone de documento (📜) → cria contrato em rascunho e fecha o negócio no Pipeline.'] },
+      { subtitle: 'Converter prospecção', items: ['**Produtos sem contrato:** ícone de carrinho (🛒) → cria rascunho de venda.', '**CONTA GLOBAL / CONTA INTERNACIONAL / DOLARIZE AQUI / MONITORE:** ícone de documento (📜) → cria contrato em rascunho e fecha o negócio no Pipeline.'] },
       { subtitle: '🎥 Agendar reunião com Meet direto pelo Pipeline', items: [
         'Em cada card do Kanban, passe o mouse para exibir os ícones de ação.',
         'Clique no ícone de calendário (📅 **CalendarPlus**) para abrir o modal "Agendar Reunião".',
@@ -590,7 +590,13 @@ const sections = [
     id: 'contratos', icon: ScrollText, title: 'Contratos',
     color: 'from-amber-700 to-amber-800', bg: 'bg-amber-50', text: 'text-amber-900', border: 'border-amber-200',
     content: [
-      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore, Garantias, Hora Técnica, Rating, Diagnóstico, Score.**'] },
+      { subtitle: 'Tipos disponíveis', items: ['**Conta Global, Conta Internacional, Dolarize Aqui, ROF, Canal Bancário, Offshore, Garantias, Hora Técnica, Rating, Diagnóstico, Score, Monitore.**'] },
+      { subtitle: '🆕 Monitore', items: [
+        'O **MONITORE** é a conta digital com monitoramento intensivo de riscos corporativos.',
+        'O modelo cobra **mensalidade de R$ 299,90** e **RATE de 0,89%**, ambos já impressos no PDF do contrato.',
+        'A adesão é paga de uma vez (sem parcelamento) e o contrato preenche automaticamente os dados cadastrais do cliente, a data do contrato e a data da 1ª mensalidade.',
+        'Depois de assinado e pago, segue o fluxo normal: envio para Vendas → Implantação.',
+      ]},
       { subtitle: '🆕 Novos modelos de crédito (RATING, DIAGNÓSTICO e SCORE)', items: [
         'Três novos modelos de contrato preenchem automaticamente o **PDF modelo** (formato AcroForm) com os dados digitados.',
         '**RATING:** valor da adesão parcelado (nº de parcelas + valor da parcela calculado automaticamente), dia de vencimento das parcelas, valor **somente diagnóstico** com seu próprio dia de vencimento e o **Serviço Contratado** (Organização Financeira, Rating ou Rating + Organização Financeira) marcado como checkbox no PDF.',
@@ -610,7 +616,7 @@ const sections = [
       ]},
       { subtitle: '🔄 Gestão manual de status', text: 'Administradores podem alterar manualmente o status do contrato em qualquer etapa do fluxo, permitindo correções e ajustes quando necessário.' },
       { subtitle: '💵 Valor da mensalidade por produto', items: [
-        'O campo **Mensalidade** só aparece (e só entra no PDF) nos produtos que a cobram: **GARANTIAS, RATING e SCORE**.',
+        'O campo **Mensalidade** só aparece (e só entra no PDF) nos produtos que a cobram: **GARANTIAS, RATING, SCORE e MONITORE**.',
         'Em **CONTA INTERNACIONAL, CONTA GLOBAL, DOLARIZE, ROF, CANAL BANCÁRIO, OFFSHORE, HORA TÉCNICA e DIAGNÓSTICO** o valor da mensalidade fica **vazio por padrão** — sem número pré-preenchido no documento.',
         'Se o contrato já tiver sido salvo com valor antigo, basta abrir o contrato, limpar o campo e salvar novamente para o PDF sair sem a linha de mensalidade.',
       ]},

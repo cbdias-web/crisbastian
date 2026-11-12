@@ -82,6 +82,20 @@ Diferenciais:
 Ganchos: acesso a crédito mais barato, credibilidade com fornecedores, negociação bancária.`,
     objecoes: ['"Quanto custa?"', '"Serve pra PJ pequena?"', '"Qual o prazo?"', '"Como é usado?"'],
   },
+  MONITORE: {
+    nome: 'Monitore',
+    pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.
+
+Você foi indicado para o Monitore — conta digital com monitoramento intensivo dos riscos do seu negócio.
+
+Diferenciais:
+• Conta digital para a rotina financeira da empresa
+• Monitoramento contínuo de riscos corporativos
+• Acompanhamento próximo da nossa equipe
+
+Ganchos: previsibilidade, controle de riscos, gestão financeira do dia a dia.`,
+    objecoes: ['"Quanto custa por mês?"', '"Serve pra PJ pequena?"', '"O que é o RATE?"', '"Posso cancelar?"'],
+  },
   'CANAL BANCÁRIO': {
     nome: 'Canal Bancário',
     pitch: `Abertura: "Oi [NOME], aqui é [GERENTE] da Villela Exchange.

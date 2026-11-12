@@ -90,7 +90,7 @@ Alem de responder, voce DEVE identificar se ha uma acao concreta que pode ser ex
 Para "criar_contrato", preencha o maximo de campos possivel com os dados extraidos dos documentos anexados ou da descricao do chamado.
 
 SCHEMA DE CONTRATO (campos disponiveis para criar_contrato.dados):
-- tipo (OBRIGATORIO): um de ["CONTA GLOBAL", "CONTA INTERNACIONAL", "DOLARIZE", "ROF", "CANAL BANCARIO", "OFFSHORE", "GARANTIAS", "HORA TECNICA"]
+- tipo (OBRIGATORIO): um de ["CONTA GLOBAL", "CONTA INTERNACIONAL", "DOLARIZE", "ROF", "CANAL BANCARIO", "OFFSHORE", "GARANTIAS", "HORA TECNICA", "RATING", "DIAGNOSTICO", "SCORE", "MONITORE"]
 - nome (OBRIGATORIO): Nome completo ou Razao Social do cliente
 - cpf_cnpj (OBRIGATORIO): CPF ou CNPJ
 - responsavel_legal: Nome do responsavel legal (se PJ)
