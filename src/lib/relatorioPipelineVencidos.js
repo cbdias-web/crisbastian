@@ -66,6 +66,7 @@ export function gerarRelatorioVencidosPDF(negocios, vendedores = []) {
     return `
       <tr>
         <td>${n.cliente_nome || '—'}</td>
+        <td>${n.produto || '—'}</td>
         <td>${n.vendedor_nome || '—'}</td>
         <td class="num">${fmtVal(n.valor_estimado)}</td>
         <td>${fmtDate(n.data_prevista)}</td>
@@ -84,7 +85,7 @@ export function gerarRelatorioVencidosPDF(negocios, vendedores = []) {
 </div>
 ${itens.length === 0
     ? '<div class="vazio">Nenhuma operação em pipeline com fechamento vencido ou status desatualizado.</div>'
-    : `<table><thead><tr><th>Nome</th><th>Gerente</th><th class="num">Valor</th><th>Fechamento previsto</th><th class="num">Vencido há</th><th>Status</th></tr></thead><tbody>${linhas}</tbody></table>`}
+    : `<table><thead><tr><th>Nome</th><th>Produto</th><th>Gerente</th><th class="num">Valor</th><th>Fechamento previsto</th><th class="num">Vencido há</th><th>Status</th></tr></thead><tbody>${linhas}</tbody></table>`}
 <div class="footer">Critério: operações em pipeline (não fechadas nem perdidas) com data de fechamento vencida, sem data de fechamento definida, ou status sem atualização há mais de ${DIAS_DESATUALIZADO} dias.<br>Villela Exchange — Pipeline Comercial</div>
 </body></html>`;
 
