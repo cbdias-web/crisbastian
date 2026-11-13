@@ -46,21 +46,33 @@ export default function CadastroCarteiraPanel({ clienteId, fila }) {
           email: c.email || '', cidade: c.cidade || '', estado: c.estado || '',
         });
         // Monta detalhe para JornadaCliente
-        const [leads, contratos, vendas] = await Promise.all([
+        // IMPORTANTE: só consulta com a chave preenchida — filtro com valor vazio é
+        // ignorado pelo backend e devolve TODOS os registros (traía venda/implantação
+        // de outro cliente na jornada).
+        const [leads, contratos] = await Promise.all([
           base44.entities.LeadIndicacao.filter({ cliente_id: clienteId }).catch(() => []),
           base44.entities.Contrato.filter({ cliente_id: clienteId }).catch(() => []),
-          base44.entities.Venda.filter({ cpf_cnpj: c.cpf_cnpj }).catch(() => []),
         ]);
+        const contrato = contratos[0] || null;
+        let vendas = [];
+        if (contrato?.id) {
+          vendas = await base44.entities.Venda.filter({ contrato_id: contrato.id }).catch(() => []);
+        }
+        if (vendas.length === 0 && c.cpf_cnpj) {
+          vendas = await base44.entities.Venda.filter({ cpf_cnpj: c.cpf_cnpj }, '-data').catch(() => []);
+        }
         const venda = vendas[0] || null;
         let parcelas = [];
         if (venda?.id) {
           parcelas = await base44.entities.ParcelaVenda.filter({ venda_id: venda.id }).catch(() => []);
         }
-        const impl = await base44.entities.Implantacao.filter({ contrato_id: contratos[0]?.id || '' }).catch(() => []);
+        let impl = [];
+        if (contrato?.id) impl = await base44.entities.Implantacao.filter({ contrato_id: contrato.id }).catch(() => []);
+        if (impl.length === 0 && venda?.id) impl = await base44.entities.Implantacao.filter({ venda_id: venda.id }).catch(() => []);
         if (active) {
           setDetalhe({
             lead: leads[0] || { produto: fila?.produto || '—', created_date: c.created_date, cliente_id: c.id, convertido_em: c.created_date },
-            contrato: contratos[0] || null,
+            contrato,
             venda,
             parcelas,
             implantacao: impl[0] || null,
