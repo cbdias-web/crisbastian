@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { PDFDocument, PDFName, PDFString, PDFArray, PDFDict } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, PDFName, PDFString, PDFArray, PDFDict, PDFNumber, PDFRawStream, PDFRef } from 'npm:pdf-lib@1.17.1';
 
 const PDF_URLS = {
   'CONTA GLOBAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/440bfe20e_Contrato-ContaGlobal.pdf',
@@ -132,6 +132,68 @@ const MESES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho',
 function fmtVal(v) {
   // Sempre retorna valor formatado, mesmo zero
   return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Substituição de textos impressos no modelo (ex.: valores fixos do MONITORE) ──
+function bytesParaTexto(b: Uint8Array): string {
+  let s = '';
+  for (let i = 0; i < b.length; i += 8192) s += String.fromCharCode(...b.subarray(i, i + 8192));
+  return s;
+}
+
+function textoParaBytes(s: string): Uint8Array {
+  const b = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i) & 0xff;
+  return b;
+}
+
+async function inflarBytes(bytes: Uint8Array): Promise<Uint8Array> {
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function desinflarBytes(bytes: Uint8Array): Promise<Uint8Array> {
+  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate'));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/**
+ * Troca trechos de texto no conteúdo das páginas do PDF (mantém fonte e posição originais).
+ * Usado para refletir valores negociados que vêm impressos no modelo do contrato.
+ */
+async function substituirTextosNoPdf(pdfDoc: any, substituicoes: Array<[string, string]>): Promise<number> {
+  if (!substituicoes.length) return 0;
+  let alterados = 0;
+  for (const page of pdfDoc.getPages()) {
+    const conteudo = page.node.get(PDFName.of('Contents'));
+    const refs: any[] = [];
+    if (conteudo instanceof PDFRef) refs.push(conteudo);
+    else {
+      const arr = pdfDoc.context.lookup(conteudo);
+      if (arr instanceof PDFArray) for (let i = 0; i < arr.size(); i++) refs.push(arr.get(i));
+    }
+    for (const ref of refs) {
+      if (!(ref instanceof PDFRef)) continue;
+      const stream = pdfDoc.context.lookup(ref);
+      if (!(stream instanceof PDFRawStream)) continue;
+      let decodificado: Uint8Array;
+      try {
+        const bruto = (stream as any).getContents ? (stream as any).getContents() : (stream as any).asUint8Array();
+        decodificado = await inflarBytes(bruto);
+      } catch (_) {
+        continue; // stream não comprimido / formato inesperado
+      }
+      const original = bytesParaTexto(decodificado);
+      let novo = original;
+      for (const [de, para] of substituicoes) novo = novo.split(de).join(para);
+      if (novo === original) continue;
+      const comprimido = await desinflarBytes(textoParaBytes(novo));
+      stream.dict.set(PDFName.of('Length'), PDFNumber.of(comprimido.length));
+      pdfDoc.context.assign(ref, PDFRawStream.of(stream.dict, comprimido));
+      alterados++;
+    }
+  }
+  return alterados;
 }
 
 function fmtDate(d) {
@@ -685,6 +747,22 @@ Deno.serve(async (req) => {
         borderWidth: 0,
         opacity: 1,
       });
+    }
+
+    // MONITORE: mensalidade (R$ 299,90) e RATE (0,89%) vêm impressos no modelo —
+    // substituir pelos valores negociados no contrato
+    if (contrato.tipo === 'MONITORE') {
+      const substituicoes: Array<[string, string]> = [];
+      const mensNum = Number(contrato.mensalidade);
+      if (Number.isFinite(mensNum) && mensNum > 0) {
+        substituicoes.push(['R$ 299,90', `R$ ${fmtVal(mensNum)}`]);
+      }
+      const rateNum = typeof contrato.rate === 'number' ? contrato.rate : Number(String(contrato.rate ?? '').replace(',', '.'));
+      if (Number.isFinite(rateNum) && rateNum > 0) {
+        substituicoes.push(['0,89%', `${rateNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`]);
+      }
+      const alterados = await substituirTextosNoPdf(pdfDoc, substituicoes);
+      console.log(`[MONITORE] Trechos de valores atualizados no modelo: ${alterados} | mensalidade=${mensNum} rate=${rateNum}`);
     }
 
     const pdfPreenchido = await pdfDoc.save();
