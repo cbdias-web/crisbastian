@@ -23,7 +23,7 @@ const EMPTY = {
   forma_pagamento: '', data_primeiro_pagamento: '', dia_vencimento: '',
   banco: '', agencia: '', conta: '', moeda: 'USD', cotacao: '', valor_em_moeda: '',
   prazo_meses: '', observacoes: '', data_contrato: todayBrasilia(),
-  mensalidade: '', valor_divida: '', percentual_montante: '', administracao_debitos: [],
+  mensalidade: '', rate: '', valor_divida: '', percentual_montante: '', administracao_debitos: [],
   valor_diagnostico: '', dia_vencimento_diagnostico: '', dia_vencimento_mensalidade: '',
   data_primeira_parcela: '',
 };
@@ -323,6 +323,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         prazo_meses: parseInt(data.prazo_meses) || 0,
         dia_vencimento: parseInt(data.dia_vencimento) || 0,
         mensalidade: toNum(data.mensalidade),
+        rate: toNum(data.rate),
         valor_diagnostico: toNum(data.valor_diagnostico),
         dia_vencimento_diagnostico: parseInt(data.dia_vencimento_diagnostico) || undefined,
         dia_vencimento_mensalidade: parseInt(data.dia_vencimento_mensalidade) || undefined,

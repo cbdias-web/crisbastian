@@ -769,6 +769,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
               <Item label="Valor de Adesão" value={fmtVal(contrato.valor_adesao)} />
               <Item label="Parcela" value={fmtVal(contrato.valor_parcela)} />
               <Item label="Nº Parcelas" value={contrato.num_parcelas ? `${contrato.num_parcelas}x` : null} />
+              <Item label="Mensalidade" value={contrato.mensalidade ? fmtVal(contrato.mensalidade) : null} />
+              <Item label="RATE" value={contrato.rate ? `${Number(contrato.rate).toFixed(2).replace('.', ',')}%` : null} />
               <Item label="Forma de Pagamento" value={contrato.forma_pagamento} />
               <Item label="1º Pagamento" value={fmtDate(contrato.data_primeiro_pagamento)} />
               <Item label="Dia Vencimento" value={contrato.dia_vencimento ? `Dia ${contrato.dia_vencimento}` : null} />
