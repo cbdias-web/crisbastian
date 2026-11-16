@@ -11,6 +11,7 @@ import ContratoForm from './ContratoForm';
 import FluxoContrato from './FluxoContrato';
 import BoletosParcelas from './BoletosParcelas';
 import IndicadoresEditor from './IndicadoresEditor';
+import ValoresContratoEditor from './ValoresContratoEditor';
 import ZapsignEnviarModal from './ZapsignEnviarModal';
 import { useEnvioVendasDialog } from './EnviarVendasDialog';
 import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
@@ -769,8 +770,6 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
               <Item label="Valor de Adesão" value={fmtVal(contrato.valor_adesao)} />
               <Item label="Parcela" value={fmtVal(contrato.valor_parcela)} />
               <Item label="Nº Parcelas" value={contrato.num_parcelas ? `${contrato.num_parcelas}x` : null} />
-              <Item label="Mensalidade" value={contrato.mensalidade ? fmtVal(contrato.mensalidade) : null} />
-              <Item label="RATE" value={contrato.rate ? `${Number(contrato.rate).toFixed(2).replace('.', ',')}%` : null} />
               <Item label="Forma de Pagamento" value={contrato.forma_pagamento} />
               <Item label="1º Pagamento" value={fmtDate(contrato.data_primeiro_pagamento)} />
               <Item label="Dia Vencimento" value={contrato.dia_vencimento ? `Dia ${contrato.dia_vencimento}` : null} />
@@ -779,6 +778,10 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
               <Item label="Cotação" value={contrato.cotacao ? `R$ ${Number(contrato.cotacao).toFixed(4)}` : null} />
               <Item label="Valor em Moeda Estrangeira" value={contrato.valor_em_moeda ? `${contrato.moeda || 'USD'} ${Number(contrato.valor_em_moeda).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : null} />
             </Grid>
+
+            {/* Mensalidade e RATE — edição liberada para todos os usuários */}
+            <ValoresContratoEditor contrato={contrato} onUpdate={handleUpdate} />
+
             {contrato.banco && (
               <Grid>
                 <Item label="Banco" value={contrato.banco} />
