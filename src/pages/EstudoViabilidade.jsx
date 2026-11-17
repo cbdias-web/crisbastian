@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
+import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -307,7 +308,7 @@ export default function EstudoViabilidade() {
 }
 
 function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
-  const [form, setForm] = useState({ produto: produtoInicial || '', tipo_cliente: 'PF', cliente_nome: '', cliente_documento: '', cliente_email: '', cliente_telefone: '', observacoes_internas: '' });
+  const [form, setForm] = useState({ produto: produtoInicial || '', tipo_cliente: 'PF', cliente_id: '', cliente_nome: '', cliente_documento: '', cliente_email: '', cliente_telefone: '', observacoes_internas: '' });
   const [salvando, setSalvando] = useState(false);
   const [criado, setCriado] = useState(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -376,6 +377,15 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
                 ))}
               </div>
             </div>
+            <ClienteEstudoPicker onSelecionar={(c) => setForm(f => ({
+              ...f,
+              cliente_id: c.id || '',
+              cliente_nome: c.nome || '',
+              cliente_documento: c.cpf_cnpj || '',
+              cliente_email: c.email || '',
+              cliente_telefone: c.telefone || '',
+              tipo_cliente: c.tipo_pessoa === 'PF' ? 'PF' : (c.tipo_pessoa === 'PJ' ? 'PJ' : f.tipo_cliente),
+            }))} />
             <Campo label={form.tipo_cliente === 'PJ' ? 'Razão social *' : 'Nome do cliente *'} value={form.cliente_nome} onChange={v => set('cliente_nome', v)} />
             <div className="grid grid-cols-2 gap-3">
               <Campo label={form.tipo_cliente === 'PJ' ? 'CNPJ' : 'CPF'} value={form.cliente_documento} onChange={v => set('cliente_documento', v)} />
