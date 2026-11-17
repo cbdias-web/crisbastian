@@ -38,6 +38,8 @@ import ModoFocoMobile from './pages/ModoFocoMobile';
 import AgendarPublicaPage from './pages/AgendarPublicaPage';
 import ConfigProspeccao from './pages/ConfigProspeccao';
 import PainelProspeccao from './pages/PainelProspeccao';
+import EstudoViabilidade from './pages/EstudoViabilidade';
+import EstudoViabilidadePublicaPage from './pages/EstudoViabilidadePublicaPage';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -61,6 +63,14 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/conta-internacional-publica/:token" element={<ContaInternacionalPublicaPage />} />
+      </Routes>
+    );
+  }
+  // Formulário público do Estudo de Viabilidade (Holding / Offshore / Conta Internacional)
+  if (location.pathname.startsWith('/estudo-viabilidade/')) {
+    return (
+      <Routes>
+        <Route path="/estudo-viabilidade/:token" element={<EstudoViabilidadePublicaPage />} />
       </Routes>
     );
   }
@@ -158,6 +168,7 @@ const AuthenticatedAppInner = () => {
       <Route path="/m" element={<ModoFocoMobile />} />
       <Route path="/ConfigProspeccao" element={<LayoutWrapper currentPageName="ConfigProspeccao"><ConfigProspeccao /></LayoutWrapper>} />
       <Route path="/PainelProspeccao" element={<LayoutWrapper currentPageName="PainelProspeccao"><PainelProspeccao /></LayoutWrapper>} />
+      <Route path="/EstudoViabilidade" element={<LayoutWrapper currentPageName="EstudoViabilidade"><EstudoViabilidade /></LayoutWrapper>} />
       <Route
         path="/RelatorioComissoes"
         element={
