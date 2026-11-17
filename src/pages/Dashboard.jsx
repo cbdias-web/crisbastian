@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getImpersonatedVendedor } from "@/lib/impersonation";
 import { vendaContaProducao } from "@/lib/vendaProducao";
 import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
+import { normNome } from "@/lib/nomes";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -290,10 +291,29 @@ export default function Dashboard() {
       const usr = u.status === 'fulfilled' ? u.value : null;
       const parcelas = parc.status === 'fulfilled' ? parc.value : [];
       const vendsConsulta = filtrarGerentesConsulta(vends);
-      setVendas(vendas); setVendedores(vendsConsulta); setMetas(mts);
-      setComissoes(coms); setParcelasMes(parcelas); setUser(usr);
-      setSelectedVendedores(vendsConsulta.map(vv => vv.id));
-      const prods = [...new Set(vendas.map(vv => vv.produto).filter(Boolean))];
+
+      // Dashboard considera apenas GERENTES ATIVOS: cadastros inativos (e suas vendas) ficam fora dos números.
+      const vendsAtivos = vendsConsulta.filter(vv => vv.ativo !== false);
+      const idsAtivos = new Set(vendsAtivos.map(vv => vv.id).filter(Boolean));
+      const nomesAtivos = new Set(vendsAtivos.map(vv => normNome(vv.nome)).filter(Boolean));
+      const chavesInativas = new Set();
+      vendsConsulta.filter(vv => vv.ativo === false).forEach(vv => {
+        if (vv.id && !idsAtivos.has(vv.id)) chavesInativas.add(`id:${vv.id}`);
+        const n = normNome(vv.nome);
+        if (n && !nomesAtivos.has(n)) chavesInativas.add(`nome:${n}`);
+      });
+      const deGerenteInativo = (vendedorId, nome) => {
+        if (vendedorId && chavesInativas.has(`id:${vendedorId}`)) return true;
+        if (nome && chavesInativas.has(`nome:${normNome(nome)}`)) return true;
+        return false;
+      };
+      const vendasAtivas = vendas.filter(vd => !deGerenteInativo(vd.vendedor_id, vd.assessor_comercial));
+      const parcelasAtivas = parcelas.filter(p => !deGerenteInativo(p.vendedor_id, p.vendedor_nome));
+
+      setVendas(vendasAtivas); setVendedores(vendsAtivos); setMetas(mts);
+      setComissoes(coms); setParcelasMes(parcelasAtivas); setUser(usr);
+      setSelectedVendedores(vendsAtivos.map(vv => vv.id));
+      const prods = [...new Set(vendasAtivas.map(vv => vv.produto).filter(Boolean))];
       setSelectedProdutos(prods);
       if (usr) {
         const isAdm = usr.role === 'admin' || usr.permissao_admin === true;
