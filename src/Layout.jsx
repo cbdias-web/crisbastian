@@ -11,7 +11,7 @@ import {
   UserCheck, FileText, AlertTriangle, LogOut, BookOpen, Briefcase, Menu, X,
   Eye, EyeOff, Megaphone, Receipt, GraduationCap, TrendingUp, ScrollText,
   MessageSquare, Calculator, LifeBuoy, Activity, ChevronDown, Bell, Settings,
-  Search, Zap, Rocket, Newspaper, Bot, User, Handshake
+  Search, Zap, Rocket, Newspaper, Bot, User, Handshake, FlaskConical
 } from 'lucide-react';
 import AssistenteFloating from '@/components/chat/AssistenteFloating.jsx';
 import BarraNovaVersao from '@/components/BarraNovaVersao.jsx';
@@ -374,6 +374,7 @@ export default function Layout({ children, currentPageName }) {
         { name: 'Contratos', icon: ScrollText, page: 'Contratos', alwaysVisible: true },
         { name: 'Implantações', icon: Rocket, page: 'Implantacoes', alwaysVisible: true },
         { name: 'Pipeline', icon: TrendingUp, page: 'Pipeline', alwaysVisible: true },
+        { name: 'Estudo de Viabilidade', icon: FlaskConical, page: 'EstudoViabilidade', alwaysVisible: true },
         { name: 'Desempenho', icon: Activity, page: 'Desempenho', alwaysVisible: true },
       ].filter(i => isAdmin || i.alwaysVisible || menusUsuario.includes(i.page))
     },
