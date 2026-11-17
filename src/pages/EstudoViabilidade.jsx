@@ -3,10 +3,12 @@ import { base44 } from '@/api/base44Client';
 import {
   Landmark, Globe2, Wallet, Plus, Search, Link2, Copy, MessageCircle, Mail, ExternalLink, X, Loader2,
   FlaskConical, User, Building2, Paperclip, Send, RotateCcw, Ban, CheckCircle2, AlertTriangle, ClipboardList,
+  Pencil, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
 import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
+import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -206,7 +208,7 @@ export default function EstudoViabilidade() {
           </p>
         </div>
         <button onClick={() => setNovoAberto(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
-          <Plus className="w-4 h-4" /> {produtoAtual ? `Novo estudo — ${produtoAtual.nome}` : 'Novo estudo'}
+          <Plus className="w-4 h-4" /> {produtoAtual ? `Iniciar Estudo — ${produtoAtual.nome}` : 'Iniciar Estudo'}
         </button>
       </div>
 
@@ -301,7 +303,13 @@ export default function EstudoViabilidade() {
           onCriado={(e) => { setEstudos(l => [e, ...l]); }} />
       )}
       {detalhe && (
-        <DetalheEstudoModal estudo={detalhe} user={user} isAdmin={isAdmin} onClose={() => setDetalhe(null)} onAtualizar={atualizar} />
+        <DetalheEstudoModal estudo={detalhe} user={user} isAdmin={isAdmin} onClose={() => setDetalhe(null)} onAtualizar={atualizar}
+          onExcluido={async (e) => {
+            await base44.entities.EstudoViabilidade.delete(e.id);
+            setEstudos(l => l.filter(x => x.id !== e.id));
+            setDetalhe(null);
+            toast.success('Estudo excluído');
+          }} />
       )}
     </div>
   );
@@ -407,9 +415,17 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   );
 }
 
-function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar }) {
+function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido }) {
   const [obs, setObs] = useState(estudo.observacoes_internas || '');
   const [gerando, setGerando] = useState(false);
+  const [editando, setEditando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+
+  const excluir = async () => {
+    if (!confirm('Excluir definitivamente este estudo? Esta ação não pode ser desfeita.')) return;
+    setExcluindo(true);
+    try { await onExcluido(estudo); } finally { setExcluindo(false); }
+  };
   const p = PRODUTOS_ESTUDO[estudo.produto];
   const Icon = ICONE[estudo.produto] || Landmark;
   const r = estudo.respostas || {};
@@ -464,6 +480,16 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar }) {
 
         {/* Ações */}
         <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <button onClick={() => setEditando(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+              <Pencil className="w-3.5 h-3.5" /> Editar estudo
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={excluir} disabled={excluindo} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-60" style={{ ...inputStyle, color: AURORA.danger }}>
+              {excluindo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Excluir
+            </button>
+          )}
           {['recebido', 'em_preenchimento', 'enviado_cliente'].includes(estudo.status) && (
             <button onClick={enviarAnalise} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#a78bfa', color: '#0d1117' }}>
               <Send className="w-3.5 h-3.5" /> Enviar para Análise Técnica
@@ -545,6 +571,12 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar }) {
                 })}
               </ul>
             </div>
+            {estudo.parecer_tecnico && (
+              <div className="rounded-xl p-4 space-y-1" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
+                <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Parecer técnico</p>
+                <p className="text-[11px] whitespace-pre-wrap" style={{ color: AURORA.text }}>{estudo.parecer_tecnico}</p>
+              </div>
+            )}
             <div className="rounded-xl p-4 space-y-2" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
               <p className="text-xs font-bold" style={{ color: AURORA.accent }}>Observações internas</p>
               <textarea value={obs} onChange={e => setObs(e.target.value)} rows={4} style={{ ...inputStyle, background: AURORA.surface }} className="w-full px-2 py-1.5 text-xs rounded-md focus:outline-none resize-y" />
@@ -553,6 +585,11 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar }) {
           </div>
         </div>
       </div>
+
+      {editando && (
+        <EditarEstudoModal estudo={estudo} onClose={() => setEditando(false)}
+          onSalvar={async (dados) => { await onAtualizar(estudo, dados, 'Estudo atualizado'); setEditando(false); }} />
+      )}
     </Modal>
   );
 }
