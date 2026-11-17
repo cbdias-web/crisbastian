@@ -309,7 +309,6 @@ export default function EstudoViabilidadePublicaPage() {
   const produto = PRODUTOS_ESTUDO[estudo.produto] || PRODUTOS_ESTUDO.holding;
   const IconeProduto = ICONE_PRODUTO[estudo.produto] || Landmark;
   const isPJ = estudo.tipo_cliente === 'PJ';
-  const bloq = !!estudo.bloqueado;
   const docs = estudo.documentos || [];
 
   const PASSOS = [
