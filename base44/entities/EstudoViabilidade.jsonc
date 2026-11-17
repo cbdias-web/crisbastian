@@ -1,0 +1,180 @@
+{
+  "name": "EstudoViabilidade",
+  "type": "object",
+  "properties": {
+    "produto": {
+      "type": "string",
+      "enum": [
+        "holding",
+        "offshore",
+        "conta_internacional"
+      ],
+      "description": "Produto objeto do estudo tecnico"
+    },
+    "tipo_cliente": {
+      "type": "string",
+      "enum": [
+        "PF",
+        "PJ"
+      ],
+      "description": "Natureza do cliente: Pessoa Fisica ou Pessoa Juridica"
+    },
+    "cliente_id": {
+      "type": "string",
+      "description": "ID do Cliente vinculado (opcional)"
+    },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Nome / razao social do cliente"
+    },
+    "cliente_email": {
+      "type": "string"
+    },
+    "cliente_telefone": {
+      "type": "string"
+    },
+    "cliente_documento": {
+      "type": "string",
+      "description": "CPF ou CNPJ"
+    },
+    "responsavel_email": {
+      "type": "string",
+      "description": "E-mail do gerente/consultor responsavel"
+    },
+    "responsavel_nome": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "enviado_cliente",
+        "em_preenchimento",
+        "recebido",
+        "em_analise_tecnica",
+        "concluido",
+        "cancelado"
+      ],
+      "default": "rascunho",
+      "description": "Etapa do estudo"
+    },
+    "respostas": {
+      "type": "object",
+      "description": "Respostas do formulario (identificacao, proposito, patrimonio e campos especificos do produto)",
+      "additionalProperties": true
+    },
+    "documentos": {
+      "type": "array",
+      "description": "Documentos anexados pelo cliente",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "nome_arquivo": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "enviado_em": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "aceite_lgpd": {
+      "type": "boolean",
+      "default": false
+    },
+    "preenchido_por_nome": {
+      "type": "string"
+    },
+    "observacoes_internas": {
+      "type": "string"
+    },
+    "parecer_tecnico": {
+      "type": "string",
+      "description": "Reservado para o modulo de Analise Tecnica"
+    },
+    "link_token": {
+      "type": "string"
+    },
+    "link_gerado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "link_ultimo_acesso_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "link_preenchido_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_envio_cliente": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_recebimento": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_envio_analise": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "enviado_analise_por": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "produto",
+    "tipo_cliente"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.responsavel_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.responsavel_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
