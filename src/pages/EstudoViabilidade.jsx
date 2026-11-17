@@ -83,8 +83,13 @@ const Modal = ({ onClose, children, largo }) => (
   </div>
 );
 
+const APP_PUBLICO = 'https://villelaexchange.base44.app';
 function linkCompleto(estudo) {
-  return estudo?.link_token ? `${window.location.origin}/estudo-viabilidade/${estudo.link_token}` : '';
+  if (!estudo?.link_token) return '';
+  // Links compartilhados com o cliente precisam apontar para o app publicado,
+  // nunca para o endereço de preview do editor.
+  const origem = /preview-/i.test(window.location.origin) ? APP_PUBLICO : window.location.origin;
+  return `${origem}/estudo-viabilidade/${estudo.link_token}`;
 }
 function mensagemWhatsapp(estudo) {
   const p = PRODUTOS_ESTUDO[estudo.produto];
