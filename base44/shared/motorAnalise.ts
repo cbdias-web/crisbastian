@@ -99,37 +99,31 @@ Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, 
 // Modelo usado na análise técnica (raciocínio jurídico-tributário + leitura de documentos).
 export const MODELO_ANALISE = 'claude-sonnet-5';
 
-// Schema enxuto para modelos com limite de gramática (a estrutura detalhada vai no prompt).
-const SCHEMA_SIMPLES = {
-  type: 'object',
-  properties: {
-    score_viabilidade: { type: 'number' },
-    classificacao: { type: 'string' },
-    justificativa_score: { type: 'string' },
-    conteudo: { type: 'object', additionalProperties: true },
-    notas_internas: { type: 'object', additionalProperties: true },
-  },
-  required: ['score_viabilidade', 'classificacao', 'conteudo'],
-};
-
 export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) {
   const exec = (files?: string[], model?: string) => base44.integrations.Core.InvokeLLM({
     prompt: model
-      ? `${prompt}\n\nFORMATO DE SAÍDA: responda com um objeto JSON que siga EXATAMENTE este JSON Schema (todas as chaves de "conteudo" e "notas_internas" devem existir):\n${JSON.stringify(SCHEMA_ANALISE)}`
+      ? `${prompt}\n\nFORMATO DE SAÍDA: responda SOMENTE com um objeto JSON válido (sem markdown, sem texto antes ou depois) que siga EXATAMENTE este JSON Schema, preenchendo todas as chaves de "conteudo" e "notas_internas":\n${JSON.stringify(SCHEMA_ANALISE)}`
       : prompt,
     model,
     file_urls: files && files.length ? files : undefined,
-    response_json_schema: model ? SCHEMA_SIMPLES : SCHEMA_ANALISE,
+    // Modelos com limite de gramática: sem schema estrito, JSON puro descrito no prompt.
+    response_json_schema: model ? undefined : SCHEMA_ANALISE,
   });
+  const parse = (res: any) => {
+    if (res && typeof res === 'object' && res.conteudo) return res;
+    const s = typeof res === 'string' ? res : (res?.response || res?.text || JSON.stringify(res || ''));
+    const i = s.indexOf('{'), j = s.lastIndexOf('}');
+    if (i < 0 || j <= i) return null;
+    try { return JSON.parse(s.slice(i, j + 1)); } catch (_) { return null; }
+  };
   const tentativas: [string[] | undefined, string | undefined][] = [
     [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [fileUrls, undefined], [undefined, undefined],
   ];
   let ultimoErro: unknown;
   for (const [f, m] of tentativas) {
     try {
-      const res = await exec(f, m);
-      const out = typeof res === 'string' ? JSON.parse(res) : res;
-      if (out && out.conteudo) { out._modelo = m || 'default'; out._com_arquivos = !!(f && f.length); out._erro_anterior = ultimoErro ? String((ultimoErro as Error).message || ultimoErro).slice(0, 300) : ''; return out; }
+      const out = parse(await exec(f, m));
+      if (out && out.conteudo && (out.conteudo.sumario_executivo || (out.conteudo.etapas || []).length)) { out._modelo = m || 'default'; out._com_arquivos = !!(f && f.length); out._erro_anterior = ultimoErro ? String((ultimoErro as Error).message || ultimoErro).slice(0, 300) : ''; return out; }
     } catch (e) { ultimoErro = e; }
   }
   throw ultimoErro || new Error('Falha no motor de IA');
