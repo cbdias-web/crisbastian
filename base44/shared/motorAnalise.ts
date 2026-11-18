@@ -123,6 +123,22 @@ export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) 
   throw ultimoErro || new Error('Falha no motor de IA');
 }
 
+export function normalizarConteudo(c: any) {
+  const conteudo = { ...(c || {}) };
+  conteudo.etapas = (conteudo.etapas || []).map((e: any, i: number) => ({
+    fase: e.fase || `Fase ${i + 1}`,
+    titulo: e.titulo || '',
+    objetivo: e.objetivo || '',
+    atividades: e.atividades || [],
+    entregaveis: e.entregaveis || [],
+    prazo_dias: Math.max(0, Math.round(Number(e.prazo_dias) || 0)),
+    investimento_min: Math.max(0, Math.round(Number(e.investimento_min) || 0)),
+    investimento_max: Math.max(0, Math.round(Number(e.investimento_max) || 0)),
+  }));
+  if (!conteudo.condicoes_gerais) conteudo.condicoes_gerais = CONDICOES_GERAIS_PADRAO;
+  return conteudo;
+}
+
 // Garante classificação válida (alta | media | baixa | inviavel), derivando do score se preciso.
 export function normClassificacao(c: any, score: number) {
   const v = String(c || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
