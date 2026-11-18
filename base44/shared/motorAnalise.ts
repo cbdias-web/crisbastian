@@ -99,12 +99,27 @@ Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, 
 // Modelo usado na análise técnica (raciocínio jurídico-tributário + leitura de documentos).
 export const MODELO_ANALISE = 'claude-sonnet-5';
 
+// Schema enxuto para modelos com limite de gramática (a estrutura detalhada vai no prompt).
+const SCHEMA_SIMPLES = {
+  type: 'object',
+  properties: {
+    score_viabilidade: { type: 'number' },
+    classificacao: { type: 'string' },
+    justificativa_score: { type: 'string' },
+    conteudo: { type: 'object', additionalProperties: true },
+    notas_internas: { type: 'object', additionalProperties: true },
+  },
+  required: ['score_viabilidade', 'classificacao', 'conteudo'],
+};
+
 export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) {
   const exec = (files?: string[], model?: string) => base44.integrations.Core.InvokeLLM({
-    prompt,
+    prompt: model
+      ? `${prompt}\n\nFORMATO DE SAÍDA: responda com um objeto JSON que siga EXATAMENTE este JSON Schema (todas as chaves de "conteudo" e "notas_internas" devem existir):\n${JSON.stringify(SCHEMA_ANALISE)}`
+      : prompt,
     model,
     file_urls: files && files.length ? files : undefined,
-    response_json_schema: SCHEMA_ANALISE,
+    response_json_schema: model ? SCHEMA_SIMPLES : SCHEMA_ANALISE,
   });
   const tentativas: [string[] | undefined, string | undefined][] = [
     [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [fileUrls, undefined], [undefined, undefined],
