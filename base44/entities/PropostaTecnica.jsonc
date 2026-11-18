@@ -1,0 +1,171 @@
+{
+  "name": "PropostaTecnica",
+  "type": "object",
+  "properties": {
+    "estudo_id": {
+      "type": "string",
+      "description": "ID do EstudoViabilidade de origem"
+    },
+    "versao": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00famero sequencial da vers\u00e3o da proposta"
+    },
+    "codigo": {
+      "type": "string",
+      "description": "C\u00f3digo da proposta (ex.: PT-HOL-2026-0001-v2)"
+    },
+    "produto": {
+      "type": "string",
+      "enum": [
+        "holding",
+        "offshore",
+        "conta_internacional"
+      ]
+    },
+    "tipo_cliente": {
+      "type": "string",
+      "enum": [
+        "PF",
+        "PJ"
+      ]
+    },
+    "cliente_nome": {
+      "type": "string"
+    },
+    "cliente_documento": {
+      "type": "string"
+    },
+    "responsavel_email": {
+      "type": "string"
+    },
+    "responsavel_nome": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "em_revisao",
+        "aprovada",
+        "enviada_cliente",
+        "aceita",
+        "recusada",
+        "substituida"
+      ],
+      "default": "rascunho"
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "ia",
+        "revisao_ia",
+        "manual"
+      ],
+      "description": "Como esta vers\u00e3o foi gerada"
+    },
+    "motivo_revisao": {
+      "type": "string",
+      "description": "O que mudou na negocia\u00e7\u00e3o / motivo da nova vers\u00e3o"
+    },
+    "versao_anterior_id": {
+      "type": "string"
+    },
+    "score_viabilidade": {
+      "type": "number",
+      "description": "0 a 100"
+    },
+    "classificacao": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baixa",
+        "inviavel"
+      ]
+    },
+    "conteudo": {
+      "type": "object",
+      "description": "Conte\u00fado edit\u00e1vel da proposta: sum\u00e1rio, diagn\u00f3stico, estrutura, riscos, etapas, investimento, condi\u00e7\u00f5es",
+      "additionalProperties": true
+    },
+    "notas_internas_ia": {
+      "type": "object",
+      "description": "Pontos de aten\u00e7\u00e3o comercial e observa\u00e7\u00f5es da IA (n\u00e3o v\u00e3o para o PDF)",
+      "additionalProperties": true
+    },
+    "validade_dias": {
+      "type": "number",
+      "default": 15
+    },
+    "pdf_url": {
+      "type": "string"
+    },
+    "pdf_gerado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "aprovada_por": {
+      "type": "string"
+    },
+    "aprovada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "enviada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decisao_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decisao_observacao": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "estudo_id",
+    "versao"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.responsavel_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.responsavel_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
