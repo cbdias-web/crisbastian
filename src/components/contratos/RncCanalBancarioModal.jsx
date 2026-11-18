@@ -3,11 +3,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   X, Building2, User, FileCheck2, Upload, CheckCircle2, Circle, Plus, Trash2,
-  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2
+  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2, MessageSquare, MessageCircle, Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
 import CampoMascara from '@/components/ui/campo-mascara';
+import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
 
 const DOC_CONFIG = {
   PF: [
@@ -62,6 +63,7 @@ const emptyForm = () => ({
   profissao_natureza: '', estado_civil: '', dupla_nacionalidade: '', media_salarial: '', quantidade_funcionarios: '',
   email: '', telefone: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacoes: '',
 });
+const emptyDestinatario = () => ({ cliente_nome: '', mensagem_cliente: mensagemPadrao('canal'), responsavel_nome: '' });
 const emptySlot = (tipo) => ({
   rnc: null,
   form: emptyForm(),
@@ -69,6 +71,7 @@ const emptySlot = (tipo) => ({
   socios: tipo === 'PJ' ? [emptySocio()] : [],
   operarAcima270k: false,
   link: '',
+  destinatario: emptyDestinatario(),
 });
 
 function slotFromRnc(rnc) {
@@ -88,6 +91,11 @@ function slotFromRnc(rnc) {
     socios: rnc.socios && rnc.socios.length ? rnc.socios : (tipo === 'PJ' ? [emptySocio()] : []),
     operarAcima270k: rnc.operar_acima_270k || false,
     link: rnc.link_token ? window.location.origin + '/rnc-publica/' + rnc.link_token : '',
+    destinatario: {
+      cliente_nome: rnc.cliente_nome || rnc.nome || '',
+      mensagem_cliente: rnc.mensagem_cliente || mensagemPadrao('canal'),
+      responsavel_nome: rnc.responsavel_nome || '',
+    },
   };
 }
 
@@ -108,6 +116,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   const [secaoDocsOpen, setSecaoDocsOpen] = useState(true);
   const [secaoSociosOpen, setSecaoSociosOpen] = useState(true);
   const [secaoObsOpen, setSecaoObsOpen] = useState(true);
+  const [secaoDestOpen, setSecaoDestOpen] = useState(true);
 
   const slot = dadosPorTipo[tipoCanal];
   const form = slot.form;
@@ -116,6 +125,17 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   const operarAcima270k = slot.operarAcima270k;
   const rncExistente = slot.rnc;
   const linkRnc = slot.link;
+  const destinatario = slot.destinatario || emptyDestinatario();
+  const updateDestinatario = (patch) => updateSlot({ destinatario: { ...destinatario, ...patch } });
+  const textoConvite = () => {
+    const nome = destinatario.cliente_nome || form.nome || '';
+    const corpo = destinatario.mensagem_cliente || mensagemPadrao('canal');
+    return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${corpo}\n\n${linkRnc}`;
+  };
+  const telWhats = (() => {
+    const t = String(form.telefone || '').replace(/\D/g, '');
+    return t ? (t.length <= 11 ? '55' + t : t) : '';
+  })();
 
   // Carrega registros existentes (PF e PJ são independentes — pode haver um de cada por contrato)
   useEffect(() => {
@@ -150,8 +170,16 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
           nacionalidade: contrato.nacionalidade || 'Brasileira', profissao_natureza: contrato.profissao || '',
           estado_civil: contrato.estado_civil || '', nascimento_fundacao: contrato.nascimento || '',
         };
+        const destInicial = {
+          ...emptyDestinatario(),
+          cliente_nome: contrato.nome || '',
+          responsavel_nome: user?.nome_tratamento || user?.full_name || '',
+        };
         setDadosPorTipo(prev => {
-          const next = { PF: { ...prev.PF, form: { ...baseForm } }, PJ: { ...prev.PJ, form: { ...baseForm } } };
+          const next = {
+            PF: { ...prev.PF, form: { ...baseForm }, destinatario: { ...destInicial } },
+            PJ: { ...prev.PJ, form: { ...baseForm }, destinatario: { ...destInicial } },
+          };
           for (const r of rncs) {
             next[r.tipo_canal] = slotFromRnc(r);
           }
@@ -185,6 +213,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
       ...prev,
       [tipoCanal]: {
         ...prev[tipoCanal],
+        destinatario: { ...(prev[tipoCanal].destinatario || emptyDestinatario()), cliente_nome: cliente.nome || '' },
         form: {
           ...prev[tipoCanal].form,
           nome: cliente.nome || '', cpf_cnpj: cliente.cpf_cnpj || '',
@@ -298,6 +327,9 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     quantidade_funcionarios: form.quantidade_funcionarios ? Number(form.quantidade_funcionarios) : null,
     documentos,
     socios: tipoCanal === 'PJ' ? socios : [],
+    cliente_nome: destinatario.cliente_nome?.trim() || form.nome?.trim() || '',
+    mensagem_cliente: destinatario.mensagem_cliente || mensagemPadrao('canal'),
+    responsavel_nome: destinatario.responsavel_nome || '',
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
     data_preenchimento: isoNowBrasilia(),
   });
@@ -369,6 +401,11 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   };
 
   const handleGerarLink = async () => {
+    if (!destinatario.cliente_nome?.trim() && !form.nome?.trim()) {
+      toast.error('Indique o cliente destinatário do link antes de gerar.');
+      setSecaoDestOpen(true);
+      return;
+    }
     setSalvando(true);
     let id = rncExistente?.id;
     try {
@@ -738,6 +775,14 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
             </CardSection>
           )}
 
+          {/* Destinatário do link + mensagem personalizada */}
+          <CardSection title="Envio ao cliente" icon={MessageSquare}
+            open={secaoDestOpen} onToggle={() => setSecaoDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="canal" valor={destinatario} onChange={updateDestinatario}
+              onSelecionarCliente={(c) => selecionarCliente(c)} />
+          </CardSection>
+
           {/* Observações */}
           <CardSection title="Observações" icon={FileText} open={secaoObsOpen} onToggle={() => setSecaoObsOpen(p => !p)}>
             <textarea value={form.observacoes} onChange={e => updateForm('observacoes', e.target.value)}
@@ -767,8 +812,16 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
             {linkRnc && (
               <div className="flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                 <span className="text-[10px] truncate flex-1" style={{ color: AURORA.accent }}>{linkRnc}</span>
+                <a href={`https://wa.me/${telWhats}?text=${encodeURIComponent(textoConvite())}`} target="_blank" rel="noreferrer"
+                  className="p-1 rounded flex-shrink-0" style={{ color: '#25D366' }} title="Enviar por WhatsApp">
+                  <MessageCircle className="w-3 h-3" />
+                </a>
+                <a href={`mailto:${form.email || ''}?subject=${encodeURIComponent('Abertura de Canal Bancário — Villela Exchange')}&body=${encodeURIComponent(textoConvite())}`}
+                  className="p-1 rounded flex-shrink-0" style={{ color: '#60a5fa' }} title="Enviar por e-mail">
+                  <Mail className="w-3 h-3" />
+                </a>
                 <button onClick={() => { navigator.clipboard?.writeText(linkRnc); toast.success('Link copiado!'); }}
-                  className="p-1 rounded flex-shrink-0" style={{ color: AURORA.accent }}>
+                  className="p-1 rounded flex-shrink-0" style={{ color: AURORA.accent }} title="Copiar link">
                   <Copy className="w-3 h-3" />
                 </button>
               </div>

@@ -32,6 +32,9 @@ function sanitize(rnc: any) {
     id: rnc.id,
     tipo_conta: rnc.tipo_conta,
     status: rnc.status,
+    cliente_nome: rnc.cliente_nome,
+    mensagem_cliente: rnc.mensagem_cliente,
+    responsavel_nome: rnc.responsavel_nome,
     // Secao 1 — Conta
     secao1_tipo_conta: rnc.secao1_tipo_conta,
     secao1_proposito: rnc.secao1_proposito,

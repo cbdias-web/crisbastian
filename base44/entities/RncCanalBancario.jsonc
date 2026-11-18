@@ -19,6 +19,18 @@
       "default": false,
       "description": "Operar valores superiores a R$ 270.000,00 no periodo de 12 meses"
     },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Cliente destinatario do link do formulario (nome usado na saudacao e para pre-preencher)"
+    },
+    "mensagem_cliente": {
+      "type": "string",
+      "description": "Mensagem personalizada exibida no topo do formulario publico"
+    },
+    "responsavel_nome": {
+      "type": "string",
+      "description": "Consultor responsavel que assina a mensagem enviada ao cliente"
+    },
     "nome": {
       "type": "string",
       "description": "Nome completo (PF) ou Razao Social (PJ)"

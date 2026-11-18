@@ -57,7 +57,7 @@ export default function RncPublicaPage() {
       setRnc(data.rnc);
       setPendencias(data.pendencias || []);
       setForm({
-        nome: data.rnc.nome || '', cpf_cnpj: data.rnc.cpf_cnpj || '', rg_ie: data.rnc.rg_ie || '',
+        nome: data.rnc.nome || data.rnc.cliente_nome || '', cpf_cnpj: data.rnc.cpf_cnpj || '', rg_ie: data.rnc.rg_ie || '',
         nascimento_fundacao: data.rnc.nascimento_fundacao || '', nacionalidade: data.rnc.nacionalidade || 'Brasileira',
         profissao_natureza: data.rnc.profissao_natureza || '', estado_civil: data.rnc.estado_civil || '',
         dupla_nacionalidade: data.rnc.dupla_nacionalidade || '', media_salarial: data.rnc.media_salarial || '',
@@ -172,15 +172,26 @@ export default function RncPublicaPage() {
     <div className="min-h-screen py-6 px-4" style={{ background: AURORA.bg }}>
       <div className="max-w-2xl mx-auto space-y-5">
         {/* Header */}
-        <div className="rounded-2xl p-5 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 100%)', border: `1px solid ${AURORA.border}` }}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
-            {isPJ ? <Building2 className="w-6 h-6" style={{ color: AURORA.accent }} /> : <User className="w-6 h-6" style={{ color: AURORA.accent }} />}
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
+              {isPJ ? <Building2 className="w-6 h-6" style={{ color: AURORA.accent }} /> : <User className="w-6 h-6" style={{ color: AURORA.accent }} />}
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: AURORA.accent }}>Villela Exchange · RNC</p>
+              <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Abertura de Canal Bancário</h1>
+              <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário RNC</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: AURORA.accent }}>Villela Exchange</p>
-            <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Abertura de Canal Bancário</h1>
-            <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário RNC</p>
-          </div>
+          {(rnc.cliente_nome || rnc.mensagem_cliente) && (
+            <p className="text-xs mt-4 leading-relaxed" style={{ color: AURORA.textMuted }}>
+              {rnc.cliente_nome ? <>Olá, <strong style={{ color: AURORA.text }}>{rnc.cliente_nome}</strong>. </> : null}
+              {rnc.mensagem_cliente}
+              {rnc.responsavel_nome ? (
+                <><br /><span style={{ color: AURORA.accent }}>{rnc.responsavel_nome} · Villela Exchange</span></>
+              ) : null}
+            </p>
+          )}
         </div>
 
         {/* Pendências */}

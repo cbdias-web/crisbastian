@@ -125,7 +125,7 @@ export default function ContaInternacionalPublicaPage() {
         secao1_cartao_debito: r.secao1_cartao_debito || '', secao1_email: r.secao1_email || '',
         secao1_telefone_escritorio1: r.secao1_telefone_escritorio1 || '', secao1_telefone_escritorio2: r.secao1_telefone_escritorio2 || '',
         secao1_celular: r.secao1_celular || '', secao1_endereco_correspondencia: r.secao1_endereco_correspondencia || '',
-        secao1_pj_razao_social: r.secao1_pj_razao_social || '', secao1_pj_linha_negocios: r.secao1_pj_linha_negocios || '',
+        secao1_pj_razao_social: r.secao1_pj_razao_social || r.cliente_nome || '', secao1_pj_linha_negocios: r.secao1_pj_linha_negocios || '',
         secao1_pj_num_empregados: r.secao1_pj_num_empregados || '', secao1_pj_produtos_servicos: r.secao1_pj_produtos_servicos || '',
         secao1_pj_pais_operacao: r.secao1_pj_pais_operacao || '', secao1_pj_receita_bruta: r.secao1_pj_receita_bruta || '',
         secao1_pj_prospeccao_receita: r.secao1_pj_prospeccao_receita || '',
@@ -138,7 +138,7 @@ export default function ContaInternacionalPublicaPage() {
       setFornecedoresPJ(r.secao1_pj_fornecedores?.length > 0 ? r.secao1_pj_fornecedores : [{ nome: '', pais: '' }]);
       setAcionistasPJ(r.secao1_pj_acionistas?.length > 0 ? r.secao1_pj_acionistas.map((a) => ({ ...a, percentual: a.percentual ?? '' })) : [{ nome: '', percentual: '' }]);
       setAssinantes(r.secao2_assinantes?.length > 0 ? r.secao2_assinantes : [ASSINANTE_VAZIO()]);
-      setS3({ secao3_nome: r.secao3_nome || '', secao3_cpf: r.secao3_cpf || '', secao3_nascimento: r.secao3_nascimento || '', secao3_nacionalidade: r.secao3_nacionalidade || 'Brasileira', secao3_email: r.secao3_email || '', secao3_telefone: r.secao3_telefone || '', secao3_passaporte: r.secao3_passaporte || '' });
+      setS3({ secao3_nome: r.secao3_nome || r.cliente_nome || '', secao3_cpf: r.secao3_cpf || '', secao3_nascimento: r.secao3_nascimento || '', secao3_nacionalidade: r.secao3_nacionalidade || 'Brasileira', secao3_email: r.secao3_email || '', secao3_telefone: r.secao3_telefone || '', secao3_passaporte: r.secao3_passaporte || '' });
       setBeneficiarios(r.secao3_beneficiarios?.length > 0 ? r.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     } catch (e) { setError('Não foi possível carregar o formulário.'); }
     setLoading(false);
@@ -274,15 +274,26 @@ export default function ContaInternacionalPublicaPage() {
       <div className="max-w-2xl mx-auto space-y-5">
 
         {/* Header */}
-        <div className="rounded-2xl p-5 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 100%)', border: `1px solid ${AURORA.border}` }}>
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
-            <Globe className="w-6 h-6" style={{ color: AURORA.accent }} />
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
+              <Globe className="w-6 h-6" style={{ color: AURORA.accent }} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: AURORA.accent }}>Villela Exchange · Conta Internacional</p>
+              <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Abertura de Conta Internacional</h1>
+              <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário de Cadastro</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: AURORA.accent }}>Villela Exchange</p>
-            <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Abertura de Conta Internacional</h1>
-            <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário de Cadastro</p>
-          </div>
+          {(rnc.cliente_nome || rnc.mensagem_cliente) && (
+            <p className="text-xs mt-4 leading-relaxed" style={{ color: AURORA.textMuted }}>
+              {rnc.cliente_nome ? <>Olá, <strong style={{ color: AURORA.text }}>{rnc.cliente_nome}</strong>. </> : null}
+              {rnc.mensagem_cliente}
+              {rnc.responsavel_nome ? (
+                <><br /><span style={{ color: AURORA.accent }}>{rnc.responsavel_nome} · Villela Exchange</span></>
+              ) : null}
+            </p>
+          )}
         </div>
 
         {/* Pendências */}

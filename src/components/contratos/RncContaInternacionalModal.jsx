@@ -3,10 +3,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
   X, Globe, User, Building2, FileCheck2, Upload, CheckCircle2, Circle, Plus, Trash2,
-  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2
+  Loader2, FileText, Download, AlertTriangle, ChevronDown, ChevronUp, Copy, Link2, MessageSquare, MessageCircle, Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
+import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
 
 const DOC_CONFIG_PF = [
   { tipo: 'passaporte', descricao: 'Passaporte vigente (foto + dados)', obrigatorio: true },
@@ -111,6 +112,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const [gerandoLink, setGerandoLink] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [linkRnc, setLinkRnc] = useState('');
+  const [destinatario, setDestinatario] = useState({ cliente_nome: '', mensagem_cliente: mensagemPadrao('conta'), responsavel_nome: '' });
 
   // Seções abertas
   const [s1Open, setS1Open] = useState(true);
@@ -118,6 +120,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const [s3Open, setS3Open] = useState(true);
   const [sDocsOpen, setSDocsOpen] = useState(true);
   const [sObsOpen, setSObsOpen] = useState(false);
+  const [sDestOpen, setSDestOpen] = useState(true);
 
   // Seção 1 — Conta
   const [s1, setS1] = useState({
@@ -182,6 +185,11 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     setBeneficiarios(rnc.secao3_beneficiarios?.length > 0 ? rnc.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     setDocumentos(mergeDocs(rnc.tipo_conta || 'PF', rnc.documentos));
     setObservacoes(rnc.observacoes || '');
+    setDestinatario({
+      cliente_nome: rnc.cliente_nome || rnc.secao1_pj_razao_social || rnc.secao3_nome || '',
+      mensagem_cliente: rnc.mensagem_cliente || mensagemPadrao('conta'),
+      responsavel_nome: rnc.responsavel_nome || '',
+    });
     if (rnc.link_token) setLinkRnc(window.location.origin + '/conta-internacional-publica/' + rnc.link_token);
   };
 
@@ -198,6 +206,11 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
         } else {
           setS1(f => ({ ...f, secao1_email: contrato.email || '', secao1_celular: contrato.telefone || '', secao1_pj_razao_social: contrato.nome || '' }));
           setS3(f => ({ ...f, secao3_nome: contrato.nome || '', secao3_cpf: contrato.cpf_cnpj || '', secao3_email: contrato.email || '', secao3_nascimento: contrato.nascimento || '' }));
+          setDestinatario({
+            cliente_nome: contrato.nome || '',
+            mensagem_cliente: mensagemPadrao('conta'),
+            responsavel_nome: user?.nome_tratamento || user?.full_name || '',
+          });
           setDocumentos(buildDocInicial('PF'));
         }
       }).catch(() => {});
@@ -221,6 +234,9 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     secao3_beneficiarios: beneficiarios.filter(b => b.nome_completo),
     documentos,
     observacoes,
+    cliente_nome: destinatario.cliente_nome?.trim() || '',
+    mensagem_cliente: destinatario.mensagem_cliente || mensagemPadrao('conta'),
+    responsavel_nome: destinatario.responsavel_nome || '',
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
     data_preenchimento: isoNowBrasilia(),
   });
@@ -291,6 +307,11 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   };
 
   const handleGerarLink = async () => {
+    if (!destinatario.cliente_nome?.trim()) {
+      toast.error('Indique o cliente destinatário do link antes de gerar.');
+      setSDestOpen(true);
+      return;
+    }
     setSalvando(true);
     let id = rncExistente?.id;
     try {
@@ -318,6 +339,16 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   };
 
   const isPJ = tipoConta === 'PJ';
+
+  const textoConvite = () => {
+    const nome = destinatario.cliente_nome || s3.secao3_nome || s1.secao1_pj_razao_social || '';
+    const corpo = destinatario.mensagem_cliente || mensagemPadrao('conta');
+    return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${corpo}\n\n${linkRnc}`;
+  };
+  const telWhats = (() => {
+    const t = String(s1.secao1_celular || s3.secao3_telefone || '').replace(/\D/g, '');
+    return t ? (t.length <= 11 ? '55' + t : t) : '';
+  })();
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
@@ -658,6 +689,18 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
             </div>
           </CardSection>
 
+          {/* ENVIO AO CLIENTE */}
+          <CardSection title="Envio ao cliente" icon={MessageSquare} open={sDestOpen} onToggle={() => setSDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="conta" valor={destinatario}
+              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
+              onSelecionarCliente={(c) => {
+                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
+                setS1(f => ({ ...f, secao1_email: f.secao1_email || c.email || '', secao1_celular: f.secao1_celular || c.telefone || '', secao1_pj_razao_social: f.secao1_pj_razao_social || c.nome || '' }));
+                setS3(f => ({ ...f, secao3_nome: f.secao3_nome || c.nome || '', secao3_cpf: f.secao3_cpf || c.cpf_cnpj || '', secao3_email: f.secao3_email || c.email || '' }));
+              }} />
+          </CardSection>
+
           {/* OBSERVAÇÕES */}
           <CardSection title="Observações" icon={FileText} open={sObsOpen} onToggle={() => setSObsOpen(p => !p)}>
             <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)}
@@ -686,8 +729,16 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
             {linkRnc && (
               <div className="flex items-center gap-1.5 min-w-0 flex-1 px-2 py-1 rounded-lg" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
                 <span className="text-[10px] truncate flex-1" style={{ color: AURORA.accent }}>{linkRnc}</span>
+                <a href={`https://wa.me/${telWhats}?text=${encodeURIComponent(textoConvite())}`} target="_blank" rel="noreferrer"
+                  className="p-1 rounded flex-shrink-0" style={{ color: '#25D366' }} title="Enviar por WhatsApp">
+                  <MessageCircle className="w-3 h-3" />
+                </a>
+                <a href={`mailto:${s1.secao1_email || ''}?subject=${encodeURIComponent('Abertura de Conta Internacional — Villela Exchange')}&body=${encodeURIComponent(textoConvite())}`}
+                  className="p-1 rounded flex-shrink-0" style={{ color: '#60a5fa' }} title="Enviar por e-mail">
+                  <Mail className="w-3 h-3" />
+                </a>
                 <button onClick={() => { navigator.clipboard?.writeText(linkRnc); toast.success('Link copiado!'); }}
-                  className="p-1 rounded flex-shrink-0" style={{ color: AURORA.accent }}>
+                  className="p-1 rounded flex-shrink-0" style={{ color: AURORA.accent }} title="Copiar link">
                   <Copy className="w-3 h-3" />
                 </button>
               </div>

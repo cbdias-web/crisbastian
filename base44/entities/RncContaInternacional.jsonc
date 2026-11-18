@@ -14,6 +14,18 @@
       ],
       "description": "Tipo: Pessoa Fisica (PF) ou Pessoa Juridica (PJ)"
     },
+    "cliente_nome": {
+      "type": "string",
+      "description": "Cliente destinatario do link do formulario (nome usado na saudacao e para pre-preencher)"
+    },
+    "mensagem_cliente": {
+      "type": "string",
+      "description": "Mensagem personalizada exibida no topo do formulario publico"
+    },
+    "responsavel_nome": {
+      "type": "string",
+      "description": "Consultor responsavel que assina a mensagem enviada ao cliente"
+    },
     "secao1_tipo_conta": {
       "type": "string",
       "enum": [
