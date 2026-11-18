@@ -102,6 +102,27 @@
       "type": "string",
       "description": "Reservado para o modulo de Analise Tecnica"
     },
+    "score_viabilidade": {
+      "type": "number",
+      "description": "Score 0-100 da ultima analise"
+    },
+    "classificacao_viabilidade": {
+      "type": "string"
+    },
+    "proposta_atual_id": {
+      "type": "string",
+      "description": "ID da versao vigente da PropostaTecnica"
+    },
+    "proposta_versao": {
+      "type": "number"
+    },
+    "proposta_status": {
+      "type": "string"
+    },
+    "analise_gerada_em": {
+      "type": "string",
+      "format": "date-time"
+    },
     "link_token": {
       "type": "string"
     },
