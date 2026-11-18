@@ -8,6 +8,7 @@ export const PAGE_LABELS = {
   Implantacoes: 'Implantações',
   Pipeline: 'Pipeline',
   EstudoViabilidade: 'Estudo de Viabilidade',
+  AnaliseTecnica: 'Análise Técnica',
   Precificacao: 'Precificação',
   Desempenho: 'Desempenho',
   Clientes: 'Clientes',
