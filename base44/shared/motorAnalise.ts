@@ -108,12 +108,12 @@ export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) 
     response_json_schema: SCHEMA_ANALISE,
   });
   const valido = (o: any) => o && o.conteudo && (o.conteudo.sumario_executivo || (o.conteudo.etapas || []).length);
-  const tentativas: [string[] | undefined, string | undefined][] = [
-    [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [undefined, undefined],
-  ];
+  const temArquivos = (fileUrls || []).length > 0;
+  const tentativas: [string[] | undefined, string | undefined][] = temArquivos
+    ? [[fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [undefined, undefined]]
+    : [[undefined, MODELO_ANALISE], [undefined, undefined]];
   let ultimoErro: unknown;
   for (const [f, m] of tentativas) {
-    if (f === undefined && m === MODELO_ANALISE && !(fileUrls || []).length && tentativas[0][1] === m && ultimoErro === undefined) continue;
     try {
       const res = await exec(f, m);
       const out = typeof res === 'string' ? JSON.parse(res) : res;
