@@ -335,6 +335,22 @@
       "type": "string",
       "description": "Numero do passaporte do titular (PF)"
     },
+    "secao3_profissao": {
+      "type": "string",
+      "description": "Profissao / ocupacao do titular (qualificacao PF)"
+    },
+    "secao3_origem_recursos": {
+      "type": "string",
+      "description": "Origem dos recursos declarada pelo titular (qualificacao PF)"
+    },
+    "secao3_renda_anual_usd": {
+      "type": "string",
+      "description": "Renda anual declarada em USD (qualificacao PF)"
+    },
+    "secao3_patrimonio_usd": {
+      "type": "string",
+      "description": "Patrimonio estimado em USD (qualificacao PF)"
+    },
     "secao3_beneficiarios": {
       "type": "array",
       "description": "Beneficiarios da conta PF (em caso de falecimento)",

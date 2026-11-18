@@ -330,6 +330,10 @@ Deno.serve(async (req) => {
       campo('E-mail', rnc.secao3_email);
       campo('Telefone', rnc.secao3_telefone);
       campo('Número do Passaporte', rnc.secao3_passaporte);
+      campo('Profissão', rnc.secao3_profissao);
+      campo('Origem dos Recursos', rnc.secao3_origem_recursos);
+      campo('Renda Anual (USD)', rnc.secao3_renda_anual_usd);
+      campo('Patrimônio Estimado (USD)', rnc.secao3_patrimonio_usd);
       y -= 4;
 
       const benef = rnc.secao3_beneficiarios || [];

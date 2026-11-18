@@ -8,6 +8,8 @@ import {
 import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
 import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
+import ClienteContaInternacionalCard from '@/components/contratos/ClienteContaInternacionalCard';
+import { AURORA, inputStyle, labelStyle, CardSection, LI, RadioBtns } from '@/components/contratos/ciFormControls';
 import { linkPublico, origemPublica } from '@/lib/appUrl';
 
 const DOC_CONFIG_PF = [
@@ -43,16 +45,6 @@ function mergeDocs(tipo, savedDocs) {
   });
 }
 
-const AURORA = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
-  accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
-  text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
-  gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
-};
-const inputStyle = { background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text };
-const labelStyle = { color: AURORA.textMuted, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' };
-
 const ASSINANTE_VAZIO = () => ({
   nome: '', email: '', telefone_residencia: '', telefone_celular: '', telefone_escritorio: '',
   endereco_correspondencia: '', nome_empresa: '', atividade_empresa: '', titulo_posicao: '',
@@ -63,45 +55,6 @@ const ASSINANTE_VAZIO = () => ({
 });
 
 const BANCO_VAZIO = () => ({ nome_banco: '', pais: '', tipo_conta: '' });
-
-// Componentes de formulário — definidos FORA do componente pai para não
-// serem recriados a cada render (o que faz o input perder o foco a cada tecla).
-const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
-  <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-    <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 transition" style={{ background: AURORA.surface2 }}>
-      <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4" style={{ color: AURORA.accent }} />
-        <span className="text-sm font-semibold" style={{ color: AURORA.text }}>{title}</span>
-        {badge && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: AURORA.accentDim, color: AURORA.accent }}>{badge}</span>}
-      </div>
-      {open ? <ChevronUp className="w-4 h-4" style={{ color: AURORA.textMuted }} /> : <ChevronDown className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
-    </button>
-    {open && <div className="p-4">{children}</div>}
-  </div>
-);
-
-const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
-  <div>
-    <label className="block mb-1" style={labelStyle}>{label}</label>
-    <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
-  </div>
-);
-
-const RadioBtns = ({ label, value, onChange, opts }) => (
-  <div>
-    <label className="block mb-1" style={labelStyle}>{label}</label>
-    <div className="flex flex-wrap gap-2">
-      {opts.map(o => (
-        <button key={o.value} type="button" onClick={() => onChange(o.value)}
-          className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
-          style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
-          {o.label}
-        </button>
-      ))}
-    </div>
-  </div>
-);
 
 export default function RncContaInternacionalModal({ contrato, user, onClose, rncId }) {
   const queryClient = useQueryClient();
@@ -116,6 +69,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const [destinatario, setDestinatario] = useState({ cliente_nome: '', mensagem_cliente: mensagemPadrao('conta'), responsavel_nome: '' });
 
   // Seções abertas
+  const [sClienteOpen, setSClienteOpen] = useState(true);
   const [s1Open, setS1Open] = useState(true);
   const [s2Open, setS2Open] = useState(true);
   const [s3Open, setS3Open] = useState(true);
@@ -149,7 +103,8 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const [s3, setS3] = useState({
     secao3_nome: '', secao3_cpf: '', secao3_nascimento: '',
     secao3_nacionalidade: 'Brasileira', secao3_email: '', secao3_telefone: '',
-    secao3_passaporte: '',
+    secao3_passaporte: '', secao3_profissao: '', secao3_origem_recursos: '',
+    secao3_renda_anual_usd: '', secao3_patrimonio_usd: '',
   });
   const [beneficiarios, setBeneficiarios] = useState([{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
 
@@ -182,6 +137,8 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
       secao3_nascimento: rnc.secao3_nascimento || '', secao3_nacionalidade: rnc.secao3_nacionalidade || 'Brasileira',
       secao3_email: rnc.secao3_email || '', secao3_telefone: rnc.secao3_telefone || '',
       secao3_passaporte: rnc.secao3_passaporte || '',
+      secao3_profissao: rnc.secao3_profissao || '', secao3_origem_recursos: rnc.secao3_origem_recursos || '',
+      secao3_renda_anual_usd: rnc.secao3_renda_anual_usd || '', secao3_patrimonio_usd: rnc.secao3_patrimonio_usd || '',
     });
     setBeneficiarios(rnc.secao3_beneficiarios?.length > 0 ? rnc.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     setDocumentos(mergeDocs(rnc.tipo_conta || 'PF', rnc.documentos));
@@ -407,15 +364,18 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
             ))}
           </div>
 
+          {/* CLIENTE — IDENTIFICAÇÃO E QUALIFICAÇÃO */}
+          <ClienteContaInternacionalCard
+            tipoConta={tipoConta}
+            s1={s1} setS1={setS1}
+            s3={s3} setS3={setS3}
+            setDestinatario={setDestinatario}
+            open={sClienteOpen} onToggle={() => setSClienteOpen(p => !p)}
+          />
+
           {/* SEÇÃO 1 — INFORMAÇÕES DA CONTA */}
           <CardSection title="Seção 1 — Informações da Conta" icon={Globe} open={s1Open} onToggle={() => setS1Open(p => !p)}>
             <div className="space-y-3">
-              {isPJ && (
-                <>
-                  <LI label="Nome Completo da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />
-                  <LI label="CNPJ/EIN" value={s1.secao1_pj_cnpj} onChange={v => setS1(f => ({ ...f, secao1_pj_cnpj: v }))} />
-                </>
-              )}
               <RadioBtns label="Tipo de Conta"
                 value={s1.secao1_tipo_conta}
                 onChange={v => setS1(f => ({ ...f, secao1_tipo_conta: v }))}
@@ -489,17 +449,6 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
                 <RadioBtns label="Cartão de Débito?" value={s1.secao1_cartao_debito}
                   onChange={v => setS1(f => ({ ...f, secao1_cartao_debito: v }))}
                   opts={[{ value: 'sim', label: 'Sim' }, { value: 'nao', label: 'Não' }]} />
-              </div>
-
-              <p className="text-xs font-bold pt-2" style={{ color: AURORA.accent }}>Contato</p>
-              <div className="grid grid-cols-2 gap-3">
-                <LI label="E-mail" value={s1.secao1_email} onChange={v => setS1(f => ({ ...f, secao1_email: v }))} />
-                <LI label="Celular" value={s1.secao1_celular} onChange={v => setS1(f => ({ ...f, secao1_celular: v }))} />
-                <LI label="Telefone Escritório 1" value={s1.secao1_telefone_escritorio1} onChange={v => setS1(f => ({ ...f, secao1_telefone_escritorio1: v }))} />
-                <LI label="Telefone Escritório 2" value={s1.secao1_telefone_escritorio2} onChange={v => setS1(f => ({ ...f, secao1_telefone_escritorio2: v }))} />
-                <div className="col-span-2">
-                  <LI label="Endereço para Correspondências (se diferente do legal)" value={s1.secao1_endereco_correspondencia} onChange={v => setS1(f => ({ ...f, secao1_endereco_correspondencia: v }))} />
-                </div>
               </div>
 
               {isPJ && (
@@ -636,17 +585,8 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
 
           {/* SEÇÃO 3 — PF: Titular + Beneficiários */}
           {!isPJ && (
-            <CardSection title="Seção 3 — Titular e Beneficiários" icon={User} open={s3Open} onToggle={() => setS3Open(p => !p)}>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2"><LI label="Nome Completo *" value={s3.secao3_nome} onChange={v => setS3(f => ({ ...f, secao3_nome: v }))} /></div>
-                <LI label="CPF" value={s3.secao3_cpf} onChange={v => setS3(f => ({ ...f, secao3_cpf: v }))} />
-                <LI label="Data de Nascimento" type="date" value={s3.secao3_nascimento} onChange={v => setS3(f => ({ ...f, secao3_nascimento: v }))} />
-                <LI label="Nacionalidade" value={s3.secao3_nacionalidade} onChange={v => setS3(f => ({ ...f, secao3_nacionalidade: v }))} />
-                <LI label="E-mail" value={s3.secao3_email} onChange={v => setS3(f => ({ ...f, secao3_email: v }))} />
-                <div className="col-span-2"><LI label="Telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
-                <LI label="Nº Passaporte" value={s3.secao3_passaporte} onChange={v => setS3(f => ({ ...f, secao3_passaporte: v }))} />
-              </div>
-              <p className="text-xs font-bold mt-4 mb-2" style={{ color: AURORA.accent }}>Beneficiários da Conta (em caso de falecimento)</p>
+            <CardSection title="Seção 3 — Beneficiários da Conta (PF)" icon={User} open={s3Open} onToggle={() => setS3Open(p => !p)}>
+              <p className="text-xs font-bold mb-2" style={{ color: AURORA.accent }}>Beneficiários (em caso de falecimento)</p>
               {beneficiarios.map((b, i) => (
                 <div key={i} className="grid grid-cols-3 gap-2 mb-2 items-center">
                   <input value={b.nome_completo} onChange={e => setBeneficiarios(bs => bs.map((x, j) => j === i ? { ...x, nome_completo: e.target.value } : x))}
@@ -746,7 +686,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
                   className="p-1 rounded flex-shrink-0" style={{ color: '#25D366' }} title="Enviar por WhatsApp">
                   <MessageCircle className="w-3 h-3" />
                 </a>
-                <a href={`mailto:${s1.secao1_email || ''}?subject=${encodeURIComponent('Abertura de Conta Internacional — Villela Exchange')}&body=${encodeURIComponent(textoConvite())}`}
+                <a href={`mailto:${s1.secao1_email || s3.secao3_email || ''}?subject=${encodeURIComponent('Abertura de Conta Internacional — Villela Exchange')}&body=${encodeURIComponent(textoConvite())}`}
                   className="p-1 rounded flex-shrink-0" style={{ color: '#60a5fa' }} title="Enviar por e-mail">
                   <Mail className="w-3 h-3" />
                 </a>
