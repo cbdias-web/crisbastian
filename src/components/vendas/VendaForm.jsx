@@ -11,6 +11,7 @@ import { X, Save, Plus, Trash2, AlertTriangle, Search, UserPlus, ChevronDown, Ch
 import { toast } from "sonner";
 import ComprovantesUpload from "./ComprovantesUpload";
 import CampoMascara from "@/components/ui/campo-mascara";
+import { consultarCep } from "@/lib/autocomplete";
 import CampoMoeda from "@/components/ui/campo-moeda";
 import PainelRecorrencia from "./PainelRecorrencia";
 import { produtoSemContrato } from "@/lib/vendaProducao";
@@ -56,7 +57,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
   const [clienteSearch, setClienteSearch] = useState(venda?.cliente || '');
   const [clienteDropdown, setClienteDropdown] = useState(false);
   const [showNovoClienteModal, setShowNovoClienteModal] = useState(false);
-  const [novoCliente, setNovoCliente] = useState({ nome: '', cpf_cnpj: '', email: '', telefone: '', cidade: '', estado: '', observacao: '' });
+  const [novoCliente, setNovoCliente] = useState({ nome: '', cpf_cnpj: '', email: '', telefone: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacao: '' });
   const [criandoCliente, setCriandoCliente] = useState(false);
   const clienteRef = useRef(null);
   const produtoRef = useRef(null);
@@ -113,7 +114,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     });
     setFormData(f => ({ ...f, cliente: novo.nome, cpf_cnpj: novo.cpf_cnpj || f.cpf_cnpj }));
     setClienteSearch(novo.nome);
-    setNovoCliente({ nome: '', cpf_cnpj: '', email: '', telefone: '', cidade: '', estado: '', observacao: '' });
+    setNovoCliente({ nome: '', cpf_cnpj: '', email: '', telefone: '', cep: '', endereco: '', bairro: '', cidade: '', estado: '', observacao: '' });
     setShowNovoClienteModal(false);
     setClienteDropdown(false);
     setCriandoCliente(false);
@@ -1023,6 +1024,23 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
                   <input type="email" value={novoCliente.email} onChange={e => setNovoCliente(p => ({ ...p, email: e.target.value }))}
                     className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" placeholder="email@exemplo.com" />
                 </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">CEP</label>
+                <CampoMascara tipo="cep" value={novoCliente.cep || ''}
+                  onChange={async e => {
+                    const valor = e.target.value;
+                    setNovoCliente(p => ({ ...p, cep: valor }));
+                    const dados = await consultarCep(valor);
+                    if (dados) setNovoCliente(p => ({
+                      ...p,
+                      endereco: p.endereco || dados.logradouro,
+                      bairro: p.bairro || dados.bairro,
+                      cidade: p.cidade || dados.cidade,
+                      estado: p.estado || dados.estado,
+                    }));
+                  }}
+                  className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

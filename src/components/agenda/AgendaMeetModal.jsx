@@ -4,6 +4,7 @@ import { X, Calendar, Clock, Video, User, CheckCircle2, ExternalLink, Plus } fro
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 /**
  * Modal de agendamento com Meet integrado.
@@ -311,10 +312,10 @@ export default function AgendaMeetModal({
                           <input type="text" placeholder="Nome completo *" value={novoContatoForm.nome}
                             onChange={e => setNovoContatoForm(f => ({ ...f, nome: e.target.value }))}
                             className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                          <input type="text" placeholder="CPF / CNPJ" value={novoContatoForm.cpf_cnpj}
+                          <CampoMascara tipo="cpfcnpj" value={novoContatoForm.cpf_cnpj}
                             onChange={e => setNovoContatoForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
                             className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
-                          <input type="text" placeholder="Telefone" value={novoContatoForm.telefone}
+                          <CampoMascara tipo="telefone" value={novoContatoForm.telefone}
                             onChange={e => setNovoContatoForm(f => ({ ...f, telefone: e.target.value }))}
                             className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]" />
                           <div className="flex gap-2">

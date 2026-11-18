@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Loader2, Save, X, User, CreditCard, Phone, MapPin, Home } from 'lucide-react';
 import { toast } from 'sonner';
 import JornadaCliente from '@/components/portal/JornadaCliente';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
   surface: '#161b22',
@@ -125,8 +126,13 @@ export default function CadastroCarteiraPanel({ clienteId, fila }) {
                 <div key={f}>
                   <label className="text-[10px] block mb-0.5" style={{ color: AURORA.textMuted }}>{FIELD_LABELS[f]}</label>
                   {editando ? (
-                    <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
-                      className="w-full px-2 py-1.5 rounded-lg text-xs focus:outline-none" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                    f === 'cpf_cnpj' || f === 'telefone' ? (
+                      <CampoMascara tipo={f === 'cpf_cnpj' ? 'cpfcnpj' : 'telefone'} value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
+                        className="w-full px-2 py-1.5 rounded-lg text-xs focus:outline-none" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                    ) : (
+                      <input value={form[f] || ''} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
+                        className="w-full px-2 py-1.5 rounded-lg text-xs focus:outline-none" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                    )
                   ) : (
                     <p className="text-xs font-medium" style={{ color: AURORA.text }}>{cliente[f] || '—'}</p>
                   )}

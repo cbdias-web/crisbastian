@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Loader2, CheckCircle2, FileText, UserCheck, Package, User, AlertTriangle } from 'lucide-react';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
   surface: '#161b22',
@@ -141,7 +142,7 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
             {/* Campos */}
             <div>
               <label className="text-[11px] mb-1 block" style={{ color: AURORA.textMuted }}>CPF / CNPJ do cliente *</label>
-              <input value={cpfCnpj} onChange={e => setCpfCnpj(e.target.value)} placeholder="Somente dígitos"
+              <CampoMascara tipo="cpfcnpj" value={cpfCnpj} onChange={e => setCpfCnpj(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
                 style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
             </div>

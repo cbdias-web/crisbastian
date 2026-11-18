@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const DOC_CONFIG = {
   PF: [
@@ -416,11 +417,16 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     </div>
   );
 
-  const LabeledInput = ({ label, field, ...props }) => (
+  const LabeledInput = ({ label, field, mascara, ...props }) => (
     <div>
       <label className="block mb-1" style={labelStyle}>{label}</label>
-      <input value={form[field]} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
-        className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
+      {mascara ? (
+        <CampoMascara tipo={mascara} value={form[field] || ''} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
+          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
+      ) : (
+        <input value={form[field]} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
+          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
+      )}
     </div>
   );
 
@@ -543,7 +549,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
               <div className="col-span-2">
                 <LabeledInput label={tipoCanal === 'PF' ? 'Nome Completo *' : 'Razão Social *'} field="nome" placeholder="Nome completo" />
               </div>
-              <LabeledInput label={tipoCanal === 'PF' ? 'CPF' : 'CNPJ'} field="cpf_cnpj" placeholder="000.000.000-00" />
+              <LabeledInput label={tipoCanal === 'PF' ? 'CPF' : 'CNPJ'} field="cpf_cnpj" mascara={tipoCanal === 'PF' ? 'cpf' : 'cnpj'} placeholder="000.000.000-00" />
               <LabeledInput label={tipoCanal === 'PF' ? 'RG' : 'Inscrição Estadual'} field="rg_ie" placeholder="Documento" />
               <LabeledInput
                 label={tipoCanal === 'PF' ? 'Data de Nascimento' : 'Data de Fundação'}
@@ -586,8 +592,8 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                 </>
               )}
               <LabeledInput label="E-mail" field="email" placeholder="email@exemplo.com" />
-              <LabeledInput label="Telefone / WhatsApp" field="telefone" placeholder="(00) 00000-0000" />
-              <LabeledInput label="CEP" field="cep" placeholder="00000-000" />
+              <LabeledInput label="Telefone / WhatsApp" field="telefone" mascara="telefone" placeholder="(00) 00000-0000" />
+              <LabeledInput label="CEP" field="cep" mascara="cep" placeholder="00000-000" />
               <div className="col-span-2">
                 <LabeledInput label="Endereço" field="endereco" placeholder="Rua, número, complemento" />
               </div>
@@ -665,7 +671,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
                         placeholder="Nome do sócio/administrador"
                         className="flex-1 px-3 py-1.5 text-sm rounded-lg focus:outline-none"
                         style={inputStyle} />
-                      <input value={socio.cpf} onChange={e => handleSocioChange(i, 'cpf', e.target.value)}
+                      <CampoMascara tipo="cpf" value={socio.cpf} onChange={e => handleSocioChange(i, 'cpf', e.target.value)}
                         placeholder="CPF" className="w-36 px-3 py-1.5 text-sm rounded-lg focus:outline-none"
                         style={inputStyle} />
                       {socios.length > 1 && (

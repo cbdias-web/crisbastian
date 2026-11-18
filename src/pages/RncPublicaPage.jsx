@@ -6,6 +6,7 @@ import {
   Loader2, AlertTriangle, CheckCircle, Copy, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
   bg: '#0d1117',
@@ -218,7 +219,7 @@ export default function RncPublicaPage() {
             </div>
             <div>
               <label className="block mb-1" style={labelStyle}>{isPJ ? 'CNPJ' : 'CPF'}</label>
-              <input value={form.cpf_cnpj || ''} onChange={e => updateForm('cpf_cnpj', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+              <CampoMascara tipo={isPJ ? 'cnpj' : 'cpf'} value={form.cpf_cnpj || ''} onChange={e => updateForm('cpf_cnpj', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
             </div>
             <div>
               <label className="block mb-1" style={labelStyle}>{isPJ ? 'Inscrição Estadual' : 'RG'}</label>
@@ -275,11 +276,11 @@ export default function RncPublicaPage() {
             </div>
             <div>
               <label className="block mb-1" style={labelStyle}>Telefone / WhatsApp</label>
-              <input value={form.telefone || ''} onChange={e => updateForm('telefone', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+              <CampoMascara tipo="telefone" value={form.telefone || ''} onChange={e => updateForm('telefone', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
             </div>
             <div>
               <label className="block mb-1" style={labelStyle}>CEP</label>
-              <input value={form.cep || ''} onChange={e => updateForm('cep', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+              <CampoMascara tipo="cep" value={form.cep || ''} onChange={e => updateForm('cep', e.target.value)} style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
             </div>
             <div className="col-span-2">
               <label className="block mb-1" style={labelStyle}>Endereço</label>

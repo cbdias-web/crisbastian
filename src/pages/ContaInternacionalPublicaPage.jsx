@@ -6,6 +6,7 @@ import {
   Loader2, AlertTriangle, CheckCircle, ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
+import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -28,11 +29,16 @@ const ASSINANTE_VAZIO = () => ({
 
 // Componentes de formulário — definidos FORA do componente pai para não
 // serem recriados a cada render (o que faz o input perder o foco a cada tecla).
-const LI = ({ label, value, onChange, type = 'text', placeholder = '' }) => (
+const LI = ({ label, value, onChange, type = 'text', placeholder = '', mascara }) => (
   <div>
     <label className="block mb-1" style={labelStyle}>{label}</label>
-    <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+    {mascara ? (
+      <CampoMascara tipo={mascara} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+    ) : (
+      <input type={type} value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" />
+    )}
   </div>
 );
 
@@ -325,7 +331,7 @@ export default function ContaInternacionalPublicaPage() {
             {isPJ && (
               <>
                 <LI label="Nome da Empresa *" value={s1.secao1_pj_razao_social} onChange={v => setS1(f => ({ ...f, secao1_pj_razao_social: v }))} />
-                <LI label="CNPJ/EIN" value={s1.secao1_pj_cnpj} onChange={v => setS1(f => ({ ...f, secao1_pj_cnpj: v }))} />
+                <LI label="CNPJ/EIN" mascara="cnpj" value={s1.secao1_pj_cnpj} onChange={v => setS1(f => ({ ...f, secao1_pj_cnpj: v }))} />
               </>
             )}
             <RadioBtns label="Tipo de Conta" value={s1.secao1_tipo_conta}
@@ -364,8 +370,8 @@ export default function ContaInternacionalPublicaPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <LI label="E-mail *" value={s1.secao1_email} onChange={v => setS1(f => ({ ...f, secao1_email: v }))} />
-              <LI label="Celular" value={s1.secao1_celular} onChange={v => setS1(f => ({ ...f, secao1_celular: v }))} />
-              <LI label="Telefone Principal" value={s1.secao1_telefone_escritorio1} onChange={v => setS1(f => ({ ...f, secao1_telefone_escritorio1: v }))} />
+              <LI label="Celular" mascara="telefone" value={s1.secao1_celular} onChange={v => setS1(f => ({ ...f, secao1_celular: v }))} />
+              <LI label="Telefone Principal" mascara="telefone" value={s1.secao1_telefone_escritorio1} onChange={v => setS1(f => ({ ...f, secao1_telefone_escritorio1: v }))} />
             </div>
             <LI label="Endereço para Correspondências" value={s1.secao1_endereco_correspondencia} onChange={v => setS1(f => ({ ...f, secao1_endereco_correspondencia: v }))} />
             <div className="grid grid-cols-2 gap-3">
@@ -465,11 +471,11 @@ export default function ContaInternacionalPublicaPage() {
             </h2>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2"><LI label="Nome Completo *" value={s3.secao3_nome} onChange={v => setS3(f => ({ ...f, secao3_nome: v }))} /></div>
-              <LI label="CPF" value={s3.secao3_cpf} onChange={v => setS3(f => ({ ...f, secao3_cpf: v }))} />
+              <LI label="CPF" mascara="cpf" value={s3.secao3_cpf} onChange={v => setS3(f => ({ ...f, secao3_cpf: v }))} />
               <LI label="Data de Nascimento" type="date" value={s3.secao3_nascimento} onChange={v => setS3(f => ({ ...f, secao3_nascimento: v }))} />
               <LI label="Nacionalidade" value={s3.secao3_nacionalidade} onChange={v => setS3(f => ({ ...f, secao3_nacionalidade: v }))} />
               <LI label="E-mail" value={s3.secao3_email} onChange={v => setS3(f => ({ ...f, secao3_email: v }))} />
-              <div className="col-span-2"><LI label="Telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
+              <div className="col-span-2"><LI label="Telefone" mascara="telefone" value={s3.secao3_telefone} onChange={v => setS3(f => ({ ...f, secao3_telefone: v }))} /></div>
             </div>
 
             <div className="h-px" style={{ background: AURORA.border }} />

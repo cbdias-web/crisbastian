@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import CampoMascara from '@/components/ui/campo-mascara';
 import {
   X, Save, Star, Phone, Mail, MapPin, Clock, CheckCircle2, XCircle,
   MinusCircle, MessageSquare, Plus, TrendingUp, User, Pencil
@@ -72,11 +73,13 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label className="text-xs text-gray-500">CPF / CNPJ</Label>
-          <Input value={form.cpf_cnpj} onChange={e => set('cpf_cnpj', e.target.value)} disabled={!canEdit} className="mt-1" />
+          <CampoMascara tipo="cpfcnpj" value={form.cpf_cnpj} onChange={e => set('cpf_cnpj', e.target.value)} disabled={!canEdit}
+            className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm disabled:opacity-60" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Telefone</Label>
-          <Input value={form.telefone} onChange={e => set('telefone', e.target.value)} disabled={!canEdit} className="mt-1" />
+          <CampoMascara tipo="telefone" value={form.telefone} onChange={e => set('telefone', e.target.value)} disabled={!canEdit}
+            className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm disabled:opacity-60" />
         </div>
         <div>
           <Label className="text-xs text-gray-500">Email</Label>

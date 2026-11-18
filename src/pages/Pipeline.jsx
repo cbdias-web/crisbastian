@@ -9,6 +9,7 @@ import { filtrarGerentesConsulta, ehGerenteConsulta } from '@/lib/gerentesConsul
 import { mesmoNome } from '@/lib/nomes';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import CampoMascara from '@/components/ui/campo-mascara';
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -1126,14 +1127,12 @@ export default function Pipeline() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">CPF / CNPJ</label>
-                  <input value={form.cliente_cpf_cnpj} onChange={e => setForm(f => ({ ...f, cliente_cpf_cnpj: e.target.value }))}
-                    placeholder="000.000.000-00"
+                  <CampoMascara tipo="cpfcnpj" value={form.cliente_cpf_cnpj} onChange={e => setForm(f => ({ ...f, cliente_cpf_cnpj: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-600 mb-1 block">Telefone</label>
-                  <input value={form.cliente_telefone} onChange={e => setForm(f => ({ ...f, cliente_telefone: e.target.value }))}
-                    placeholder="(00) 00000-0000"
+                  <CampoMascara tipo="telefone" value={form.cliente_telefone} onChange={e => setForm(f => ({ ...f, cliente_telefone: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
                 </div>
               </div>

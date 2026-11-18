@@ -11,11 +11,25 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
 import ClienteDetalheModal from "@/components/clientes/ClienteDetalheModal";
+import CampoMascara from "@/components/ui/campo-mascara";
+import { consultarCep } from "@/lib/autocomplete";
 
 function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
-    nome: "", cpf_cnpj: "", email: "", telefone: "", cidade: "", estado: "", observacao: "", vendedor_id: "", vendedor_nome: "", subcarteira: ""
+    nome: "", cpf_cnpj: "", email: "", telefone: "", cep: "", endereco: "", bairro: "", cidade: "", estado: "", observacao: "", vendedor_id: "", vendedor_nome: "", subcarteira: ""
   });
+
+  const buscarCep = async (valor) => {
+    const dados = await consultarCep(valor);
+    if (!dados) return;
+    setForm(f => ({
+      ...f,
+      endereco: f.endereco || dados.logradouro,
+      bairro: f.bairro || dados.bairro,
+      cidade: f.cidade || dados.cidade,
+      estado: f.estado || dados.estado,
+    }));
+  };
 
   // Subcarteiras disponíveis com base nos clientes do mesmo vendedor
   const subcarteirasDisponiveis = [...new Set(
@@ -43,15 +57,30 @@ function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoadin
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>CPF / CNPJ *</Label>
-              <Input value={form.cpf_cnpj || ""} onChange={e => set("cpf_cnpj", e.target.value)} placeholder="000.000.000-00" />
+              <CampoMascara tipo="cpfcnpj" value={form.cpf_cnpj || ""} onChange={e => set("cpf_cnpj", e.target.value)}
+                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
             </div>
             <div>
               <Label>Telefone *</Label>
-              <Input value={form.telefone || ""} onChange={e => set("telefone", e.target.value)} placeholder="(11) 99999-9999" />
+              <CampoMascara tipo="telefone" value={form.telefone || ""} onChange={e => set("telefone", e.target.value)}
+                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
             </div>
             <div>
               <Label>Email *</Label>
               <Input value={form.email || ""} onChange={e => set("email", e.target.value)} placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label>CEP</Label>
+              <CampoMascara tipo="cep" value={form.cep || ""} onChange={e => { set("cep", e.target.value); buscarCep(e.target.value); }}
+                className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            </div>
+            <div>
+              <Label>Endereço</Label>
+              <Input value={form.endereco || ""} onChange={e => set("endereco", e.target.value)} placeholder="Rua, número, complemento" />
+            </div>
+            <div>
+              <Label>Bairro</Label>
+              <Input value={form.bairro || ""} onChange={e => set("bairro", e.target.value)} placeholder="Bairro" />
             </div>
             <div>
               <Label>Cidade *</Label>
