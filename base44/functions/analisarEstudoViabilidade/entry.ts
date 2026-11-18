@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { montarPrompt, chamarIA, normalizarConteudo, urlsAnalisaveis } from '../../shared/motorAnalise.ts';
+import { montarPrompt, chamarIA, normalizarConteudo, urlsAnalisaveis, normClassificacao } from '../../shared/motorAnalise.ts';
 import { SIGLA_PRODUTO } from '../../shared/propostaTecnica.ts';
 
 // Motor de Análise Técnica do Estudo de Viabilidade.
@@ -51,7 +51,7 @@ export default async function(req: Request): Promise<Response> {
       motivo: body.motivo || (base ? '' : 'Análise inicial'),
       base,
       score: Math.max(0, Math.min(100, Math.round(Number(out.score_viabilidade) || 0))),
-      classificacao: out.classificacao,
+      classificacao: normClassificacao(out.classificacao, Number(out.score_viabilidade) || 0),
       conteudo: { ...normalizarConteudo(out.conteudo), justificativa_score: out.justificativa_score || '' },
       notas: out.notas_internas || {},
     }));

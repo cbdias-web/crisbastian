@@ -145,3 +145,10 @@ export function normalizarConteudo(c: any) {
   return conteudo;
 }
 
+
+// Garante classificação válida (alta | media | baixa | inviavel), derivando do score se preciso.
+export function normClassificacao(c: any, score: number) {
+  const v = String(c || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (['alta', 'media', 'baixa', 'inviavel'].includes(v)) return v;
+  return score >= 75 ? 'alta' : score >= 55 ? 'media' : score >= 35 ? 'baixa' : 'inviavel';
+}
