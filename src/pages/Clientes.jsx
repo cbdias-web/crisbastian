@@ -13,6 +13,7 @@ import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
 import ClienteDetalheModal from "@/components/clientes/ClienteDetalheModal";
 import CampoMascara from "@/components/ui/campo-mascara";
 import { consultarCep } from "@/lib/autocomplete";
+import { listAll } from "@/lib/listAll";
 
 function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
@@ -286,7 +287,7 @@ export default function Clientes() {
 
   const { data: clientes = [], isLoading } = useQuery({
     queryKey: ["clientes"],
-    queryFn: () => base44.entities.Cliente.list("nome", 5000),
+    queryFn: () => listAll(base44.entities.Cliente, {}, "nome"),
   });
 
   const { data: vendedores = [] } = useQuery({
@@ -301,17 +302,17 @@ export default function Clientes() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.create(data),
-    onSuccess: () => { queryClient.invalidateQueries(["clientes"]); toast.success("Cliente cadastrado!"); setModal(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente cadastrado!"); setModal(null); },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries(["clientes"]); toast.success("Cliente atualizado!"); setModal(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente atualizado!"); setModal(null); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Cliente.delete(id),
-    onSuccess: () => { queryClient.invalidateQueries(["clientes"]); toast.success("Cliente removido!"); setConfirmDelete(null); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente removido!"); setConfirmDelete(null); },
   });
 
   const handleSave = (form) => {
@@ -364,7 +365,7 @@ export default function Clientes() {
         await base44.entities.Cliente.create(c);
       }
 
-      queryClient.invalidateQueries(["clientes"]);
+      queryClient.invalidateQueries({ queryKey: ["clientes"] });
       toast.success(`${novos.length} cliente(s) importado(s) com sucesso!`);
     } catch (e) {
       toast.error("Erro ao importar clientes: " + e.message);
