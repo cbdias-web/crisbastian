@@ -221,6 +221,14 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     setDocumentos(prev => mergeDocs(tipoConta, prev));
   }, [tipoConta]);
 
+  // Nome que identifica o cliente no link público (saudação + pré-preenchimento).
+  const nomeDestinatario = () =>
+    destinatario.cliente_nome?.trim()
+    || s3.secao3_nome?.trim()
+    || s1.secao1_pj_razao_social?.trim()
+    || contrato?.nome?.trim()
+    || '';
+
   const coletarDados = () => ({
     contrato_id: rncExistente?.contrato_id || contrato?.id || '',
     tipo_conta: tipoConta,
@@ -235,7 +243,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     secao3_beneficiarios: beneficiarios.filter(b => b.nome_completo),
     documentos,
     observacoes,
-    cliente_nome: destinatario.cliente_nome?.trim() || '',
+    cliente_nome: nomeDestinatario(),
     mensagem_cliente: destinatario.mensagem_cliente || mensagemPadrao('conta'),
     responsavel_nome: destinatario.responsavel_nome || '',
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
@@ -308,10 +316,14 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   };
 
   const handleGerarLink = async () => {
-    if (!destinatario.cliente_nome?.trim()) {
-      toast.error('Indique o cliente destinatário do link antes de gerar.');
+    if (!nomeDestinatario()) {
+      toast.error('Informe o nome do cliente para o link sair identificado.');
       setSDestOpen(true);
       return;
+    }
+    // Mantém o campo do painel alinhado ao nome que irá no link
+    if (!destinatario.cliente_nome?.trim()) {
+      setDestinatario(d => ({ ...d, cliente_nome: nomeDestinatario() }));
     }
     setSalvando(true);
     let id = rncExistente?.id;

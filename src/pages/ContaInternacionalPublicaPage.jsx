@@ -122,9 +122,10 @@ export default function ContaInternacionalPublicaPage() {
         secao1_deposito_remetente: r.secao1_deposito_remetente || '', secao1_deposito_banco: r.secao1_deposito_banco || '',
         secao1_deposito_valor: r.secao1_deposito_valor || '', secao1_origem_fundos: r.secao1_origem_fundos || '',
         secao1_assinatura_tipo: r.secao1_assinatura_tipo || '', secao1_talao_cheques: r.secao1_talao_cheques || '',
-        secao1_cartao_debito: r.secao1_cartao_debito || '', secao1_email: r.secao1_email || '',
+        secao1_cartao_debito: r.secao1_cartao_debito || '',
+        secao1_email: r.secao1_email || r.secao3_email || '',
         secao1_telefone_escritorio1: r.secao1_telefone_escritorio1 || '', secao1_telefone_escritorio2: r.secao1_telefone_escritorio2 || '',
-        secao1_celular: r.secao1_celular || '', secao1_endereco_correspondencia: r.secao1_endereco_correspondencia || '',
+        secao1_celular: r.secao1_celular || r.secao3_telefone || '', secao1_endereco_correspondencia: r.secao1_endereco_correspondencia || '',
         secao1_pj_razao_social: r.secao1_pj_razao_social || r.cliente_nome || '', secao1_pj_linha_negocios: r.secao1_pj_linha_negocios || '',
         secao1_pj_num_empregados: r.secao1_pj_num_empregados || '', secao1_pj_produtos_servicos: r.secao1_pj_produtos_servicos || '',
         secao1_pj_pais_operacao: r.secao1_pj_pais_operacao || '', secao1_pj_receita_bruta: r.secao1_pj_receita_bruta || '',
@@ -137,7 +138,14 @@ export default function ContaInternacionalPublicaPage() {
       setClientesPJ(r.secao1_pj_clientes?.length > 0 ? r.secao1_pj_clientes : [{ nome: '', pais: '' }]);
       setFornecedoresPJ(r.secao1_pj_fornecedores?.length > 0 ? r.secao1_pj_fornecedores : [{ nome: '', pais: '' }]);
       setAcionistasPJ(r.secao1_pj_acionistas?.length > 0 ? r.secao1_pj_acionistas.map((a) => ({ ...a, percentual: a.percentual ?? '' })) : [{ nome: '', percentual: '' }]);
-      setAssinantes(r.secao2_assinantes?.length > 0 ? r.secao2_assinantes : [ASSINANTE_VAZIO()]);
+      // PF: o titular é o próprio assinante — já chega identificado no formulário
+      const assinanteIdentificado = {
+        ...ASSINANTE_VAZIO(),
+        nome: r.tipo_conta === 'PJ' ? '' : (r.secao3_nome || r.cliente_nome || ''),
+        email: r.tipo_conta === 'PJ' ? '' : (r.secao3_email || r.secao1_email || ''),
+        telefone_celular: r.tipo_conta === 'PJ' ? '' : (r.secao3_telefone || r.secao1_celular || ''),
+      };
+      setAssinantes(r.secao2_assinantes?.length > 0 ? r.secao2_assinantes : [assinanteIdentificado]);
       setS3({ secao3_nome: r.secao3_nome || r.cliente_nome || '', secao3_cpf: r.secao3_cpf || '', secao3_nascimento: r.secao3_nascimento || '', secao3_nacionalidade: r.secao3_nacionalidade || 'Brasileira', secao3_email: r.secao3_email || '', secao3_telefone: r.secao3_telefone || '', secao3_passaporte: r.secao3_passaporte || '' });
       setBeneficiarios(r.secao3_beneficiarios?.length > 0 ? r.secao3_beneficiarios : [{ nome_completo: '', data_nascimento: '', parentesco: '' }]);
     } catch (e) { setError('Não foi possível carregar o formulário.'); }
@@ -256,6 +264,8 @@ export default function ContaInternacionalPublicaPage() {
   }
 
   const isPJ = rnc?.tipo_conta === 'PJ';
+  // Identificação do cliente na saudação: nome do link ou o já cadastrado no formulário
+  const nomeSaudacao = (rnc?.cliente_nome || (isPJ ? rnc?.secao1_pj_razao_social : rnc?.secao3_nome) || '').trim();
 
   const TABS = [];
   if (isPJ) {
@@ -285,9 +295,9 @@ export default function ContaInternacionalPublicaPage() {
               <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário de Cadastro</p>
             </div>
           </div>
-          {(rnc.cliente_nome || rnc.mensagem_cliente) && (
+          {(nomeSaudacao || rnc.mensagem_cliente) && (
             <p className="text-xs mt-4 leading-relaxed" style={{ color: AURORA.textMuted }}>
-              {rnc.cliente_nome ? <>Olá, <strong style={{ color: AURORA.text }}>{rnc.cliente_nome}</strong>. </> : null}
+              {nomeSaudacao ? <>Olá, <strong style={{ color: AURORA.text }}>{nomeSaudacao}</strong>. </> : null}
               {rnc.mensagem_cliente}
               {rnc.responsavel_nome ? (
                 <><br /><span style={{ color: AURORA.accent }}>{rnc.responsavel_nome} · Villela Exchange</span></>

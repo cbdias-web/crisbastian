@@ -28,12 +28,17 @@ function mergeDocs(tipo: string, savedDocs: any[]) {
 }
 
 function sanitize(rnc: any) {
+  // Nome de identificação do cliente: o informado no link ou, na falta dele,
+  // o nome já cadastrado no formulário (razão social PJ / titular PF).
+  const clienteNome = (rnc.cliente_nome || '').trim()
+    || (rnc.tipo_conta === 'PJ' ? rnc.secao1_pj_razao_social : rnc.secao3_nome) || '';
+  const MENSAGEM_PADRAO = 'Para darmos início à abertura da sua conta internacional, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.';
   return {
     id: rnc.id,
     tipo_conta: rnc.tipo_conta,
     status: rnc.status,
-    cliente_nome: rnc.cliente_nome,
-    mensagem_cliente: rnc.mensagem_cliente,
+    cliente_nome: clienteNome,
+    mensagem_cliente: (rnc.mensagem_cliente || '').trim() || MENSAGEM_PADRAO,
     responsavel_nome: rnc.responsavel_nome,
     // Secao 1 — Conta
     secao1_tipo_conta: rnc.secao1_tipo_conta,

@@ -1,12 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+const NOME_PLACEHOLDER = 'Formulário RNC';
+const MENSAGEM_PADRAO = 'Para darmos início à abertura do seu canal bancário, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.';
+
 function sanitizeRnc(rnc: any) {
+  // Identificação do cliente na saudação: nome do link ou o já cadastrado no formulário.
+  // Evita usar o rótulo genérico "Formulário RNC" como nome de pessoa.
+  const nomeCadastro = (rnc.nome || '').trim();
+  const clienteNome = (rnc.cliente_nome || '').trim()
+    || (nomeCadastro && nomeCadastro !== NOME_PLACEHOLDER ? nomeCadastro : '');
   return {
     id: rnc.id,
     tipo_canal: rnc.tipo_canal,
     operar_acima_270k: rnc.operar_acima_270k,
-    cliente_nome: rnc.cliente_nome,
-    mensagem_cliente: rnc.mensagem_cliente,
+    cliente_nome: clienteNome,
+    mensagem_cliente: (rnc.mensagem_cliente || '').trim() || MENSAGEM_PADRAO,
     responsavel_nome: rnc.responsavel_nome,
     nome: rnc.nome,
     cpf_cnpj: rnc.cpf_cnpj,
