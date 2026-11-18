@@ -40,6 +40,7 @@ import ConfigProspeccao from './pages/ConfigProspeccao';
 import PainelProspeccao from './pages/PainelProspeccao';
 import EstudoViabilidade from './pages/EstudoViabilidade';
 import EstudoViabilidadePublicaPage from './pages/EstudoViabilidadePublicaPage';
+import AnaliseTecnica from './pages/AnaliseTecnica';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -169,6 +170,7 @@ const AuthenticatedAppInner = () => {
       <Route path="/ConfigProspeccao" element={<LayoutWrapper currentPageName="ConfigProspeccao"><ConfigProspeccao /></LayoutWrapper>} />
       <Route path="/PainelProspeccao" element={<LayoutWrapper currentPageName="PainelProspeccao"><PainelProspeccao /></LayoutWrapper>} />
       <Route path="/EstudoViabilidade" element={<LayoutWrapper currentPageName="EstudoViabilidade"><EstudoViabilidade /></LayoutWrapper>} />
+      <Route path="/AnaliseTecnica" element={<LayoutWrapper currentPageName="AnaliseTecnica"><AnaliseTecnica /></LayoutWrapper>} />
       <Route
         path="/RelatorioComissoes"
         element={
