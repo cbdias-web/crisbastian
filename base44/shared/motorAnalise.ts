@@ -114,7 +114,7 @@ export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) 
     try {
       const res = await exec(f, m);
       const out = typeof res === 'string' ? JSON.parse(res) : res;
-      if (out && out.conteudo) return out;
+      if (out && out.conteudo) { out._modelo = m || 'default'; out._com_arquivos = !!(f && f.length); out._erro_anterior = ultimoErro ? String((ultimoErro as Error).message || ultimoErro).slice(0, 300) : ''; return out; }
     } catch (e) { ultimoErro = e; }
   }
   throw ultimoErro || new Error('Falha no motor de IA');
