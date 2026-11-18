@@ -97,54 +97,31 @@ Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, 
 }
 
 // Modelo usado na análise técnica (raciocínio jurídico-tributário + leitura de documentos).
-export const MODELO_ANALISE = 'claude-sonnet-5';
+// Precisa aceitar o JSON Schema completo e responder dentro do limite de tempo das funções.
+export const MODELO_ANALISE = 'gemini_3_1_pro';
 
 export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) {
   const exec = (files?: string[], model?: string) => base44.integrations.Core.InvokeLLM({
-    prompt: model
-      ? `${prompt}\n\nFORMATO DE SAÍDA: responda SOMENTE com um objeto JSON válido (sem markdown, sem texto antes ou depois) que siga EXATAMENTE este JSON Schema, preenchendo todas as chaves de "conteudo" e "notas_internas":\n${JSON.stringify(SCHEMA_ANALISE)}`
-      : prompt,
+    prompt,
     model,
     file_urls: files && files.length ? files : undefined,
-    // Modelos com limite de gramática: sem schema estrito, JSON puro descrito no prompt.
-    response_json_schema: model ? undefined : SCHEMA_ANALISE,
+    response_json_schema: SCHEMA_ANALISE,
   });
-  const parse = (res: any) => {
-    if (res && typeof res === 'object' && res.conteudo) return res;
-    const s = typeof res === 'string' ? res : (res?.response || res?.text || JSON.stringify(res || ''));
-    const i = s.indexOf('{'), j = s.lastIndexOf('}');
-    if (i < 0 || j <= i) return null;
-    try { return JSON.parse(s.slice(i, j + 1)); } catch (_) { return null; }
-  };
+  const valido = (o: any) => o && o.conteudo && (o.conteudo.sumario_executivo || (o.conteudo.etapas || []).length);
   const tentativas: [string[] | undefined, string | undefined][] = [
-    [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [fileUrls, undefined], [undefined, undefined],
+    [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [undefined, undefined],
   ];
   let ultimoErro: unknown;
   for (const [f, m] of tentativas) {
+    if (f === undefined && m === MODELO_ANALISE && !(fileUrls || []).length && tentativas[0][1] === m && ultimoErro === undefined) continue;
     try {
-      const out = parse(await exec(f, m));
-      if (out && out.conteudo && (out.conteudo.sumario_executivo || (out.conteudo.etapas || []).length)) { out._modelo = m || 'default'; out._com_arquivos = !!(f && f.length); out._erro_anterior = ultimoErro ? String((ultimoErro as Error).message || ultimoErro).slice(0, 300) : ''; return out; }
+      const res = await exec(f, m);
+      const out = typeof res === 'string' ? JSON.parse(res) : res;
+      if (valido(out)) { out._modelo = m || 'default'; out._com_arquivos = !!(f && f.length); out._erro_anterior = ultimoErro ? String((ultimoErro as Error).message || ultimoErro).slice(0, 300) : ''; return out; }
     } catch (e) { ultimoErro = e; }
   }
   throw ultimoErro || new Error('Falha no motor de IA');
 }
-
-export function normalizarConteudo(c: any) {
-  const conteudo = { ...(c || {}) };
-  conteudo.etapas = (conteudo.etapas || []).map((e: any, i: number) => ({
-    fase: e.fase || `Fase ${i + 1}`,
-    titulo: e.titulo || '',
-    objetivo: e.objetivo || '',
-    atividades: e.atividades || [],
-    entregaveis: e.entregaveis || [],
-    prazo_dias: Math.max(0, Math.round(Number(e.prazo_dias) || 0)),
-    investimento_min: Math.max(0, Math.round(Number(e.investimento_min) || 0)),
-    investimento_max: Math.max(0, Math.round(Number(e.investimento_max) || 0)),
-  }));
-  if (!conteudo.condicoes_gerais) conteudo.condicoes_gerais = CONDICOES_GERAIS_PADRAO;
-  return conteudo;
-}
-
 
 // Garante classificação válida (alta | media | baixa | inviavel), derivando do score se preciso.
 export function normClassificacao(c: any, score: number) {
