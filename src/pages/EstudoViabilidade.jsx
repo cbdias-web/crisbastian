@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
 import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
+import { origemPublica } from '@/lib/appUrl';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -84,13 +85,10 @@ const Modal = ({ onClose, children, largo }) => (
   </div>
 );
 
-const APP_PUBLICO = 'https://villelaexchange.base44.app';
 function linkCompleto(estudo) {
   if (!estudo?.link_token) return '';
-  // Links compartilhados com o cliente precisam apontar para o app publicado,
-  // nunca para o endereço de preview do editor.
-  const origem = /preview-/i.test(window.location.origin) ? APP_PUBLICO : window.location.origin;
-  return `${origem}/estudo-viabilidade/${estudo.link_token}`;
+  // Endereço público padronizado (ver src/lib/appUrl.js)
+  return `${origemPublica()}/estudo-viabilidade/${estudo.link_token}`;
 }
 function mensagemWhatsapp(estudo) {
   const p = PRODUTOS_ESTUDO[estudo.produto];

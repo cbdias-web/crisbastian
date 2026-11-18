@@ -8,6 +8,7 @@ import {
 import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
 import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
+import { linkPublico, origemPublica } from '@/lib/appUrl';
 
 const DOC_CONFIG_PF = [
   { tipo: 'passaporte', descricao: 'Passaporte vigente (foto + dados)', obrigatorio: true },
@@ -190,7 +191,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
       mensagem_cliente: rnc.mensagem_cliente || mensagemPadrao('conta'),
       responsavel_nome: rnc.responsavel_nome || '',
     });
-    if (rnc.link_token) setLinkRnc(window.location.origin + '/conta-internacional-publica/' + rnc.link_token);
+    if (rnc.link_token) setLinkRnc(linkPublico('/conta-internacional-publica', rnc.link_token));
   };
 
   useEffect(() => {
@@ -329,7 +330,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
     try {
       const res = await base44.functions.invoke('gerarLinkContaInternacional', { rnc_id: id });
       if (res?.data?.link) {
-        const fullUrl = window.location.origin + res.data.link;
+        const fullUrl = origemPublica() + res.data.link;
         setLinkRnc(fullUrl);
         navigator.clipboard?.writeText(fullUrl).catch(() => {});
         toast.success('Link gerado e copiado!');

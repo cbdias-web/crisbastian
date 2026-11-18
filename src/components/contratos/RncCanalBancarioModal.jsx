@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
 import CampoMascara from '@/components/ui/campo-mascara';
 import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
+import { linkPublico, origemPublica } from '@/lib/appUrl';
 
 const DOC_CONFIG = {
   PF: [
@@ -90,7 +91,7 @@ function slotFromRnc(rnc) {
     documentos: rnc.documentos && rnc.documentos.length ? rnc.documentos : buildDocInicial(tipo, rnc.operar_acima_270k),
     socios: rnc.socios && rnc.socios.length ? rnc.socios : (tipo === 'PJ' ? [emptySocio()] : []),
     operarAcima270k: rnc.operar_acima_270k || false,
-    link: rnc.link_token ? window.location.origin + '/rnc-publica/' + rnc.link_token : '',
+    link: linkPublico('/rnc-publica', rnc.link_token),
     destinatario: {
       cliente_nome: rnc.cliente_nome || rnc.nome || '',
       mensagem_cliente: rnc.mensagem_cliente || mensagemPadrao('canal'),
@@ -424,7 +425,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     try {
       const res = await base44.functions.invoke('gerarLinkRnc', { rnc_id: id });
       if (res?.data?.link) {
-        const fullUrl = window.location.origin + res.data.link;
+        const fullUrl = origemPublica() + res.data.link;
         updateSlot({ link: fullUrl });
         navigator.clipboard?.writeText(fullUrl).catch(() => {});
         toast.success('Link gerado e copiado para a área de transferência!');
