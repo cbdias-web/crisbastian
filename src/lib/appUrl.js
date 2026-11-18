@@ -3,8 +3,10 @@
 // nunca para o endereço de preview do editor.
 export const APP_PUBLICO = 'https://villelaexchange.base44.app';
 
+// Todo link enviado ao cliente usa SEMPRE o app publicado, independente do
+// ambiente em que o colaborador está trabalhando (editor, preview ou app).
 export function origemPublica() {
-  return /preview-/i.test(window.location.origin) ? APP_PUBLICO : window.location.origin;
+  return APP_PUBLICO;
 }
 
 /** Monta o link público completo: linkPublico('/rnc-publica', token) */
