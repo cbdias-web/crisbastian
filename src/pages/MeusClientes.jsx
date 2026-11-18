@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { base44 } from '@/api/base44Client';
+import { listAll } from '@/lib/listAll';
+import { listarTodosClientes } from '@/lib/clientesBusca';
 import { Button } from '@/components/ui/button';
 import AgendaCalendario from '@/components/leads/AgendaCalendario';
 import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
@@ -173,8 +175,8 @@ export default function MeusClientes() {
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-crm', isAdmin ? 'admin' : vendedor?.id],
     queryFn: () => {
-      if (isAdmin) return base44.entities.Cliente.list('nome', 10000);
-      if (vendedor) return base44.entities.Cliente.filter({ vendedor_id: vendedor.id }, 'nome', 10000);
+      if (isAdmin) return listarTodosClientes();
+      if (vendedor) return listAll(base44.entities.Cliente, { vendedor_id: vendedor.id }, 'nome');
       return [];
     },
     enabled: !!user && (isAdmin || !!vendedor)

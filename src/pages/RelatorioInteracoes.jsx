@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
  import { base44 } from '@/api/base44Client';
+import { listarTodosClientes } from '@/lib/clientesBusca';
  import { Button } from '@/components/ui/button';
  import { FileText, Filter, Download, Search, X, CheckCircle2, Clock, XCircle, MinusCircle, Users, Eye, Phone, Mail, MapPin, Save, Trash2, Edit2, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -55,7 +56,7 @@ export default function RelatorioInteracoes() {
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-relatorio-perfil'],
-    queryFn: () => base44.entities.Cliente.list('nome', 10000),
+    queryFn: () => listarTodosClientes(),
     enabled: !!user
   });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ const resultadoConfig = {
 };
 
 // ── Aba Dados ─────────────────────────────────────────────────────────────────
-function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved }) {
+function AbaDados({ cliente, vendedores, isAdmin, vendedor, onSaved }) {
   const canEdit = isAdmin || (vendedor && cliente?.vendedor_id === vendedor.id);
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
@@ -41,9 +41,19 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const subcarteirasDisponiveis = [...new Set(
-    (clientes || []).filter(c => c.vendedor_id === form.vendedor_id && c.subcarteira).map(c => c.subcarteira)
-  )].sort();
+  // Subcarteiras do vendedor selecionado (consulta direta ao servidor)
+  const [subcarteirasDisponiveis, setSubcarteirasDisponiveis] = useState([]);
+  useEffect(() => {
+    if (!form.vendedor_id) { setSubcarteirasDisponiveis([]); return; }
+    let ativo = true;
+    base44.entities.Cliente.filter({ vendedor_id: form.vendedor_id, subcarteira: { $exists: true } }, '-created_date', 500)
+      .then(rows => {
+        if (!ativo) return;
+        setSubcarteirasDisponiveis([...new Set(rows.map(r => r.subcarteira).filter(Boolean))].sort());
+      })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, [form.vendedor_id]);
 
   const handleVendedor = (id) => {
     const v = vendedores.find(x => x.id === id);
@@ -53,8 +63,9 @@ function AbaDados({ cliente, vendedores, clientes, isAdmin, vendedor, onSaved })
   const updateMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.update(cliente.id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['clientes']);
-      queryClient.invalidateQueries(['cliente-modal', cliente.id]);
+      queryClient.invalidateQueries({ queryKey: ['clientes'] });
+      queryClient.invalidateQueries({ queryKey: ['clientes-total'] });
+      queryClient.invalidateQueries({ queryKey: ['cliente-modal', cliente.id] });
       toast.success('Cliente atualizado!');
       onSaved && onSaved();
     },
@@ -283,7 +294,7 @@ function AbaInteracoes({ clienteId, cliente, vendedor, user }) {
 }
 
 // ── Modal Principal ────────────────────────────────────────────────────────────
-export default function ClienteDetalheModal({ clienteId, vendedores, clientes, isAdmin, vendedor, user, onClose, initialTab = 'dados' }) {
+export default function ClienteDetalheModal({ clienteId, vendedores, isAdmin, vendedor, user, onClose, initialTab = 'dados' }) {
   const [tab, setTab] = useState(initialTab);
 
   const { data: cliente, isLoading } = useQuery({
@@ -350,7 +361,6 @@ export default function ClienteDetalheModal({ clienteId, vendedores, clientes, i
             <AbaDados
               cliente={cliente}
               vendedores={vendedores}
-              clientes={clientes}
               isAdmin={isAdmin}
               vendedor={vendedor}
               onSaved={() => {}}

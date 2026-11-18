@@ -13,9 +13,9 @@ import { isDiaUtil, mensagemNaoDiaUtil } from "@/lib/diaUtil";
 import ClienteDetalheModal from "@/components/clientes/ClienteDetalheModal";
 import CampoMascara from "@/components/ui/campo-mascara";
 import { consultarCep } from "@/lib/autocomplete";
-import { listAll } from "@/lib/listAll";
+import { buscarClientes, contarClientes, listarTodosClientes, filtroClientes, CLIENTES_POR_PAGINA } from "@/lib/clientesBusca";
 
-function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoading }) {
+function ClienteModal({ cliente, vendedores, onClose, onSave, isLoading }) {
   const [form, setForm] = useState(cliente || {
     nome: "", cpf_cnpj: "", email: "", telefone: "", cep: "", endereco: "", bairro: "", cidade: "", estado: "", observacao: "", vendedor_id: "", vendedor_nome: "", subcarteira: ""
   });
@@ -32,10 +32,19 @@ function ClienteModal({ cliente, vendedores, clientes, onClose, onSave, isLoadin
     }));
   };
 
-  // Subcarteiras disponíveis com base nos clientes do mesmo vendedor
-  const subcarteirasDisponiveis = [...new Set(
-    clientes.filter(c => c.vendedor_id === form.vendedor_id && c.subcarteira).map(c => c.subcarteira)
-  )].sort();
+  // Subcarteiras já usadas pelo vendedor selecionado (consulta direta ao servidor)
+  const [subcarteirasDisponiveis, setSubcarteirasDisponiveis] = useState([]);
+  useEffect(() => {
+    if (!form.vendedor_id) { setSubcarteirasDisponiveis([]); return; }
+    let ativo = true;
+    base44.entities.Cliente.filter({ vendedor_id: form.vendedor_id, subcarteira: { $exists: true } }, "-created_date", 500)
+      .then(rows => {
+        if (!ativo) return;
+        setSubcarteirasDisponiveis([...new Set(rows.map(r => r.subcarteira).filter(Boolean))].sort());
+      })
+      .catch(() => {});
+    return () => { ativo = false; };
+  }, [form.vendedor_id]);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleVendedor = (id) => {
@@ -278,6 +287,8 @@ export default function Clientes() {
   const [agendaCliente, setAgendaCliente] = useState(null);
   const [detalheCliente, setDetalheCliente] = useState(null); // { id, tab }
   const [user, setUser] = useState(null);
+  const [limite, setLimite] = useState(CLIENTES_POR_PAGINA);
+  const [buscaServidor, setBuscaServidor] = useState("");
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -285,10 +296,32 @@ export default function Clientes() {
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
+  // Pesquisa e listagem no servidor: os cadastros mais recentes aparecem primeiro
+  // e qualquer cliente pode ser encontrado pela busca, sem limite silencioso.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setBuscaServidor(search.trim());
+      setLimite(CLIENTES_POR_PAGINA);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  useEffect(() => { setLimite(CLIENTES_POR_PAGINA); }, [filterVendedor]);
+
   const { data: clientes = [], isLoading } = useQuery({
-    queryKey: ["clientes"],
-    queryFn: () => listAll(base44.entities.Cliente, {}, "nome"),
+    queryKey: ["clientes", buscaServidor, filterVendedor, limite],
+    queryFn: () => buscarClientes({ busca: buscaServidor, vendedorId: filterVendedor, limite }),
   });
+
+  const { data: totalClientes = 0 } = useQuery({
+    queryKey: ["clientes-total", buscaServidor, filterVendedor],
+    queryFn: () => contarClientes({ busca: buscaServidor, vendedorId: filterVendedor }),
+  });
+
+  const recarregarClientes = () => {
+    queryClient.invalidateQueries({ queryKey: ["clientes"] });
+    queryClient.invalidateQueries({ queryKey: ["clientes-total"] });
+  };
 
   const { data: vendedores = [] } = useQuery({
     queryKey: ["vendedores"],
@@ -302,17 +335,22 @@ export default function Clientes() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Cliente.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente cadastrado!"); setModal(null); },
+    onSuccess: () => {
+      recarregarClientes();
+      setSearch("");
+      toast.success("Cliente cadastrado!");
+      setModal(null);
+    },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Cliente.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente atualizado!"); setModal(null); },
+    onSuccess: () => { recarregarClientes(); toast.success("Cliente atualizado!"); setModal(null); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Cliente.delete(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["clientes"] }); toast.success("Cliente removido!"); setConfirmDelete(null); },
+    onSuccess: () => { recarregarClientes(); toast.success("Cliente removido!"); setConfirmDelete(null); },
   });
 
   const handleSave = (form) => {
@@ -327,8 +365,9 @@ export default function Clientes() {
   const handleImportar = async () => {
     setImporting(true);
     try {
-      const nomesSalvos = new Set(clientes.map(c => c.nome?.trim().toLowerCase()));
-      const cpfsSalvos = new Set(clientes.map(c => c.cpf_cnpj?.trim()).filter(Boolean));
+      const todosClientes = await listarTodosClientes();
+      const nomesSalvos = new Set(todosClientes.map(c => c.nome?.trim().toLowerCase()));
+      const cpfsSalvos = new Set(todosClientes.map(c => c.cpf_cnpj?.trim()).filter(Boolean));
 
       // Agrupar vendas por cliente (nome ou CPF), pegar último vendedor associado
       const mapaClientes = {};
@@ -365,7 +404,7 @@ export default function Clientes() {
         await base44.entities.Cliente.create(c);
       }
 
-      queryClient.invalidateQueries({ queryKey: ["clientes"] });
+      recarregarClientes();
       toast.success(`${novos.length} cliente(s) importado(s) com sucesso!`);
     } catch (e) {
       toast.error("Erro ao importar clientes: " + e.message);
@@ -373,21 +412,15 @@ export default function Clientes() {
     setImporting(false);
   };
 
-  const filtered = clientes.filter(c => {
-    const matchSearch =
-      c.nome?.toLowerCase().includes(search.toLowerCase()) ||
-      c.cpf_cnpj?.includes(search) ||
-      c.email?.toLowerCase().includes(search.toLowerCase()) ||
-      c.telefone?.includes(search);
-    const matchVendedor = !filterVendedor || c.vendedor_id === filterVendedor;
-    return matchSearch && matchVendedor;
-  });
+  // A lista já chega filtrada pelo servidor
+  const filtered = clientes;
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
-  const exportCSV = () => {
+  const exportCSV = async () => {
+    const todos = await listarTodosClientes(filtroClientes({ busca: buscaServidor, vendedorId: filterVendedor }));
     const rows = [["Nome", "CPF/CNPJ", "Telefone", "Email", "Cidade", "UF", "Vendedor"]];
-    filtered.forEach(c => rows.push([c.nome, c.cpf_cnpj || "", c.telefone || "", c.email || "", c.cidade || "", c.estado || "", c.vendedor_nome || ""]));
+    todos.forEach(c => rows.push([c.nome, c.cpf_cnpj || "", c.telefone || "", c.email || "", c.cidade || "", c.estado || "", c.vendedor_nome || ""]));
     const csv = rows.map(r => r.join(";")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -410,7 +443,7 @@ export default function Clientes() {
       const vendasFiltradas = todasVendas.filter(v => v.produto && produtosVenda.includes(v.produto.toUpperCase()));
 
       // 3. Clientes — lookup por cpf_cnpj ou nome para telefone/email
-      const todosClientes = await base44.entities.Cliente.list("nome", 5000);
+      const todosClientes = await listarTodosClientes();
       const clienteByCpf = {};
       const clienteByNome = {};
       for (const c of todosClientes) {
@@ -491,7 +524,7 @@ export default function Clientes() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Clientes</h2>
             <p className="text-gray-400 text-sm mt-0.5">
-              {filtered.length} de {clientes.length} clientes
+              {totalClientes} cliente(s){filtered.length < totalClientes ? ` · exibindo ${filtered.length}` : ""}
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -648,6 +681,15 @@ export default function Clientes() {
             })}
           </div>
         )}
+
+        {/* Carregar mais */}
+        {!isLoading && filtered.length > 0 && filtered.length < totalClientes && (
+          <div className="flex justify-center pt-1">
+            <Button variant="outline" onClick={() => setLimite(l => l + CLIENTES_POR_PAGINA)} className="text-sm">
+              Carregar mais clientes ({filtered.length} de {totalClientes})
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Modal cadastro/edição */}
@@ -655,7 +697,6 @@ export default function Clientes() {
         <ClienteModal
           cliente={modal === "new" ? null : modal}
           vendedores={vendedores}
-          clientes={clientes}
           onClose={() => setModal(null)}
           onSave={handleSave}
           isLoading={isSaving}
@@ -677,7 +718,6 @@ export default function Clientes() {
           clienteId={detalheCliente.id}
           initialTab={detalheCliente.tab}
           vendedores={vendedores}
-          clientes={clientes}
           isAdmin={isAdmin}
           vendedor={vendedores.find(v => v.email === user?.email) || null}
           user={user}

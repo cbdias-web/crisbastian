@@ -7,6 +7,7 @@ import { Plus, X, Pencil, Trash2, FileText, ShoppingCart, UserPlus, Check, Dolla
 import { gerarRelatorioVencidosPDF } from '@/lib/relatorioPipelineVencidos';
 import { filtrarGerentesConsulta, ehGerenteConsulta } from '@/lib/gerentesConsulta';
 import { mesmoNome } from '@/lib/nomes';
+import { listarTodosClientes } from '@/lib/clientesBusca';
 import ParcelasVincendasModal from '@/components/parcelas/ParcelasVincendasModal';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import CampoMascara from '@/components/ui/campo-mascara';
@@ -202,7 +203,7 @@ export default function Pipeline() {
 
   const { data: clientes = [] } = useQuery({
     queryKey: ['clientes-pipeline'],
-    queryFn: () => base44.entities.Cliente.list('nome', 5000),
+    queryFn: () => listarTodosClientes(),
     enabled: !!user,
     staleTime: 60000,
   });

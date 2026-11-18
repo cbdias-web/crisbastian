@@ -2,16 +2,25 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Search, UserPlus } from 'lucide-react';
+import { buscarClientes } from '@/lib/clientesBusca';
 
 export default function ClienteSelector({ value, onChange }) {
   const [search, setSearch] = useState(value || '');
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
+  // Busca no servidor: encontra qualquer cliente da base, não só os 300 primeiros
+  const [termo, setTermo] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setTermo(search.trim()), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const { data: clientes = [] } = useQuery({
-    queryKey: ['clientes-precificacao'],
-    queryFn: () => base44.entities.Cliente.list('nome', 300),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['clientes-precificacao', termo],
+    queryFn: () => buscarClientes({ busca: termo, limite: 8 }),
+    enabled: termo.length >= 2,
+    staleTime: 60 * 1000,
   });
 
   useEffect(() => {
@@ -26,9 +35,7 @@ export default function ClienteSelector({ value, onChange }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const filtered = search.length >= 2
-    ? clientes.filter(c => c.nome.toLowerCase().includes(search.toLowerCase())).slice(0, 8)
-    : [];
+  const filtered = termo.length >= 2 ? clientes : [];
 
   function select(nome) {
     setSearch(nome);

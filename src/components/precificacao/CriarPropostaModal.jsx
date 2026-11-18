@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, FileText, Download, Loader2, Search, UserPlus, Check } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import { buscarClientes } from '@/lib/clientesBusca';
 
 function Field({ label, children }) {
   return (
@@ -46,9 +47,8 @@ export default function CriarPropostaModal({ produto, cliente: clienteInicial, p
     const t = setTimeout(async () => {
       setBuscando(true);
       try {
-        const r = await base44.entities.Cliente.list('-updated_date', 100);
-        const q = busca.toLowerCase();
-        setClientes(r.filter(c => c.nome?.toLowerCase().includes(q) || c.cpf_cnpj?.includes(busca)).slice(0, 8));
+        const r = await buscarClientes({ busca, limite: 8 });
+        setClientes(r);
       } catch {}
       setBuscando(false);
     }, 350);
