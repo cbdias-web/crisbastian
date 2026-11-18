@@ -14,6 +14,7 @@ import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 import CampoMascara from '@/components/ui/campo-mascara';
 import { consultarCnpj } from '@/lib/autocomplete';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import { buscarClientes } from '@/lib/clientesBusca';
 
 const EMPTY = {
   nome: '', cpf_cnpj: '', responsavel_legal: '', cpf_responsavel: '',
@@ -111,13 +112,19 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   });
   const searchRef = useRef(null);
 
-  const { data: clientes = [] } = useQuery({
-    queryKey: ['clientes-contrato'],
-    // Base completa: o limite de 500 escondia clientes além da 1ª fatia
-    // alfabética na busca do formulário (ex: JOSE ANTONIO DA SILVEIRA).
-    queryFn: () => base44.entities.Cliente.list('nome', 5000),
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
+  // Busca de cliente no servidor: a base passa de 7 mil cadastros e a lista
+  // carregada de uma vez escondia clientes (ex: MATRUNITA).
+  const [buscaClienteDebounced, setBuscaClienteDebounced] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setBuscaClienteDebounced(buscaCliente.trim()), 300);
+    return () => clearTimeout(t);
+  }, [buscaCliente]);
+
+  const { data: clientes = [], isFetching: buscandoClientes } = useQuery({
+    queryKey: ['clientes-contrato', buscaClienteDebounced],
+    queryFn: () => buscarClientes({ busca: buscaClienteDebounced, limite: 8 }),
+    enabled: !!user && buscaClienteDebounced.length >= 2,
+    staleTime: 60 * 1000,
   });
 
   const { data: vendedoresList = [] } = useQuery({
@@ -379,10 +386,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     onError: (err) => { toast.error('Erro ao salvar contrato: ' + (err?.message || 'Verifique os campos obrigatórios')); },
   });
 
-  const clientesFiltrados = clientes.filter(c =>
-    c.nome?.toLowerCase().includes(buscaCliente.toLowerCase()) ||
-    c.cpf_cnpj?.includes(buscaCliente)
-  ).slice(0, 8);
+  const clientesFiltrados = clientes;
 
   const selecionarCliente = async (c) => {
     let ind = null;
@@ -645,7 +649,12 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-[#1a3150] ml-auto flex-shrink-0" />
                   </button>
-                )) : (
+                )) : buscandoClientes ? (
+                  <div className="px-4 py-4 text-center flex items-center justify-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin" />
+                    <p className="text-xs text-gray-500 font-medium">Buscando clientes...</p>
+                  </div>
+                ) : (
                   <div className="px-4 py-4 text-center">
                     <p className="text-xs text-gray-500 font-medium">Nenhum cliente encontrado</p>
                     <p className="text-[10px] text-gray-400 mt-0.5">Preencha os campos manualmente abaixo</p>
