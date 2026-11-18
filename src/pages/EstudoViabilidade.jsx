@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import {
   Landmark, Globe2, Wallet, Plus, Search, Link2, Copy, MessageCircle, Mail, ExternalLink, X, Loader2,
   FlaskConical, User, Building2, Paperclip, Send, RotateCcw, Ban, CheckCircle2, AlertTriangle, ClipboardList,
-  Pencil, Trash2,
+  Pencil, Trash2, BrainCircuit,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
@@ -421,6 +422,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
 }
 
 function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido }) {
+  const nav = useNavigate();
   const [obs, setObs] = useState(estudo.observacoes_internas || '');
   const [gerando, setGerando] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -448,9 +450,10 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
     setGerando(false);
   };
 
-  const enviarAnalise = () => {
+  const enviarAnalise = async () => {
     if (pend.length > 0 && !confirm(`Há ${pend.length} pendência(s) no formulário. Enviar para Análise Técnica mesmo assim?`)) return;
-    onAtualizar(estudo, { status: 'em_analise_tecnica', data_envio_analise: new Date().toISOString(), observacoes_internas: obs }, 'Enviado para Análise Técnica');
+    await onAtualizar(estudo, { status: 'em_analise_tecnica', data_envio_analise: new Date().toISOString(), observacoes_internas: obs }, 'Enviado para Análise Técnica');
+    nav(`/AnaliseTecnica?estudo=${estudo.id}`);
   };
 
   return (
@@ -498,6 +501,11 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
           {['recebido', 'em_preenchimento', 'enviado_cliente'].includes(estudo.status) && (
             <button onClick={enviarAnalise} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#a78bfa', color: '#0d1117' }}>
               <Send className="w-3.5 h-3.5" /> Enviar para Análise Técnica
+            </button>
+          )}
+          {(['em_analise_tecnica', 'concluido'].includes(estudo.status) || estudo.proposta_atual_id) && (
+            <button onClick={() => nav(`/AnaliseTecnica?estudo=${estudo.id}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+              <BrainCircuit className="w-3.5 h-3.5" /> Abrir Análise Técnica{estudo.proposta_versao ? ` (v${estudo.proposta_versao})` : ''}
             </button>
           )}
           {['recebido', 'em_analise_tecnica'].includes(estudo.status) && (
