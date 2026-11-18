@@ -21,7 +21,7 @@ export default async function(req: Request): Promise<Response> {
     const bytes = montarPdfProposta(p, { full_name: 'Teste' });
     const file = new File([new Blob([bytes], { type: 'application/pdf' })], 'teste.pdf', { type: 'application/pdf' });
     const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-    return Response.json({ segundos: Math.round((Date.now() - t0) / 1000), pdf_url: file_url, score: p.score_viabilidade, classificacao: p.classificacao, conteudo: p.conteudo, notas: out.notas_internas });
+    return Response.json({ segundos: Math.round((Date.now() - t0) / 1000), modelo: out._modelo, erro_anterior: out._erro_anterior, pdf_url: file_url, score: p.score_viabilidade, classificacao: p.classificacao, conteudo: p.conteudo, notas: out.notas_internas });
   } catch (e) {
     return Response.json({ error: (e as Error).message, stack: (e as Error).stack }, { status: 500 });
   }
