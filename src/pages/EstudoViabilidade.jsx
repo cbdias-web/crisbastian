@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import {
   Landmark, Globe2, Wallet, Plus, Search, Link2, Copy, MessageCircle, Mail, ExternalLink, X, Loader2,
@@ -146,6 +146,7 @@ function ValorResposta({ v }) {
 }
 
 export default function EstudoViabilidade() {
+  const loc = useLocation();
   const [user, setUser] = useState(null);
   const [estudos, setEstudos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +171,17 @@ export default function EstudoViabilidade() {
     base44.auth.me().then(setUser).catch(() => {});
     carregar();
   }, []);
+
+  // Vindo da Análise Técnica (?estudo=ID): abre o estudo de origem já no detalhe,
+  // para manter o fluxo estudo → análise como uma coisa só.
+  const abertoPorParam = useRef(false);
+  useEffect(() => {
+    if (abertoPorParam.current) return;
+    const alvo = new URLSearchParams(loc.search).get('estudo');
+    if (!alvo || !estudos.length) return;
+    const e = estudos.find(x => x.id === alvo);
+    if (e) { setDetalhe(e); abertoPorParam.current = true; }
+  }, [estudos, loc.search]);
 
   const contagem = useMemo(() => {
     const c = { holding: 0, offshore: 0, conta_internacional: 0 };
@@ -498,7 +510,7 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
               {excluindo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Excluir
             </button>
           )}
-          {['recebido', 'em_preenchimento', 'enviado_cliente'].includes(estudo.status) && (
+          {estudo.status === 'recebido' && (
             <button onClick={enviarAnalise} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#a78bfa', color: '#0d1117' }}>
               <Send className="w-3.5 h-3.5" /> Enviar para Análise Técnica
             </button>

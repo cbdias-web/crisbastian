@@ -172,24 +172,50 @@ function Painel() {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
+  const [user, setUser] = useState(null);
+
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+
+  const carregar = () => {
+    // A análise nasce do estudo de viabilidade: a lista mostra o estudo desde o
+    // envio do link (aguardando respostas) até a proposta decidida.
+    base44.entities.EstudoViabilidade.list('-updated_date', 500)
+      .then(l => setEstudos((l || []).filter(e => ['enviado_cliente', 'em_preenchimento', 'recebido', 'em_analise_tecnica', 'concluido'].includes(e.status) || e.proposta_atual_id)))
+      .catch(e => toast.error(e.message)).finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    base44.entities.EstudoViabilidade.list('-updated_date', 500)
-      .then(l => setEstudos((l || []).filter(e => ['recebido', 'em_analise_tecnica', 'concluido'].includes(e.status) || e.proposta_atual_id)))
-      .catch(e => toast.error(e.message)).finally(() => setLoading(false));
+    base44.auth.me().then(setUser).catch(() => {});
+    carregar();
   }, []);
 
+  const excluirAnalise = async (e) => {
+    if (!confirm(`Excluir a análise técnica de ${e.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`)) return;
+    try {
+      await base44.entities.PropostaTecnica.deleteMany({ estudo_id: e.id });
+      await base44.entities.EstudoViabilidade.update(e.id, {
+        proposta_atual_id: null, proposta_status: null, proposta_versao: null,
+        score_viabilidade: null, classificacao_viabilidade: null, parecer_tecnico: null,
+        analise_gerada_em: null, status: 'recebido',
+      });
+      toast.success('Análise excluída.');
+      carregar();
+    } catch (err) { toast.error('Erro ao excluir: ' + err.message); }
+  };
+
   const kpi = useMemo(() => {
+    const respostas = estudos.filter(e => !e.proposta_atual_id && ['enviado_cliente', 'em_preenchimento'].includes(e.status)).length;
     const aguard = estudos.filter(e => !e.proposta_atual_id && e.status === 'recebido').length;
     const emAn = estudos.filter(e => e.proposta_atual_id && ['rascunho', 'em_revisao', 'aprovada'].includes(e.proposta_status)).length;
     const env = estudos.filter(e => e.proposta_status === 'enviada_cliente').length;
     const ac = estudos.filter(e => e.proposta_status === 'aceita').length;
     const dec = estudos.filter(e => ['aceita', 'recusada'].includes(e.proposta_status)).length;
     const sc = estudos.filter(e => e.score_viabilidade != null);
-    return { aguard, emAn, env, ac, conv: dec ? Math.round((ac / dec) * 100) : null, score: sc.length ? Math.round(sc.reduce((s, e) => s + e.score_viabilidade, 0) / sc.length) : null };
+    return { respostas, aguard, emAn, env, ac, conv: dec ? Math.round((ac / dec) * 100) : null, score: sc.length ? Math.round(sc.reduce((s, e) => s + e.score_viabilidade, 0) / sc.length) : null };
   }, [estudos]);
 
   const lista = estudos.filter(e => {
+    if (filtro === 'respostas' && (e.proposta_atual_id || !['enviado_cliente', 'em_preenchimento'].includes(e.status))) return false;
     if (filtro === 'aguardando' && (e.proposta_atual_id || e.status !== 'recebido')) return false;
     if (filtro === 'andamento' && !['rascunho', 'em_revisao', 'aprovada'].includes(e.proposta_status)) return false;
     if (filtro === 'enviadas' && e.proposta_status !== 'enviada_cliente') return false;
@@ -199,21 +225,21 @@ function Painel() {
   });
 
   const KPIS = [
+    { k: 'Aguardando respostas', v: kpi.respostas, cor: '#60a5fa' },
     { k: 'Aguardando análise', v: kpi.aguard, cor: A.gold },
     { k: 'Propostas em elaboração', v: kpi.emAn, cor: '#60a5fa' },
     { k: 'Enviadas ao cliente', v: kpi.env, cor: A.violet },
     { k: 'Aceitas', v: kpi.ac, cor: '#34d399' },
     { k: 'Conversão', v: kpi.conv == null ? '—' : `${kpi.conv}%`, cor: A.accent },
-    { k: 'Score médio', v: kpi.score ?? '—', cor: A.accent },
   ];
-  const FILTROS = [['todos', 'Todos'], ['aguardando', 'Aguardando análise'], ['andamento', 'Em elaboração'], ['enviadas', 'Enviadas'], ['decididas', 'Decididas']];
+  const FILTROS = [['todos', 'Todos'], ['respostas', 'Aguardando respostas'], ['aguardando', 'Aguardando análise'], ['andamento', 'Em elaboração'], ['enviadas', 'Enviadas'], ['decididas', 'Decididas']];
 
   return (
     <div className="p-4 md:p-6 space-y-5" style={{ color: A.text }}>
       <div>
         <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: A.accent }}>Comercial · Estudos técnicos</p>
         <h1 className="text-2xl font-bold flex items-center gap-2"><BrainCircuit className="w-6 h-6" style={{ color: A.accent }} /> Análise Técnica e Propostas</h1>
-        <p className="text-xs mt-1" style={{ color: A.muted }}>O motor de IA avalia o formulário e os documentos do cliente e gera a proposta técnica executiva, com etapas, prazos e investimento. Cada revisão gera uma nova versão.</p>
+        <p className="text-xs mt-1" style={{ color: A.muted }}>Toda análise nasce do Estudo de Viabilidade: você envia o link, o cliente devolve as respostas e os documentos, e a partir daí o motor de IA monta a proposta técnica executiva com etapas, prazos e investimento. Cada revisão gera uma nova versão.</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {KPIS.map(k => (
@@ -237,15 +263,18 @@ function Painel() {
         : lista.length === 0 ? (
           <div className="rounded-2xl p-10 text-center" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
             <ClipboardCheck className="w-10 h-10 mx-auto mb-2" style={{ color: A.muted }} />
-            <p className="text-sm" style={{ color: A.muted }}>Nenhum estudo neste filtro. Os formulários recebidos em Estudo de Viabilidade aparecem aqui.</p>
+            <p className="text-sm" style={{ color: A.muted }}>Nenhum estudo neste filtro. Os estudos criados em Estudo de Viabilidade aparecem aqui desde o envio do link ao cliente.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
             {lista.map(e => {
               const Icon = ICONE[e.produto] || Landmark; const cl = CLASSIFICACAO[e.classificacao_viabilidade];
               const sp = STATUS_PROPOSTA[e.proposta_status];
+              const aguardandoRespostas = !e.proposta_atual_id && ['enviado_cliente', 'em_preenchimento'].includes(e.status);
               return (
-                <button key={e.id} onClick={() => nav(`/AnaliseTecnica?estudo=${e.id}`)} className="text-left rounded-2xl p-4 transition hover:-translate-y-0.5"
+                <div key={e.id} role="button" tabIndex={0} onClick={() => nav(`/AnaliseTecnica?estudo=${e.id}`)}
+                  onKeyDown={ev => { if (ev.key === 'Enter') nav(`/AnaliseTecnica?estudo=${e.id}`); }}
+                  className="text-left rounded-2xl p-4 transition hover:-translate-y-0.5 cursor-pointer"
                   style={{ background: A.surface, border: `1px solid ${A.border}` }}>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -255,19 +284,32 @@ function Painel() {
                         <p className="text-[11px]" style={{ color: A.muted }}>{PRODUTOS_ESTUDO[e.produto]?.nome} · {e.tipo_cliente}</p>
                       </div>
                     </div>
-                    {e.score_viabilidade != null && (
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-xl font-extrabold leading-none" style={{ color: cl?.cor || A.text }}>{Math.round(e.score_viabilidade)}</p>
-                        <p className="text-[9px]" style={{ color: A.muted }}>score</p>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {e.score_viabilidade != null && (
+                        <div className="text-right">
+                          <p className="text-xl font-extrabold leading-none" style={{ color: cl?.cor || A.text }}>{Math.round(e.score_viabilidade)}</p>
+                          <p className="text-[9px]" style={{ color: A.muted }}>score</p>
+                        </div>
+                      )}
+                      {isAdmin && e.proposta_atual_id && (
+                        <button onClick={ev => { ev.stopPropagation(); excluirAnalise(e); }} title="Excluir análise"
+                          className="p-1.5 rounded-lg" style={{ color: A.danger, background: 'rgba(248,113,113,0.12)' }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-                    {sp ? <Badge cor={sp.cor}>v{e.proposta_versao} · {sp.label}</Badge> : <Badge cor={A.gold}>Aguardando análise</Badge>}
+                    {sp ? <Badge cor={sp.cor}>v{e.proposta_versao} · {sp.label}</Badge>
+                      : aguardandoRespostas ? <Badge cor="#60a5fa">Aguardando respostas do cliente</Badge>
+                      : <Badge cor={A.gold}>Aguardando análise</Badge>}
                     {cl && <Badge cor={cl.cor}>{cl.label}</Badge>}
                   </div>
-                  <p className="text-[10.5px] mt-2" style={{ color: A.muted }}>{e.responsavel_nome || '—'} · atualizado {fmtData(e.updated_date)}</p>
-                </button>
+                  <p className="text-[10.5px] mt-2" style={{ color: A.muted }}>
+                    {e.data_recebimento ? `Respostas recebidas em ${fmtData(e.data_recebimento)}` : 'Formulário enviado — sem respostas ainda'}
+                  </p>
+                  <p className="text-[10.5px] mt-0.5" style={{ color: A.muted }}>{e.responsavel_nome || '—'} · atualizado {fmtData(e.updated_date)}</p>
+                </div>
               );
             })}
           </div>
@@ -294,11 +336,14 @@ function Workspace({ estudoId }) {
   const [salvando, setSalvando] = useState(false);
   const [gerandoPdf, setGerandoPdf] = useState(false);
   const [revisaoAberta, setRevisaoAberta] = useState(false);
+  const [manutencao, setManutencao] = useState(false);
   const timer = useRef(null);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
   const sel = versoes.find(v => v.id === selId) || null;
-  const editavel = sel && EDITAVEL.includes(sel.status);
+  const bloqueada = sel && !EDITAVEL.includes(sel.status);
+  // Manutenção: admin pode editar uma versão já aprovada/enviada sem criar nova versão.
+  const editavel = sel && (EDITAVEL.includes(sel.status) || (manutencao && isAdmin));
   const c = draft || {};
 
   const carregar = async (preferId) => {
@@ -327,7 +372,21 @@ function Workspace({ estudoId }) {
 
   const selecionar = (v) => {
     if (dirty && !confirm('Há alterações não salvas. Descartar?')) return;
-    setSelId(v.id); setDraft(JSON.parse(JSON.stringify(v.conteudo || {}))); setDirty(false);
+    setSelId(v.id); setDraft(JSON.parse(JSON.stringify(v.conteudo || {}))); setDirty(false); setManutencao(false);
+  };
+
+  const excluirAnalise = async () => {
+    if (!confirm(`Excluir a análise técnica de ${estudo.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`)) return;
+    try {
+      await base44.entities.PropostaTecnica.deleteMany({ estudo_id: estudoId });
+      await base44.entities.EstudoViabilidade.update(estudoId, {
+        proposta_atual_id: null, proposta_status: null, proposta_versao: null,
+        score_viabilidade: null, classificacao_viabilidade: null, parecer_tecnico: null,
+        analise_gerada_em: null, status: 'recebido',
+      });
+      toast.success('Análise excluída. O estudo permanece disponível para uma nova análise.');
+      nav('/AnaliseTecnica');
+    } catch (e) { toast.error('Erro ao excluir: ' + e.message); }
   };
 
   const rodarIA = async (payload) => {
@@ -393,6 +452,8 @@ function Workspace({ estudoId }) {
   const cl = CLASSIFICACAO[sel?.classificacao];
   const docs = estudo.documentos || [];
   const notas = sel?.notas_internas_ia || {};
+  // A análise só começa depois que o cliente devolve as respostas do estudo.
+  const respostasRecebidas = ['recebido', 'em_analise_tecnica', 'concluido'].includes(estudo.status);
 
   const TABS = [
     ['resumo', 'Resumo executivo', Target], ['diagnostico', 'Diagnóstico', Search], ['estrutura', 'Estrutura', Layers],
@@ -417,16 +478,28 @@ function Workspace({ estudoId }) {
             </div>
           </div>
         </div>
-        {sel && (
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setRevisaoAberta(true)} disabled={rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
-              <History className="w-3.5 h-3.5" /> Revisar / nova versão
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) nav(`/EstudoViabilidade?estudo=${estudoId}`); }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
+            <ClipboardCheck className="w-3.5 h-3.5" /> Ver estudo de origem
+          </button>
+          {sel && (
+            <>
+              <button onClick={() => setRevisaoAberta(true)} disabled={rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
+                <History className="w-3.5 h-3.5" /> Revisar / nova versão
+              </button>
+              <button onClick={gerarPdf} disabled={gerandoPdf || rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0d1117' }}>
+                {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />} Gerar PDF executivo
+              </button>
+            </>
+          )}
+          {sel && isAdmin && (
+            <button onClick={excluirAnalise} disabled={rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-60"
+              style={{ color: A.danger, background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.35)' }}>
+              <Trash2 className="w-3.5 h-3.5" /> Excluir análise
             </button>
-            <button onClick={gerarPdf} disabled={gerandoPdf || rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0d1117' }}>
-              {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />} Gerar PDF executivo
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Estado: IA rodando */}
@@ -457,12 +530,24 @@ function Workspace({ estudoId }) {
             <div className="flex flex-wrap gap-2 mt-3 text-[11px]">
               <Badge cor={A.accent}>{Object.keys(estudo.respostas || {}).length} respostas</Badge>
               <Badge cor={A.accent}>{docs.length} documentos</Badge>
-              {estudo.status !== 'recebido' && estudo.status !== 'em_analise_tecnica' && <Badge cor={A.gold}>Formulário ainda não concluído pelo cliente</Badge>}
+              <Badge cor={A.gold}>Estudo: {STATUS_ESTUDO[estudo.status]?.label}</Badge>
             </div>
           </div>
-          <button onClick={() => rodarIA({ action: 'analisar', estudo_id: estudoId })} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}>
-            <Sparkles className="w-4 h-4" /> Rodar análise com IA
-          </button>
+          {respostasRecebidas ? (
+            <button onClick={() => rodarIA({ action: 'analisar', estudo_id: estudoId })} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+              <Sparkles className="w-4 h-4" /> Rodar análise com IA
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2 items-stretch">
+              <p className="text-[11px] flex items-start gap-1.5 max-w-[260px]" style={{ color: A.gold }}>
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                A análise começa quando o cliente devolve as respostas do estudo.
+              </p>
+              <button onClick={() => nav(`/EstudoViabilidade?estudo=${estudoId}`)} className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={inputStyle}>
+                <ClipboardCheck className="w-4 h-4" /> Ver estudo / link do cliente
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -543,9 +628,22 @@ function Workspace({ estudoId }) {
 
           {/* Área principal */}
           <div className="space-y-4 min-w-0">
-            {!editavel && (
-              <div className="rounded-xl px-4 py-2.5 text-xs flex items-center gap-2" style={{ background: A.goldDim, border: '1px solid rgba(251,191,36,0.25)', color: A.gold }}>
+            {bloqueada && !manutencao && (
+              <div className="rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 flex-wrap" style={{ background: A.goldDim, border: '1px solid rgba(251,191,36,0.25)', color: A.gold }}>
                 <Lock className="w-3.5 h-3.5" /> Visualizando v{sel.versao} ({STATUS_PROPOSTA[sel.status].label}) — somente leitura.
+                {isAdmin && (
+                  <button onClick={() => setManutencao(true)} className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold" style={{ background: A.gold, color: '#0d1117' }}>
+                    <PencilLine className="w-3 h-3" /> Habilitar manutenção
+                  </button>
+                )}
+              </div>
+            )}
+            {manutencao && editavel && (
+              <div className="rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 flex-wrap" style={{ background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.35)', color: A.danger }}>
+                <PencilLine className="w-3.5 h-3.5" /> Modo manutenção: editando v{sel.versao} diretamente (o histórico desta versão não é preservado).
+                <button onClick={() => { setManutencao(false); setDraft(JSON.parse(JSON.stringify(sel.conteudo || {}))); setDirty(false); }} className="ml-auto px-2.5 py-1 rounded-md text-[11px] font-bold" style={{ background: 'rgba(248,113,113,0.2)' }}>
+                  Sair da manutenção
+                </button>
               </div>
             )}
             <div className="flex gap-1 overflow-x-auto pb-1">
