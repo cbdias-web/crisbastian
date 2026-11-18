@@ -75,7 +75,9 @@ REGRAS DE REDAÇÃO:
 - Português do Brasil, tom executivo, claro e consultivo; frases objetivas; sem jargão desnecessário.
 - NÃO invente fatos, números ou documentos. Quando uma informação faltar, registre-a em "premissas" e/ou "documentos_pendentes" e em notas_internas.informacoes_faltantes.
 - Score de viabilidade 0-100 considerando: aderência entre objetivos e solução, patrimônio/escala vs. custo, riscos jurídico-fiscais (débitos, processos, bloqueios), completude documental e prazo desejado.
-- Etapas: de 3 a 6 fases sequenciais (ex.: Diagnóstico e planejamento → Constituição/estruturação → Transferência/integralização ou abertura → Governança/sucessão → Acompanhamento), cada uma com objetivo, atividades, entregáveis, prazo em dias corridos e faixa de honorários (investimento_min/investimento_max em BRL, números inteiros).
+- Profundidade mínima: diagnóstico com 5 ou mais achados; riscos com 4 ou mais itens; benefícios com 4 ou mais; próximos passos com 4 ou mais; premissas com 3 ou mais; alternativas com 2 ou mais. Use os números informados pelo cliente (valores de mercado vs. valores no IR, renda de aluguéis, débitos) para quantificar impactos e estimativas de economia quando possível, deixando claro que são estimativas.
+- Linguagem: use "proteção patrimonial" e "organização patrimonial"; não use "blindagem".
+- Etapas: OBRIGATORIAMENTE de 4 a 6 fases sequenciais (ex.: Diagnóstico e planejamento → Constituição/estruturação → Transferência/integralização ou abertura → Governança/sucessão → Acompanhamento), cada uma com objetivo, atividades, entregáveis, prazo em dias corridos e faixa de honorários (investimento_min/investimento_max em BRL, números inteiros).
 - Custos de terceiros (ITBI, ITCMD, cartórios, juntas, agentes no exterior) vão em custos_recorrentes ou premissas, nunca somados aos honorários.
 - Riscos com nível e mitigação concreta. Diagnóstico com impacto.
 - base_legal: liste apenas normas efetivamente pertinentes.
@@ -94,15 +96,28 @@ Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, 
   return p;
 }
 
+// Modelo usado na análise técnica (raciocínio jurídico-tributário + leitura de documentos).
+export const MODELO_ANALISE = 'claude-sonnet-5';
+
 export async function chamarIA(base44: any, prompt: string, fileUrls: string[]) {
-  const exec = (files?: string[]) => base44.integrations.Core.InvokeLLM({
+  const exec = (files?: string[], model?: string) => base44.integrations.Core.InvokeLLM({
     prompt,
+    model,
     file_urls: files && files.length ? files : undefined,
     response_json_schema: SCHEMA_ANALISE,
   });
-  let res;
-  try { res = await exec(fileUrls); } catch (_e) { res = await exec(); }
-  return typeof res === 'string' ? JSON.parse(res) : res;
+  const tentativas: [string[] | undefined, string | undefined][] = [
+    [fileUrls, MODELO_ANALISE], [undefined, MODELO_ANALISE], [fileUrls, undefined], [undefined, undefined],
+  ];
+  let ultimoErro: unknown;
+  for (const [f, m] of tentativas) {
+    try {
+      const res = await exec(f, m);
+      const out = typeof res === 'string' ? JSON.parse(res) : res;
+      if (out && out.conteudo) return out;
+    } catch (e) { ultimoErro = e; }
+  }
+  throw ultimoErro || new Error('Falha no motor de IA');
 }
 
 export function normalizarConteudo(c: any) {
