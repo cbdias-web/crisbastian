@@ -39,6 +39,7 @@ export default function NdaEstudoCard({ onAlterar }) {
   const [dados, setDados] = useState(null);
   const [cliente, setCliente] = useState(null);
   const [processando, setProcessando] = useState(false);
+  const [arrastando, setArrastando] = useState(false);
 
   const enviar = async (file) => {
     if (!file) return;
@@ -73,8 +74,23 @@ export default function NdaEstudoCard({ onAlterar }) {
     onAlterar?.(null);
   };
 
+  const soltar = (e) => {
+    e.preventDefault();
+    setArrastando(false);
+    if (processando) return;
+    const file = e.dataTransfer?.files?.[0];
+    if (file) enviar(file);
+  };
+
   return (
-    <div className="rounded-xl p-3 space-y-2" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+    <div className="rounded-xl p-3 space-y-2 transition"
+      onDragOver={(e) => { e.preventDefault(); if (!processando) setArrastando(true); }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastando(false); }}
+      onDrop={soltar}
+      style={{
+        background: arrastando ? A.accentDim : A.surface2,
+        border: `1px ${arrastando ? 'dashed' : 'solid'} ${arrastando ? A.accent : A.border}`,
+      }}>
       <div className="flex items-center justify-between gap-2">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: A.accent }}>
@@ -95,7 +111,7 @@ export default function NdaEstudoCard({ onAlterar }) {
         <label className="flex items-center justify-center gap-2 py-3 rounded-lg cursor-pointer text-xs font-semibold"
           style={{ border: `1px dashed ${A.border}`, color: processando ? A.textMuted : A.accent, background: A.accentDim }}>
           {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {processando ? 'Lendo documento...' : 'Selecionar arquivo do NDA (PDF ou imagem)'}
+          {processando ? 'Lendo documento...' : arrastando ? 'Solte o NDA aqui' : 'Arraste o NDA aqui ou clique para selecionar'}
           <input type="file" className="hidden" accept=".pdf,image/*" disabled={processando}
             onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; enviar(f); }} />
         </label>
@@ -105,6 +121,9 @@ export default function NdaEstudoCard({ onAlterar }) {
             <PaperclipIcon processando={processando} />
             <span className="flex-1 truncate">{arquivo.nome}</span>
           </div>
+          {!processando && (
+            <p className="text-[10px]" style={{ color: A.textMuted }}>Arraste outro arquivo aqui para substituir.</p>
+          )}
 
           {dados && (
             <>
