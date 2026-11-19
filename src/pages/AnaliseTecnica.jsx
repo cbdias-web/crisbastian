@@ -10,6 +10,7 @@ import {
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estudoViabilidade';
 import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl } from '@/lib/propostaTecnica';
+import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 
 const A = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', surface3: '#222b3d',
@@ -398,8 +399,9 @@ function Workspace({ estudoId }) {
       await carregar(res.data.proposta.id);
       toast.success(`Proposta v${res.data.proposta.versao} gerada. Revise antes de enviar.`);
       setTab('resumo');
-    } catch (e) { toast.error('Falha na análise: ' + (e?.response?.data?.error || e.message)); }
-    clearInterval(timer.current); setRodando(false);
+      return true;
+    } catch (e) { toast.error('Falha na análise: ' + (e?.response?.data?.error || e.message)); return false; }
+    finally { clearInterval(timer.current); setRodando(false); }
   };
 
   const salvar = async () => {
@@ -760,6 +762,15 @@ function Workspace({ estudoId }) {
             {tab === 'cliente' && <DadosCliente estudo={estudo} />}
           </div>
         </div>
+      )}
+
+      {/* Depois da análise gerada: campo de informações/ajustes → nova versão */}
+      {sel && (
+        <SugestoesAjuste versao={sel.versao} rodando={rodando}
+          onGerar={async (texto) => {
+            if (dirty) await salvar();
+            return rodarIA({ action: 'revisar', estudo_id: estudoId, proposta_id: sel.id, motivo: texto, instrucoes: texto });
+          }} />
       )}
 
       {/* Barra de salvar */}
