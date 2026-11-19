@@ -347,7 +347,15 @@ export default function EstudoViabilidade() {
       {detalhe && (
         <DetalheEstudoModal estudo={detalhe} user={user} isAdmin={isAdmin} onClose={() => setDetalhe(null)} onAtualizar={atualizar}
           onExcluido={async (e) => {
-            await base44.entities.EstudoViabilidade.delete(e.id);
+            try {
+              await base44.entities.EstudoViabilidade.delete(e.id);
+            } catch (err) {
+              // Registro já removido (ex.: exclusão repetida ou em outra aba): segue limpando a tela
+              if (!/not found/i.test(err?.message || '')) {
+                toast.error('Erro ao excluir: ' + (err?.message || 'tente novamente'));
+                return;
+              }
+            }
             setEstudos(l => l.filter(x => x.id !== e.id));
             setDetalhe(null);
             toast.success('Estudo excluído');
@@ -509,9 +517,10 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
   const [excluindo, setExcluindo] = useState(false);
 
   const excluir = async () => {
+    if (excluindo) return;
     if (!confirm('Excluir definitivamente este estudo? Esta ação não pode ser desfeita.')) return;
     setExcluindo(true);
-    try { await onExcluido(estudo); } finally { setExcluindo(false); }
+    try { await onExcluido(estudo); } catch { /* tratado no pai */ } finally { setExcluindo(false); }
   };
   const p = PRODUTOS_ESTUDO[estudo.produto];
   const Icon = ICONE[estudo.produto] || Landmark;
