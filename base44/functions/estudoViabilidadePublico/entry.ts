@@ -35,6 +35,52 @@ function resposta(e: any, extra: Record<string, unknown> = {}) {
   });
 }
 
+const JANELA_ALERTA_MS = 3 * 60 * 60 * 1000;
+
+// Avisa consultor responsável + admins (Jarvis + e-mail) sobre a devolução do formulário.
+async function notificar(base44: any, estudo: any, assunto: string, mensagem: string) {
+  const emails = new Set<string>();
+  if (estudo.responsavel_email) emails.add(estudo.responsavel_email);
+  try {
+    const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' });
+    (admins || []).forEach((u: any) => { if (u.email && u.ativo !== false) emails.add(u.email); });
+  } catch (_) { /* sem lista de admins não bloqueia */ }
+
+  const prod = (PRODUTOS_ESTUDO as any)[estudo.produto]?.nome || estudo.produto;
+  const resumo = `\n\nCliente: ${estudo.cliente_nome || '—'} · Produto: ${prod}\nAcesse Comercial > Estudo de Viabilidade para revisar.`;
+
+  for (const email of emails) {
+    try {
+      await base44.asServiceRole.entities.JarvisMensagem.create({
+        destinatario_email: email,
+        remetente_nome: 'Jarvis',
+        mensagem: mensagem + resumo,
+      });
+    } catch (_) { /* Jarvis não bloqueia */ }
+    try {
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: email,
+        subject: assunto,
+        body: mensagem + `\n\nCliente: ${estudo.cliente_nome || '—'}\nProduto: ${prod}\n\nAcesse o portal Villela Exchange > Comercial > Estudo de Viabilidade para revisar as respostas e documentos.`,
+      });
+    } catch (_) { /* e-mail não bloqueia */ }
+  }
+}
+
+// Cliente preencheu tudo (faltando só as declarações finais): avisa uma vez a cada 3h.
+async function alertarPreenchimentoCompleto(base44: any, estudo: any) {
+  if (!['rascunho', 'enviado_cliente', 'em_preenchimento'].includes(estudo.status)) return;
+  const anterior = estudo.ultimo_alerta_cliente_em ? new Date(estudo.ultimo_alerta_cliente_em).getTime() : 0;
+  if (Date.now() - anterior < JANELA_ALERTA_MS) return;
+  const pendencias = calcularPendenciasEstudo(estudo).filter((p: string) => !p.startsWith('Declaração'));
+  if (pendencias.length > 0) return;
+  try {
+    await base44.asServiceRole.entities.EstudoViabilidade.update(estudo.id, { ultimo_alerta_cliente_em: new Date().toISOString() });
+  } catch (_) { /* não bloqueia */ }
+  await notificar(base44, estudo, `Estudo de Viabilidade preenchido — ${estudo.cliente_nome || ''}`,
+    'O cliente preencheu as informações e enviou os documentos do estudo de viabilidade. Faltam apenas as declarações finais para concluir o envio.');
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -70,6 +116,7 @@ export default async function(req: Request): Promise<Response> {
       if (typeof body.preenchido_por_nome === 'string') u.preenchido_por_nome = body.preenchido_por_nome.slice(0, 200);
       await Ent.update(estudo.id, u);
       estudo = await Ent.get(estudo.id);
+      await alertarPreenchimentoCompleto(base44, estudo);
       return resposta(estudo);
     }
 
@@ -90,6 +137,7 @@ export default async function(req: Request): Promise<Response> {
       documentos.push({ tipo, descricao: item.descricao, nome_arquivo: nome, url: file_url, enviado_em: new Date().toISOString() });
       await Ent.update(estudo.id, marcarPreenchimento({ documentos }));
       estudo = await Ent.get(estudo.id);
+      await alertarPreenchimentoCompleto(base44, estudo);
       return resposta(estudo);
     }
 
@@ -111,23 +159,16 @@ export default async function(req: Request): Promise<Response> {
       if (pend.length > 0) {
         await Ent.update(estudo.id, marcarPreenchimento(u));
         estudo = await Ent.get(estudo.id);
+        await alertarPreenchimentoCompleto(base44, estudo);
         return resposta(estudo, { enviado: false });
       }
       const agora = new Date().toISOString();
-      await Ent.update(estudo.id, { ...u, status: 'recebido', data_recebimento: agora, link_preenchido_em: agora });
+      await Ent.update(estudo.id, { ...u, status: 'recebido', data_recebimento: agora, link_preenchido_em: agora, ultimo_alerta_cliente_em: agora });
       estudo = await Ent.get(estudo.id);
 
-      // Aviso ao consultor responsável (best-effort)
-      if (estudo.responsavel_email) {
-        try {
-          const prod = (PRODUTOS_ESTUDO as any)[estudo.produto]?.nome || estudo.produto;
-          await base44.asServiceRole.integrations.Core.SendEmail({
-            to: estudo.responsavel_email,
-            subject: `Estudo de Viabilidade recebido — ${prod} — ${estudo.cliente_nome || ''}`,
-            body: `O cliente ${estudo.cliente_nome || ''} concluiu o formulário de Estudo de Viabilidade (${prod}).\n\nAcesse o portal Villela Exchange > Comercial > Estudo de Viabilidade para revisar as respostas e documentos e encaminhar para a Análise Técnica.`,
-          });
-        } catch (_) { /* e-mail não bloqueia */ }
-      }
+      // Aviso ao consultor responsável e admins (Jarvis + e-mail)
+      await notificar(base44, estudo, `Estudo de Viabilidade recebido — ${estudo.cliente_nome || ''}`,
+        'O cliente concluiu o envio do formulário de Estudo de Viabilidade. As respostas e os documentos já estão disponíveis para revisão.');
       return resposta(estudo, { enviado: true });
     }
 

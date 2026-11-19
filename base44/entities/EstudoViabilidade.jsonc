@@ -165,6 +165,11 @@
     },
     "enviado_analise_por": {
       "type": "string"
+    },
+    "ultimo_alerta_cliente_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do ultimo aviso enviado ao consultor/admins sobre o preenchimento ou envio do formulario pelo cliente (controle anti-repeticao)"
     }
   },
   "required": [

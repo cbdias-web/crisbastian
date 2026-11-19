@@ -171,6 +171,23 @@ export default function EstudoViabilidade() {
     carregar();
   }, []);
 
+  // Atualização em tempo real: quando o cliente preenche ou envia o formulário,
+  // o status muda na tela sem precisar recarregar a página.
+  useEffect(() => {
+    const unsub = base44.entities.EstudoViabilidade.subscribe((event) => {
+      if (event.type === 'delete') {
+        setEstudos(l => l.filter(x => x.id !== event.id));
+        setDetalhe(d => (d && d.id === event.id ? null : d));
+        return;
+      }
+      const novo = event.data;
+      if (!novo?.id) return;
+      setEstudos(l => (l.some(x => x.id === novo.id) ? l.map(x => (x.id === novo.id ? { ...x, ...novo } : x)) : [novo, ...l]));
+      setDetalhe(d => (d && d.id === novo.id ? { ...d, ...novo } : d));
+    });
+    return unsub;
+  }, []);
+
   // Vindo da Análise Técnica (?estudo=ID): abre o estudo de origem já no detalhe,
   // para manter o fluxo estudo → análise como uma coisa só.
   const abertoPorParam = useRef(false);
@@ -560,6 +577,12 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
           {isAdmin && (
             <button onClick={excluir} disabled={excluindo} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-60" style={{ ...inputStyle, color: AURORA.danger }}>
               {excluindo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Excluir
+            </button>
+          )}
+          {['enviado_cliente', 'em_preenchimento'].includes(estudo.status) && (
+            <button onClick={() => onAtualizar(estudo, { status: 'recebido', data_recebimento: new Date().toISOString() }, 'Estudo marcado como recebido')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#34d399', color: '#0d1117' }}>
+              <CheckCircle2 className="w-3.5 h-3.5" /> Marcar como recebido
             </button>
           )}
           {estudo.status === 'recebido' && (
