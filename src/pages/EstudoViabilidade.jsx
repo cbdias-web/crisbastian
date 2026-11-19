@@ -370,6 +370,9 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   const [salvando, setSalvando] = useState(false);
   const [criado, setCriado] = useState(null);
   const [nda, setNda] = useState(null);
+  // Travas de segurança: impedem que um clique duplo crie dois estudos (dois "processos")
+  const criandoRef = useRef(false);
+  const estudoRef = useRef(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   // NDA enviado: preenche a identificação do cliente com os dados do documento
@@ -389,10 +392,23 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   };
 
   const criar = async () => {
+    if (criandoRef.current || criado) return;
     if (!form.produto) return toast.error('Selecione o produto do estudo.');
     if (!form.cliente_nome.trim()) return toast.error('Informe o nome do cliente.');
+    criandoRef.current = true;
     setSalvando(true);
     try {
+      // Se o estudo já foi criado nesta mesma janela (ex.: falhou só a geração do link),
+      // reaproveita o registro em vez de criar um segundo estudo/processo.
+      if (estudoRef.current) {
+        const res = await base44.functions.invoke('gerarLinkEstudoViabilidade', { estudo_id: estudoRef.current.id });
+        if (res?.data?.error) throw new Error(res.data.error);
+        const final = { ...estudoRef.current, link_token: res.data.token, status: 'enviado_cliente', data_envio_cliente: new Date().toISOString() };
+        setCriado(final);
+        onCriado(final);
+        toast.success('Estudo criado. Envie o link ao cliente.');
+        return;
+      }
       const d = nda?.dados || null;
       let clienteId = form.cliente_id;
 
@@ -427,6 +443,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
         responsavel_email: user?.email, responsavel_nome: nomeResp,
         nda_url: nda?.url || '', nda_nome: nda?.nome || '', nda_dados: d || undefined,
       });
+      estudoRef.current = e;
       const res = await base44.functions.invoke('gerarLinkEstudoViabilidade', { estudo_id: e.id });
       if (res?.data?.error) throw new Error(res.data.error);
       const final = { ...e, link_token: res.data.token, status: 'enviado_cliente', data_envio_cliente: new Date().toISOString() };
@@ -434,7 +451,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
       onCriado(final);
       toast.success('Estudo criado. Envie o link ao cliente.');
     } catch (err) { toast.error('Erro ao criar: ' + err.message); }
-    setSalvando(false);
+    finally { criandoRef.current = false; setSalvando(false); }
   };
 
   return (
@@ -539,13 +556,14 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
   };
 
   const gerarLink = async () => {
+    if (gerando) return;
     setGerando(true);
     try {
       const res = await base44.functions.invoke('gerarLinkEstudoViabilidade', { estudo_id: estudo.id });
       if (res?.data?.error) throw new Error(res.data.error);
       await onAtualizar(estudo, { link_token: res.data.token, status: estudo.status === 'rascunho' ? 'enviado_cliente' : estudo.status }, 'Link gerado');
     } catch (e) { toast.error(e.message); }
-    setGerando(false);
+    finally { setGerando(false); }
   };
 
   const enviarAnalise = async () => {
