@@ -88,6 +88,19 @@
       },
       "default": []
     },
+    "nda_url": {
+      "type": "string",
+      "description": "Arquivo do NDA enviado na abertura do estudo (file_uri privado)"
+    },
+    "nda_nome": {
+      "type": "string",
+      "description": "Nome do arquivo do NDA"
+    },
+    "nda_dados": {
+      "type": "object",
+      "description": "Dados cadastrais extraidos do NDA, usados como base do cadastro do cliente quando ele nao existe na base",
+      "additionalProperties": true
+    },
     "aceite_lgpd": {
       "type": "boolean",
       "default": false

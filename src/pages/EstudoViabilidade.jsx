@@ -4,11 +4,12 @@ import { base44 } from '@/api/base44Client';
 import {
   Landmark, Globe2, Wallet, Plus, Search, Link2, Copy, MessageCircle, Mail, ExternalLink, X, Loader2,
   FlaskConical, User, Building2, Paperclip, Send, RotateCcw, Ban, CheckCircle2, AlertTriangle, ClipboardList,
-  Pencil, Trash2, BrainCircuit,
+  Pencil, Trash2, BrainCircuit, FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
 import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
+import NdaEstudoCard from '@/components/estudo/NdaEstudoCard';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import { origemPublica } from '@/lib/appUrl';
 
@@ -335,20 +336,63 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   const [form, setForm] = useState({ produto: produtoInicial || '', tipo_cliente: 'PF', cliente_id: '', cliente_nome: '', cliente_documento: '', cliente_email: '', cliente_telefone: '', observacoes_internas: '' });
   const [salvando, setSalvando] = useState(false);
   const [criado, setCriado] = useState(null);
+  const [nda, setNda] = useState(null);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  // NDA enviado: preenche a identificação do cliente com os dados do documento
+  const aplicarNda = (info) => {
+    setNda(info);
+    const d = info?.dados;
+    if (!d) return;
+    setForm(f => ({
+      ...f,
+      cliente_id: info.cliente?.id || '',
+      cliente_nome: d.nome || f.cliente_nome,
+      cliente_documento: d.cpf_cnpj || f.cliente_documento,
+      cliente_email: d.email || f.cliente_email,
+      cliente_telefone: d.telefone || f.cliente_telefone,
+      tipo_cliente: d.tipo_pessoa || f.tipo_cliente,
+    }));
+  };
 
   const criar = async () => {
     if (!form.produto) return toast.error('Selecione o produto do estudo.');
     if (!form.cliente_nome.trim()) return toast.error('Informe o nome do cliente.');
     setSalvando(true);
     try {
+      const d = nda?.dados || null;
+      let clienteId = form.cliente_id;
+
+      // Cliente não identificado na base: o cadastro nasce dos dados do NDA
+      if (!clienteId && d?.nome) {
+        const novoCliente = { tipo_pessoa: d.tipo_pessoa || form.tipo_cliente, nome: d.nome, origem: 'nativo' };
+        const opcionais = {
+          cpf_cnpj: d.cpf_cnpj, email: d.email, telefone: d.telefone, endereco: d.endereco, bairro: d.bairro,
+          cidade: d.cidade, estado: d.estado, cep: d.cep, profissao: d.profissao, nascimento: d.nascimento,
+          nacionalidade: d.nacionalidade, responsavel_legal: d.responsavel_legal, cpf_responsavel: d.cpf_responsavel,
+          observacao: d.resumo,
+        };
+        Object.entries(opcionais).forEach(([k, v]) => { if (v) novoCliente[k] = v; });
+        try {
+          const cli = await base44.entities.Cliente.create(novoCliente);
+          clienteId = cli.id;
+        } catch { toast.error('Não foi possível cadastrar o cliente a partir do NDA.'); }
+      }
+
       const nomeResp = user?.nome_tratamento || user?.full_name || user?.email;
       const respostasIniciais = form.tipo_cliente === 'PJ'
-        ? { razao_social: form.cliente_nome, cnpj: form.cliente_documento, email: form.cliente_email, telefone: form.cliente_telefone }
-        : { nome: form.cliente_nome, cpf: form.cliente_documento, email: form.cliente_email, telefone: form.cliente_telefone };
+        ? {
+            razao_social: form.cliente_nome, cnpj: form.cliente_documento, email: form.cliente_email, telefone: form.cliente_telefone,
+            ...(d ? { endereco: d.endereco, cidade: d.cidade, uf: d.estado, resp_nome: d.responsavel_legal, resp_cpf: d.cpf_responsavel } : {}),
+          }
+        : {
+            nome: form.cliente_nome, cpf: form.cliente_documento, email: form.cliente_email, telefone: form.cliente_telefone,
+            ...(d ? { data_nascimento: d.nascimento, profissao: d.profissao, nacionalidade: d.nacionalidade, endereco: d.endereco, cidade: d.cidade, uf: d.estado } : {}),
+          };
       const e = await base44.entities.EstudoViabilidade.create({
-        ...form, status: 'rascunho', respostas: respostasIniciais, documentos: [],
+        ...form, cliente_id: clienteId, status: 'rascunho', respostas: respostasIniciais, documentos: [],
         responsavel_email: user?.email, responsavel_nome: nomeResp,
+        nda_url: nda?.url || '', nda_nome: nda?.nome || '', nda_dados: d || undefined,
       });
       const res = await base44.functions.invoke('gerarLinkEstudoViabilidade', { estudo_id: e.id });
       if (res?.data?.error) throw new Error(res.data.error);
@@ -401,6 +445,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
                 ))}
               </div>
             </div>
+            <NdaEstudoCard onAlterar={aplicarNda} />
             <ClienteEstudoPicker onSelecionar={(c) => setForm(f => ({
               ...f,
               cliente_id: c.id || '',
@@ -449,6 +494,15 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
   const pend = calcularPendenciasEstudo(estudo);
   const checklist = checklistDocumentos(estudo.produto, estudo.tipo_cliente);
   const docs = estudo.documentos || [];
+
+  const abrirNda = async () => {
+    try {
+      const res = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: estudo.nda_url, expires_in: 300 });
+      const url = res?.signed_url || res?.data?.signed_url;
+      if (!url) throw new Error('sem link');
+      window.open(url, '_blank', 'noopener');
+    } catch { toast.error('Não foi possível abrir o NDA.'); }
+  };
 
   const gerarLink = async () => {
     setGerando(true);
@@ -575,6 +629,13 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
           <div className="space-y-3">
             <div className="rounded-xl p-4" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>
               <p className="text-xs font-bold mb-2" style={{ color: AURORA.accent }}>Documentos ({docs.length})</p>
+              {estudo.nda_url && (
+                <button type="button" onClick={abrirNda}
+                  className="w-full flex items-center gap-1.5 mb-2 px-2 py-1.5 rounded-lg text-[11px] font-semibold"
+                  style={{ background: AURORA.accentDim, color: AURORA.accent }} title="Abrir NDA enviado na abertura do estudo">
+                  <FileText className="w-3.5 h-3.5 flex-shrink-0" /> <span className="truncate">NDA · {estudo.nda_nome || 'documento base'}</span>
+                </button>
+              )}
               <ul className="space-y-2">
                 {checklist.map(c => {
                   const fs = docs.filter(d => d.tipo === c.tipo);
