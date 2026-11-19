@@ -67,18 +67,28 @@ async function notificar(base44: any, estudo: any, assunto: string, mensagem: st
   }
 }
 
-// Cliente preencheu tudo (faltando só as declarações finais): avisa uma vez a cada 3h.
-async function alertarPreenchimentoCompleto(base44: any, estudo: any) {
+// Cliente devolveu o formulário (informações + documentos obrigatórios completos).
+// Marca a devolução e avisa consultor/admins uma vez a cada 3h.
+async function registrarDevolucaoCliente(base44: any, estudo: any) {
   if (!['rascunho', 'enviado_cliente', 'em_preenchimento'].includes(estudo.status)) return;
-  const anterior = estudo.ultimo_alerta_cliente_em ? new Date(estudo.ultimo_alerta_cliente_em).getTime() : 0;
-  if (Date.now() - anterior < JANELA_ALERTA_MS) return;
   const pendencias = calcularPendenciasEstudo(estudo).filter((p: string) => !p.startsWith('Declaração'));
   if (pendencias.length > 0) return;
+
+  const agora = new Date().toISOString();
+  const anterior = estudo.ultimo_alerta_cliente_em ? new Date(estudo.ultimo_alerta_cliente_em).getTime() : 0;
+  const deveAlertar = Date.now() - anterior >= JANELA_ALERTA_MS;
+  const patch: any = {};
+  if (!estudo.cliente_devolveu_em) patch.cliente_devolveu_em = agora;
+  if (deveAlertar) patch.ultimo_alerta_cliente_em = agora;
+  if (Object.keys(patch).length === 0) return;
+
   try {
-    await base44.asServiceRole.entities.EstudoViabilidade.update(estudo.id, { ultimo_alerta_cliente_em: new Date().toISOString() });
+    await base44.asServiceRole.entities.EstudoViabilidade.update(estudo.id, patch);
   } catch (_) { /* não bloqueia */ }
-  await notificar(base44, estudo, `Estudo de Viabilidade preenchido — ${estudo.cliente_nome || ''}`,
-    'O cliente preencheu as informações e enviou os documentos do estudo de viabilidade. Faltam apenas as declarações finais para concluir o envio.');
+  if (deveAlertar) {
+    await notificar(base44, estudo, `Estudo de Viabilidade devolvido — ${estudo.cliente_nome || ''}`,
+      'O cliente preencheu as informações e enviou os documentos do estudo de viabilidade. Faltam apenas as declarações finais para concluir o envio.');
+  }
 }
 
 export default async function(req: Request): Promise<Response> {
@@ -116,7 +126,7 @@ export default async function(req: Request): Promise<Response> {
       if (typeof body.preenchido_por_nome === 'string') u.preenchido_por_nome = body.preenchido_por_nome.slice(0, 200);
       await Ent.update(estudo.id, u);
       estudo = await Ent.get(estudo.id);
-      await alertarPreenchimentoCompleto(base44, estudo);
+      await registrarDevolucaoCliente(base44, estudo);
       return resposta(estudo);
     }
 
@@ -137,7 +147,7 @@ export default async function(req: Request): Promise<Response> {
       documentos.push({ tipo, descricao: item.descricao, nome_arquivo: nome, url: file_url, enviado_em: new Date().toISOString() });
       await Ent.update(estudo.id, marcarPreenchimento({ documentos }));
       estudo = await Ent.get(estudo.id);
-      await alertarPreenchimentoCompleto(base44, estudo);
+      await registrarDevolucaoCliente(base44, estudo);
       return resposta(estudo);
     }
 
@@ -159,11 +169,14 @@ export default async function(req: Request): Promise<Response> {
       if (pend.length > 0) {
         await Ent.update(estudo.id, marcarPreenchimento(u));
         estudo = await Ent.get(estudo.id);
-        await alertarPreenchimentoCompleto(base44, estudo);
+        await registrarDevolucaoCliente(base44, estudo);
         return resposta(estudo, { enviado: false });
       }
       const agora = new Date().toISOString();
-      await Ent.update(estudo.id, { ...u, status: 'recebido', data_recebimento: agora, link_preenchido_em: agora, ultimo_alerta_cliente_em: agora });
+      await Ent.update(estudo.id, {
+        ...u, status: 'recebido', data_recebimento: agora, link_preenchido_em: agora,
+        ultimo_alerta_cliente_em: agora, cliente_devolveu_em: estudo.cliente_devolveu_em || agora,
+      });
       estudo = await Ent.get(estudo.id);
 
       // Aviso ao consultor responsável e admins (Jarvis + e-mail)

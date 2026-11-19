@@ -207,7 +207,10 @@ export default function EstudoViabilidade() {
 
   const filtrados = useMemo(() => estudos.filter(e => {
     if (produtoSel && e.produto !== produtoSel) return false;
-    if (statusFiltro !== 'todos' && e.status !== statusFiltro) return false;
+    // "Recebido" inclui os estudos que o cliente já devolveu (faltando só a declaração final)
+    if (statusFiltro === 'recebido') {
+      if (e.status !== 'recebido' && !e.cliente_devolveu_em) return false;
+    } else if (statusFiltro !== 'todos' && e.status !== statusFiltro) return false;
     if (busca) {
       const q = busca.toLowerCase();
       const alvo = `${e.cliente_nome || ''} ${e.cliente_documento || ''} ${e.cliente_email || ''} ${e.responsavel_nome || ''}`.toLowerCase();
@@ -313,7 +316,12 @@ export default function EstudoViabilidade() {
                       </td>
                       <td className="px-4 py-3"><span className="flex items-center gap-1.5 text-xs"><Icon className="w-3.5 h-3.5" style={{ color: AURORA.accent }} />{PRODUTOS_ESTUDO[e.produto]?.nome}</span></td>
                       <td className="px-4 py-3 text-xs">{e.tipo_cliente}</td>
-                      <td className="px-4 py-3"><StatusBadge status={e.status} /></td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={e.status} />
+                        {e.cliente_devolveu_em && !['recebido', 'em_analise_tecnica', 'concluido'].includes(e.status) && (
+                          <p className="text-[10px] font-semibold mt-1" style={{ color: AURORA.gold }}>Devolvido pelo cliente</p>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-xs">{(e.documentos || []).length}</td>
                       <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{e.responsavel_nome || e.responsavel_email || '—'}</td>
                       <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{fmtData(e.updated_date || e.created_date)}</td>

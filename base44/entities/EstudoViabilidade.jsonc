@@ -170,6 +170,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Data/hora do ultimo aviso enviado ao consultor/admins sobre o preenchimento ou envio do formulario pelo cliente (controle anti-repeticao)"
+    },
+    "cliente_devolveu_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que o cliente devolveu o formulario com todas as informacoes e documentos obrigatorios (mesmo que falte apenas a declaracao final de envio)"
     }
   },
   "required": [
