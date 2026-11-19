@@ -48,18 +48,23 @@ export function montarPdfProposta(p: any, user: any): Uint8Array {
 
     const para = (s: any, sz = 9.5, color = INK, lh = 4.7, x = M, w = CW) => {
       font(sz, 'normal', color);
-      for (const ln of lines(s, w)) { ensure(lh); doc.text(ln, x, y); y += lh; }
+      const ls = lines(s, w);
+      // evita parágrafo órfão no pé da página (mínimo de 3 linhas para começar)
+      if (ls.length > 1) ensure(Math.min(ls.length, 3) * lh);
+      for (const ln of ls) { ensure(lh); doc.text(ln, x, y); y += lh; }
       y += 1.5;
     };
+    // Cada capítulo começa sempre no topo de uma nova página.
     const secao = (num: string, titulo: string) => {
-      ensure(18);
+      novaPagina();
       y += 3;
       font(8, 'bold', TEAL); doc.text(num, M, y);
       font(14, 'bold', NAVY); doc.text(T(titulo), M + 9, y);
       y += 2.5; doc.setDrawColor(...TEAL_L); doc.setLineWidth(0.6); doc.line(M, y, M + 22, y);
       doc.setLineWidth(0.2); y += 6;
     };
-    const sub = (t: string) => { ensure(10); font(10, 'bold', NAVY); doc.text(T(t), M, y); y += 5; };
+    // Subtítulo não fica sozinho no pé da página
+    const sub = (t: string) => { ensure(26); font(10, 'bold', NAVY); doc.text(T(t), M, y); y += 5; };
     const bullets = (arr: any[], sz = 9.2, x = M) => {
       for (const it of (arr || []).filter(Boolean)) {
         const ls = lines(it, CW - (x - M) - 5);
@@ -82,10 +87,15 @@ export function montarPdfProposta(p: any, user: any): Uint8Array {
         cols.forEach(col => { doc.text(T(col.label), col.align === 'right' ? x + col.w - pad : x + pad, y, { align: col.align === 'right' ? 'right' : 'left' }); x += col.w; });
         y += 5;
       };
+      // alturas calculadas antes de desenhar: o cabeçalho nunca fica órfão no pé da página
+      const calc = rows.map(row => {
+        const cells = row.map((cell, ci) => (typeof cell === 'object' && cell && cell.badge) ? [T(cell.text)] : lines(cell, cols[ci].w - 2 * pad));
+        return { cells, h: Math.max(...cells.map(ls => Math.max(1, ls.length))) * lh + 3 };
+      });
+      if (calc.length && y + 9 + calc[0].h > BOTTOM) novaPagina();
       header();
       rows.forEach((row, ri) => {
-        const cells = row.map((cell, ci) => (typeof cell === 'object' && cell && cell.badge) ? [T(cell.text)] : lines(cell, cols[ci].w - 2 * pad));
-        const h = Math.max(...cells.map(ls => Math.max(1, ls.length))) * lh + 3;
+        const { cells, h } = calc[ri];
         if (y + h > BOTTOM) { novaPagina(); header(); }
         const isTotal = opts.totalRow && ri === rows.length - 1;
         if (isTotal) { doc.setFillColor(232, 247, 243); doc.rect(M, y - 3.5, CW, h, 'F'); }
@@ -156,7 +166,6 @@ export function montarPdfProposta(p: any, user: any): Uint8Array {
     });
 
     // ───────────────── 01 SUMÁRIO EXECUTIVO ─────────────────
-    novaPagina();
     secao('01', 'Sumário executivo');
     // cartões KPI
     const cls = (CLASSIFICACAO as any)[p.classificacao] || { label: '—' };
@@ -270,23 +279,30 @@ export function montarPdfProposta(p: any, user: any): Uint8Array {
       y += 4;
       // Detalhe de cada etapa
       etapas.forEach((e: any, i: number) => {
-        ensure(26);
+        const colW = (CW - 6) / 2;
+        const objLs = e.objetivo ? lines(e.objetivo, CW) : [];
+        const at = (e.atividades || []).flatMap((a: any) => lines('• ' + a, colW - 2));
+        const en = (e.entregaveis || []).flatMap((a: any) => lines('• ' + a, colW - 2));
+        const n = Math.max(at.length, en.length);
+        // o bloco da etapa (cabeçalho + objetivo + listas) não é cortado entre páginas
+        const hBloco = 10 + (objLs.length ? objLs.length * 4.5 + 1.5 : 0) + (n ? 8 + n * 4.2 + 4 : 0);
+        if (y + hBloco > BOTTOM && hBloco <= BOTTOM - TOP) novaPagina();
         doc.setFillColor(...ZEBRA); doc.roundedRect(M, y - 4, CW, 9, 1.5, 1.5, 'F');
         font(9.5, 'bold', NAVY); doc.text(T(`${e.fase || 'Fase ' + (i + 1)}  ·  ${e.titulo || ''}`), M + 3, y + 1.8);
         font(8, 'bold', TEAL);
         doc.text(T(`${e.prazo_dias || 0} dias  ·  ${brl(e.investimento_min)} a ${brl(e.investimento_max)}`), M + CW - 3, y + 1.8, { align: 'right' });
         y += 10;
-        if (e.objetivo) para(e.objetivo, 9, INK, 4.5);
-        const colW = (CW - 6) / 2;
-        const at = (e.atividades || []).flatMap((a: any) => lines('• ' + a, colW - 2));
-        const en = (e.entregaveis || []).flatMap((a: any) => lines('• ' + a, colW - 2));
-        const n = Math.max(at.length, en.length);
+        if (objLs.length) { font(9, 'normal', INK); objLs.forEach((l: string) => { ensure(4.5); doc.text(l, M, y); y += 4.5; }); y += 1.5; }
         if (n) {
-          ensure(8 + Math.min(n, 30) * 4.2);
+          ensure(8);
           font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 4.5;
           font(8.5, 'normal', INK);
           for (let k = 0; k < n; k++) {
-            ensure(4.2);
+            if (y + 4.2 > BOTTOM) {
+              novaPagina();
+              font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 4.5;
+              font(8.5, 'normal', INK);
+            }
             if (at[k]) doc.text(at[k], M, y);
             if (en[k]) doc.text(en[k], M + colW + 6, y);
             y += 4.2;
