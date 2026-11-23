@@ -24,6 +24,9 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     const prod = (PRODUTOS_ESTUDO as any)[p.produto] || { titulo: 'Estudo de Viabilidade', nome: '' };
     const etapas = Array.isArray(c.etapas) ? c.etapas : [];
     const tot = somaEtapas(etapas);
+    // Honorários: valor único do projeto (definido pelo consultor a partir da sugestão da IA).
+    const inv = c.investimento || {};
+    const valorHonorarios = Number(inv.valor) || Number(inv.valor_sugerido) || 0;
     const hoje = new Date();
     const validade = new Date(hoje.getTime() + (Number(p.validade_dias) || 15) * 86400000);
 
@@ -46,12 +49,32 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     const novaPagina = () => { doc.addPage(); y = TOP + 4; };
     const ensure = (h: number) => { if (y + h > BOTTOM) novaPagina(); };
 
-    const para = (s: any, sz = 9.5, color = INK, lh = 4.7, x = M, w = CW) => {
+    // Linha justificada: distribui o espaço restante entre as palavras até fechar a coluna.
+    const linhaJustificada = (linha: string, x: number, yy: number, w: number) => {
+      const palavras = String(linha).split(' ').filter(Boolean);
+      if (palavras.length < 2) { doc.text(linha, x, yy); return; }
+      const extra = (w - doc.getTextWidth(linha)) / (palavras.length - 1);
+      if (extra <= 0 || extra > 4) { doc.text(linha, x, yy); return; }
+      const espaco = doc.getTextWidth(' ');
+      let cx = x;
+      for (const pal of palavras) { doc.text(pal, cx, yy); cx += doc.getTextWidth(pal) + espaco + extra; }
+    };
+    // Texto corrido justificado; a última linha de cada parágrafo fica alinhada à esquerda.
+    const bloco = (s: any, sz: number, color: [number, number, number], lh: number, x: number, w: number) => {
       font(sz, 'normal', color);
-      const ls = lines(s, w);
-      // evita parágrafo órfão no pé da página (mínimo de 3 linhas para começar)
-      if (ls.length > 1) ensure(Math.min(ls.length, 3) * lh);
-      for (const ln of ls) { ensure(lh); doc.text(ln, x, y); y += lh; }
+      const paragrafos = String(s ?? '').split(/\n+/).map(t => lines(t, w)).filter(b => b.length);
+      for (const b of paragrafos) {
+        // evita parágrafo órfão no pé da página (mínimo de 3 linhas para começar)
+        if (b.length > 1) ensure(Math.min(b.length, 3) * lh);
+        b.forEach((ln, i) => {
+          ensure(lh);
+          if (i < b.length - 1) linhaJustificada(ln, x, y, w); else doc.text(ln, x, y);
+          y += lh;
+        });
+      }
+    };
+    const para = (s: any, sz = 9.5, color = INK, lh = 4.7, x = M, w = CW) => {
+      bloco(s, sz, color, lh, x, w);
       y += 1.5;
     };
     // Cada capítulo começa sempre no topo de uma nova página.
@@ -201,7 +224,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     const cards = [
       { k: 'Viabilidade', v: `${Math.round(Number(p.score_viabilidade) || 0)}/100`, s: cls.label, rgb: crgb },
       { k: 'Prazo estimado', v: `${tot.prazo} dias`, s: `${etapas.length} etapas`, rgb: NAVY },
-      { k: 'Investimento (honorários)', v: tot.max ? `${brl(tot.min)}` : '—', s: tot.max ? `até ${brl(tot.max)}` : 'a definir', rgb: NAVY },
+      { k: 'Investimento (honorários)', v: valorHonorarios ? brl(valorHonorarios) : '—', s: valorHonorarios ? 'valor único · negociável' : 'a definir', rgb: NAVY },
       { k: 'Success fee', v: c.success_fee?.aplicavel ? 'Opcional' : 'Não aplicável', s: c.success_fee?.aplicavel ? 'ver seção 08' : '', rgb: NAVY },
     ];
     ensure(cardH + 6);
@@ -224,7 +247,11 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       ensure(ls.length * 4.4 + 10);
       doc.setFillColor(232, 247, 243); doc.roundedRect(M, y - 2, CW, ls.length * 4.4 + 9, 2, 2, 'F');
       font(7.5, 'bold', TEAL); doc.text('LEITURA DA VIABILIDADE', M + 5, y + 3);
-      font(8.8, 'normal', INK); ls.forEach((l, i) => doc.text(l, M + 5, y + 8 + i * 4.4));
+      font(8.8, 'normal', INK);
+      ls.forEach((l, i) => {
+        const yy = y + 8 + i * 4.4;
+        if (i < ls.length - 1) linhaJustificada(l, M + 5, yy, CW - 10); else doc.text(l, M + 5, yy);
+      });
       y += ls.length * 4.4 + 12;
     }
 
@@ -250,7 +277,11 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       doc.setFillColor(...NAVY); doc.roundedRect(M, y - 2, CW, h, 2.5, 2.5, 'F');
       font(12, 'bold', [255, 255, 255]); doc.text(T(er.nome || c.titulo_estrutura || prod.nome), M + 5, y + 5);
       if (er.jurisdicao) { font(8.5, 'bold', GOLD); doc.text(T(er.jurisdicao), M + CW - 5, y + 5, { align: 'right' }); }
-      font(9, 'normal', [210, 225, 242]); ls.forEach((l, i) => doc.text(l, M + 5, y + 12 + i * 4.6));
+      font(9, 'normal', [210, 225, 242]);
+      ls.forEach((l, i) => {
+        const yy = y + 12 + i * 4.6;
+        if (i < ls.length - 1) linhaJustificada(l, M + 5, yy, CW - 10); else doc.text(l, M + 5, yy);
+      });
       y += h + 5;
     }
     if ((er.componentes || []).length) { sub('Componentes da estrutura'); bullets(er.componentes); }
@@ -317,7 +348,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
         doc.setFillColor(...ZEBRA); doc.roundedRect(M, y - 4, CW, 9, 1.5, 1.5, 'F');
         font(9.5, 'bold', NAVY); doc.text(T(`${e.fase || 'Fase ' + (i + 1)}  ·  ${e.titulo || ''}`), M + 3, y + 1.8);
         font(8, 'bold', TEAL);
-        doc.text(T(`${e.prazo_dias || 0} dias  ·  ${brl(e.investimento_min)} a ${brl(e.investimento_max)}`), M + CW - 3, y + 1.8, { align: 'right' });
+        doc.text(T(`${e.prazo_dias || 0} dias`), M + CW - 3, y + 1.8, { align: 'right' });
         y += 10;
         if (objLs.length) { font(9, 'normal', INK); objLs.forEach((l: string) => { ensure(4.5); doc.text(l, M, y); y += 4.5; }); y += 1.5; }
         if (n) {
@@ -341,14 +372,17 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
 
     // ───────────────── 08 INVESTIMENTO ─────────────────
     secao('08', 'Investimento');
-    para('Os honorários da equipe técnica RNC são apresentados em faixas por etapa, refletindo a complexidade a ser confirmada na validação documental.', 9, MUTED);
-    if (etapas.length) {
-      tabela(
-        [{ label: 'Fase', w: 22 }, { label: 'Etapa', w: CW - 22 - 22 - 34 - 34 }, { label: 'Prazo', w: 22, align: 'right' }, { label: 'Mínimo', w: 34, align: 'right' }, { label: 'Máximo', w: 34, align: 'right' }],
-        [...etapas.map((e: any, i: number) => [e.fase || `Fase ${i + 1}`, e.titulo, `${e.prazo_dias || 0} d`, brl(e.investimento_min), brl(e.investimento_max)]),
-          ['Total', 'Honorários estimados', `${tot.prazo} d`, brl(tot.min), brl(tot.max)]],
-        { totalRow: true, boldFirst: true });
-    }
+    para('Os honorários da equipe técnica RNC são apresentados como valor único de projeto, dimensionado pelo escopo e pela complexidade da estrutura, sem valores individualizados por etapa.', 9, MUTED);
+    ensure(34);
+    doc.setFillColor(...ZEBRA); doc.roundedRect(M, y, CW, 26, 2, 2, 'F');
+    doc.setFillColor(...TEAL); doc.rect(M, y, 1.6, 26, 'F');
+    font(7, 'bold', MUTED); doc.text('HONORÁRIOS — VALOR ÚNICO DE PROJETO', M + 6, y + 7);
+    font(19, 'bold', NAVY); doc.text(T(valorHonorarios ? brl(valorHonorarios) : 'A definir'), M + 6, y + 17.5);
+    font(8, 'normal', MUTED);
+    doc.text('valor negociável  ·  parcelamento conforme o cronograma acordado', M + 6, y + 23);
+    y += 31;
+    if (inv.justificativa) { sub('Composição do valor'); para(inv.justificativa); }
+    if (inv.condicoes) { sub('Forma de pagamento e negociação'); para(inv.condicoes); }
     if ((c.custos_recorrentes || []).length) {
       sub('Custos recorrentes e de terceiros (não inclusos nos honorários)');
       tabela([{ label: 'Item', w: 92 }, { label: 'Valor estimado', w: 46 }, { label: 'Periodicidade', w: CW - 138 }],

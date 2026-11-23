@@ -45,7 +45,7 @@ export const CLASSIFICACAO = {
 export const SIGLA_PRODUTO = { holding: 'HOL', offshore: 'OFF', conta_internacional: 'CI' };
 
 export const CONDICOES_GERAIS_PADRAO = [
-  'Os honorários são apresentados em faixas por etapa e serão fixados na formalização contratual, após validação da documentação.',
+  'Os honorários são apresentados como valor único de projeto, negociável e parcelável conforme o cronograma acordado na formalização contratual.',
   'Taxas, emolumentos, tributos (ITBI, ITCMD, registros), custos cartorários, de juntas comerciais e de agentes no exterior não estão incluídos, salvo indicação expressa.',
   'Os prazos estimados dependem do envio tempestivo da documentação pelo cliente e dos prazos de órgãos públicos, cartórios e instituições financeiras.',
   'Esta proposta tem caráter técnico-comercial, é confidencial e destinada exclusivamente ao cliente identificado; não constitui parecer jurídico definitivo.',
@@ -55,11 +55,7 @@ export const CONDICOES_GERAIS_PADRAO = [
 
 export const somaEtapas = (etapas) => {
   const l = Array.isArray(etapas) ? etapas : [];
-  return {
-    prazo: l.reduce((s, e) => s + (Number(e.prazo_dias) || 0), 0),
-    min: l.reduce((s, e) => s + (Number(e.investimento_min) || 0), 0),
-    max: l.reduce((s, e) => s + (Number(e.investimento_max) || 0), 0),
-  };
+  return { prazo: l.reduce((s, e) => s + (Number(e.prazo_dias) || 0), 0) };
 };
 
 export const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
@@ -109,9 +105,15 @@ export const SCHEMA_ANALISE = {
               atividades: { type: 'array', items: { type: 'string' } },
               entregaveis: { type: 'array', items: { type: 'string' } },
               prazo_dias: { type: 'number', description: 'Duração estimada em dias corridos' },
-              investimento_min: { type: 'number', description: 'Honorários mínimos em BRL' },
-              investimento_max: { type: 'number', description: 'Honorários máximos em BRL' },
             },
+          },
+        },
+        investimento: {
+          type: 'object',
+          properties: {
+            valor_sugerido: { type: 'number', description: 'Honorários totais sugeridos em BRL — valor único do projeto (nunca por etapa)' },
+            justificativa: { type: 'string', description: 'Como o valor foi composto: escopo, complexidade, horas e riscos' },
+            condicoes: { type: 'string', description: 'Condições de pagamento sugeridas: parcelamento, marcos e margem de negociação' },
           },
         },
         custos_recorrentes: {

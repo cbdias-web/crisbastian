@@ -46,13 +46,18 @@ export default async function(req: Request): Promise<Response> {
     const out = await chamarIA(base44, prompt, urlsAnalisaveis(estudo));
     if (!out || !out.conteudo) return Response.json({ error: 'O motor de IA não retornou uma análise válida. Tente novamente.' }, { status: 502 });
 
+    const conteudo: any = { ...normalizarConteudo(out.conteudo), justificativa_score: out.justificativa_score || '' };
+    // Ao revisar, preserva o valor de honorários já definido pelo consultor.
+    const valorDefinido = Number(base?.conteudo?.investimento?.valor) || 0;
+    if (valorDefinido) conteudo.investimento.valor = valorDefinido;
+
     return Response.json(await registrarVersao(base44, user, estudo, {
       origem: base ? 'revisao_ia' : 'ia',
       motivo: body.motivo || (base ? '' : 'Análise inicial'),
       base,
       score: Math.max(0, Math.min(100, Math.round(Number(out.score_viabilidade) || 0))),
       classificacao: normClassificacao(out.classificacao, Number(out.score_viabilidade) || 0),
-      conteudo: { ...normalizarConteudo(out.conteudo), justificativa_score: out.justificativa_score || '' },
+      conteudo,
       notas: out.notas_internas || {},
     }));
   } catch (error) {

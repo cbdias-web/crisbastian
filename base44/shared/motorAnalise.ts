@@ -51,7 +51,7 @@ export function montarPrompt(estudo: any, base?: any, motivo?: string, instrucoe
   const ref = (REFERENCIA_HONORARIOS as any)[estudo.produto] || [];
   const refTxt = ref.map((x: any) => `- ${x.escopo}: ${x.recorrente ? 'recorrente' : 'pontual'} ${x.min || x.max ? `R$ ${x.min.toLocaleString('pt-BR')} a R$ ${x.max.toLocaleString('pt-BR')}` : (x.observacao || '')}`).join('\n');
 
-  let p = `Você é o motor de Análise Técnica da Villela Exchange (razão social RNC — Rede Nacional de Câmbio), vertical financeira do Grupo Villela, banca especializada em recuperação tributária. Sua tarefa é avaliar a viabilidade e redigir o conteúdo de uma PROPOSTA TÉCNICA EXECUTIVA para o cliente abaixo, no padrão das propostas de consultoria da RNC: rigor técnico com leitura executiva, plano em etapas com prazos e investimento em faixas por etapa, success fee opcional quando fizer sentido e autoria atribuída à "equipe técnica RNC".
+  let p = `Você é o motor de Análise Técnica da Villela Exchange (razão social RNC — Rede Nacional de Câmbio), vertical financeira do Grupo Villela, banca especializada em recuperação tributária. Sua tarefa é avaliar a viabilidade e redigir o conteúdo de uma PROPOSTA TÉCNICA EXECUTIVA para o cliente abaixo, no padrão das propostas de consultoria da RNC: rigor técnico com leitura executiva, plano em etapas com prazos e investimento único de projeto (negociável e parcelável), success fee opcional quando fizer sentido e autoria atribuída à "equipe técnica RNC".
 
 PRODUTO DO ESTUDO: ${prod?.titulo} (${estudo.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'})
 CLIENTE: ${estudo.cliente_nome || ''}
@@ -66,7 +66,7 @@ SITUAÇÃO DOS DOCUMENTOS:
 ${docsInfo(estudo)}
 Os documentos em PDF/imagem estão anexados para leitura: extraia deles dados relevantes (bens, valores declarados, faturamento, regime, quadro societário, endividamento) e cite-os no diagnóstico.
 
-TABELA DE REFERÊNCIA DE HONORÁRIOS DA RNC (balize as faixas de investimento por etapa por ela; a soma das etapas deve ser coerente com a complexidade):
+TABELA DE REFERÊNCIA DE HONORÁRIOS DA RNC (use-a para balizar o valor único de honorários do projeto, coerente com o escopo e a complexidade):
 ${refTxt}
 
 OBSERVAÇÕES INTERNAS DO CONSULTOR: ${estudo.observacoes_internas || '—'}
@@ -77,7 +77,8 @@ REGRAS DE REDAÇÃO:
 - Score de viabilidade 0-100 considerando: aderência entre objetivos e solução, patrimônio/escala vs. custo, riscos jurídico-fiscais (débitos, processos, bloqueios), completude documental e prazo desejado.
 - Profundidade mínima: diagnóstico com 5 ou mais achados; riscos com 4 ou mais itens; benefícios com 4 ou mais; próximos passos com 4 ou mais; premissas com 3 ou mais; alternativas com 2 ou mais. Use os números informados pelo cliente (valores de mercado vs. valores no IR, renda de aluguéis, débitos) para quantificar impactos e estimativas de economia quando possível, deixando claro que são estimativas.
 - Linguagem: use "proteção patrimonial" e "organização patrimonial"; não use "blindagem".
-- Etapas: OBRIGATORIAMENTE de 4 a 6 fases sequenciais (ex.: Diagnóstico e planejamento → Constituição/estruturação → Transferência/integralização ou abertura → Governança/sucessão → Acompanhamento), cada uma com objetivo, atividades, entregáveis, prazo em dias corridos e faixa de honorários (investimento_min/investimento_max em BRL, números inteiros).
+- Etapas: OBRIGATORIAMENTE de 4 a 6 fases sequenciais (ex.: Diagnóstico e planejamento → Constituição/estruturação → Transferência/integralização ou abertura → Governança/sucessão → Acompanhamento), cada uma com objetivo, atividades, entregáveis e prazo em dias corridos. NUNCA atribua honorários por etapa.
+- Investimento: preencha conteudo.investimento com valor_sugerido (número inteiro em BRL, valor ÚNICO do projeto), justificativa (como o valor foi composto: escopo, complexidade, horas e riscos) e condicoes (forma de pagamento sugerida, com parcelamento — ex.: 30% na assinatura e saldo em até 3 parcelas mensais — deixando claro que o valor é negociável). O cliente vê apenas o valor único, nunca a distribuição por etapa.
 - Custos de terceiros (ITBI, ITCMD, cartórios, juntas, agentes no exterior) vão em custos_recorrentes ou premissas, nunca somados aos honorários.
 - Riscos com nível e mitigação concreta. Diagnóstico com impacto.
 - base_legal: liste apenas normas efetivamente pertinentes.
@@ -91,7 +92,7 @@ ${JSON.stringify({ score: base.score_viabilidade, classificacao: base.classifica
 
 MOTIVO DA REVISÃO / MUDANÇA NA NEGOCIAÇÃO: ${motivo || '—'}
 INSTRUÇÕES ESPECÍFICAS: ${instrucoes || '—'}
-Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, prazos, faixas, riscos) e reflita a mudança no sumário executivo de forma natural (sem mencionar "versão anterior").`;
+Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, prazos, valor único de honorários, riscos) e reflita a mudança no sumário executivo de forma natural (sem mencionar "versão anterior").`;
   }
   return p;
 }
@@ -132,9 +133,17 @@ export function normalizarConteudo(c: any) {
     atividades: e.atividades || [],
     entregaveis: e.entregaveis || [],
     prazo_dias: Math.max(0, Math.round(Number(e.prazo_dias) || 0)),
-    investimento_min: Math.max(0, Math.round(Number(e.investimento_min) || 0)),
-    investimento_max: Math.max(0, Math.round(Number(e.investimento_max) || 0)),
   }));
+  // Honorários: valor único do projeto (o valor definido pelo consultor prevalece sobre a sugestão).
+  const inv = conteudo.investimento || {};
+  // Versões antigas traziam valores por etapa: a soma vira a sugestão inicial, sem expor etapas no PDF.
+  const legado = (Array.isArray(c?.etapas) ? c.etapas : []).reduce((s: number, e: any) => s + (Number(e?.investimento_max) || Number(e?.investimento_min) || 0), 0);
+  conteudo.investimento = {
+    valor_sugerido: Math.max(0, Math.round(Number(inv.valor_sugerido) || legado || 0)),
+    valor: Math.max(0, Math.round(Number(inv.valor) || 0)),
+    justificativa: inv.justificativa || '',
+    condicoes: inv.condicoes || '',
+  };
   if (!conteudo.condicoes_gerais) conteudo.condicoes_gerais = CONDICOES_GERAIS_PADRAO;
   return conteudo;
 }

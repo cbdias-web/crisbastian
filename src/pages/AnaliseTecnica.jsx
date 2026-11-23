@@ -370,6 +370,7 @@ function Workspace({ estudoId }) {
 
   const set = (k, v) => { setDraft(d => ({ ...d, [k]: v })); setDirty(true); };
   const setER = (k, v) => set('estrutura_recomendada', { ...(c.estrutura_recomendada || {}), [k]: v });
+  const setInv = (k, v) => set('investimento', { ...(c.investimento || {}), [k]: v });
 
   const selecionar = (v) => {
     if (dirty && !confirm('Há alterações não salvas. Descartar?')) return;
@@ -451,6 +452,8 @@ function Workspace({ estudoId }) {
   const prod = PRODUTOS_ESTUDO[estudo.produto];
   const Icon = ICONE[estudo.produto] || Landmark;
   const tot = somaEtapas(c.etapas);
+  const inv = c.investimento || {};
+  const valorHonorarios = Number(inv.valor) || Number(inv.valor_sugerido) || 0;
   const cl = CLASSIFICACAO[sel?.classificacao];
   const docs = estudo.documentos || [];
   const notas = sel?.notas_internas_ia || {};
@@ -569,8 +572,8 @@ function Workspace({ estudoId }) {
                 ))}
               </div>
               <div className="w-full rounded-lg p-2.5 mt-2" style={{ background: A.surface2 }}>
-                <p className="text-[9.5px] uppercase" style={{ color: A.muted }}>Investimento estimado</p>
-                <p className="font-bold text-sm" style={{ color: A.accent }}>{tot.max ? `${brl(tot.min)} – ${brl(tot.max)}` : '—'}</p>
+                <p className="text-[9.5px] uppercase" style={{ color: A.muted }}>Investimento</p>
+                <p className="font-bold text-sm" style={{ color: A.accent }}>{valorHonorarios ? brl(valorHonorarios) : '—'}</p>
               </div>
             </div>
 
@@ -719,8 +722,30 @@ function Workspace({ estudoId }) {
 
             {tab === 'etapas' && (
               <>
+                <Cartao titulo="Investimento — valor único do projeto" icon={Wallet}>
+                  <p className="text-[11px] -mt-1 leading-relaxed" style={{ color: A.muted }}>
+                    Sugestão da IA: <strong style={{ color: A.accent }}>{inv.valor_sugerido ? brl(inv.valor_sugerido) : '—'}</strong>. O valor vai ao cliente como <strong style={{ color: A.text }}>valor único</strong>, negociável e parcelável — sem valores individualizados por etapa.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-3 items-end">
+                    <div>
+                      <p className="mb-1" style={label}>Valor definido (R$)</p>
+                      {editavel ? (
+                        <input type="number" min={0} value={inv.valor ?? ''} placeholder={inv.valor_sugerido ? String(inv.valor_sugerido) : '0'}
+                          onChange={e => setInv('valor', e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full px-3 py-2 text-sm font-bold rounded-lg focus:outline-none" style={inputStyle} />
+                      ) : <p className="text-lg font-bold" style={{ color: A.accent }}>{valorHonorarios ? brl(valorHonorarios) : '—'}</p>}
+                    </div>
+                    {editavel && (
+                      <button onClick={() => setInv('valor', Number(inv.valor_sugerido) || 0)} className="text-[11px] px-3 py-2 rounded-lg font-semibold" style={{ background: A.accentDim, color: A.accent }}>
+                        Usar sugestão da IA ({inv.valor_sugerido ? brl(inv.valor_sugerido) : '—'})
+                      </button>
+                    )}
+                  </div>
+                  <TextoEd titulo="Composição do valor" value={inv.justificativa} onChange={v => setInv('justificativa', v)} rows={3} readOnly={!editavel} placeholder="Como o valor foi composto: escopo, complexidade, horas e riscos." />
+                  <TextoEd titulo="Forma de pagamento e negociação" value={inv.condicoes} onChange={v => setInv('condicoes', v)} rows={3} readOnly={!editavel} placeholder="Ex.: 30% na assinatura e o saldo em até 3 parcelas mensais; valor negociável conforme escopo." />
+                </Cartao>
                 <Cartao titulo="Cronograma" icon={ChartGantt}
-                  acao={<span className="text-xs font-bold" style={{ color: A.accent }}>{tot.prazo} dias · {brl(tot.min)} – {brl(tot.max)}</span>}>
+                  acao={<span className="text-xs font-bold" style={{ color: A.accent }}>{tot.prazo} dias · {(c.etapas || []).length} etapas</span>}>
                   {(c.etapas || []).length ? <Gantt etapas={c.etapas} /> : <p className="text-sm" style={{ color: A.muted }}>Sem etapas.</p>}
                 </Cartao>
                 <EditorEtapas etapas={c.etapas || []} onChange={v => set('etapas', v)} readOnly={!editavel} />
@@ -826,14 +851,10 @@ function EditorEtapas({ etapas, onChange, readOnly }) {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[['prazo_dias', 'Prazo (dias)'], ['investimento_min', 'Honorários mín. (R$)'], ['investimento_max', 'Honorários máx. (R$)']].map(([k, l]) => (
-              <div key={k}>
-                <p className="mb-1" style={label}>{l}</p>
-                {readOnly ? <p className="text-sm font-bold">{k === 'prazo_dias' ? `${e[k] || 0} dias` : brl(e[k])}</p>
-                  : <input type="number" min={0} value={e[k] ?? ''} onChange={ev => upd(i, k, num(ev.target.value))} className="w-full px-2.5 py-1.5 text-sm rounded-md focus:outline-none" style={inputStyle} />}
-              </div>
-            ))}
+          <div className="w-32">
+            <p className="mb-1" style={label}>Prazo (dias)</p>
+            {readOnly ? <p className="text-sm font-bold">{e.prazo_dias || 0} dias</p>
+              : <input type="number" min={0} value={e.prazo_dias ?? ''} onChange={ev => upd(i, 'prazo_dias', num(ev.target.value))} className="w-full px-2.5 py-1.5 text-sm rounded-md focus:outline-none" style={inputStyle} />}
           </div>
           <TextoEd titulo="Objetivo" value={e.objetivo} onChange={v => upd(i, 'objetivo', v)} rows={2} readOnly={readOnly} />
           <div className="grid md:grid-cols-2 gap-3">
@@ -843,7 +864,7 @@ function EditorEtapas({ etapas, onChange, readOnly }) {
         </div>
       ))}
       {!readOnly && (
-        <button onClick={() => onChange([...etapas, { fase: `Fase ${etapas.length + 1}`, titulo: '', objetivo: '', atividades: [], entregaveis: [], prazo_dias: 15, investimento_min: 0, investimento_max: 0 }])}
+        <button onClick={() => onChange([...etapas, { fase: `Fase ${etapas.length + 1}`, titulo: '', objetivo: '', atividades: [], entregaveis: [], prazo_dias: 15 }])}
           className="w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl text-xs font-bold" style={{ border: `1px dashed ${A.borderActive}`, color: A.accent }}>
           <Plus className="w-4 h-4" /> Adicionar etapa
         </button>
