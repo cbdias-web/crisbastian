@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, calcularPendenciasEstudo, checklistDocumentos } from '@/lib/estudoViabilidade';
 import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 import NdaEstudoCard from '@/components/estudo/NdaEstudoCard';
+import DocumentosEstudoCard from '@/components/estudo/DocumentosEstudoCard';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import { origemPublica } from '@/lib/appUrl';
 
@@ -370,6 +371,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   const [salvando, setSalvando] = useState(false);
   const [criado, setCriado] = useState(null);
   const [nda, setNda] = useState(null);
+  const [documentos, setDocumentos] = useState([]);
   // Travas de segurança: impedem que um clique duplo crie dois estudos (dois "processos")
   const criandoRef = useRef(false);
   const estudoRef = useRef(null);
@@ -439,7 +441,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
             ...(d ? { data_nascimento: d.nascimento, profissao: d.profissao, nacionalidade: d.nacionalidade, endereco: d.endereco, cidade: d.cidade, uf: d.estado } : {}),
           };
       const e = await base44.entities.EstudoViabilidade.create({
-        ...form, cliente_id: clienteId, status: 'rascunho', respostas: respostasIniciais, documentos: [],
+        ...form, cliente_id: clienteId, status: 'rascunho', respostas: respostasIniciais, documentos,
         responsavel_email: user?.email, responsavel_nome: nomeResp,
         nda_url: nda?.url || '', nda_nome: nda?.nome || '', nda_dados: d || undefined,
       });
@@ -496,6 +498,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
               </div>
             </div>
             <NdaEstudoCard onAlterar={aplicarNda} />
+            <DocumentosEstudoCard produto={form.produto} tipoCliente={form.tipo_cliente} documentos={documentos} onChange={setDocumentos} />
             <ClienteEstudoPicker onSelecionar={(c) => setForm(f => ({
               ...f,
               cliente_id: c.id || '',
@@ -712,6 +715,10 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
                   );
                 })}
               </ul>
+              <div className="mt-3">
+                <DocumentosEstudoCard produto={estudo.produto} tipoCliente={estudo.tipo_cliente} documentos={docs}
+                  onChange={(next) => onAtualizar(estudo, { documentos: next }, 'Documentos anexados')} />
+              </div>
             </div>
             {estudo.parecer_tecnico && (
               <div className="rounded-xl p-4 space-y-1" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}` }}>

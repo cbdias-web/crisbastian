@@ -602,7 +602,11 @@ export default function EstudoViabilidadePublicaPage() {
                                 <a href={f.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 truncate hover:underline">
                                   <Paperclip className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{f.nome_arquivo}</span>
                                 </a>
-                                <button onClick={() => remover(f.url)} style={{ color: AURORA.danger }} title="Remover"><Trash2 className="w-3 h-3" /></button>
+                                {f.origem === 'equipe' ? (
+                                  <span className="text-[10px] flex-shrink-0" style={{ color: '#34d399' }}>enviado pela equipe</span>
+                                ) : (
+                                  <button onClick={() => remover(f.url)} style={{ color: AURORA.danger }} title="Remover"><Trash2 className="w-3 h-3" /></button>
+                                )}
                               </li>
                             ))}
                           </ul>

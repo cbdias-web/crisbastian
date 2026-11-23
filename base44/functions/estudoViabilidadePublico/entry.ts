@@ -17,7 +17,7 @@ function sanitize(e: any) {
     status: e.status,
     respostas: e.respostas || {},
     documentos: (e.documentos || []).map((d: any) => ({
-      tipo: d.tipo, descricao: d.descricao, nome_arquivo: d.nome_arquivo, url: d.url, enviado_em: d.enviado_em,
+      tipo: d.tipo, descricao: d.descricao, nome_arquivo: d.nome_arquivo, url: d.url, enviado_em: d.enviado_em, origem: d.origem || '',
     })),
     aceite_lgpd: !!e.aceite_lgpd,
     preenchido_por_nome: e.preenchido_por_nome || '',
