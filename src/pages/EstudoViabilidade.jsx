@@ -412,23 +412,10 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
         return;
       }
       const d = nda?.dados || null;
-      let clienteId = form.cliente_id;
-
-      // Cliente não identificado na base: o cadastro nasce dos dados do NDA
-      if (!clienteId && d?.nome) {
-        const novoCliente = { tipo_pessoa: d.tipo_pessoa || form.tipo_cliente, nome: d.nome, origem: 'nativo' };
-        const opcionais = {
-          cpf_cnpj: d.cpf_cnpj, email: d.email, telefone: d.telefone, endereco: d.endereco, bairro: d.bairro,
-          cidade: d.cidade, estado: d.estado, cep: d.cep, profissao: d.profissao, nascimento: d.nascimento,
-          nacionalidade: d.nacionalidade, responsavel_legal: d.responsavel_legal, cpf_responsavel: d.cpf_responsavel,
-          observacao: d.resumo,
-        };
-        Object.entries(opcionais).forEach(([k, v]) => { if (v) novoCliente[k] = v; });
-        try {
-          const cli = await base44.entities.Cliente.create(novoCliente);
-          clienteId = cli.id;
-        } catch { toast.error('Não foi possível cadastrar o cliente a partir do NDA.'); }
-      }
+      // O estudo NÃO cria cadastro na base de clientes/leads: os dados do cliente
+      // ficam dentro do próprio estudo e o cadastro só nasce na conversão
+      // (contrato/venda) ou quando o cliente já existe e é selecionado acima.
+      const clienteId = form.cliente_id || '';
 
       const nomeResp = user?.nome_tratamento || user?.full_name || user?.email;
       const respostasIniciais = form.tipo_cliente === 'PJ'
