@@ -182,6 +182,7 @@ export default function EstudoViabilidadePublicaPage() {
   const [uploading, setUploading] = useState(null);
   const [arrastandoTipo, setArrastandoTipo] = useState(null);
   const [arrastandoAuto, setArrastandoAuto] = useState(false);
+  const [arrastandoArquivo, setArrastandoArquivo] = useState(false);
   const [enviandoAuto, setEnviandoAuto] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const topoRef = useRef(null);
@@ -618,19 +619,23 @@ export default function EstudoViabilidadePublicaPage() {
                     Pode soltar vários de uma vez — a IA identifica o item de cada arquivo. Ou clique para escolher do computador ou celular.
                   </p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2"
+                  onDragOver={e => { e.preventDefault(); if (!uploading) setArrastandoArquivo(true); }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) { setArrastandoArquivo(false); setArrastandoTipo(null); } }}
+                  onDrop={() => { setArrastandoArquivo(false); setArrastandoTipo(null); }}>
                   {checklist.map(d => {
                     const enviados = docs.filter(x => x.tipo === d.tipo);
                     const ok = enviados.length > 0;
                     const alvo = arrastandoTipo === d.tipo;
+                    const sugerido = alvo || (arrastandoArquivo && !ok);
                     return (
                       <div key={d.tipo} className="rounded-lg p-3 transition"
                         onDragOver={e => { if (uploading) return; e.preventDefault(); setArrastandoTipo(d.tipo); }}
                         onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastandoTipo(null); }}
-                        onDrop={e => { e.preventDefault(); setArrastandoTipo(null); if (!uploading) upload(d.tipo, e.dataTransfer?.files); }}
+                        onDrop={e => { e.preventDefault(); setArrastandoTipo(null); setArrastandoArquivo(false); if (!uploading) upload(d.tipo, e.dataTransfer?.files); }}
                         style={{
                           background: alvo ? AURORA.accentDim : AURORA.surface2,
-                          border: `1px ${alvo ? 'dashed' : 'solid'} ${alvo ? AURORA.accent : (ok ? 'rgba(16,185,129,0.35)' : AURORA.border)}`,
+                          border: `1px ${sugerido ? 'dashed' : 'solid'} ${alvo ? AURORA.accent : sugerido ? AURORA.borderActive : (ok ? 'rgba(16,185,129,0.35)' : AURORA.border)}`,
                         }}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2 min-w-0">
@@ -645,7 +650,7 @@ export default function EstudoViabilidadePublicaPage() {
                           <label className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg cursor-pointer flex-shrink-0"
                             style={{ background: AURORA.accentDim, color: AURORA.accent, opacity: uploading ? 0.6 : 1 }}>
                             {uploading === d.tipo ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                            {ok && !d.multiplo ? 'Substituir' : 'Anexar'}
+                            {alvo ? 'Solte aqui' : ok && !d.multiplo ? 'Substituir' : 'Anexar'}
                             <input type="file" className="hidden" multiple={!!d.multiplo} disabled={!!uploading}
                               accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.xls,.xlsx,.csv,.doc,.docx"
                               onChange={e => { upload(d.tipo, e.target.files); e.target.value = ''; }} />
