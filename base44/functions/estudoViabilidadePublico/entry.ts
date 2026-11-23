@@ -91,6 +91,38 @@ async function registrarDevolucaoCliente(base44: any, estudo: any) {
   }
 }
 
+async function subirArquivo(base44: any, base64: string, nome: string, mime: string) {
+  if (!base64) throw new Error('Arquivo vazio');
+  const binary = atob(base64);
+  if (binary.length > MAX_BYTES) throw new Error('Arquivo acima de 10MB');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const file = new File([new Blob([bytes], { type: mime || 'application/octet-stream' })], nome || 'documento', { type: mime || 'application/octet-stream' });
+  const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+  return file_url as string;
+}
+
+// Identifica por IA a qual item do checklist o arquivo pertence (fallback: "outros").
+async function classificarArquivo(base44: any, estudo: any, file_url: string, nome: string) {
+  const itens = checklistDocumentos(estudo.produto, estudo.tipo_cliente).filter((d: any) => d.tipo !== 'outros');
+  const lista = itens.map((d: any) => `- ${d.tipo}: ${d.descricao}`).join('\n');
+  try {
+    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `Identifique a qual item do checklist o documento anexado corresponde.\n\nItens disponíveis:\n${lista}\n\nNome do arquivo: ${nome}\n\nResponda apenas com o código (tipo) do item correspondente. Se nenhum item corresponder com segurança, responda "outros".`,
+      file_urls: [file_url],
+      response_json_schema: {
+        type: 'object',
+        properties: { tipo: { type: 'string', description: 'Código do item do checklist ou "outros"' } },
+        required: ['tipo'],
+      },
+    });
+    const tipo = String((res as any)?.tipo || '').trim();
+    return itens.some((d: any) => d.tipo === tipo) ? tipo : 'outros';
+  } catch (_) {
+    return 'outros';
+  }
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -130,17 +162,18 @@ export default async function(req: Request): Promise<Response> {
       return resposta(estudo);
     }
 
-    if (action === 'upload') {
-      const { tipo, base64, nome, mime } = body;
+    if (action === 'upload' || action === 'upload_auto') {
+      const { base64, nome, mime } = body;
+      const auto = action === 'upload_auto';
+      if (!auto) {
+        const itemTipo = checklistDocumentos(estudo.produto, estudo.tipo_cliente).find((d: any) => d.tipo === body.tipo);
+        if (!itemTipo) return Response.json({ error: 'Tipo de documento inválido' }, { status: 400 });
+      }
+      if (!base64) return Response.json({ error: 'Arquivo vazio' }, { status: 400 });
+      const file_url = await subirArquivo(base44, base64, nome, mime);
+      const tipo = auto ? await classificarArquivo(base44, estudo, file_url, nome || '') : body.tipo;
       const item = checklistDocumentos(estudo.produto, estudo.tipo_cliente).find((d: any) => d.tipo === tipo);
       if (!item) return Response.json({ error: 'Tipo de documento inválido' }, { status: 400 });
-      if (!base64) return Response.json({ error: 'Arquivo vazio' }, { status: 400 });
-      const binary = atob(base64);
-      if (binary.length > MAX_BYTES) return Response.json({ error: 'Arquivo acima de 10MB' }, { status: 413 });
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      const file = new File([new Blob([bytes], { type: mime || 'application/octet-stream' })], nome || 'documento', { type: mime || 'application/octet-stream' });
-      const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
       let documentos = [...(estudo.documentos || [])];
       if (!item.multiplo) documentos = documentos.filter((d: any) => d.tipo !== tipo);
@@ -148,7 +181,7 @@ export default async function(req: Request): Promise<Response> {
       await Ent.update(estudo.id, marcarPreenchimento({ documentos }));
       estudo = await Ent.get(estudo.id);
       await registrarDevolucaoCliente(base44, estudo);
-      return resposta(estudo);
+      return resposta(estudo, { tipo_identificado: tipo, descricao_identificada: item.descricao, nome_arquivo: nome });
     }
 
     if (action === 'remover_documento') {

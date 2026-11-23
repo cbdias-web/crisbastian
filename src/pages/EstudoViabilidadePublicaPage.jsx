@@ -181,6 +181,8 @@ export default function EstudoViabilidadePublicaPage() {
   const [enviando, setEnviando] = useState(false);
   const [uploading, setUploading] = useState(null);
   const [arrastandoTipo, setArrastandoTipo] = useState(null);
+  const [arrastandoAuto, setArrastandoAuto] = useState(false);
+  const [enviandoAuto, setEnviandoAuto] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const topoRef = useRef(null);
 
@@ -255,6 +257,28 @@ export default function EstudoViabilidadePublicaPage() {
       }
     }
     setUploading(null);
+  };
+
+  // Soltar vários arquivos na área de upload: a IA identifica o item de cada um.
+  const uploadAuto = async (files) => {
+    const lista = Array.from(files || []);
+    if (lista.length === 0 || enviandoAuto) return;
+    setEnviandoAuto(true);
+    for (const file of lista) {
+      if (file.size > 10 * 1024 * 1024) { toast.error(`${file.name}: arquivo acima de 10MB.`); continue; }
+      try {
+        const base64 = await fileToBase64(file);
+        const res = await withTimeout(base44.functions.invoke('estudoViabilidadePublico', {
+          action: 'upload_auto', token, base64, nome: file.name, mime: file.type,
+        }), 120000);
+        if (res?.data?.error) throw new Error(res.data.error);
+        aplicar(res.data);
+        toast.success(`${file.name} → ${res.data.descricao_identificada || 'Outros documentos'}`);
+      } catch (e) {
+        toast.error(`Falha ao anexar ${file.name}: ` + (e?.response?.data?.error || e.message));
+      }
+    }
+    setEnviandoAuto(false);
   };
 
   const remover = async (url) => {
@@ -570,7 +594,30 @@ export default function EstudoViabilidadePublicaPage() {
 
             {/* 5 — Documentos */}
             {passo === 4 && (
-              <Secao icon={FileCheck2} titulo="Documentos" descricao="Arraste os arquivos sobre o item correspondente ou clique em Anexar. PDF, imagem ou planilha, até 10MB por arquivo. Itens com * são obrigatórios; os recomendados agilizam o estudo.">
+              <Secao icon={FileCheck2} titulo="Documentos" descricao="Arraste os arquivos para a área abaixo (ou sobre o item correspondente) e a IA identifica cada documento. PDF, imagem ou planilha, até 10MB por arquivo. Itens com * são obrigatórios; os recomendados agilizam o estudo.">
+                <div
+                  onDragOver={e => { e.preventDefault(); setArrastandoAuto(true); }}
+                  onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastandoAuto(false); }}
+                  onDrop={e => { e.preventDefault(); setArrastandoAuto(false); uploadAuto(e.dataTransfer?.files); }}
+                  onClick={() => document.getElementById('estudo-docs-auto')?.click()}
+                  className="rounded-xl px-5 py-6 text-center cursor-pointer transition"
+                  style={{
+                    background: arrastandoAuto ? AURORA.accentDim : 'rgba(0,212,170,0.05)',
+                    border: `2px dashed ${arrastandoAuto ? AURORA.accent : AURORA.borderActive}`,
+                  }}>
+                  <input id="estudo-docs-auto" type="file" className="hidden" multiple disabled={enviandoAuto}
+                    accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.xls,.xlsx,.csv,.doc,.docx"
+                    onChange={e => { uploadAuto(e.target.files); e.target.value = ''; }} />
+                  {enviandoAuto
+                    ? <Loader2 className="w-7 h-7 mx-auto mb-2 animate-spin" style={{ color: AURORA.accent }} />
+                    : <Upload className="w-7 h-7 mx-auto mb-2" style={{ color: AURORA.accent }} />}
+                  <p className="text-sm font-bold" style={{ color: AURORA.text }}>
+                    {enviandoAuto ? 'Enviando e identificando os arquivos…' : 'Arraste os documentos aqui'}
+                  </p>
+                  <p className="text-[11px] mt-1" style={{ color: AURORA.textMuted }}>
+                    Pode soltar vários de uma vez — a IA identifica o item de cada arquivo. Ou clique para escolher do computador ou celular.
+                  </p>
+                </div>
                 <div className="space-y-2">
                   {checklist.map(d => {
                     const enviados = docs.filter(x => x.tipo === d.tipo);
