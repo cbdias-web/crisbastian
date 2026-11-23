@@ -19,7 +19,7 @@ const CLASS_RGB: Record<string, [number, number, number]> = { alta: [5, 150, 105
 const brl = (v: any) => 'R$ ' + Math.round(Number(v) || 0).toLocaleString('pt-BR');
 const fmtD = (d: Date) => d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-export function montarPdfProposta(p: any, user: any): Uint8Array {
+export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint8Array {
     const c = p.conteudo || {};
     const prod = (PRODUTOS_ESTUDO as any)[p.produto] || { titulo: 'Estudo de Viabilidade', nome: '' };
     const etapas = Array.isArray(c.etapas) ? c.etapas : [];
@@ -119,35 +119,62 @@ export function montarPdfProposta(p: any, user: any): Uint8Array {
       y += 4;
     };
 
-    // ───────────────── CAPA ─────────────────
-    doc.setFillColor(...NAVY); doc.rect(0, 0, W, H, 'F');
-    doc.setFillColor(...NAVY2); doc.rect(0, 200, W, 97, 'F');
-    doc.setFillColor(...TEAL_L); doc.rect(0, 198, W, 2.2, 'F');
-    doc.setFillColor(...GOLD); doc.rect(M, 40, 14, 1.4, 'F');
-    font(10, 'bold', TEAL_L); doc.text('VILLELA EXCHANGE  ·  RNC', M, 34);
-    font(30, 'bold', [255, 255, 255]); doc.text('PROPOSTA TÉCNICA', M, 62);
-    font(15, 'normal', [190, 214, 240]); doc.text(T(prod.titulo), M, 74);
-    if (c.titulo_estrutura) {
-      font(12, 'bold', GOLD);
-      doc.splitTextToSize(T(c.titulo_estrutura), CW).slice(0, 3).forEach((l: string, i: number) => doc.text(l, M, 90 + i * 6));
+    // ───────────────── CAPA (executiva — papel branco, sem fundo chapado) ─────────────────
+    // Cabeçalho: logo + identificação institucional
+    const marcaLado = 10;
+    let marcaX = M;
+    if (logoDataUrl) {
+      try { doc.addImage(logoDataUrl, 'PNG', M, 15, marcaLado, marcaLado); marcaX = M + marcaLado + 3.5; }
+      catch { /* segue com a marca vetorial */ }
     }
-    font(8, 'bold', TEAL_L); doc.text('PREPARADA PARA', M, 128);
-    font(17, 'bold', [255, 255, 255]);
-    doc.splitTextToSize(T(p.cliente_nome || '—'), CW).slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, 137 + i * 7));
-    font(9, 'normal', [190, 214, 240]);
-    doc.text(T(`${p.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'}${p.cliente_documento ? '  ·  ' + p.cliente_documento : ''}`), M, 154);
+    if (marcaX === M) {
+      doc.setFillColor(...NAVY); doc.roundedRect(M, 15, marcaLado, marcaLado, 1.8, 1.8, 'F');
+      font(6.2, 'bold', [255, 255, 255]); doc.text('VX', M + marcaLado / 2, 21.4, { align: 'center' });
+      marcaX = M + marcaLado + 3.5;
+    }
+    font(10.5, 'bold', NAVY); doc.text('VILLELA EXCHANGE', marcaX, 21.2);
+    font(7.2, 'normal', MUTED); doc.text('RNC  ·  Consultoria e Estruturação Patrimonial', marcaX, 25.6);
+    font(7.2, 'bold', TEAL); doc.text('DOCUMENTO TÉCNICO', W - M, 21.2, { align: 'right' });
+    doc.setDrawColor(...TEAL_L); doc.setLineWidth(0.5); doc.line(M, 31, W - M, 31); doc.setLineWidth(0.2);
 
+    // Identificação do estudo
+    font(8.2, 'bold', TEAL); doc.text('ANÁLISE TÉCNICA DE VIABILIDADE', M, 88);
+    let yc = 100;
+    const tituloLs = doc.splitTextToSize(T(c.titulo_estrutura || prod.titulo), CW);
+    font(21, 'bold', NAVY);
+    tituloLs.slice(0, 3).forEach((l: string, i: number) => doc.text(l, M, yc + i * 9.5));
+    yc += Math.min(3, tituloLs.length) * 9.5 + 1;
+    font(10.5, 'normal', MUTED); doc.text(T(prod.titulo), M, yc);
+    yc += 9;
+    doc.setDrawColor(...LINE); doc.line(M, yc, M + 30, yc);
+    yc += 13;
+
+    // Cliente
+    font(7.2, 'bold', MUTED); doc.text('CLIENTE', M, yc);
+    yc += 8.5;
+    const nomeLs = doc.splitTextToSize(T(p.cliente_nome || '—'), CW);
+    font(17, 'bold', NAVY);
+    nomeLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 7.5));
+    yc += Math.min(2, nomeLs.length) * 7.5 + 1;
+    font(8.6, 'normal', MUTED);
+    doc.text(T(`${p.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'}${p.cliente_documento ? '  ·  ' + p.cliente_documento : ''}`), M, yc);
+
+    // Faixa de metadados no pé da capa
     const meta = [['Código', p.codigo || '—'], ['Versão', `v${p.versao}`], ['Emissão', fmtD(hoje)], ['Validade', fmtD(validade)]];
+    const faixaY = 232;
+    doc.setFillColor(...ZEBRA); doc.rect(0, faixaY, W, 26, 'F');
+    doc.setFillColor(...TEAL); doc.rect(0, faixaY, W, 0.7, 'F');
     meta.forEach(([k, v], i) => {
       const x = M + i * (CW / 4);
-      font(7.5, 'bold', TEAL_L); doc.text(T(k.toUpperCase()), x, 222);
-      font(10.5, 'bold', [255, 255, 255]); doc.text(T(v), x, 229);
+      font(6.8, 'bold', MUTED); doc.text(T(k.toUpperCase()), x, faixaY + 10);
+      font(10, 'bold', NAVY); doc.text(T(v), x, faixaY + 17.5);
     });
-    font(8.5, 'normal', [190, 214, 240]);
-    doc.text('Elaborada pela equipe técnica RNC', M, 250);
-    doc.text(T(`Consultor responsável: ${p.responsavel_nome || user.full_name || user.email}`), M, 256);
-    doc.setFillColor(...GOLD); doc.roundedRect(M, 268, 34, 7, 1.5, 1.5, 'F');
-    font(7.5, 'bold', NAVY); doc.text('CONFIDENCIAL', M + 17, 272.8, { align: 'center' });
+    font(8, 'normal', MUTED);
+    doc.text('Elaborado pela equipe técnica RNC', M, 271);
+    doc.text(T(`Consultor responsável: ${p.responsavel_nome || user.full_name || user.email}`), M, 276.5);
+    doc.setDrawColor(...MUTED); doc.setLineWidth(0.3);
+    doc.roundedRect(W - M - 32, 267, 32, 6.6, 1.5, 1.5, 'S'); doc.setLineWidth(0.2);
+    font(6.8, 'bold', MUTED); doc.text('CONFIDENCIAL', W - M - 16, 271.4, { align: 'center' });
 
     // ───────────────── SUMÁRIO (estático) ─────────────────
     novaPagina();
