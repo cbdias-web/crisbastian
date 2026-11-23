@@ -180,6 +180,7 @@ export default function EstudoViabilidadePublicaPage() {
   const [salvando, setSalvando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [uploading, setUploading] = useState(null);
+  const [arrastandoTipo, setArrastandoTipo] = useState(null);
   const [enviado, setEnviado] = useState(false);
   const topoRef = useRef(null);
 
@@ -569,13 +570,21 @@ export default function EstudoViabilidadePublicaPage() {
 
             {/* 5 — Documentos */}
             {passo === 4 && (
-              <Secao icon={FileCheck2} titulo="Documentos" descricao="PDF, imagem ou planilha, até 10MB por arquivo. Itens com * são obrigatórios; os recomendados agilizam o estudo.">
+              <Secao icon={FileCheck2} titulo="Documentos" descricao="Arraste os arquivos sobre o item correspondente ou clique em Anexar. PDF, imagem ou planilha, até 10MB por arquivo. Itens com * são obrigatórios; os recomendados agilizam o estudo.">
                 <div className="space-y-2">
                   {checklist.map(d => {
                     const enviados = docs.filter(x => x.tipo === d.tipo);
                     const ok = enviados.length > 0;
+                    const alvo = arrastandoTipo === d.tipo;
                     return (
-                      <div key={d.tipo} className="rounded-lg p-3" style={{ background: AURORA.surface2, border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : AURORA.border}` }}>
+                      <div key={d.tipo} className="rounded-lg p-3 transition"
+                        onDragOver={e => { if (uploading) return; e.preventDefault(); setArrastandoTipo(d.tipo); }}
+                        onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastandoTipo(null); }}
+                        onDrop={e => { e.preventDefault(); setArrastandoTipo(null); if (!uploading) upload(d.tipo, e.dataTransfer?.files); }}
+                        style={{
+                          background: alvo ? AURORA.accentDim : AURORA.surface2,
+                          border: `1px ${alvo ? 'dashed' : 'solid'} ${alvo ? AURORA.accent : (ok ? 'rgba(16,185,129,0.35)' : AURORA.border)}`,
+                        }}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-2 min-w-0">
                             {ok ? <CheckCircle2 className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: '#34d399' }} /> : <Circle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: AURORA.textMuted }} />}
