@@ -19,6 +19,7 @@ const A = {
 export default function DocumentosEstudoCard({ produto, tipoCliente, documentos = [], onChange, desabilitado }) {
   const [lista, setLista] = useState(documentos || []);
   const [processando, setProcessando] = useState(null);
+  const [arrastando, setArrastando] = useState(false);
 
   useEffect(() => { setLista(documentos || []); }, [documentos]);
 
@@ -65,8 +66,22 @@ export default function DocumentosEstudoCard({ produto, tipoCliente, documentos 
     onChange?.(next);
   };
 
+  const soltar = (e) => {
+    e.preventDefault();
+    setArrastando(false);
+    if (processando || desabilitado) return;
+    anexar(e.dataTransfer?.files);
+  };
+
   return (
-    <div className="rounded-xl p-3 space-y-2" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
+    <div className="rounded-xl p-3 space-y-2 transition"
+      onDragOver={(e) => { if (desabilitado) return; e.preventDefault(); if (!processando) setArrastando(true); }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastando(false); }}
+      onDrop={soltar}
+      style={{
+        background: arrastando ? A.accentDim : A.surface2,
+        border: `1px ${arrastando ? 'dashed' : 'solid'} ${arrastando ? A.accent : A.border}`,
+      }}>
       <div>
         <p className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: A.accent }}>
           <Sparkles className="w-3.5 h-3.5" /> Documentos já recebidos
@@ -99,7 +114,9 @@ export default function DocumentosEstudoCard({ produto, tipoCliente, documentos 
         <label className="flex items-center justify-center gap-2 py-2.5 rounded-lg cursor-pointer text-xs font-semibold"
           style={{ border: `1px dashed ${A.border}`, color: processando ? A.textMuted : A.accent, background: A.accentDim }}>
           {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          <span className="truncate px-2">{processando ? `Identificando ${processando}...` : 'Anexar documentos (vários de uma vez)'}</span>
+          <span className="truncate px-2">
+            {processando ? `Identificando ${processando}...` : arrastando ? 'Solte os documentos aqui' : 'Arraste os documentos aqui ou clique para selecionar'}
+          </span>
           <input type="file" className="hidden" multiple disabled={!!processando} accept=".pdf,.jpg,.jpeg,.png,.webp,.xls,.xlsx,.csv,.doc,.docx"
             onChange={(e) => { const fs = e.target.files; e.target.value = ''; anexar(fs); }} />
         </label>
