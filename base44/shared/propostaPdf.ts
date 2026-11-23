@@ -1,7 +1,7 @@
 import { jsPDF } from 'npm:jspdf@4.0.0';
 import { winAnsi } from './pdfWinAnsi.ts';
 import { PRODUTOS_ESTUDO } from './estudoViabilidade.ts';
-import { CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas } from './propostaTecnica.ts';
+import { CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, valorHonorariosProjeto } from './propostaTecnica.ts';
 
 // Gera o PDF executivo da Proposta Técnica (identidade Villela Exchange / RNC).
 const NAVY: [number, number, number] = [10, 31, 53];
@@ -26,7 +26,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     const tot = somaEtapas(etapas);
     // Honorários: valor único do projeto (definido pelo consultor a partir da sugestão da IA).
     const inv = c.investimento || {};
-    const valorHonorarios = Number(inv.valor) || Number(inv.valor_sugerido) || 0;
+    const valorHonorarios = valorHonorariosProjeto(c);
     const hoje = new Date();
     const validade = new Date(hoje.getTime() + (Number(p.validade_dias) || 15) * 86400000);
 

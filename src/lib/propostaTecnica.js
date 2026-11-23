@@ -60,6 +60,16 @@ export const somaEtapas = (etapas) => {
 
 export const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
+// Valor único de honorários do projeto: o definido pelo consultor, a sugestão da IA ou,
+// em versões antigas (que traziam valores por etapa), a soma das etapas como valor único.
+export const valorHonorariosProjeto = (conteudo) => {
+  const inv = conteudo?.investimento || {};
+  const definido = Number(inv.valor) || Number(inv.valor_sugerido) || 0;
+  if (definido) return definido;
+  return (Array.isArray(conteudo?.etapas) ? conteudo.etapas : [])
+    .reduce((s, e) => s + (Number(e.investimento_max) || Number(e.investimento_min) || 0), 0);
+};
+
 // JSON schema da saída do motor de IA (conteúdo da proposta + avaliação)
 export const SCHEMA_ANALISE = {
   type: 'object',

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estudoViabilidade';
-import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl } from '@/lib/propostaTecnica';
+import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto } from '@/lib/propostaTecnica';
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 
 const A = {
@@ -453,7 +453,8 @@ function Workspace({ estudoId }) {
   const Icon = ICONE[estudo.produto] || Landmark;
   const tot = somaEtapas(c.etapas);
   const inv = c.investimento || {};
-  const valorHonorarios = Number(inv.valor) || Number(inv.valor_sugerido) || 0;
+  const valorHonorarios = valorHonorariosProjeto(c);
+  const sugestaoValor = Number(inv.valor_sugerido) || valorHonorarios;
   const cl = CLASSIFICACAO[sel?.classificacao];
   const docs = estudo.documentos || [];
   const notas = sel?.notas_internas_ia || {};
@@ -724,20 +725,20 @@ function Workspace({ estudoId }) {
               <>
                 <Cartao titulo="Investimento — valor único do projeto" icon={Wallet}>
                   <p className="text-[11px] -mt-1 leading-relaxed" style={{ color: A.muted }}>
-                    Sugestão da IA: <strong style={{ color: A.accent }}>{inv.valor_sugerido ? brl(inv.valor_sugerido) : '—'}</strong>. O valor vai ao cliente como <strong style={{ color: A.text }}>valor único</strong>, negociável e parcelável — sem valores individualizados por etapa.
+                    Sugestão da IA: <strong style={{ color: A.accent }}>{sugestaoValor ? brl(sugestaoValor) : '—'}</strong>. O valor vai ao cliente como <strong style={{ color: A.text }}>valor único</strong>, negociável e parcelável — sem valores individualizados por etapa.
                   </p>
                   <div className="grid md:grid-cols-2 gap-3 items-end">
                     <div>
                       <p className="mb-1" style={label}>Valor definido (R$)</p>
                       {editavel ? (
-                        <input type="number" min={0} value={inv.valor ?? ''} placeholder={inv.valor_sugerido ? String(inv.valor_sugerido) : '0'}
+                        <input type="number" min={0} value={inv.valor ?? ''} placeholder={sugestaoValor ? String(sugestaoValor) : '0'}
                           onChange={e => setInv('valor', e.target.value === '' ? '' : Number(e.target.value))}
                           className="w-full px-3 py-2 text-sm font-bold rounded-lg focus:outline-none" style={inputStyle} />
                       ) : <p className="text-lg font-bold" style={{ color: A.accent }}>{valorHonorarios ? brl(valorHonorarios) : '—'}</p>}
                     </div>
                     {editavel && (
-                      <button onClick={() => setInv('valor', Number(inv.valor_sugerido) || 0)} className="text-[11px] px-3 py-2 rounded-lg font-semibold" style={{ background: A.accentDim, color: A.accent }}>
-                        Usar sugestão da IA ({inv.valor_sugerido ? brl(inv.valor_sugerido) : '—'})
+                      <button onClick={() => setInv('valor', Number(sugestaoValor) || 0)} className="text-[11px] px-3 py-2 rounded-lg font-semibold" style={{ background: A.accentDim, color: A.accent }}>
+                        Usar sugestão da IA ({sugestaoValor ? brl(sugestaoValor) : '—'})
                       </button>
                     )}
                   </div>
