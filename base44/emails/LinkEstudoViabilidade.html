@@ -1,0 +1,49 @@
+<mjml>
+  <mj-head>
+    <mj-title>Seu Estudo de Viabilidade: {{produto}}</mj-title>
+    <mj-preview>Formulário do seu estudo técnico com link direto para preenchimento.</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-section background-color="#151a23" padding="0 36px" />
+      <mj-text color="#e2ebf3" font-size="15px" line-height="1.6" padding="0" />
+      <mj-button background-color="#00d6ab" color="#0e121b" border-radius="8px" font-weight="700" inner-padding="14px 28px" align="left" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#0d1117">
+    <mj-section background-color="#00d6ab" padding="18px 36px">
+      <mj-column>
+        <mj-image src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/698a1739c50002e4d14fa547/3aa28b1cd_logo.png" alt="VILLELA EXCHANGE" width="40px" align="left" padding="0 0 0 0" />
+        <mj-text color="#0e121b" font-size="16px" font-weight="700" letter-spacing="1px" padding="8px 0 0 0">VILLELA EXCHANGE</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="36px 36px 8px">
+      <mj-column>
+        <mj-text font-size="26px" line-height="1.2" font-weight="700" color="#ffffff" padding="0">Olá, {{cliente_nome}}</mj-text>
+        <mj-text color="#758ca3" font-size="15px" padding="10px 0 0 0">Seu estudo de {{produto}} está pronto para ser preenchido.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="20px 36px 0">
+      <mj-column>
+        <mj-text padding="0">Para darmos início à análise, precisamos conhecer o propósito, as expectativas e a documentação da sua estrutura. O formulário leva poucos minutos e seu progresso fica salvo, então você pode concluir em mais de uma etapa.</mj-text>
+        <mj-button href="{{link}}" padding="24px 0 0 0">Preencher meu estudo</mj-button>
+        <mj-text color="#758ca3" font-size="13px" padding="16px 0 0 0">Se o botão não abrir, copie e cole este endereço no navegador:<br />{{link}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="32px 36px 0">
+      <mj-column>
+        <mj-divider border-color="#145245" border-width="1px" padding="0" />
+        <mj-text color="#758ca3" font-size="13px" padding="18px 0 0 0">Conte conosco para o que precisar.</mj-text>
+        <mj-text color="#e2ebf3" font-size="14px" font-weight="700" padding="4px 0 0 0">{{consultor_nome}}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section padding="28px 36px 36px">
+      <mj-column>
+        <mj-text color="#758ca3" font-size="12px" padding="0">VILLELA EXCHANGE · Este e-mail foi enviado porque um estudo de viabilidade foi aberto em seu nome. Se você não reconhece este contato, basta ignorar a mensagem.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

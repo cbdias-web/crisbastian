@@ -12,6 +12,7 @@ import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 import NdaEstudoCard from '@/components/estudo/NdaEstudoCard';
 import DocumentosEstudoCard from '@/components/estudo/DocumentosEstudoCard';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
+import EnviarLinkEmailBotao from '@/components/estudo/EnviarLinkEmailBotao';
 import { origemPublica } from '@/lib/appUrl';
 
 const AURORA = {
@@ -115,10 +116,7 @@ function PainelCompartilhar({ estudo }) {
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#25D366', color: '#0d1117' }}>
           <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
         </a>
-        <a href={`mailto:${estudo.cliente_email || ''}?subject=${encodeURIComponent((p?.titulo || 'Estudo de Viabilidade') + ' — Villela Exchange')}&body=${encodeURIComponent(mensagemWhatsapp(estudo).replace(/\*/g, ''))}`}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ ...inputStyle }}>
-          <Mail className="w-3.5 h-3.5" /> E-mail
-        </a>
+        <EnviarLinkEmailBotao estudo={estudo} />
         <a href={link} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ ...inputStyle }}>
           <ExternalLink className="w-3.5 h-3.5" /> Abrir formulário
         </a>
@@ -326,11 +324,16 @@ export default function EstudoViabilidade() {
                       <td className="px-4 py-3 text-xs">{(e.documentos || []).length}</td>
                       <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{e.responsavel_nome || e.responsavel_email || '—'}</td>
                       <td className="px-4 py-3 text-xs" style={{ color: AURORA.textMuted }}>{fmtData(e.updated_date || e.created_date)}</td>
-                      <td className="px-4 py-3 text-right">
-                        {e.link_token && (
-                          <button onClick={ev => { ev.stopPropagation(); navigator.clipboard.writeText(linkCompleto(e)); toast.success('Link copiado'); }}
-                            className="p-1.5 rounded-md" style={{ color: AURORA.accent }} title="Copiar link"><Copy className="w-3.5 h-3.5" /></button>
-                        )}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          {e.link_token && (
+                            <>
+                              <EnviarLinkEmailBotao compacto estudo={e} onEnviado={() => setEstudos(l => l.map(x => x.id === e.id ? { ...x, status: x.status === 'rascunho' ? 'enviado_cliente' : x.status } : x))} />
+                              <button onClick={ev => { ev.stopPropagation(); navigator.clipboard.writeText(linkCompleto(e)); toast.success('Link copiado'); }}
+                                className="p-1.5 rounded-md" style={{ color: AURORA.accent }} title="Copiar link"><Copy className="w-3.5 h-3.5" /></button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
