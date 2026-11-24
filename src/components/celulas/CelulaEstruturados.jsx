@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
@@ -542,6 +542,9 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
           <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <span style={{ flex: 1, color: '#DCE2EA' }}>{d.nome}</span>
             <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
+            {d.acao && (
+              <button onClick={d.acao.onClick} className="vx-btn vx-btn-primary" style={{ height: 26, padding: '0 10px', fontSize: 11 }}>{d.acao.label}</button>
+            )}
             {d.arquivo && (
               <>
                 <button onClick={() => abrirArquivo(d.arquivo)} className="vx-btn vx-btn-soft" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Abrir ${d.nome}`}>Abrir</button>
@@ -581,6 +584,22 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
 function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar }) {
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
+  const assinadoRef = useRef(null);
+  const [enviandoAss, setEnviandoAss] = useState(false);
+  // Via assinada do NDA: arquivo privado, conclui a etapa NDA e libera o estudo
+  const anexarAssinado = async (file) => {
+    if (!file) return;
+    setEnviandoAss(true);
+    try {
+      const up = await base44.integrations.Core.UploadPrivateFile({ file });
+      if (!up?.file_uri) throw new Error('Falha no envio.');
+      await base44.entities.EstudoViabilidade.update(e.id, { nda_assinado_url: up.file_uri, nda_assinado_nome: file.name, nda_assinado_em: new Date().toISOString() });
+      toast.success('NDA assinado anexado. A operação seguiu para o Estudo de viabilidade.');
+      recarregar?.();
+    } catch (er) { toast.error(er.message || 'Não foi possível anexar.'); }
+    setEnviandoAss(false);
+    if (assinadoRef.current) assinadoRef.current.value = '';
+  };
   const [propostas, setPropostas] = useState([]);
   const [formPos, setFormPos] = useState(null);
 
@@ -623,7 +642,12 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   }, [e, propostas, contrato, formPos, comentarios]);
 
   const docs = [
-    { nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome },
+    ...(e.nda_origem === 'gerado'
+      ? [
+          { nome: 'NDA (gerado)', ok: true, st: 'Gerado', arquivo: e.nda_url, nomeArquivo: e.nda_nome, acao: produto === 'offshore' ? { label: 'Refazer', onClick: () => abrirNda(e) } : null },
+          { nome: 'NDA assinado', ok: !!e.nda_assinado_url, st: e.nda_assinado_url ? 'Assinado' : 'Aguardando', arquivo: e.nda_assinado_url || null, nomeArquivo: e.nda_assinado_nome, acao: e.nda_assinado_url ? null : { label: enviandoAss ? 'Enviando…' : 'Anexar', onClick: () => assinadoRef.current?.click() } },
+        ]
+      : [{ nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome, acao: !e.nda_url && produto === 'offshore' ? { label: 'Gerar', onClick: () => abrirNda(e) } : null }]),
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
     { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado', arquivo: contrato?.contrato_assinado_url || contrato?.pdf_url || null, nomeArquivo: contrato?.contrato_assinado_nome || `Contrato ${contrato?.numero_contrato || ''}.pdf` },
@@ -637,7 +661,9 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <input ref={assinadoRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={ev => anexarAssinado(ev.target.files?.[0])} />
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
+        acoes={{ nda: () => abrirNda(e), nda_assinado: () => assinadoRef.current?.click() }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <div className="vx-cel-body">
         <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={ir} />
