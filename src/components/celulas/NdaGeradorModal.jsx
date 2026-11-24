@@ -14,6 +14,12 @@ const ESTADO_CIVIL = ['solteiro(a)', 'casado(a)', 'divorciado(a)', 'viúvo(a)', 
 
 const parteVazia = (tipo = 'PJ') => ({ tipo, nome: '', nome_fantasia: '', cpf_cnpj: '', natureza: 'sociedade empresária limitada', endereco: '', bairro: '', cidade: '', estado: '', cep: '', representante: '', representante_cargo: 'sócio administrador', representante_tratamento: 'Sr.', nacionalidade: 'brasileiro(a)', estado_civil: '', profissao: '', genero: 'M', sigla: '' });
 
+// Fora do componente: se fosse criado a cada render, os campos perderiam o foco ao digitar.
+const LBL = { fontSize: 11, color: '#8E97A8', display: 'flex', flexDirection: 'column', gap: 4 };
+function Campo({ label, children, span = 1 }) {
+  return <label style={{ ...LBL, gridColumn: `span ${span}` }}>{label}{children}</label>;
+}
+
 function baixarBase64(b64, nome) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
@@ -125,8 +131,6 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
 
   const acc = t?.acc || '#C9A962';
   const inp = { height: 38, padding: '0 12px', borderRadius: 10, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#F4EFE3', fontSize: 13, width: '100%' };
-  const lbl = { fontSize: 11, color: '#8E97A8', display: 'flex', flexDirection: 'column', gap: 4 };
-  const Campo = ({ label, children, span = 1 }) => <label style={{ ...lbl, gridColumn: `span ${span}` }}>{label}{children}</label>;
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Gerar NDA"
