@@ -198,6 +198,19 @@ export default function EstudoViabilidade() {
     if (e) { setDetalhe(e); abertoPorParam.current = true; }
   }, [estudos, loc.search]);
 
+  // Vindo da célula Produtos Estruturados (?novo=offshore): abre o novo estudo
+  // já com o produto escolhido.
+  const novoPorParam = useRef(false);
+  useEffect(() => {
+    if (novoPorParam.current) return;
+    const p = new URLSearchParams(loc.search).get('novo');
+    if (p && ['holding', 'offshore', 'conta_internacional'].includes(p)) {
+      novoPorParam.current = true;
+      setProdutoSel(p);
+      setNovoAberto(true);
+    }
+  }, [loc.search]);
+
   const contagem = useMemo(() => {
     const c = { holding: 0, offshore: 0, conta_internacional: 0 };
     estudos.forEach(e => { if (c[e.produto] !== undefined && e.status !== 'cancelado') c[e.produto]++; });
