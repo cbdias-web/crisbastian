@@ -14,6 +14,7 @@ import DocumentosEstudoCard from '@/components/estudo/DocumentosEstudoCard';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import EnviarLinkEmailBotao from '@/components/estudo/EnviarLinkEmailBotao';
 import { origemPublica } from '@/lib/appUrl';
+import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -433,7 +434,9 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
       // (contrato/venda) ou quando o cliente já existe e é selecionado acima.
       const clienteId = form.cliente_id || '';
 
-      const nomeResp = user?.nome_tratamento || user?.full_name || user?.email;
+      let nomeResp = user?.nome_tratamento || user?.full_name || user?.email;
+      // Nome do gerente ATIVO no cadastro de Vendedores (evita grafias diferentes da mesma pessoa)
+      try { const vv = await resolverVendedorDoUsuarioLogado(); if (vv?.nome && vv.ativo !== false) nomeResp = vv.nome; } catch (er) { /* mantém o nome do usuário */ }
       const respostasIniciais = form.tipo_cliente === 'PJ'
         ? {
             razao_social: form.cliente_nome, cnpj: form.cliente_documento, email: form.cliente_email, telefone: form.cliente_telefone,
