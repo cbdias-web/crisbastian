@@ -35,9 +35,9 @@ export default function HeaderAvatares({ groups, currentPageName }) {
 
   const Avatar = ({ id, label, Icon, cor, ativo, badge, onClick, title }) => (
     <button onClick={onClick} title={title || label} aria-expanded={aberto === id}
-      className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition flex-shrink-0"
-      style={{ background: ativo || aberto === id ? 'rgba(255,255,255,0.06)' : 'transparent', border: `1px solid ${ativo || aberto === id ? cor + '66' : 'transparent'}` }}>
-      <span className="relative w-8 h-8 rounded-full flex items-center justify-center" style={{ background: cor + '22', border: `1.5px solid ${cor}` }}>
+      className="vx-lift flex items-center gap-2 pl-1 pr-3 py-1 rounded-full flex-shrink-0"
+      style={{ background: ativo || aberto === id ? 'rgba(255,255,255,0.06)' : 'transparent', border: `1px solid ${ativo || aberto === id ? cor + '66' : 'transparent'}`, '--vx-glow': cor + '40' }}>
+      <span className="vx-av relative w-8 h-8 rounded-full flex items-center justify-center" style={{ background: cor + '22', border: `1.5px solid ${cor}` }}>
         <Icon className="w-4 h-4" style={{ color: cor }} />
         {badge > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', border: '2px solid #0d1117' }} />}
       </span>
@@ -47,9 +47,9 @@ export default function HeaderAvatares({ groups, currentPageName }) {
 
   return (
     <div ref={ref} className="flex items-center gap-1 relative">
-      <Link to="/Inicio" title="Início" className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full flex-shrink-0"
-        style={{ background: noInicio ? 'rgba(255,255,255,0.06)' : 'transparent', border: `1px solid ${noInicio ? '#00D4AA66' : 'transparent'}` }}>
-        <span className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.14)', border: '1.5px solid #00D4AA' }}>
+      <Link to="/Inicio" title="Início" className="vx-lift flex items-center gap-2 pl-1 pr-3 py-1 rounded-full flex-shrink-0"
+        style={{ background: noInicio ? 'rgba(255,255,255,0.06)' : 'transparent', border: `1px solid ${noInicio ? '#00D4AA66' : 'transparent'}`, '--vx-glow': 'rgba(0,212,170,0.25)' }}>
+        <span className="vx-av w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.14)', border: '1.5px solid #00D4AA' }}>
           <Home className="w-4 h-4" style={{ color: '#00D4AA' }} />
         </span>
         <span className="hidden xl:inline text-sm font-medium" style={{ color: noInicio ? '#e6edf3' : 'rgba(230,237,243,0.7)' }}>Início</span>
@@ -73,12 +73,13 @@ export default function HeaderAvatares({ groups, currentPageName }) {
             <div className="grid grid-cols-1 gap-2">
               {CELULAS_CAPA.map(c => {
                 const Icon = ICONE_CELULA[c.id];
+                const cor = c.cor || OURO;
                 return (
                   <button key={c.id} disabled={!c.ativa} onClick={() => c.ativa && abrirCelula(c.id)}
-                    className="flex items-center gap-3 p-3 rounded-xl text-left transition"
-                    style={{ background: c.ativa ? 'rgba(201,169,98,0.10)' : 'rgba(255,255,255,0.03)', border: `1px solid ${c.ativa ? 'rgba(201,169,98,0.35)' : 'rgba(255,255,255,0.06)'}`, opacity: c.ativa ? 1 : 0.6, cursor: c.ativa ? 'pointer' : 'default' }}>
-                    <span className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(201,169,98,0.15)', border: `1.5px solid ${OURO}` }}>
-                      <Icon className="w-5 h-5" style={{ color: OURO }} />
+                    className="vx-card-lift flex items-center gap-3 p-3 rounded-xl text-left"
+                    style={{ background: cor + '14', border: `1px solid ${cor}55`, opacity: c.ativa ? 1 : 0.6, cursor: c.ativa ? 'pointer' : 'default', '--vx-acc': cor, '--vx-glow': c.glow }}>
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: cor + '24', border: `1.5px solid ${cor}` }}>
+                      <Icon className="w-5 h-5" style={{ color: cor }} />
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-semibold" style={{ color: '#F4EFE3' }}>{c.nome}</span>
@@ -108,10 +109,8 @@ export function BlocoItens({ grupo, currentPageName, onNavigate }) {
         const ativo = currentPageName === it.page;
         return (
           <Link key={it.page} to={urlItem(it)} onClick={onNavigate}
-            className="relative flex flex-col gap-2 p-3 rounded-xl transition"
-            style={{ background: ativo ? v.fundo : 'rgba(255,255,255,0.03)', border: `1px solid ${ativo ? v.cor + '66' : 'rgba(255,255,255,0.06)'}` }}
-            onMouseEnter={e => { e.currentTarget.style.background = v.fundo; }}
-            onMouseLeave={e => { e.currentTarget.style.background = ativo ? v.fundo : 'rgba(255,255,255,0.03)'; }}>
+            className="vx-card-lift relative flex flex-col gap-2 p-3 rounded-xl"
+            style={{ background: ativo ? v.fundo : 'rgba(255,255,255,0.03)', border: `1px solid ${ativo ? v.cor + '66' : 'rgba(255,255,255,0.06)'}`, '--vx-acc': v.cor + '88', '--vx-glow': v.cor + '55' }}>
             <span className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: v.fundo }}>
               {Icon && <Icon className="w-4 h-4" style={{ color: v.cor }} />}
             </span>
