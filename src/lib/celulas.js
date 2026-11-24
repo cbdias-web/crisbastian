@@ -141,6 +141,32 @@ export function proximaAcaoContrato(etapa, contrato, produto) {
   }
 }
 
+// Para qual célula/produto um negócio do Pipeline deve ir quando for convertido.
+// Retorna { celula, produto, tipoContrato } ou null (produto sem célula: segue o fluxo antigo).
+export function celulaDoProdutoPipeline(produtoTexto) {
+  const p = ` ${normal(produtoTexto).replace(/[^a-z0-9]+/g, ' ')} `;
+  if (!p.trim()) return null;
+  const tem = (s) => p.includes(` ${s} `) || p.includes(` ${s}`) && s.includes(' ');
+  const regras = [
+    ['estruturados', 'offshore', 'offshore'],
+    ['estruturados', 'conta_internacional', 'conta internacional'],
+    ['estruturados', 'holding', 'holding'],
+    ['internacional', 'dolarize', 'dolarize'],
+    ['internacional', 'canal_bancario', 'canal bancario'],
+    ['internacional', 'conta_global', 'conta global'],
+    ['internacional', 'rof', 'rof'],
+    ['internacional', 'cambio', 'cambio'],
+    ['cross', 'diagnostico', 'diagnostico'],
+    ['cross', 'rating', 'rating'],
+    ['cross', 'score', 'score'],
+    ['cross', 'monitore', 'monitore'],
+  ];
+  for (const [celula, produto, chave] of regras) {
+    if (tem(chave)) return { celula, produto, tipoContrato: JORNADAS[produto].tipoContrato };
+  }
+  return null;
+}
+
 // Negócio do Pipeline pertence ao produto?
 export function pipelineDoProduto(neg, produto) {
   const chaves = JORNADAS[produto]?.pipeline || [];
