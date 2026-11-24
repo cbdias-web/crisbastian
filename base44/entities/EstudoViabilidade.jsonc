@@ -29,6 +29,10 @@
       "type": "string",
       "description": "E-mail do administrador que alterou a origem/produto do estudo"
     },
+    "analise_base_id": {
+      "type": "string",
+      "description": "ID da PropostaTecnica usada como referencia de metodo quando a analise e gerada a partir de outra ja existente (outro cliente)"
+    },
     "tipo_cliente": {
       "type": "string",
       "enum": [

@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estudoViabilidade';
 import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto } from '@/lib/propostaTecnica';
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
+import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal';
 
 const A = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', surface3: '#222b3d',
@@ -174,6 +175,7 @@ function Painel() {
   const [filtro, setFiltro] = useState('todos');
   const [busca, setBusca] = useState('');
   const [user, setUser] = useState(null);
+  const [novaAberta, setNovaAberta] = useState(false);
 
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
@@ -237,10 +239,15 @@ function Painel() {
 
   return (
     <div className="p-4 md:p-6 space-y-5" style={{ color: A.text }}>
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: A.accent }}>Comercial · Estudos técnicos</p>
-        <h1 className="text-2xl font-bold flex items-center gap-2"><BrainCircuit className="w-6 h-6" style={{ color: A.accent }} /> Análise Técnica e Propostas</h1>
-        <p className="text-xs mt-1" style={{ color: A.muted }}>Toda análise nasce do Estudo de Viabilidade: você envia o link, o cliente devolve as respostas e os documentos, e a partir daí o motor de IA monta a proposta técnica executiva com etapas, prazos e investimento. Cada revisão gera uma nova versão.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: A.accent }}>Comercial · Estudos técnicos</p>
+          <h1 className="text-2xl font-bold flex items-center gap-2"><BrainCircuit className="w-6 h-6" style={{ color: A.accent }} /> Análise Técnica e Propostas</h1>
+          <p className="text-xs mt-1 max-w-3xl" style={{ color: A.muted }}>A análise nasce do Estudo de Viabilidade — o cliente devolve as respostas e os documentos — ou direto de um cadastro, com as informações digitadas pelo consultor. Em ambos os casos o motor de IA segue as premissas do sistema, e uma análise já criada pode servir de base para outro cliente.</p>
+        </div>
+        <button onClick={() => setNovaAberta(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+          <Plus className="w-4 h-4" /> Nova análise manual
+        </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {KPIS.map(k => (
@@ -315,6 +322,10 @@ function Painel() {
             })}
           </div>
         )}
+      {novaAberta && (
+        <NovaAnaliseManualModal user={user} onClose={() => setNovaAberta(false)}
+          onConcluido={(id) => { setNovaAberta(false); nav(`/AnaliseTecnica?estudo=${id}`); }} />
+      )}
     </div>
   );
 }
@@ -537,6 +548,7 @@ function Workspace({ estudoId }) {
               <Badge cor={A.accent}>{Object.keys(estudo.respostas || {}).length} respostas</Badge>
               <Badge cor={A.accent}>{docs.length} documentos</Badge>
               <Badge cor={A.gold}>Estudo: {STATUS_ESTUDO[estudo.status]?.label}</Badge>
+              {estudo.analise_base_id && <Badge cor={A.violet}>Usa análise existente como base</Badge>}
             </div>
           </div>
           {respostasRecebidas ? (

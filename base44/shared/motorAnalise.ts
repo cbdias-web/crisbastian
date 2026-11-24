@@ -46,7 +46,7 @@ export function urlsAnalisaveis(estudo: any) {
     .map((d: any) => d.url);
 }
 
-export function montarPrompt(estudo: any, base?: any, motivo?: string, instrucoes?: string) {
+export function montarPrompt(estudo: any, base?: any, motivo?: string, instrucoes?: string, referencia?: any) {
   const prod = (PRODUTOS_ESTUDO as any)[estudo.produto];
   const origem = estudo.produto_origem && estudo.produto_origem !== estudo.produto
     ? (PRODUTOS_ESTUDO as any)[estudo.produto_origem]
@@ -102,6 +102,15 @@ ${JSON.stringify({ score: base.score_viabilidade, classificacao: base.classifica
 MOTIVO DA REVISÃO / MUDANÇA NA NEGOCIAÇÃO: ${motivo || '—'}
 INSTRUÇÕES ESPECÍFICAS: ${instrucoes || '—'}
 Mantenha o que continua válido, ajuste o que a mudança exige (escopo, etapas, prazos, valor único de honorários, riscos) e reflita a mudança no sumário executivo de forma natural (sem mencionar "versão anterior").`;
+  }
+
+  if (referencia?.conteudo) {
+    p += `
+
+ANÁLISE DE REFERÊNCIA — OUTRA CONTRATAÇÃO DA RNC (cliente diferente):
+${JSON.stringify({ produto: referencia.produto, score: referencia.score_viabilidade, conteudo: referencia.conteudo }).slice(0, 22000)}
+
+Use esta análise anterior apenas como REFERÊNCIA DE MÉTODO: arquitetura da solução, sequência de etapas, riscos típicos, referências normativas, padrão de redação e de dimensionamento do investimento. Adapte tudo ao cliente atual: dados, patrimônio, objetivos, riscos e números são exclusivamente os deste estudo. NUNCA reproduza nome, documentos, valores ou fatos do outro cliente. Mantenha as premissas do sistema e registre em premissas/documentos_pendentes o que faltar.`;
   }
   return p;
 }

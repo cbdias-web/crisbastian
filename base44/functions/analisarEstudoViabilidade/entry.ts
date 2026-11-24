@@ -42,7 +42,14 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Ação inválida' }, { status: 400 });
     }
 
-    const prompt = montarPrompt(estudo, base, body.motivo, body.instrucoes);
+    // Análise de referência (outro cliente): usada só como método de trabalho.
+    let referencia = null;
+    if (action === 'analisar') {
+      const refId = body.base_proposta_id || estudo.analise_base_id;
+      if (refId) { try { referencia = await PT.get(refId); } catch (_) { referencia = null; } }
+    }
+
+    const prompt = montarPrompt(estudo, base, body.motivo, body.instrucoes, referencia);
     const out = await chamarIA(base44, prompt, urlsAnalisaveis(estudo));
     if (!out || !out.conteudo) return Response.json({ error: 'O motor de IA não retornou uma análise válida. Tente novamente.' }, { status: 502 });
 
