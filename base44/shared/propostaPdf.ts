@@ -194,10 +194,19 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     // Identificação do estudo
     font(8.2, 'bold', TEAL); doc.text('ANÁLISE TÉCNICA DE VIABILIDADE', M, 60);
     let yc = 72;
-    const tituloLs = doc.splitTextToSize(T(c.titulo_estrutura || prod.titulo), CW);
-    font(20, 'bold', NAVY);
-    tituloLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 9));
-    yc += Math.min(2, tituloLs.length) * 9 + 2;
+    // O título nunca é cortado: a fonte diminui até caber em até 3 linhas.
+    let tituloSz = 20;
+    let tituloLs: string[] = [];
+    for (const sz of [20, 18, 16, 14, 12.5]) {
+      font(sz, 'bold', NAVY);
+      tituloLs = doc.splitTextToSize(T(c.titulo_estrutura || prod.titulo), CW);
+      tituloSz = sz;
+      if (tituloLs.length <= 3) break;
+    }
+    const lhTit = tituloSz * 0.45;
+    font(tituloSz, 'bold', NAVY);
+    tituloLs.forEach((l: string, i: number) => doc.text(l, M, yc + i * lhTit));
+    yc += tituloLs.length * lhTit + 2;
     font(10, 'normal', MUTED); doc.text(T(prod.titulo), M, yc);
     yc += 8;
     doc.setDrawColor(...LINE); doc.line(M, yc, M + 30, yc);
@@ -206,10 +215,19 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     // Cliente (dados formatados: documento, contato)
     font(7.2, 'bold', MUTED); doc.text('CLIENTE', M, yc);
     yc += 8;
-    const nomeLs = doc.splitTextToSize(T(nomeProprio(p.cliente_nome) || '—'), CW);
-    font(16, 'bold', NAVY);
-    nomeLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 7.2));
-    yc += Math.min(2, nomeLs.length) * 7.2 + 1.5;
+    // Nome do cliente também não é cortado: reduz a fonte se precisar de mais de 2 linhas.
+    let nomeSz = 16;
+    let nomeLs: string[] = [];
+    for (const sz of [16, 14, 12.5, 11]) {
+      font(sz, 'bold', NAVY);
+      nomeLs = doc.splitTextToSize(T(nomeProprio(p.cliente_nome) || '—'), CW);
+      nomeSz = sz;
+      if (nomeLs.length <= 2) break;
+    }
+    const lhNome = nomeSz * 0.45;
+    font(nomeSz, 'bold', NAVY);
+    nomeLs.forEach((l: string, i: number) => doc.text(l, M, yc + i * lhNome));
+    yc += nomeLs.length * lhNome + 1.5;
     const docFmt = fmtDoc(p.cliente_documento || estudo?.cliente_documento);
     const linhaCliente = [
       p.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física',
