@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
+import NdaGeradorModal from './NdaGeradorModal';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
@@ -62,6 +63,9 @@ function Overlay({ cfg, sp, setSp }) {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [etapaFiltro, setEtapaFiltro] = useState(null);
+  const [ndaModal, setNdaModal] = useState(null); // { estudo } | null
+  const [recarga, setRecarga] = useState(0);
+  const recarregar = () => setRecarga(n => n + 1);
 
   const setParam = (patch) => {
     const n = new URLSearchParams(sp);
@@ -101,7 +105,7 @@ function Overlay({ cfg, sp, setSp }) {
       .then(([d, c]) => { setDados(d); setComentarios(c || []); })
       .catch(e => toast.error('Erro ao carregar a célula: ' + e.message))
       .finally(() => setLoading(false));
-  }, [cfg.id]);
+  }, [cfg.id, recarga]);
 
   useEffect(() => { setEtapaFiltro(null); setBusca(''); }, [produto]);
 
@@ -181,6 +185,8 @@ function Overlay({ cfg, sp, setSp }) {
   };
 
   const novaOperacao = () => {
+    // Offshore: a operação começa pela geração do NDA (modelo validado)
+    if (cfg.fonte === 'estudo' && produto === 'offshore') return setNdaModal({ estudo: null });
     if (cfg.fonte === 'estudo') return ir(`/EstudoViabilidade?novo=${produto}`);
     if (jornada.tipoContrato) return ir(`/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`);
     return ir('/Pipeline');
@@ -243,7 +249,8 @@ function Overlay({ cfg, sp, setSp }) {
           </div>
         ) : opSel ? (
           opSel.kind === 'estudo'
-            ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
+            ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
+                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} />
             : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
         ) : (
           <div className="vx-cel-body">
@@ -451,7 +458,7 @@ function Duvidas({ celula, produto, nomeProduto, t, comentarios, setComentarios,
 }
 
 // ───────────── Peças comuns da tela de operação ─────────────
-function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo }) {
+function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {} }) {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
@@ -464,7 +471,7 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo }) {
         </div>
         <div style={{ flex: 1 }} />
         <span style={{ padding: '6px 12px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 13, fontWeight: 500, border: `1px solid ${t.line}` }}>Etapa atual: {jornada.etapas[op.etapa].titulo}</span>
-        <button onClick={() => ir(op.acao.to)} className="vx-btn vx-btn-primary" style={{ height: 42, padding: '0 18px', fontSize: 14 }}>
+        <button onClick={() => (op.acao.acao && acoes[op.acao.acao] ? acoes[op.acao.acao]() : ir(op.acao.to))} className="vx-btn vx-btn-primary" style={{ height: 42, padding: '0 18px', fontSize: 14 }}>
           {op.acao.label} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
@@ -571,7 +578,7 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
 }
 
 // ───────────── Operação de Produtos estruturados (estudo) ─────────────
-function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
+function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar }) {
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
   const [propostas, setPropostas] = useState([]);
@@ -588,7 +595,13 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
   const eventos = useMemo(() => {
     const ev = [];
     const add = (quando, quem, idx, txt, link) => { if (quando) ev.push({ quando, quem, etapa: jornada.etapas[idx]?.titulo, txt, link }); };
-    add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : 'Operação aberta — NDA ainda não anexado.');
+    if (e.nda_origem === 'gerado') {
+      add(e.created_date, e.responsavel_nome || 'Gerente', 0, 'Operação aberta.');
+      add(e.nda_gerado_em, e.responsavel_nome || 'Gerente', 0, `NDA gerado no portal${(e.nda_partes || []).length > 1 ? ` (${e.nda_partes.length} partes do cliente)` : ''} e enviado para assinatura.`);
+      add(e.nda_assinado_em, e.responsavel_nome || 'Gerente', 0, `Via assinada do NDA anexada${e.nda_assinado_nome ? ` (${e.nda_assinado_nome})` : ''}.`);
+    } else {
+      add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : 'Operação aberta — NDA ainda não anexado.');
+    }
     add(e.data_envio_cliente || e.link_gerado_em, e.responsavel_nome || 'Gerente', 1, 'Link do estudo de viabilidade enviado ao cliente.');
     add(e.cliente_devolveu_em || e.data_recebimento, e.cliente_nome || 'Cliente', 1, 'Estudo devolvido com propósito, expectativas e documentos.', { label: 'Abrir estudo', to: `/EstudoViabilidade?estudo=${e.id}` });
     add(e.data_envio_analise, e.enviado_analise_por || 'Gerente', 2, 'Estudo enviado para análise técnica.');
