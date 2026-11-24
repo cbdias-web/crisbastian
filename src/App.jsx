@@ -175,6 +175,8 @@ const AuthenticatedAppInner = () => {
           }
         />
       ))}
+      {/* Nova capa (usuários liberados veem o Hub; os demais, o Dashboard) */}
+      <Route path="/Inicio" element={<LayoutWrapper currentPageName="Inicio"><MainPage /></LayoutWrapper>} />
       <Route path="/m" element={<ModoFocoMobile />} />
       <Route path="/ConfigProspeccao" element={<LayoutWrapper currentPageName="ConfigProspeccao"><ConfigProspeccao /></LayoutWrapper>} />
       <Route path="/PainelProspeccao" element={<LayoutWrapper currentPageName="PainelProspeccao"><PainelProspeccao /></LayoutWrapper>} />
