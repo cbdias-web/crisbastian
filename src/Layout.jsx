@@ -20,6 +20,8 @@ import BannerAlertaSistema from '@/components/BannerAlertaSistema.jsx';
 import MarketTicker from '@/components/MarketTicker.jsx';
 import HeaderNav from '@/components/layout/HeaderNav.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
+import CelulaEstruturados from '@/components/celulas/CelulaEstruturados.jsx';
+import CelulaLauncher from '@/components/celulas/CelulaLauncher.jsx';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -532,6 +534,8 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Right side actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Célula Produtos Estruturados (piloto) — abre por cima da página atual */}
+            {!isIndicador && !isMobile && <CelulaLauncher />}
             {/* Alertas do gerente (retornos, SLA, reuniões) */}
             {!isIndicador && <AlertasSino />}
 
@@ -648,6 +652,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="fixed inset-0 z-[60] flex flex-col"
           style={{ background: 'rgba(13,17,23,0.98)', paddingTop: '60px' }}>
           <nav className="flex-1 overflow-y-auto px-4 py-4">
+            <CelulaLauncher variant="mobile" onAbrir={() => setMobileMenuOpen(false)} />
             <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl mb-2 text-sm font-medium"
               style={{
@@ -728,6 +733,9 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Jarvis fora do <main> para não ser tapado pelo cabeçalho fixo (z-50) */}
       {!isIndicador && <AssistenteFloating />}
+
+      {/* Célula imersiva (?celula=estruturados) */}
+      {!isIndicador && user && <CelulaEstruturados />}
     </div>
   );
 }
