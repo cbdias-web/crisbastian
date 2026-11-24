@@ -17,6 +17,7 @@ import CampoMoeda from '@/components/ui/campo-moeda';
 import { buscarClientes } from '@/lib/clientesBusca';
 import ContratoOffshoreEstrutura, { OFFSHORE_DEFAULTS } from '@/components/contratos/ContratoOffshoreEstrutura';
 import { Globe2 } from 'lucide-react';
+import ImportarDocumentoContrato from '@/components/contratos/ImportarDocumentoContrato';
 
 const EMPTY = {
   nome: '', cpf_cnpj: '', responsavel_legal: '', cpf_responsavel: '',
@@ -438,6 +439,52 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     toast.success(`Cliente "${c.nome}" carregado!`);
   };
 
+  // Dados minerados pela IA de um NDA / proposta: preenche o formulário e vincula o cliente da base
+  const aplicarDocumento = async (dados, meta) => {
+    const d = { ...dados };
+    const ehOffshore = (form._tipoOverride || tipo) === 'OFFSHORE';
+    const OFFSHORE_KEYS = ['estrutura_jurisdicao', 'offshore_tipo_entidade', 'offshore_estrutura_nacional', 'prazo_implantacao_dias', 'offshore_manutencao_meses', 'local_assinatura', 'offshore_entrada_forma', 'anexo_veiculo', 'rg'];
+    if (!ehOffshore) OFFSHORE_KEYS.forEach(k => delete d[k]);
+    setForm(f => {
+      const novo = { ...f };
+      for (const [k, v] of Object.entries(d)) {
+        if (k === 'anexo_veiculo') novo.anexo_veiculo = { ...(f.anexo_veiculo || {}), ...v };
+        else novo[k] = typeof v === 'number' ? String(v) : v;
+      }
+      if (typeof d.offshore_estrutura_nacional === 'boolean') novo.offshore_estrutura_nacional = d.offshore_estrutura_nacional;
+      if (d.offshore_entrada_forma === 'dacao_veiculo') { novo.anexo_ativo = true; novo.anexo_tipo = 'veiculo'; }
+      // coerência financeira: entrada/parcelas e valor da parcela
+      const total = parseFloat(novo.valor_total) || 0;
+      const entrada = parseFloat(novo.valor_adesao) || 0;
+      const n = parseInt(novo.num_parcelas);
+      if (d.valor_total && d.num_parcelas === undefined && !d.valor_adesao) { novo.num_parcelas = 0; novo.valor_adesao = String(total); novo.valor_parcela = '0'; }
+      else if (n > 0 && !d.valor_parcela && total > entrada) novo.valor_parcela = String(((total - entrada) / n).toFixed(2));
+      if (meta?.condicoes_especiais) {
+        const nota = `Condições extraídas do documento (${meta.arquivo}): ${meta.condicoes_especiais}`;
+        if (!String(f.observacoes || '').includes(meta.condicoes_especiais)) novo.observacoes = [f.observacoes, nota].filter(Boolean).join('\n\n');
+      }
+      return novo;
+    });
+    if (d.nome) setBuscaCliente(d.nome);
+    // Vincula ao cliente já cadastrado (mesmo CPF/CNPJ), se existir
+    const dig = String(d.cpf_cnpj || '').replace(/\D/g, '');
+    if (dig.length === 11 || dig.length === 14) {
+      try {
+        const termos = [dig, String(d.nome || '').split(/\s+/)[0]].filter(t => t && t.length >= 3);
+        for (const termo of termos) {
+          const lista = await buscarClientes({ busca: termo, limite: 20 });
+          const achou = (Array.isArray(lista) ? lista : lista?.items || []).find(c => String(c.cpf_cnpj || '').replace(/\D/g, '') === dig);
+          if (achou) {
+            setForm(f => ({ ...f, cliente_id: achou.id }));
+            toast.success(`Cliente "${achou.nome}" já existe na base e foi vinculado.`);
+            break;
+          }
+        }
+      } catch { /* sem vínculo: o cliente é criado ao avançar */ }
+    }
+    setAba('dados');
+  };
+
   const cor = TIPO_COLOR[tipo] || '#0f1e35';
   const gradient = TIPO_GRADIENT[tipo] || 'from-[#0f1e35] to-[#1a3150]';
 
@@ -636,6 +683,9 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
             </div>
           </div>
         )}
+
+        {/* Preencher com IA a partir de NDA / proposta */}
+        <ImportarDocumentoContrato tipo={form._tipoOverride || tipo} cor={cor} onDados={aplicarDocumento} />
 
         {/* Buscar cliente */}
         <div ref={searchRef} className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mb-4 relative">
