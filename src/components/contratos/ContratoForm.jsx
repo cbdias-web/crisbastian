@@ -78,7 +78,7 @@ function calcProgress(form, aba) {
   return Math.round((filled / fields.length) * 100);
 }
 
-export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado }) {
+export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado, embutido = false }) {
   const [form, setForm] = useState(() => {
     // Contrato OFFSHORE: campos do modelo nº 000142/2026 com padrões (Porto Alegre, Wyoming, 90 dias...)
     const base = tipo === 'OFFSHORE' ? { ...EMPTY, ...OFFSHORE_DEFAULTS } : EMPTY;
@@ -651,7 +651,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6'}>
       <div className="max-w-4xl mx-auto">
         <button onClick={onCancel} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-5 transition group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Voltar para Contratos
