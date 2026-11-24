@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import { PDFDocument, PDFName, PDFString, PDFArray, PDFDict, PDFNumber, PDFRawStream, PDFRef } from 'npm:pdf-lib@1.17.1';
+import { gerarContratoOffshorePdf, proximoNumeroContrato } from '../../shared/contratoOffshore.ts';
 
 const PDF_URLS = {
   'CONTA GLOBAL': 'https://base44.app/api/apps/698a1739c50002e4d14fa547/files/mp/public/698a1739c50002e4d14fa547/440bfe20e_Contrato-ContaGlobal.pdf',
@@ -360,6 +361,29 @@ Deno.serve(async (req) => {
     // Buscar contrato
     const contrato = await base44.entities.Contrato.get(contrato_id);
     if (!contrato) return Response.json({ error: 'Contrato não encontrado' }, { status: 404 });
+
+    // ── OFFSHORE: contrato completo (modelo nº 000142/2026), com numeração sequencial anual ──
+    if (contrato.tipo === 'OFFSHORE') {
+      let ct = contrato;
+      if (!String(ct.numero_contrato || '').trim()) {
+        const ano = Number(String(ct.data_contrato || new Date().toISOString()).slice(0, 4));
+        const numerados = await base44.asServiceRole.entities.Contrato.filter(
+          { numero_contrato: { $regex: `/${ano}$` } }, '-created_date', 2000);
+        const numero = proximoNumeroContrato(numerados.map((x) => x.numero_contrato), ano);
+        await base44.entities.Contrato.update(ct.id, { numero_contrato: numero });
+        ct = { ...ct, numero_contrato: numero };
+      }
+      const bytesOff = await gerarContratoOffshorePdf(ct);
+      let b64Off = '';
+      for (let i = 0; i < bytesOff.length; i += 8192) b64Off += String.fromCharCode(...bytesOff.slice(i, i + 8192));
+      const slug = String(ct.nome || 'cliente').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '');
+      return Response.json({
+        pdf_base64: btoa(b64Off),
+        filename: `Contrato_Offshore_${String(ct.numero_contrato).replace('/', '-')}_${slug}.pdf`,
+        tipo: 'OFFSHORE',
+        numero_contrato: ct.numero_contrato,
+      });
+    }
 
     const pdfUrl = PDF_URLS[contrato.tipo];
     
