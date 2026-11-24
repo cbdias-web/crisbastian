@@ -11,6 +11,7 @@ import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/De
 import { AURORA, inputStyle, labelStyle, CardSection, LI, RadioBtns, SelectField } from '@/components/contratos/ciFormControls';
 import { linkPublico, origemPublica } from '@/lib/appUrl';
 import { mergeDocs, calcularPendencias, FAIXAS_MOVIMENTACAO, ESTADOS_CIVIS } from '@/lib/offshoreForm';
+import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 
 const CONTRATANTE_VAZIO = {
   contratante_nome: '', contratante_cpf: '', contratante_rg: '', contratante_nascimento: '',
@@ -101,6 +102,33 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
   useEffect(() => {
     setDocumentos(prev => mergeDocs({ llc_tipo_membros: llc.llc_tipo_membros, socio_pj: llc.socio_pj }, prev));
   }, [llc.llc_tipo_membros, llc.socio_pj]);
+
+  // Cliente escolhido na base preenche toda a identificação do contratante.
+  // Cliente PJ: o contratante da LLC é o responsável legal da empresa.
+  const aplicarCliente = (c) => {
+    const isPJ = c.tipo_pessoa === 'PJ';
+    const nome = (isPJ ? (c.responsavel_legal || c.nome) : c.nome) || '';
+    const cpf = (isPJ ? c.cpf_responsavel : c.cpf_cnpj) || '';
+    const pega = (v, atual) => (v !== undefined && v !== null && String(v).trim() !== '' ? v : atual);
+    setCt(f => ({
+      ...f,
+      contratante_nome: pega(nome, f.contratante_nome),
+      contratante_cpf: pega(cpf, f.contratante_cpf),
+      contratante_nascimento: isPJ ? f.contratante_nascimento : pega(c.nascimento, f.contratante_nascimento),
+      contratante_nacionalidade: pega(c.nacionalidade, f.contratante_nacionalidade),
+      contratante_estado_civil: ESTADOS_CIVIS.includes(c.estado_civil) ? c.estado_civil : f.contratante_estado_civil,
+      contratante_profissao: isPJ ? f.contratante_profissao : pega(c.profissao, f.contratante_profissao),
+      contratante_email: pega(c.email, f.contratante_email),
+      contratante_telefone: pega(c.telefone, f.contratante_telefone),
+      contratante_cep: pega(c.cep, f.contratante_cep),
+      contratante_endereco: pega(c.endereco, f.contratante_endereco),
+      contratante_bairro: pega(c.bairro, f.contratante_bairro),
+      contratante_cidade: pega(c.cidade, f.contratante_cidade),
+      contratante_estado: pega(c.estado, f.contratante_estado),
+    }));
+    setDestinatario(d => ({ ...d, cliente_nome: nome || c.nome || d.cliente_nome }));
+    if (isPJ) toast.info('Cliente PJ: usei o responsável legal como contratante. Se a empresa for sócia da LLC, marque na seção Sócios.');
+  };
 
   const nomeDestinatario = () => destinatario.cliente_nome?.trim() || ct.contratante_nome?.trim() || contrato?.nome?.trim() || '';
 
@@ -256,7 +284,9 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
             </div>
           )}
 
-          <CardSection title="Seção 1 — Dados do Contratante" icon={User} open={open.ct} onToggle={() => toggle('ct')}>
+          <CardSection title="Seção 1 — Dados do Contratante" icon={User} open={open.ct} onToggle={() => toggle('ct')}
+            badge={ct.contratante_nome ? ct.contratante_nome.split(' ')[0] : 'definir cliente'}>
+            <div className="mb-3"><ClienteEstudoPicker onSelecionar={aplicarCliente} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2"><LI label="Nome completo *" value={ct.contratante_nome} onChange={setC('contratante_nome')} /></div>
               <LI label="CPF *" value={ct.contratante_cpf} onChange={setC('contratante_cpf')} />
@@ -401,10 +431,7 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
             badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
             <DestinatarioLinkPanel tipo="offshore" valor={destinatario}
               onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
-              onSelecionarCliente={(c) => {
-                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
-                setCt(f => ({ ...f, contratante_nome: f.contratante_nome || c.nome || '', contratante_cpf: f.contratante_cpf || c.cpf_cnpj || '', contratante_email: f.contratante_email || c.email || '', contratante_telefone: f.contratante_telefone || c.telefone || '' }));
-              }} />
+              onSelecionarCliente={aplicarCliente} />
           </CardSection>
 
           <CardSection title="Observações internas" icon={FileText} open={open.obs} onToggle={() => toggle('obs')}>
