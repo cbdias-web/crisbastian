@@ -43,7 +43,9 @@ const STATUS_CONFIG = {
 
 const STATUS_ORDER = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
 
-export default function ContratoViewer({ contrato: contratoInicial, onBack, onUpdate, isAdmin }) {
+// embutido: usado dentro das células (sem ocupar a tela toda); onVendaCriada: em vez de ir para /Vendas,
+// devolve o controle para quem embutiu (a célula mostra a venda e as comissões na própria operação).
+export default function ContratoViewer({ contrato: contratoInicial, onBack, onUpdate, isAdmin, embutido = false, textoVoltar = 'Voltar para Contratos', onVendaCriada }) {
   const [contrato, setContrato] = useState(contratoInicial);
   const [editando, setEditando] = useState(false);
   const [gerando, setGerando] = useState(false);
@@ -272,8 +274,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         await base44.entities.Contrato.update(c.id, { status: 'no_pipeline' });
         queryClient.invalidateQueries(['contratos']); queryClient.invalidateQueries(['vendas']); queryClient.invalidateQueries(['parcelas-venda-pipeline']); queryClient.invalidateQueries(['comissoes']);
         handleUpdate({ ...contrato, status: 'no_pipeline' });
-        toast.success(d.ja_recebida ? 'Esta parcela já havia sido recebida — nada foi duplicado.' : 'Pagamento de parcela registrado como recorrência! Redirecionando para Vendas...');
-        setTimeout(() => navigate('/Vendas'), 1200);
+        toast.success(d.ja_recebida ? 'Esta parcela já havia sido recebida — nada foi duplicado.' : (onVendaCriada ? 'Pagamento de parcela registrado como recorrência!' : 'Pagamento de parcela registrado como recorrência! Redirecionando para Vendas...'));
+        if (onVendaCriada) onVendaCriada(); else setTimeout(() => navigate('/Vendas'), 1200);
         setEnviandoVenda(false);
         return;
       }
@@ -322,8 +324,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       queryClient.invalidateQueries(['vendas']);
       handleUpdate({ ...contrato, status: 'no_pipeline' });
       notificar('no_pipeline', 'todos');
-      toast.success('Venda criada! Redirecionando para Vendas...');
-      setTimeout(() => navigate('/Vendas'), 1200);
+      toast.success(onVendaCriada ? 'Venda criada! Veja a venda e as comissões na operação.' : 'Venda criada! Redirecionando para Vendas...');
+      if (onVendaCriada) onVendaCriada(); else setTimeout(() => navigate('/Vendas'), 1200);
     } catch (err) {
       toast.error('Erro: ' + err.message);
     }
@@ -415,11 +417,11 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : null;
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ background: '#0d1117' }}>
-      <div className="max-w-3xl mx-auto">
+    <div className={embutido ? 'p-1' : 'min-h-screen p-4 md:p-6'} style={{ background: embutido ? 'transparent' : '#0d1117' }}>
+      <div className={embutido ? 'max-w-3xl' : 'max-w-3xl mx-auto'}>
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="flex items-center gap-2 text-sm transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
-            <ArrowLeft className="w-4 h-4" /> Voltar para Contratos
+            <ArrowLeft className="w-4 h-4" /> {textoVoltar}
           </button>
           <div className="flex items-center gap-2 px-3 py-1 rounded-full" style={{ background: 'rgba(0,212,170,0.1)', border: '1px solid rgba(0,212,170,0.2)' }}>
             <ScrollText className="w-3.5 h-3.5" style={{ color: '#00D4AA' }} />
