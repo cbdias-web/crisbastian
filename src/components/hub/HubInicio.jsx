@@ -78,12 +78,12 @@ export default function HubInicio({ user, groups, isAdmin }) {
     Promise.all([
       base44.entities.CelulaComentario.list('-created_date', 200).catch(() => []),
       base44.entities.EstudoViabilidade.list('-updated_date', 500).catch(() => []),
-      base44.entities.Venda.filter({ data: { $gte: ini } }, '-data', 1000).catch(() => []),
+      base44.entities.Venda.list('-data', 1000).catch(() => []),
       base44.entities.Contrato.list('-created_date', 300).catch(() => []),
     ]).then(([cs, es, vs, cts]) => {
       setItens(cs || []);
       setEstudosAbertos((es || []).filter(e => e.status !== 'cancelado').length);
-      const vendasMes = (vs || []);
+      const vendasMes = (vs || []).filter(v => String(v.data || '') >= ini);
       const contratosAbertos = (cts || []).filter(c => ['rascunho', 'gerado', 'aguardando_pagamento'].includes(c.status)).length;
       setDash({ qtd: vendasMes.length, total: vendasMes.reduce((s, v) => s + (Number(v.valor) || 0), 0), contratosAbertos });
     }).finally(() => setCarregando(false));
