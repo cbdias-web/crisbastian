@@ -106,9 +106,9 @@ export default function DashNovo(p) {
       )}
 
       {/* Destaque + KPIs */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))' }}>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="vx-card-lift rounded-3xl p-6 flex items-center gap-6 flex-wrap"
-          style={{ background: 'radial-gradient(120% 140% at 0% 0%, rgba(0,212,170,0.22) 0%, rgba(0,102,204,0.14) 45%, rgba(18,23,31,0.92) 100%)', border: '1px solid rgba(0,212,170,0.35)', gridColumn: 'span 2', '--vx-acc': TEAL, '--vx-glow': 'rgba(0,212,170,0.45)' }}>
+          style={{ background: 'radial-gradient(120% 140% at 0% 0%, rgba(0,212,170,0.22) 0%, rgba(0,102,204,0.14) 45%, rgba(18,23,31,0.92) 100%)', border: '1px solid rgba(0,212,170,0.35)', '--vx-acc': TEAL, '--vx-glow': 'rgba(0,212,170,0.45)' }}>
           <div className="flex-1 min-w-[220px]">
             <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: TEAL }}><TrendingUp className="w-3.5 h-3.5" /> Total vendido no período</p>
             <p className="text-4xl md:text-5xl font-semibold tracking-tight mt-2" style={{ color: T.txt }}>{brl(valorTotal)}</p>
@@ -126,7 +126,7 @@ export default function DashNovo(p) {
             ) : <span className="text-[11px] text-center px-4" style={{ color: T.muted }}>Sem meta no mês</span>}
           </Anel>
         </div>
-        <div className="grid grid-cols-2 gap-4" style={{ gridColumn: 'span 2' }}>
+        <div className="grid grid-cols-2 gap-4">
           <Kpi icon={FileText} cor="#60A5FA" label="Vendas novas" valor={totalVendas} sub={totalRecorrencias ? `+ ${totalRecorrencias} recorrência${totalRecorrencias !== 1 ? 's' : ''}` : null} />
           <Kpi icon={DollarSign} cor={GOLD} label="Comissão gerada" valor={brlCurto(comissaoGerada)} />
           <Kpi icon={BarChart2} cor="#A78BFA" label="Ticket médio" valor={brlCurto(ticketMedio)} />
