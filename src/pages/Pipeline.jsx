@@ -17,6 +17,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { usaNovoPortal } from '@/lib/novoPortal';
+import { CELULAS, JORNADAS, celulaDoProdutoPipeline } from '@/lib/celulas';
 
 const TEMPERATURAS = [
   { value: 'Frio', dot: 'bg-blue-500', emoji: '🧊' },
@@ -421,8 +423,105 @@ export default function Pipeline() {
     return p.includes('CONTA GLOBAL') || p.includes('CONTA INTERNACIONAL') || p.includes('DOLARIZE') || p.includes('ROF') || p.includes('CANAL BANC') || p.includes('OFFSHORE') || p.includes('GARANTIA') || p.includes('MONITORE');
   };
 
+  // Dados do cliente para pré-preencher contrato/estudo
+  const buscarClienteData = async (n) => {
+    if (!n.cliente_id) return {};
+    try {
+      const c = await base44.entities.Cliente.get(n.cliente_id);
+      return {
+        nome: c.nome || n.cliente_nome || '',
+        cpf_cnpj: c.cpf_cnpj || n.cliente_cpf_cnpj || '',
+        telefone: c.telefone || n.cliente_telefone || '',
+        email: c.email || '',
+        cidade: c.cidade || '',
+        estado: c.estado || '',
+        cliente_id: c.id,
+      };
+    } catch { return {}; }
+  };
+
+  // Nova capa: o negócio vai para a célula do produto (Produtos estruturados abre o estudo;
+  // Área internacional e Operações cross abrem o contrato em rascunho) e a célula abre na operação.
+  const destinoCelula = (n) => (usaNovoPortal(user) ? celulaDoProdutoPipeline(n.produto) : null);
+  const enviarParaCelula = async (n, destino) => {
+    const nomeCelula = CELULAS[destino.celula].nome;
+    const nomeProduto = JORNADAS[destino.produto].nome;
+    const acao = destino.celula === 'estruturados' ? 'um estudo de viabilidade será aberto (começando pelo NDA)' : 'um contrato em rascunho será criado';
+    if (!confirm(`"${n.cliente_nome}" será enviado para a célula ${nomeCelula} · ${nomeProduto}: ${acao} e a operação será aberta na célula.`)) return;
+    setConvertendo(n.id);
+    try {
+      const cd = await buscarClienteData(n);
+      const doc = cd.cpf_cnpj || n.cliente_cpf_cnpj || '';
+      let opId;
+      if (destino.celula === 'estruturados') {
+        // Responsável = gerente do negócio (e-mail do cadastro de Vendedor, para ele enxergar o estudo)
+        let respEmail = user?.email || '';
+        let respNome = n.vendedor_nome || user?.nome_tratamento || user?.full_name || '';
+        if (n.vendedor_id) {
+          try {
+            const v = await base44.entities.Vendedor.get(n.vendedor_id);
+            if (v?.email) respEmail = v.email;
+            if (v?.nome) respNome = v.nome;
+          } catch { /* mantém o usuário */ }
+        }
+        const estudo = await base44.entities.EstudoViabilidade.create({
+          produto: destino.produto,
+          tipo_cliente: doc.replace(/\D/g, '').length === 14 ? 'PJ' : 'PF',
+          cliente_id: cd.cliente_id || n.cliente_id || '',
+          cliente_nome: cd.nome || n.cliente_nome || '',
+          cliente_documento: doc,
+          cliente_email: cd.email || '',
+          cliente_telefone: cd.telefone || n.cliente_telefone || '',
+          responsavel_email: respEmail,
+          responsavel_nome: respNome,
+          status: 'rascunho',
+          respostas: {},
+          documentos: [],
+          observacoes_internas: `Originado do Pipeline.${n.descricao ? ' ' + n.descricao : ''}`,
+        });
+        opId = estudo.id;
+      } else {
+        if (!destino.tipoContrato) {
+          toast.message(`${nomeProduto} ainda não tem contrato no portal: a negociação segue acompanhada na célula.`);
+          opId = 'p_' + n.id;
+        } else {
+          const ct = await base44.entities.Contrato.create({
+            tipo: destino.tipoContrato,
+            nome: cd.nome || n.cliente_nome || '',
+            cpf_cnpj: doc,
+            telefone: cd.telefone || n.cliente_telefone || '',
+            email: cd.email || '',
+            cidade: cd.cidade || '',
+            estado: cd.estado || '',
+            cliente_id: cd.cliente_id || n.cliente_id || '',
+            pipeline_id: n.id,
+            vendedor_id: n.vendedor_id || '',
+            vendedor_nome: n.vendedor_nome || '',
+            valor_total: n.valor_estimado || 0,
+            valor_adesao: n.valor_estimado || 0,
+            data_contrato: todayBrasilia(),
+            status: 'rascunho',
+            observacoes: n.descricao || '',
+          });
+          opId = ct.id;
+        }
+      }
+      if (opId && !String(opId).startsWith('p_')) {
+        await base44.entities.Pipeline.update(n.id, { temperatura: 'Fechado' });
+      }
+      queryClient.invalidateQueries(['pipeline']);
+      toast.success(`Enviado para ${nomeCelula} · ${nomeProduto}`);
+      navigate({ pathname: '/Pipeline', search: `?celula=${destino.celula}&produto=${destino.produto}&op=${opId}` });
+    } catch (err) {
+      toast.error('Erro: ' + err.message);
+    }
+    setConvertendo(null);
+  };
+
   // Converter prospecção: produtos de contrato → aba Contratos; demais → aba Vendas
   const converterEmVenda = async (n) => {
+    const destino = destinoCelula(n);
+    if (destino) return enviarParaCelula(n, destino);
     const ehContrato = isProdutoContrato(n.produto);
 
     if (ehContrato) {
@@ -922,12 +1021,12 @@ export default function Pipeline() {
                                        <button
                                          onClick={() => converterEmVenda(n)}
                                          disabled={convertendo === n.id}
-                                         title={isProdutoContrato(n.produto) ? 'Ir para Contratos' : 'Converter em venda'}
-                                         className={`p-0.5 text-gray-400 ${isProdutoContrato(n.produto) ? 'hover:text-amber-600' : 'hover:text-emerald-600'}`}
+                                         title={destinoCelula(n) ? `Enviar para ${CELULAS[destinoCelula(n).celula].nome}` : isProdutoContrato(n.produto) ? 'Ir para Contratos' : 'Converter em venda'}
+                                         className={`p-0.5 text-gray-400 ${destinoCelula(n) || isProdutoContrato(n.produto) ? 'hover:text-amber-600' : 'hover:text-emerald-600'}`}
                                        >
                                          {convertendo === n.id
                                            ? <div className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                                           : isProdutoContrato(n.produto)
+                                           : destinoCelula(n) || isProdutoContrato(n.produto)
                                              ? <ScrollText className="w-3 h-3" />
                                              : <ShoppingCart className="w-3 h-3" />}
                                        </button>
