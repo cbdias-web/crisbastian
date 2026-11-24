@@ -4,6 +4,7 @@ import { acharVendedor } from '../../shared/vendedorResolver.ts';
 // Devolve o cadastro de Vendedor correto (id + nome canônico) para o usuário logado, para um usuário
 // informado (user_id) ou para um vendedor_id/nome vindos de um contrato antigo.
 // Body: { vendedor_id?, user_id?, nome?, email? }  (vazio = usuário logado)
+// Prioriza sempre o cadastro de Vendedor ATIVO ligado ao usuário (ver shared/vendedorResolver.ts).
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
