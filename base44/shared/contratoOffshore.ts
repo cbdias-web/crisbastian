@@ -181,10 +181,15 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
       let x = x0;
       if (o.align === 'center') x = ML + (TW - conteudo - gaps * esp) / 2;
       if (o.align === 'right') x = MR - conteudo - gaps * esp;
-      for (const p of ln) {
-        for (const r of p) { page.drawText(r.t, { x, y, size, font: r.f, color: o.color || PRETO }); x += r.f.widthOfTextAtSize(r.t, size); }
+      ln.forEach((p, k) => {
+        p.forEach((r, j) => {
+          // espaço real ao fim de cada palavra (invisível) para cópia/leitura do texto do PDF
+          const fimPalavra = j === p.length - 1 && k < ln.length - 1;
+          page.drawText(fimPalavra ? r.t + ' ' : r.t, { x, y, size, font: r.f, color: o.color || PRETO });
+          x += r.f.widthOfTextAtSize(r.t, size);
+        });
         x += gap;
-      }
+      });
       y -= LH;
     });
     y -= o.after ?? 6;
@@ -253,6 +258,7 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
   const jur = limpa(c.estrutura_jurisdicao) || 'Wyoming';
   const estado = jur.replace(/\s*[,/-]\s*EUA\s*$/i, '').trim() || 'Wyoming';
   const entidade = limpa(c.offshore_tipo_entidade) || 'Limited Liability Company (LLC)';
+  const sigla = (entidade.match(/\(([A-Z]{2,6})\)/) || [])[1] || 'entidade';
   const nacional = c.offshore_estrutura_nacional !== false;
   const manut = Number(c.offshore_manutencao_meses) > 0 ? Number(c.offshore_manutencao_meses) : 12;
   const prazo = Number(c.prazo_implantacao_dias) > 0 ? Number(c.prazo_implantacao_dias) : 90;
@@ -292,13 +298,18 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
         ', doravante denominada ',
     }, { t: 'CONTRATANTE', b: true }, { t: '.' }];
   } else {
-    const partes = [minusc(c.nacionalidade), minusc(c.estado_civil), minusc(c.profissao)].filter(Boolean);
+    // gênero pela nacionalidade informada (brasileiro/brasileira); sem pista, mantém "(a)"
+    const nac = minusc(c.nacionalidade);
+    const g = /o$/.test(nac) ? 'm' : /a$/.test(nac) ? 'f' : '';
+    const fl = (m: string, f: string, n: string) => (g === 'm' ? m : g === 'f' ? f : n);
+    const ec = minusc(c.estado_civil).replace(/\(a\)/, fl('', 'a', '(a)')).replace(/o\(a\)$/, fl('o', 'a', 'o(a)'));
+    const partes = [nac, ec, minusc(c.profissao)].filter(Boolean);
     qualif = [{ t: nome, b: true }, {
       t: (partes.length ? ', ' + partes.join(', ') : '') +
-        (c.rg ? `, portador(a) do RG nº ${limpa(c.rg)}` : '') +
-        `, inscrito(a) no CPF sob o nº ${fmtDoc(c.cpf_cnpj)}` +
+        (c.rg ? `, ${fl('portador', 'portadora', 'portador(a)')} do RG nº ${limpa(c.rg)}` : '') +
+        `, ${fl('inscrito', 'inscrita', 'inscrito(a)')} no CPF sob o nº ${fmtDoc(c.cpf_cnpj)}` +
         (c.email ? `, endereço eletrônico ${limpa(c.email)}` : '') +
-        `, residente e domiciliado(a) na ${endCompleto}, doravante denominado(a) `,
+        `, ${fl('residente e domiciliado', 'residente e domiciliada', 'residente e domiciliado(a)')} na ${endCompleto}, doravante ${fl('denominado', 'denominada', 'denominado(a)')} `,
     }, { t: 'CONTRATANTE', b: true }, { t: '.' }];
   }
   paragrafo(qualif, { after: 10 });
@@ -316,7 +327,7 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
   item('2.1.1.', [{ t: `Estrutura Internacional nos EUA (${estado}):`, b: true }]);
   bullets([
     [{ t: 'Criação de Entidade Offshore: ', b: true }, { t: `Constituição de uma ${entidade} no estado de ${estado}, EUA${DESCRICAO_ESTADO[estado] || ''};` }],
-    [{ t: 'Estrutura Financeira nos EUA: ', b: true }, { t: 'Abertura de conta bancária empresarial em dólares americanos (USD) para a entidade, permitindo operações comerciais e financeiras internacionais;' }],
+    [{ t: 'Estrutura Financeira nos EUA: ', b: true }, { t: `Abertura de conta bancária empresarial em dólares americanos (USD) para a ${sigla}, permitindo operações comerciais e financeiras internacionais;` }],
     [{ t: 'Obtenção do EIN: ', b: true }, { t: 'Solicitação e obtenção do Employer Identification Number (EIN) junto ao IRS (Receita Federal Americana), essencial para todas as operações da empresa.' }],
   ]);
   let sub = 2;
@@ -418,7 +429,7 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
   }
   let s6 = 2;
   item(`6.${s6++}.`, 'Caso a data de vencimento de qualquer parcela recaia em sábado, domingo ou feriado, o pagamento poderá ser realizado no primeiro dia útil subsequente, sem incidência de encargos.');
-  item(`6.${s6++}.`, [{ t: 'Dados Bancários para Pagamento:', b: true }]);
+  item(`6.${s6++}.`, [{ t: parcelas > 0 ? 'Dados Bancários para Pagamento das parcelas:' : 'Dados Bancários para Pagamento:', b: true }]);
   bullets(DADOS_BANCARIOS);
   const iBanco = s6 - 1;
   item(`6.${s6++}.`, `Os pagamentos em dinheiro deverão ser realizados mediante transferência bancária ou PIX para os dados acima, sendo considerados efetivados a partir da confirmação do crédito na conta da CONTRATADA.`);
@@ -504,8 +515,8 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
       const comoQue = est.tipo === 'entrada_parcelas' ? 'como entrada do contrato acima referido' : 'como pagamento do contrato acima referido';
       paragrafo([{ t: 'Pelo presente termo, ' }, { t: nome, b: true }, { t: `, ${isPJ ? 'CNPJ' : 'CPF'} nº ${fmtDoc(c.cpf_cnpj)} (` }, { t: 'CONTRATANTE', b: true }, { t: '), entrega em dação em pagamento à ' }, { t: CONTRATADA.nome, b: true }, { t: `, CNPJ nº ${CONTRATADA.cnpj} (` }, { t: 'CONTRATADA', b: true }, { t: `), o veículo abaixo descrito, ${comoQue}, nas seguintes condições:` }], { after: 10 });
       titulo('1. IDENTIFICAÇÃO DO VEÍCULO');
-      const muni = limpa(v.municipio_registro).toUpperCase();
-      const ufDetran = (muni.match(/\/\s*([A-Z]{2})\b/) || [])[1] || limpa(c.estado).toUpperCase();
+      const muni = limpa(v.municipio_registro);
+      const ufDetran = ((muni.match(/\/\s*([A-Za-z]{2})\b/) || [])[1] || limpa(c.estado)).toUpperCase();
       const linhasV: [string, string][] = [
         ['Marca / Modelo / Versão', limpa(v.marca_modelo).toUpperCase()],
         ['Espécie / Tipo', limpa(v.especie_tipo).toUpperCase()],
@@ -520,7 +531,7 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
         ['Potência / Cilindrada', limpa(v.potencia).toUpperCase()],
         ['Número do CRV', limpa(v.crv)],
         ['Proprietário (CRLV)', `${nome} – ${isPJ ? 'CNPJ' : 'CPF'} ${fmtDoc(c.cpf_cnpj)}`],
-        ['Município de registro', muni + (ufDetran && !/DETRAN/.test(muni) ? ` – DETRAN-${ufDetran}` : '')],
+        ['Município de registro', muni + (ufDetran && !/DETRAN/i.test(muni) ? ` – DETRAN-${ufDetran}` : '')],
       ];
       tabela([{ w: 160 }, { w: 285 }], linhasV.filter(([, val]) => val && val.trim()).map(([k, val]) => ({ cells: [k, val] })), 9.5);
       titulo('2. VALOR ATRIBUÍDO');
