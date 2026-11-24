@@ -82,6 +82,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     // Contrato OFFSHORE: campos do modelo nº 000142/2026 com padrões (Porto Alegre, Wyoming, 90 dias...)
     const base = tipo === 'OFFSHORE' ? { ...EMPTY, ...OFFSHORE_DEFAULTS } : EMPTY;
     if (contratoExistente) {
+      if (tipo !== 'OFFSHORE') return { ...EMPTY, ...contratoExistente };
+      // OFFSHORE antigo (sem os campos novos): mantém os padrões onde o registro está vazio
       const ct = { ...base };
       for (const [k, v] of Object.entries(contratoExistente)) if (v !== null && v !== undefined) ct[k] = v;
       return ct;
