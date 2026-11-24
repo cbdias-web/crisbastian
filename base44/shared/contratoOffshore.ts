@@ -56,22 +56,20 @@ function ate999(x: number, fem = false): string {
 export function inteiroExtenso(n: number, fem = false): string {
   n = Math.floor(Math.abs(n));
   if (n === 0) return 'zero';
-  const grupos: [number, string, string][] = [];
   const bi = Math.floor(n / 1e9), mi = Math.floor((n % 1e9) / 1e6), mil = Math.floor((n % 1e6) / 1e3), r = n % 1000;
-  const partes: string[] = [];
-  if (bi) partes.push(bi === 1 ? 'um bilhão' : ate999(bi) + ' bilhões');
-  if (mi) partes.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões');
-  if (mil) partes.push(mil === 1 ? 'mil' : ate999(mil, fem) + ' mil');
-  if (r) partes.push(ate999(r, fem));
-  void grupos;
-  // conector "e" antes do último grupo quando ele é < 100 ou centena redonda
-  if (partes.length > 1) {
-    const ultimo = r || 0;
-    const usaE = ultimo > 0 && (ultimo < 100 || ultimo % 100 === 0);
-    const fim = partes.pop() as string;
-    return partes.join(', ').replace(/, ([^,]*)$/, ' $1') + (usaE ? ' e ' : (ultimo ? ' ' : ' e ')) + fim;
+  const grupos: { v: number; t: string }[] = [];
+  if (bi) grupos.push({ v: bi, t: bi === 1 ? 'um bilhão' : ate999(bi) + ' bilhões' });
+  if (mi) grupos.push({ v: mi, t: mi === 1 ? 'um milhão' : ate999(mi) + ' milhões' });
+  if (mil) grupos.push({ v: mil, t: mil === 1 ? 'mil' : ate999(mil, fem) + ' mil' });
+  if (r) grupos.push({ v: r, t: ate999(r, fem) });
+  // "e" antes de um grupo < 100 ou centena redonda ("mil e duzentos", "mil e cinco");
+  // caso contrário, só espaço ("mil duzentos e cinquenta")
+  let s = grupos[0].t;
+  for (let i = 1; i < grupos.length; i++) {
+    const g = grupos[i];
+    s += (g.v < 100 || g.v % 100 === 0) ? ' e ' + g.t : ' ' + g.t;
   }
-  return partes[0];
+  return s;
 }
 export function reaisExtenso(v: number): string {
   const total = Math.round((Number(v) || 0) * 100);
