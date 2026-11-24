@@ -11,6 +11,24 @@
       ],
       "description": "Produto objeto do estudo tecnico"
     },
+    "produto_origem": {
+      "type": "string",
+      "enum": [
+        "holding",
+        "offshore",
+        "conta_internacional"
+      ],
+      "description": "Produto original do estudo quando o administrador altera a origem (ex.: holding -> offshore). A analise da IA passa a ser construida a partir do novo produto, sem descartar a avaliacao do produto de origem"
+    },
+    "produto_alterado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da ultima alteracao de origem/produto do estudo"
+    },
+    "produto_alterado_por": {
+      "type": "string",
+      "description": "E-mail do administrador que alterou a origem/produto do estudo"
+    },
     "tipo_cliente": {
       "type": "string",
       "enum": [

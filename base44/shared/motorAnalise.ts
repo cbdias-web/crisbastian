@@ -48,6 +48,9 @@ export function urlsAnalisaveis(estudo: any) {
 
 export function montarPrompt(estudo: any, base?: any, motivo?: string, instrucoes?: string) {
   const prod = (PRODUTOS_ESTUDO as any)[estudo.produto];
+  const origem = estudo.produto_origem && estudo.produto_origem !== estudo.produto
+    ? (PRODUTOS_ESTUDO as any)[estudo.produto_origem]
+    : null;
   const ref = (REFERENCIA_HONORARIOS as any)[estudo.produto] || [];
   const refTxt = ref.map((x: any) => `- ${x.escopo}: ${x.recorrente ? 'recorrente' : 'pontual'} ${x.min || x.max ? `R$ ${x.min.toLocaleString('pt-BR')} a R$ ${x.max.toLocaleString('pt-BR')}` : (x.observacao || '')}`).join('\n');
 
@@ -58,7 +61,13 @@ CLIENTE: ${estudo.cliente_nome || ''}
 
 DIRETRIZES TÉCNICAS DO PRODUTO:
 ${CONTEXTO_PRODUTO[estudo.produto] || ''}
-
+${origem ? `
+MUDANÇA DE ORIGEM DEFINIDA PELA EQUIPE TÉCNICA (${origem.nome} → ${prod?.nome}):
+- O estudo foi aberto como ${origem.nome} e passa a ser conduzido como ${prod?.nome}. O FOCO desta análise é PROTEÇÃO PATRIMONIAL.
+- Construa a proposta a partir do desenho de ${prod?.nome}: a estrutura de ${prod?.nome} é a base da solução.
+- NÃO descarte a avaliação de ${origem.nome}. A camada de ${origem.nome} deve ser CONSTRUÍDA A PARTIR dessa estrutura de ${prod?.nome}, apresentada como etapa ou veículo complementar dentro do desenho (ex.: nas etapas, no diagnóstico e nos benefícios), preservando o diagnóstico, os objetivos, os riscos e os números levantados no formulário original.
+- As respostas e os documentos coletados na etapa de ${origem.nome} são informações válidas do mesmo cliente: aproveite-as integralmente. Registre em premissas e documentos_pendentes apenas o que for específico de ${prod?.nome} e estiver faltando.
+` : ''}
 RESPOSTAS DO FORMULÁRIO DO CLIENTE (chave: valor):
 ${resumoRespostas(estudo) || '(sem respostas)'}
 

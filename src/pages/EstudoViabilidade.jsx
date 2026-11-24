@@ -519,7 +519,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   );
 }
 
-function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido }) {
+function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExcluido }) {
   const nav = useNavigate();
   const [obs, setObs] = useState(estudo.observacoes_internas || '');
   const [gerando, setGerando] = useState(false);
@@ -579,6 +579,23 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
           </div>
           <button onClick={onClose} style={{ color: AURORA.textMuted }}><X className="w-5 h-5" /></button>
         </div>
+
+        {estudo.produto_origem && estudo.produto_origem !== estudo.produto && (
+          <div className="rounded-xl p-3" style={{ background: AURORA.accentDim, border: `1px solid ${AURORA.borderActive}` }}>
+            <p className="text-[11px] font-bold" style={{ color: AURORA.accent }}>
+              Origem alterada: {PRODUTOS_ESTUDO[estudo.produto_origem]?.nome} → {p?.nome}
+              {estudo.produto_alterado_em ? ` · ${fmtData(estudo.produto_alterado_em)}` : ''}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: AURORA.textMuted }}>
+              A análise da IA passa a ser construída a partir de {p?.nome}, com foco em proteção patrimonial, mantendo a avaliação de {PRODUTOS_ESTUDO[estudo.produto_origem]?.nome} como camada complementar.
+            </p>
+            {estudo.analise_gerada_em && estudo.produto_alterado_em && new Date(estudo.analise_gerada_em) < new Date(estudo.produto_alterado_em) && (
+              <p className="text-[11px] font-semibold mt-1" style={{ color: AURORA.gold }}>
+                A análise atual é anterior a esta mudança — gere uma nova análise na Análise Técnica.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Linha do tempo */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
@@ -726,7 +743,7 @@ function DetalheEstudoModal({ estudo, isAdmin, onClose, onAtualizar, onExcluido 
       </div>
 
       {editando && (
-        <EditarEstudoModal estudo={estudo} onClose={() => setEditando(false)}
+        <EditarEstudoModal estudo={estudo} user={user} onClose={() => setEditando(false)}
           onSalvar={async (dados) => { await onAtualizar(estudo, dados, 'Estudo atualizado'); setEditando(false); }} />
       )}
     </Modal>

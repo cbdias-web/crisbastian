@@ -14,7 +14,7 @@ const labelStyle = { color: A.textMuted, fontSize: '11px', fontWeight: 600, text
 const ICONE = { holding: Landmark, offshore: Globe2, conta_internacional: Wallet };
 
 /** Edição administrativa do estudo e do resultado recebido do cliente. */
-export default function EditarEstudoModal({ estudo, onClose, onSalvar }) {
+export default function EditarEstudoModal({ estudo, user, onClose, onSalvar }) {
   const [form, setForm] = useState({
     produto: estudo.produto || 'holding',
     tipo_cliente: estudo.tipo_cliente || 'PF',
@@ -33,7 +33,15 @@ export default function EditarEstudoModal({ estudo, onClose, onSalvar }) {
     if (!form.cliente_nome.trim()) return toast.error('Informe o nome do cliente.');
     setSalvando(true);
     try {
-      await onSalvar({ ...form, cliente_nome: form.cliente_nome.trim() });
+      const payload = { ...form, cliente_nome: form.cliente_nome.trim() };
+      // Mudança de origem/produto: registra de onde o estudo veio para que a
+      // análise da IA construa o novo produto sem descartar o anterior.
+      if (form.produto !== estudo.produto) {
+        payload.produto_origem = estudo.produto_origem || estudo.produto;
+        payload.produto_alterado_em = new Date().toISOString();
+        payload.produto_alterado_por = user?.email || '';
+      }
+      await onSalvar(payload);
     } finally {
       setSalvando(false);
     }
@@ -68,6 +76,11 @@ export default function EditarEstudoModal({ estudo, onClose, onSalvar }) {
                 );
               })}
             </div>
+            {form.produto !== estudo.produto && (
+              <p className="text-[11px] mt-2 leading-snug" style={{ color: '#fbbf24' }}>
+                Origem alterada de {PRODUTOS_ESTUDO[estudo.produto]?.nome} para {PRODUTOS_ESTUDO[form.produto]?.nome}. A próxima análise da IA é construída a partir de {PRODUTOS_ESTUDO[form.produto]?.nome}, com foco em proteção patrimonial, sem descartar a avaliação de {PRODUTOS_ESTUDO[estudo.produto]?.nome}.
+              </p>
+            )}
           </div>
 
           <div>
