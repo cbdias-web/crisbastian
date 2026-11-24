@@ -3,40 +3,38 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
-import { CELULA_ESTRUTURADOS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao } from '@/lib/celulas';
+import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 
-// Paleta da célula: azul profundo + dourado, para marcar o "modo imersivo".
-const C = {
-  bg: '#0D1420', head: '#0F1726', card: '#111A2A', card2: '#131C2D', input: '#0A101B',
-  line: '#1E2533', line2: '#232C3D', gold: '#C9A962', goldTxt: '#E3C982', goldDim: '#2A2416',
-  goldLine: '#3A3220', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799',
-};
+// Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
+const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
+
+const STATUS_CONTRATO = { rascunho: 'Rascunho', gerado: 'PDF gerado', assinado: 'Assinado', aguardando_pagamento: 'Aguardando pagamento', pago: 'Pago', no_pipeline: 'No pipeline', cancelado: 'Cancelado' };
 
 const fmtData = (d) => {
   if (!d) return '';
-  const dt = new Date(d);
+  const dt = new Date(String(d).length === 10 ? d + 'T12:00:00' : d);
   if (isNaN(dt)) return '';
   return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
 };
 const iniciais = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
-export default function CelulaEstruturados() {
+export default function CelulaOverlay() {
   const [sp, setSp] = useSearchParams();
-  const aberta = sp.get('celula') === CELULA_ESTRUTURADOS.id;
-  if (!aberta) return null;
-  return <Overlay sp={sp} setSp={setSp} />;
+  const cfg = CELULAS[sp.get('celula')];
+  if (!cfg) return null;
+  return <Overlay key={cfg.id} cfg={cfg} sp={sp} setSp={setSp} />;
 }
 
-function Overlay({ sp, setSp }) {
+function Overlay({ cfg, sp, setSp }) {
   const navigate = useNavigate();
-  const produto = JORNADAS[sp.get('produto')] ? sp.get('produto') : 'offshore';
+  const t = cfg.tema;
+  const produto = cfg.produtos.includes(sp.get('produto')) ? sp.get('produto') : cfg.produtos[0];
   const opId = sp.get('op');
   const jornada = JORNADAS[produto];
 
   const [user, setUser] = useState(null);
-  const [estudos, setEstudos] = useState([]);
-  const [contratos, setContratos] = useState([]);
+  const [dados, setDados] = useState({ estudos: [], contratos: [], pipeline: [], implantacoes: [] });
   const [comentarios, setComentarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
@@ -54,7 +52,6 @@ function Overlay({ sp, setSp }) {
   };
   const ir = (to) => navigate(to);
 
-  // Trava a rolagem da página de fundo e fecha com Esc.
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -63,42 +60,52 @@ function Overlay({ sp, setSp }) {
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
   }, [opId, sp]);
 
-  const carregar = async () => {
-    try {
-      const [es, cOff, cCi, cm] = await Promise.all([
-        base44.entities.EstudoViabilidade.list('-updated_date', 500),
-        base44.entities.Contrato.filter({ tipo: 'OFFSHORE' }, '-created_date', 500),
-        base44.entities.Contrato.filter({ tipo: 'CONTA INTERNACIONAL' }, '-created_date', 500),
-        base44.entities.CelulaComentario.filter({ celula: CELULA_ESTRUTURADOS.id }, '-created_date', 300),
-      ]);
-      setEstudos(es || []);
-      setContratos([...(cOff || []), ...(cCi || [])]);
-      setComentarios(cm || []);
-    } catch (e) {
-      toast.error('Erro ao carregar a célula: ' + e.message);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
-    carregar();
-  }, []);
+    const tipos = cfg.produtos.map(p => JORNADAS[p].tipoContrato).filter(Boolean);
+    const cm = base44.entities.CelulaComentario.filter({ celula: cfg.id }, '-created_date', 300).catch(() => []);
+    const carga = cfg.fonte === 'estudo'
+      ? Promise.all([
+          base44.entities.EstudoViabilidade.list('-updated_date', 500),
+          Promise.all(tipos.map(tp => base44.entities.Contrato.filter({ tipo: tp }, '-created_date', 500))).then(ls => ls.flat()),
+        ]).then(([estudos, contratos]) => ({ estudos: estudos || [], contratos: contratos || [], pipeline: [], implantacoes: [] }))
+      : Promise.all([
+          Promise.all(tipos.map(tp => base44.entities.Contrato.filter({ tipo: tp }, '-created_date', 500))).then(ls => ls.flat()),
+          base44.entities.Pipeline.list('-created_date', 500).catch(() => []),
+          base44.entities.Implantacao.list('-created_date', 500).catch(() => []),
+        ]).then(([contratos, pipeline, implantacoes]) => ({ estudos: [], contratos: contratos || [], pipeline: pipeline || [], implantacoes: implantacoes || [] }));
+    Promise.all([carga, cm])
+      .then(([d, c]) => { setDados(d); setComentarios(c || []); })
+      .catch(e => toast.error('Erro ao carregar a célula: ' + e.message))
+      .finally(() => setLoading(false));
+  }, [cfg.id]);
 
   useEffect(() => { setEtapaFiltro(null); setBusca(''); }, [produto]);
 
-  // Operações = estudos do produto, com contrato e etapa calculados.
+  // Operações normalizadas: { id, kind, cliente, sub, responsavel, etapa, acao, quando, raw }
   const operacoes = useMemo(() => {
     const tipo = jornada.tipoContrato;
-    const doTipo = tipo ? contratos.filter(c => c.tipo === tipo) : [];
-    return estudos
-      .filter(e => e.produto === produto && e.status !== 'cancelado')
-      .map(e => {
-        const contrato = tipo ? contratoDoEstudo(e, doTipo) : null;
-        const etapa = etapaDaOperacao(e, contrato);
-        return { estudo: e, contrato, etapa, acao: proximaAcao(e, etapa, contrato, produto) };
-      });
-  }, [estudos, contratos, produto]);
+    const doTipo = tipo ? dados.contratos.filter(c => c.tipo === tipo && c.status !== 'cancelado') : [];
+    if (cfg.fonte === 'estudo') {
+      return dados.estudos
+        .filter(e => e.produto === produto && e.status !== 'cancelado')
+        .map(e => {
+          const contrato = tipo ? contratoDoEstudo(e, doTipo) : null;
+          const etapa = etapaDaOperacao(e, contrato);
+          return { id: e.id, kind: 'estudo', cliente: e.cliente_nome || 'Cliente sem nome', doc: e.cliente_documento, sub: `${e.tipo_cliente} · ${STATUS_ESTUDO[e.status]?.label || e.status}`, responsavel: e.responsavel_nome, etapa, acao: proximaAcao(e, etapa, contrato, produto), quando: e.updated_date, raw: { estudo: e, contrato } };
+        });
+    }
+    const ops = doTipo.map(c => {
+      const impl = dados.implantacoes.find(i => i.contrato_id === c.id) || null;
+      const etapa = etapaContrato(c, impl);
+      return { id: c.id, kind: 'contrato', cliente: c.nome || 'Cliente sem nome', doc: c.cpf_cnpj, sub: `${c.numero_contrato ? 'Contrato ' + c.numero_contrato : 'Sem número'} · ${STATUS_CONTRATO[c.status] || c.status}`, responsavel: c.vendedor_nome, etapa, acao: proximaAcaoContrato(etapa, c, produto), quando: c.updated_date || c.created_date, raw: { contrato: c, impl } };
+    });
+    dados.pipeline
+      .filter(n => pipelineDoProduto(n, produto) && n.temperatura !== 'Perdido')
+      .filter(n => !doTipo.some(c => mesmoCliente({ doc: n.cliente_cpf_cnpj, nome: n.cliente_nome }, { doc: c.cpf_cnpj, nome: c.nome })))
+      .forEach(n => ops.push({ id: 'p_' + n.id, kind: 'pipeline', cliente: n.cliente_nome || 'Prospect', doc: n.cliente_cpf_cnpj, sub: `Pipeline · ${n.temperatura || 'Frio'}`, responsavel: n.vendedor_nome, etapa: 0, acao: proximaAcaoContrato(0, null, produto), quando: n.updated_date || n.created_date, raw: { neg: n } }));
+    return ops.sort((a, b) => new Date(b.quando || 0) - new Date(a.quando || 0));
+  }, [dados, produto]);
 
   const contagem = useMemo(() => {
     const c = jornada.etapas.map(() => 0);
@@ -109,66 +116,80 @@ function Overlay({ sp, setSp }) {
   const lista = useMemo(() => operacoes.filter(o => {
     if (etapaFiltro !== null && o.etapa !== etapaFiltro) return false;
     if (!busca) return true;
-    const q = busca.toLowerCase();
-    const e = o.estudo;
-    return `${e.cliente_nome || ''} ${e.cliente_documento || ''} ${e.responsavel_nome || ''} ${o.contrato?.numero_contrato || ''}`.toLowerCase().includes(q);
+    return `${o.cliente} ${o.doc || ''} ${o.responsavel || ''} ${o.sub}`.toLowerCase().includes(busca.toLowerCase());
   }), [operacoes, etapaFiltro, busca]);
 
-  const opSel = opId ? operacoes.find(o => o.estudo.id === opId) || null : null;
-  const idsVisiveis = useMemo(() => new Set(operacoes.map(o => o.estudo.id)), [operacoes]);
+  const opSel = opId ? operacoes.find(o => o.id === opId) || null : null;
+  const idsVisiveis = useMemo(() => new Set(operacoes.map(o => o.id)), [operacoes]);
 
   const atividade = useMemo(() => {
     const ev = [];
-    operacoes.forEach(({ estudo: e, contrato }) => {
-      const nome = e.cliente_nome || 'Cliente';
-      if (e.created_date) ev.push({ quando: e.created_date, quem: e.responsavel_nome || 'Gerente', txt: `abriu a operação de ${nome}`, op: e.id });
-      if (e.cliente_devolveu_em || e.data_recebimento) ev.push({ quando: e.cliente_devolveu_em || e.data_recebimento, quem: nome, txt: 'enviou o estudo de viabilidade', op: e.id });
-      if (e.analise_gerada_em) ev.push({ quando: e.analise_gerada_em, quem: 'Análise técnica', txt: `gerou a proposta de ${nome}`, op: e.id });
-      if (contrato?.created_date) ev.push({ quando: contrato.created_date, quem: contrato.vendedor_nome || 'Gerente', txt: `criou o contrato de ${nome}`, op: e.id });
+    operacoes.forEach(o => {
+      if (o.kind === 'estudo') {
+        const e = o.raw.estudo, ct = o.raw.contrato;
+        ev.push({ quando: e.created_date, quem: e.responsavel_nome || 'Gerente', txt: `abriu a operação de ${o.cliente}`, op: o.id });
+        if (e.cliente_devolveu_em || e.data_recebimento) ev.push({ quando: e.cliente_devolveu_em || e.data_recebimento, quem: o.cliente, txt: 'enviou o estudo de viabilidade', op: o.id });
+        if (e.analise_gerada_em) ev.push({ quando: e.analise_gerada_em, quem: 'Análise técnica', txt: `gerou a proposta de ${o.cliente}`, op: o.id });
+        if (ct?.created_date) ev.push({ quando: ct.created_date, quem: ct.vendedor_nome || 'Gerente', txt: `criou o contrato de ${o.cliente}`, op: o.id });
+      } else if (o.kind === 'contrato') {
+        const ct = o.raw.contrato, im = o.raw.impl;
+        ev.push({ quando: ct.created_date, quem: ct.vendedor_nome || 'Gerente', txt: `criou o contrato ${jornada.nome} de ${o.cliente}`, op: o.id });
+        if (im?.data_entrada) ev.push({ quando: im.data_entrada, quem: im.padrinho_nome || 'Implantação', txt: `iniciou a implantação de ${o.cliente}`, op: o.id });
+        if (im?.data_conclusao) ev.push({ quando: im.data_conclusao, quem: im.padrinho_nome || 'Implantação', txt: `concluiu a implantação de ${o.cliente}`, op: o.id });
+      } else {
+        ev.push({ quando: o.raw.neg.created_date, quem: o.raw.neg.vendedor_nome || 'Gerente', txt: `abriu a negociação com ${o.cliente}`, op: o.id });
+      }
     });
-    comentarios.filter(c => c.produto === produto && c.tipo === 'comentario' && idsVisiveis.has(c.estudo_id))
-      .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', txt: `comentou: “${String(c.texto).slice(0, 70)}${String(c.texto).length > 70 ? '…' : ''}”`, op: c.estudo_id }));
+    comentarios.filter(c => c.produto === produto && c.tipo === 'comentario' && idsVisiveis.has(c.operacao_id || c.estudo_id))
+      .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', txt: `comentou: “${String(c.texto).slice(0, 70)}${String(c.texto).length > 70 ? '…' : ''}”`, op: c.operacao_id || c.estudo_id }));
     return ev.filter(x => x.quando).sort((a, b) => new Date(b.quando) - new Date(a.quando)).slice(0, 12);
   }, [operacoes, comentarios, produto, idsVisiveis]);
 
   const autor = { autor_nome: user?.nome_tratamento || user?.full_name || 'Usuário', autor_email: user?.email || '' };
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
-  const publicar = async (dados) => {
-    const novo = await base44.entities.CelulaComentario.create({ celula: CELULA_ESTRUTURADOS.id, produto, origem: 'usuario', ...autor, ...dados });
+  const publicar = async (d) => {
+    const novo = await base44.entities.CelulaComentario.create({ celula: cfg.id, produto, origem: 'usuario', ...autor, ...d });
     setComentarios(l => [novo, ...l]);
     return novo;
   };
 
+  const novaOperacao = () => {
+    if (cfg.fonte === 'estudo') return ir(`/EstudoViabilidade?novo=${produto}`);
+    if (jornada.tipoContrato) return ir(`/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`);
+    return ir('/Pipeline');
+  };
+
+  const temaVars = { '--vx-acc': t.acc, '--vx-acc2': t.acc2, '--vx-txt': t.txt, '--vx-dim': t.dim, '--vx-line': t.line, '--vx-glow': t.glow, '--vx-on-acc': t.onAcc };
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-stretch justify-center" role="dialog" aria-modal="true" aria-label={CELULA_ESTRUTURADOS.nome}
-      style={{ background: 'rgba(3,6,10,0.72)', backdropFilter: 'blur(3px)' }}
+    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 md:p-7" role="dialog" aria-modal="true" aria-label={cfg.nome}
+      style={{ background: 'rgba(3,6,10,0.62)', backdropFilter: 'blur(6px)', ...temaVars }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <style>{`
-        .vx-cel{position:relative;margin:16px;flex:1;border-radius:20px;background:${C.bg};border:1px solid ${C.goldLine};display:flex;flex-direction:column;overflow:hidden;color:${C.txt2};font-family:Inter,system-ui,sans-serif;box-shadow:0 30px 80px rgba(0,0,0,.6)}
         .vx-cel-body{flex:1;display:flex;gap:20px;padding:20px 24px;min-height:0;overflow:auto}
         .vx-cel-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
         .vx-cel-aside{width:340px;flex:none;display:flex;flex-direction:column;gap:14px}
         .vx-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
-        .vx-row{display:grid;grid-template-columns:2fr 1.3fr 1.2fr 2fr 130px;gap:12px;align-items:center}
-        .vx-btn:hover{filter:brightness(1.12)}
-        .vx-lnk:hover{background:${C.card2}}
+        .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 28px;gap:12px;align-items:center}
+        .vx-tab{transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
+        .vx-tab:hover{transform:translateY(-1px);color:${C.txt}}
         @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
-        @media (max-width:720px){.vx-cel{margin:0;border-radius:0}.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr}.vx-row .vx-hide{display:none}}
+        @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 28px}.vx-row .vx-hide{display:none}}
       `}</style>
-      <section className="vx-cel">
+      <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: t.bg, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
         {/* Cabeçalho */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: C.head, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 220 }}>
-            <span style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: C.gold }}>Célula · modo imersivo</span>
-            <span style={{ fontSize: 24, fontWeight: 600, color: C.txt }}>{CELULA_ESTRUTURADOS.nome}</span>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: t.head, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200 }}>
+            <span style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: t.acc }}>Modo imersivo</span>
+            <span style={{ fontSize: 24, fontWeight: 600, color: C.txt }}>{cfg.nome}</span>
           </div>
-          <nav aria-label="Produtos da célula" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 12, background: C.input, border: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
-            {CELULA_ESTRUTURADOS.produtos.map(p => {
+          <nav aria-label="Produtos" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
+            {cfg.produtos.map(p => {
               const ativo = p === produto;
               return (
-                <button key={p} onClick={() => setParam({ produto: p, op: null })} className="vx-btn"
-                  style={{ height: 36, padding: '0 16px', borderRadius: 8, border: 0, cursor: 'pointer', fontSize: 14, fontWeight: ativo ? 600 : 500, background: ativo ? C.gold : 'transparent', color: ativo ? '#1A1508' : '#B8C0CC' }}>
+                <button key={p} onClick={() => setParam({ produto: p, op: null })} className="vx-tab"
+                  style={{ height: 36, padding: '0 16px', borderRadius: 999, border: 0, cursor: 'pointer', fontSize: 14, fontWeight: ativo ? 600 : 500, background: ativo ? `linear-gradient(135deg, ${t.acc2}, ${t.acc})` : 'transparent', color: ativo ? t.onAcc : '#B8C0CC', boxShadow: ativo ? `0 8px 18px -10px ${t.glow}` : 'none' }}>
                   {JORNADAS[p].nome}
                 </button>
               );
@@ -176,28 +197,28 @@ function Overlay({ sp, setSp }) {
           </nav>
           <div style={{ flex: 1 }} />
           {!opSel && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', borderRadius: 10, background: C.input, border: `1px solid ${C.line}`, width: 260, maxWidth: '100%' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 14px', borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, width: 270, maxWidth: '100%' }}>
               <Search className="w-4 h-4" style={{ color: C.muted2 }} aria-hidden="true" />
               <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar cliente, documento, gerente…" aria-label="Buscar operações"
                 style={{ flex: 1, background: 'transparent', border: 0, outline: 0, color: C.txt, fontSize: 14 }} />
             </label>
           )}
-          <button aria-label="Abrir em nova aba" title="Abrir em nova aba" className="vx-btn" onClick={() => window.open(window.location.href, '_blank')}
-            style={{ width: 40, height: 40, borderRadius: 10, background: C.input, border: `1px solid ${C.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#B8C0CC' }}>
+          <button aria-label="Abrir em nova aba" title="Abrir em nova aba" className="vx-btn vx-btn-ghost vx-icon-btn" onClick={() => window.open(window.location.href, '_blank')}>
             <ExternalLink className="w-4 h-4" />
           </button>
-          <button onClick={fechar} className="vx-btn"
-            style={{ height: 40, padding: '0 14px', borderRadius: 10, background: 'transparent', border: `1px solid ${C.goldLine}`, color: C.goldTxt, fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <button onClick={fechar} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14 }}>
             <X className="w-4 h-4" /> Voltar ao portal
           </button>
         </header>
 
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, color: C.muted }}>
-            <Loader2 className="w-5 h-5 animate-spin" /> Carregando a célula…
+            <Loader2 className="w-5 h-5 animate-spin" /> Carregando…
           </div>
         ) : opSel ? (
-          <Operacao op={opSel} produto={produto} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
+          opSel.kind === 'estudo'
+            ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
+            : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
         ) : (
           <div className="vx-cel-body">
             <main className="vx-cel-main">
@@ -206,9 +227,8 @@ function Overlay({ sp, setSp }) {
                   <div style={{ fontSize: 19, fontWeight: 600, color: C.txt }}>Jornada {jornada.nome}</div>
                   <div style={{ fontSize: 14, color: C.muted, marginTop: 4 }}>{jornada.lead}</div>
                 </div>
-                <button className="vx-btn" onClick={() => ir(`/EstudoViabilidade?novo=${produto}`)}
-                  style={{ height: 42, padding: '0 18px', borderRadius: 10, background: C.gold, border: 0, color: '#1A1508', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Plus className="w-4 h-4" /> Nova operação {jornada.nome}
+                <button className="vx-btn vx-btn-primary" onClick={novaOperacao} style={{ height: 44, padding: '0 20px', fontSize: 14 }}>
+                  <Plus className="w-4 h-4" /> {cfg.fonte === 'estudo' || jornada.tipoContrato ? `Nova operação ${jornada.nome}` : 'Nova negociação'}
                 </button>
               </div>
 
@@ -217,10 +237,10 @@ function Overlay({ sp, setSp }) {
                   const ativo = etapaFiltro === i;
                   return (
                     <li key={i}>
-                      <button onClick={() => setEtapaFiltro(ativo ? null : i)} className="vx-btn" aria-pressed={ativo}
-                        style={{ width: '100%', height: '100%', textAlign: 'left', padding: 14, borderRadius: 12, cursor: 'pointer', background: ativo ? C.goldDim : C.card, border: `1px solid ${ativo ? C.gold : C.line2}`, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 116 }}>
+                      <button onClick={() => setEtapaFiltro(ativo ? null : i)} className="vx-card-lift" aria-pressed={ativo}
+                        style={{ width: '100%', height: '100%', textAlign: 'left', padding: 14, borderRadius: 16, cursor: 'pointer', background: ativo ? t.dim : C.card, border: `1px solid ${ativo ? t.acc : C.line2}`, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 116 }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ width: 24, height: 24, borderRadius: 12, background: C.goldDim, color: C.goldTxt, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+                          <span style={{ width: 24, height: 24, borderRadius: 12, background: t.dim, color: t.txt, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${t.line}` }}>{i + 1}</span>
                           <span style={{ fontSize: 12, color: C.muted }}>{contagem[i]} {contagem[i] === 1 ? 'operação' : 'operações'}</span>
                         </span>
                         <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, lineHeight: 1.3 }}>{et.titulo}</span>
@@ -231,13 +251,13 @@ function Overlay({ sp, setSp }) {
                 })}
               </ol>
 
-              <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', minHeight: 200 }}>
+              <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', minHeight: 200, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderBottom: `1px solid ${C.line}`, gap: 12 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, flex: 1 }}>
                     Operações {etapaFiltro !== null ? `· ${jornada.etapas[etapaFiltro].titulo}` : 'em andamento'}
                   </span>
                   {etapaFiltro !== null && (
-                    <button onClick={() => setEtapaFiltro(null)} style={{ fontSize: 12, color: C.goldTxt, background: 'transparent', border: 0, cursor: 'pointer' }}>Limpar filtro</button>
+                    <button onClick={() => setEtapaFiltro(null)} className="vx-btn vx-btn-soft" style={{ height: 28, padding: '0 12px', fontSize: 12 }}>Limpar filtro</button>
                   )}
                   <span style={{ fontSize: 12, color: C.muted2 }}>{lista.length}</span>
                 </div>
@@ -246,38 +266,36 @@ function Overlay({ sp, setSp }) {
                 </div>
                 {lista.length === 0 && (
                   <div style={{ padding: '28px 18px', fontSize: 14, color: C.muted, textAlign: 'center' }}>
-                    Nenhuma operação {jornada.nome} {etapaFiltro !== null ? 'nesta etapa' : 'ainda'}. Use “Nova operação” para abrir um estudo.
+                    Nenhuma operação {jornada.nome} {etapaFiltro !== null ? 'nesta etapa' : 'ainda'}.
                   </div>
                 )}
                 {lista.map(o => (
-                  <div key={o.estudo.id} className="vx-row" style={{ padding: '12px 18px', borderTop: `1px solid #182030`, fontSize: 14 }}>
+                  <div key={o.id} role="button" tabIndex={0} className="vx-row vx-row-hover"
+                    onClick={() => setParam({ op: o.id })} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setParam({ op: o.id }); } }}
+                    aria-label={`Abrir operação de ${o.cliente}`}
+                    style={{ padding: '13px 18px', borderTop: `1px solid ${C.line}`, fontSize: 14 }}>
                     <span style={{ color: C.txt, fontWeight: 500, minWidth: 0 }}>
-                      <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.estudo.cliente_nome || 'Cliente sem nome'}</span>
-                      <span style={{ fontSize: 12, color: C.muted2 }}>{o.estudo.tipo_cliente} · {STATUS_ESTUDO[o.estudo.status]?.label || o.estudo.status}</span>
+                      <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.cliente}</span>
+                      <span style={{ fontSize: 12, color: C.muted2 }}>{o.sub}</span>
                     </span>
-                    <span><span style={{ padding: '4px 10px', borderRadius: 999, background: '#1C2436', color: C.txt2, fontSize: 12 }}>{jornada.etapas[o.etapa].titulo}</span></span>
-                    <span className="vx-hide" style={{ color: '#B8C0CC' }}>{o.estudo.responsavel_nome || '—'}</span>
+                    <span><span style={{ padding: '4px 10px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 12, border: `1px solid ${t.line}` }}>{jornada.etapas[o.etapa].titulo}</span></span>
+                    <span className="vx-hide" style={{ color: '#B8C0CC' }}>{o.responsavel || '—'}</span>
                     <span className="vx-hide" style={{ color: C.muted }}>{o.acao.label}</span>
-                    <span>
-                      <button onClick={() => setParam({ op: o.estudo.id })} className="vx-btn"
-                        style={{ height: 34, padding: '0 12px', borderRadius: 8, border: `1px solid ${C.goldLine}`, background: 'transparent', color: C.goldTxt, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                        Abrir operação
-                      </button>
-                    </span>
+                    <ChevronRight className="w-4 h-4" style={{ color: t.acc }} aria-hidden="true" />
                   </div>
                 ))}
               </div>
             </main>
 
             <aside className="vx-cel-aside">
-              <Duvidas produto={produto} nomeProduto={jornada.nome} comentarios={comentarios} setComentarios={setComentarios} publicar={publicar} user={user} isAdmin={isAdmin} />
-              <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Atividade da célula</span>
+              <Duvidas celula={cfg.id} produto={produto} nomeProduto={jornada.nome} t={t} comentarios={comentarios} setComentarios={setComentarios} publicar={publicar} user={user} isAdmin={isAdmin} />
+              <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, marginBottom: 4 }}>Atividade</span>
                 {atividade.length === 0 && <span style={{ fontSize: 13, color: C.muted }}>Sem atividade recente.</span>}
                 {atividade.map((a, i) => (
-                  <button key={i} onClick={() => setParam({ op: a.op })} className="vx-lnk"
-                    style={{ display: 'flex', gap: 10, textAlign: 'left', background: 'transparent', border: 0, padding: 4, borderRadius: 8, cursor: 'pointer' }}>
-                    <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 15, background: C.goldDim, color: C.goldTxt, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{iniciais(a.quem)}</span>
+                  <button key={i} onClick={() => setParam({ op: a.op })} className="vx-row-hover"
+                    style={{ display: 'flex', gap: 10, textAlign: 'left', background: 'transparent', border: 0, padding: 6, borderRadius: 10 }}>
+                    <span style={{ width: 30, height: 30, flex: 'none', borderRadius: 15, background: t.dim, color: t.txt, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{iniciais(a.quem)}</span>
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontSize: 13, color: '#DCE2EA', lineHeight: 1.4 }}><b style={{ fontWeight: 600 }}>{a.quem}</b> {a.txt}</span>
                       <span style={{ fontSize: 11, color: C.muted2 }}>{fmtData(a.quando)}</span>
@@ -285,16 +303,14 @@ function Overlay({ sp, setSp }) {
                   </button>
                 ))}
               </div>
-              <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Atalhos</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {[
-                    ['Estudos', `/EstudoViabilidade`],
-                    ['Análise técnica', `/AnaliseTecnica`],
-                    ...(jornada.tipoContrato ? [['Contratos ' + jornada.nome, `/Contratos?tipo=${encodeURIComponent(jornada.tipoContrato)}`]] : [['Contratos', '/Contratos']]),
-                  ].map(([l, to]) => (
-                    <button key={l} onClick={() => ir(to)} className="vx-btn"
-                      style={{ padding: '7px 11px', borderRadius: 8, background: C.card2, border: 0, fontSize: 12, color: C.txt2, cursor: 'pointer' }}>{l}</button>
+                  {(cfg.fonte === 'estudo'
+                    ? [['Estudos', '/EstudoViabilidade'], ['Análise técnica', '/AnaliseTecnica'], [jornada.tipoContrato ? 'Contratos ' + jornada.nome : 'Contratos', jornada.tipoContrato ? `/Contratos?tipo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos']]
+                    : [['Pipeline', '/Pipeline'], [jornada.tipoContrato ? 'Contratos ' + jornada.nome : 'Contratos', jornada.tipoContrato ? `/Contratos?tipo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos'], ['Implantações', '/Implantacoes']]
+                  ).map(([l, to]) => (
+                    <button key={l} onClick={() => ir(to)} className="vx-btn vx-btn-soft" style={{ height: 32, padding: '0 14px', fontSize: 12 }}>{l}</button>
                   ))}
                 </div>
               </div>
@@ -306,8 +322,8 @@ function Overlay({ sp, setSp }) {
   );
 }
 
-// ───────────── Dúvidas da célula (perguntas, respostas e IA) ─────────────
-function Duvidas({ produto, nomeProduto, comentarios, setComentarios, publicar, user, isAdmin }) {
+// ───────────── Dúvidas da célula ─────────────
+function Duvidas({ celula, produto, nomeProduto, t, comentarios, setComentarios, publicar, user, isAdmin }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [aberta, setAberta] = useState(null);
@@ -332,10 +348,10 @@ function Duvidas({ produto, nomeProduto, comentarios, setComentarios, publicar, 
   const perguntarIA = async (d) => {
     setIaRodando(d.id);
     try {
-      const prompt = `Você apoia a equipe comercial da Villela Exchange na célula Produtos Estruturados, produto ${nomeProduto}. A jornada é: ${JORNADAS[produto].etapas.map(e => e.titulo).join(' → ')}. Responda em português, de forma objetiva (até 8 linhas), à dúvida interna de um gerente. Se a resposta depender de análise jurídica ou tributária do caso, diga isso e indique encaminhar ao head da célula.\n\nDúvida: ${d.texto}`;
+      const prompt = `Você apoia a equipe comercial da Villela Exchange (Grupo Villela), produto ${nomeProduto}. A jornada é: ${JORNADAS[produto].etapas.map(e => e.titulo).join(' → ')}. Responda em português, de forma objetiva (até 8 linhas), à dúvida interna de um gerente. Se a resposta depender de análise jurídica, tributária ou cambial do caso, diga isso e indique encaminhar ao head da célula.\n\nDúvida: ${d.texto}`;
       const r = await base44.integrations.Core.InvokeLLM({ prompt });
       const txt = typeof r === 'string' ? r : (r?.text || r?.response || JSON.stringify(r));
-      const novo = await base44.entities.CelulaComentario.create({ celula: CELULA_ESTRUTURADOS.id, produto, tipo: 'resposta', pai_id: d.id, texto: txt, origem: 'ia', autor_nome: `IA de ${nomeProduto}`, autor_email: user?.email || '' });
+      const novo = await base44.entities.CelulaComentario.create({ celula, produto, tipo: 'resposta', pai_id: d.id, texto: txt, origem: 'ia', autor_nome: `IA de ${nomeProduto}`, autor_email: user?.email || '' });
       setComentarios(l => [novo, ...l]);
     } catch (e) { toast.error('A IA não respondeu: ' + e.message); }
     setIaRodando(null);
@@ -348,58 +364,53 @@ function Duvidas({ produto, nomeProduto, comentarios, setComentarios, publicar, 
   };
 
   return (
-    <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <MessageSquare className="w-4 h-4" style={{ color: C.gold }} /> Dúvidas sobre {nomeProduto}
+        <MessageSquare className="w-4 h-4" style={{ color: t.acc }} /> Dúvidas sobre {nomeProduto}
       </span>
       <div style={{ display: 'flex', gap: 8 }}>
         <input value={texto} onChange={e => setTexto(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') perguntar(); }}
-          placeholder="Pergunte à célula…" aria-label={`Nova dúvida sobre ${nomeProduto}`}
-          style={{ flex: 1, height: 40, padding: '0 12px', borderRadius: 10, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 14 }} />
-        <button onClick={perguntar} disabled={enviando} aria-label="Publicar dúvida" className="vx-btn"
-          style={{ width: 40, height: 40, borderRadius: 10, background: C.gold, border: 0, color: '#1A1508', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          placeholder="Pergunte à equipe…" aria-label={`Nova dúvida sobre ${nomeProduto}`}
+          style={{ flex: 1, height: 40, padding: '0 14px', borderRadius: 999, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 14 }} />
+        <button onClick={perguntar} disabled={enviando} aria-label="Publicar dúvida" className="vx-btn vx-btn-primary vx-icon-btn">
           {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>
       </div>
-      {duvidas.length === 0 && <span style={{ fontSize: 13, color: C.muted }}>Nenhuma dúvida ainda. A primeira pergunta abre o espaço da célula.</span>}
+      {duvidas.length === 0 && <span style={{ fontSize: 13, color: C.muted }}>Nenhuma dúvida ainda.</span>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 360, overflow: 'auto' }}>
         {duvidas.slice(0, 20).map(d => {
           const rs = respostasDe(d.id);
           const open = aberta === d.id;
           const podeResolver = isAdmin || d.autor_email === user?.email;
           return (
-            <div key={d.id} style={{ padding: 12, borderRadius: 10, background: C.card2, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div key={d.id} style={{ padding: 12, borderRadius: 14, background: C.card2, display: 'flex', flexDirection: 'column', gap: 6 }}>
               <button onClick={() => setAberta(open ? null : d.id)} style={{ textAlign: 'left', background: 'transparent', border: 0, padding: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <span style={{ fontSize: 12, color: C.muted }}>{d.autor_nome} · {fmtData(d.created_date)}</span>
                 <span style={{ fontSize: 14, color: '#DCE2EA', lineHeight: 1.45 }}>{d.texto}</span>
-                <span style={{ fontSize: 12, color: d.resolvida ? '#8FD9B0' : C.gold }}>
-                  {rs.length} {rs.length === 1 ? 'resposta' : 'respostas'}{d.resolvida ? ' · resolvida' : ''}
-                </span>
+                <span style={{ fontSize: 12, color: d.resolvida ? '#8FD9B0' : t.txt }}>{rs.length} {rs.length === 1 ? 'resposta' : 'respostas'}{d.resolvida ? ' · resolvida' : ''}</span>
               </button>
               {open && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: `1px solid ${C.line}`, paddingTop: 8 }}>
                   {rs.map(r => (
                     <div key={r.id} style={{ fontSize: 13, lineHeight: 1.5, color: C.txt2, whiteSpace: 'pre-wrap' }}>
-                      <span style={{ fontWeight: 600, color: r.origem === 'ia' ? C.goldTxt : C.txt }}>{r.autor_nome}: </span>{r.texto}
+                      <span style={{ fontWeight: 600, color: r.origem === 'ia' ? t.txt : C.txt }}>{r.autor_nome}: </span>{r.texto}
                     </div>
                   ))}
                   <div style={{ display: 'flex', gap: 6 }}>
                     <input value={resposta} onChange={e => setResposta(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') responder(d); }}
                       placeholder="Responder…" aria-label="Responder à dúvida"
-                      style={{ flex: 1, height: 36, padding: '0 10px', borderRadius: 8, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 13 }} />
-                    <button onClick={() => responder(d)} aria-label="Enviar resposta" className="vx-btn"
-                      style={{ width: 36, height: 36, borderRadius: 8, background: '#1C2436', border: 0, color: C.goldTxt, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      style={{ flex: 1, height: 36, padding: '0 12px', borderRadius: 999, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 13 }} />
+                    <button onClick={() => responder(d)} aria-label="Enviar resposta" className="vx-btn vx-btn-soft" style={{ width: 36, height: 36, padding: 0 }}>
                       <Send className="w-4 h-4" />
                     </button>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    <button onClick={() => perguntarIA(d)} disabled={iaRodando === d.id}
-                      style={{ fontSize: 12, color: C.goldTxt, background: 'transparent', border: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}>
-                      {iaRodando === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Pedir resposta da IA
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button onClick={() => perguntarIA(d)} disabled={iaRodando === d.id} className="vx-btn vx-btn-soft" style={{ height: 30, padding: '0 12px', fontSize: 12 }}>
+                      {iaRodando === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />} Resposta da IA
                     </button>
                     {podeResolver && (
-                      <button onClick={() => marcarResolvida(d)} style={{ fontSize: 12, color: '#8FD9B0', background: 'transparent', border: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0 }}>
-                        <CheckCircle2 className="w-3.5 h-3.5" /> {d.resolvida ? 'Reabrir' : 'Marcar como resolvida'}
+                      <button onClick={() => marcarResolvida(d)} className="vx-btn vx-btn-ghost" style={{ height: 30, padding: '0 12px', fontSize: 12, color: '#8FD9B0', borderColor: 'rgba(143,217,176,.3)' }}>
+                        <CheckCircle2 className="w-3.5 h-3.5" /> {d.resolvida ? 'Reabrir' : 'Resolvida'}
                       </button>
                     )}
                   </div>
@@ -413,14 +424,114 @@ function Duvidas({ produto, nomeProduto, comentarios, setComentarios, publicar, 
   );
 }
 
-// ───────────── Dentro de uma operação: linha do tempo ─────────────
-function Operacao({ op, produto, comentarios, publicar, voltar, ir }) {
-  const { estudo: e, contrato, etapa, acao } = op;
+// ───────────── Peças comuns da tela de operação ─────────────
+function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo }) {
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
+        <button onClick={voltar} className="vx-btn vx-btn-ghost" style={{ height: 38, padding: '0 14px', fontSize: 13 }}>
+          <ArrowLeft className="w-4 h-4" /> {jornada.nome}
+        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <span style={{ fontSize: 21, fontWeight: 600, color: C.txt }}>{op.cliente}</span>
+          <span style={{ fontSize: 13, color: C.muted }}>{subtitulo}</span>
+        </div>
+        <div style={{ flex: 1 }} />
+        <span style={{ padding: '6px 12px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 13, fontWeight: 500, border: `1px solid ${t.line}` }}>Etapa atual: {jornada.etapas[op.etapa].titulo}</span>
+        <button onClick={() => ir(op.acao.to)} className="vx-btn vx-btn-primary" style={{ height: 42, padding: '0 18px', fontSize: 14 }}>
+          {op.acao.label} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+      <ol aria-label="Jornada da operação" className="vx-steps" style={{ listStyle: 'none', margin: 0, padding: '16px 24px', borderBottom: `1px solid ${C.line}` }}>
+        {jornada.etapas.map((et, i) => {
+          const feito = i < op.etapa, atual = i === op.etapa;
+          return (
+            <li key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <span style={{ height: 4, borderRadius: 2, background: feito ? t.acc : atual ? t.line : C.line }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: feito ? t.acc : atual ? t.dim : 'rgba(255,255,255,.05)', color: feito ? t.onAcc : atual ? t.txt : C.muted2, border: atual ? `1px solid ${t.acc}` : 0 }}>{feito ? '✓' : i + 1}</span>
+                <span style={{ fontSize: 13, color: feito || atual ? C.txt : C.muted2, fontWeight: feito || atual ? 500 : 400 }}>{et.titulo}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </>
+  );
+}
+
+function LinhaDoTempo({ eventos, t, publicar, extra, ir }) {
+  const [texto, setTexto] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const comentar = async () => {
+    if (!texto.trim()) return;
+    setEnviando(true);
+    try { await publicar({ tipo: 'comentario', ...extra, texto: texto.trim() }); setTexto(''); }
+    catch (er) { toast.error(er.message); }
+    setEnviando(false);
+  };
+  return (
+    <main className="vx-cel-main" style={{ gap: 12 }}>
+      <span style={{ fontSize: 17, fontWeight: 600, color: C.txt }}>Linha do tempo da operação</span>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 6px 6px 16px', borderRadius: 999, background: C.input, border: `1px solid ${C.line}` }}>
+        <input value={texto} onChange={ev => setTexto(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') comentar(); }}
+          placeholder="Comente na operação — a equipe acompanha por aqui" aria-label="Comentar na operação"
+          style={{ flex: 1, height: 40, background: 'transparent', border: 0, outline: 0, color: C.txt, fontSize: 14 }} />
+        <button onClick={comentar} disabled={enviando} className="vx-btn vx-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 13 }}>
+          {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publicar
+        </button>
+      </div>
+      {eventos.length === 0 && <span style={{ fontSize: 13, color: C.muted }}>Sem eventos registrados ainda.</span>}
+      {eventos.map((ev, i) => (
+        <article key={i} style={{ padding: 14, borderRadius: 16, background: ev.comentario ? C.card2 : C.card, border: `1px solid ${C.line}`, display: 'flex', gap: 12 }}>
+          <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 17, background: ev.comentario ? t.dim : 'rgba(255,255,255,.06)', color: ev.comentario ? t.txt : C.txt2, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{iniciais(ev.quem)}</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>{ev.quem}</span>
+              {ev.etapa && <span style={{ padding: '2px 8px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 11 }}>{ev.etapa}</span>}
+              <span style={{ fontSize: 12, color: C.muted2 }}>{fmtData(ev.quando)}</span>
+            </div>
+            <div style={{ fontSize: 14, color: C.txt2, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{ev.txt}</div>
+            {ev.link && <button onClick={() => ir(ev.link.to)} className="vx-btn vx-btn-soft" style={{ alignSelf: 'flex-start', height: 28, padding: '0 12px', fontSize: 12 }}>{ev.link.label} →</button>}
+          </div>
+        </article>
+      ))}
+    </main>
+  );
+}
+
+function PainelLateral({ t, docs, atalhos, ir }) {
+  return (
+    <aside className="vx-cel-aside">
+      <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}><FileText className="w-4 h-4" style={{ color: t.acc }} /> Documentos da operação</span>
+        {docs.map(d => (
+          <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+            <span style={{ flex: 1, color: '#DCE2EA' }}>{d.nome}</span>
+            <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
+          </div>
+        ))}
+        <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Tudo o que é gerado nesta operação continua aparecendo em Contratos e, ao fechar, em Vendas.</span>
+      </div>
+      <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Ir para</span>
+        {atalhos.map(([l, to]) => (
+          <button key={l} onClick={() => ir(to)} className="vx-row-hover"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderRadius: 12, background: 'transparent', border: `1px solid ${C.line}`, color: C.txt2, fontSize: 13 }}>
+            {l} <ChevronRight className="w-4 h-4" style={{ color: t.acc }} />
+          </button>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+// ───────────── Operação de Produtos estruturados (estudo) ─────────────
+function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
+  const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
   const [propostas, setPropostas] = useState([]);
   const [formPos, setFormPos] = useState(null);
-  const [texto, setTexto] = useState('');
-  const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
     base44.entities.PropostaTecnica.filter({ estudo_id: e.id }, '-versao', 50).then(l => setPropostas(l || [])).catch(() => {});
@@ -432,7 +543,7 @@ function Operacao({ op, produto, comentarios, publicar, voltar, ir }) {
 
   const eventos = useMemo(() => {
     const ev = [];
-    const add = (quando, quem, etapaIdx, txt, link) => { if (quando) ev.push({ quando, quem, etapa: jornada.etapas[etapaIdx]?.titulo, txt, link }); };
+    const add = (quando, quem, idx, txt, link) => { if (quando) ev.push({ quando, quem, etapa: jornada.etapas[idx]?.titulo, txt, link }); };
     add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : 'Operação aberta — NDA ainda não anexado.');
     add(e.data_envio_cliente || e.link_gerado_em, e.responsavel_nome || 'Gerente', 1, 'Link do estudo de viabilidade enviado ao cliente.');
     add(e.cliente_devolveu_em || e.data_recebimento, e.cliente_nome || 'Cliente', 1, 'Estudo devolvido com propósito, expectativas e documentos.', { label: 'Abrir estudo', to: `/EstudoViabilidade?estudo=${e.id}` });
@@ -444,10 +555,7 @@ function Operacao({ op, produto, comentarios, publicar, voltar, ir }) {
       add(p.enviada_em, p.responsavel_nome || 'Gerente', 3, `Proposta v${p.versao} enviada ao cliente.`, lk);
       if (p.status === 'aceita' || p.status === 'recusada') add(p.decisao_em, e.cliente_nome || 'Cliente', 3, `Proposta v${p.versao} ${p.status === 'aceita' ? 'aceita' : 'recusada'} pelo cliente.${p.decisao_observacao ? ` ${p.decisao_observacao}` : ''}`, lk);
     });
-    if (contrato) {
-      const lk = { label: 'Ver em Contratos', to: `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` };
-      add(contrato.created_date, contrato.vendedor_nome || 'Gerente', 4, `Contrato ${contrato.numero_contrato || ''} criado (${contrato.status}).`, lk);
-    }
+    if (contrato) add(contrato.created_date, contrato.vendedor_nome || 'Gerente', 4, `Contrato ${contrato.numero_contrato || ''} criado (${STATUS_CONTRATO[contrato.status] || contrato.status}).`, { label: 'Ver em Contratos', to: `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` });
     if (formPos) {
       add(formPos.link_gerado_em, formPos.responsavel_nome || 'Gerente', 5, 'Link do formulário pós-contrato enviado ao cliente.');
       add(formPos.link_preenchido_em || formPos.data_preenchimento, formPos.cliente_nome || e.cliente_nome || 'Cliente', 5, 'Cliente preencheu o formulário pós-contrato.');
@@ -457,111 +565,98 @@ function Operacao({ op, produto, comentarios, publicar, voltar, ir }) {
     return ev.sort((a, b) => new Date(b.quando) - new Date(a.quando));
   }, [e, propostas, contrato, formPos, comentarios]);
 
-  const comentar = async () => {
-    if (!texto.trim()) return;
-    setEnviando(true);
-    try { await publicar({ tipo: 'comentario', estudo_id: e.id, texto: texto.trim() }); setTexto(''); }
-    catch (er) { toast.error(er.message); }
-    setEnviando(false);
-  };
-
   const docs = [
     { nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente' },
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
-    { nome: 'Contrato', ok: contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? contrato.status : 'Não gerado' },
+    { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado' },
     ...(jornada.tipoContrato ? [{ nome: produto === 'offshore' ? 'Formulário da LLC' : 'Formulário de abertura', ok: !!(formPos?.link_preenchido_em), st: formPos ? (formPos.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
+  ];
+  const atalhos = [
+    ['Estudo de viabilidade', `/EstudoViabilidade?estudo=${e.id}`],
+    ['Análise técnica e proposta', `/AnaliseTecnica?estudo=${e.id}`],
+    ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', contrato ? `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` : `/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`]] : [['Contratos', '/Contratos']]),
   ];
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
-        <button onClick={voltar} className="vx-btn"
-          style={{ height: 38, padding: '0 12px', borderRadius: 10, border: `1px solid ${C.goldLine}`, background: 'transparent', color: C.goldTxt, fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-          <ArrowLeft className="w-4 h-4" /> {jornada.nome}
-        </button>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 21, fontWeight: 600, color: C.txt }}>{e.cliente_nome || 'Cliente sem nome'}</span>
-          <span style={{ fontSize: 13, color: C.muted }}>{jornada.nome} · {e.tipo_cliente}{e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável {e.responsavel_nome || '—'}</span>
-        </div>
-        <div style={{ flex: 1 }} />
-        <span style={{ padding: '6px 12px', borderRadius: 999, background: C.goldDim, color: C.goldTxt, fontSize: 13, fontWeight: 500 }}>Etapa atual: {jornada.etapas[etapa].titulo}</span>
-        <button onClick={() => ir(acao.to)} className="vx-btn"
-          style={{ height: 40, padding: '0 16px', borderRadius: 10, background: C.gold, border: 0, color: '#1A1508', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {acao.label} <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
-      <ol aria-label="Jornada da operação" className="vx-steps" style={{ listStyle: 'none', margin: 0, padding: '16px 24px', borderBottom: `1px solid ${C.line}` }}>
-        {jornada.etapas.map((et, i) => {
-          const feito = i < etapa, atual = i === etapa;
-          return (
-            <li key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <span style={{ height: 4, borderRadius: 2, background: feito ? C.gold : atual ? '#7A6634' : C.line }} />
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: feito ? C.gold : atual ? C.goldDim : '#141C2B', color: feito ? '#1A1508' : atual ? C.goldTxt : C.muted2, border: atual ? `1px solid ${C.gold}` : 0 }}>{feito ? '✓' : i + 1}</span>
-                <span style={{ fontSize: 13, color: feito || atual ? C.txt : C.muted2, fontWeight: feito || atual ? 500 : 400 }}>{et.titulo}</span>
-              </span>
-            </li>
-          );
-        })}
-      </ol>
-
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
+        subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <div className="vx-cel-body">
-        <main className="vx-cel-main" style={{ gap: 12 }}>
-          <span style={{ fontSize: 17, fontWeight: 600, color: C.txt }}>Linha do tempo da operação</span>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 10, borderRadius: 12, background: C.head, border: `1px solid ${C.line}` }}>
-            <input value={texto} onChange={ev => setTexto(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') comentar(); }}
-              placeholder="Comente na operação — a equipe da célula acompanha por aqui" aria-label="Comentar na operação"
-              style={{ flex: 1, height: 40, padding: '0 10px', background: 'transparent', border: 0, outline: 0, color: C.txt, fontSize: 14 }} />
-            <button onClick={comentar} disabled={enviando} className="vx-btn"
-              style={{ height: 38, padding: '0 14px', borderRadius: 8, background: '#1C2436', border: 0, color: C.goldTxt, fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publicar
-            </button>
-          </div>
-          {eventos.map((ev, i) => (
-            <article key={i} style={{ padding: 14, borderRadius: 12, background: ev.comentario ? C.card2 : C.head, border: `1px solid ${C.line}`, display: 'flex', gap: 12 }}>
-              <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 17, background: ev.comentario ? C.goldDim : '#1C2436', color: ev.comentario ? C.goldTxt : C.txt2, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{iniciais(ev.quem)}</span>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5, minWidth: 0 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>{ev.quem}</span>
-                  {ev.etapa && <span style={{ padding: '2px 8px', borderRadius: 999, background: C.goldDim, color: C.goldTxt, fontSize: 11 }}>{ev.etapa}</span>}
-                  <span style={{ fontSize: 12, color: C.muted2 }}>{fmtData(ev.quando)}</span>
-                </div>
-                <div style={{ fontSize: 14, color: C.txt2, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{ev.txt}</div>
-                {ev.link && (
-                  <button onClick={() => ir(ev.link.to)} style={{ alignSelf: 'flex-start', fontSize: 13, color: C.goldTxt, background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}>{ev.link.label} →</button>
-                )}
-              </div>
-            </article>
-          ))}
-        </main>
+        <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={ir} />
+        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir} />
+      </div>
+    </div>
+  );
+}
 
-        <aside className="vx-cel-aside">
-          <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}><FileText className="w-4 h-4" style={{ color: C.gold }} /> Documentos da operação</span>
-            {docs.map(d => (
-              <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-                <span style={{ flex: 1, color: '#DCE2EA' }}>{d.nome}</span>
-                <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 12, background: d.ok ? '#16291F' : '#141C2B', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
-              </div>
-            ))}
-            <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Tudo o que é gerado nesta operação continua aparecendo em Contratos e, ao fechar, em Vendas.</span>
-          </div>
-          <div style={{ borderRadius: 14, background: C.head, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Ir para</span>
-            {[
-              ['Estudo de viabilidade', `/EstudoViabilidade?estudo=${e.id}`],
-              ['Análise técnica e proposta', `/AnaliseTecnica?estudo=${e.id}`],
-              ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', contrato ? `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` : `/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`]] : [['Contratos', '/Contratos']]),
-            ].map(([l, to]) => (
-              <button key={l} onClick={() => ir(to)} className="vx-lnk"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 10px', borderRadius: 8, background: 'transparent', border: `1px solid ${C.line}`, color: C.txt2, fontSize: 13, cursor: 'pointer' }}>
-                {l} <ChevronRight className="w-4 h-4" style={{ color: C.gold }} />
-              </button>
-            ))}
-          </div>
-        </aside>
+// ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
+function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir }) {
+  const jornada = JORNADAS[produto];
+  const ct = op.raw.contrato || null;
+  const impl = op.raw.impl || null;
+  const neg = op.raw.neg || null;
+  const [rnc, setRnc] = useState(null);
+
+  useEffect(() => {
+    if (ct && produto === 'canal_bancario') {
+      base44.entities.RncCanalBancario.filter({ contrato_id: ct.id }, '-created_date', 1).then(l => setRnc((l || [])[0] || null)).catch(() => {});
+    }
+  }, [ct?.id]);
+
+  const listaContratos = jornada.tipoContrato ? `/Contratos?tipo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos';
+
+  const eventos = useMemo(() => {
+    const ev = [];
+    const add = (quando, quem, idx, txt, link) => { if (quando) ev.push({ quando, quem, etapa: idx != null ? jornada.etapas[idx]?.titulo : null, txt, link }); };
+    if (neg) {
+      add(neg.created_date, neg.vendedor_nome || 'Gerente', 0, `Negociação aberta no Pipeline${neg.valor_estimado ? ` · valor estimado ${Number(neg.valor_estimado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}.${neg.descricao ? `\n${neg.descricao}` : ''}`, { label: 'Abrir Pipeline', to: '/Pipeline' });
+      if (neg.proximo_contato) add(neg.proximo_contato, neg.vendedor_nome || 'Gerente', 0, 'Próximo contato agendado.');
+    }
+    if (ct) {
+      add(ct.created_date, ct.vendedor_nome || 'Gerente', 1, `Contrato ${ct.numero_contrato || ''} criado${ct.valor_total ? ` · ${Number(ct.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}. Situação atual: ${STATUS_CONTRATO[ct.status] || ct.status}.`, { label: 'Ver em Contratos', to: listaContratos });
+      if (ct.data_contrato) add(ct.data_contrato, ct.vendedor_nome || 'Gerente', 2, 'Data do contrato registrada.');
+      if (ct.data_primeiro_pagamento) add(ct.data_primeiro_pagamento, op.cliente, 3, 'Primeiro pagamento previsto/registrado.');
+    }
+    if (rnc) {
+      add(rnc.link_gerado_em, rnc.responsavel_nome || 'Gerente', 4, 'Link do formulário RNC enviado ao cliente.');
+      add(rnc.link_preenchido_em || rnc.data_preenchimento, rnc.nome || op.cliente, 4, 'Cliente preencheu o formulário RNC do canal bancário.');
+    }
+    if (impl) {
+      add(impl.data_entrada, impl.padrinho_nome || 'Implantação', 4, `Implantação iniciada${impl.padrinho_nome ? ` com ${impl.padrinho_nome}` : ''}.`, { label: 'Abrir Implantações', to: '/Implantacoes' });
+      (impl.historico || []).forEach(h => {
+        const q = h.data || h.data_hora || h.created_at || h.em;
+        const st = h.status_novo || h.status || '';
+        add(q, h.usuario || h.autor || impl.padrinho_nome || 'Implantação', 4, `${st ? `Implantação: ${String(st).replace(/_/g, ' ')}.` : 'Atualização da implantação.'}${h.observacao ? ` ${h.observacao}` : ''}`);
+      });
+      add(impl.data_conclusao, impl.padrinho_nome || 'Implantação', 5, 'Implantação concluída.');
+    }
+    comentarios.filter(c => c.tipo === 'comentario' && c.operacao_id === op.id)
+      .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', etapa: 'Comentário', txt: c.texto, comentario: true }));
+    return ev.sort((a, b) => new Date(b.quando) - new Date(a.quando));
+  }, [ct, impl, neg, rnc, comentarios]);
+
+  const docs = [
+    { nome: 'Negociação', ok: !!(neg || ct), st: neg ? (neg.temperatura || 'Aberta') : ct ? 'Convertida' : '—' },
+    { nome: 'Contrato', ok: !!ct && !['rascunho', 'gerado'].includes(ct.status), st: ct ? (STATUS_CONTRATO[ct.status] || ct.status) : 'Não gerado' },
+    ...(produto === 'canal_bancario' ? [{ nome: 'Formulário RNC', ok: !!rnc?.link_preenchido_em, st: rnc ? (rnc.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
+    { nome: 'Implantação', ok: !!impl && ['concluido', 'concluido_feedback'].includes(impl.status), st: impl ? String(impl.status || '').replace(/_/g, ' ') : 'Não iniciada' },
+  ];
+  const atalhos = [
+    ...(neg ? [['Negociação no Pipeline', '/Pipeline']] : []),
+    [ct ? 'Contrato da operação' : 'Gerar contrato', ct ? listaContratos : (jornada.tipoContrato ? `/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos')],
+    ['Implantações', '/Implantacoes'],
+  ];
+  const subtitulo = ct
+    ? `${jornada.nome} · ${ct.numero_contrato ? 'Contrato ' + ct.numero_contrato : 'contrato sem número'}${ct.cpf_cnpj ? ` · ${ct.cpf_cnpj}` : ''} · responsável ${ct.vendedor_nome || '—'}`
+    : `${jornada.nome} · negociação no Pipeline · responsável ${neg?.vendedor_nome || '—'}`;
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} />
+      <div className="vx-cel-body">
+        <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ operacao_id: op.id }} ir={ir} />
+        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir} />
       </div>
     </div>
   );
