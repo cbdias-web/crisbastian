@@ -396,7 +396,8 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
     `Inclui o pagamento de taxas anuais (Annual Report no estado de ${estado}), declaração de impostos federais americanos e cumprimento de obrigações legais futuras.`,
   ]);
 
-  // 6 — Valor e forma de pagamento
+  // 6 — Valor e forma de pagamento: sempre em página nova
+  if (y < TOPO) novaPagina();
   clausula('DO VALOR E FORMA DE PAGAMENTO');
   const forma = limpa(c.forma_pagamento) || 'PIX';
   const v1 = limpa(v.marca_modelo).toUpperCase() || '[VEÍCULO]';
