@@ -8,11 +8,15 @@
       "type": "string"
     },
     "celula": {
-      "description": "C\u00e9lula do portal (ex.: estruturados) ou 'geral' para o mural da capa",
+      "description": "C\u00e9lula do portal (estruturados, internacional, cross) ou 'geral' para o mural da capa",
       "type": "string"
     },
     "estudo_id": {
-      "description": "Opera\u00e7\u00e3o (EstudoViabilidade) a que o coment\u00e1rio pertence",
+      "description": "Opera\u00e7\u00e3o baseada em EstudoViabilidade (Produtos estruturados)",
+      "type": "string"
+    },
+    "operacao_id": {
+      "description": "Opera\u00e7\u00e3o baseada em Contrato (id do contrato) ou em Pipeline (p_<id>)",
       "type": "string"
     },
     "origem": {
@@ -28,12 +32,7 @@
       "type": "string"
     },
     "produto": {
-      "description": "Produto da c\u00e9lula",
-      "enum": [
-        "offshore",
-        "conta_internacional",
-        "holding"
-      ],
+      "description": "Produto da c\u00e9lula (ex.: offshore, conta_internacional, holding, rof, canal_bancario, conta_global, dolarize, cambio, score, rating, diagnostico, monitore)",
       "type": "string"
     },
     "resolvida": {
