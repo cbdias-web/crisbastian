@@ -19,6 +19,29 @@ const fmtData = (d) => {
 };
 const iniciais = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
+// Abre um arquivo anexado: link público direto ou, se for arquivo privado (file_uri), link temporário.
+async function abrirArquivo(ref, baixarComo) {
+  try {
+    let url = ref;
+    if (!/^https?:\/\//i.test(String(ref || ''))) {
+      const r = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: ref, expires_in: 600 });
+      url = r?.signed_url || r?.data?.signed_url;
+    }
+    if (!url) throw new Error('sem link');
+    if (baixarComo) {
+      const resp = await fetch(url);
+      const blob = await resp.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = baixarComo;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
+  } catch { toast.error('Não foi possível abrir o documento.'); }
+}
+
 export default function CelulaOverlay() {
   const [sp, setSp] = useSearchParams();
   const cfg = CELULAS[sp.get('celula')];
@@ -503,17 +526,35 @@ function LinhaDoTempo({ eventos, t, publicar, extra, ir }) {
   );
 }
 
-function PainelLateral({ t, docs, atalhos, ir }) {
+function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
   return (
     <aside className="vx-cel-aside">
       <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}><FileText className="w-4 h-4" style={{ color: t.acc }} /> Documentos da operação</span>
         {docs.map(d => (
-          <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+          <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <span style={{ flex: 1, color: '#DCE2EA' }}>{d.nome}</span>
             <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
+            {d.arquivo && (
+              <>
+                <button onClick={() => abrirArquivo(d.arquivo)} className="vx-btn vx-btn-soft" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Abrir ${d.nome}`}>Abrir</button>
+                <button onClick={() => abrirArquivo(d.arquivo, d.nomeArquivo || `${d.nome}.pdf`)} className="vx-btn vx-btn-ghost" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Baixar ${d.nome}`}>Baixar</button>
+              </>
+            )}
           </div>
         ))}
+        {arquivos.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, borderTop: `1px solid ${C.line}`, paddingTop: 10 }}>
+            <span style={{ fontSize: 12, color: C.muted2, marginBottom: 2 }}>Arquivos enviados pelo cliente ({arquivos.length})</span>
+            {arquivos.map((a, i) => (
+              <button key={i} onClick={() => abrirArquivo(a.ref)} className="vx-row-hover" title={a.descricao || a.nome}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, background: 'transparent', border: 0, color: t.txt, fontSize: 12, textAlign: 'left' }}>
+                <FileText className="w-3.5 h-3.5" style={{ flex: 'none' }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Tudo o que é gerado nesta operação continua aparecendo em Contratos e, ao fechar, em Vendas.</span>
       </div>
       <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -569,7 +610,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
   }, [e, propostas, contrato, formPos, comentarios]);
 
   const docs = [
-    { nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente' },
+    { nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome },
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
     { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado' },
@@ -587,7 +628,8 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <div className="vx-cel-body">
         <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={ir} />
-        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir} />
+        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir}
+          arquivos={(e.documentos || []).filter(d => d.url).map(d => ({ ref: d.url, nome: d.nome_arquivo || d.descricao || 'Documento', descricao: d.descricao }))} />
       </div>
     </div>
   );
