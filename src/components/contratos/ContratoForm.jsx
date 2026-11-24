@@ -322,11 +322,20 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       if (contratoExistente) {
         vendedorId = vendedorEditId || contratoExistente.vendedor_id || user?.id || '';
         vendedorNome = vendedorEditNome || contratoExistente.vendedor_nome || user?.nome_tratamento || user?.full_name || '';
+      } else if (vendedorEditId) {
+        // Admin escolheu o gerente responsável (lista só com gerentes ativos)
+        vendedorId = vendedorEditId;
+        vendedorNome = vendedorEditNome || (vendedoresList.find(v => v.id === vendedorEditId)?.nome) || '';
       } else {
         vendedorId = user?.id || '';
         vendedorNome = user?.nome_tratamento || user?.full_name || user?.email || '';
-        // Nome canônico do cadastro de Vendedor (ex.: "JONATHAN DUTRA") — evita variações de caixa/apelido no contrato
-        try { const vv = await resolverVendedorDoUsuarioLogado(); if (vv?.nome) vendedorNome = vv.nome; } catch (e) { /* mantém o nome do usuário */ }
+        // Cadastro de Vendedor ATIVO do usuário (id + nome canônico, ex.: "JONATHAN DUTRA"): evita que a
+        // mesma pessoa apareça com dois nomes/ids diferentes nos contratos.
+        try {
+          const vv = await resolverVendedorDoUsuarioLogado();
+          if (vv?.id && vv.ativo !== false) { vendedorId = vv.id; vendedorNome = vv.nome; }
+          else if (vv?.nome) vendedorNome = vv.nome;
+        } catch (e) { /* mantém o usuário */ }
       }
       const toNum = (v) => { const n = parseFloat(v); return isNaN(n) ? undefined : n; };
       const payload = {
@@ -1202,7 +1211,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                       </select>
                     </div>
                   )}
-                  {isAdmin && contratoExistente && (
+                  {isAdmin && (
                     <div className="group">
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5 group-focus-within:text-[#1a3150] transition-colors">
                         Vendedor Responsável
