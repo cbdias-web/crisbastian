@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, X, Loader2, Plus, ChevronDown, Globe } from 'lucide-react';
+import { Send, X, Loader2, Plus, ChevronDown, Globe, Paperclip, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import JarvisAvatar from '@/components/chat/JarvisAvatar.jsx';
@@ -497,10 +497,37 @@ export default function AssistenteFloating() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, isTyping]);
 
+  // ── Anexos: documentos enviados ao Jarvis ficam em armazenamento PRIVADO (file_uri);
+  // o Jarvis recebe um link temporário para ler e o file_uri para extrair os dados.
+  const [anexos, setAnexos] = useState([]); // { nome, file_uri, url }
+  const [subindo, setSubindo] = useState(false);
+  const fileInputRef = useRef(null);
+  const anexar = async (files) => {
+    const lista = Array.from(files || []).slice(0, 5);
+    if (!lista.length) return;
+    setSubindo(true);
+    for (const f of lista) {
+      if (f.size > 20 * 1024 * 1024) { setSendError(`"${f.name}" passa de 20 MB.`); continue; }
+      try {
+        const up = await base44.integrations.Core.UploadPrivateFile({ file: f });
+        const s = await base44.integrations.Core.CreateFileSignedUrl({ file_uri: up.file_uri, expires_in: 3600 });
+        const url = s?.signed_url || s?.data?.signed_url || '';
+        setAnexos(a => [...a, { nome: f.name, file_uri: up.file_uri, url }]);
+      } catch (e) {
+        setSendError(`Não consegui anexar "${f.name}".`);
+      }
+    }
+    setSubindo(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const send = async (text) => {
-    const msg = (text || input).trim();
-    if (!msg || sending) return;
+    const anexosEnvio = anexos;
+    let msg = (text || input).trim();
+    if (!msg && anexosEnvio.length) msg = 'Segue(m) documento(s) em anexo.';
+    if (!msg || sending || subindo) return;
     setInput('');
+    setAnexos([]);
     setSending(true);
     // Cancela timer de sugestões ao enviar nova mensagem
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
@@ -515,13 +542,18 @@ export default function AssistenteFloating() {
         setMessages(data.messages || []);
       });
     }
-    const content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
+    let content = userName ? `[Usuário: ${userName}] ${msg}` : msg;
+    if (anexosEnvio.length) {
+      content += `\n\n[Anexos enviados pelo usuário — use o file_uri nas ferramentas]\n` +
+        anexosEnvio.map(a => `- ${a.nome} | file_uri: ${a.file_uri}`).join('\n');
+    }
     setIsFirstMessage(false);
     recordActivity();
     setSendError(null);
     setAwaitingReply(true);
     try {
-      await base44.agents.addMessage(conv, { role: 'user', content });
+      const fileUrls = anexosEnvio.map(a => a.url).filter(Boolean);
+      await base44.agents.addMessage(conv, fileUrls.length ? { role: 'user', content, file_urls: fileUrls } : { role: 'user', content });
     } catch (e) {
       setAwaitingReply(false);
       setSendError('Não consegui enviar sua mensagem. Toque em "Nova conversa" e tente novamente.');
@@ -751,8 +783,27 @@ export default function AssistenteFloating() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#0d1117' }}>
+          <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#0d1117' }}
+            onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); anexar(e.dataTransfer.files); }}>
+            {(anexos.length > 0 || subindo) && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {anexos.map((a, i) => (
+                  <span key={a.file_uri} className="flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full text-[11px]" style={{ background: 'rgba(0,212,170,0.12)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.3)' }}>
+                    <FileText className="w-3 h-3" /> <span className="max-w-[140px] truncate">{a.nome}</span>
+                    <button onClick={() => setAnexos(l => l.filter((_, j) => j !== i))} aria-label={`Remover ${a.nome}`} className="p-0.5 rounded-full" style={{ color: 'rgba(230,237,243,0.6)' }}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                {subindo && <span className="flex items-center gap-1.5 px-2 py-1 text-[11px]" style={{ color: 'rgba(230,237,243,0.55)' }}><Loader2 className="w-3 h-3 animate-spin" /> Anexando…</span>}
+              </div>
+            )}
             <div className="flex items-end gap-2 rounded-xl px-3 py-2 transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)' }}>
+              <input ref={fileInputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={e => anexar(e.target.files)} />
+              <button onClick={() => fileInputRef.current?.click()} disabled={subindo} title="Anexar documentos (RG, CNH, contrato social, NDA, proposta…)" aria-label="Anexar documentos"
+                className="p-1.5 rounded-lg transition flex-shrink-0 disabled:opacity-40" style={{ color: '#00D4AA', background: 'rgba(0,212,170,0.1)' }}>
+                <Paperclip className="w-3.5 h-3.5" />
+              </button>
               <textarea
                 ref={inputRef}
                 value={input}
@@ -763,7 +814,7 @@ export default function AssistenteFloating() {
                 className="flex-1 text-sm bg-transparent resize-none focus:outline-none max-h-24" style={{ color: '#e6edf3' }}
                 style={{ minHeight: '22px' }}
               />
-              <button onClick={() => send()} disabled={!input.trim() || sending}
+              <button onClick={() => send()} disabled={(!input.trim() && anexos.length === 0) || sending || subindo}
                 className="p-1.5 text-white rounded-lg disabled:opacity-40 transition flex-shrink-0" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)' }}>
                 {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               </button>
