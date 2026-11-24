@@ -121,8 +121,10 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
   });
 
   const persistir = async (statusForcado) => {
-    const status = statusForcado || (rncExistente?.status === 'concluido' ? 'concluido' : 'rascunho');
-    const dados = { ...coletarDados(), status };
+    const base = coletarDados();
+    const completo = calcularPendencias(base).length === 0;
+    const status = statusForcado || (completo || rncExistente?.status === 'concluido' ? 'concluido' : 'rascunho');
+    const dados = { ...base, status };
     if (rncExistente?.id) {
       await base44.entities.RncOffshore.update(rncExistente.id, dados);
       const novo = { ...rncExistente, ...dados };
