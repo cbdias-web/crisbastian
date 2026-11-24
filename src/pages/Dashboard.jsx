@@ -755,7 +755,7 @@ export default function Dashboard() {
                           <Cell key={i}
                             fill={novo ? (baseFill === '#10b981' ? 'url(#vxGradOk)' : 'url(#vxGradVol)') : baseFill}
                             onMouseEnter={e => { e.target.setAttribute('fill', baseFill === '#10b981' ? '#34d399' : '#33e6cc'); e.target.style.transform = 'scaleY(1.18)'; e.target.style.transformOrigin = 'bottom'; }}
-                            onMouseLeave={e => { e.target.setAttribute('fill', baseFill); e.target.style.transform = 'scaleY(1)'; }}
+                            onMouseLeave={e => { e.target.setAttribute('fill', novo ? (baseFill === '#10b981' ? 'url(#vxGradOk)' : 'url(#vxGradVol)') : baseFill); e.target.style.transform = 'scaleY(1)'; }}
                             style={{ cursor: 'pointer', transition: 'transform 200ms ease, fill 200ms ease', transformOrigin: 'bottom' }}
                           />
                         );
