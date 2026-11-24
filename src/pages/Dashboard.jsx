@@ -20,6 +20,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import { usaNovoPortal } from "@/lib/novoPortal";
 import { SlidersHorizontal } from "lucide-react";
+import { CELULAS_CAPA } from "@/lib/novoPortal";
+import { ICONE_CELULA } from "@/components/hub/HeaderAvatares";
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -895,7 +897,36 @@ export default function Dashboard() {
         </div>
 
         {/* ─── Acesso Rápido ────────────────────────────────────────────── */}
-        <div className="rounded-2xl p-5 transition-all duration-200"
+        {novo && (
+          <div className="rounded-3xl p-5" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <h3 className="font-semibold text-sm flex-1" style={{ color: A.text }}>Operações por área</h3>
+              <Link to="/Contratos" className="vx-btn vx-btn-soft h-8 px-3 text-xs">Contratos <ArrowUpRight className="w-3 h-3" /></Link>
+              <Link to="/Pipeline" className="vx-btn vx-btn-soft h-8 px-3 text-xs">Pipeline <ArrowUpRight className="w-3 h-3" /></Link>
+              <Link to="/Vendas" className="vx-btn vx-btn-soft h-8 px-3 text-xs">Vendas <ArrowUpRight className="w-3 h-3" /></Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {CELULAS_CAPA.map(c => {
+                const Icon = ICONE_CELULA[c.id];
+                return (
+                  <button key={c.id} onClick={() => navigate({ pathname: '/Dashboard', search: `?celula=${c.id}` })}
+                    className="vx-card-lift flex items-center gap-4 p-4 rounded-2xl text-left"
+                    style={{ background: c.cor + '12', border: `1px solid ${c.cor}55`, '--vx-acc': c.cor, '--vx-glow': c.glow }}>
+                    <span className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: c.cor + '22', border: `1.5px solid ${c.cor}` }}>
+                      {Icon && <Icon className="w-6 h-6" style={{ color: c.cor }} />}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold" style={{ color: A.text }}>{c.nome}</span>
+                      <span className="block text-xs truncate" style={{ color: A.textMuted }}>{c.produtos}</span>
+                    </span>
+                    <ArrowUpRight className="w-4 h-4 flex-shrink-0" style={{ color: c.cor }} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {!novo && <div className="rounded-2xl p-5 transition-all duration-200"
           onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 32px rgba(0,212,170,0.35), 0 8px 32px rgba(0,0,0,0.5)`; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = `${A.accent}55`; }}
           onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; e.currentTarget.style.borderColor = A.border; }}
           style={{ background: A.surface, border: `1px solid ${A.border}` }}>
@@ -922,7 +953,7 @@ export default function Dashboard() {
               </Link>
             ))}
           </div>
-        </div>
+        </div>}
 
         {/* ─── Modals & Popups ──────────────────────────────────────────── */}
         {!agendaPopupDismissed && agendaPendentes > 0 && (
