@@ -22,6 +22,9 @@ import HeaderNav from '@/components/layout/HeaderNav.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
 import CelulaEstruturados from '@/components/celulas/CelulaEstruturados.jsx';
 import CelulaLauncher from '@/components/celulas/CelulaLauncher.jsx';
+import HubInicio from '@/components/hub/HubInicio.jsx';
+import HeaderAvatares from '@/components/hub/HeaderAvatares.jsx';
+import { usaNovoPortal } from '@/lib/novoPortal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
@@ -45,6 +48,7 @@ const AURORA = {
 
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [parceiroByEmail, setParceiroByEmail] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
@@ -420,6 +424,26 @@ export default function Layout({ children, currentPageName }) {
     }] : [])
   ];
 
+  // ─── Nova capa (avatares + mural + células) — por enquanto só para usuários liberados ───
+  const novoPortal = !isIndicador && usaNovoPortal(user);
+  // Na nova capa o Dash Parceiro passa a morar dentro de Prospecção.
+  const navGroupsPortal = (() => {
+    const gs = navGroups.map(g => ({ ...g, items: [...g.items] }));
+    const apoio = gs.find(g => g.label === 'Apoio');
+    const prosp = gs.find(g => g.label === 'Prospecção');
+    if (prosp) {
+      let dash = null;
+      if (apoio) {
+        const i = apoio.items.findIndex(it => it.page === 'DashParceiro');
+        if (i >= 0) dash = apoio.items.splice(i, 1)[0];
+      }
+      if (!dash && isAdmin) dash = { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro' };
+      if (dash) prosp.items.push({ ...dash, badge: novasIndicacoes.length, search: novasIndicacoes.length > 0 ? '?aba=indicacoes' : '' });
+    }
+    return gs.filter(g => g.items.length > 0);
+  })();
+  const mostrarCapa = novoPortal && (currentPageName === 'Inicio' || location.pathname === '/');
+
   const handleLogout = () => {
     if (confirm('Deseja realmente sair?')) base44.auth.logout();
   };
@@ -506,7 +530,7 @@ export default function Layout({ children, currentPageName }) {
       >
         {/* Single row: Brand + Navigation + Actions */}
         <div className="flex items-center px-6 py-3 gap-4">
-          <Link to={createPageUrl('Dashboard')} className="flex items-center gap-2.5 flex-shrink-0">
+          <Link to={novoPortal ? '/Inicio' : createPageUrl('Dashboard')} className="flex items-center gap-2.5 flex-shrink-0">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
               VX
@@ -521,7 +545,10 @@ export default function Layout({ children, currentPageName }) {
           <div className="hidden md:block h-7 w-px flex-shrink-0" style={{ background: AURORA.border }} />
 
           {/* Navigation menus (desktop) — drag-and-drop para admin reordenar */}
-          {!isMobile && (
+          {!isMobile && novoPortal && (
+            <HeaderAvatares groups={navGroupsPortal} currentPageName={currentPageName} />
+          )}
+          {!isMobile && !novoPortal && (
             <HeaderNav
               user={user}
               currentPageName={currentPageName}
@@ -535,7 +562,6 @@ export default function Layout({ children, currentPageName }) {
           {/* Right side actions */}
           <div className="flex items-center gap-2 ml-auto">
             {/* Célula Produtos Estruturados (piloto) — abre por cima da página atual */}
-            {!isIndicador && !isMobile && <CelulaLauncher />}
             {/* Alertas do gerente (retornos, SLA, reuniões) */}
             {!isIndicador && <AlertasSino />}
 
@@ -652,7 +678,7 @@ export default function Layout({ children, currentPageName }) {
         <div className="fixed inset-0 z-[60] flex flex-col"
           style={{ background: 'rgba(13,17,23,0.98)', paddingTop: '60px' }}>
           <nav className="flex-1 overflow-y-auto px-4 py-4">
-            <CelulaLauncher variant="mobile" onAbrir={() => setMobileMenuOpen(false)} />
+            {novoPortal && <CelulaLauncher variant="mobile" onAbrir={() => setMobileMenuOpen(false)} />}
             <Link to={createPageUrl('Dashboard')} onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 px-4 py-3 rounded-xl mb-2 text-sm font-medium"
               style={{
@@ -725,7 +751,7 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
         <BannerAlertaSistema user={user} />
-        {children}
+        {mostrarCapa ? <HubInicio user={user} groups={navGroupsPortal} isAdmin={isAdmin} /> : children}
       </main>
 
       {/* ═══ BARRA DE NOVA VERSÃO (aparece quando o app é publicado) ═══ */}
@@ -735,7 +761,7 @@ export default function Layout({ children, currentPageName }) {
       {!isIndicador && <AssistenteFloating />}
 
       {/* Célula imersiva (?celula=estruturados) */}
-      {!isIndicador && user && <CelulaEstruturados />}
+      {novoPortal && <CelulaEstruturados />}
     </div>
   );
 }
