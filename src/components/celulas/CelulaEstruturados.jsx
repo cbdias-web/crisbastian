@@ -613,7 +613,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir }) {
     { nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome },
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
-    { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado' },
+    { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado', arquivo: contrato?.contrato_assinado_url || contrato?.pdf_url || null, nomeArquivo: contrato?.contrato_assinado_nome || `Contrato ${contrato?.numero_contrato || ''}.pdf` },
     ...(jornada.tipoContrato ? [{ nome: produto === 'offshore' ? 'Formulário da LLC' : 'Formulário de abertura', ok: !!(formPos?.link_preenchido_em), st: formPos ? (formPos.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
   ];
   const atalhos = [
@@ -683,7 +683,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir })
 
   const docs = [
     { nome: 'Negociação', ok: !!(neg || ct), st: neg ? (neg.temperatura || 'Aberta') : ct ? 'Convertida' : '—' },
-    { nome: 'Contrato', ok: !!ct && !['rascunho', 'gerado'].includes(ct.status), st: ct ? (STATUS_CONTRATO[ct.status] || ct.status) : 'Não gerado' },
+    { nome: 'Contrato', ok: !!ct && !['rascunho', 'gerado'].includes(ct.status), st: ct ? (STATUS_CONTRATO[ct.status] || ct.status) : 'Não gerado', arquivo: ct?.contrato_assinado_url || ct?.pdf_url || null, nomeArquivo: ct?.contrato_assinado_nome || `Contrato ${ct?.numero_contrato || ''}.pdf` },
     ...(produto === 'canal_bancario' ? [{ nome: 'Formulário RNC', ok: !!rnc?.link_preenchido_em, st: rnc ? (rnc.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
     { nome: 'Implantação', ok: !!impl && ['concluido', 'concluido_feedback'].includes(impl.status), st: impl ? String(impl.status || '').replace(/_/g, ' ') : 'Não iniciada' },
   ];
