@@ -160,7 +160,16 @@ export default function Usuarios() {
   });
 
   const iniciarEdicao = (usuario) => {
-    const vend = vendedoresTodos.find(v => v.email?.toLowerCase() === usuario.email?.toLowerCase());
+    // Cadastro de Vendedor do usuário: e-mail principal ou alternativo (ou nome), com prioridade ao ATIVO.
+    const em = (usuario.email || '').toLowerCase();
+    const nomesU = [usuario.nome_tratamento, usuario.full_name].filter(Boolean).map(s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase());
+    const ligados = vendedoresTodos.filter(v => {
+      const emails = [v.email, ...(v.emails_alternativos || [])].filter(Boolean).map(e => String(e).toLowerCase());
+      if (em && emails.includes(em)) return true;
+      const n = String(v.nome || '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+      return !!n && nomesU.includes(n);
+    });
+    const vend = ligados.find(v => v.ativo !== false) || ligados[0];
     setEditingUser(usuario.id);
     setMenusEditando(usuario.menus_acesso || menusDefault);
     setNomeEditando(usuario.nome_tratamento || usuario.full_name || '');
