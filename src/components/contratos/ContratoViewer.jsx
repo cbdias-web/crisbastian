@@ -408,6 +408,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         contratoExistente={contrato}
         onSaved={(c) => { handleUpdate(c); setEditando(false); }}
         onCancel={() => setEditando(false)}
+        embutido={embutido}
       />
     );
   }
