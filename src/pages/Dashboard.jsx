@@ -22,6 +22,7 @@ import { usaNovoPortal } from "@/lib/novoPortal";
 import { SlidersHorizontal } from "lucide-react";
 import { CELULAS_CAPA } from "@/lib/novoPortal";
 import { ICONE_CELULA } from "@/components/hub/HeaderAvatares";
+import DashNovo from "@/components/dashboard/DashNovo";
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -553,8 +554,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-1 min-w-[240px]">
-                <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: A.accent }}>Dash</p>
-                <h2 className="text-3xl font-semibold mt-1" style={{ color: A.text }}>Desempenho da operação</h2>
+                <h2 className="text-3xl font-semibold" style={{ color: A.text }}>Desempenho da operação</h2>
                 <p className="text-sm mt-1" style={{ color: A.textMuted }}>
                   {fmtCurta(dataInicio)} a {fmtCurta(dataFim)}
                   {' · '}{selectedVendedores.length ? `${selectedVendedores.length} gerente${selectedVendedores.length > 1 ? 's' : ''}` : 'Todos os gerentes'}
@@ -592,13 +592,13 @@ export default function Dashboard() {
         </div>}
 
         {/* ─── Bonus banner ─────────────────────────────────────────────── */}
-        {bonusAtingido && (
+        {!novo && bonusAtingido && (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
             style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
             🎉 Parabéns! Você bateu a meta e garantiu o bônus de <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong>!
           </div>
         )}
-        {!bonusAtingido && metaIndividual && faltaParaBonus > 0 && (
+        {!novo && !bonusAtingido && metaIndividual && faltaParaBonus > 0 && (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium"
             style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}>
             🎯 Faltam <strong>{formatCurrency(faltaParaBonus)}</strong> para você levar <strong>{formatCurrency(metaIndividual.valor_bonus)}</strong> de bônus!
@@ -633,6 +633,20 @@ export default function Dashboard() {
         </div>}
 
         {/* ─── Hero + KPIs ──────────────────────────────────────────────── */}
+        {novo && (
+          <DashNovo
+            valorTotal={valorTotal} valorNovas={valorNovas} valorRecorrencia={valorRecorrencia}
+            totalVendas={totalVendas} totalRecorrencias={totalRecorrencias} ticketMedio={ticketMedio}
+            comissaoGerada={comissaoGerada} vendedoresAtivos={vendedoresAtivos}
+            metaTimeMes={metaTimeMes} metaTimePct={metaTimePct} metaTimeAtingida={metaTimeAtingida} periodoMesLabel={periodoMesLabel}
+            rankingData={rankingData} recentes={recentes} ranking={ranking} vendasAcumulado={vendasAcumulado}
+            dataInicio={dataInicio} dataFim={dataFim}
+            bonusAtingido={bonusAtingido} metaIndividual={metaIndividual} faltaParaBonus={faltaParaBonus}
+            parcelasMes={parcelasMes} mesIni={mesIni} mesFim={mesFim}
+            onParcelas={() => setShowParcelasModal(true)} navigate={navigate}
+          />
+        )}
+        {!novo && <>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Hero card */}
           <div className="lg:col-span-1 rounded-2xl p-6 flex flex-col justify-between transition-all duration-200 cursor-default"
@@ -966,6 +980,8 @@ export default function Dashboard() {
         </div>}
 
         {/* ─── Modals & Popups ──────────────────────────────────────────── */}
+        </>}
+
         {!agendaPopupDismissed && agendaPendentes > 0 && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)' }}>
             <div className="rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
