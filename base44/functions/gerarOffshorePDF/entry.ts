@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
 
     const cy = PH / 2 + 60;
     cover.drawText('OFFSHORE', { x: 44, y: cy + 60, size: 52, font: fontBold, color: C.teal });
-    cover.drawText('CONSTITUICAO DE LLC', { x: 44, y: cy + 14, size: 28, font: fontBold, color: C.teal });
-    cover.drawText('FORMULARIO DE DADOS E DOCUMENTOS', { x: 46, y: cy - 8, size: 10, font, color: C.tealDim });
+    cover.drawText('CONSTITUIÇÃO DE LLC', { x: 44, y: cy + 14, size: 28, font: fontBold, color: C.teal });
+    cover.drawText('FORMULÁRIO DE DADOS E DOCUMENTOS', { x: 46, y: cy - 8, size: 10, font, color: C.tealDim });
     cover.drawLine({ start: { x: 44, y: cy - 20 }, end: { x: 280, y: cy - 20 }, thickness: 1.5, color: C.teal });
 
     cover.drawText(winAnsi(rnc.llc_nome_opcao1 ? rnc.llc_nome_opcao1 : (rnc.contratante_nome || 'Estrutura Internacional')), { x: 44, y: cy - 42, size: 18, font: fontBold, color: C.white });
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
     function addFooter(pg: any, num: number) {
       pg.drawLine({ start: { x: ML, y: 38 }, end: { x: MR, y: 38 }, thickness: 0.5, color: C.lineSep });
       pg.drawRectangle({ x: 0, y: 0, width: 4, height: PH, color: C.teal });
-      pg.drawText('Offshore / LLC — Formulario de Constituicao | Villela Exchange', { x: ML, y: 24, size: 7.5, font, color: C.gray });
+      pg.drawText('Offshore / LLC — Formulário de Constituição | Villela Exchange', { x: ML, y: 24, size: 7.5, font, color: C.gray });
       const pStr = 'Pag. ' + num;
       pg.drawText(pStr, { x: MR - font.widthOfTextAtSize(pStr, 7.5), y: 24, size: 7.5, font, color: C.gray });
     }
@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       pg.drawRectangle({ x: ML, y: PH - 36, width: 12, height: 12, color: C.teal });
       pg.drawRectangle({ x: ML + 8, y: PH - 42, width: 9, height: 9, color: C.white, borderColor: C.teal, borderWidth: 1 });
       pg.drawText('VILLELA EXCHANGE', { x: ML + 26, y: PH - 30, size: 8, font: fontBold, color: C.dark });
-      pg.drawText('Offshore / LLC — Formulario de Constituicao', { x: ML + 26, y: PH - 41, size: 7, font, color: C.gray });
+      pg.drawText('Offshore / LLC — Formulário de Constituição', { x: ML + 26, y: PH - 41, size: 7, font, color: C.gray });
       pg.drawLine({ start: { x: ML, y: PH - 48 }, end: { x: MR, y: PH - 48 }, thickness: 0.5, color: C.lineSep });
     }
     addHeader(page);
@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
 
     // ─── CONTEÚDO ───
     y = PH - 62;
-    const titDoc = 'FORMULARIO DE CONSTITUICAO DE LLC';
+    const titDoc = 'FORMULÁRIO DE CONSTITUIÇÃO DE LLC';
     const titW = fontBold.widthOfTextAtSize(titDoc, 12);
     dt(titDoc, (PW - titW) / 2, 12, fontBold, C.teal);
     page.drawLine({ start: { x: (PW - titW) / 2, y: y - 1 }, end: { x: (PW - titW) / 2 + titW, y: y - 1 }, thickness: 0.7, color: C.teal });
