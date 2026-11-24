@@ -18,6 +18,8 @@ import AvatarPickerModal from "@/components/vendedores/AvatarPickerModal";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, AreaChart, Area } from "recharts";
 import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
+import { usaNovoPortal } from "@/lib/novoPortal";
+import { SlidersHorizontal } from "lucide-react";
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -242,6 +244,7 @@ export default function Dashboard() {
   const [dataFim, setDataFim] = useState(toDateStr(now));
   const [selectedVendedores, setSelectedVendedores] = useState([]);
   const [selectedProdutos, setSelectedProdutos] = useState([]);
+  const [filtrosAbertos, setFiltrosAbertos] = useState(false);
 
   const sincronizarAgenda = async (vendedorId) => {
     try {
@@ -527,18 +530,64 @@ export default function Dashboard() {
     );
   };
 
+  // ─── Novo Dash (mesmo movimento da nova capa): indicadores primeiro, filtros sob demanda ───
+  const novo = usaNovoPortal(user);
+  const fmtCurta = (s) => (s ? s.split('-').reverse().slice(0, 2).join('/') : '');
+  const hojeD = new Date();
+  const presets = [
+    { id: 'mes', label: 'Este mês', ini: toDateStr(new Date(hojeD.getFullYear(), hojeD.getMonth(), 1)), fim: toDateStr(hojeD) },
+    { id: 'ant', label: 'Mês passado', ini: toDateStr(new Date(hojeD.getFullYear(), hojeD.getMonth() - 1, 1)), fim: toDateStr(new Date(hojeD.getFullYear(), hojeD.getMonth(), 0)) },
+    { id: '90', label: 'Últimos 90 dias', ini: toDateStr(new Date(hojeD.getTime() - 89 * 86400000)), fim: toDateStr(hojeD) },
+    { id: 'ano', label: 'Ano', ini: toDateStr(new Date(hojeD.getFullYear(), 0, 1)), fim: toDateStr(hojeD) },
+  ];
+  const presetAtivo = presets.find(p => p.ini === dataInicio && p.fim === dataFim)?.id;
+  const qtdFiltros = selectedVendedores.length + selectedProdutos.length;
+
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: A.text }} className="p-4 sm:p-6">
       <div className="space-y-5 max-w-[1400px] mx-auto">
 
+        {novo && (
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1 min-w-[240px]">
+                <p className="text-[11px] uppercase tracking-widest font-semibold" style={{ color: A.accent }}>Dash</p>
+                <h2 className="text-3xl font-semibold mt-1" style={{ color: A.text }}>Desempenho da operação</h2>
+                <p className="text-sm mt-1" style={{ color: A.textMuted }}>
+                  {fmtCurta(dataInicio)} a {fmtCurta(dataFim)}
+                  {' · '}{selectedVendedores.length ? `${selectedVendedores.length} gerente${selectedVendedores.length > 1 ? 's' : ''}` : 'Todos os gerentes'}
+                  {' · '}{selectedProdutos.length ? `${selectedProdutos.length} produto${selectedProdutos.length > 1 ? 's' : ''}` : 'Todos os produtos'}
+                  {' · '}<span style={{ color: A.accent }}>{vendasAcumulado.length}</span> venda{vendasAcumulado.length !== 1 ? 's' : ''} no período
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex gap-1 p-1 rounded-full" style={{ background: 'rgba(0,0,0,0.25)', border: `1px solid ${A.border}` }}>
+                  {presets.map(p => (
+                    <button key={p.id} onClick={() => { setDataInicio(p.ini); setDataFim(p.fim); }}
+                      className="vx-btn h-8 px-3.5 text-xs"
+                      style={presetAtivo === p.id
+                        ? { background: `linear-gradient(135deg, #33e0bf, ${A.accent})`, color: '#0d1117', border: 0, boxShadow: '0 8px 18px -10px rgba(0,212,170,.7)' }
+                        : { background: 'transparent', color: A.textMuted, border: 0, fontWeight: 500 }}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setFiltrosAbertos(o => !o)} aria-expanded={filtrosAbertos} className="vx-btn vx-btn-ghost h-10 px-4 text-sm">
+                  <SlidersHorizontal className="w-4 h-4" /> Filtros{qtdFiltros > 0 ? ` (${qtdFiltros})` : ''}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── Header row ──────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {!novo && <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold" style={{ color: A.text }}>Visão Geral</h2>
             <p className="text-sm mt-0.5" style={{ color: A.textMuted }}>Acompanhe o desempenho da sua operação</p>
           </div>
 
-        </div>
+        </div>}
 
         {/* ─── Bonus banner ─────────────────────────────────────────────── */}
         {bonusAtingido && (
@@ -554,9 +603,9 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ─── Filtros ──────────────────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-2 p-3 rounded-2xl"
-          style={{ background: A.surface, border: `1px solid ${A.border}` }}>
+        {/* ─── Filtros (no novo Dash, só quando o usuário abre) ─────────────────────────── */}
+        {(!novo || filtrosAbertos) && <div className={`flex flex-wrap items-center gap-2 p-3 rounded-2xl ${novo ? 'vx-suspensa' : ''}`}
+          style={{ background: A.surface, border: `1px solid ${A.border}`, ...(novo ? { boxShadow: '0 24px 50px -30px rgba(0,0,0,.9)' } : {}) }}>
           <Calendar className="w-4 h-4 ml-1 flex-shrink-0" style={{ color: A.accent }} />
           <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
             className="px-3 py-2 text-sm rounded-xl focus:outline-none"
@@ -575,7 +624,11 @@ export default function Dashboard() {
             <span className="mx-1" style={{ color: A.border }}>·</span>
             {vendas.length} total
           </span>
-        </div>
+          {novo && (
+            <button onClick={() => { setSelectedVendedores([]); setSelectedProdutos([]); setDataInicio(presets[0].ini); setDataFim(presets[0].fim); }}
+              className="vx-btn vx-btn-soft h-8 px-3 text-xs">Limpar</button>
+          )}
+        </div>}
 
         {/* ─── Hero + KPIs ──────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
