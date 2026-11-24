@@ -139,10 +139,8 @@ export default function HubInicio({ user, groups, isAdmin }) {
       {/* Dash + áreas de produto */}
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         <button onClick={() => navigate('/Dashboard')}
-          className="flex flex-col items-center text-center gap-3 p-6 rounded-3xl transition"
-          style={{ background: 'rgba(0,212,170,0.09)', border: '1px solid rgba(0,212,170,0.45)' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,212,170,0.09)'; }}>
+          className="vx-card-lift flex flex-col items-center text-center gap-3 p-6 rounded-3xl"
+          style={{ background: 'rgba(0,212,170,0.09)', border: '1px solid rgba(0,212,170,0.45)', '--vx-acc': TEAL, '--vx-glow': 'rgba(0,212,170,0.5)' }}>
           <span className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)', border: `2px solid ${TEAL}` }}>
             <BarChart3 className="w-9 h-9" style={{ color: TEAL }} />
           </span>
@@ -166,19 +164,18 @@ export default function HubInicio({ user, groups, isAdmin }) {
 
         {CELULAS_CAPA.map(c => {
           const Icon = ICONE_CELULA[c.id];
+          const cor = c.cor || OURO;
           return (
             <button key={c.id} onClick={() => c.ativa && abrirCelula(c.id)} disabled={!c.ativa}
-              className="flex flex-col items-center text-center gap-3 p-6 rounded-3xl transition"
-              style={{ background: c.ativa ? 'rgba(201,169,98,0.08)' : T.card, border: `1px solid ${c.ativa ? 'rgba(201,169,98,0.4)' : T.line}`, cursor: c.ativa ? 'pointer' : 'default', opacity: c.ativa ? 1 : 0.65 }}
-              onMouseEnter={e => { if (c.ativa) e.currentTarget.style.background = 'rgba(201,169,98,0.14)'; }}
-              onMouseLeave={e => { if (c.ativa) e.currentTarget.style.background = 'rgba(201,169,98,0.08)'; }}>
-              <span className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(201,169,98,0.14)', border: `2px solid ${OURO}` }}>
-                <Icon className="w-9 h-9" style={{ color: OURO }} />
+              className="vx-card-lift flex flex-col items-center text-center gap-3 p-6 rounded-3xl"
+              style={{ background: cor + '14', border: `1px solid ${cor}66`, cursor: c.ativa ? 'pointer' : 'default', opacity: c.ativa ? 1 : 0.65, '--vx-acc': cor, '--vx-glow': c.glow || 'rgba(201,169,98,0.5)' }}>
+              <span className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: cor + '24', border: `2px solid ${cor}` }}>
+                <Icon className="w-9 h-9" style={{ color: cor }} />
               </span>
               <span className="text-base font-semibold" style={{ color: '#F4EFE3' }}>{c.nome}</span>
               <span className="text-xs leading-relaxed" style={{ color: T.muted }}>{c.produtos}</span>
-              <span className="text-[11px] px-2.5 py-1 rounded-full" style={{ background: c.ativa ? 'rgba(201,169,98,0.18)' : 'rgba(255,255,255,0.06)', color: c.ativa ? '#E3C982' : T.muted }}>
-                {c.ativa ? (estudosAbertos == null ? 'Entrar' : `${estudosAbertos} ${estudosAbertos === 1 ? 'operação' : 'operações'} · entrar`) : 'Em breve'}
+              <span className="text-[11px] px-2.5 py-1 rounded-full flex items-center gap-1" style={{ background: cor + '2E', color: cor }}>
+                {c.id === 'estruturados' && estudosAbertos != null ? `${estudosAbertos} ${estudosAbertos === 1 ? 'operação' : 'operações'} · entrar` : 'Entrar'} <ArrowRight className="w-3 h-3" />
               </span>
             </button>
           );
@@ -192,10 +189,9 @@ export default function HubInicio({ user, groups, isAdmin }) {
           const Icon = ICONE_BLOCO[g.label];
           const badge = g.items.reduce((s, i) => s + (i.badge || 0), 0);
           return (
-            <button key={g.label} onClick={() => setBlocoAberto(g.label)} className="flex flex-col items-center gap-2 w-[110px]"
-              onMouseEnter={e => { e.currentTarget.firstChild.style.transform = 'translateY(-3px)'; }}
-              onMouseLeave={e => { e.currentTarget.firstChild.style.transform = 'none'; }}>
-              <span className="relative w-[76px] h-[76px] rounded-full flex items-center justify-center transition-transform"
+            <button key={g.label} onClick={() => setBlocoAberto(g.label)} className="vx-lift flex flex-col items-center gap-2 w-[120px] py-3 rounded-3xl"
+              style={{ '--vx-glow': v.cor + '40' }}>
+              <span className="vx-av relative w-[76px] h-[76px] rounded-full flex items-center justify-center"
                 style={{ background: v.fundo, border: `2px solid ${v.cor}` }}>
                 {Icon && <Icon className="w-8 h-8" style={{ color: v.cor }} />}
                 {badge > 0 && (
@@ -220,8 +216,7 @@ export default function HubInicio({ user, groups, isAdmin }) {
             placeholder="No que você está trabalhando? Compartilhe uma conquista, um aviso ou uma dúvida…" aria-label="Nova publicação no mural"
             className="flex-1 bg-transparent outline-none text-sm" style={{ color: T.txt }} />
           <button onClick={publicar} disabled={publicando || !texto.trim()}
-            className="flex items-center gap-2 h-10 px-5 rounded-full text-sm font-semibold transition disabled:opacity-40"
-            style={{ background: TEAL, color: '#0d1117' }}>
+            className="vx-btn vx-btn-primary h-10 px-5 text-sm">
             {publicando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publicar
           </button>
         </div>
@@ -241,10 +236,8 @@ export default function HubInicio({ user, groups, isAdmin }) {
             const cor = ehDuvida ? OURO : corAutor(p.autor_nome);
             return (
               <button key={p.id} onClick={() => { setPostAberto(p.id); setResposta(''); }}
-                className="text-left flex flex-col gap-3 p-4 rounded-2xl transition"
-                style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `3px solid ${cor}` }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(30,37,48,0.95)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = T.card; }}>
+                className="vx-card-lift text-left flex flex-col gap-3 p-4 rounded-2xl"
+                style={{ background: T.card, border: `1px solid ${T.line}`, borderTop: `3px solid ${cor}`, '--vx-acc': cor + '88', '--vx-glow': cor + '55' }}>
                 <span className="flex items-center gap-2.5">
                   <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ background: cor + '22', color: cor, border: `1.5px solid ${cor}` }}>{iniciais(p.autor_nome)}</span>
                   <span className="flex-1 min-w-0">
@@ -306,7 +299,7 @@ export default function HubInicio({ user, groups, isAdmin }) {
               <input value={resposta} onChange={e => setResposta(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') responder(post); }} autoFocus
                 placeholder="Escreva uma resposta…" aria-label="Responder publicação"
                 className="flex-1 h-11 rounded-full px-4 text-sm outline-none" style={{ background: T.input, border: `1px solid ${T.line}`, color: T.txt }} />
-              <button onClick={() => responder(post)} aria-label="Enviar resposta" className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: TEAL, color: '#0d1117' }}>
+              <button onClick={() => responder(post)} aria-label="Enviar resposta" className="vx-btn vx-btn-primary w-11 h-11">
                 <Send className="w-4 h-4" />
               </button>
             </div>
