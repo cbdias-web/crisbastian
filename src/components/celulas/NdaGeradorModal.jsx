@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Plus, Trash2, Loader2, FileText, Eye, ChevronDown, Search } from 'lucide-react';
+import { X, Plus, Trash2, Loader2, FileText, Eye, ChevronDown, Search, Check, Database } from 'lucide-react';
 import { consultarCnpj, consultarCep } from '@/lib/autocomplete';
 import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 
@@ -18,6 +18,111 @@ const parteVazia = (tipo = 'PJ') => ({ tipo, nome: '', nome_fantasia: '', cpf_cn
 const LBL = { fontSize: 11, color: '#8E97A8', display: 'flex', flexDirection: 'column', gap: 4 };
 function Campo({ label, children, span = 1 }) {
   return <label style={{ ...LBL, gridColumn: `span ${span}` }}>{label}{children}</label>;
+}
+
+const fmtDoc = (s) => {
+  const d = dig(s);
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  return String(s || '').trim();
+};
+const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Cadastro da base → campos da parte do NDA
+const parteDoCliente = (c) => ({
+  cliente_id: c.id,
+  tipo: c.tipo_pessoa || (dig(c.cpf_cnpj).length === 11 ? 'PF' : 'PJ'),
+  nome: c.nome || '', cpf_cnpj: c.cpf_cnpj || '',
+  endereco: c.endereco || '', bairro: c.bairro || '', cidade: c.cidade || '', estado: c.estado || '', cep: c.cep || '',
+  representante: c.responsavel_legal || '',
+  ...(c.nacionalidade ? { nacionalidade: c.nacionalidade } : {}),
+  ...(c.estado_civil ? { estado_civil: String(c.estado_civil).toLowerCase() } : {}),
+  ...(c.profissao ? { profissao: c.profissao } : {}),
+});
+
+// Busca na base de clientes (nome, CPF/CNPJ, e-mail ou telefone)
+function BuscaCliente({ onEscolher, acc }) {
+  const [termo, setTermo] = useState('');
+  const [res, setRes] = useState([]);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const q = termo.trim();
+    if (q.length < 2) { setRes([]); return; }
+    let cancel = false;
+    setBusy(true);
+    const tm = setTimeout(async () => {
+      try {
+        const rx = { $regex: escapar(q), $options: 'i' };
+        const ors = [{ nome: rx }, { cpf_cnpj: rx }, { email: rx }, { telefone: rx }];
+        if (dig(q).length >= 11) ors.push({ cpf_cnpj: fmtDoc(q) }, { cpf_cnpj: dig(q) });
+        const r = await base44.entities.Cliente.filter({ $or: ors }, 'nome', 8);
+        if (!cancel) setRes(Array.isArray(r) ? r : []);
+      } catch { if (!cancel) setRes([]); }
+      if (!cancel) setBusy(false);
+    }, 350);
+    return () => { cancel = true; clearTimeout(tm); };
+  }, [termo]);
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 h-10 px-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${acc}44` }}>
+        <Database className="w-4 h-4" style={{ color: acc }} aria-hidden="true" />
+        <input value={termo} onChange={e => setTermo(e.target.value)} placeholder="Buscar cliente na base (nome, CPF/CNPJ, e-mail)…" aria-label="Buscar cliente na base"
+          className="flex-1 bg-transparent outline-none text-sm" style={{ color: '#F4EFE3' }} />
+        {busy && <Loader2 className="w-4 h-4 animate-spin" style={{ color: acc }} />}
+      </div>
+      {termo.trim().length >= 2 && !busy && (
+        <div className="absolute z-10 left-0 right-0 mt-1 rounded-xl overflow-hidden" style={{ background: '#162033', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 16px 40px rgba(0,0,0,.5)' }}>
+          {res.map(c => (
+            <button key={c.id} onClick={() => { onEscolher(c); setTermo(''); setRes([]); }} className="vx-row-hover w-full flex items-center gap-2 px-3 py-2 text-left text-sm" style={{ color: '#F4EFE3' }}>
+              <span className="flex-1 truncate">{c.nome}</span>
+              {c.cpf_cnpj && <span className="text-[11px]" style={{ color: '#8E97A8' }}>{c.cpf_cnpj}</span>}
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: acc + '22', color: acc }}>{c.tipo_pessoa || '—'}</span>
+            </button>
+          ))}
+          {res.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: '#8E97A8' }}>Nenhum cliente encontrado. Preencha abaixo: o cadastro será criado na base ao gerar o NDA.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Garante cada parte na base de clientes: vincula o cadastro existente (pelo CPF/CNPJ) ou cria um novo.
+// Em cadastros existentes, só completa campos vazios (nunca sobrescreve dados da base).
+async function salvarPartesNaBase(partes, { email, telefone }) {
+  let vend = null;
+  try { vend = await resolverVendedorDoUsuarioLogado(); } catch { /* sem vínculo */ }
+  const out = [];
+  for (const [i, p] of partes.entries()) {
+    const docF = fmtDoc(p.cpf_cnpj);
+    const dados = {
+      tipo_pessoa: p.tipo, nome: p.nome.trim(), cpf_cnpj: docF,
+      endereco: p.endereco, bairro: p.bairro, cidade: p.cidade, estado: p.estado, cep: p.cep,
+      ...(p.tipo === 'PJ' ? { responsavel_legal: p.representante } : { nacionalidade: p.nacionalidade, estado_civil: p.estado_civil, profissao: p.profissao }),
+      ...(i === 0 ? { email, telefone } : {}),
+    };
+    let c = null;
+    if (p.cliente_id) c = await base44.entities.Cliente.get(p.cliente_id).catch(() => null);
+    if (!c && dig(p.cpf_cnpj)) {
+      const r = await base44.entities.Cliente.filter({ $or: [{ cpf_cnpj: docF }, { cpf_cnpj: dig(p.cpf_cnpj) }] }, '-created_date', 1).catch(() => []);
+      c = r?.[0] || null;
+    }
+    if (c) {
+      const faltando = {};
+      Object.entries(dados).forEach(([k, v]) => { if (v && !String(c[k] ?? '').trim()) faltando[k] = v; });
+      if (Object.keys(faltando).length) await base44.entities.Cliente.update(c.id, faltando).catch(() => {});
+    } else {
+      const limpo = Object.fromEntries(Object.entries(dados).filter(([, v]) => v));
+      c = await base44.entities.Cliente.create({
+        ...limpo,
+        origem: 'nativo',
+        responsavel_origem: 'Produtos estruturados · Offshore',
+        observacao: 'Cadastro criado na abertura da operação Offshore (NDA).',
+        ...(vend?.id && vend.ativo !== false ? { vendedor_id: vend.id, vendedor_nome: vend.nome } : {}),
+      });
+    }
+    out.push({ ...p, cliente_id: c.id });
+  }
+  return out;
 }
 
 function baixarBase64(b64, nome) {
@@ -105,21 +210,26 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
     if (erro) { toast.error(erro); return; }
     setGerando(true);
     try {
+      // 1) Clientes na base (vincula ou cadastra)
+      const partesBase = await salvarPartesNaBase(partes, { email: email.trim(), telefone: telefone.trim() });
+      setPartes(partesBase);
       let alvo = estudo;
-      const p0 = partes[0];
+      const p0 = partesBase[0];
       if (!alvo) {
         const me = await base44.auth.me();
         let respNome = me?.nome_tratamento || me?.full_name || me?.email;
         try { const v = await resolverVendedorDoUsuarioLogado(); if (v?.nome && v.ativo !== false) respNome = v.nome; } catch { /* mantém */ }
         alvo = await base44.entities.EstudoViabilidade.create({
-          produto, tipo_cliente: p0.tipo, cliente_nome: p0.nome.trim(), cliente_documento: p0.cpf_cnpj,
+          produto, tipo_cliente: p0.tipo, cliente_id: p0.cliente_id, cliente_nome: p0.nome.trim(), cliente_documento: p0.cpf_cnpj,
           cliente_email: email.trim(), cliente_telefone: telefone.trim(),
           responsavel_email: me?.email || '', responsavel_nome: respNome,
           status: 'rascunho', respostas: {}, documentos: [],
-          observacoes_internas: partes.length > 1 ? `Cliente composto por: ${partes.map(p => p.nome).join('; ')}` : '',
+          observacoes_internas: partesBase.length > 1 ? `Cliente composto por: ${partesBase.map(p => p.nome).join('; ')}` : '',
         });
+      } else if (!alvo.cliente_id && p0.cliente_id) {
+        await base44.entities.EstudoViabilidade.update(alvo.id, { cliente_id: p0.cliente_id }).catch(() => {});
       }
-      const r = await base44.functions.invoke('gerarNDA', { estudo_id: alvo.id, partes, config: cfg });
+      const r = await base44.functions.invoke('gerarNDA', { estudo_id: alvo.id, partes: partesBase, config: cfg });
       const d = r?.data || r;
       if (!d?.pdf_base64) throw new Error(d?.error || 'Falha ao gerar o NDA.');
       baixarBase64(d.pdf_base64, d.filename).baixar();
@@ -162,6 +272,19 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
                   <button onClick={() => setPartes(l => l.filter((_, j) => j !== i))} aria-label={`Remover parte ${i + 1}`} className="vx-btn vx-btn-ghost vx-icon-btn" style={{ width: 32, height: 32 }}><Trash2 className="w-3.5 h-3.5" /></button>
                 )}
               </div>
+              {p.cliente_id ? (
+                <div className="flex items-center gap-2 px-3 h-10 rounded-xl text-sm" style={{ background: acc + '14', border: `1px solid ${acc}55`, color: '#F4EFE3' }}>
+                  <Check className="w-4 h-4" style={{ color: acc }} />
+                  <span className="flex-1 truncate">Vinculado ao cadastro da base{p.nome ? `: ${p.nome}` : ''}</span>
+                  <button onClick={() => set(i, { cliente_id: '' })} className="text-xs" style={{ color: '#8E97A8' }}>Desvincular</button>
+                </div>
+              ) : (
+                <BuscaCliente acc={acc} onEscolher={(c) => {
+                  set(i, parteDoCliente(c));
+                  if (i === 0) { if (c.email && !email) setEmail(c.email); if (c.telefone && !telefone) setTelefone(c.telefone); }
+                  toast.success('Dados do cliente carregados da base. Confira e complete o que faltar.');
+                }} />
+              )}
               <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                 <Campo label={p.tipo === 'PJ' ? 'CNPJ' : 'CPF'} span={2}>
                   <span className="flex gap-1.5">
@@ -231,7 +354,7 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
         </div>
 
         <div className="flex items-center gap-2 px-6 py-4 flex-wrap" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <span className="text-xs flex-1" style={{ color: '#8E97A8' }}>O PDF fica salvo na operação (acesso restrito) e é baixado para envio ao cliente.</span>
+          <span className="text-xs flex-1" style={{ color: '#8E97A8' }}>Clientes novos entram na base. O PDF fica salvo na operação (acesso restrito) e é baixado para envio ao cliente.</span>
           <button onClick={preVisualizar} disabled={previa || gerando} className="vx-btn vx-btn-ghost h-10 px-4 text-sm">{previa ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />} Pré-visualizar</button>
           <button onClick={gerar} disabled={gerando} className="vx-btn vx-btn-primary h-10 px-5 text-sm">{gerando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} {estudo ? 'Gerar NDA' : 'Gerar NDA e abrir operação'}</button>
         </div>
