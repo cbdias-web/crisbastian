@@ -86,6 +86,9 @@ export function contratoDoEstudo(estudo, contratos) {
 
 const CONTRATO_FECHADO = ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
 
+// NDA concluído: anexado (fluxo antigo) ou gerado no portal E com a via assinada anexada.
+export const ndaConcluido = (e) => !!e.nda_url && (e.nda_origem !== 'gerado' || !!e.nda_assinado_url);
+
 export function etapaDaOperacao(estudo, contrato) {
   if (contrato && CONTRATO_FECHADO.includes(contrato.status)) return 5;
   if (contrato) return 4;
@@ -93,14 +96,19 @@ export function etapaDaOperacao(estudo, contrato) {
   if (ps === 'aceita') return 4;
   if (ps === 'aprovada' || ps === 'enviada_cliente') return 3;
   if (estudo.status === 'em_analise_tecnica' || estudo.status === 'concluido' || estudo.proposta_atual_id) return 2;
-  if (estudo.nda_url) return 1;
+  if (ndaConcluido(estudo)) return 1;
   return 0;
 }
 
 export function proximaAcao(estudo, etapa, contrato, produto) {
   const tipo = JORNADAS[produto]?.tipoContrato;
   switch (etapa) {
-    case 0: return { label: 'Anexar o NDA ao estudo', to: `/EstudoViabilidade?estudo=${estudo.id}` };
+    case 0:
+      if (produto === 'offshore') {
+        if (!estudo.nda_url) return { label: 'Gerar o NDA', acao: 'nda', to: '' };
+        if (estudo.nda_origem === 'gerado') return { label: 'Anexar o NDA assinado', acao: 'nda_assinado', to: '' };
+      }
+      return { label: 'Anexar o NDA ao estudo', to: `/EstudoViabilidade?estudo=${estudo.id}` };
     case 1: {
       if (estudo.status === 'rascunho') return { label: 'Enviar o link do estudo ao cliente', to: `/EstudoViabilidade?estudo=${estudo.id}` };
       if (estudo.status === 'recebido' || estudo.cliente_devolveu_em) return { label: 'Enviar para análise técnica', to: `/EstudoViabilidade?estudo=${estudo.id}` };
