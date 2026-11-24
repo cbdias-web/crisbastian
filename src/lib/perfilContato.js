@@ -23,7 +23,8 @@ export async function carregarVendedoresDoUsuario(user) {
 
 export async function carregarVendedorDoUsuario(user) {
   const vinculados = await carregarVendedoresDoUsuario(user);
-  return vinculados[0] || null;
+  // Gerente ativo primeiro: evita gravar no cadastro antigo/inativo.
+  return vinculados.find(v => v.ativo !== false) || vinculados[0] || null;
 }
 
 export async function salvarContatoDoUsuario(user, { celular, operadora }) {
@@ -37,7 +38,7 @@ export async function salvarContatoDoUsuario(user, { celular, operadora }) {
   }
   if (!celular) return null;
   const novo = await base44.entities.Vendedor.create({
-    nome: user?.full_name || user?.nome_tratamento || user?.email,
+    nome: user?.nome_tratamento || user?.full_name || user?.email,
     email: user?.email,
     celular_operadora: celular,
     operadora,
