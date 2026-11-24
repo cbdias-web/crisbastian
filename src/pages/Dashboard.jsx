@@ -716,6 +716,16 @@ export default function Dashboard() {
               ? <div className="flex items-center justify-center h-48 text-sm" style={{ color: A.textMuted }}>Nenhuma venda no período</div>
               : <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={rankingData} barGap={4} margin={{ top: 0, right: 8, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="vxGradVol" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#33e0bf" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#0066cc" stopOpacity={0.85} />
+                      </linearGradient>
+                      <linearGradient id="vxGradOk" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#34d399" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.85} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,212,170,0.08)" vertical={false} />
                     <XAxis dataKey="nome" tick={{ fontSize: 11, fill: A.textMuted }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: A.textMuted }} axisLine={false} tickLine={false}
@@ -743,7 +753,7 @@ export default function Dashboard() {
                         const baseFill = entry.volume >= entry.meta && entry.meta > 0 ? '#10b981' : A.accent;
                         return (
                           <Cell key={i}
-                            fill={baseFill}
+                            fill={novo ? (baseFill === '#10b981' ? 'url(#vxGradOk)' : 'url(#vxGradVol)') : baseFill}
                             onMouseEnter={e => { e.target.setAttribute('fill', baseFill === '#10b981' ? '#34d399' : '#33e6cc'); e.target.style.transform = 'scaleY(1.18)'; e.target.style.transformOrigin = 'bottom'; }}
                             onMouseLeave={e => { e.target.setAttribute('fill', baseFill); e.target.style.transform = 'scaleY(1)'; }}
                             style={{ cursor: 'pointer', transition: 'transform 200ms ease, fill 200ms ease', transformOrigin: 'bottom' }}
