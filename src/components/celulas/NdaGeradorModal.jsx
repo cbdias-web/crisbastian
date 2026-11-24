@@ -139,7 +139,7 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
     if (estudo) {
       const d = estudo.nda_dados || {};
       const tipo = estudo.tipo_cliente || (dig(estudo.cliente_documento).length === 11 ? 'PF' : 'PJ');
-      return [{ ...parteVazia(tipo), nome: estudo.cliente_nome || d.nome || '', cpf_cnpj: estudo.cliente_documento || d.cpf_cnpj || '', endereco: d.endereco || '', bairro: d.bairro || '', cidade: d.cidade || '', estado: d.estado || '', cep: d.cep || '', representante: d.responsavel_legal || '' }];
+      return [{ ...parteVazia(tipo), cliente_id: estudo.cliente_id || '', nome: estudo.cliente_nome || d.nome || '', cpf_cnpj: estudo.cliente_documento || d.cpf_cnpj || '', endereco: d.endereco || '', bairro: d.bairro || '', cidade: d.cidade || '', estado: d.estado || '', cep: d.cep || '', representante: d.responsavel_legal || '' }];
     }
     return [parteVazia('PJ')];
   });
