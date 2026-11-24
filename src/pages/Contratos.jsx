@@ -83,6 +83,20 @@ export default function Contratos() {
     base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
+  // Vindo das células do portal: ?tipo=OFFSHORE filtra a lista;
+  // ?novo=OFFSHORE abre o cadastro de um novo contrato desse tipo.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const tipo = sp.get('tipo');
+    const novo = sp.get('novo');
+    if (tipo && TIPO_CONFIG[tipo]) setFiltroTipo(tipo);
+    if (novo && TIPO_CONFIG[novo]) {
+      setTipoSelecionado(novo);
+      setClientePreSelecionado(null);
+      setView('novo');
+    }
+  }, []);
+
   const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
 
   useEffect(() => {
