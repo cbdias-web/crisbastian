@@ -68,7 +68,7 @@ export const JORNADAS = {
   cambio: { nome: 'Câmbio', lead: 'Negociações de câmbio acompanhadas pelo Pipeline.', tipoContrato: null, pipeline: ['cambio', 'câmbio'], etapas: ETAPAS_CONTRATO },
   // ── Operações cross
   score: { nome: 'Score', lead: 'Reorganização financeira e remoção de apontamentos.', tipoContrato: 'SCORE', pipeline: ['score'], etapas: ETAPAS_CONTRATO },
-  rating: { nome: 'Rating', lead: 'Diagnóstico, reorganização e monitoramento do rating.', tipoContrato: 'RATING', pipeline: ['rating'], etapas: ETAPAS_CONTRATO },
+  rating: { nome: 'Rating', lead: 'Diagnóstico, reorganização e monitoramento do rating.', tipoContrato: 'RATING', pipeline: ['rating'], pipelineExcluir: ['diagnostico'], etapas: ETAPAS_CONTRATO },
   diagnostico: { nome: 'Diagnóstico', lead: 'Diagnóstico de rating bancário.', tipoContrato: 'DIAGNÓSTICO', pipeline: ['diagnostico', 'diagnóstico'], etapas: ETAPAS_CONTRATO },
   monitore: { nome: 'Monitore', lead: 'Conta digital com monitoramento de riscos corporativos.', tipoContrato: 'MONITORE', pipeline: ['monitore'], etapas: ETAPAS_CONTRATO },
 };
@@ -144,8 +144,9 @@ export function proximaAcaoContrato(etapa, contrato, produto) {
 // Negócio do Pipeline pertence ao produto?
 export function pipelineDoProduto(neg, produto) {
   const chaves = JORNADAS[produto]?.pipeline || [];
+  const fora = JORNADAS[produto]?.pipelineExcluir || [];
   const p = normal(neg.produto);
-  return !!p && chaves.some(k => p.includes(normal(k)));
+  return !!p && chaves.some(k => p.includes(normal(k))) && !fora.some(k => p.includes(normal(k)));
 }
 
 export function mesmoCliente(a, b) {
