@@ -146,7 +146,7 @@ export function proximaAcaoContrato(etapa, contrato, produto) {
 export function celulaDoProdutoPipeline(produtoTexto) {
   const p = ` ${normal(produtoTexto).replace(/[^a-z0-9]+/g, ' ')} `;
   if (!p.trim()) return null;
-  const tem = (s) => p.includes(` ${s} `) || p.includes(` ${s}`) && s.includes(' ');
+  const tem = (s) => p.includes(` ${s} `);
   const regras = [
     ['estruturados', 'offshore', 'offshore'],
     ['estruturados', 'conta_internacional', 'conta internacional'],
