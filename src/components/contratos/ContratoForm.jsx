@@ -15,6 +15,8 @@ import CampoMascara from '@/components/ui/campo-mascara';
 import { consultarCnpj } from '@/lib/autocomplete';
 import CampoMoeda from '@/components/ui/campo-moeda';
 import { buscarClientes } from '@/lib/clientesBusca';
+import ContratoOffshoreEstrutura, { OFFSHORE_DEFAULTS } from '@/components/contratos/ContratoOffshoreEstrutura';
+import { Globe2 } from 'lucide-react';
 
 const EMPTY = {
   nome: '', cpf_cnpj: '', responsavel_legal: '', cpf_responsavel: '',
@@ -68,6 +70,7 @@ function calcProgress(form, aba) {
     endereco: ['cep', 'endereco', 'bairro', 'cidade', 'estado'],
     financeiro: ['valor_total', 'forma_pagamento'],
     obs: ['data_contrato'],
+    estrutura: ['estrutura_jurisdicao', 'prazo_implantacao_dias', 'local_assinatura'],
   };
   const fields = checks[aba] || [];
   const filled = fields.filter(f => form[f] && String(form[f]).trim() !== '').length;
@@ -76,9 +79,15 @@ function calcProgress(form, aba) {
 
 export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado }) {
   const [form, setForm] = useState(() => {
-    if (contratoExistente) return { ...EMPTY, ...contratoExistente };
+    // Contrato OFFSHORE: campos do modelo nº 000142/2026 com padrões (Porto Alegre, Wyoming, 90 dias...)
+    const base = tipo === 'OFFSHORE' ? { ...EMPTY, ...OFFSHORE_DEFAULTS } : EMPTY;
+    if (contratoExistente) {
+      const ct = { ...base };
+      for (const [k, v] of Object.entries(contratoExistente)) if (v !== null && v !== undefined) ct[k] = v;
+      return ct;
+    }
     if (clientePreSelecionado) return {
-      ...EMPTY,
+      ...base,
       nome: clientePreSelecionado.nome || '',
       cpf_cnpj: clientePreSelecionado.cpf_cnpj || '',
       responsavel_legal: clientePreSelecionado.responsavel_legal || '',
@@ -97,8 +106,9 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
       cliente_id: clientePreSelecionado.id || '',
       observacoes: clientePreSelecionado.observacao || '',
     };
-    return EMPTY;
+    return base;
   });
+  const isOffshore = (form._tipoOverride || tipo) === 'OFFSHORE';
 
   const queryClient = useQueryClient();
   const [buscaCliente, setBuscaCliente] = useState('');
@@ -338,7 +348,17 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
         data_primeira_parcela: data.data_primeira_parcela || undefined,
         valor_divida: toNum(data.valor_divida),
         percentual_montante: toNum(data.percentual_montante),
+        ...((data._tipoOverride || tipo) === 'OFFSHORE' ? {
+          prazo_implantacao_dias: parseInt(data.prazo_implantacao_dias) || 90,
+          offshore_manutencao_meses: parseInt(data.offshore_manutencao_meses) || 12,
+          numero_contrato: String(data.numero_contrato || '').trim(),
+          estrutura_jurisdicao: String(data.estrutura_jurisdicao || '').trim() || 'Wyoming, EUA',
+          anexo_ativo: data.offshore_entrada_forma === 'dacao_veiculo' ? true : !!data.anexo_ativo,
+          anexo_tipo: data.offshore_entrada_forma === 'dacao_veiculo' ? 'veiculo' : (data.anexo_tipo || 'personalizado'),
+          anexo_veiculo: { ...(data.anexo_veiculo || {}), prazo_entrega_dias: parseInt(data.anexo_veiculo?.prazo_entrega_dias) || 5 },
+        } : {}),
       };
+      delete payload._tipoOverride;
 
       const payloadFinal = { ...payload, indicadores };
 
@@ -500,6 +520,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     { id: 'dados', label: 'Dados Pessoais', icon: User },
     { id: 'endereco', label: 'Endereço', icon: MapPin, bloqueada: !dadosPessoaisCompletos, motivoBloqueio: 'Preencha os dados pessoais primeiro' },
     { id: 'financeiro', label: 'Financeiro', icon: DollarSign, bloqueada: !dadosPessoaisCompletos || !enderecoCompleto, motivoBloqueio: 'Preencha os dados pessoais e o endereço primeiro' },
+    ...(isOffshore ? [{ id: 'estrutura', label: 'Estrutura & Anexo', icon: Globe2, bloqueada: !dadosPessoaisCompletos || !enderecoCompleto, motivoBloqueio: 'Preencha os dados pessoais e o endereço primeiro' }] : []),
     { id: 'obs', label: 'Obs. & Data', icon: FileText, bloqueada: !dadosPessoaisCompletos || !enderecoCompleto, motivoBloqueio: 'Preencha os dados pessoais e o endereço primeiro' },
   ];
   const abaIdx = abas.findIndex(a => a.id === aba);
@@ -739,6 +760,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   {campo('CPF / CNPJ', 'cpf_cnpj', 'text', { required: true })}
                   {campo('Responsável Legal', 'responsavel_legal')}
                   {campo('CPF do Responsável Legal', 'cpf_responsavel')}
+                  {isOffshore && campo('RG (pessoa física)', 'rg')}
                   {campo('Data de Nascimento', 'nascimento', 'date')}
                   {campo('Nacionalidade', 'nacionalidade')}
                   {campo('Profissão', 'profissao')}
@@ -1102,6 +1124,10 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
                   </div>
                 </div>
               </div>
+            )}
+
+            {aba === 'estrutura' && isOffshore && (
+              <ContratoOffshoreEstrutura form={form} setForm={setForm} />
             )}
 
             {aba === 'obs' && (
