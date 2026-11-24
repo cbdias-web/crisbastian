@@ -1,0 +1,92 @@
+{
+  "name": "CelulaComentario",
+  "properties": {
+    "autor_email": {
+      "type": "string"
+    },
+    "autor_nome": {
+      "type": "string"
+    },
+    "celula": {
+      "description": "C\u00e9lula do portal (ex.: estruturados) ou 'geral' para o mural da capa",
+      "type": "string"
+    },
+    "estudo_id": {
+      "description": "Opera\u00e7\u00e3o (EstudoViabilidade) a que o coment\u00e1rio pertence",
+      "type": "string"
+    },
+    "origem": {
+      "default": "usuario",
+      "enum": [
+        "usuario",
+        "ia"
+      ],
+      "type": "string"
+    },
+    "pai_id": {
+      "description": "D\u00favida ou post respondido (para tipo resposta)",
+      "type": "string"
+    },
+    "produto": {
+      "description": "Produto da c\u00e9lula",
+      "enum": [
+        "offshore",
+        "conta_internacional",
+        "holding"
+      ],
+      "type": "string"
+    },
+    "resolvida": {
+      "default": false,
+      "type": "boolean"
+    },
+    "texto": {
+      "type": "string"
+    },
+    "tipo": {
+      "default": "comentario",
+      "description": "comentario = linha do tempo de uma opera\u00e7\u00e3o; duvida = pergunta da c\u00e9lula; resposta = resposta a uma d\u00favida ou post; post = publica\u00e7\u00e3o no mural da capa",
+      "enum": [
+        "comentario",
+        "duvida",
+        "resposta",
+        "post"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "celula",
+    "texto"
+  ],
+  "type": "object",
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
