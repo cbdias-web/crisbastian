@@ -201,6 +201,9 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
     const rh = 17;
     const totalW = cols.reduce((a, c) => a + c.w, 0);
     const x0 = ML + (TW - totalW) / 2;
+    // tabela inteira na mesma página sempre que couber
+    const alturaTotal = linhas.reduce((a, l) => a + Math.max(1, ...l.cells.map((t, i) => quebra(winAnsi(t), l.bold ? FB : F, size, cols[i].w - 10).length)) * 12.5 + 5, 0);
+    if (alturaTotal < TOPO - BASE - 20) garantir(alturaTotal + 4);
     for (const l of linhas) {
       // células com quebra (ex.: anexo do veículo)
       const linhasCel = l.cells.map((t, i) => quebra(winAnsi(t), l.bold ? FB : F, size, cols[i].w - 10));
