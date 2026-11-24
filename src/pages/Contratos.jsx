@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { FileText, Eye, Trash2, Search, Globe, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3, FileCheck2 } from 'lucide-react';
+import { FileText, Eye, Trash2, Search, Globe, Globe2, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3, FileCheck2 } from 'lucide-react';
 import RelatorioContratosModal from '@/components/contratos/RelatorioContratosModal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -13,6 +13,8 @@ import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal'
 import RncListModal from '@/components/contratos/RncListModal';
 import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
 import CiListModal from '@/components/contratos/CiListModal';
+import OffshoreFormModal from '@/components/contratos/OffshoreFormModal';
+import OffshoreListModal from '@/components/contratos/OffshoreListModal';
 import KanbanContratos from '@/components/contratos/KanbanContratos';
 import { useEnvioVendasDialog } from '@/components/contratos/EnviarVendasDialog';
 import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
@@ -70,6 +72,9 @@ export default function Contratos() {
   const [showCiList, setShowCiList] = useState(false);
   const [ciContrato, setCiContrato] = useState(null);
   const [ciDirectId, setCiDirectId] = useState(null);
+  const [showOffList, setShowOffList] = useState(false);
+  const [offContrato, setOffContrato] = useState(null);
+  const [offDirectId, setOffDirectId] = useState(null);
   const vendedorDropdownRef = useRef(null);
   const queryClient = useQueryClient();
   const { dialog: envioDialog, pedirOpcoes } = useEnvioVendasDialog();
@@ -320,6 +325,12 @@ export default function Contratos() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button onClick={() => setShowOffList(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
+              style={{ background: 'rgba(6,182,212,0.12)', border: '1px solid rgba(6,182,212,0.3)', color: '#22d3ee' }}>
+              <Globe2 className="w-4 h-4" />
+              Forms Offshore
+            </button>
             <button onClick={() => setShowCiList(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:scale-105"
               style={{ background: 'rgba(59,130,249,0.12)', border: '1px solid rgba(59,130,249,0.3)', color: '#60a5fa' }}>
@@ -383,6 +394,13 @@ export default function Contratos() {
                     className="w-full mt-2.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition"
                     style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
                     <Globe className="w-3 h-3" /> Formulário CI
+                  </button>
+                )}
+                {tipo === 'OFFSHORE' && (
+                  <button onClick={(e) => { e.stopPropagation(); setOffContrato({}); setOffDirectId(null); }}
+                    className="w-full mt-2.5 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-[10px] font-bold transition"
+                    style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}>
+                    <Globe2 className="w-3 h-3" /> Formulário LLC
                   </button>
                 )}
               </div>
@@ -571,6 +589,13 @@ export default function Contratos() {
                               <Globe className="w-3.5 h-3.5" />
                             </button>
                           )}
+                          {c.tipo === 'OFFSHORE' && (
+                            <button onClick={() => { setOffContrato(c); setOffDirectId(null); }}
+                              className="p-1.5 rounded-lg transition" title="Formulário Offshore / LLC"
+                              style={{ background: 'rgba(6,182,212,0.12)', color: '#22d3ee' }}>
+                              <Globe2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => enviarParaVendas(c)}
                             disabled={c.status === 'no_pipeline' || enviandoPipelineId === c.id}
@@ -634,6 +659,25 @@ export default function Contratos() {
             rncId={ciDirectId}
             user={user}
             onClose={() => { setCiContrato(null); setCiDirectId(null); }}
+          />
+        )}
+        {showOffList && (
+          <OffshoreListModal
+            user={user}
+            onClose={() => setShowOffList(false)}
+            onOpenOffshore={(r) => {
+              setShowOffList(false);
+              setOffContrato(null);
+              setOffDirectId(r.id);
+            }}
+          />
+        )}
+        {(offContrato || offDirectId) && (
+          <OffshoreFormModal
+            contrato={offContrato || {}}
+            rncId={offDirectId}
+            user={user}
+            onClose={() => { setOffContrato(null); setOffDirectId(null); }}
           />
         )}
         {envioDialog}
