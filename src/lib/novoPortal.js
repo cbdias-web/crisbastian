@@ -25,7 +25,7 @@ export const BLOCOS_VISUAL = {
 };
 
 export const CELULAS_CAPA = [
-  { id: 'estruturados', nome: 'Produtos estruturados', produtos: 'Offshore · Conta internacional · Holding', ativa: true },
-  { id: 'internacional', nome: 'Área internacional', produtos: 'ROF · Canal bancário · Conta global · Dolarize · Câmbio', ativa: false },
-  { id: 'cross', nome: 'Operações cross', produtos: 'Score · Rating · Diagnóstico · Monitore', ativa: false },
+  { id: 'estruturados', nome: 'Produtos estruturados', produtos: 'Offshore · Conta internacional · Holding', ativa: true, cor: '#C9A962', glow: 'rgba(201,169,98,0.5)' },
+  { id: 'internacional', nome: 'Área internacional', produtos: 'ROF · Canal bancário · Conta global · Dolarize · Câmbio', ativa: true, cor: '#4F8DF5', glow: 'rgba(79,141,245,0.5)' },
+  { id: 'cross', nome: 'Operações cross', produtos: 'Score · Rating · Diagnóstico · Monitore', ativa: true, cor: '#9B87F5', glow: 'rgba(155,135,245,0.5)' },
 ];
