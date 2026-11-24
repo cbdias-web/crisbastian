@@ -748,6 +748,10 @@ export default function AssistenteFloating() {
               if (msg.role === 'user' && msg.content?.includes('[Usuário:')) {
                 display.content = msg.content.replace(/^\[Usuário:[^\]]*\]\s*/, '');
               }
+              // Anexos: mostra só os nomes dos arquivos (o file_uri é para o Jarvis)
+              if (msg.role === 'user' && display.content?.includes('[Anexos enviados pelo usuário')) {
+                display.content = display.content.replace(/\[Anexos enviados pelo usuário[^\]]*\]\n?/, '📎 ').replace(/\s*\|\s*file_uri:\s*\S+/g, '');
+              }
               if (msg.role === 'user' && msg.content?.includes('[BROADCAST_ADMIN')) {
                 return null;
               }
