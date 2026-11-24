@@ -445,3 +445,46 @@ main > div[style*="161b22"] {
 .manual-markdown strong { font-weight: 600; color: hsl(var(--foreground)); }
 .manual-markdown a { color: hsl(var(--primary)); text-decoration: underline; }
 .manual-markdown > * + * { margin-top: 1rem; }
+/* ═══════════════════════════════════════════════════════════════
+   Portal — interações modernas (linhas, botões, menus e cartões)
+   ═══════════════════════════════════════════════════════════════ */
+/* Linhas de tabela: destaque discreto ao passar o mouse, em todo o portal */
+tbody tr { transition: background-color .16s ease, box-shadow .16s ease; }
+tbody tr:hover { box-shadow: inset 3px 0 0 rgba(0,212,170,0.55), 0 10px 22px -18px rgba(0,0,0,0.95); }
+
+/* Linha clicável (listas das células) */
+.vx-row-hover { transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease; cursor: pointer; }
+.vx-row-hover:hover { background: rgba(255,255,255,0.035); box-shadow: inset 3px 0 0 var(--vx-acc, #00D4AA), 0 12px 26px -18px rgba(0,0,0,0.95); }
+.vx-row-hover:focus-visible { outline: 2px solid var(--vx-acc, #00D4AA); outline-offset: -2px; }
+
+/* Botões modernos */
+.vx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease, color .18s ease, filter .18s ease; }
+.vx-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.vx-btn:active:not(:disabled) { transform: translateY(0) scale(.98); }
+.vx-btn:disabled { opacity: .5; cursor: default; }
+.vx-btn:focus-visible { outline: 2px solid var(--vx-acc, #00D4AA); outline-offset: 2px; }
+.vx-btn-primary { border: 0; color: var(--vx-on-acc, #0d1117);
+  background: linear-gradient(135deg, var(--vx-acc2, #33e0bf) 0%, var(--vx-acc, #00D4AA) 100%);
+  box-shadow: 0 10px 22px -12px var(--vx-glow, rgba(0,212,170,.6)), inset 0 1px 0 rgba(255,255,255,.35); }
+.vx-btn-primary:hover:not(:disabled) { box-shadow: 0 16px 30px -12px var(--vx-glow, rgba(0,212,170,.6)), inset 0 1px 0 rgba(255,255,255,.45); filter: brightness(1.05); }
+.vx-btn-ghost { color: var(--vx-txt, #00D4AA); background: rgba(255,255,255,.03); border: 1px solid var(--vx-line, rgba(0,212,170,.3)); backdrop-filter: blur(6px); }
+.vx-btn-ghost:hover:not(:disabled) { background: var(--vx-dim, rgba(0,212,170,.1)); border-color: var(--vx-acc, #00D4AA); box-shadow: 0 12px 24px -16px var(--vx-glow, rgba(0,212,170,.6)); }
+.vx-btn-soft { color: var(--vx-txt, #00D4AA); background: var(--vx-dim, rgba(0,212,170,.1)); border: 1px solid transparent; }
+.vx-btn-soft:hover:not(:disabled) { border-color: var(--vx-line, rgba(0,212,170,.3)); box-shadow: 0 10px 22px -16px var(--vx-glow, rgba(0,212,170,.6)); }
+.vx-icon-btn { width: 40px; height: 40px; padding: 0; }
+
+/* Menus/avatares: relevo, sombra e cor ao passar o mouse */
+.vx-lift { transition: transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s ease, background .22s ease, border-color .22s ease; }
+.vx-lift:hover { transform: translateY(-2px); background: rgba(255,255,255,.06) !important; box-shadow: 0 12px 26px -16px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.07); }
+.vx-lift .vx-av { transition: box-shadow .22s ease, transform .22s ease, background .22s ease; }
+.vx-lift:hover .vx-av { box-shadow: 0 0 0 4px var(--vx-glow, rgba(0,212,170,.25)), 0 8px 20px -6px var(--vx-glow, rgba(0,212,170,.4)); transform: scale(1.06); }
+
+/* Cartões elevados */
+.vx-card-lift { transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease, background .25s ease; }
+.vx-card-lift:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 24px 44px -24px var(--vx-glow, rgba(0,212,170,.55)), 0 0 0 1px var(--vx-acc, rgba(0,212,170,.4)); }
+
+/* Janela suspensa (células) */
+@keyframes vxSuspensa { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+.vx-suspensa { animation: vxSuspensa .28s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .vx-suspensa { animation: none; } .vx-lift:hover, .vx-card-lift:hover, .vx-btn:hover { transform: none; } }
