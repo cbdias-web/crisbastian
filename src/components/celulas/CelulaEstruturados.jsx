@@ -116,6 +116,8 @@ function Overlay({ cfg, sp, setSp }) {
 
   const lista = useMemo(() => operacoes.filter(o => {
     if (etapaFiltro !== null && o.etapa !== etapaFiltro) return false;
+    // Sem filtro, a lista mostra só o que está em andamento (as concluídas ficam no cartão "Concluída")
+    if (etapaFiltro === null && !busca && cfg.fonte === 'contrato' && o.etapa === 5) return false;
     if (!busca) return true;
     return `${o.cliente} ${o.doc || ''} ${o.responsavel || ''} ${o.sub}`.toLowerCase().includes(busca.toLowerCase());
   }), [operacoes, etapaFiltro, busca]);
