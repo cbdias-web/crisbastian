@@ -59,6 +59,12 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       let cx = x;
       for (const pal of palavras) { doc.text(pal, cx, yy); cx += doc.getTextWidth(pal) + espaco + extra; }
     };
+    // Justifica um conjunto de linhas já quebradas (a última fica à esquerda).
+    const linhasJustificadas = (ls: string[], x: number, yy0: number, w: number, lh: number) => {
+      ls.forEach((l, i) => {
+        if (i < ls.length - 1) linhaJustificada(l, x, yy0 + i * lh, w); else doc.text(l, x, yy0 + i * lh);
+      });
+    };
     // Texto corrido justificado; a última linha de cada parágrafo fica alinhada à esquerda.
     const bloco = (s: any, sz: number, color: [number, number, number], lh: number, x: number, w: number) => {
       font(sz, 'normal', color);
@@ -94,7 +100,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
         ensure(ls.length * 4.5 + 1);
         doc.setFillColor(...TEAL); doc.circle(x + 1.2, y - 1.2, 0.8, 'F');
         font(sz, 'normal', INK);
-        ls.forEach((l, i) => doc.text(l, x + 4.5, y + i * 4.5));
+        linhasJustificadas(ls, x + 4.5, y, CW - (x - M) - 5, 4.5);
         y += ls.length * 4.5 + 1.2;
       }
       y += 1.5;
@@ -271,17 +277,23 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     secao('04', 'Estrutura recomendada');
     const er = c.estrutura_recomendada || {};
     {
-      const ls = lines(er.descricao || '', CW - 10);
-      const h = 14 + ls.length * 4.6;
+      const jur = er.jurisdicao ? T(er.jurisdicao) : '';
+      font(8.5, 'bold', GOLD);
+      const jurW = jur ? doc.getTextWidth(jur) : 0;
+      font(12, 'bold', [255, 255, 255]);
+      // O título quebra em linhas e nunca invade a jurisdição (alinhada à direita).
+      const tituloLs: string[] = doc.splitTextToSize(T(er.nome || c.titulo_estrutura || prod.nome), CW - 10 - (jurW ? jurW + 6 : 0));
+      const descLs = lines(er.descricao || '', CW - 10);
+      const lhT = 5.6;
+      const hTitulo = Math.max(1, tituloLs.length) * lhT;
+      const h = 11 + hTitulo + Math.max(0, descLs.length - 1) * 4.6;
       ensure(h + 4);
       doc.setFillColor(...NAVY); doc.roundedRect(M, y - 2, CW, h, 2.5, 2.5, 'F');
-      font(12, 'bold', [255, 255, 255]); doc.text(T(er.nome || c.titulo_estrutura || prod.nome), M + 5, y + 5);
-      if (er.jurisdicao) { font(8.5, 'bold', GOLD); doc.text(T(er.jurisdicao), M + CW - 5, y + 5, { align: 'right' }); }
+      font(12, 'bold', [255, 255, 255]);
+      tituloLs.forEach((l: string, i: number) => doc.text(l, M + 5, y + 5 + i * lhT));
+      if (jur) { font(8.5, 'bold', GOLD); doc.text(jur, M + CW - 5, y + 5, { align: 'right' }); }
       font(9, 'normal', [210, 225, 242]);
-      ls.forEach((l, i) => {
-        const yy = y + 12 + i * 4.6;
-        if (i < ls.length - 1) linhaJustificada(l, M + 5, yy, CW - 10); else doc.text(l, M + 5, yy);
-      });
+      linhasJustificadas(descLs, M + 5, y + 6 + hTitulo, CW - 10, 4.6);
       y += h + 5;
     }
     if ((er.componentes || []).length) { sub('Componentes da estrutura'); bullets(er.componentes); }
@@ -298,7 +310,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       ensure(ls.length * 4.5 + 8);
       doc.setFillColor(...TEAL_L); doc.rect(M, y - 3.5, 1.2, ls.length * 4.5 + 5.5, 'F');
       font(9.5, 'bold', NAVY); doc.text(T(b.titulo), M + 4, y);
-      font(9, 'normal', INK); ls.forEach((l, i) => doc.text(l, M + 4, y + 5 + i * 4.5));
+      font(9, 'normal', INK); linhasJustificadas(ls, M + 4, y + 5, CW - 8, 4.5);
       y += ls.length * 4.5 + 9;
     }
 
@@ -393,7 +405,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       ensure(ls.length * 4.5 + 12);
       doc.setFillColor(255, 248, 225); doc.roundedRect(M, y - 2, CW, ls.length * 4.5 + 10, 2, 2, 'F');
       font(7.5, 'bold', [146, 100, 0]); doc.text('SUCCESS FEE (OPCIONAL)', M + 5, y + 3);
-      font(8.8, 'normal', [90, 62, 0]); ls.forEach((l, i) => doc.text(l, M + 5, y + 8 + i * 4.5));
+      font(8.8, 'normal', [90, 62, 0]); linhasJustificadas(ls, M + 5, y + 8, CW - 10, 4.5);
       y += ls.length * 4.5 + 13;
     }
 
@@ -410,7 +422,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
       ensure(ls.length * 4.6 + 3);
       doc.setFillColor(...NAVY); doc.circle(M + 3, y - 1.3, 3, 'F');
       font(8, 'bold', [255, 255, 255]); doc.text(String(i + 1), M + 3, y - 0.2, { align: 'center' });
-      font(9.3, 'normal', INK); ls.forEach((l, k) => doc.text(l, M + 9, y + k * 4.6));
+      font(9.3, 'normal', INK); linhasJustificadas(ls, M + 9, y, CW - 12, 4.6);
       y += ls.length * 4.6 + 3.5;
     });
 
