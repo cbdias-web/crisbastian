@@ -197,6 +197,43 @@
       "type": "string",
       "format": "date-time",
       "description": "Data/hora em que o cliente devolveu o formulario com todas as informacoes e documentos obrigatorios (mesmo que falte apenas a declaracao final de envio)"
+    },
+    "nda_origem": {
+      "type": "string",
+      "enum": [
+        "anexado",
+        "gerado"
+      ],
+      "description": "Como o NDA entrou: anexado (arquivo enviado) ou gerado no portal (modelo Villela Exchange)"
+    },
+    "nda_gerado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Quando o NDA foi gerado no portal"
+    },
+    "nda_partes": {
+      "type": "array",
+      "description": "Partes do CLIENTE usadas na geração do NDA (PF/PJ, qualificação, representante, sigla)",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "nda_config": {
+      "type": "object",
+      "description": "Parâmetros do NDA gerado (multa, vigência, sigilo, não evasão, foro, local, data)",
+      "additionalProperties": true
+    },
+    "nda_assinado_url": {
+      "type": "string",
+      "description": "Arquivo do NDA assinado (file_uri privado)"
+    },
+    "nda_assinado_nome": {
+      "type": "string"
+    },
+    "nda_assinado_em": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
