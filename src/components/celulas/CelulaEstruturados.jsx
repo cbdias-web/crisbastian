@@ -82,10 +82,10 @@ function Overlay({ cfg, sp, setSp }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (e) => { if (e.key === 'Escape') { opId ? setParam({ op: null }) : fechar(); } };
+    const onKey = (e) => { if (e.key === 'Escape' && !ndaModal) { opId ? setParam({ op: null }) : fechar(); } };
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [opId, sp]);
+  }, [opId, sp, ndaModal]);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
