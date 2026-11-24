@@ -403,6 +403,101 @@
     "venda_origem_id": {
       "type": "string",
       "description": "Quando natureza_pagamento = recorrencia: ID da venda original"
+    },
+    "local_assinatura": {
+      "type": "string",
+      "description": "Cidade/UF onde o contrato \u00e9 firmado (ex.: Porto Alegre) \u2014 OFFSHORE"
+    },
+    "offshore_tipo_entidade": {
+      "type": "string",
+      "description": "Tipo da entidade a constituir (ex.: Limited Liability Company (LLC)) \u2014 OFFSHORE"
+    },
+    "offshore_estrutura_nacional": {
+      "type": "boolean",
+      "description": "Inclui a estrutura nacional no Brasil (representa\u00e7\u00e3o/filial, conta em BRL, tradu\u00e7\u00e3o juramentada) \u2014 OFFSHORE"
+    },
+    "offshore_manutencao_meses": {
+      "type": "number",
+      "description": "Meses de manuten\u00e7\u00e3o inclusos (registered agent e suporte) \u2014 OFFSHORE"
+    },
+    "offshore_entrada_forma": {
+      "type": "string",
+      "enum": [
+        "dinheiro",
+        "dacao_veiculo"
+      ],
+      "description": "Como a entrada \u00e9 paga: dinheiro (PIX/transfer\u00eancia) ou da\u00e7\u00e3o em pagamento de ve\u00edculo \u2014 OFFSHORE"
+    },
+    "anexo_ativo": {
+      "type": "boolean",
+      "description": "O contrato tem Anexo I (s\u00f3 quando a negocia\u00e7\u00e3o exigir) \u2014 OFFSHORE"
+    },
+    "anexo_tipo": {
+      "type": "string",
+      "enum": [
+        "veiculo",
+        "personalizado"
+      ],
+      "description": "veiculo = Termo de Da\u00e7\u00e3o em Pagamento de Ve\u00edculo; personalizado = anexo com t\u00edtulo e texto livres"
+    },
+    "anexo_veiculo": {
+      "type": "object",
+      "description": "Dados do ve\u00edculo dado em pagamento (Anexo I)",
+      "properties": {
+        "marca_modelo": {
+          "type": "string"
+        },
+        "especie_tipo": {
+          "type": "string"
+        },
+        "carroceria": {
+          "type": "string"
+        },
+        "ano_fabricacao": {
+          "type": "string"
+        },
+        "ano_modelo": {
+          "type": "string"
+        },
+        "placa": {
+          "type": "string"
+        },
+        "renavam": {
+          "type": "string"
+        },
+        "chassi": {
+          "type": "string"
+        },
+        "motor": {
+          "type": "string"
+        },
+        "cor": {
+          "type": "string"
+        },
+        "combustivel": {
+          "type": "string"
+        },
+        "potencia": {
+          "type": "string"
+        },
+        "crv": {
+          "type": "string"
+        },
+        "municipio_registro": {
+          "type": "string"
+        },
+        "prazo_entrega_dias": {
+          "type": "number"
+        }
+      }
+    },
+    "anexo_titulo": {
+      "type": "string",
+      "description": "T\u00edtulo do anexo personalizado"
+    },
+    "anexo_texto": {
+      "type": "string",
+      "description": "Texto do anexo personalizado (par\u00e1grafos separados por linha em branco)"
     }
   },
   "required": [
