@@ -71,6 +71,21 @@ const FUNDO = rgb(0.9, 0.91, 0.93), BARRA = rgb(0.35, 0.38, 0.45), LINHA = rgb(0
 
 type Seg = { t: string; b?: boolean };
 
+// Largura sem kerning: o pdf-lib aplica kerning na medição mas não no desenho,
+// o que deixava palavras em caixa alta (ex.: "PARTE") coladas na seguinte.
+const _cache = new Map<string, number>();
+function wid(f: any, t: string, size: number): number {
+  let w = 0;
+  for (const ch of t) {
+    const k = f.name + '|' + ch;
+    let cw = _cache.get(k);
+    if (cw === undefined) { cw = f.widthOfTextAtSize(ch, 1000); _cache.set(k, cw); }
+    w += cw;
+  }
+  return (w * size) / 1000;
+}
+
+
 export async function gerarNdaOffshorePdf(partesIn: ParteNda[], cfgIn: ConfigNda = {}): Promise<Uint8Array> {
   const partes = (partesIn || []).filter((p) => limpa(p?.nome));
   if (!partes.length) throw new Error('Informe ao menos uma parte do CLIENTE.');
@@ -137,8 +152,8 @@ export async function gerarNdaOffshorePdf(partesIn: ParteNda[], cfgIn: ConfigNda
       }
     }
     if (atual.length) palavras.push(atual);
-    const larg = (w: Run[]) => w.reduce((a, r) => a + r.f.widthOfTextAtSize(r.t, size), 0);
-    const esp = reg.widthOfTextAtSize(' ', size);
+    const larg = (w: Run[]) => w.reduce((a, r) => a + wid(r.f, r.t, size), 0);
+    const esp = wid(reg, ' ', size);
     const x0 = ML + indent, maxW = TW - indent;
     const linhas: Run[][][] = [];
     let linha: Run[][] = [], w = 0;
@@ -160,7 +175,7 @@ export async function gerarNdaOffshorePdf(partesIn: ParteNda[], cfgIn: ConfigNda
         p.forEach((r, j) => {
           const fim = j === p.length - 1 && k < ln.length - 1;
           page.drawText(fim ? r.t + ' ' : r.t, { x, y, size, font: r.f, color: o.cor || TEXTO });
-          x += r.f.widthOfTextAtSize(r.t, size);
+          x += wid(r.f, r.t, size);
         });
         x += gap;
       });
@@ -216,10 +231,10 @@ export async function gerarNdaOffshorePdf(partesIn: ParteNda[], cfgIn: ConfigNda
       const f = s.b ? SB : S;
       for (const pal of winAnsi(s.t).split(' ')) {
         if (!pal) continue;
-        const wpal = f.widthOfTextAtSize(pal, 9.6);
+        const wpal = wid(f, pal, 9.6);
         if (x + wpal > MR - 8) { yy -= 13.4; x = ML + colL; }
         tmpPage.drawText(pal + ' ', { x, y: yy, size: 9.6, font: f, color: TEXTO });
-        x += wpal + S.widthOfTextAtSize(' ', 9.6);
+        x += wpal + wid(S, ' ', 9.6);
       }
     }
     y = ySalvo - h - 1.5;
