@@ -14,6 +14,7 @@ const label = { color: A.muted, fontSize: '10px', fontWeight: 600, textTransform
 export const MENSAGENS_PADRAO = {
   canal: 'Para darmos início à abertura do seu canal bancário, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
   conta: 'Para darmos início à abertura da sua conta internacional, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
+  offshore: 'Para darmos início à constituição da sua empresa no exterior (LLC), precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
 };
 
 export const mensagemPadrao = (tipo) => MENSAGENS_PADRAO[tipo] || MENSAGENS_PADRAO.canal;
