@@ -81,7 +81,7 @@ export function contratoDoEstudo(estudo, contratos) {
   const doc = digitos(estudo.cliente_documento);
   const nome = normal(estudo.cliente_nome);
   const vivos = contratos.filter(c => c.status !== 'cancelado');
-  return (doc && vivos.find(c => digitos(c.cpf_cnpj) === doc)) || (nome && vivos.find(c => normal(c.nome) === nome)) || null;
+  return vivos.find(c => c.estudo_id === estudo.id) || (doc && vivos.find(c => digitos(c.cpf_cnpj) === doc)) || (nome && vivos.find(c => normal(c.nome) === nome)) || null;
 }
 
 const CONTRATO_FECHADO = ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'];
@@ -117,10 +117,11 @@ export function proximaAcao(estudo, etapa, contrato, produto) {
     case 2: return { label: estudo.proposta_atual_id ? 'Revisar e aprovar a proposta' : 'Gerar a análise técnica', to: `/AnaliseTecnica?estudo=${estudo.id}` };
     case 3: return { label: 'Registrar a decisão do cliente', to: `/AnaliseTecnica?estudo=${estudo.id}` };
     case 4:
-      if (contrato) return { label: 'Concluir e assinar o contrato', to: `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` };
-      return tipo ? { label: 'Gerar o contrato', to: `/Contratos?novo=${encodeURIComponent(tipo)}` } : { label: 'Gerar o contrato', to: '/Contratos' };
+      if (contrato) return { label: contrato.status === 'rascunho' ? 'Gerar o PDF do contrato' : 'Assinatura e pagamento', acao: 'contrato', to: '' };
+      return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Gerar o contrato', to: '/Contratos' };
     default:
-      return tipo ? { label: 'Acompanhar o formulário pós-contrato', to: `/Contratos?tipo=${encodeURIComponent(tipo)}` } : { label: 'Acompanhar a constituição', to: '/Implantacoes' };
+      if (contrato && contrato.status !== 'no_pipeline') return { label: 'Pagamento e envio para Vendas', acao: 'contrato', to: '' };
+      return tipo ? { label: 'Ver venda e comissões', acao: 'venda', to: '' } : { label: 'Acompanhar a constituição', to: '/Implantacoes' };
   }
 }
 
@@ -138,13 +139,12 @@ export function etapaContrato(contrato, implantacao) {
 
 export function proximaAcaoContrato(etapa, contrato, produto) {
   const tipo = JORNADAS[produto]?.tipoContrato;
-  const lista = tipo ? `/Contratos?tipo=${encodeURIComponent(tipo)}` : '/Contratos';
   switch (etapa) {
-    case 0: return tipo ? { label: 'Gerar o contrato', to: `/Contratos?novo=${encodeURIComponent(tipo)}` } : { label: 'Atualizar a negociação', to: '/Pipeline' };
-    case 1: return { label: 'Concluir e gerar o contrato', to: lista };
-    case 2: return { label: 'Acompanhar a assinatura', to: lista };
-    case 3: return { label: contrato?.status === 'assinado' ? 'Registrar o pagamento' : 'Confirmar o pagamento e enviar para Vendas', to: lista };
-    case 4: return { label: 'Acompanhar a implantação', to: '/Implantacoes' };
+    case 0: return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Atualizar a negociação', to: '/Pipeline' };
+    case 1: return { label: 'Concluir e gerar o PDF', acao: 'contrato', to: '' };
+    case 2: return { label: 'Acompanhar a assinatura', acao: 'contrato', to: '' };
+    case 3: return { label: contrato?.status === 'assinado' ? 'Registrar o pagamento' : 'Confirmar o pagamento e enviar para Vendas', acao: 'contrato', to: '' };
+    case 4: return contrato && contrato.status !== 'no_pipeline' ? { label: 'Enviar para Vendas', acao: 'contrato', to: '' } : { label: 'Acompanhar a implantação', to: '/Implantacoes' };
     default: return { label: 'Ver a implantação concluída', to: '/Implantacoes' };
   }
 }
