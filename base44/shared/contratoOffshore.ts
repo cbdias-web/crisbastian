@@ -302,7 +302,7 @@ export async function gerarContratoOffshorePdf(c: any): Promise<Uint8Array> {
     const nac = minusc(c.nacionalidade);
     const g = /o$/.test(nac) ? 'm' : /a$/.test(nac) ? 'f' : '';
     const fl = (m: string, f: string, n: string) => (g === 'm' ? m : g === 'f' ? f : n);
-    const ec = minusc(c.estado_civil).replace(/\(a\)/, fl('', 'a', '(a)')).replace(/o\(a\)$/, fl('o', 'a', 'o(a)'));
+    const ec = minusc(c.estado_civil).replace(/o\(a\)/, fl('o', 'a', 'o(a)')).replace(/\(a\)/, fl('', 'a', '(a)'));
     const partes = [nac, ec, minusc(c.profissao)].filter(Boolean);
     qualif = [{ t: nome, b: true }, {
       t: (partes.length ? ', ' + partes.join(', ') : '') +
