@@ -101,7 +101,8 @@ function Overlay({ cfg, sp, setSp }) {
       return { id: c.id, kind: 'contrato', cliente: c.nome || 'Cliente sem nome', doc: c.cpf_cnpj, sub: `${c.numero_contrato ? 'Contrato ' + c.numero_contrato : 'Sem número'} · ${STATUS_CONTRATO[c.status] || c.status}`, responsavel: c.vendedor_nome, etapa, acao: proximaAcaoContrato(etapa, c, produto), quando: c.updated_date || c.created_date, raw: { contrato: c, impl } };
     });
     dados.pipeline
-      .filter(n => pipelineDoProduto(n, produto) && n.temperatura !== 'Perdido')
+      // Negociações em aberto (Perdido sai da jornada; Fechado já deveria ter virado contrato)
+      .filter(n => pipelineDoProduto(n, produto) && !['Perdido', 'Fechado'].includes(n.temperatura))
       .filter(n => !doTipo.some(c => mesmoCliente({ doc: n.cliente_cpf_cnpj, nome: n.cliente_nome }, { doc: c.cpf_cnpj, nome: c.nome })))
       .forEach(n => ops.push({ id: 'p_' + n.id, kind: 'pipeline', cliente: n.cliente_nome || 'Prospect', doc: n.cliente_cpf_cnpj, sub: `Pipeline · ${n.temperatura || 'Frio'}`, responsavel: n.vendedor_nome, etapa: 0, acao: proximaAcaoContrato(0, null, produto), quando: n.updated_date || n.created_date, raw: { neg: n } }));
     return ops.sort((a, b) => new Date(b.quando || 0) - new Date(a.quando || 0));
