@@ -15,14 +15,19 @@ export function acharVendedor(vendedores: any[], q: { vendedor_id?: string; emai
     const v = vendedores.find((x) => x.id === q.vendedor_id);
     if (v) return { vendedor: v, via: 'id' };
   }
+  // Gerente ATIVO tem prioridade: um cadastro inativo (antigo ou criado em duplicidade)
+  // só é usado quando não existe nenhum cadastro ativo ligado ao mesmo usuário.
+  const ativo = (r: any) => r && r.vendedor && r.vendedor.ativo !== false;
   const r1 = porEmail(q.user?.email);
-  if (r1) return r1;
+  if (ativo(r1)) return r1;
   const nomes = [q.nome, q.user?.nome_tratamento, q.user?.full_name].map(norm).filter((n) => n && !n.includes('@'));
+  let rNome: any = null;
   if (nomes.length) {
     const hit = vendedores.filter((v) => nomes.includes(norm(v.nome)));
-    if (hit.length) return { vendedor: preferir(hit), via: 'nome', ambiguo: hit.length > 1 };
+    if (hit.length) rNome = { vendedor: preferir(hit), via: 'nome', ambiguo: hit.length > 1 };
   }
+  if (ativo(rNome)) return rNome;
   const r2 = porEmail(q.email);
-  if (r2) return r2;
-  return { vendedor: null, via: null };
+  if (ativo(r2)) return r2;
+  return r1 || rNome || r2 || { vendedor: null, via: null };
 }
