@@ -19,7 +19,32 @@ const CLASS_RGB: Record<string, [number, number, number]> = { alta: [5, 150, 105
 const brl = (v: any) => 'R$ ' + Math.round(Number(v) || 0).toLocaleString('pt-BR');
 const fmtD = (d: Date) => d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
-export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint8Array {
+// ── Formatação dos dados exibidos na capa e no aceite ──
+const digitos = (v: any) => String(v ?? '').replace(/\D/g, '');
+const fmtDoc = (v: any) => {
+  const d = digitos(v);
+  if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  return String(v ?? '').trim();
+};
+const fmtTel = (v: any) => {
+  const d = digitos(v);
+  const n = d.length > 11 && d.startsWith('55') ? d.slice(2) : d;
+  if (n.length === 11) return n.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  if (n.length === 10) return n.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  return String(v ?? '').trim();
+};
+// Nomes digitados em caixa alta (comum em cadastros) recebem capitalização de nome próprio.
+const PARTICULAS = new Set(['da', 'de', 'do', 'das', 'dos', 'e', 'di', 'du', 'van', 'von', 'del', 'la', 'le']);
+const nomeProprio = (v: any) => {
+  const s = String(v ?? '').trim();
+  if (!s || s !== s.toUpperCase()) return s;
+  return s.toLowerCase().split(/\s+/)
+    .map((pal, i) => (i > 0 && PARTICULAS.has(pal) ? pal : pal.charAt(0).toUpperCase() + pal.slice(1)))
+    .join(' ');
+};
+
+export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estudo?: any): Uint8Array {
     const c = p.conteudo || {};
     const prod = (PRODUTOS_ESTUDO as any)[p.produto] || { titulo: 'Estudo de Viabilidade', nome: '' };
     const etapas = Array.isArray(c.etapas) ? c.etapas : [];
@@ -167,26 +192,52 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     doc.setDrawColor(...TEAL_L); doc.setLineWidth(0.5); doc.line(M, 31, W - M, 31); doc.setLineWidth(0.2);
 
     // Identificação do estudo
-    font(8.2, 'bold', TEAL); doc.text('ANÁLISE TÉCNICA DE VIABILIDADE', M, 88);
-    let yc = 100;
+    font(8.2, 'bold', TEAL); doc.text('ANÁLISE TÉCNICA DE VIABILIDADE', M, 60);
+    let yc = 72;
     const tituloLs = doc.splitTextToSize(T(c.titulo_estrutura || prod.titulo), CW);
-    font(21, 'bold', NAVY);
-    tituloLs.slice(0, 3).forEach((l: string, i: number) => doc.text(l, M, yc + i * 9.5));
-    yc += Math.min(3, tituloLs.length) * 9.5 + 1;
-    font(10.5, 'normal', MUTED); doc.text(T(prod.titulo), M, yc);
-    yc += 9;
+    font(20, 'bold', NAVY);
+    tituloLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 9));
+    yc += Math.min(2, tituloLs.length) * 9 + 2;
+    font(10, 'normal', MUTED); doc.text(T(prod.titulo), M, yc);
+    yc += 8;
     doc.setDrawColor(...LINE); doc.line(M, yc, M + 30, yc);
-    yc += 13;
+    yc += 12;
 
-    // Cliente
+    // Cliente (dados formatados: documento, contato)
     font(7.2, 'bold', MUTED); doc.text('CLIENTE', M, yc);
-    yc += 8.5;
-    const nomeLs = doc.splitTextToSize(T(p.cliente_nome || '—'), CW);
-    font(17, 'bold', NAVY);
-    nomeLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 7.5));
-    yc += Math.min(2, nomeLs.length) * 7.5 + 1;
-    font(8.6, 'normal', MUTED);
-    doc.text(T(`${p.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física'}${p.cliente_documento ? '  ·  ' + p.cliente_documento : ''}`), M, yc);
+    yc += 8;
+    const nomeLs = doc.splitTextToSize(T(nomeProprio(p.cliente_nome) || '—'), CW);
+    font(16, 'bold', NAVY);
+    nomeLs.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M, yc + i * 7.2));
+    yc += Math.min(2, nomeLs.length) * 7.2 + 1.5;
+    const docFmt = fmtDoc(p.cliente_documento || estudo?.cliente_documento);
+    const linhaCliente = [
+      p.tipo_cliente === 'PJ' ? 'Pessoa Jurídica' : 'Pessoa Física',
+      docFmt ? `${p.tipo_cliente === 'PJ' ? 'CNPJ' : 'CPF'} ${docFmt}` : '',
+    ].filter(Boolean).join('  ·  ');
+    font(8.6, 'normal', MUTED); doc.text(T(linhaCliente), M, yc);
+    const contato = [estudo?.cliente_email, fmtTel(estudo?.cliente_telefone)].filter(Boolean).join('  ·  ');
+    if (contato) { yc += 5; font(8.4, 'normal', MUTED); doc.text(T(contato), M, yc); }
+
+    // Painel de identificação técnica — mesmo padrão em todas as análises
+    const py = 182, ph = 30, pw = (CW - 8) / 3;
+    const painel = [
+      { k: 'Estrutura recomendada', v: c.estrutura_recomendada?.nome || c.titulo_estrutura || '—', s: c.estrutura_recomendada?.jurisdicao || '' },
+      { k: 'Score de viabilidade', v: `${Math.round(Number(p.score_viabilidade) || 0)}/100`, s: (CLASSIFICACAO as any)[p.classificacao]?.label || '—' },
+      { k: 'Consultor responsável', v: nomeProprio(p.responsavel_nome) || user.full_name || user.email, s: p.responsavel_email || '' },
+    ];
+    painel.forEach((it, i) => {
+      const x = M + i * (pw + 4);
+      doc.setFillColor(...ZEBRA); doc.roundedRect(x, py, pw, ph, 2, 2, 'F');
+      doc.setFillColor(...TEAL); doc.rect(x, py, 1.6, ph, 'F');
+      font(6.8, 'bold', MUTED); doc.text(T(it.k.toUpperCase()), x + 4.5, py + 6.5);
+      const vs: string[] = doc.splitTextToSize(T(it.v), pw - 9).slice(0, 2);
+      font(9.6, 'bold', NAVY); vs.forEach((l: string, li: number) => doc.text(l, x + 4.5, py + 13 + li * 4.6));
+      if (it.s) {
+        font(7.2, 'normal', MUTED);
+        doc.text(T(doc.splitTextToSize(T(it.s), pw - 9)[0] || ''), x + 4.5, py + ph - 3.5);
+      }
+    });
 
     // Faixa de metadados no pé da capa
     const meta = [['Código', p.codigo || '—'], ['Versão', `v${p.versao}`], ['Emissão', fmtD(hoje)], ['Validade', fmtD(validade)]];
@@ -200,7 +251,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     });
     font(8, 'normal', MUTED);
     doc.text('Elaborado pela equipe técnica RNC', M, 271);
-    doc.text(T(`Consultor responsável: ${p.responsavel_nome || user.full_name || user.email}`), M, 276.5);
+    doc.text(T(`Consultor responsável: ${nomeProprio(p.responsavel_nome) || user.full_name || user.email}`), M, 276.5);
     doc.setDrawColor(...MUTED); doc.setLineWidth(0.3);
     doc.roundedRect(W - M - 32, 267, 32, 6.6, 1.5, 1.5, 'S'); doc.setLineWidth(0.2);
     font(6.8, 'bold', MUTED); doc.text('CONFIDENCIAL', W - M - 16, 271.4, { align: 'center' });
@@ -435,7 +486,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string): Uint
     doc.setDrawColor(...MUTED);
     doc.line(M, y, M + 72, y); doc.line(M + CW - 72, y, M + CW, y);
     font(8, 'bold', NAVY);
-    doc.text(T(p.cliente_nome || 'Contratante'), M, y + 5);
+    doc.text(T(nomeProprio(p.cliente_nome) || 'Contratante'), M, y + 5);
     doc.text('RNC — Villela Exchange', M + CW - 72, y + 5);
     font(7.5, 'normal', MUTED);
     doc.text('De acordo — local e data', M, y + 9.5);
