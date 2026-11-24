@@ -6,6 +6,7 @@ import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal from './NdaGeradorModal';
+import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
@@ -251,7 +252,8 @@ function Overlay({ cfg, sp, setSp }) {
           opSel.kind === 'estudo'
             ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
                 abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} />
-            : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir} />
+            : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
+                 recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} />
         ) : (
           <div className="vx-cel-body">
             <main className="vx-cel-main">
@@ -498,7 +500,7 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {} }
   );
 }
 
-function LinhaDoTempo({ eventos, t, publicar, extra, ir }) {
+function LinhaDoTempo({ eventos, t, publicar, extra, ir, setAba }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const comentar = async () => {
@@ -530,7 +532,7 @@ function LinhaDoTempo({ eventos, t, publicar, extra, ir }) {
               <span style={{ fontSize: 12, color: C.muted2 }}>{fmtData(ev.quando)}</span>
             </div>
             <div style={{ fontSize: 14, color: C.txt2, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{ev.txt}</div>
-            {ev.link && <button onClick={() => ir(ev.link.to)} className="vx-btn vx-btn-soft" style={{ alignSelf: 'flex-start', height: 28, padding: '0 12px', fontSize: 12 }}>{ev.link.label} →</button>}
+            {ev.link && <button onClick={() => (ev.link.aba && setAba ? setAba(ev.link.aba) : ir(ev.link.to))} className="vx-btn vx-btn-soft" style={{ alignSelf: 'flex-start', height: 28, padding: '0 12px', fontSize: 12 }}>{ev.link.label} →</button>}
           </div>
         </article>
       ))}
@@ -570,7 +572,7 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
             ))}
           </div>
         )}
-        <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Tudo o que é gerado nesta operação continua aparecendo em Contratos e, ao fechar, em Vendas.</span>
+        <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Contrato, PDF, assinatura, boletos e comprovantes são feitos aqui. A área Contratos mostra o mesmo registro (espelho) e, ao enviar, a venda vai para Vendas.</span>
       </div>
       <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Ir para</span>
@@ -582,6 +584,42 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
         ))}
       </div>
     </aside>
+  );
+}
+
+// Abas da operação: a jornada (linha do tempo), o contrato completo e a venda com comissões
+function AbasOperacao({ aba, setAba, t, temContrato, temVenda }) {
+  const abas = [['jornada', 'Linha do tempo'], ['contrato', temContrato ? 'Contrato' : 'Gerar contrato'], ['venda', 'Venda e comissões']];
+  return (
+    <div role="tablist" aria-label="Seções da operação" style={{ display: 'flex', gap: 6, padding: '10px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
+      {abas.map(([id, l]) => {
+        const on = aba === id;
+        return (
+          <button key={id} role="tab" aria-selected={on} onClick={() => setAba(id)} className="vx-btn"
+            style={{ height: 34, padding: '0 14px', fontSize: 13, borderRadius: 999, background: on ? t.dim : 'transparent', color: on ? t.txt : C.muted, border: `1px solid ${on ? t.acc : C.line}` }}>
+            {l}{id === 'venda' && temVenda ? ' ✓' : ''}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// Corpo das abas Contrato / Venda (ocupa a largura toda; o formulário de criação é claro, o acompanhamento é escuro)
+function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, clienteFallback, vinculo, t, recarregar, onCriado }) {
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
+      {aba === 'contrato' && (
+        <div style={!contrato ? { background: '#F5F6F8', borderRadius: 18, padding: 12 } : undefined}>
+          <ContratoNaCelula contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo}
+            onVoltar={() => setAba('jornada')}
+            onSalvo={(c) => { onCriado ? onCriado(c) : recarregar?.(); }}
+            onAtualizado={() => recarregar?.()}
+            onVendaCriada={() => { recarregar?.(); setAba('venda'); }} />
+        </div>
+      )}
+      {aba === 'venda' && <VendaDaOperacao contrato={contrato} t={t} />}
+    </div>
   );
 }
 
@@ -607,6 +645,8 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   };
   const [propostas, setPropostas] = useState([]);
   const [formPos, setFormPos] = useState(null);
+  const [aba, setAba] = useState('jornada');
+  useEffect(() => { setAba('jornada'); }, [e.id]);
 
   useEffect(() => {
     base44.entities.PropostaTecnica.filter({ estudo_id: e.id }, '-versao', 50).then(l => setPropostas(l || [])).catch(() => {});
@@ -636,7 +676,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       add(p.enviada_em, p.responsavel_nome || 'Gerente', 3, `Proposta v${p.versao} enviada ao cliente.`, lk);
       if (p.status === 'aceita' || p.status === 'recusada') add(p.decisao_em, e.cliente_nome || 'Cliente', 3, `Proposta v${p.versao} ${p.status === 'aceita' ? 'aceita' : 'recusada'} pelo cliente.${p.decisao_observacao ? ` ${p.decisao_observacao}` : ''}`, lk);
     });
-    if (contrato) add(contrato.created_date, contrato.vendedor_nome || 'Gerente', 4, `Contrato ${contrato.numero_contrato || ''} criado (${STATUS_CONTRATO[contrato.status] || contrato.status}).`, { label: 'Ver em Contratos', to: `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` });
+    if (contrato) add(contrato.created_date, contrato.vendedor_nome || 'Gerente', 4, `Contrato ${contrato.numero_contrato || ''} criado (${STATUS_CONTRATO[contrato.status] || contrato.status}).`, { label: 'Abrir contrato', aba: 'contrato' });
     if (formPos) {
       add(formPos.link_gerado_em, formPos.responsavel_nome || 'Gerente', 5, 'Link do formulário pós-contrato enviado ao cliente.');
       add(formPos.link_preenchido_em || formPos.data_preenchimento, formPos.cliente_nome || e.cliente_nome || 'Cliente', 5, 'Cliente preencheu o formulário pós-contrato.');
@@ -661,31 +701,41 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   const atalhos = [
     ['Estudo de viabilidade', `/EstudoViabilidade?estudo=${e.id}`],
     ['Análise técnica e proposta', `/AnaliseTecnica?estudo=${e.id}`],
-    ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', contrato ? `/Contratos?tipo=${encodeURIComponent(contrato.tipo)}` : `/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`]] : [['Contratos', '/Contratos']]),
+    ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', () => setAba('contrato')], ['Venda e comissões', () => setAba('venda')]] : [['Contratos', '/Contratos']]),
   ];
+  const irAba = (to) => (typeof to === 'function' ? to() : ir(to));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <input ref={assinadoRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={ev => anexarAssinado(ev.target.files?.[0])} />
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
-        acoes={{ nda: () => abrirNda(e), nda_assinado: () => assinadoRef.current?.click() }}
+        acoes={{ nda: () => abrirNda(e), nda_assinado: () => assinadoRef.current?.click(), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
-      <div className="vx-cel-body">
-        <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={ir} />
-        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir}
-          arquivos={(e.documentos || []).filter(d => d.url).map(d => ({ ref: d.url, nome: d.nome_arquivo || d.descricao || 'Documento', descricao: d.descricao }))} />
-      </div>
+      {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'} />}
+      {aba === 'jornada' ? (
+        <div className="vx-cel-body">
+          <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={irAba} setAba={setAba} />
+          <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={irAba}
+            arquivos={(e.documentos || []).filter(d => d.url).map(d => ({ ref: d.url, nome: d.nome_arquivo || d.descricao || 'Documento', descricao: d.descricao }))} />
+        </div>
+      ) : (
+        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={contrato} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
+          clienteId={e.cliente_id} vinculo={{ estudo_id: e.id }}
+          clienteFallback={{ nome: e.cliente_nome, cpf_cnpj: e.cliente_documento, email: e.cliente_email, telefone: e.cliente_telefone }} />
+      )}
     </div>
   );
 }
 
 // ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
-function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir }) {
+function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp }) {
   const jornada = JORNADAS[produto];
   const ct = op.raw.contrato || null;
   const impl = op.raw.impl || null;
   const neg = op.raw.neg || null;
   const [rnc, setRnc] = useState(null);
+  const [aba, setAba] = useState('jornada');
+  useEffect(() => { setAba('jornada'); }, [op.id]);
 
   useEffect(() => {
     if (ct && produto === 'canal_bancario') {
@@ -703,7 +753,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir })
       if (neg.proximo_contato) add(neg.proximo_contato, neg.vendedor_nome || 'Gerente', 0, 'Próximo contato agendado.');
     }
     if (ct) {
-      add(ct.created_date, ct.vendedor_nome || 'Gerente', 1, `Contrato ${ct.numero_contrato || ''} criado${ct.valor_total ? ` · ${Number(ct.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}. Situação atual: ${STATUS_CONTRATO[ct.status] || ct.status}.`, { label: 'Ver em Contratos', to: listaContratos });
+      add(ct.created_date, ct.vendedor_nome || 'Gerente', 1, `Contrato ${ct.numero_contrato || ''} criado${ct.valor_total ? ` · ${Number(ct.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}. Situação atual: ${STATUS_CONTRATO[ct.status] || ct.status}.`, { label: 'Abrir contrato', aba: 'contrato' });
       if (ct.data_contrato) add(ct.data_contrato, ct.vendedor_nome || 'Gerente', 2, 'Data do contrato registrada.');
       if (ct.data_primeiro_pagamento) add(ct.data_primeiro_pagamento, op.cliente, 3, 'Primeiro pagamento previsto/registrado.');
     }
@@ -733,20 +783,33 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir })
   ];
   const atalhos = [
     ...(neg ? [['Negociação no Pipeline', '/Pipeline']] : []),
-    [ct ? 'Contrato da operação' : 'Gerar contrato', ct ? listaContratos : (jornada.tipoContrato ? `/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos')],
+    ...(jornada.tipoContrato ? [[ct ? 'Contrato da operação' : 'Gerar contrato', () => setAba('contrato')], ['Venda e comissões', () => setAba('venda')]] : [['Contratos', listaContratos]]),
     ['Implantações', '/Implantacoes'],
   ];
+  const irAba = (to) => (typeof to === 'function' ? to() : ir(to));
   const subtitulo = ct
     ? `${jornada.nome} · ${ct.numero_contrato ? 'Contrato ' + ct.numero_contrato : 'contrato sem número'}${ct.cpf_cnpj ? ` · ${ct.cpf_cnpj}` : ''} · responsável ${ct.vendedor_nome || '—'}`
     : `${jornada.nome} · negociação no Pipeline · responsável ${neg?.vendedor_nome || '—'}`;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} />
-      <div className="vx-cel-body">
-        <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ operacao_id: op.id }} ir={ir} />
-        <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={ir} />
-      </div>
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo}
+        acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda') }} />
+      {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!ct} temVenda={ct?.status === 'no_pipeline'} />}
+      {aba === 'jornada' ? (
+        <div className="vx-cel-body">
+          <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ operacao_id: op.id }} ir={irAba} setAba={setAba} />
+          <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={irAba} />
+        </div>
+      ) : (
+        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
+          clienteId={neg?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
+          clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, email: neg.cliente_email, telefone: neg.cliente_telefone } : null}
+          onCriado={async (c) => {
+            if (neg) await base44.entities.Pipeline.update(neg.id, { temperatura: 'Fechado' }).catch(() => {});
+            abrirOp?.(c.id);
+          }} />
+      )}
     </div>
   );
 }
