@@ -29,6 +29,7 @@ import Implantacoes from './pages/Implantacoes';
 import DashParceiro from './pages/DashParceiro';
 import RncPublicaPage from './pages/RncPublicaPage';
 import ContaInternacionalPublicaPage from './pages/ContaInternacionalPublicaPage';
+import OffshorePublicaPage from './pages/OffshorePublicaPage';
 import IndicacaoPublicaPage from './pages/IndicacaoPublicaPage';
 import IndicacaoGenericaPage from './pages/IndicacaoGenericaPage';
 import PortalIndicador from './pages/PortalIndicador';
@@ -64,6 +65,14 @@ const AuthenticatedApp = () => {
     return (
       <Routes>
         <Route path="/conta-internacional-publica/:token" element={<ContaInternacionalPublicaPage />} />
+      </Routes>
+    );
+  }
+  // Formulário público pós-contrato da Offshore / LLC
+  if (location.pathname.startsWith('/offshore-publica')) {
+    return (
+      <Routes>
+        <Route path="/offshore-publica/:token" element={<OffshorePublicaPage />} />
       </Routes>
     );
   }
