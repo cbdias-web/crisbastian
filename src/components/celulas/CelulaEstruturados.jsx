@@ -351,6 +351,11 @@ function Overlay({ cfg, sp, setSp }) {
           </div>
         )}
       </section>
+      {ndaModal && (
+        <NdaGeradorModal estudo={ndaModal.estudo} produto={produto} t={t}
+          onClose={() => setNdaModal(null)}
+          onGerado={(id) => { setNdaModal(null); recarregar(); setParam({ op: id }); }} />
+      )}
     </div>
   );
 }
