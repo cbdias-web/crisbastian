@@ -1,0 +1,255 @@
+{
+  "name": "RncOffshore",
+  "properties": {
+    "autorizacao_lgpd": {
+      "default": false,
+      "type": "boolean"
+    },
+    "cliente_nome": {
+      "description": "Cliente destinatario do link (saudacao e pre-preenchimento)",
+      "type": "string"
+    },
+    "contratante_bairro": {
+      "type": "string"
+    },
+    "contratante_cep": {
+      "type": "string"
+    },
+    "contratante_cidade": {
+      "type": "string"
+    },
+    "contratante_cpf": {
+      "type": "string"
+    },
+    "contratante_email": {
+      "type": "string"
+    },
+    "contratante_endereco": {
+      "description": "Logradouro, numero e complemento",
+      "type": "string"
+    },
+    "contratante_estado": {
+      "type": "string"
+    },
+    "contratante_estado_civil": {
+      "enum": [
+        "Solteiro(a)",
+        "Casado(a)",
+        "Divorciado(a)",
+        "Viuvo(a)",
+        "Uniao Estavel"
+      ],
+      "type": "string"
+    },
+    "contratante_nacionalidade": {
+      "type": "string"
+    },
+    "contratante_nascimento": {
+      "format": "date",
+      "type": "string"
+    },
+    "contratante_nome": {
+      "description": "Nome completo do contratante",
+      "type": "string"
+    },
+    "contratante_passaporte": {
+      "description": "Numero do passaporte",
+      "type": "string"
+    },
+    "contratante_profissao": {
+      "type": "string"
+    },
+    "contratante_rg": {
+      "description": "Numero do RG ou CNH",
+      "type": "string"
+    },
+    "contratante_telefone": {
+      "type": "string"
+    },
+    "contrato_id": {
+      "description": "ID do contrato Offshore vinculado",
+      "type": "string"
+    },
+    "data_preenchimento": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "declaracao_veracidade": {
+      "default": false,
+      "type": "boolean"
+    },
+    "declaracoes_aceitas_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "documentos": {
+      "default": [],
+      "description": "Checklist de documentos",
+      "items": {
+        "properties": {
+          "descricao": {
+            "type": "string"
+          },
+          "nome_arquivo": {
+            "type": "string"
+          },
+          "obrigatorio": {
+            "type": "boolean"
+          },
+          "recebido": {
+            "default": false,
+            "type": "boolean"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "link_gerado_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "link_origem_admin": {
+      "type": "string"
+    },
+    "link_preenchido_em": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "link_token": {
+      "type": "string"
+    },
+    "llc_atividade": {
+      "description": "Atividade da LLC",
+      "type": "string"
+    },
+    "llc_gestor": {
+      "description": "Quem sera o manager da LLC",
+      "enum": [
+        "contratante",
+        "outro"
+      ],
+      "type": "string"
+    },
+    "llc_gestor_nome": {
+      "description": "Nome do manager quando nao for o contratante",
+      "type": "string"
+    },
+    "llc_membros": {
+      "default": [],
+      "description": "Socios (members) da LLC e participacao",
+      "items": {
+        "properties": {
+          "documento": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "percentual": {
+            "type": "number"
+          },
+          "tipo": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "llc_nome_opcao1": {
+      "description": "1a opcao de nome da LLC",
+      "type": "string"
+    },
+    "llc_nome_opcao2": {
+      "description": "2a opcao de nome da LLC",
+      "type": "string"
+    },
+    "llc_nome_opcao3": {
+      "description": "3a opcao de nome da LLC",
+      "type": "string"
+    },
+    "llc_proposito": {
+      "description": "Proposito da estrutura (protecao patrimonial, recebimentos, investimentos etc.)",
+      "type": "string"
+    },
+    "llc_tipo_membros": {
+      "description": "Single-member (socio unico) ou Multi-member (varios socios)",
+      "enum": [
+        "single",
+        "multi"
+      ],
+      "type": "string"
+    },
+    "mensagem_cliente": {
+      "description": "Mensagem personalizada exibida no topo do formulario publico",
+      "type": "string"
+    },
+    "observacoes": {
+      "type": "string"
+    },
+    "pdf_nome": {
+      "type": "string"
+    },
+    "pdf_url": {
+      "type": "string"
+    },
+    "perfil_movimentacao_prevista": {
+      "description": "Faixa de movimentacao anual prevista (USD)",
+      "type": "string"
+    },
+    "perfil_paises": {
+      "description": "Paises com que a empresa vai operar",
+      "type": "string"
+    },
+    "perfil_pep": {
+      "description": "Contratante e pessoa politicamente exposta?",
+      "enum": [
+        "sim",
+        "nao"
+      ],
+      "type": "string"
+    },
+    "perfil_pep_detalhe": {
+      "type": "string"
+    },
+    "preenchido_por": {
+      "type": "string"
+    },
+    "responsavel_nome": {
+      "description": "Consultor responsavel que assina a mensagem",
+      "type": "string"
+    },
+    "socio_pj": {
+      "description": "Alguma empresa sera socia da LLC?",
+      "enum": [
+        "sim",
+        "nao"
+      ],
+      "type": "string"
+    },
+    "socio_pj_cnpj": {
+      "type": "string"
+    },
+    "socio_pj_razao_social": {
+      "type": "string"
+    },
+    "status": {
+      "default": "rascunho",
+      "enum": [
+        "rascunho",
+        "concluido",
+        "enviado"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [],
+  "type": "object"
+}

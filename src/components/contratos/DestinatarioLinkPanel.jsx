@@ -31,7 +31,7 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
 
   useEffect(() => {
     clearTimeout(timer.current);
-    if (busca.trim().length < 3) { setResultados([]); setBuscando(false); return; }
+    if (busca.trim().length < 2) { setResultados([]); setBuscando(false); return; }
     setBuscando(true);
     timer.current = setTimeout(async () => {
       try { setResultados(await buscarClientes({ busca: busca.trim(), limite: 6 })); }
@@ -62,16 +62,26 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
             className="w-full pl-8 pr-8 py-1.5 text-xs rounded-lg focus:outline-none"
             style={{ ...inputStyle, background: A.surface }} />
           {buscando && <Loader2 className="w-3 h-3 animate-spin absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: A.accent }} />}
-          {resultados.length > 0 && (
-            <div className="absolute z-20 left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-2xl"
+          {busca.trim().length >= 2 && (
+            <div className="absolute z-30 left-0 right-0 mt-1 rounded-lg overflow-hidden shadow-2xl"
               style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
-              {resultados.map(c => (
+              {buscando && (
+                <p className="px-3 py-2 text-xs flex items-center gap-2" style={{ color: A.muted }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Buscando na base...
+                </p>
+              )}
+              {!buscando && resultados.map(c => (
                 <button key={c.id} onClick={() => escolher(c)}
                   className="w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 hover:bg-white/5">
                   <span className="truncate">{c.nome}</span>
                   <span className="text-[10px] flex-shrink-0" style={{ color: A.muted }}>{c.cpf_cnpj || ''}</span>
                 </button>
               ))}
+              {!buscando && resultados.length === 0 && (
+                <p className="px-3 py-2 text-xs" style={{ color: A.muted }}>
+                  Nenhum cliente encontrado para “{busca.trim()}”.
+                </p>
+              )}
             </div>
           )}
         </div>

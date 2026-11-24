@@ -11,6 +11,8 @@ const A = {
 const inputStyle = { background: A.surface2, border: `1px solid ${A.border}`, color: A.text };
 const labelStyle = { color: A.textMuted, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' };
 const digitos = (v) => String(v || '').replace(/\D/g, '');
+// Nomes com ( ) . + & quebram a expressão regular da busca — escapa antes de enviar.
+const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * Busca o cliente na base automaticamente (nome, CPF/CNPJ ou e-mail).
@@ -38,12 +40,9 @@ export default function ClienteEstudoPicker({ onSelecionar }) {
     setBuscando(true);
     const t = setTimeout(async () => {
       try {
+        const rx = { $regex: escapar(termo), $options: 'i' };
         const r = await base44.entities.Cliente.filter({
-          $or: [
-            { nome: { $regex: termo, $options: 'i' } },
-            { cpf_cnpj: { $regex: termo, $options: 'i' } },
-            { email: { $regex: termo, $options: 'i' } },
-          ],
+          $or: [{ nome: rx }, { cpf_cnpj: rx }, { email: rx }, { telefone: rx }],
         }, { limit: 8, sort: 'nome' });
         if (cancelado) return;
         setResultados(Array.isArray(r) ? r : (r?.items || []));
@@ -108,10 +107,15 @@ export default function ClienteEstudoPicker({ onSelecionar }) {
             {buscando && <Loader2 className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 animate-spin" style={{ color: A.accent }} />}
           </div>
 
-          {aberto && busca.trim().length >= 2 && !buscando && (
-            <div className="absolute z-30 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-2xl"
+          {aberto && busca.trim().length >= 2 && (
+            <div className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-2xl"
               style={{ background: A.surface2, border: `1px solid ${A.border}` }}>
-              {resultados.map(c => (
+              {buscando && (
+                <p className="px-3 py-2.5 text-xs flex items-center gap-2" style={{ color: A.textMuted }}>
+                  <Loader2 className="w-3 h-3 animate-spin" /> Buscando na base...
+                </p>
+              )}
+              {!buscando && resultados.map(c => (
                 <button key={c.id} type="button" onClick={() => escolher(c)}
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-white/[0.05]">
                   <span className="flex-1 truncate" style={{ color: A.text }}>{c.nome}</span>
@@ -120,7 +124,7 @@ export default function ClienteEstudoPicker({ onSelecionar }) {
                     style={{ background: A.accentDim, color: A.accent }}>{c.tipo_pessoa || '—'}</span>
                 </button>
               ))}
-              {resultados.length === 0 && (
+              {!buscando && resultados.length === 0 && (
                 <p className="px-3 py-2.5 text-xs" style={{ color: A.textMuted }}>
                   Nenhum cliente encontrado para “{busca.trim()}”.
                 </p>
