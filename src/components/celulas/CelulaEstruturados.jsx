@@ -19,7 +19,7 @@ import RncContaInternacionalModal from '@/components/contratos/RncContaInternaci
 import OffshoreFormModal from '@/components/contratos/OffshoreFormModal';
 import { DetalheEstudoModal } from '@/pages/EstudoViabilidade';
 import { Workspace as AnaliseWorkspace } from '@/pages/AnaliseTecnica';
-import { valorHonorariosProjeto, somaEtapas } from '@/lib/propostaTecnica';
+import { valorHonorariosProjeto, somaEtapas, parcelamentoDaProposta, extrairParcelamento } from '@/lib/propostaTecnica';
 import { confirmar } from '@/lib/confirmar';
 import CampoMoeda from '@/components/ui/campo-moeda';
 
@@ -886,15 +886,10 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   const irAba = (to) => (typeof to === 'function' ? to() : ir(to));
   // Valores definidos na análise/proposta seguem para o contrato
   const propostaBase = propostas.find(p => p.id === e.proposta_atual_id) || propostas.find(p => p.status === 'aceita') || propostas[0] || null;
-  const invBase = propostaBase?.conteudo?.investimento || {};
-  const totalBase = propostaBase ? valorHonorariosProjeto(propostaBase.conteudo) || 0 : 0;
-  const nParc = Number(invBase.num_parcelas) || 0;
+  // Valor, entrada, parcelas e forma de pagamento da versão vigente da análise (campos ou texto de condições)
   const valoresDaProposta = propostaBase ? {
     _origem: `${propostaBase.codigo || 'Proposta'} · v${propostaBase.versao}`,
-    valor_total: totalBase || '',
-    ...(invBase.entrada !== undefined && invBase.entrada !== '' ? { valor_adesao: Number(invBase.entrada) || 0 } : {}),
-    ...(invBase.num_parcelas !== undefined && invBase.num_parcelas !== '' ? { num_parcelas: nParc, valor_parcela: nParc > 0 ? Number((Math.max(0, totalBase - (Number(invBase.entrada) || 0)) / nParc).toFixed(2)) : 0 } : {}),
-    ...(invBase.forma_pagamento ? { forma_pagamento: invBase.forma_pagamento } : {}),
+    ...parcelamentoDaProposta(propostaBase.conteudo),
     ...(jornada.tipoContrato === 'OFFSHORE' ? { prazo_implantacao_dias: somaEtapas(propostaBase.conteudo?.etapas).prazo || '' } : {}),
     observacoes: propostaBase.conteudo?.investimento?.condicoes ? `Condições da proposta ${propostaBase.codigo || 'v' + propostaBase.versao}: ${propostaBase.conteudo.investimento.condicoes}` : '',
   } : null;
@@ -1258,7 +1253,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
         <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar} user={user} isAdmin={isAdmin}
           key={'ct' + editarCt} editarAoAbrir={editarCt > 0}
           clienteId={neg?.cliente_id || ct?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
-          valoresIniciais={negAberta ? { valor_total: negAberta.valor_estimado || '', observacoes: negAberta.descricao || '' } : null}
+          valoresIniciais={negAberta ? { _origem: 'negociação', valor_total: negAberta.valor_estimado || '', ...extrairParcelamento(negAberta.descricao, negAberta.valor_estimado), observacoes: negAberta.descricao || '' } : null}
           clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, telefone: neg.cliente_telefone } : ct ? { nome: ct.nome, cpf_cnpj: ct.cpf_cnpj, email: ct.email, telefone: ct.telefone } : null}
           onCriado={async (c) => {
             if (negAberta) await base44.entities.Pipeline.update(negAberta.id, { temperatura: 'Fechado' }).catch(() => {});
