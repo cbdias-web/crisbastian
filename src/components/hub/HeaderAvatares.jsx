@@ -24,6 +24,12 @@ export default function HeaderAvatares({ groups, currentPageName }) {
   }, []);
   useEffect(() => { setAberto(null); }, [location.pathname]);
 
+  const abrirPainel = (id) => {
+    const sp = new URLSearchParams(location.search);
+    sp.set('painel', id);
+    navigate({ pathname: location.pathname, search: '?' + sp.toString() });
+    setAberto(null);
+  };
   const abrirCelula = (id) => {
     const sp = new URLSearchParams(location.search);
     sp.set('celula', id);
@@ -63,7 +69,7 @@ export default function HeaderAvatares({ groups, currentPageName }) {
         const ativo = g.items.some(i => i.page === currentPageName);
         const badge = g.items.reduce((s, i) => s + (i.badge || 0), 0);
         return <Avatar key={g.label} id={g.label} label={g.label} Icon={Icon} cor={v.cor} ativo={ativo} badge={badge}
-          onClick={() => setAberto(aberto === g.label ? null : g.label)} />;
+          onClick={() => (g.label === 'Prospecção' ? abrirPainel('prospeccao') : setAberto(aberto === g.label ? null : g.label))} />;
       })}
 
       {aberto && (

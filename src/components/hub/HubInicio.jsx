@@ -89,6 +89,12 @@ export default function HubInicio({ user, groups, isAdmin }) {
     }).finally(() => setCarregando(false));
   }, []);
 
+  // Prospecção abre como painel imersivo (dash + ferramentas), no padrão das células
+  const abrirPainel = (id) => {
+    const sp = new URLSearchParams(location.search);
+    sp.set('painel', id);
+    navigate({ pathname: location.pathname, search: '?' + sp.toString() });
+  };
   const abrirCelula = (id) => {
     const sp = new URLSearchParams(location.search);
     sp.set('celula', id);
@@ -189,7 +195,7 @@ export default function HubInicio({ user, groups, isAdmin }) {
           const Icon = ICONE_BLOCO[g.label];
           const badge = g.items.reduce((s, i) => s + (i.badge || 0), 0);
           return (
-            <button key={g.label} onClick={() => setBlocoAberto(g.label)} className="vx-lift flex flex-col items-center gap-2 w-[120px] py-3 rounded-3xl"
+            <button key={g.label} onClick={() => (g.label === 'Prospecção' ? abrirPainel('prospeccao') : setBlocoAberto(g.label))} className="vx-lift flex flex-col items-center gap-2 w-[120px] py-3 rounded-3xl"
               style={{ '--vx-glow': v.cor + '40' }}>
               <span className="vx-av relative w-[76px] h-[76px] rounded-full flex items-center justify-center"
                 style={{ background: v.fundo, border: `2px solid ${v.cor}` }}>
