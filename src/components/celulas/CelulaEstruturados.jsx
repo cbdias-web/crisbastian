@@ -359,7 +359,7 @@ function Overlay({ cfg, sp, setSp }) {
                 ))}
               </div>
               <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Atalhos</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>Visão geral (áreas espelho)</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {(cfg.fonte === 'estudo'
                     ? [['Estudos', '/EstudoViabilidade'], ['Análise técnica', '/AnaliseTecnica'], [jornada.tipoContrato ? 'Contratos ' + jornada.nome : 'Contratos', jornada.tipoContrato ? `/Contratos?tipo=${encodeURIComponent(jornada.tipoContrato)}` : '/Contratos']]
