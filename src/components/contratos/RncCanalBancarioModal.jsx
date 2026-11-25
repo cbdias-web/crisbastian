@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { isoNowBrasilia } from '@/lib/dateUtils';
 import CampoMascara from '@/components/ui/campo-mascara';
 import DestinatarioLinkPanel, { mensagemPadrao } from '@/components/contratos/DestinatarioLinkPanel';
+import { produtoRnc, infoRnc } from '@/lib/coletaProdutos';
 import { linkPublico, origemPublica } from '@/lib/appUrl';
 
 const DOC_CONFIG = {
@@ -100,7 +101,8 @@ function slotFromRnc(rnc) {
   };
 }
 
-export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }) {
+// produto: CANAL BANCÁRIO (padrão), ROF ou DOLARIZE — mesmo formulário RNC, títulos e mensagem do produto
+export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, produto: produtoProp }) {
   const queryClient = useQueryClient();
   const [tipoCanal, setTipoCanal] = useState('PF');
   const [dadosPorTipo, setDadosPorTipo] = useState({ PF: emptySlot('PF'), PJ: emptySlot('PJ') });
@@ -125,12 +127,16 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   const socios = slot.socios;
   const operarAcima270k = slot.operarAcima270k;
   const rncExistente = slot.rnc;
+  const produtoForm = produtoRnc(produtoProp || rncExistente?.produto);
+  const infoProd = infoRnc(produtoForm);
+  const msgKey = infoProd.msg;
+  const msgFinal = (m) => (!m || (m === mensagemPadrao('canal') && msgKey !== 'canal') ? mensagemPadrao(msgKey) : m);
   const linkRnc = slot.link;
   const destinatario = slot.destinatario || emptyDestinatario();
   const updateDestinatario = (patch) => updateSlot({ destinatario: { ...destinatario, ...patch } });
   const textoConvite = () => {
     const nome = destinatario.cliente_nome || form.nome || '';
-    const corpo = destinatario.mensagem_cliente || mensagemPadrao('canal');
+    const corpo = msgFinal(destinatario.mensagem_cliente);
     return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${corpo}\n\n${linkRnc}`;
   };
   const telWhats = (() => {
@@ -317,6 +323,10 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
   const removeSocio = (index) => updateSlot({ socios: socios.filter((_, i) => i !== index) });
 
   const updateForm = (field, value) => updateSlot({ form: { ...form, [field]: value } });
+  useEffect(() => {
+    if (msgKey === 'canal') return;
+    setDadosPorTipo(prev => Object.fromEntries(Object.entries(prev).map(([k, sl]) => [k, sl.rnc ? sl : { ...sl, destinatario: { ...(sl.destinatario || emptyDestinatario()), mensagem_cliente: msgFinal(sl.destinatario?.mensagem_cliente) } }])));
+  }, [msgKey]);
 
   const coletarDados = () => ({
     contrato_id: rncExistente?.contrato_id || contrato?.id || '',
@@ -329,7 +339,8 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
     documentos,
     socios: tipoCanal === 'PJ' ? socios : [],
     cliente_nome: destinatario.cliente_nome?.trim() || form.nome?.trim() || '',
-    mensagem_cliente: destinatario.mensagem_cliente || mensagemPadrao('canal'),
+    mensagem_cliente: msgFinal(destinatario.mensagem_cliente),
+    produto: produtoForm,
     responsavel_nome: destinatario.responsavel_nome || '',
     preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
     data_preenchimento: isoNowBrasilia(),
@@ -480,7 +491,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId }
               <FileCheck2 className="w-5 h-5" style={{ color: '#a78bfa' }} />
             </div>
             <div>
-              <h2 className="text-lg font-bold" style={{ color: AURORA.text }}>RNC — Canal Bancário</h2>
+              <h2 className="text-lg font-bold" style={{ color: AURORA.text }}>RNC — {infoProd.titulo}</h2>
               <p className="text-xs" style={{ color: AURORA.textMuted }}>
                 {rncExistente
                   ? `${tipoCanal === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'} · ${form.nome || contrato?.nome || ''}`
