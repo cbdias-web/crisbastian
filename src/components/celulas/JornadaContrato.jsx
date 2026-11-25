@@ -126,7 +126,12 @@ function formInicial({ contrato, tipo, cliente, valoresIniciais }) {
   const c = cliente || {};
   const doCliente = Object.fromEntries(['nome', 'cpf_cnpj', 'responsavel_legal', 'cpf_responsavel', 'nascimento', 'nacionalidade', 'profissao', 'estado_civil', 'email', 'telefone', 'cep', 'endereco', 'bairro', 'cidade', 'estado'].filter(k => c[k]).map(k => [k, c[k]]));
   const vals = Object.fromEntries(Object.entries(valoresIniciais || {}).filter(([k, v]) => !k.startsWith('_') && v !== '' && v != null));
-  return { ...base, ...doCliente, ...vals, ...(c.id ? { cliente_id: c.id } : {}) };
+  const f = { ...base, ...doCliente, ...vals, ...(c.id ? { cliente_id: c.id } : {}) };
+  // Parcela calculada a partir de total, entrada e nº de parcelas vindos da análise/negociação
+  const np = parseInt(f.num_parcelas) || 0;
+  if (np > 0 && !(parseFloat(f.valor_parcela) > 0)) f.valor_parcela = (Math.max(0, (parseFloat(f.valor_total) || 0) - (parseFloat(f.valor_adesao) || 0)) / np).toFixed(2);
+  if (np === 0 && f.valor_total) { f.valor_adesao = f.valor_adesao || f.valor_total; f.valor_parcela = '0'; }
+  return f;
 }
 
 export default function JornadaContrato({ contrato: inicial, tipoContrato, clienteId, clienteFallback, vinculo = {}, valoresIniciais, t, user, isAdmin, editarAoAbrir = false, onCriado, onAtualizado, onVendaCriada }) {
