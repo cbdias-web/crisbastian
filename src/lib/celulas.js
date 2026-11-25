@@ -140,7 +140,7 @@ export function etapaContrato(contrato, implantacao) {
 export function proximaAcaoContrato(etapa, contrato, produto) {
   const tipo = JORNADAS[produto]?.tipoContrato;
   switch (etapa) {
-    case 0: return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Atualizar a negociação', to: '/Pipeline' };
+    case 0: return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Atualizar a negociação', acao: 'negociacao', to: '' };
     case 1: return { label: 'Concluir e gerar o PDF', acao: 'contrato', to: '' };
     case 2: return { label: 'Acompanhar a assinatura', acao: 'contrato', to: '' };
     case 3: return { label: contrato?.status === 'assinado' ? 'Registrar o pagamento' : 'Confirmar o pagamento e enviar para Vendas', acao: 'contrato', to: '' };
