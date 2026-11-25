@@ -23,6 +23,7 @@ import { SlidersHorizontal } from "lucide-react";
 import DashNovo from "@/components/dashboard/DashNovo";
 import VendasGerentePopup from "@/components/dashboard/VendasGerentePopup";
 import { todayBrasilia } from '@/lib/dateUtils';
+import { brlCompacto } from '@/lib/moeda';
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -744,7 +745,7 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,212,170,0.08)" vertical={false} />
                     <XAxis dataKey="nome" tick={{ fontSize: 11, fill: A.textMuted }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: A.textMuted }} axisLine={false} tickLine={false}
-                      tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                      width={72} tickFormatter={v => brlCompacto(v)} />
                     <Tooltip cursor={false} content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null;
                       const item = payload.find(p => p.dataKey === 'volume') || payload[0];

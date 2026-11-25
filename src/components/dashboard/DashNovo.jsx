@@ -5,6 +5,7 @@ import { TrendingUp, FileText, DollarSign, BarChart2, Users, ArrowUpRight, Award
 import { CELULAS_CAPA } from '@/lib/novoPortal';
 import { ICONE_CELULA } from '@/components/hub/HeaderAvatares';
 import VendasGerentePopup from '@/components/dashboard/VendasGerentePopup';
+import { brlCompacto } from '@/lib/moeda';
 
 const TEAL = '#00D4AA';
 const GOLD = '#D4AF37';
@@ -159,7 +160,7 @@ export default function DashNovo(p) {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                   <XAxis dataKey="dia" tick={{ fontSize: 10, fill: T.muted }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={24} />
-                  <YAxis tick={{ fontSize: 10, fill: T.muted }} axisLine={false} tickLine={false} width={44} tickFormatter={v => (v >= 1000 ? `${Math.round(v / 1000)}k` : v)} />
+                  <YAxis tick={{ fontSize: 10, fill: T.muted }} axisLine={false} tickLine={false} width={72} tickFormatter={v => brlCompacto(v)} />
                   <Tooltip cursor={{ stroke: 'rgba(255,255,255,0.15)' }} content={({ active, payload, label }) => {
                     if (!active || !payload?.length) return null;
                     const r = payload.find(x => x.dataKey === 'realizado');
