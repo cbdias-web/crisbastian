@@ -32,7 +32,7 @@ function sanitize(rnc: any) {
   // o nome já cadastrado no formulário (razão social PJ / titular PF).
   const clienteNome = (rnc.cliente_nome || '').trim()
     || (rnc.tipo_conta === 'PJ' ? rnc.secao1_pj_razao_social : rnc.secao3_nome) || '';
-  const MENSAGEM_PADRAO = 'Para darmos início à abertura da sua conta internacional, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.';
+  const MENSAGEM_PADRAO = 'Seja bem-vindo(a) à Villela Exchange! Para darmos início à abertura da sua conta internacional, precisamos de alguns dados e documentos. Preencha o formulário com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, fale comigo: estou acompanhando o seu atendimento.';
   return {
     id: rnc.id,
     tipo_conta: rnc.tipo_conta,

@@ -54,6 +54,8 @@ Deno.serve(async (req) => {
     if (!rnc_id) return Response.json({ error: 'rnc_id obrigatorio' }, { status: 400 });
 
     const rnc = await base44.entities.RncCanalBancario.get(rnc_id);
+    const PROD: Record<string, string> = { 'ROF': 'ROF - Registro de Operacao Financeira', 'DOLARIZE': 'Dolarize' };
+    const rotulo = PROD[(rnc as any)?.produto] || 'Canal Bancario';
     if (!rnc) return Response.json({ error: 'RNC nao encontrada' }, { status: 404 });
 
     const doc = await PDFDocument.create();
@@ -89,14 +91,14 @@ Deno.serve(async (req) => {
     // Bloco central — título principal do documento
     const cy = PH / 2 + 60;
     cover.drawText('RNC', { x: 44, y: cy + 60, size: 52, font: fontBold, color: C.teal });
-    cover.drawText('CANAL BANCARIO', { x: 46, y: cy + 36, size: 11, font, color: C.tealDim });
+    cover.drawText(rotulo.toUpperCase(), { x: 46, y: cy + 36, size: 11, font, color: C.tealDim });
 
     // Linha decorativa
     cover.drawLine({ start: { x: 44, y: cy + 24 }, end: { x: 220, y: cy + 24 }, thickness: 1.5, color: C.teal });
 
     // Subtítulo sofisticado
     cover.drawText('Formulario de Abertura de', { x: 44, y: cy - 2, size: 22, font: fontBold, color: C.white });
-    cover.drawText('Canal Bancario', { x: 44, y: cy - 28, size: 22, font: fontBold, color: C.white });
+    cover.drawText(rotulo, { x: 44, y: cy - 28, size: 22, font: fontBold, color: C.white });
     cover.drawText('Villela Exchange — Servicos Financeiros Internacionais', { x: 44, y: cy - 56, size: 10, font: fontOblique, color: C.accent });
     cover.drawText('Documento confidencial para uso interno e cadastro bancario.', { x: 44, y: cy - 74, size: 9, font, color: C.grayLt });
 
@@ -130,7 +132,7 @@ Deno.serve(async (req) => {
       // Barra teal lateral
       pg.drawRectangle({ x: 0, y: 0, width: 4, height: PH, color: C.teal });
       // Rodapé esquerdo
-      pg.drawText('RNC - Abertura de Canal Bancario | Villela Exchange', { x: ML, y: 24, size: 7.5, font, color: C.gray });
+      pg.drawText(`RNC - ${rotulo} | Villela Exchange`, { x: ML, y: 24, size: 7.5, font, color: C.gray });
       // Rodapé direito — número de página
       const pStr = 'Pag. ' + num;
       pg.drawText(pStr, { x: MR - font.widthOfTextAtSize(pStr, 7.5), y: 24, size: 7.5, font, color: C.gray });
@@ -142,7 +144,7 @@ Deno.serve(async (req) => {
       pg.drawRectangle({ x: ML, y: PH - 36, width: 12, height: 12, color: C.teal });
       pg.drawRectangle({ x: ML + 8, y: PH - 42, width: 9, height: 9, color: C.white, borderColor: C.teal, borderWidth: 1 });
       pg.drawText('VILLELA EXCHANGE', { x: ML + 26, y: PH - 30, size: 8, font: fontBold, color: C.dark });
-      pg.drawText('Canal Bancario — RNC', { x: ML + 26, y: PH - 41, size: 7, font, color: C.gray });
+      pg.drawText(`${rotulo} — RNC`, { x: ML + 26, y: PH - 41, size: 7, font, color: C.gray });
       pg.drawLine({ start: { x: ML, y: PH - 48 }, end: { x: MR, y: PH - 48 }, thickness: 0.5, color: C.lineSep });
     }
     addHeader(page);
@@ -212,13 +214,13 @@ Deno.serve(async (req) => {
     y = PH - 62;
 
     // TÍTULO DA PÁGINA DE CONTEÚDO
-    const titDoc = 'REQUISICAO DE NOVO CANAL BANCARIO (RNC)';
+    const titDoc = rotulo === 'Canal Bancario' ? 'REQUISICAO DE NOVO CANAL BANCARIO (RNC)' : `FORMULARIO DE CADASTRO - ${rotulo.toUpperCase()}`;
     const titW = fontBold.widthOfTextAtSize(titDoc, 13);
     dt(titDoc, (PW - titW) / 2, 13, fontBold, C.teal);
     page.drawLine({ start: { x: (PW - titW) / 2, y: y - 1 }, end: { x: (PW - titW) / 2 + titW, y: y - 1 }, thickness: 0.7, color: C.teal });
     y -= 16;
 
-    const subtit = rnc.tipo_canal === 'PJ' ? 'CANAL BANCARIO - PESSOA JURIDICA' : 'CANAL BANCARIO - PESSOA FISICA';
+    const subtit = `${rotulo.toUpperCase()} - ${rnc.tipo_canal === 'PJ' ? 'PESSOA JURIDICA' : 'PESSOA FISICA'}`;
     const stW = font.widthOfTextAtSize(subtit, 8.5);
     dt(subtit, (PW - stW) / 2, 8.5, font, C.gray);
     y -= 6;
@@ -337,7 +339,7 @@ Deno.serve(async (req) => {
     y -= 16;
 
     // Declaração
-    const declTxt = 'Declaro que as informacoes fornecidas sao verdadeiras e estou ciente de que serao utilizadas para abertura do Canal Bancario.';
+    const declTxt = 'Declaro que as informacoes fornecidas sao verdadeiras e estou ciente de que serao utilizadas para ' + (rotulo === 'Canal Bancario' ? 'abertura do Canal Bancario' : rotulo) + '.';
     const declLines = wrapText(declTxt, fontOblique, 8.5, TW);
     for (const ln of declLines) { dt(ln, ML, 8.5, fontOblique, C.gray); nextLine(2); }
     y -= 20;
@@ -361,7 +363,7 @@ Deno.serve(async (req) => {
       base64 += String.fromCharCode(...uint8.slice(i, i + 8192));
     }
 
-    const nomeArquivo = `RNC_Canal_Bancario_${(rnc.nome || 'formulario').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const nomeArquivo = `RNC_${rotulo.replace(/[^a-zA-Z0-9]+/g, '_')}_${(rnc.nome || 'formulario').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
     return Response.json({
       pdf_base64: btoa(base64),
       filename: nomeArquivo,

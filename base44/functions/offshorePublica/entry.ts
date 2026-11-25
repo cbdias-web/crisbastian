@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { mergeDocs, calcularPendencias } from '../../shared/offshoreForm.ts';
 
-const MENSAGEM_PADRAO = 'Para darmos início à constituição da sua empresa no exterior (LLC), precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.';
+const MENSAGEM_PADRAO = 'Seja bem-vindo(a) à Villela Exchange! Para darmos início à constituição da sua empresa no exterior (LLC), precisamos de alguns dados e documentos. Preencha o formulário com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, fale comigo: estou acompanhando o seu atendimento.';
 
 // Campos que o cliente pode preencher pelo link público (nada administrativo).
 const CAMPOS_CLIENTE = [

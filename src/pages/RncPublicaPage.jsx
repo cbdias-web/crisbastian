@@ -179,7 +179,7 @@ export default function RncPublicaPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: AURORA.accent }}>Villela Exchange · RNC</p>
-              <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Abertura de Canal Bancário</h1>
+              <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>{{ ROF: 'ROF — Registro de Operação Financeira', DOLARIZE: 'Abertura da conta Dolarize' }[rnc.produto] || 'Abertura de Canal Bancário'}</h1>
               <p className="text-xs" style={{ color: AURORA.textMuted }}>{isPJ ? 'Pessoa Jurídica' : 'Pessoa Física'} — Formulário RNC</p>
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function RncPublicaPage() {
         </div>
 
         <p className="text-center text-[10px] pb-4" style={{ color: AURORA.textMuted }}>
-          Villela Exchange — Documento confidencial. Seus dados são protegidos e usados apenas para abertura do canal bancário.
+          Villela Exchange — Documento confidencial. Seus dados são protegidos e usados apenas para {{ ROF: 'a formalização do seu ROF', DOLARIZE: 'a abertura da sua conta Dolarize' }[rnc?.produto] || 'a abertura do canal bancário'}.
         </p>
       </div>
     </div>

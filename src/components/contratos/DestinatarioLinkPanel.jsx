@@ -11,10 +11,15 @@ const A = {
 const inputStyle = { background: A.surface2, border: `1px solid ${A.border}`, color: A.text };
 const label = { color: A.muted, fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' };
 
+// Mensagem de acolhimento padronizada (mesmo texto para todos os produtos; muda só o objetivo).
+// Na página do cliente ela aparece depois de "Olá, <nome>." e é assinada pelo gerente responsável.
+const acolhimento = (acao) => `Seja bem-vindo(a) à Villela Exchange! Para darmos início à ${acao}, precisamos de alguns dados e documentos. Preencha o formulário com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, fale comigo: estou acompanhando o seu atendimento.`;
 export const MENSAGENS_PADRAO = {
-  canal: 'Para darmos início à abertura do seu canal bancário, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
-  conta: 'Para darmos início à abertura da sua conta internacional, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
-  offshore: 'Para darmos início à constituição da sua empresa no exterior (LLC), precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.',
+  canal: acolhimento('abertura do seu canal bancário'),
+  conta: acolhimento('abertura da sua conta internacional'),
+  offshore: acolhimento('constituição da sua empresa no exterior (LLC)'),
+  rof: acolhimento('formalização do seu ROF (Registro de Operação Financeira)'),
+  dolarize: acolhimento('abertura da sua conta Dolarize'),
 };
 
 export const mensagemPadrao = (tipo) => MENSAGENS_PADRAO[tipo] || MENSAGENS_PADRAO.canal;

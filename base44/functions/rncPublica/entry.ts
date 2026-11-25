@@ -1,7 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 const NOME_PLACEHOLDER = 'Formulário RNC';
-const MENSAGEM_PADRAO = 'Para darmos início à abertura do seu canal bancário, precisamos de alguns dados e documentos. Preencha o formulário abaixo com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, estou à disposição.';
+const ACOLHIMENTO = (acao: string) => `Seja bem-vindo(a) à Villela Exchange! Para darmos início à ${acao}, precisamos de alguns dados e documentos. Preencha o formulário com atenção — seu progresso fica salvo e você pode voltar pelo mesmo link sempre que precisar. Qualquer dúvida, fale comigo: estou acompanhando o seu atendimento.`;
+const ACAO: Record<string, string> = { 'CANAL BANCÁRIO': 'abertura do seu canal bancário', 'ROF': 'formalização do seu ROF (Registro de Operação Financeira)', 'DOLARIZE': 'abertura da sua conta Dolarize' };
+const MENSAGEM_PADRAO_DE = (p?: string) => ACOLHIMENTO(ACAO[p || ''] || ACAO['CANAL BANCÁRIO']);
 
 function sanitizeRnc(rnc: any) {
   // Identificação do cliente na saudação: nome do link ou o já cadastrado no formulário.
@@ -14,7 +16,8 @@ function sanitizeRnc(rnc: any) {
     tipo_canal: rnc.tipo_canal,
     operar_acima_270k: rnc.operar_acima_270k,
     cliente_nome: clienteNome,
-    mensagem_cliente: (rnc.mensagem_cliente || '').trim() || MENSAGEM_PADRAO,
+    produto: rnc.produto || 'CANAL BANCÁRIO',
+    mensagem_cliente: (rnc.mensagem_cliente || '').trim() || MENSAGEM_PADRAO_DE(rnc.produto),
     responsavel_nome: rnc.responsavel_nome,
     nome: rnc.nome,
     cpf_cnpj: rnc.cpf_cnpj,

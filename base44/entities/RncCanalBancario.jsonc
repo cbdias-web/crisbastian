@@ -215,6 +215,10 @@
       "type": "string",
       "format": "date-time",
       "description": "Data/hora da ultima submissao do cliente via link"
+    },
+    "produto": {
+      "type": "string",
+      "description": "Produto do formulário: CANAL BANCÁRIO (padrão), ROF ou DOLARIZE — mesma estrutura de coleta"
     }
   },
   "required": [
