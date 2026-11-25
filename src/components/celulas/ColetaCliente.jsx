@@ -147,35 +147,115 @@ export default function ColetaCliente({ tipo, contrato, user, t, compacto = fals
   );
 }
 
-// Painel da célula: todos os links de coleta do produto (com ou sem contrato) + link avulso
+// Painel da célula: todos os links de coleta do produto (com ou sem contrato) + link avulso,
+// com manutenção: revogar o link (deixa de abrir para o cliente) ou excluir o formulário.
+const diasDesde = (d) => (d ? Math.floor((Date.now() - new Date(d).getTime()) / 86400000) : null);
+const FILTROS = [['todos', 'Todos'], ['aguardando', 'Aguardando'], ['preenchidos', 'Preenchidos'], ['parados', 'Sem retorno +30 dias']];
+
 export function LinksDeColeta({ tipo, user, t }) {
   const cfg = COLETAS[tipo];
   const [lista, setLista] = useState(null);
   const [aberto, setAberto] = useState(null); // { id } | { novo: true }
   const [recarga, setRecarga] = useState(0);
+  const [filtro, setFiltro] = useState('todos');
+  const [sel, setSel] = useState(new Set());
+  const [menu, setMenu] = useState(null);
+  const [ocupado, setOcupado] = useState(false);
+  const isAdmin = user?.role === 'admin' || user?.permissao_admin === true;
+  const email = String(user?.email || '').toLowerCase();
+  const pode = (r) => isAdmin || String(r.created_by || '').toLowerCase() === email || String(r.link_origem_admin || '').toLowerCase() === email;
+
   useEffect(() => {
     if (!cfg) return;
-    base44.entities[cfg.ent].list('-created_date', 100).then(l => setLista(l || [])).catch(() => setLista([]));
+    base44.entities[cfg.ent].list('-created_date', 300).then(l => setLista(l || [])).catch(() => setLista([]));
+    setSel(new Set());
   }, [tipo, recarga]);
+  useEffect(() => {
+    if (!menu) return;
+    const f = () => setMenu(null);
+    window.addEventListener('click', f);
+    return () => window.removeEventListener('click', f);
+  }, [menu]);
   if (!cfg) return null;
+
+  const preenchido = (r) => situacaoColeta(r).ok;
+  const parado = (r) => !preenchido(r) && (diasDesde(r.link_gerado_em || r.created_date) ?? 0) > 30;
+  const visiveis = (lista || []).filter(r => filtro === 'todos' || (filtro === 'aguardando' && !preenchido(r)) || (filtro === 'preenchidos' && preenchido(r)) || (filtro === 'parados' && parado(r)));
+
+  const revogar = async (r) => {
+    if (!confirm(`Revogar o link de ${r.cliente_nome || r.nome || 'cliente'}? Ele deixa de abrir para o cliente; o formulário e o que já foi enviado continuam salvos.`)) return;
+    try { await base44.entities[cfg.ent].update(r.id, { link_token: null }); toast.success('Link revogado.'); setRecarga(n => n + 1); }
+    catch (e) { toast.error(e.message); }
+  };
+  const excluir = async (lista) => {
+    const comDados = lista.filter(preenchido).length;
+    const msg = lista.length === 1
+      ? `Excluir o formulário de ${lista[0].cliente_nome || lista[0].nome || 'cliente'}?${comDados ? ' ATENÇÃO: o cliente já preencheu — respostas e documentos serão apagados.' : ''} Esta ação não pode ser desfeita.`
+      : `Excluir ${lista.length} formulários?${comDados ? ` ATENÇÃO: ${comDados} já foram preenchidos pelo cliente.` : ''} Esta ação não pode ser desfeita.`;
+    if (!confirm(msg)) return;
+    setOcupado(true);
+    let ok = 0;
+    for (const r of lista) { try { await base44.entities[cfg.ent].delete(r.id); ok++; } catch { /* segue */ } }
+    toast.success(`${ok} formulário(s) excluído(s).`);
+    setOcupado(false);
+    setRecarga(n => n + 1);
+  };
+  const alternar = (id) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selecionados = (lista || []).filter(r => sel.has(r.id));
+  const parados = (lista || []).filter(r => parado(r) && pode(r));
+
   return (
     <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}><ClipboardList className="w-4 h-4" style={{ color: t?.acc }} /> Links de coleta do cliente</span>
       <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>{cfg.titulo}: dados e documentos enviados pelo cliente.</span>
-      <button onClick={() => setAberto({ novo: true })} className="vx-btn vx-btn-soft" style={{ height: 32, padding: '0 12px', fontSize: 12, alignSelf: 'flex-start' }}>+ Link avulso (sem contrato)</button>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button onClick={() => setAberto({ novo: true })} className="vx-btn vx-btn-soft" style={{ height: 30, padding: '0 12px', fontSize: 12 }}>+ Link avulso</button>
+        {parados.length > 0 && filtro !== 'parados' && (
+          <button onClick={() => { setFiltro('parados'); setSel(new Set(parados.map(r => r.id))); }} className="vx-btn vx-btn-ghost" style={{ height: 30, padding: '0 12px', fontSize: 12, color: C.warn }}>
+            {parados.length} sem retorno há +30 dias
+          </button>
+        )}
+      </div>
+      <div role="tablist" aria-label="Filtrar links" style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        {FILTROS.map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={filtro === k} onClick={() => { setFiltro(k); setSel(new Set()); }} className="vx-btn"
+            style={{ height: 26, padding: '0 10px', fontSize: 11, borderRadius: 999, background: filtro === k ? t?.dim : 'transparent', color: filtro === k ? t?.txt : C.muted, border: `1px solid ${filtro === k ? t?.acc : C.line}` }}>{l}</button>
+        ))}
+      </div>
+      {selecionados.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 10, background: 'rgba(244,163,163,.08)', border: '1px solid rgba(244,163,163,.25)', fontSize: 12 }}>
+          <span style={{ flex: 1, color: C.txt2 }}>{selecionados.length} selecionado(s)</span>
+          <button onClick={() => setSel(new Set())} className="vx-btn vx-btn-ghost" style={{ height: 26, padding: '0 8px', fontSize: 11 }}>Limpar</button>
+          <button onClick={() => excluir(selecionados)} disabled={ocupado} className="vx-btn" style={{ height: 26, padding: '0 10px', fontSize: 11, background: 'rgba(244,163,163,.15)', color: '#F4A3A3', border: '1px solid rgba(244,163,163,.35)' }}>
+            {ocupado ? <Loader2 className="w-3 h-3 animate-spin" /> : null} Excluir selecionados
+          </button>
+        </div>
+      )}
       {lista === null && <span style={{ fontSize: 12, color: C.muted }}><Loader2 className="w-3.5 h-3.5 animate-spin inline" /> Carregando…</span>}
-      {lista?.length === 0 && <span style={{ fontSize: 12, color: C.muted }}>Nenhum formulário ainda.</span>}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflow: 'auto' }}>
-        {(lista || []).slice(0, 40).map(r => {
+      {lista && visiveis.length === 0 && <span style={{ fontSize: 12, color: C.muted }}>Nenhum formulário neste filtro.</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 340, overflow: 'auto' }}>
+        {visiveis.slice(0, 120).map(r => {
           const s = situacaoColeta(r);
           const l = r.link_token ? linkPublico(cfg.path, r.link_token) : '';
+          const dias = diasDesde(r.link_gerado_em || r.created_date);
           return (
-            <div key={r.id} className="vx-row-hover" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 8px', borderRadius: 10, fontSize: 12 }}>
+            <div key={r.id} className="vx-row-hover" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 6px', borderRadius: 10, fontSize: 12, position: 'relative' }}>
+              {pode(r) && <input type="checkbox" checked={sel.has(r.id)} onChange={() => alternar(r.id)} aria-label={`Selecionar ${r.cliente_nome || 'formulário'}`} />}
               <button onClick={() => setAberto({ id: r.id })} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'transparent', border: 0, padding: 0, cursor: 'pointer' }}>
                 <span style={{ display: 'block', color: C.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cliente_nome || r.nome || 'Sem nome'}</span>
-                <span style={{ display: 'block', color: s.cor, fontSize: 11 }}>{s.l}{!r.contrato_id ? ' · avulso' : ''}</span>
+                <span style={{ display: 'block', color: s.cor, fontSize: 11 }}>{!r.link_token && !s.ok ? 'Link revogado' : s.l}{!s.ok && dias != null ? ` · ${dias}d` : ''}{!r.contrato_id ? ' · avulso' : ''}</span>
               </button>
-              {l && <button onClick={() => { navigator.clipboard.writeText(l); toast.success('Link copiado.'); }} className="vx-btn vx-btn-ghost" aria-label="Copiar link" style={{ width: 28, height: 28, padding: 0 }}><Copy className="w-3.5 h-3.5" /></button>}
+              {l && <button onClick={() => { navigator.clipboard.writeText(l); toast.success('Link copiado.'); }} className="vx-btn vx-btn-ghost" aria-label="Copiar link" title="Copiar link" style={{ width: 26, height: 26, padding: 0 }}><Copy className="w-3.5 h-3.5" /></button>}
+              {pode(r) && (
+                <button onClick={(e) => { e.stopPropagation(); setMenu(menu === r.id ? null : r.id); }} className="vx-btn vx-btn-ghost" aria-label="Mais ações" title="Manutenção do link" style={{ width: 26, height: 26, padding: 0, fontSize: 16, lineHeight: 1 }}>⋯</button>
+              )}
+              {menu === r.id && (
+                <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 4, top: 32, zIndex: 5, minWidth: 190, borderRadius: 12, background: '#162033', border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 16px 40px rgba(0,0,0,.5)', padding: 4, display: 'flex', flexDirection: 'column' }}>
+                  <button onClick={() => { setMenu(null); setAberto({ id: r.id }); }} className="vx-row-hover" style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 0, color: C.txt2, fontSize: 12 }}>Ver / editar formulário</button>
+                  {r.link_token && <button onClick={() => { setMenu(null); revogar(r); }} className="vx-row-hover" style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 0, color: C.warn, fontSize: 12 }}>Revogar link (cliente não acessa mais)</button>}
+                  <button onClick={() => { setMenu(null); excluir([r]); }} className="vx-row-hover" style={{ textAlign: 'left', padding: '8px 10px', borderRadius: 8, background: 'transparent', border: 0, color: '#F4A3A3', fontSize: 12 }}>Excluir formulário</button>
+                </div>
+              )}
             </div>
           );
         })}
