@@ -4,6 +4,7 @@ import { Send, X, Loader2, Plus, ChevronDown, Globe, Paperclip, FileText } from 
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import JarvisAvatar from '@/components/chat/JarvisAvatar.jsx';
+import JarvisMicrofone from '@/components/chat/JarvisMicrofone.jsx';
 
 const INACTIVITY_MS = 30 * 60 * 1000;
 const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
@@ -817,6 +818,15 @@ export default function AssistenteFloating() {
                 rows={1}
                 className="flex-1 text-sm bg-transparent resize-none focus:outline-none max-h-24" style={{ color: '#e6edf3' }}
                 style={{ minHeight: '22px' }}
+              />
+              <JarvisMicrofone
+                desabilitado={sending || subindo}
+                onErro={(t) => setSendError(t)}
+                onTexto={(t) => {
+                  setSendError(null);
+                  setInput(prev => (prev.trim() ? `${prev.trim()} ${t}` : t));
+                  setTimeout(() => inputRef.current?.focus(), 60);
+                }}
               />
               <button onClick={() => send()} disabled={(!input.trim() && anexos.length === 0) || sending || subindo}
                 className="p-1.5 text-white rounded-lg disabled:opacity-40 transition flex-shrink-0" style={{ background: 'linear-gradient(135deg,#00D4AA,#0066cc)' }}>
