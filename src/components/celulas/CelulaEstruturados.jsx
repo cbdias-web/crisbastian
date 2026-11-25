@@ -8,6 +8,10 @@ import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal from './NdaGeradorModal';
 import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
+import NovaOperacaoModal from './NovaOperacaoModal';
+import { DetalheEstudoModal } from '@/pages/EstudoViabilidade';
+import { Workspace as AnaliseWorkspace } from '@/pages/AnaliseTecnica';
+import { valorHonorariosProjeto, somaEtapas } from '@/lib/propostaTecnica';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
@@ -74,6 +78,7 @@ function Overlay({ cfg, sp, setSp }) {
   const [busca, setBusca] = useState('');
   const [etapaFiltro, setEtapaFiltro] = useState(null);
   const [ndaModal, setNdaModal] = useState(null); // { estudo } | null
+  const [novaOp, setNovaOp] = useState(false);
   const [recarga, setRecarga] = useState(0);
   const recarregar = () => setRecarga(n => n + 1);
 
@@ -92,10 +97,10 @@ function Overlay({ cfg, sp, setSp }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (e) => { if (e.key === 'Escape' && !ndaModal) { opId ? setParam({ op: null }) : fechar(); } };
+    const onKey = (e) => { if (e.key === 'Escape' && !ndaModal && !novaOp) { opId ? setParam({ op: null }) : fechar(); } };
     window.addEventListener('keydown', onKey);
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey); };
-  }, [opId, sp, ndaModal]);
+  }, [opId, sp, ndaModal, novaOp]);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -134,8 +139,9 @@ function Overlay({ cfg, sp, setSp }) {
     }
     const ops = doTipo.map(c => {
       const impl = dados.implantacoes.find(i => i.contrato_id === c.id) || null;
+      const negOrigem = c.pipeline_id ? dados.pipeline.find(n => n.id === c.pipeline_id) || null : null;
       const etapa = etapaContrato(c, impl);
-      return { id: c.id, kind: 'contrato', cliente: c.nome || 'Cliente sem nome', doc: c.cpf_cnpj, sub: `${c.numero_contrato ? 'Contrato ' + c.numero_contrato : 'Sem número'} · ${STATUS_CONTRATO[c.status] || c.status}`, responsavel: c.vendedor_nome, etapa, acao: proximaAcaoContrato(etapa, c, produto), quando: c.updated_date || c.created_date, raw: { contrato: c, impl } };
+      return { id: c.id, kind: 'contrato', cliente: c.nome || 'Cliente sem nome', doc: c.cpf_cnpj, sub: `${c.numero_contrato ? 'Contrato ' + c.numero_contrato : 'Sem número'} · ${STATUS_CONTRATO[c.status] || c.status}`, responsavel: c.vendedor_nome, etapa, acao: proximaAcaoContrato(etapa, c, produto), quando: c.updated_date || c.created_date, raw: { contrato: c, impl, negOrigem } };
     });
     dados.pipeline
       // Negociações em aberto (Perdido sai da jornada; Fechado já deveria ter virado contrato)
@@ -180,7 +186,7 @@ function Overlay({ cfg, sp, setSp }) {
         ev.push({ quando: o.raw.neg.created_date, quem: o.raw.neg.vendedor_nome || 'Gerente', txt: `abriu a negociação com ${o.cliente}`, op: o.id });
       }
     });
-    comentarios.filter(c => c.produto === produto && c.tipo === 'comentario' && idsVisiveis.has(c.operacao_id || c.estudo_id))
+    comentarios.filter(c => c.produto === produto && ['comentario', 'abordagem'].includes(c.tipo) && idsVisiveis.has(c.operacao_id || c.estudo_id))
       .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', txt: `comentou: “${String(c.texto).slice(0, 70)}${String(c.texto).length > 70 ? '…' : ''}”`, op: c.operacao_id || c.estudo_id }));
     return ev.filter(x => x.quando).sort((a, b) => new Date(b.quando) - new Date(a.quando)).slice(0, 12);
   }, [operacoes, comentarios, produto, idsVisiveis]);
@@ -197,9 +203,8 @@ function Overlay({ cfg, sp, setSp }) {
   const novaOperacao = () => {
     // Offshore: a operação começa pela geração do NDA (modelo validado)
     if (cfg.fonte === 'estudo' && produto === 'offshore') return setNdaModal({ estudo: null });
-    if (cfg.fonte === 'estudo') return ir(`/EstudoViabilidade?novo=${produto}`);
-    if (jornada.tipoContrato) return ir(`/Contratos?novo=${encodeURIComponent(jornada.tipoContrato)}`);
-    return ir('/Pipeline');
+    // Demais produtos: cliente (base/carteira) + negociação ou estudo, sem sair da célula
+    setNovaOp(true);
   };
 
   const temaVars = { '--vx-acc': t.acc, '--vx-acc2': t.acc2, '--vx-txt': t.txt, '--vx-dim': t.dim, '--vx-line': t.line, '--vx-glow': t.glow, '--vx-on-acc': t.onAcc };
@@ -216,6 +221,7 @@ function Overlay({ cfg, sp, setSp }) {
         .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 28px;gap:12px;align-items:center}
         .vx-tab{transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
         .vx-tab:hover{transform:translateY(-1px);color:${C.txt}}
+        .vx-crumb{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font:inherit}.vx-crumb:hover{color:${C.txt};text-decoration:underline}
         @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
         @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 28px}.vx-row .vx-hide{display:none}}
       `}</style>
@@ -223,7 +229,12 @@ function Overlay({ cfg, sp, setSp }) {
         {/* Cabeçalho */}
         <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: t.head, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200 }}>
-            <span style={{ fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: t.acc }}>Modo imersivo</span>
+            <nav aria-label="Você está em" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, flexWrap: 'wrap' }}>
+              <button onClick={fechar} className="vx-crumb">Portal</button>
+              <ChevronRight className="w-3 h-3" aria-hidden="true" />
+              <button onClick={() => setParam({ op: null })} className="vx-crumb" style={{ color: opSel ? C.muted : t.acc }}>{cfg.nome} · {jornada.nome}</button>
+              {opSel && <><ChevronRight className="w-3 h-3" aria-hidden="true" /><span style={{ color: t.acc }}>{opSel.cliente}</span></>}
+            </nav>
             <span style={{ fontSize: 24, fontWeight: 600, color: C.txt }}>{cfg.nome}</span>
           </div>
           <nav aria-label="Produtos" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
@@ -260,7 +271,7 @@ function Overlay({ cfg, sp, setSp }) {
         ) : opSel ? (
           opSel.kind === 'estudo'
             ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
-                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} />
+                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} />
             : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
                  recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} />
         ) : (
@@ -362,6 +373,10 @@ function Overlay({ cfg, sp, setSp }) {
           </div>
         )}
       </section>
+      {novaOp && (
+        <NovaOperacaoModal celula={cfg} produto={produto} t={t} onClose={() => setNovaOp(false)}
+          onCriada={(id) => { setNovaOp(false); recarregar(); setParam({ op: id }); }} />
+      )}
       {ndaModal && (
         <NdaGeradorModal estudo={ndaModal.estudo} produto={produto} t={t}
           onClose={() => setNdaModal(null)}
@@ -509,7 +524,7 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {} }
   );
 }
 
-function LinhaDoTempo({ eventos, t, publicar, extra, ir, setAba }) {
+function LinhaDoTempo({ eventos, t, publicar, extra, ir, setAba, topo = null }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const comentar = async () => {
@@ -521,6 +536,7 @@ function LinhaDoTempo({ eventos, t, publicar, extra, ir, setAba }) {
   };
   return (
     <main className="vx-cel-main" style={{ gap: 12 }}>
+      {topo}
       <span style={{ fontSize: 17, fontWeight: 600, color: C.txt }}>Linha do tempo da operação</span>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 6px 6px 16px', borderRadius: 999, background: C.input, border: `1px solid ${C.line}` }}>
         <input value={texto} onChange={ev => setTexto(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') comentar(); }}
@@ -602,8 +618,8 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
 }
 
 // Abas da operação: a jornada (linha do tempo), o contrato completo e a venda com comissões
-function AbasOperacao({ aba, setAba, t, temContrato, temVenda }) {
-  const abas = [['jornada', 'Linha do tempo'], ['contrato', temContrato ? 'Contrato' : 'Gerar contrato'], ['venda', 'Venda e comissões']];
+function AbasOperacao({ aba, setAba, t, temContrato, temVenda, extras = [], comContrato = true }) {
+  const abas = [['jornada', 'Linha do tempo'], ...extras, ...(comContrato ? [['contrato', temContrato ? 'Contrato' : 'Gerar contrato'], ['venda', 'Venda e comissões']] : [])];
   return (
     <div role="tablist" aria-label="Seções da operação" style={{ display: 'flex', gap: 6, padding: '10px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
       {abas.map(([id, l]) => {
@@ -620,12 +636,12 @@ function AbasOperacao({ aba, setAba, t, temContrato, temVenda }) {
 }
 
 // Corpo das abas Contrato / Venda (ocupa a largura toda; o formulário de criação é claro, o acompanhamento é escuro)
-function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, clienteFallback, vinculo, t, recarregar, onCriado }) {
+function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, clienteFallback, vinculo, valoresIniciais, t, recarregar, onCriado }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
       {aba === 'contrato' && (
         <div style={!contrato ? { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: 12 } : undefined}>
-          <ContratoNaCelula contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo}
+          <ContratoNaCelula contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo} valoresIniciais={valoresIniciais}
             onVoltar={() => setAba('jornada')}
             onSalvo={(c) => { onCriado ? onCriado(c) : recarregar?.(); }}
             onAtualizado={() => recarregar?.()}
@@ -638,7 +654,7 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
 }
 
 // ───────────── Operação de Produtos estruturados (estudo) ─────────────
-function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar }) {
+function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin }) {
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
   const [modalAssinado, setModalAssinado] = useState(false);
@@ -656,8 +672,19 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   };
   const [propostas, setPropostas] = useState([]);
   const [formPos, setFormPos] = useState(null);
-  const [aba, setAba] = useState('jornada');
-  useEffect(() => { setAba('jornada'); }, [e.id]);
+  const [aba, setAbaBruta] = useState('jornada');
+  // Ao sair do estudo/análise, recarrega a célula (status e proposta podem ter mudado lá dentro)
+  const setAba = (n) => { if (['estudo', 'analise'].includes(aba) && n !== aba) recarregar?.(); setAbaBruta(n); };
+  useEffect(() => { setAbaBruta('jornada'); }, [e.id]);
+  const atualizarEstudo = async (est, dadosNovos, msg) => {
+    try { await base44.entities.EstudoViabilidade.update(est.id, dadosNovos); if (msg) toast.success(msg); recarregar?.(); }
+    catch (er) { toast.error('Erro: ' + er.message); }
+  };
+  const excluirEstudo = async (est) => {
+    await base44.entities.EstudoViabilidade.delete(est.id);
+    toast.success('Operação excluída.');
+    recarregar?.(); voltar();
+  };
 
   useEffect(() => {
     base44.entities.PropostaTecnica.filter({ estudo_id: e.id }, '-versao', 50).then(l => setPropostas(l || [])).catch(() => {});
@@ -678,10 +705,10 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : 'Operação aberta — NDA ainda não anexado.');
     }
     add(e.data_envio_cliente || e.link_gerado_em, e.responsavel_nome || 'Gerente', 1, 'Link do estudo de viabilidade enviado ao cliente.');
-    add(e.cliente_devolveu_em || e.data_recebimento, e.cliente_nome || 'Cliente', 1, 'Estudo devolvido com propósito, expectativas e documentos.', { label: 'Abrir estudo', to: `/EstudoViabilidade?estudo=${e.id}` });
+    add(e.cliente_devolveu_em || e.data_recebimento, e.cliente_nome || 'Cliente', 1, 'Estudo devolvido com propósito, expectativas e documentos.', { label: 'Abrir estudo', aba: 'estudo' });
     add(e.data_envio_analise, e.enviado_analise_por || 'Gerente', 2, 'Estudo enviado para análise técnica.');
     propostas.forEach(p => {
-      const lk = { label: 'Abrir análise', to: `/AnaliseTecnica?estudo=${e.id}` };
+      const lk = { label: 'Abrir análise', aba: 'analise' };
       add(p.created_date, p.origem === 'manual' ? (p.responsavel_nome || 'Gerente') : 'Análise técnica (IA)', 2, `Proposta técnica v${p.versao}${p.codigo ? ` (${p.codigo})` : ''} ${p.origem === 'revisao_ia' ? 'revisada' : 'gerada'}${p.motivo_revisao ? ` — ${p.motivo_revisao}` : ''}.`, lk);
       add(p.aprovada_em, p.aprovada_por || 'Gestão', 3, `Proposta v${p.versao} aprovada.`, lk);
       add(p.enviada_em, p.responsavel_nome || 'Gerente', 3, `Proposta v${p.versao} enviada ao cliente.`, lk);
@@ -710,19 +737,36 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
     ...(jornada.tipoContrato ? [{ nome: produto === 'offshore' ? 'Formulário da LLC' : 'Formulário de abertura', ok: !!(formPos?.link_preenchido_em), st: formPos ? (formPos.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
   ];
   const atalhos = [
-    ['Estudo de viabilidade', `/EstudoViabilidade?estudo=${e.id}`],
-    ['Análise técnica e proposta', `/AnaliseTecnica?estudo=${e.id}`],
-    ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', () => setAba('contrato')], ['Venda e comissões', () => setAba('venda')]] : [['Contratos', '/Contratos']]),
+    ['Estudo de viabilidade', () => setAba('estudo')],
+    ['Análise técnica e proposta', () => setAba('analise')],
+    ...(jornada.tipoContrato ? [[contrato ? 'Contrato da operação' : 'Gerar contrato', () => setAba('contrato')], ['Venda e comissões', () => setAba('venda')]] : []),
   ];
   const irAba = (to) => (typeof to === 'function' ? to() : ir(to));
+  // Valores definidos na análise/proposta seguem para o contrato
+  const propostaBase = propostas.find(p => p.id === e.proposta_atual_id) || propostas.find(p => p.status === 'aceita') || propostas[0] || null;
+  const valoresDaProposta = propostaBase ? {
+    valor_total: valorHonorariosProjeto(propostaBase.conteudo) || '',
+    ...(jornada.tipoContrato === 'OFFSHORE' ? { prazo_implantacao_dias: somaEtapas(propostaBase.conteudo?.etapas).prazo || '' } : {}),
+    observacoes: propostaBase.conteudo?.investimento?.condicoes ? `Condições da proposta ${propostaBase.codigo || 'v' + propostaBase.versao}: ${propostaBase.conteudo.investimento.condicoes}` : '',
+  } : null;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
-        acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
+        acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), estudo: () => setAba('estudo'), analise: () => setAba('analise'), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
-      {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'} />}
-      {aba === 'jornada' ? (
+      <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'}
+        extras={[['estudo', 'Estudo de viabilidade'], ['analise', 'Análise e proposta']]} comContrato={!!jornada.tipoContrato} />
+      {aba === 'estudo' ? (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
+          <DetalheEstudoModal embutido estudo={e} user={user} isAdmin={isAdmin} onClose={() => setAba('jornada')}
+            onAtualizar={atualizarEstudo} onExcluido={excluirEstudo} onIrAnalise={() => setAba('analise')} />
+        </div>
+      ) : aba === 'analise' ? (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
+          <AnaliseWorkspace key={e.id} estudoId={e.id} embutido onVoltar={() => setAba('jornada')} onIrEstudo={() => setAba('estudo')} />
+        </div>
+      ) : aba === 'jornada' ? (
         <div className="vx-cel-body">
           <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ estudo_id: e.id }} ir={irAba} setAba={setAba} />
           <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={irAba}
@@ -730,7 +774,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
         </div>
       ) : (
         <CorpoContratoVenda aba={aba} setAba={setAba} contrato={contrato} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
-          clienteId={e.cliente_id} vinculo={{ estudo_id: e.id }}
+          clienteId={e.cliente_id} vinculo={{ estudo_id: e.id }} valoresIniciais={valoresDaProposta}
           clienteFallback={{ nome: e.cliente_nome, cpf_cnpj: e.cliente_documento, email: e.cliente_email, telefone: e.cliente_telefone }} />
       )}
       {modalAssinado && (
