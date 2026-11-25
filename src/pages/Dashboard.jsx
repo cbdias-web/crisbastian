@@ -21,6 +21,7 @@ import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import { usaNovoPortal } from "@/lib/novoPortal";
 import { SlidersHorizontal } from "lucide-react";
 import DashNovo from "@/components/dashboard/DashNovo";
+import VendasGerentePopup from "@/components/dashboard/VendasGerentePopup";
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -239,6 +240,7 @@ export default function Dashboard() {
   const [agendaPendentes, setAgendaPendentes] = useState(0);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [roletaPendente, setRoletaPendente] = useState(null);
+  const [gerenteRanking, setGerenteRanking] = useState(null);
   const navigate = useNavigate();
 
   const [dataInicio, setDataInicio] = useState(toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)));
@@ -875,7 +877,10 @@ export default function Dashboard() {
                     const pct = Math.round(v.vol / maxVol * 100);
                     const medals = ["🥇", "🥈", "🥉"];
                     return (
-                      <div key={v.id} className="flex items-center gap-3">
+                      <div key={v.id} onClick={() => setGerenteRanking(v)} title={`Ver vendas de ${v.nome}`}
+                        className="flex items-center gap-3 cursor-pointer rounded-xl transition"
+                        onMouseEnter={e => e.currentTarget.style.background = A.accentDim}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <div className="w-8 text-center text-lg flex-shrink-0">
                           {i < 3 && v.vol > 0 ? medals[i] : <span className="text-sm font-bold" style={{ color: A.textMuted }}>{v.vol > 0 ? i + 1 : '—'}</span>}
                         </div>
@@ -983,6 +988,11 @@ export default function Dashboard() {
         )}
 
         {showParcelasModal && <ParcelasVincendasModal user={user} onClose={() => setShowParcelasModal(false)} />}
+
+        {gerenteRanking && (
+          <VendasGerentePopup vendedor={gerenteRanking} dataInicio={dataInicio} dataFim={dataFim}
+            onClose={() => setGerenteRanking(null)} />
+        )}
 
         {showAvatarPicker && (
           <AvatarPickerModal

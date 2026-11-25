@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, FileText, DollarSign, BarChart2, Users, ArrowUpRight, Award, CalendarClock, Target, Sparkles } from 'lucide-react';
 import { CELULAS_CAPA } from '@/lib/novoPortal';
 import { ICONE_CELULA } from '@/components/hub/HeaderAvatares';
+import VendasGerentePopup from '@/components/dashboard/VendasGerentePopup';
 
 const TEAL = '#00D4AA';
 const GOLD = '#D4AF37';
@@ -62,6 +63,9 @@ export default function DashNovo(p) {
     metaTimeMes, metaTimePct, metaTimeAtingida, periodoMesLabel, rankingData, recentes, ranking, vendasAcumulado,
     dataInicio, dataFim, bonusAtingido, metaIndividual, faltaParaBonus, parcelasMes, mesIni, mesFim, onParcelas, navigate,
   } = p;
+
+  // Gerente selecionado no ranking → popup com resumo e histórico de vendas (ao vivo)
+  const [gerenteAberto, setGerenteAberto] = useState(null);
 
   // Ritmo: produção acumulada dia a dia no período x ritmo linear da meta
   const ritmo = useMemo(() => {
@@ -229,8 +233,9 @@ export default function DashNovo(p) {
                 const m = medalhas[pos];
                 const alto = pos === 0;
                 return (
-                  <div key={v.id} className="vx-card-lift flex flex-col items-center text-center gap-2 rounded-2xl px-2 pb-4"
-                    style={{ paddingTop: alto ? 22 : 14, background: `linear-gradient(180deg, ${m.cor}1F 0%, rgba(0,0,0,0) 100%)`, border: `1px solid ${m.cor}44`, '--vx-acc': m.cor, '--vx-glow': m.cor + '55' }}>
+                  <div key={v.id} onClick={() => setGerenteAberto(v)} title={`Ver vendas de ${v.nome}`}
+                    className="vx-card-lift flex flex-col items-center text-center gap-2 rounded-2xl px-2 pb-4"
+                    style={{ paddingTop: alto ? 22 : 14, cursor: 'pointer', background: `linear-gradient(180deg, ${m.cor}1F 0%, rgba(0,0,0,0) 100%)`, border: `1px solid ${m.cor}44`, '--vx-acc': m.cor, '--vx-glow': m.cor + '55' }}>
                     <span className="relative">
                       {v.avatar_url
                         ? <img src={v.avatar_url} alt="" className="rounded-full object-cover" style={{ width: alto ? 64 : 52, height: alto ? 64 : 52, border: `2px solid ${m.cor}` }} />
@@ -247,7 +252,8 @@ export default function DashNovo(p) {
           )}
           <div className="flex flex-col gap-2">
             {resto.map((v, i) => (
-              <div key={v.id} className="vx-row-hover flex items-center gap-3 px-3 py-2 rounded-xl" style={{ '--vx-acc': TEAL }}>
+              <div key={v.id} onClick={() => setGerenteAberto(v)} title={`Ver vendas de ${v.nome}`}
+                className="vx-row-hover flex items-center gap-3 px-3 py-2 rounded-xl" style={{ '--vx-acc': TEAL }}>
                 <span className="w-6 text-xs font-semibold text-center" style={{ color: T.muted }}>{v.vol > 0 ? podio.length + i + 1 : '—'}</span>
                 <span className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: corDe(v.nome) + '22', color: corDe(v.nome) }}>{iniciais(v.nome)}</span>
                 <div className="flex-1 min-w-0">
@@ -329,6 +335,11 @@ export default function DashNovo(p) {
           })}
         </div>
       </div>
+
+      {gerenteAberto && (
+        <VendasGerentePopup vendedor={gerenteAberto} dataInicio={dataInicio} dataFim={dataFim}
+          onClose={() => setGerenteAberto(null)} />
+      )}
     </div>
   );
 }
