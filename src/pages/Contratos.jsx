@@ -323,7 +323,7 @@ export default function Contratos() {
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ background: '#0d1117' }}>
+    <div className="min-h-screen p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-5">
 
         {/* Header — indicação da entidade */}

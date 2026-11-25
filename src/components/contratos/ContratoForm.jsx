@@ -651,8 +651,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   };
 
   return (
-    <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen p-4 md:p-6'}
-      style={embutido ? undefined : { background: '#0d1117' }}>
+    <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen p-4 md:p-6'}>
       <div className="max-w-4xl mx-auto">
         <button onClick={onCancel} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-5 transition group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Voltar para Contratos

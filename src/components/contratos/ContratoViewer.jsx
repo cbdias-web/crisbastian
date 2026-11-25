@@ -418,7 +418,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   const fmtDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : null;
 
   return (
-    <div className={embutido ? 'p-1' : 'min-h-screen p-4 md:p-6'} style={{ background: embutido ? 'transparent' : '#0d1117' }}>
+    <div className={embutido ? 'p-1' : 'min-h-screen p-4 md:p-6'} style={{ background: 'transparent' }}>
       <div className={embutido ? 'max-w-3xl' : 'max-w-3xl mx-auto'}>
         <div className="flex items-center justify-between mb-4">
           <button onClick={onBack} className="flex items-center gap-2 text-sm transition" style={{ color: 'rgba(230,237,243,0.6)' }}>

@@ -7,9 +7,18 @@ import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etap
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal from './NdaGeradorModal';
 import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
+import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
+
+// Fundo institucional do portal — a célula usa a mesma imagem das telas do portal
+const FUNDO_PORTAL = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
+const veu = (hex, a) => {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
 
 const STATUS_CONTRATO = { rascunho: 'Rascunho', gerado: 'PDF gerado', assinado: 'Assinado', aguardando_pagamento: 'Aguardando pagamento', pago: 'Pago', no_pipeline: 'No pipeline', cancelado: 'Cancelado' };
 
@@ -210,7 +219,7 @@ function Overlay({ cfg, sp, setSp }) {
         @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
         @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 28px}.vx-row .vx-hide{display:none}}
       `}</style>
-      <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: t.bg, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
+      <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${veu(t.bg, 0.82)}, ${veu(t.bg, 0.92)}), url("${FUNDO_PORTAL}") center / cover no-repeat ${t.bg}`, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
         {/* Cabeçalho */}
         <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: t.head, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200 }}>
@@ -548,7 +557,12 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
         {docs.map(d => (
           <div key={d.nome} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
             <span style={{ flex: 1, color: '#DCE2EA' }}>{d.nome}</span>
-            <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
+            {d.onStatus ? (
+              <button onClick={d.onStatus} title={`Anexar ${d.nome}`} className="vx-btn"
+                style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, cursor: 'pointer', background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted, border: `1px solid ${d.ok ? 'rgba(52,211,153,.35)' : C.line2}` }}>{d.st}</button>
+            ) : (
+              <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
+            )}
             {d.acao && (
               <button onClick={d.acao.onClick} className="vx-btn vx-btn-primary" style={{ height: 26, padding: '0 10px', fontSize: 11 }}>{d.acao.label}</button>
             )}
@@ -627,21 +641,18 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
 function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar }) {
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
-  const assinadoRef = useRef(null);
-  const [enviandoAss, setEnviandoAss] = useState(false);
+  const [modalAssinado, setModalAssinado] = useState(false);
   // Via assinada do NDA: arquivo privado, conclui a etapa NDA e libera o estudo
   const anexarAssinado = async (file) => {
-    if (!file) return;
-    setEnviandoAss(true);
+    if (!file) return false;
     try {
       const up = await base44.integrations.Core.UploadPrivateFile({ file });
       if (!up?.file_uri) throw new Error('Falha no envio.');
       await base44.entities.EstudoViabilidade.update(e.id, { nda_assinado_url: up.file_uri, nda_assinado_nome: file.name, nda_assinado_em: new Date().toISOString() });
-      toast.success('NDA assinado anexado. A operação seguiu para o Estudo de viabilidade.');
+      toast.success('NDA assinado anexado. A etapa NDA foi concluída e o estudo de viabilidade liberado.');
       recarregar?.();
-    } catch (er) { toast.error(er.message || 'Não foi possível anexar.'); }
-    setEnviandoAss(false);
-    if (assinadoRef.current) assinadoRef.current.value = '';
+      return true;
+    } catch (er) { toast.error(er.message || 'Não foi possível anexar.'); return false; }
   };
   const [propostas, setPropostas] = useState([]);
   const [formPos, setFormPos] = useState(null);
@@ -690,7 +701,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
     ...(e.nda_origem === 'gerado'
       ? [
           { nome: 'NDA (gerado)', ok: true, st: 'Gerado', arquivo: e.nda_url, nomeArquivo: e.nda_nome, acao: produto === 'offshore' ? { label: 'Refazer', onClick: () => abrirNda(e) } : null },
-          { nome: 'NDA assinado', ok: !!e.nda_assinado_url, st: e.nda_assinado_url ? 'Assinado' : 'Aguardando', arquivo: e.nda_assinado_url || null, nomeArquivo: e.nda_assinado_nome, acao: e.nda_assinado_url ? null : { label: enviandoAss ? 'Enviando…' : 'Anexar', onClick: () => assinadoRef.current?.click() } },
+          { nome: 'NDA assinado', ok: !!e.nda_assinado_url, st: e.nda_assinado_url ? 'Assinado' : 'Aguardando', arquivo: e.nda_assinado_url || null, nomeArquivo: e.nda_assinado_nome, onStatus: () => setModalAssinado(true), acao: { label: e.nda_assinado_url ? 'Substituir' : 'Anexar', onClick: () => setModalAssinado(true) } },
         ]
       : [{ nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome, acao: !e.nda_url && produto === 'offshore' ? { label: 'Gerar', onClick: () => abrirNda(e) } : null }]),
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
@@ -707,9 +718,8 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <input ref={assinadoRef} type="file" accept=".pdf,.png,.jpg,.jpeg" className="hidden" onChange={ev => anexarAssinado(ev.target.files?.[0])} />
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
-        acoes={{ nda: () => abrirNda(e), nda_assinado: () => assinadoRef.current?.click(), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
+        acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'} />}
       {aba === 'jornada' ? (
@@ -722,6 +732,9 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
         <CorpoContratoVenda aba={aba} setAba={setAba} contrato={contrato} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
           clienteId={e.cliente_id} vinculo={{ estudo_id: e.id }}
           clienteFallback={{ nome: e.cliente_nome, cpf_cnpj: e.cliente_documento, email: e.cliente_email, telefone: e.cliente_telefone }} />
+      )}
+      {modalAssinado && (
+        <AnexarNdaAssinadoModal estudo={e} t={t} onEnviar={anexarAssinado} onClose={() => setModalAssinado(false)} />
       )}
     </div>
   );
