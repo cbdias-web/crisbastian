@@ -51,7 +51,7 @@ export default function KanbanContratos({ contratos, onSelectContrato, isAdmin, 
     if (novoStatus === source.droppableId && destination.index === source.index) return;
 
     const ct = contratos.find(c => c.id === draggableId);
-    const colunaLabel = COLUNAS.find(async c => c.key === novoStatus)?.label || novoStatus;
+    const colunaLabel = COLUNAS.find(c => c.key === novoStatus)?.label || novoStatus;
 
     // No Pipeline é atingível apenas pelo fluxo "Enviar para Vendas" (cria a Venda)
     if (novoStatus === 'no_pipeline') {
