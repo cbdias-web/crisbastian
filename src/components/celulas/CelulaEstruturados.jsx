@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound } from 'lucide-react';
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
-import NdaGeradorModal from './NdaGeradorModal';
+import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
 import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 import NovaOperacaoModal from './NovaOperacaoModal';
@@ -367,6 +367,11 @@ function Overlay({ cfg, sp, setSp }) {
             </main>
 
             <aside className="vx-cel-aside">
+              <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, display: 'flex', alignItems: 'center', gap: 8 }}><UserRound className="w-4 h-4" style={{ color: t.acc }} /> Ficha do cliente</span>
+                <BuscaCliente acc={t.acc} onEscolher={(c) => abrirFicha(setSp, sp, { clienteId: c.id })} vazioTexto="Nenhum cliente encontrado na base." />
+                <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Negociações, interações, contratos, vendas, parcelas e documentos de qualquer cliente.</span>
+              </div>
               <Duvidas celula={cfg.id} produto={produto} nomeProduto={jornada.nome} t={t} comentarios={comentarios} setComentarios={setComentarios} publicar={publicar} user={user} isAdmin={isAdmin} />
               <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, marginBottom: 4 }}>Atividade</span>
