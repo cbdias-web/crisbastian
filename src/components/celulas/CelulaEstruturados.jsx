@@ -227,12 +227,12 @@ function Overlay({ cfg, sp, setSp }) {
         .vx-cel-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
         .vx-cel-aside{width:340px;flex:none;display:flex;flex-direction:column;gap:14px}
         .vx-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
-        .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 60px;gap:12px;align-items:center}
+        .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 124px;gap:12px;align-items:center}
         .vx-tab{transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
         .vx-tab:hover{transform:translateY(-1px);color:${C.txt}}
         .vx-crumb{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font:inherit}.vx-crumb:hover{color:${C.txt};text-decoration:underline}
         @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
-        @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 60px}.vx-row .vx-hide{display:none}}
+        @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 124px}.vx-row .vx-hide{display:none}}
       `}</style>
       <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${veu(t.bg, 0.82)}, ${veu(t.bg, 0.92)}), url("${FUNDO_PORTAL}") center / cover no-repeat ${t.bg}`, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
         {/* Cabeçalho */}
@@ -280,10 +280,12 @@ function Overlay({ cfg, sp, setSp }) {
         ) : opSel ? (
           opSel.kind === 'estudo'
             ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
-                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)} />
+                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)}
+                acaoInicial={sp.get('acao')} limparAcao={() => setParam({ acao: null })} />
             : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
                  recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)}
-                 produtosCelula={cfg.produtos} mudarProduto={(p, id) => { recarregar(); setParam({ produto: p, op: id }); }} />
+                 produtosCelula={cfg.produtos} mudarProduto={(p, id) => { recarregar(); setParam({ produto: p, op: id }); }}
+                 acaoInicial={sp.get('acao')} limparAcao={() => setParam({ acao: null })} />
         ) : (
           <div className="vx-cel-body">
             <main className="vx-cel-main">
@@ -358,6 +360,12 @@ function Overlay({ cfg, sp, setSp }) {
                     <span className="vx-hide" style={{ color: '#B8C0CC' }}>{o.responsavel || '—'}</span>
                     <span className="vx-hide" style={{ color: C.muted }}>{o.acao.label}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <button onClick={(ev) => { ev.stopPropagation(); setParam({ op: o.id, acao: 'editar' }); }} title="Editar operação" aria-label={`Editar operação de ${o.cliente}`} className="vx-btn vx-btn-ghost" style={{ width: 28, height: 28, padding: 0, border: 0 }}>
+                        <Pencil className="w-4 h-4" style={{ color: C.muted }} />
+                      </button>
+                      <button onClick={(ev) => { ev.stopPropagation(); setParam({ op: o.id, acao: 'excluir' }); }} title="Excluir operação" aria-label={`Excluir operação de ${o.cliente}`} className="vx-btn vx-btn-ghost" style={{ width: 28, height: 28, padding: 0, border: 0 }}>
+                        <Trash2 className="w-4 h-4" style={{ color: '#F4A3A3' }} />
+                      </button>
                       <button onClick={(ev) => { ev.stopPropagation(); fichaDe(o); }} title="Ficha do cliente" aria-label={`Ficha de ${o.cliente}`} className="vx-btn vx-btn-ghost" style={{ width: 28, height: 28, padding: 0, border: 0 }}>
                         <UserRound className="w-4 h-4" style={{ color: t.txt }} />
                       </button>
@@ -697,7 +705,7 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
 }
 
 // ───────────── Operação de Produtos estruturados (estudo) ─────────────
-function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin, onFicha }) {
+function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin, onFicha, acaoInicial, limparAcao }) {
   const [formModal, setFormModal] = useState(false);
   const [editEstudo, setEditEstudo] = useState(false);
   const { estudo: e, contrato } = op.raw;
@@ -796,10 +804,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
     observacoes: propostaBase.conteudo?.investimento?.condicoes ? `Condições da proposta ${propostaBase.codigo || 'v' + propostaBase.versao}: ${propostaBase.conteudo.investimento.condicoes}` : '',
   } : null;
 
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} onFicha={onFicha}
-        gerenciar={[
+  const ger = [
           podeGerenciar(e, user, isAdmin) && { label: 'Editar', onClick: () => setEditEstudo(true) },
           contrato && podeGerenciar(contrato, user, isAdmin) && contrato.status !== 'no_pipeline' && { label: 'Excluir contrato', perigo: true, onClick: async () => { if (await excluirContratoDaOperacao(contrato)) recarregar?.(); } },
           podeGerenciar(e, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => {
@@ -807,7 +812,20 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
             if (!confirm(`Excluir a operação ${jornada.nome} de ${e.cliente_nome || 'cliente'}? NDA, estudo e propostas desta operação deixam de aparecer. O cadastro do cliente continua na base.`)) return;
             try { await excluirEstudo(e); } catch (er) { toast.error(er.message); }
           } },
-        ]}
+        ];
+  // Editar/excluir a partir da lista (?acao=editar|excluir)
+  useEffect(() => {
+    if (!acaoInicial) return;
+    const g = ger.filter(Boolean);
+    const alvo = acaoInicial === 'excluir' ? (g.find(x => x.perigo && x.label === 'Excluir') || g.find(x => x.perigo)) : g.find(x => !x.perigo);
+    limparAcao?.();
+    if (alvo) alvo.onClick(); else toast.error('Você não tem permissão para esta ação nesta operação.');
+  }, [acaoInicial]);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} onFicha={onFicha}
+        gerenciar={ger}
         acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), estudo: () => setAba('estudo'), analise: () => setAba('analise'), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'}
@@ -1036,7 +1054,7 @@ function NegociacaoCard({ neg, aberta, t, publicar, operacaoId, recarregar, volt
 }
 
 // ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
-function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp, user, isAdmin, onFicha, produtosCelula = [], mudarProduto }) {
+function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp, user, isAdmin, onFicha, produtosCelula = [], mudarProduto, acaoInicial, limparAcao }) {
   const [formModal, setFormModal] = useState(false);
   const [editNeg, setEditNeg] = useState(false);
   const [editarCt, setEditarCt] = useState(0);
@@ -1104,10 +1122,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
     ? `${jornada.nome} · ${ct.numero_contrato ? 'Contrato ' + ct.numero_contrato : 'contrato sem número'}${ct.cpf_cnpj ? ` · ${ct.cpf_cnpj}` : ''} · responsável ${ct.vendedor_nome || '—'}`
     : `${jornada.nome} · negociação no Pipeline · responsável ${neg?.vendedor_nome || '—'}`;
 
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} onFicha={onFicha}
-        gerenciar={ct ? [
+  const ger = ct ? [
           podeGerenciar(ct, user, isAdmin) && ct.status !== 'no_pipeline' && { label: 'Editar contrato', onClick: () => { setEditarCt(n => n + 1); setAba('contrato'); } },
           podeGerenciar(ct, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => { if (await excluirContratoDaOperacao(ct)) { recarregar?.(); voltar(); } } },
         ] : negAberta ? [
@@ -1121,7 +1136,20 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
               recarregar?.(); voltar();
             } catch (er) { toast.error(er.message); }
           } },
-        ] : []}
+        ] : [];
+  // Editar/excluir a partir da lista (?acao=editar|excluir)
+  useEffect(() => {
+    if (!acaoInicial) return;
+    const g = ger.filter(Boolean);
+    const alvo = acaoInicial === 'excluir' ? (g.find(x => x.perigo && x.label === 'Excluir') || g.find(x => x.perigo)) : g.find(x => !x.perigo);
+    limparAcao?.();
+    if (alvo) alvo.onClick(); else toast.error('Você não tem permissão para esta ação nesta operação.');
+  }, [acaoInicial]);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} onFicha={onFicha}
+        gerenciar={ger}
         acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda'), negociacao: () => setAba('jornada') }} />
       {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!ct} temVenda={ct?.status === 'no_pipeline'} />}
       {aba === 'jornada' ? (
