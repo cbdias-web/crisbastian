@@ -9,10 +9,10 @@ import { toast } from 'sonner';
 import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
@@ -172,7 +172,7 @@ export default function RncPublicaPage() {
     <div className="min-h-screen py-6 px-4" style={{ background: AURORA.bg }}>
       <div className="max-w-2xl mx-auto space-y-5">
         {/* Header */}
-        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111A2B 0%, #17223A 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
               {isPJ ? <Building2 className="w-6 h-6" style={{ color: AURORA.accent }} /> : <User className="w-6 h-6" style={{ color: AURORA.accent }} />}
@@ -275,8 +275,8 @@ export default function RncPublicaPage() {
                 <div>
                   <label className="block mb-1" style={labelStyle}>Possui dupla nacionalidade?</label>
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'sim')} className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition" style={form.dupla_nacionalidade === 'sim' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>Sim</button>
-                    <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'nao')} className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition" style={form.dupla_nacionalidade === 'nao' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>Não</button>
+                    <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'sim')} className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition" style={form.dupla_nacionalidade === 'sim' ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>Sim</button>
+                    <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'nao')} className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition" style={form.dupla_nacionalidade === 'nao' ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>Não</button>
                   </div>
                 </div>
               </>
@@ -397,7 +397,7 @@ export default function RncPublicaPage() {
           <p className="text-xs" style={{ color: AURORA.textMuted }}>
             {pendencias.length === 0 ? 'Tudo preenchido!' : `${pendencias.length} pendência(s)`}
           </p>
-          <button onClick={handleSubmit} disabled={salvando} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          <button onClick={handleSubmit} disabled={salvando} className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50" style={{ background: AURORA.accent, color: '#0B111C' }}>
             {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
             {salvando ? 'Enviando...' : 'Enviar Formulário'}
           </button>

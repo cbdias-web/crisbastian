@@ -155,7 +155,7 @@ export default function JarvisAvatar({ size = 'md', pulse = false, glow = true }
         className="absolute bottom-0 right-0 w-3 h-3 rounded-full z-30"
         style={{
           background: '#00D4AA',
-          border: '2px solid #0d1117',
+          border: '2px solid #0B111C',
           boxShadow: '0 0 6px rgba(0,212,170,0.6)',
         }}
       />

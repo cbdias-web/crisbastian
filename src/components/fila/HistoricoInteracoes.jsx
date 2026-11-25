@@ -3,8 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { Phone, MessageSquare, Mail, Video, MapPin, PhoneMissed, Calendar, Clock, History, Loader2 } from 'lucide-react';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
+  surface: '#111A2B',
+  surface2: '#17223A',
   border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',

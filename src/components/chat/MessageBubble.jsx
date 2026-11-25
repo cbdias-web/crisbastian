@@ -29,8 +29,8 @@ const FunctionDisplay = ({ toolCall }) => {
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all"
         style={{
-          background: expanded ? 'rgba(0,212,170,0.10)' : '#1c2333',
-          borderColor: expanded ? 'rgba(0,212,170,0.35)' : 'rgba(0,212,170,0.15)',
+          background: expanded ? 'rgba(0,212,170,0.10)' : '#17223A',
+          borderColor: expanded ? 'rgba(0,212,170,0.35)' : 'rgba(255,255,255,0.08)',
         }}
       >
         <Icon className={cn("h-3 w-3", statusConfig.color, statusConfig.spin && "animate-spin")} />
@@ -58,7 +58,7 @@ export default function MessageBubble({ message }) {
             className="rounded-2xl px-4 py-2.5"
             style={isUser
               ? { background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }
-              : { background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}
+              : { background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }}
           >
             {isUser ? (
               <p className="text-sm leading-relaxed">{message.content}</p>

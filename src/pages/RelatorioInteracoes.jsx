@@ -628,7 +628,7 @@ export default function RelatorioInteracoes() {
                         <ChevronRight className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                       </button>
                       {isOpen && (
-                        <div className="border-t border-gray-50 bg-[#0d1117]/40">
+                        <div className="border-t border-gray-50 bg-[#0B111C]/40">
                           <table className="w-full text-sm">
                             <thead>
                               <tr className="border-b border-gray-100">
@@ -649,7 +649,7 @@ export default function RelatorioInteracoes() {
                                   <tr key={i.id} onClick={() => {
                                     setEditandoInteracao(i);
                                     setEditInteracaoForm({ tipo: i.tipo, descricao: i.descricao, data_interacao: i.data_interacao, proximo_contato: i.proximo_contato || '', resultado: i.resultado });
-                                  }} className="hover:bg-[#1c2333] transition cursor-pointer">
+                                  }} className="hover:bg-[#17223A] transition cursor-pointer">
                                     <td className="px-6 py-3 text-xs text-gray-500 whitespace-nowrap">
                                       {i.data_interacao ? format(parseISO(i.data_interacao), 'dd/MM/yyyy') : '—'}
                                     </td>

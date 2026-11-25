@@ -769,7 +769,7 @@ export default function Vendas() {
 
         {/* Regras de produção */}
         <div className="rounded-2xl px-4 py-3 text-[11px] flex flex-wrap items-center gap-x-3 gap-y-1"
-          style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.6)' }}>
+          style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(230,237,243,0.6)' }}>
           <span className="font-bold uppercase tracking-wider" style={{ color: '#00D4AA' }}>Conta na produção:</span>
           <span>vendedor responsável definido</span>
           <span>· contrato gerado automaticamente</span>

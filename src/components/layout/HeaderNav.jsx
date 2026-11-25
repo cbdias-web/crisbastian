@@ -5,8 +5,8 @@ import { BarChart3, Handshake, ChevronDown } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 
 const AURORA = {
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3',

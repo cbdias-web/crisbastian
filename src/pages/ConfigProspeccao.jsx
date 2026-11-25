@@ -7,7 +7,7 @@ import { ROTEIROS, FAQ } from '@/components/fila/roteirosPadrao';
 import { PESOS_PADRAO } from '@/lib/leadUtils';
 import { confirmar } from '@/lib/confirmar';
 
-const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const inp = { background: A.surface2, color: A.text, border: `1px solid ${A.border}` };
 const cls = 'w-full px-2.5 py-1.5 rounded-lg text-xs focus:outline-none';
 
@@ -104,7 +104,7 @@ function Parametros({ qc }) {
   return (
     <div className="space-y-4">
       {!cfg && <div className="rounded-xl p-3 text-xs" style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24' }}>Ainda não há configuração salva: o sistema usa os valores antigos (cap 10, 5 leads/dia). Clique em “Carregar padrões” para criar tudo de uma vez.</div>}
-      <button onClick={carregarPadroes} disabled={carregando} className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 disabled:opacity-40" style={{ background: A.accent, color: '#0d1117' }}>{carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Carregar padrões (parâmetros, modelos, cadências, roteiros e FAQ)</button>
+      <button onClick={carregarPadroes} disabled={carregando} className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 disabled:opacity-40" style={{ background: A.accent, color: '#0B111C' }}>{carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Carregar padrões (parâmetros, modelos, cadências, roteiros e FAQ)</button>
       {f && (
         <div className="rounded-2xl p-4 space-y-4" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -133,7 +133,7 @@ function Parametros({ qc }) {
             <div className="mt-3"><Campo l="Produtos contratados com afinidade (palavras-chave, vírgula)"><input className={cls} style={inp} value={f.afinidade_txt || ''} onChange={e => set('afinidade_txt', e.target.value)} placeholder="regulariz, garantia, rating" /></Campo></div>
             <p className="text-[10px] mt-1" style={{ color: A.muted }}>Os pesos valem para as próximas importações; leads já importados mantêm o score calculado.</p>
           </div>
-          <button onClick={salvar} className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2" style={{ background: A.accent, color: '#0d1117' }}><Save className="w-4 h-4" /> Salvar parâmetros</button>
+          <button onClick={salvar} className="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2" style={{ background: A.accent, color: '#0B111C' }}><Save className="w-4 h-4" /> Salvar parâmetros</button>
         </div>
       )}
     </div>
@@ -153,7 +153,7 @@ function Cadencias({ qc }) {
   const setPasso = (i, k, v) => setEd(e => ({ ...e, passos: e.passos.map((p, j) => (j === i ? { ...p, [k]: v } : p)) }));
   return (
     <div className="space-y-3">
-      <button onClick={() => setEd({ nome: '', ativa: true, ao_final: 'nutricao', padrao_para: 'nenhum', passos: [{ canal: 'ligacao', dias_uteis: 0, titulo: '' }] })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0d1117' }}><Plus className="w-4 h-4" /> Nova cadência</button>
+      <button onClick={() => setEd({ nome: '', ativa: true, ao_final: 'nutricao', padrao_para: 'nenhum', passos: [{ canal: 'ligacao', dias_uteis: 0, titulo: '' }] })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0B111C' }}><Plus className="w-4 h-4" /> Nova cadência</button>
       {cads.length === 0 && <p className="text-xs" style={{ color: A.muted }}>Nenhuma cadência. Use “Carregar padrões” na aba Parâmetros.</p>}
       {cads.map(c => (
         <div key={c.id} className="rounded-xl p-3 flex items-center justify-between gap-3" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
@@ -182,7 +182,7 @@ function Cadencias({ qc }) {
               </div>
             ))}
             <button onClick={() => setEd({ ...ed, passos: [...ed.passos, { canal: 'ligacao', dias_uteis: (ed.passos.at(-1)?.dias_uteis ?? 0) + 1, titulo: '' }] })} className="text-xs underline" style={{ color: A.accent }}>+ adicionar passo</button>
-            <div className="flex gap-2 justify-end pt-2"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} disabled={!ed.nome} className="px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0d1117' }}>Salvar</button></div>
+            <div className="flex gap-2 justify-end pt-2"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} disabled={!ed.nome} className="px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0B111C' }}>Salvar</button></div>
           </div>
         </div>
       )}
@@ -198,7 +198,7 @@ function Modelos({ qc }) {
   const apagar = async (m) => { if (!(await confirmar('Excluir modelo?'))) return; await base44.entities.ModeloMensagem.delete(m.id); qc.invalidateQueries({ queryKey: ['mod-admin'] }); };
   return (
     <div className="space-y-3">
-      <button onClick={() => setEd({ nome: '', canal: 'whatsapp', publico: 'geral', texto: '', ativo: true, primeiro_contato: false, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0d1117' }}><Plus className="w-4 h-4" /> Novo modelo</button>
+      <button onClick={() => setEd({ nome: '', canal: 'whatsapp', publico: 'geral', texto: '', ativo: true, primeiro_contato: false, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0B111C' }}><Plus className="w-4 h-4" /> Novo modelo</button>
       <p className="text-[11px]" style={{ color: A.muted }}>Variáveis: {'{{primeiro_nome}} {{gerente}} {{produto_contratado}} {{produto}} {{responsavel_origem}}'}. Marque “1º contato” para anexar o texto de descadastro e contar no limite diário.</p>
       {itens.map(m => (
         <div key={m.id} className="rounded-xl p-3" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
@@ -220,7 +220,7 @@ function Modelos({ qc }) {
               <label className="flex items-center gap-1.5"><input type="checkbox" checked={ed.ativo !== false} onChange={e => setEd({ ...ed, ativo: e.target.checked })} /> Ativo</label>
               <label className="flex items-center gap-1.5"><input type="checkbox" checked={!!ed.aprovado_compliance} onChange={e => setEd({ ...ed, aprovado_compliance: e.target.checked })} /> Aprovado pelo compliance</label>
             </div>
-            <div className="flex gap-2 justify-end"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} disabled={!ed.nome || !ed.texto} className="px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0d1117' }}>Salvar</button></div>
+            <div className="flex gap-2 justify-end"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} disabled={!ed.nome || !ed.texto} className="px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0B111C' }}>Salvar</button></div>
           </div>
         </div>
       )}
@@ -245,7 +245,7 @@ function Roteiros({ qc }) {
   return (
     <div className="space-y-4">
       <p className="text-[11px]" style={{ color: A.muted }}>Enquanto não houver registros, o app usa os roteiros e o FAQ padrão do código. A IA responde somente com base no que está aqui. Marque o que o compliance aprovou.</p>
-      <div className="flex gap-2"><button onClick={() => setEd({ tipo: 'rot', chave: '', nome: '', pitch: '', obj_txt: '', ativo: true, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0d1117' }}>+ Roteiro</button><button onClick={() => setEd({ tipo: 'faq', categoria: '', pergunta: '', resposta: '', ativo: true, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold" style={{ background: A.surface2, color: A.accent }}>+ FAQ</button></div>
+      <div className="flex gap-2"><button onClick={() => setEd({ tipo: 'rot', chave: '', nome: '', pitch: '', obj_txt: '', ativo: true, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0B111C' }}>+ Roteiro</button><button onClick={() => setEd({ tipo: 'faq', categoria: '', pergunta: '', resposta: '', ativo: true, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold" style={{ background: A.surface2, color: A.accent }}>+ FAQ</button></div>
       <p className="text-xs font-bold" style={{ color: A.accent }}>Roteiros ({rots.length})</p>
       {rots.map(r => <div key={r.id} className="rounded-xl p-3 flex justify-between gap-2" style={{ background: A.surface, border: `1px solid ${A.border}` }}><p className="text-xs"><b>{r.chave}</b> — {r.nome} {r.aprovado_compliance ? '✅' : <span style={{ color: '#fbbf24' }}>(não aprovado)</span>}</p><div className="flex gap-1.5"><button onClick={() => setEd({ tipo: 'rot', ...r, obj_txt: (r.objecoes || []).join('\n') })} className="text-xs" style={{ color: A.accent }}>Editar</button><button onClick={() => apagar('rot', r.id)} style={{ color: '#f87171' }}><Trash2 className="w-3.5 h-3.5" /></button></div></div>)}
       <p className="text-xs font-bold mt-2" style={{ color: A.accent }}>FAQ ({faqs.length})</p>
@@ -263,7 +263,7 @@ function Roteiros({ qc }) {
               <Campo l="Resposta aprovada"><textarea rows={5} className={cls} style={inp} value={ed.resposta} onChange={e => setEd({ ...ed, resposta: e.target.value })} /></Campo>
             </>)}
             <div className="flex gap-4 text-xs"><label className="flex items-center gap-1.5"><input type="checkbox" checked={ed.ativo !== false} onChange={e => setEd({ ...ed, ativo: e.target.checked })} /> Ativo</label><label className="flex items-center gap-1.5"><input type="checkbox" checked={!!ed.aprovado_compliance} onChange={e => setEd({ ...ed, aprovado_compliance: e.target.checked })} /> Aprovado pelo compliance</label></div>
-            <div className="flex gap-2 justify-end"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} className="px-4 py-2 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0d1117' }}>Salvar</button></div>
+            <div className="flex gap-2 justify-end"><button onClick={() => setEd(null)} className="px-4 py-2 rounded-xl text-xs" style={{ background: A.surface2, color: A.muted }}>Cancelar</button><button onClick={salvar} className="px-4 py-2 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0B111C' }}>Salvar</button></div>
           </div>
         </div>
       )}
@@ -280,7 +280,7 @@ function Supressao({ qc }) {
   return (
     <div className="space-y-3">
       <p className="text-[11px]" style={{ color: A.muted }}>Quem pediu para não ser contatado nunca volta à fila nem a importações. Entradas são criadas automaticamente pelo botão “Não quer contato”.</p>
-      <div className="flex gap-2 flex-wrap"><input placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className={cls + ' !w-40'} style={inp} /><input placeholder="CPF/CNPJ" value={doc} onChange={e => setDoc(e.target.value)} className={cls + ' !w-40'} style={inp} /><input placeholder="Telefone (DDD+número)" value={tel} onChange={e => setTel(e.target.value)} className={cls + ' !w-44'} style={inp} /><button onClick={add} disabled={!doc && !tel} className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0d1117' }}>Adicionar</button></div>
+      <div className="flex gap-2 flex-wrap"><input placeholder="Nome" value={nome} onChange={e => setNome(e.target.value)} className={cls + ' !w-40'} style={inp} /><input placeholder="CPF/CNPJ" value={doc} onChange={e => setDoc(e.target.value)} className={cls + ' !w-40'} style={inp} /><input placeholder="Telefone (DDD+número)" value={tel} onChange={e => setTel(e.target.value)} className={cls + ' !w-44'} style={inp} /><button onClick={add} disabled={!doc && !tel} className="px-3 py-1.5 rounded-lg text-xs font-bold disabled:opacity-40" style={{ background: A.accent, color: '#0B111C' }}>Adicionar</button></div>
       <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${A.border}` }}>
         {itens.length === 0 && <p className="p-4 text-xs" style={{ color: A.muted }}>Lista vazia.</p>}
         {itens.map(i => <div key={i.id} className="flex justify-between items-center px-3 py-2 text-xs" style={{ background: A.surface, borderTop: `1px solid ${A.border}` }}><span>{i.nome || '—'} · {i.cpf_cnpj || '—'} · {i.telefone_e164 || '—'} · <span style={{ color: A.muted }}>{i.motivo}</span></span><button onClick={() => rem(i)} style={{ color: '#f87171' }}><Trash2 className="w-3.5 h-3.5" /></button></div>)}

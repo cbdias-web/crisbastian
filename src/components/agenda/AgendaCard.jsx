@@ -95,7 +95,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
   return (
     <div className="group relative rounded-xl p-2.5 transition-all duration-200 cursor-grab active:cursor-grabbing"
       style={{
-        background: isDragging ? 'rgba(0,212,170,0.08)' : '#1c2333',
+        background: isDragging ? 'rgba(0,212,170,0.08)' : '#17223A',
         border: `1px solid ${isDragging ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.12)'}`,
         opacity: updating === item.id ? 0.5 : 1,
         boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.4)' : 'none',
@@ -159,7 +159,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
 
       {menuOpen && (
         <div className="absolute top-7 right-1 z-10 rounded-lg shadow-2xl py-1 w-28"
-          style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }}>
+          style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.2)' }}>
           <button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setEditando(true); }}
             className="w-full text-left px-2.5 py-1.5 text-[10px] transition flex items-center gap-1.5"
             style={{ color: 'rgba(230,237,243,0.7)' }}>
@@ -186,12 +186,12 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
           style={{ background: 'rgba(0,212,170,0.06)' }}>
           <input type="date" value={editData} onChange={e => setEditData(e.target.value)}
             className="text-[10px] px-1.5 py-0.5 rounded focus:outline-none"
-            style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+            style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
           <input type="time" value={editHorario} onChange={e => setEditHorario(e.target.value)}
             className="text-[10px] px-1.5 py-0.5 rounded focus:outline-none"
-            style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+            style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
           <button onClick={(e) => { e.stopPropagation(); const aviso = mensagemNaoDiaUtil(editData); if (aviso) { toast.error(aviso); return; } onAction(item, item.status, undefined, editData, editHorario); setEditando(false); }}
-            className="text-[10px] px-2 py-0.5 rounded font-semibold" style={{ background: '#00D4AA', color: '#0d1117' }}>OK</button>
+            className="text-[10px] px-2 py-0.5 rounded font-semibold" style={{ background: '#00D4AA', color: '#0B111C' }}>OK</button>
           <button onClick={(e) => { e.stopPropagation(); setEditando(false); }} className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>✕</button>
         </div>
       )}
@@ -202,7 +202,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
           style={{ background: 'rgba(59,130,246,0.1)' }}>
           <input type="date" value={novaData} onChange={e => setNovaData(e.target.value)}
             className="text-[10px] px-1.5 py-0.5 rounded focus:outline-none"
-            style={{ background: '#0d1117', border: '1px solid rgba(59,130,246,0.3)', color: '#e6edf3' }} />
+            style={{ background: '#0B111C', border: '1px solid rgba(59,130,246,0.3)', color: '#e6edf3' }} />
           <button onClick={(e) => { e.stopPropagation(); if (!novaData) return; onAction(item, 'reagendado', novaData); setReagendando(false); }}
             className="text-[10px] px-2 py-0.5 rounded font-semibold text-white" style={{ background: '#2563eb' }}>OK</button>
           <button onClick={(e) => { e.stopPropagation(); setReagendando(false); }} className="text-[10px]" style={{ color: 'rgba(230,237,243,0.4)' }}>✕</button>

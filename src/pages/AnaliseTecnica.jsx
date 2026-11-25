@@ -15,8 +15,8 @@ import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal'
 import { confirmar } from '@/lib/confirmar';
 
 const A = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', surface3: '#222b3d',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', surface3: '#222b3d',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', muted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171', violet: '#a78bfa',
@@ -152,7 +152,7 @@ function Gantt({ etapas }) {
             <div className="w-[30%] min-w-0 text-[11px] truncate"><b style={{ color: A.accent }}>{e.fase}</b> <span style={{ color: A.muted }}>{e.titulo}</span></div>
             <div className="flex-1 h-5 rounded-md relative" style={{ background: A.surface2 }}>
               <div className="absolute top-0 h-5 rounded-md flex items-center justify-center text-[10px] font-bold"
-                style={{ left: `${left}%`, width: `${w}%`, background: i % 2 ? '#3b82f6' : A.accent, color: '#0d1117' }}>{d}d</div>
+                style={{ left: `${left}%`, width: `${w}%`, background: i % 2 ? '#3b82f6' : A.accent, color: '#0B111C' }}>{d}d</div>
             </div>
           </div>
         );
@@ -246,7 +246,7 @@ function Painel() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><BrainCircuit className="w-6 h-6" style={{ color: A.accent }} /> Análise Técnica e Propostas</h1>
           <p className="text-xs mt-1 max-w-3xl" style={{ color: A.muted }}>A análise nasce do Estudo de Viabilidade — o cliente devolve as respostas e os documentos — ou direto de um cadastro, com as informações digitadas pelo consultor. Em ambos os casos o motor de IA segue as premissas do sistema, e uma análise já criada pode servir de base para outro cliente.</p>
         </div>
-        <button onClick={() => setNovaAberta(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+        <button onClick={() => setNovaAberta(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0B111C' }}>
           <Plus className="w-4 h-4" /> Nova análise manual
         </button>
       </div>
@@ -265,7 +265,7 @@ function Painel() {
         </div>
         {FILTROS.map(([k, l]) => (
           <button key={k} onClick={() => setFiltro(k)} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={filtro === k ? { background: A.accent, color: '#0d1117' } : { background: A.surface, color: A.muted, border: `1px solid ${A.border}` }}>{l}</button>
+            style={filtro === k ? { background: A.accent, color: '#0B111C' } : { background: A.surface, color: A.muted, border: `1px solid ${A.border}` }}>{l}</button>
         ))}
       </div>
       {loading ? <div className="p-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin" style={{ color: A.accent }} /></div>
@@ -509,7 +509,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
               <button onClick={() => setRevisaoAberta(true)} disabled={rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
                 <History className="w-3.5 h-3.5" /> Revisar / nova versão
               </button>
-              <button onClick={gerarPdf} disabled={gerandoPdf || rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0d1117' }}>
+              <button onClick={gerarPdf} disabled={gerandoPdf || rodando} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0B111C' }}>
                 {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />} Gerar PDF executivo
               </button>
             </>
@@ -525,7 +525,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
 
       {/* Estado: IA rodando */}
       {rodando && (
-        <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), #161b22)', border: `1px solid ${A.borderActive}` }}>
+        <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.10), #111A2B)', border: `1px solid ${A.borderActive}` }}>
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="w-5 h-5 animate-pulse" style={{ color: A.accent }} />
             <p className="font-bold">O motor de IA está trabalhando na análise…</p>
@@ -556,7 +556,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
             </div>
           </div>
           {respostasRecebidas ? (
-            <button onClick={() => rodarIA({ action: 'analisar', estudo_id: estudoId })} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+            <button onClick={() => rodarIA({ action: 'analisar', estudo_id: estudoId })} className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0B111C' }}>
               <Sparkles className="w-4 h-4" /> Rodar análise com IA
             </button>
           ) : (
@@ -598,18 +598,18 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
             <div className="rounded-2xl p-4 space-y-2" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
               <p style={label}>Fluxo da proposta</p>
               {EDITAVEL.includes(sel.status) && (
-                <button onClick={() => mudarStatus('aprovada')} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold" style={{ background: '#60a5fa', color: '#0d1117' }}>
+                <button onClick={() => mudarStatus('aprovada')} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold" style={{ background: '#60a5fa', color: '#0B111C' }}>
                   <ThumbsUp className="w-3.5 h-3.5" /> Aprovar internamente
                 </button>
               )}
               {sel.status === 'aprovada' && (
-                <button onClick={() => mudarStatus('enviada_cliente')} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold" style={{ background: A.violet, color: '#0d1117' }}>
+                <button onClick={() => mudarStatus('enviada_cliente')} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold" style={{ background: A.violet, color: '#0B111C' }}>
                   <Send className="w-3.5 h-3.5" /> Marcar como enviada ao cliente
                 </button>
               )}
               {['aprovada', 'enviada_cliente'].includes(sel.status) && (
                 <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => mudarStatus('aceita')} className="flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-bold" style={{ background: '#34d399', color: '#0d1117' }}><CheckCircle2 className="w-3.5 h-3.5" /> Aceita</button>
+                  <button onClick={() => mudarStatus('aceita')} className="flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-bold" style={{ background: '#34d399', color: '#0B111C' }}><CheckCircle2 className="w-3.5 h-3.5" /> Aceita</button>
                   <button onClick={() => { const o = prompt('Motivo da recusa (opcional):'); if (o !== null) mudarStatus('recusada', { decisao_observacao: o }); }} className="flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-bold" style={{ background: 'rgba(248,113,113,0.15)', color: A.danger, border: '1px solid rgba(248,113,113,0.35)' }}><XCircle className="w-3.5 h-3.5" /> Recusada</button>
                 </div>
               )}
@@ -654,7 +654,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
               <div className="rounded-xl px-4 py-2.5 text-xs flex items-center gap-2 flex-wrap" style={{ background: A.goldDim, border: '1px solid rgba(251,191,36,0.25)', color: A.gold }}>
                 <Lock className="w-3.5 h-3.5" /> Visualizando v{sel.versao} ({STATUS_PROPOSTA[sel.status].label}) — somente leitura.
                 {isAdmin && (
-                  <button onClick={() => setManutencao(true)} className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold" style={{ background: A.gold, color: '#0d1117' }}>
+                  <button onClick={() => setManutencao(true)} className="ml-auto flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold" style={{ background: A.gold, color: '#0B111C' }}>
                     <PencilLine className="w-3 h-3" /> Habilitar manutenção
                   </button>
                 )}
@@ -671,7 +671,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
             <div className="flex gap-1 overflow-x-auto pb-1">
               {TABS.map(([k, l, I]) => (
                 <button key={k} onClick={() => setTab(k)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"
-                  style={tab === k ? { background: A.accent, color: '#0d1117' } : { background: A.surface, color: A.muted, border: `1px solid ${A.border}` }}>
+                  style={tab === k ? { background: A.accent, color: '#0B111C' } : { background: A.surface, color: A.muted, border: `1px solid ${A.border}` }}>
                   <I className="w-3.5 h-3.5" /> {l}
                 </button>
               ))}
@@ -821,7 +821,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
           style={{ background: A.surface3, border: `1px solid ${A.borderActive}` }}>
           <span className="text-xs flex items-center gap-1.5"><PencilLine className="w-3.5 h-3.5" style={{ color: A.gold }} /> Alterações não salvas em v{sel.versao}</span>
           <button onClick={() => { setDraft(JSON.parse(JSON.stringify(sel.conteudo || {}))); setDirty(false); }} className="text-xs px-3 py-1.5 rounded-lg" style={{ color: A.muted }}>Descartar</button>
-          <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+          <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-bold" style={{ background: A.accent, color: '#0B111C' }}>
             {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
           </button>
         </div>
@@ -969,7 +969,7 @@ function RevisaoModal({ versao, onClose, onIA, onManual, onReanalisar }) {
             className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none" style={inputStyle} />
         </div>
         <div className="grid sm:grid-cols-2 gap-2">
-          <button onClick={() => exigeMotivo() && onIA(motivo, instr)} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+          <button onClick={() => exigeMotivo() && onIA(motivo, instr)} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold" style={{ background: A.accent, color: '#0B111C' }}>
             <WandSparkles className="w-3.5 h-3.5" /> Revisar com IA
           </button>
           <button onClick={() => exigeMotivo() && onManual(motivo)} className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold" style={inputStyle}>

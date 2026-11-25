@@ -60,9 +60,9 @@ function MiniCalendar({ selected, onSelect, dotDates = new Set() }) {
             <button key={ds} onClick={() => onSelect(day)}
               className="relative flex items-center justify-center w-full aspect-square rounded-lg text-[11px] font-medium transition-all"
               style={isSelected
-                ? { background: '#00D4AA', color: '#0d1117', fontWeight: 700 }
+                ? { background: '#00D4AA', color: '#0B111C', fontWeight: 700 }
                 : isTod
-                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA', fontWeight: 700 }
+                ? { background: 'rgba(255,255,255,0.08)', color: '#00D4AA', fontWeight: 700 }
                 : { color: 'rgba(230,237,243,0.6)' }}>
               {format(day, 'd')}
               {hasDot && !isSelected && (
@@ -111,7 +111,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-sm" style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.2)' }}>
         <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)' }}>
           <div>
             <p className="font-bold text-sm" style={{ color: '#e6edf3' }}>Adicionar ao Pipeline</p>
@@ -125,7 +125,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
             <input value={form.produto} onChange={e => setForm(p => ({ ...p, produto: e.target.value }))}
               placeholder="Ex: Conta Global"
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
           </div>
           <div className="flex gap-2">
             <div className="flex-1">
@@ -133,20 +133,20 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
               <input type="number" value={form.valor_estimado} onChange={e => setForm(p => ({ ...p, valor_estimado: e.target.value }))}
                 placeholder="R$ 0"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+                style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
             </div>
             <div className="flex-1">
               <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Temperatura</label>
               <select value={form.temperatura} onChange={e => setForm(p => ({ ...p, temperatura: e.target.value }))}
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
+                style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }}>
                 {['Frio', 'Morno', 'Quente'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
           </div>
         </div>
         <div className="px-5 py-4 flex justify-end gap-2" style={{ borderTop: '1px solid rgba(0,212,170,0.12)' }}>
-          <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl transition" style={{ color: 'rgba(230,237,243,0.6)', border: '1px solid rgba(0,212,170,0.15)' }}>Cancelar</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm rounded-xl transition" style={{ color: 'rgba(230,237,243,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}>Cancelar</button>
           <button onClick={handleSave} disabled={saving}
             className="px-4 py-2 text-sm rounded-xl transition flex items-center gap-2 font-semibold text-white"
             style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
@@ -319,10 +319,10 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             <div className="space-y-1.5 p-2 rounded-lg" style={{ background: 'rgba(28,35,51,0.6)', border: '1px solid rgba(0,212,170,0.1)' }}>
               <input type="date" value={filtroPeriodoInicio} onChange={e => setFiltroPeriodoInicio(e.target.value)}
                 className="w-full px-2 py-1 text-[10px] rounded focus:outline-none"
-                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+                style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
               <input type="date" value={filtroPeriodoFim} onChange={e => setFiltroPeriodoFim(e.target.value)}
                 className="w-full px-2 py-1 text-[10px] rounded focus:outline-none"
-                style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+                style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
               {(filtroPeriodoInicio || filtroPeriodoFim) && (
                 <button onClick={() => { setFiltroPeriodoInicio(''); setFiltroPeriodoFim(''); }}
                   className="text-[10px] font-semibold" style={{ color: '#f87171' }}>Limpar período</button>
@@ -339,7 +339,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             {/* Date nav box */}
             <div className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition"
               style={{ background: 'rgba(255,255,255,0.03)' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(255,255,255,0.08)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
               <button onClick={() => { setSelectedDate(d => addDays(d, -1)); setShowAllUpcoming(false); }}
                 className="p-0.5 rounded transition" style={{ color: 'rgba(230,237,243,0.6)' }}>
@@ -362,7 +362,7 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             {/* Gerente filter box */}
             {todosVendedores.length > 0 && (
               <div className="flex-1 min-w-[140px] max-w-[220px] rounded-lg transition"
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(255,255,255,0.08)'}
                 onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
                 <GerenteMultiSelect
                   vendedores={todosVendedores}
@@ -375,17 +375,17 @@ export default function AgendaCalendario({ vendedorId, vendedor, user, onCliente
             {/* Action buttons box */}
             <div className="flex items-center gap-1 rounded-lg px-1.5 py-1 transition ml-auto"
               style={{ background: 'rgba(255,255,255,0.03)' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(0,212,170,0.15)'}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 0 12px rgba(255,255,255,0.08)'}
               onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
               <button onClick={() => { setSelectedDate(new Date()); setShowAllUpcoming(false); }}
                 className="px-2 py-0.5 text-[10px] font-semibold rounded-md transition"
-                style={{ background: !showAllUpcoming && isToday(selectedDate) ? 'rgba(0,212,170,0.15)' : 'transparent', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
+                style={{ background: !showAllUpcoming && isToday(selectedDate) ? 'rgba(255,255,255,0.08)' : 'transparent', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.2)' }}>
                 Hoje
               </button>
               <button onClick={() => setShowAllUpcoming(p => !p)}
                 className="px-2 py-0.5 text-[10px] font-semibold rounded-md transition flex items-center gap-0.5"
                 style={{
-                  background: showAllUpcoming ? 'rgba(0,212,170,0.15)' : 'transparent',
+                  background: showAllUpcoming ? 'rgba(255,255,255,0.08)' : 'transparent',
                   color: showAllUpcoming ? '#00D4AA' : 'rgba(230,237,243,0.4)',
                   border: `1px solid ${showAllUpcoming ? 'rgba(0,212,170,0.2)' : 'rgba(255,255,255,0.06)'}`,
                 }}>

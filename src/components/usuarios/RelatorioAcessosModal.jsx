@@ -9,10 +9,10 @@ import UserDetailPopup from './UserDetailPopup';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3',
@@ -309,7 +309,7 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
 
         {/* ═══ HEADER ═══ */}
         <div className="px-6 py-4 flex items-center justify-between sticky top-0 z-20"
-          style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
+          style={{ background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', boxShadow: '0 4px 16px rgba(0,212,170,0.3)' }}>
@@ -345,7 +345,7 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
                   background: isActive ? AURORA.accentDim : s.bg,
                   border: `1px solid ${isActive ? 'rgba(0,212,170,0.4)' : `${s.color}22`}`,
                   cursor: s.filterKey ? 'pointer' : 'default',
-                  boxShadow: isActive ? '0 4px 16px rgba(0,212,170,0.15)' : 'none',
+                  boxShadow: isActive ? '0 4px 16px rgba(255,255,255,0.08)' : 'none',
                 }}
                 onMouseEnter={e => { if (s.filterKey && !isActive) e.currentTarget.style.transform = 'scale(1.03)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>

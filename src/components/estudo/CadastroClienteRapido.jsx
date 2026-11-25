@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import CampoMascara from '@/components/ui/campo-mascara';
 
 const A = {
-  surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
+  surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
 };
 const inputStyle = { background: A.surface2, border: `1px solid ${A.border}`, color: A.text };
@@ -65,7 +65,7 @@ export default function CadastroClienteRapido({ inicial = {}, onClose, onCriado 
               {[{ v: 'PF', l: 'Pessoa Física', I: User }, { v: 'PJ', l: 'Pessoa Jurídica', I: Building2 }].map(o => (
                 <button key={o.v} type="button" onClick={() => set('tipo_pessoa', o.v)}
                   className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold"
-                  style={form.tipo_pessoa === o.v ? { background: A.accent, color: '#0d1117' } : inputStyle}>
+                  style={form.tipo_pessoa === o.v ? { background: A.accent, color: '#0B111C' } : inputStyle}>
                   <o.I className="w-3.5 h-3.5" /> {o.l}
                 </button>
               ))}
@@ -102,7 +102,7 @@ export default function CadastroClienteRapido({ inicial = {}, onClose, onCriado 
               style={{ ...inputStyle, color: A.textMuted }}>Cancelar</button>
             <button type="button" onClick={salvar} disabled={salvando}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-60"
-              style={{ background: A.accent, color: '#0d1117' }}>
+              style={{ background: A.accent, color: '#0B111C' }}>
               {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5" />} Cadastrar e usar
             </button>
           </div>

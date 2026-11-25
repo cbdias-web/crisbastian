@@ -6,9 +6,9 @@ import JornadaCliente from '@/components/portal/JornadaCliente';
 import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -146,12 +146,12 @@ export default function CadastroCarteiraPanel({ clienteId, fila }) {
       {/* Ações */}
       <div className="flex gap-2">
         {!editando ? (
-          <button onClick={() => setEditando(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          <button onClick={() => setEditando(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition" style={{ background: AURORA.accent, color: '#0B111C' }}>
             <User className="w-3.5 h-3.5" /> Editar Dados
           </button>
         ) : (
           <>
-            <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0B111C' }}>
               {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
             </button>
             <button onClick={() => { setEditando(false); setForm({ nome: cliente.nome||'', cpf_cnpj: cliente.cpf_cnpj||'', telefone: cliente.telefone||'', email: cliente.email||'', cidade: cliente.cidade||'', estado: cliente.estado||'' }); }}

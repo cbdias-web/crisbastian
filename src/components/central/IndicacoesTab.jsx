@@ -11,9 +11,9 @@ import { periodoRange, dentroPeriodo } from '../portal/FiltroIndicadores';
 import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -28,7 +28,7 @@ const STATUS_CFG = {
   em_atendimento: { label: 'Em Atendimento', color: AURORA.warning, bg: 'rgba(251,191,36,0.12)' },
   convertido_cliente: { label: '→ Cliente', color: AURORA.green, bg: 'rgba(52,211,153,0.12)' },
   convertido_contrato: { label: '→ Contrato', color: AURORA.purple, bg: 'rgba(167,139,250,0.12)' },
-  convertido_venda: { label: 'Venda Convertida', color: '#0d1117', bg: 'linear-gradient(135deg, #34d399, #00D4AA)', glow: 'rgba(52,211,153,0.35)' },
+  convertido_venda: { label: 'Venda Convertida', color: '#0B111C', bg: 'linear-gradient(135deg, #34d399, #00D4AA)', glow: 'rgba(52,211,153,0.35)' },
   rejeitado_compliance: { label: 'Rejeitado por Compliance', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
   descartado: { label: 'Descartado', color: '#9ca3af', bg: 'rgba(100,100,100,0.2)' },
 };

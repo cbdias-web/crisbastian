@@ -462,7 +462,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
         <CardContent className="space-y-4">
           {!venda?.id && (
             <div className="rounded-xl px-3 py-2.5 text-[11px] leading-relaxed"
-              style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.65)' }}>
+              style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(230,237,243,0.65)' }}>
               Todo lançamento exige <strong style={{ color: '#00D4AA' }}>vendedor responsável</strong> e gera automaticamente o <strong style={{ color: '#00D4AA' }}>contrato vinculado</strong>.
               A venda manual só é liberada com o <strong style={{ color: '#00D4AA' }}>código de liberação da gerência</strong> (uso único) e só conta na produção depois de anexar o contrato assinado e o comprovante de pagamento.
             </div>
@@ -866,7 +866,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
           </div>
 
           {isAdmin && (
-            <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(0,212,170,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
               <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                 <input
                   type="checkbox"

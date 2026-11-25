@@ -5,7 +5,7 @@ import { X, Smartphone, Loader2, CheckCircle2, PhoneCall, MessageCircle } from '
 import { qrUrl, telParaTel, waLink } from './QrCodeContato';
 import { codigoOperadora } from '@/lib/operadora';
 
-const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const inp = { background: A.surface2, color: A.text, border: `1px solid ${A.border}` };
 
 // Cadastro do celular/operadora do gerente: as ligações saem do chip do próprio gerente (sem custo de telefonia no CRM).
@@ -65,7 +65,7 @@ export default function MeuCelularModal({ vendedorId, onClose, onSalvo }) {
                 <select value={form.canal_alerta} onChange={e => setForm(f => ({ ...f, canal_alerta: e.target.value }))} className="w-full px-3 py-2 rounded-xl" style={inp}><option value="ambos">App e e-mail</option><option value="push">Só no app</option><option value="email">Só e-mail</option></select></div>
               <label className="col-span-2 flex items-center gap-2"><input type="checkbox" checked={form.alertas_silenciados} onChange={e => setForm(f => ({ ...f, alertas_silenciados: e.target.checked }))} /> Silenciar e-mails (alertas continuam no sino)</label>
             </div>
-            <button onClick={() => salvar()} disabled={salvando} className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-40" style={{ background: A.accent, color: '#0d1117' }}>{salvando && <Loader2 className="w-4 h-4 animate-spin" />} Salvar</button>
+            <button onClick={() => salvar()} disabled={salvando} className="w-full py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-40" style={{ background: A.accent, color: '#0B111C' }}>{salvando && <Loader2 className="w-4 h-4 animate-spin" />} Salvar</button>
 
             {meu && (
               <div className="rounded-2xl p-3 space-y-2" style={{ background: A.surface2, border: `1px solid ${A.border}` }}>

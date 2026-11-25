@@ -13,8 +13,8 @@ import AgendarRetornoModal from './AgendarRetornoModal';
 import PosChamadaSheet from './PosChamadaSheet';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
+  surface: '#111A2B',
+  surface2: '#17223A',
   border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
@@ -302,7 +302,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                 </select>
                 <button onClick={reatribuirGerente} disabled={!novoGerenteId || reatribuindo}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition disabled:opacity-40"
-                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  style={{ background: AURORA.accent, color: '#0B111C' }}>
                   {reatribuindo ? <Loader2 className="w-3 h-3 animate-spin" /> : <User className="w-3 h-3" />} Confirmar
                 </button>
                 <button onClick={() => setTrocarGerente(false)}
@@ -325,7 +325,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-40"
                 style={{
                   background: ativo ? c.color : `${c.color}1a`,
-                  color: ativo ? '#0d1117' : c.color,
+                  color: ativo ? '#0B111C' : c.color,
                   border: `1px solid ${ativo ? c.color : `${c.color}55`}`,
                 }}>
                 {classificando === c.key && <Loader2 className="w-3 h-3 animate-spin" />}
@@ -394,7 +394,7 @@ export default function CapaContatoPopup({ fila, user, vendedor, onAtualizado, o
                 <div className="w-full" style={{ maxWidth: 420 }}>
                   <button onClick={() => setPosChamada({ canal: 'ligacao' })}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition hover:brightness-110"
-                    style={{ background: AURORA.accent, color: '#0d1117' }}>
+                    style={{ background: AURORA.accent, color: '#0B111C' }}>
                     <PhoneCall className="w-4 h-4" /> Registrar resultado do contato
                   </button>
                   <button onClick={() => setView('registro')}
@@ -547,7 +547,7 @@ function InfoOrigem({ fila, user, vendedor, leadIndicacao }) {
       <div>
         <p className="text-[10px] uppercase tracking-wider mb-1" style={{ color: AURORA.textMuted }}>Em Atendimento</p>
         <div className="flex items-center gap-1.5">
-          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: 'rgba(0,212,170,0.15)', color: AURORA.accent }}>{(atendendo || '?').charAt(0).toUpperCase()}</span>
+          <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)', color: AURORA.accent }}>{(atendendo || '?').charAt(0).toUpperCase()}</span>
           <span className="text-xs font-semibold" style={{ color: AURORA.accent }}>{atendendo}</span>
         </div>
       </div>

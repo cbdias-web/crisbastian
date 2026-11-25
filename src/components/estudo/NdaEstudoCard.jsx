@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { buscarClientes } from '@/lib/clientesBusca';
 
 const A = {
-  surface2: '#1c2333', border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A', border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
@@ -127,7 +127,7 @@ export default function NdaEstudoCard({ onAlterar }) {
 
           {dados && (
             <>
-              <div className="rounded-lg p-2 text-[11px] space-y-0.5" style={{ background: '#161b22', border: `1px solid ${A.border}` }}>
+              <div className="rounded-lg p-2 text-[11px] space-y-0.5" style={{ background: '#111A2B', border: `1px solid ${A.border}` }}>
                 <p className="font-semibold" style={{ color: A.text }}>{dados.nome} <span style={{ color: A.textMuted }}>· {dados.tipo_pessoa}</span></p>
                 <p style={{ color: A.textMuted }}>{[dados.cpf_cnpj, dados.email, dados.telefone].filter(Boolean).join(' · ') || 'Documento sem dados de contato'}</p>
               </div>

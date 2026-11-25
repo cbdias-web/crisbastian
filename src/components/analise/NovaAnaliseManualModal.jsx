@@ -8,8 +8,8 @@ import { PRODUTOS_ESTUDO, OBJETIVOS_POR_PRODUTO } from '@/lib/estudoViabilidade'
 import ClienteEstudoPicker from '@/components/estudo/ClienteEstudoPicker';
 
 const A = {
-  surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', muted: 'rgba(230,237,243,0.55)', gold: '#fbbf24', danger: '#f87171',
 };
@@ -124,7 +124,7 @@ export default function NovaAnaliseManualModal({ user, onClose, onConcluido }) {
                   {[{ v: 'PF', l: 'Pessoa Física', I: User }, { v: 'PJ', l: 'Pessoa Jurídica', I: Building2 }].map(o => (
                     <button key={o.v} type="button" onClick={() => setTipo(o.v)}
                       className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold"
-                      style={tipo === o.v ? { background: A.accent, color: '#0d1117' } : inputStyle}>
+                      style={tipo === o.v ? { background: A.accent, color: '#0B111C' } : inputStyle}>
                       <o.I className="w-3.5 h-3.5" /> {o.l}
                     </button>
                   ))}
@@ -162,7 +162,7 @@ export default function NovaAnaliseManualModal({ user, onClose, onConcluido }) {
                     const on = objetivos.includes(o);
                     return (
                       <button key={o} type="button" onClick={() => toggleObjetivo(o)} className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                        style={on ? { background: A.accent, color: '#0d1117' } : { background: A.surface2, color: A.muted, border: `1px solid ${A.border}` }}>
+                        style={on ? { background: A.accent, color: '#0B111C' } : { background: A.surface2, color: A.muted, border: `1px solid ${A.border}` }}>
                         {o}
                       </button>
                     );
@@ -216,7 +216,7 @@ export default function NovaAnaliseManualModal({ user, onClose, onConcluido }) {
 
               <div className="flex justify-end gap-2 pt-1">
                 <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ ...inputStyle, color: A.muted }}>Cancelar</button>
-                <button type="button" onClick={gerar} className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold" style={{ background: A.accent, color: '#0d1117' }}>
+                <button type="button" onClick={gerar} className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold" style={{ background: A.accent, color: '#0B111C' }}>
                   <Sparkles className="w-3.5 h-3.5" /> Gerar análise técnica
                 </button>
               </div>

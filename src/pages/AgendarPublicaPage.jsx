@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Loader2, CalendarCheck, Video, Clock } from 'lucide-react';
 
-const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.6)' };
+const A = { bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.6)' };
 const DIAS = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 // Página pública: o lead escolhe o horário da reunião com o gerente (Google Calendar + Meet).
@@ -52,7 +52,7 @@ export default function AgendarPublicaPage() {
             <h1 className="text-lg font-bold mb-1">Reunião confirmada!</h1>
             <p className="text-sm" style={{ color: A.muted }}>com {ok.gerente}</p>
             {ok.quando && <p className="text-sm font-semibold mt-2 capitalize">{fmtQuando(ok.quando)}</p>}
-            {ok.meet_link ? <a href={ok.meet_link} className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0d1117' }}><Video className="w-4 h-4" /> Link do Google Meet</a>
+            {ok.meet_link ? <a href={ok.meet_link} className="inline-flex items-center gap-2 mt-4 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0B111C' }}><Video className="w-4 h-4" /> Link do Google Meet</a>
               : <p className="text-xs mt-3" style={{ color: A.muted }}>O gerente enviará o link da reunião.</p>}
           </div>
         )}
@@ -65,16 +65,16 @@ export default function AgendarPublicaPage() {
               <>
                 <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
                   {Object.keys(porDia).map(d => { const w = new Date(`${d}T12:00:00`).getDay(); return (
-                    <button key={d} onClick={() => { setDia(d); setSlot(null); }} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap capitalize" style={{ background: dia === d ? A.accent : A.surface2, color: dia === d ? '#0d1117' : A.text }}>{DIAS[w]} {d.split('-').reverse().slice(0, 2).join('/')}</button>); })}
+                    <button key={d} onClick={() => { setDia(d); setSlot(null); }} className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap capitalize" style={{ background: dia === d ? A.accent : A.surface2, color: dia === d ? '#0B111C' : A.text }}>{DIAS[w]} {d.split('-').reverse().slice(0, 2).join('/')}</button>); })}
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-4">
                   {(porDia[dia] || []).map(s => (
-                    <button key={s.iso} onClick={() => setSlot(s)} className="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1" style={{ background: slot?.iso === s.iso ? A.accent : A.surface2, color: slot?.iso === s.iso ? '#0d1117' : A.text, border: `1px solid ${A.border}` }}><Clock className="w-3 h-3" />{s.hora}</button>
+                    <button key={s.iso} onClick={() => setSlot(s)} className="py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1" style={{ background: slot?.iso === s.iso ? A.accent : A.surface2, color: slot?.iso === s.iso ? '#0B111C' : A.text, border: `1px solid ${A.border}` }}><Clock className="w-3 h-3" />{s.hora}</button>
                   ))}
                 </div>
                 <label className="text-[11px] block mb-1" style={{ color: A.muted }}>Seu e-mail (opcional — para receber o convite do Google Agenda)</label>
                 <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="voce@empresa.com" className="w-full px-3 py-2.5 rounded-xl text-sm mb-4 focus:outline-none" style={{ background: A.surface2, color: A.text, border: `1px solid ${A.border}` }} />
-                <button onClick={confirmar} disabled={!slot || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0d1117' }}>{enviando && <Loader2 className="w-4 h-4 animate-spin" />} Confirmar horário</button>
+                <button onClick={confirmar} disabled={!slot || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0B111C' }}>{enviando && <Loader2 className="w-4 h-4 animate-spin" />} Confirmar horário</button>
               </>
             )}
           </>

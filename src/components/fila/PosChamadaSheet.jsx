@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { X, Loader2, Mic, Sparkles, PhoneCall, PhoneMissed, MessageCircle, CalendarCheck, Ban, ThumbsDown, Voicemail, PhoneOff } from 'lucide-react';
 import { hojeBrasilia, proximoDiaUtilBR, somaDiasData } from '@/lib/leadUtils';
 
-const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 
 const LIGACAO = [
   { k: 'atendeu_interessado', l: 'Atendeu — interessado', ic: PhoneCall, c: '#34d399', retorno: true },
@@ -104,7 +104,7 @@ export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onD
           <div className="grid grid-cols-2 gap-2">
             {opcoes.map(o => (
               <button key={o.k} onClick={() => { setSel(o.k); if (INSTANT.includes(o.k) && !obs.trim() && !enviando) salvar(o.k); }} className="flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-bold text-left transition"
-                style={{ background: sel === o.k ? o.c : `${o.c}1a`, color: sel === o.k ? '#0d1117' : o.c, border: `1px solid ${sel === o.k ? o.c : `${o.c}55`}` }}>
+                style={{ background: sel === o.k ? o.c : `${o.c}1a`, color: sel === o.k ? '#0B111C' : o.c, border: `1px solid ${sel === o.k ? o.c : `${o.c}55`}` }}>
                 <o.ic className="w-4 h-4 flex-shrink-0" /> {o.l}
               </button>
             ))}
@@ -140,7 +140,7 @@ export default function PosChamadaSheet({ fila, canal = 'ligacao', modeloId, onD
           </div>
         </div>
         <div className="p-4 flex-shrink-0" style={{ borderTop: `1px solid ${A.border}` }}>
-          <button onClick={() => salvar()} disabled={!sel || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0d1117' }}>
+          <button onClick={() => salvar()} disabled={!sel || enviando} className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2" style={{ background: A.accent, color: '#0B111C' }}>
             {enviando && <Loader2 className="w-4 h-4 animate-spin" />} Salvar resultado
           </button>
           <p className="text-[10px] text-center mt-2" style={{ color: A.muted }}>“Não atendeu”, “Caixa postal” e “WhatsApp enviado” salvam com um toque.</p>

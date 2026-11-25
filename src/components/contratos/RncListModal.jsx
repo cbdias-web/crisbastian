@@ -6,10 +6,10 @@ import { X, Search, FileCheck2, Building2, User, Loader2, ChevronRight, CheckCir
 import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',

@@ -1,9 +1,9 @@
 import { Trophy, UserCheck, RefreshCw } from 'lucide-react';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -84,7 +84,7 @@ export default function KanbanIndicacoes({ leads = [], getNome, getDoc, getGeren
                   <div key={lead.id} onClick={() => onSelect(lead)}
                     className="rounded-xl p-2.5 cursor-pointer transition"
                     style={{ background: AURORA.surface, border: `1px solid ${efetivada ? 'rgba(52,211,153,0.35)' : AURORA.border}` }}
-                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,212,170,0.15)'}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 16px rgba(255,255,255,0.08)'}
                     onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] flex-shrink-0"

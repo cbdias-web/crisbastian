@@ -2,8 +2,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // Tokens e controles compartilhados do formulário de Conta Internacional.
 export const AURORA = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  bg: '#0B111C', surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
@@ -52,7 +52,7 @@ export const RadioBtns = ({ label, value, onChange, opts }) => (
       {opts.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
           className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
-          style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
+          style={value === o.value ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
           {o.label}
         </button>
       ))}

@@ -9,9 +9,9 @@ import { toast } from 'sonner';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',

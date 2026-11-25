@@ -706,7 +706,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
             </button>
             <button onClick={handleGerarPdf} disabled={gerandoPdf || salvando}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileCheck2 className="w-3.5 h-3.5" />}
               Gerar PDF
             </button>

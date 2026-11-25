@@ -341,7 +341,7 @@ function ContratosLegado() {
       <div className="max-w-6xl mx-auto space-y-5">
 
         {/* Header — indicação da entidade */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl px-5 py-4" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+        <div className="flex items-center justify-between gap-3 rounded-2xl px-5 py-4" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(0,212,170,0.12)' }}>
               <FileText className="w-6 h-6" style={{ color: '#00D4AA' }} />
@@ -437,29 +437,29 @@ function ContratosLegado() {
         </div>
 
         {/* Filtros */}
-        <div className="rounded-2xl shadow-sm p-4 flex flex-wrap gap-3 items-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+        <div className="rounded-2xl shadow-sm p-4 flex flex-wrap gap-3 items-center" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="relative flex-1 min-w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por nome ou CPF/CNPJ..."
-              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              className="w-full pl-9 pr-3 py-2 text-sm rounded-xl focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
           </div>
           <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }}>
             <option value="Todos">Todos os tipos</option>
             {Object.keys(TIPO_CONFIG).map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}
-            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }}>
+            className="px-3 py-2 text-xs rounded-xl focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }}>
             <option value="Todos">Todos os status</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
           </select>
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 font-medium">Período:</span>
             <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
-              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
             <span className="text-xs text-gray-400">até</span>
             <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
-              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} />
+              className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />
             {(filtroDataInicio || filtroDataFim) && (
               <button onClick={() => { setFiltroDataInicio(''); setFiltroDataFim(''); }}
                 className="text-xs text-red-400 hover:text-red-600 font-semibold px-1.5 py-1 hover:bg-red-50 rounded-lg transition">✕</button>
@@ -473,12 +473,12 @@ function ContratosLegado() {
                 className={`flex items-center gap-2 px-3 py-2 text-xs rounded-xl focus:outline-none transition whitespace-nowrap ${
                   filtroVendedores.length > 0 ? 'font-semibold' : ''
                 }`}
-                style={{ background: '#1c2333', border: `1px solid ${filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(0,212,170,0.15)'}`, color: filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(230,237,243,0.55)' }}>
+                style={{ background: '#17223A', border: `1px solid ${filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(255,255,255,0.08)'}`, color: filtroVendedores.length > 0 ? '#00D4AA' : 'rgba(230,237,243,0.55)' }}>
                 Gerente{filtroVendedores.length > 0 ? ` (${filtroVendedores.length})` : ''}
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${vendedorDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {vendedorDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+                <div className="absolute top-full left-0 mt-1 w-56 rounded-xl shadow-xl z-50 py-1 max-h-60 overflow-y-auto" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)' }}>
                   {filtroVendedores.length > 0 && (
                     <button onClick={() => setFiltroVendedores([])}
                       className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 font-semibold transition">
@@ -495,7 +495,7 @@ function ContratosLegado() {
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition"
                         style={{ color: sel ? '#00D4AA' : '#e6edf3', fontWeight: sel ? 600 : 400 }}>
                         <span className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${sel ? 'bg-[#00D4AA] border-[#00D4AA]' : 'border-gray-500'}`}>
-                          {sel && <svg className="w-2.5 h-2.5" style={{ color: '#0d1117' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                          {sel && <svg className="w-2.5 h-2.5" style={{ color: '#0B111C' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </span>
                         {v}
                       </button>
@@ -506,18 +506,18 @@ function ContratosLegado() {
             </div>
           )}
           {/* Alternância Lista / Kanban */}
-          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)' }}>
             <button onClick={() => setViewMode('lista')} title="Visão em Lista"
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
               style={viewMode === 'lista'
-                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }
+                ? { background: 'rgba(255,255,255,0.08)', color: '#00D4AA' }
                 : { color: 'rgba(230,237,243,0.55)' }}>
               <Table2 className="w-3.5 h-3.5" /> Lista
             </button>
             <button onClick={() => setViewMode('kanban')} title="Visão em Kanban"
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition"
               style={viewMode === 'kanban'
-                ? { background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }
+                ? { background: 'rgba(255,255,255,0.08)', color: '#00D4AA' }
                 : { color: 'rgba(230,237,243,0.55)' }}>
               <Columns3 className="w-3.5 h-3.5" /> Kanban
             </button>
@@ -528,7 +528,7 @@ function ContratosLegado() {
         {/* Lista / Kanban */}
         {viewMode === 'kanban' ? (
           contratosFiltrados.length === 0 ? (
-            <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+            <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
               <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
               <p className="text-sm" style={{ color: 'rgba(230,237,243,0.55)' }}>Nenhum contrato encontrado</p>
               <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Clique em um dos tipos acima para criar seu primeiro contrato</p>
@@ -542,16 +542,16 @@ function ContratosLegado() {
             />
           )
         ) : contratosFiltrados.length === 0 ? (
-          <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="rounded-2xl shadow-sm py-16 text-center" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
             <FileText className="w-10 h-10 mx-auto mb-3" style={{ color: 'rgba(230,237,243,0.2)' }} />
             <p className="text-sm" style={{ color: 'rgba(230,237,243,0.55)' }}>Nenhum contrato encontrado</p>
             <p className="text-xs mt-1" style={{ color: 'rgba(230,237,243,0.35)' }}>Clique em um dos tipos acima para criar seu primeiro contrato</p>
           </div>
         ) : (
-          <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wider" style={{ background: '#1c2333', color: 'rgba(230,237,243,0.55)' }}>
+                <tr className="text-xs uppercase tracking-wider" style={{ background: '#17223A', color: 'rgba(230,237,243,0.55)' }}>
                   <th className="px-4 py-3 text-left font-semibold">Cliente</th>
                   <th className="px-4 py-3 text-left font-semibold">Tipo</th>
                   <th className="px-4 py-3 text-left font-semibold">Valor Total</th>

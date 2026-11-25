@@ -5,9 +5,9 @@ import { Loader2, Send, Bot, User, Sparkles, MessageCircle, HelpCircle, ChevronD
 import { ROTEIROS as ROTEIROS_PADRAO, DEFAULT_ROTEIRO, FAQ as FAQ_PADRAO } from './roteirosPadrao';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -168,7 +168,7 @@ Responda em JSON.`;
             {msgs.length === 0 && <p className="text-[10px] italic text-center" style={{ color: AURORA.textMuted }}>Trabalhe objeções em tempo real — clique acima ou digite a sua.</p>}
             {msgs.map((m, i) => (
               <div key={i} className={`flex gap-2 ${m.de === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.15)' : 'rgba(0,212,170,0.15)' }}>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.15)' : 'rgba(255,255,255,0.08)' }}>
                   {m.de === 'user' ? <User className="w-3 h-3" style={{ color: '#60a5fa' }} /> : <Bot className="w-3 h-3" style={{ color: AURORA.accent }} />}
                 </div>
                 <div className="text-[11px] leading-relaxed max-w-[82%] p-2 rounded-lg" style={{ background: m.de === 'user' ? 'rgba(59,130,249,0.10)' : AURORA.surface2, color: AURORA.text }}>
@@ -184,7 +184,7 @@ Responda em JSON.`;
               placeholder="Digite a objeção do lead..."
               className="flex-1 px-2.5 py-1.5 rounded-lg text-[11px] focus:outline-none" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
             <button onClick={() => perguntar()} disabled={enviando || !input.trim()}
-              className="p-1.5 rounded-lg transition disabled:opacity-40 hover:brightness-110" style={{ background: AURORA.accent, color: '#0d1117' }}>
+              className="p-1.5 rounded-lg transition disabled:opacity-40 hover:brightness-110" style={{ background: AURORA.accent, color: '#0B111C' }}>
               {enviando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
             </button>
           </div>

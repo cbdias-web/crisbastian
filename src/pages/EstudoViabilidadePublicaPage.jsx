@@ -11,8 +11,8 @@ import {
 } from '@/lib/estudoViabilidade';
 
 const AURORA = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  bg: '#0B111C', surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
@@ -49,7 +49,7 @@ const Opcoes = ({ label, value, onChange, opts, disabled }) => (
         return (
           <button key={v} type="button" disabled={disabled} onClick={() => onChange(value === v ? '' : v)}
             className="px-3 py-1.5 text-xs rounded-lg font-semibold transition disabled:opacity-60"
-            style={value === v ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle }}>
+            style={value === v ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle }}>
             {l}
           </button>
         );
@@ -351,7 +351,7 @@ export default function EstudoViabilidadePublicaPage() {
       <div className="max-w-3xl mx-auto space-y-5">
 
         {/* Cabeçalho */}
-        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111A2B 0%, #17223A 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
               <IconeProduto className="w-6 h-6" style={{ color: AURORA.accent }} />
@@ -393,7 +393,7 @@ export default function EstudoViabilidadePublicaPage() {
                 return (
                   <button key={p.id} onClick={() => irPara(i)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition"
-                    style={ativo ? { background: AURORA.accent, color: '#0d1117' } : { background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
+                    style={ativo ? { background: AURORA.accent, color: '#0B111C' } : { background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
                     <Icon className="w-3.5 h-3.5" /> {i + 1}. {p.label}
                   </button>
                 );
@@ -716,7 +716,7 @@ export default function EstudoViabilidadePublicaPage() {
 
                 <button onClick={enviar} disabled={enviando || !!uploading}
                   className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition disabled:opacity-60"
-                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  style={{ background: AURORA.accent, color: '#0B111C' }}>
                   {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   {enviando ? 'Enviando...' : 'Enviar para a Villela Exchange'}
                 </button>
@@ -738,7 +738,7 @@ export default function EstudoViabilidadePublicaPage() {
               {passo < PASSOS.length - 1 && (
                 <button onClick={() => irPara(passo + 1)} disabled={salvando}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold"
-                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  style={{ background: AURORA.accent, color: '#0B111C' }}>
                   Continuar <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}

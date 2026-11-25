@@ -6,9 +6,9 @@ import { toast } from 'sonner';
 import { gerarCodigoLiberacao } from '@/lib/codigoLiberacao';
 
 const A = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   muted: 'rgba(230,237,243,0.55)',
@@ -78,7 +78,7 @@ export default function GerenciarCodigosModal({ user, onClose }) {
             />
             <button onClick={gerar} disabled={gerando}
               className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50"
-              style={{ background: A.accent, color: '#0d1117' }}>
+              style={{ background: A.accent, color: '#0B111C' }}>
               {gerando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
               Gerar código
             </button>

@@ -3,9 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { KeyRound, Loader2, X, ShieldCheck, ArrowRight } from 'lucide-react';
 
 const A = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   muted: 'rgba(230,237,243,0.55)',
@@ -87,13 +87,13 @@ export default function ModalCodigoLiberacao({ onClose, onConfirm }) {
             {valido ? (
               <button onClick={() => onConfirm(valido.codigo)}
                 className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold"
-                style={{ background: A.accent, color: '#0d1117' }}>
+                style={{ background: A.accent, color: '#0B111C' }}>
                 Continuar <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <button onClick={validar} disabled={validando}
                 className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50"
-                style={{ background: A.accent, color: '#0d1117' }}>
+                style={{ background: A.accent, color: '#0B111C' }}>
                 {validando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <KeyRound className="w-3.5 h-3.5" />}
                 Validar código
               </button>

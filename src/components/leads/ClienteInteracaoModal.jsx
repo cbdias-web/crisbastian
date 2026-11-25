@@ -218,9 +218,9 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.2)' }} onClick={e => e.stopPropagation()}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-2xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.2)' }} onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="px-6 py-4 flex items-start justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
+        <div className="px-6 py-4 flex items-start justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h3 className="font-bold text-lg" style={{ color: '#e6edf3' }}>{isLoading ? 'Carregando...' : cliente?.nome}</h3>
@@ -402,7 +402,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                     <div key={inter.id} className="flex gap-3 p-3 rounded-xl transition"
                       style={{
                         background: eHoje || vencido ? 'rgba(245,158,11,0.08)' : 'rgba(0,212,170,0.06)',
-                        border: eHoje || vencido ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(0,212,170,0.15)',
+                        border: eHoje || vencido ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)',
                       }}>
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: eHoje || vencido ? 'rgba(245,158,11,0.15)' : 'rgba(0,212,170,0.12)' }}>
@@ -413,7 +413,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                           <span className="text-xs font-semibold" style={{ color: '#e6edf3' }}>{inter.tipo}</span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
                             style={{
-                              background: eHoje ? 'rgba(245,158,11,0.2)' : vencido ? 'rgba(239,68,68,0.15)' : 'rgba(0,212,170,0.15)',
+                              background: eHoje ? 'rgba(245,158,11,0.2)' : vencido ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.08)',
                               color: eHoje ? '#fbbf24' : vencido ? '#f87171' : '#00D4AA',
                             }}>
                             <Calendar className="w-2.5 h-2.5" />
@@ -428,7 +428,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <Button size="sm" onClick={() => abrirFormAgendada(inter)}
-                          className="text-xs" style={{ background: '#00D4AA', color: '#0d1117' }}>
+                          className="text-xs" style={{ background: '#00D4AA', color: '#0B111C' }}>
                           Registrar <ChevronRight className="w-3 h-3 ml-1" />
                         </Button>
                         <button onClick={() => descartarAgendada(inter)}
@@ -459,7 +459,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
             ) : (
               <div className="space-y-2 relative">
                 {/* Timeline line */}
-                <div className="absolute left-[15px] top-2 bottom-2 w-px" style={{ background: 'rgba(0,212,170,0.15)' }} />
+                <div className="absolute left-[15px] top-2 bottom-2 w-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
                 {realizadas.map((inter, idx) => {
                   const res = resultadoConfig[inter.resultado] || resultadoConfig['Neutro'];
                   const ResIcon = res.icon;
@@ -468,7 +468,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                     <div key={inter.id} className="flex gap-3 relative">
                       {/* Timeline dot */}
                       <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10"
-                        style={{ background: '#161b22', border: `2px solid ${res.style.color}` }}>
+                        style={{ background: '#111A2B', border: `2px solid ${res.style.color}` }}>
                         <TipoIcon className="w-3.5 h-3.5" style={{ color: res.style.color }} />
                       </div>
                       <div className="flex-1 min-w-0 pb-2">

@@ -45,7 +45,7 @@ export default function HeaderAvatares({ groups, currentPageName }) {
       style={{ background: ativo || aberto === id ? 'rgba(255,255,255,0.06)' : 'transparent', border: `1px solid ${ativo || aberto === id ? cor + '66' : 'transparent'}`, '--vx-glow': cor + '40' }}>
       <span className="vx-av relative w-8 h-8 rounded-full flex items-center justify-center" style={{ background: cor + '22', border: `1.5px solid ${cor}` }}>
         <Icon className="w-4 h-4" style={{ color: cor }} />
-        {badge > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', border: '2px solid #0d1117' }} />}
+        {badge > 0 && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full" style={{ background: '#ef4444', border: '2px solid #0B111C' }} />}
       </span>
       <span className="hidden xl:inline text-sm font-medium" style={{ color: ativo ? '#e6edf3' : 'rgba(230,237,243,0.7)' }}>{label}</span>
     </button>
@@ -74,7 +74,7 @@ export default function HeaderAvatares({ groups, currentPageName }) {
 
       {aberto && (
         <div className="absolute top-full left-0 mt-3 rounded-2xl p-3 z-50 w-[min(560px,90vw)]"
-          style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 50px rgba(0,0,0,0.55)' }}>
+          style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 50px rgba(0,0,0,0.55)' }}>
           {aberto === 'celulas' ? (
             <div className="grid grid-cols-1 gap-2">
               {CELULAS_CAPA.map(c => {

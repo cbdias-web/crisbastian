@@ -6,10 +6,10 @@ import confetti from 'canvas-confetti';
 import RoletaWheel, { PREMIOS_POR_TIPO, getSegmentos } from './RoletaWheel.jsx';
 
 const A = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.5)',
@@ -80,7 +80,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
       style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)' }}>
       <div className="rounded-3xl shadow-2xl w-full max-w-2xl relative overflow-hidden max-h-[95vh] overflow-y-auto"
         style={{
-          background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
+          background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)',
           border: '1px solid rgba(0,212,170,0.25)',
           boxShadow: '0 0 60px rgba(0,212,170,0.2), 0 20px 60px rgba(0,0,0,0.7)',
         }}>
@@ -149,7 +149,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
                style={{
                  background: 'rgba(0,212,170,0.08)',
                  border: '1px solid rgba(0,212,170,0.3)',
-                 boxShadow: '0 0 24px rgba(0,212,170,0.15)',
+                 boxShadow: '0 0 24px rgba(255,255,255,0.08)',
                }}>
                <p className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: A.textMuted }}>
                  Você ganhou
@@ -159,7 +159,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
              </div>
               <button onClick={onClose}
                 className="w-full py-3 rounded-xl font-semibold transition"
-                style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: '#0d1117' }}>
+                style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: '#0B111C' }}>
                 {salvando ? 'Registrando...' : '✨ Receber Prêmio!'}
               </button>
             </div>
@@ -168,7 +168,7 @@ export default function RoletaPopup({ roletaId, user, tipo = 'default', onClose 
               className="px-10 py-3 rounded-xl font-bold text-lg transition disabled:opacity-60 w-full max-w-xs"
               style={{
                 background: spinning ? '#333' : `linear-gradient(135deg, ${A.accent}, #0066cc)`,
-                color: '#0d1117',
+                color: '#0B111C',
                 boxShadow: spinning ? 'none' : `0 0 24px rgba(0,212,170,0.3)`,
               }}>
               {spinning ? '🌀 Girando...' : '🎯 Girar Roleta'}

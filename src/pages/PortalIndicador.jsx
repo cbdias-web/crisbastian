@@ -15,10 +15,10 @@ import { confirmar } from '@/lib/confirmar';
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -171,7 +171,7 @@ export default function PortalIndicador() {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" style={{ background: AURORA.bg }}>
         <div className="max-w-xl w-full rounded-2xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-          <div className="px-6 py-5 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0d1117, #16213e)', borderBottom: `1px solid ${AURORA.border}` }}>
+          <div className="px-6 py-5 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0B111C, #16213e)', borderBottom: `1px solid ${AURORA.border}` }}>
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.12)' }}>
               <ShieldCheck className="w-5 h-5" style={{ color: AURORA.accent }} />
             </div>
@@ -191,7 +191,7 @@ export default function PortalIndicador() {
             </label>
             <button onClick={aceitarTermo} disabled={!showTermo || aceitando}
               className="w-full mt-5 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition disabled:opacity-40"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {aceitando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
               Aceitar e Acessar o Portal
             </button>
@@ -254,7 +254,7 @@ export default function PortalIndicador() {
               <p className="text-xs mb-5" style={{ color: AURORA.accent }}>Comissão padrão: <strong>{indicador.percentual_comissao ?? 0}%</strong></p>
               <button onClick={() => setShowWelcome(false)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 <ArrowRight className="w-4 h-4" /> Começar a indicar
               </button>
               <p className="text-[10px] mt-3" style={{ color: AURORA.textMuted }}>Enviamos também um e-mail de boas-vindas para {indicador.email}</p>
@@ -281,7 +281,7 @@ export default function PortalIndicador() {
               <p className="text-xs mb-5" style={{ color: AURORA.accent }}>Comissão padrão: <strong>{indicador.percentual_comissao ?? 0}%</strong></p>
               <button onClick={() => setShowCapa(false)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 <ArrowRight className="w-4 h-4" /> Acessar meu painel
               </button>
             </div>
@@ -290,7 +290,7 @@ export default function PortalIndicador() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0d1117, #16213e)', borderBottom: `1px solid ${AURORA.border}` }}>
+      <header className="sticky top-0 z-10 px-6 py-4 flex items-center justify-between" style={{ background: 'linear-gradient(135deg, #0B111C, #16213e)', borderBottom: `1px solid ${AURORA.border}` }}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm" style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>VX</div>
           <div>
@@ -373,7 +373,7 @@ export default function PortalIndicador() {
             </button>
             <button onClick={() => navigate(`/indicacao/${token}`)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               <Plus className="w-4 h-4" /> Nova Indicação
             </button>
           </div>
@@ -387,7 +387,7 @@ export default function PortalIndicador() {
             <p className="font-semibold" style={{ color: AURORA.text }}>Você ainda não cadastrou indicações</p>
             <p className="text-sm mt-1 mb-4" style={{ color: AURORA.textMuted }}>Cadastre seu primeiro lead e acompanhe a jornada aqui</p>
             <button onClick={() => navigate(`/indicacao/${token}`)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
               <Plus className="w-4 h-4" /> Cadastrar Indicação
             </button>
           </div>

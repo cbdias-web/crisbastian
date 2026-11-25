@@ -278,7 +278,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     <div className="space-y-4 mb-5">
 
       {/* Barra de progresso */}
-      <div className="rounded-2xl shadow-sm p-5" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+      <div className="rounded-2xl shadow-sm p-5" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
         <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: 'rgba(230,237,243,0.55)' }}>Fluxo do Contrato</p>
         <div className="flex items-center gap-0">
           {ETAPAS.map((etapa, i) => {
@@ -291,8 +291,8 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                   <div className="w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all"
                     style={atingida
                       ? { background: '#00D4AA', borderColor: '#00D4AA' }
-                      : { background: '#1c2333', borderColor: 'rgba(230,237,243,0.15)' }}>
-                    {atingida ? <CheckCircle2 className="w-4 h-4" style={{ color: '#0d1117' }} /> : <Icon className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.25)' }} />}
+                      : { background: '#17223A', borderColor: 'rgba(230,237,243,0.15)' }}>
+                    {atingida ? <CheckCircle2 className="w-4 h-4" style={{ color: '#0B111C' }} /> : <Icon className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.25)' }} />}
                   </div>
                   <span className="text-[9px] font-semibold text-center leading-tight max-w-[60px]"
                     style={{ color: atual ? '#00D4AA' : atingida ? 'rgba(230,237,243,0.7)' : 'rgba(230,237,243,0.3)' }}>{etapa.label}</span>
@@ -316,7 +316,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                   className="text-[10px] px-2.5 py-1 rounded-lg font-semibold border transition"
                   style={statusAtual === e.key
                     ? { background: 'rgba(230,237,243,0.05)', color: 'rgba(230,237,243,0.3)', borderColor: 'rgba(230,237,243,0.1)', cursor: 'default' }
-                    : { background: '#1c2333', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>
+                    : { background: '#17223A', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>
                   {e.label}
                 </button>
               ))}
@@ -445,7 +445,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
               onDragLeave={() => setDragOver(null)}
               onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'contrato_assinado_url', 'contrato_assinado_nome', null); }}
               className="p-4 rounded-xl border-2 border-dashed transition"
-              style={dragOver === 'contrato_assinado_url' ? { borderColor: '#34d399', background: 'rgba(16,185,129,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#1c2333' }}
+              style={dragOver === 'contrato_assinado_url' ? { borderColor: '#34d399', background: 'rgba(16,185,129,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#17223A' }}
             >
               <UploadBtn label="Anexar contrato assinado" carregando={uploading === 'contrato_assinado_url'}
                 onChange={f => uploadArquivo(f, 'contrato_assinado_url', 'contrato_assinado_nome', null)} 
@@ -515,7 +515,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                     onDragLeave={() => setDragOver(null)}
                     onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) uploadArquivo(e.dataTransfer.files[0], 'boleto_url', 'boleto_nome', 'aguardando_pagamento'); }}
                     className="p-4 rounded-xl border-2 border-dashed transition"
-                    style={dragOver === 'boleto_url' ? { borderColor: '#60a5fa', background: 'rgba(59,130,246,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#1c2333' }}
+                    style={dragOver === 'boleto_url' ? { borderColor: '#60a5fa', background: 'rgba(59,130,246,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#17223A' }}
                   >
                     <UploadBtn label="Anexar boleto" carregando={uploading === 'boleto_url'}
                       onChange={f => uploadArquivo(f, 'boleto_url', 'boleto_nome', 'aguardando_pagamento')} 
@@ -566,7 +566,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                     className="text-xs px-3 py-1.5 rounded-lg border font-semibold transition"
                     style={contrato.origem_pagamento === o
                       ? { background: '#8b5cf6', color: '#fff', borderColor: '#8b5cf6' }
-                      : { background: '#1c2333', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>{o}</button>
+                      : { background: '#17223A', color: 'rgba(230,237,243,0.7)', borderColor: 'rgba(0,212,170,0.2)' }}>{o}</button>
                 ))}
               </div>
               {contrato.origem_pagamento && (
@@ -601,7 +601,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
                 onDragLeave={() => setDragOver(null)}
                 onDrop={e => { e.preventDefault(); setDragOver(null); if (e.dataTransfer.files[0]) adicionarComprovante(e.dataTransfer.files[0]); }}
                 className="p-4 rounded-xl border-2 border-dashed transition"
-                style={dragOver === 'comprovante_url' ? { borderColor: '#a78bfa', background: 'rgba(139,92,246,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#1c2333' }}
+                style={dragOver === 'comprovante_url' ? { borderColor: '#a78bfa', background: 'rgba(139,92,246,0.1)' } : { borderColor: 'rgba(0,212,170,0.2)', background: '#17223A' }}
               >
                 <UploadBtn
                   label={temComprovante ? 'Anexar mais um comprovante' : 'Anexar comprovante de pagamento'}
@@ -655,9 +655,9 @@ function EtapaCard({ titulo, cor, concluida, children, adminOnly, adminMsg }) {
   const c = colors[cor] || colors.emerald;
   return (
     <div className="rounded-2xl shadow-sm overflow-hidden"
-      style={{ background: '#161b22', border: `1px solid ${concluida ? c.border : 'rgba(0,212,170,0.12)'}` }}>
+      style={{ background: '#111A2B', border: `1px solid ${concluida ? c.border : 'rgba(0,212,170,0.12)'}` }}>
       <div className="px-5 py-3 flex items-center gap-2"
-        style={{ borderBottom: `1px solid ${concluida ? c.border : 'rgba(0,212,170,0.1)'}`, background: concluida ? c.glow : '#1c2333' }}>
+        style={{ borderBottom: `1px solid ${concluida ? c.border : 'rgba(0,212,170,0.1)'}`, background: concluida ? c.glow : '#17223A' }}>
         {concluida
           ? <CheckCircle2 className="w-4 h-4" style={{ color: c.accent }} />
           : <Circle className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.3)' }} />
@@ -704,7 +704,7 @@ function UploadBtn({ label, carregando, onChange, small, isDragOver }) {
         small ? 'text-[11px] px-3 py-1.5 border' : 'text-xs px-4 py-2.5 shadow-sm'
       } ${carregando ? 'opacity-60 pointer-events-none' : ''} ${isDragOver ? 'ring-2 ring-emerald-400 brightness-110' : ''}`}
       style={small
-        ? { borderColor: 'rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.6)', background: '#1c2333' }
+        ? { borderColor: 'rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.6)', background: '#17223A' }
         : { background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}

@@ -76,7 +76,7 @@ export default function ValoresContratoEditor({ contrato, onUpdate }) {
             </label>
             <CampoMoeda asString value={mensalidade} onChange={setMensalidade}
               className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-              style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.25)', color: '#e6edf3' }} />
+              style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.25)', color: '#e6edf3' }} />
           </div>
           {mostraRate && (
             <div>
@@ -86,18 +86,18 @@ export default function ValoresContratoEditor({ contrato, onUpdate }) {
               <input type="number" step="0.01" min="0" max="100" value={rate} onChange={e => setRate(e.target.value)}
                 placeholder="Ex: 0,89"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
-                style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.25)', color: '#e6edf3' }} />
+                style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.25)', color: '#e6edf3' }} />
             </div>
           )}
           <div className="sm:col-span-2 flex items-center gap-2">
             <button onClick={salvar} disabled={salvando}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition disabled:opacity-50"
-              style={{ background: '#00D4AA', color: '#0d1117' }}>
+              style={{ background: '#00D4AA', color: '#0B111C' }}>
               {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
             </button>
             <button onClick={() => setEditando(false)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl transition"
-              style={{ background: '#1c2333', color: 'rgba(230,237,243,0.7)', border: '1px solid rgba(0,212,170,0.2)' }}>
+              style={{ background: '#17223A', color: 'rgba(230,237,243,0.7)', border: '1px solid rgba(0,212,170,0.2)' }}>
               <X className="w-3.5 h-3.5" /> Cancelar
             </button>
           </div>

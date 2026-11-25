@@ -8,9 +8,9 @@ import CampoMoeda from '@/components/ui/campo-moeda';
 import { consultarCep, consultarCnpj, aplicarDados } from '@/lib/autocomplete';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -284,7 +284,7 @@ export default function EditarIndicacaoModal({ lead, onClose }) {
 
         <div className="p-4 flex justify-end gap-2" style={{ background: AURORA.surface2, borderTop: `1px solid ${AURORA.border}` }}>
           <button onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-semibold" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>Cancelar</button>
-          <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          <button onClick={salvar} disabled={salvando} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0B111C' }}>
             {salvando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />} Salvar
           </button>
         </div>

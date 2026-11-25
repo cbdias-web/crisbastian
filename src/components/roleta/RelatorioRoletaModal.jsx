@@ -4,10 +4,10 @@ import { X, FileDown, Gift, Loader2, Trophy, Clock, CheckCircle, Award } from 'l
 import { toast } from 'sonner';
 
 const A = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3',
@@ -71,7 +71,7 @@ export default function RelatorioRoletaModal({ roletas, onClose }) {
 
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between flex-shrink-0"
-          style={{ borderBottom: `1px solid ${A.border}`, background: 'linear-gradient(135deg, #0d1117, #1a1a2e)' }}>
+          style={{ borderBottom: `1px solid ${A.border}`, background: 'linear-gradient(135deg, #0B111C, #1a1a2e)' }}>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl" style={{ background: A.accentDim }}>
               <Gift className="w-5 h-5" style={{ color: A.accent }} />
@@ -86,7 +86,7 @@ export default function RelatorioRoletaModal({ roletas, onClose }) {
           <div className="flex items-center gap-2">
             <button onClick={exportarPDF} disabled={exportando}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50"
-              style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: '#0d1117' }}>
+              style={{ background: `linear-gradient(135deg, ${A.accent}, #0066cc)`, color: '#0B111C' }}>
               {exportando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
               Exportar PDF
             </button>
@@ -133,7 +133,7 @@ export default function RelatorioRoletaModal({ roletas, onClose }) {
                       <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: 'rgba(0,212,170,0.08)' }}>
                         <div className="h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
                           style={{ width: `${Math.max(pct, 15)}%`, background: `linear-gradient(90deg, ${A.accent}, #0066cc)` }}>
-                          <span className="text-[10px] font-bold" style={{ color: '#0d1117' }}>{count}x</span>
+                          <span className="text-[10px] font-bold" style={{ color: '#0B111C' }}>{count}x</span>
                         </div>
                       </div>
                       <span className="text-xs w-10 text-right" style={{ color: A.textMuted }}>{Math.round(pct)}%</span>

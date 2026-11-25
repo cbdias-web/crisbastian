@@ -42,10 +42,10 @@ export function buildDocInicial(tipoCanal, operarAcima270k) {
 }
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
@@ -600,7 +600,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
             <button onClick={toggle270k}
               className="px-4 py-1.5 rounded-lg text-xs font-bold transition flex-shrink-0"
               style={operarAcima270k
-                ? { background: AURORA.gold, color: '#1c2333' }
+                ? { background: AURORA.gold, color: '#17223A' }
                 : { background: 'transparent', border: `1px solid ${AURORA.gold}`, color: AURORA.gold }}>
               {operarAcima270k ? 'SIM' : 'NÃO'}
             </button>
@@ -636,12 +636,12 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
                     <div className="flex gap-2">
                       <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'sim')}
                         className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition"
-                        style={form.dupla_nacionalidade === 'sim' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle }}>
+                        style={form.dupla_nacionalidade === 'sim' ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle }}>
                         Sim
                       </button>
                       <button type="button" onClick={() => updateForm('dupla_nacionalidade', 'nao')}
                         className="flex-1 px-3 py-2 text-sm rounded-lg font-semibold transition"
-                        style={form.dupla_nacionalidade === 'nao' ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle }}>
+                        style={form.dupla_nacionalidade === 'nao' ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle }}>
                         Não
                       </button>
                     </div>
@@ -857,7 +857,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
             </button>
             <button onClick={handleGerarPdf} disabled={gerandoPdf || salvando || gerandoLink}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold transition disabled:opacity-50"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {gerandoPdf ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileCheck2 className="w-3.5 h-3.5" />}
               Gerar PDF
             </button>

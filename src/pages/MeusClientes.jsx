@@ -668,16 +668,16 @@ export default function MeusClientes() {
   };
 
   if (!user) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d1117' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B111C' }}>
       <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'rgba(0,212,170,0.2)', borderTopColor: '#00D4AA' }} />
     </div>
   );
 
   const AURORA = {
-    bg: '#0d1117',
-    surface: '#161b22',
-    surface2: '#1c2333',
-    border: 'rgba(0,212,170,0.15)',
+    bg: '#0B111C',
+    surface: '#111A2B',
+    surface2: '#17223A',
+    border: 'rgba(255,255,255,0.08)',
     accent: '#00D4AA',
     accentDim: 'rgba(0,212,170,0.12)',
     text: '#e6edf3',
@@ -691,7 +691,7 @@ export default function MeusClientes() {
       {/* ── HEADER ── */}
       <div className="sticky top-0 z-20"
         style={{
-          background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
+          background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)',
           borderBottom: `1px solid ${AURORA.border}`,
         }}>
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
@@ -1247,7 +1247,7 @@ export default function MeusClientes() {
       )}
       {resolvendoPopup && (
         <div className="fixed top-4 right-4 z-[90] flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-          style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
+          style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.3)', color: '#00D4AA' }}>
           <div className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
             style={{ borderColor: 'rgba(0,212,170,0.3)', borderTopColor: '#00D4AA' }} />
           Abrindo contato...

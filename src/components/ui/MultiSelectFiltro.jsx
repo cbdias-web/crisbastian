@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { ChevronDown, Check, X } from 'lucide-react';
 
 const AURORA = {
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',
@@ -34,7 +34,7 @@ export default function MultiSelectFiltro({ placeholder, options, selected = [],
       {selected.length > 0 && (
         <button type="button" onClick={() => onChange([])} title="Limpar"
           className="absolute -right-1.5 -top-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-          style={{ background: '#f87171', color: '#0d1117' }}>
+          style={{ background: '#f87171', color: '#0B111C' }}>
           <X className="w-2.5 h-2.5" />
         </button>
       )}
@@ -55,7 +55,7 @@ export default function MultiSelectFiltro({ placeholder, options, selected = [],
                     borderColor: selected.includes(o.value) ? AURORA.accent : 'rgba(0,212,170,0.4)',
                     background: selected.includes(o.value) ? AURORA.accent : 'transparent',
                   }}>
-                  {selected.includes(o.value) && <Check className="w-2.5 h-2.5" style={{ color: '#0d1117' }} />}
+                  {selected.includes(o.value) && <Check className="w-2.5 h-2.5" style={{ color: '#0B111C' }} />}
                 </span>
                 <span className="truncate">{o.label}</span>
               </button>

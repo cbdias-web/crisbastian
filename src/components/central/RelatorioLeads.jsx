@@ -5,10 +5,10 @@ import { BarChart2, Clock, ArrowRight, Users, TrendingUp, X, Download, CheckCirc
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -197,7 +197,7 @@ export default function RelatorioLeads({ onClose }) {
             </select>
             <button onClick={exportarPDF} disabled={exportando}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-50"
-              style={{ background: 'rgba(0,212,170,0.15)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
+              style={{ background: 'rgba(255,255,255,0.08)', color: AURORA.accent, border: `1px solid ${AURORA.border}` }}>
               <Download className="w-3.5 h-3.5" /> {exportando ? 'Gerando...' : 'Exportar PDF'}
             </button>
             <button onClick={onClose} className="p-2 rounded-lg" style={{ color: AURORA.textMuted }}>
@@ -266,7 +266,7 @@ export default function RelatorioLeads({ onClose }) {
                   </div>
                   <div className="flex items-center gap-1.5">
                     {v.disponivel ? (
-                      <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }}>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)', color: '#00D4AA' }}>
                         <CheckCircle2 className="w-3 h-3" /> Disponível
                       </span>
                     ) : (

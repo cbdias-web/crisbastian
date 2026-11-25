@@ -7,7 +7,7 @@ import AlertasSino from '@/components/fila/AlertasSino';
 import PosChamadaSheet from '@/components/fila/PosChamadaSheet';
 import { telParaTel, waLink } from '@/components/fila/QrCodeContato';
 
-const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 
 // Rota /m — app do celular do gerente (PWA): recebe comandos "Ligar"/"WhatsApp" enviados do computador
 // e roda o Modo Foco. A ligação sai do chip do próprio aparelho (sem custo de telefonia no CRM).

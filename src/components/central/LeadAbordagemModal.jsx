@@ -13,10 +13,10 @@ import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -202,7 +202,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
             <>
               <button onClick={() => setShowFormInteracao(true)}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 <Plus className="w-3.5 h-3.5" /> Nova Interação
               </button>
               <button onClick={() => setShowFormAgenda(true)}
@@ -284,7 +284,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
               <div className="flex gap-2">
                 <button onClick={salvarInteracao} disabled={salvando}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  style={{ background: AURORA.accent, color: '#0B111C' }}>
                   {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar Interação
                 </button>
                 <button onClick={() => setShowFormInteracao(false)}
@@ -324,7 +324,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
               <div className="flex gap-2">
                 <button onClick={salvarAgenda} disabled={salvando}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                  style={{ background: '#a78bfa', color: '#0d1117' }}>
+                  style={{ background: '#a78bfa', color: '#0B111C' }}>
                   {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} Agendar
                 </button>
                 <button onClick={() => setShowFormAgenda(false)}
@@ -393,7 +393,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
                     <div key={inter.id} className="flex gap-3 p-3 rounded-xl items-center"
                       style={{
                         background: eHoje || vencido ? 'rgba(245,158,11,0.08)' : 'rgba(0,212,170,0.06)',
-                        border: eHoje || vencido ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(0,212,170,0.15)',
+                        border: eHoje || vencido ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)',
                       }}>
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{ background: eHoje || vencido ? 'rgba(245,158,11,0.15)' : 'rgba(0,212,170,0.12)' }}>

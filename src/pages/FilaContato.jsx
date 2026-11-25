@@ -16,10 +16,10 @@ import GerenteMultiSelect from '@/components/leads/GerenteMultiSelect';
 import { isStaleItem } from '@/components/fila/filaContatoUtils';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -243,7 +243,7 @@ export default function FilaContato() {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <Zap className="w-4 h-4" style={{ color: AURORA.accent }} />
               </div>
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Fila de Contatos</h1>
@@ -278,7 +278,7 @@ export default function FilaContato() {
             )}
             <button onClick={montarFila} disabled={montando}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {montando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Montar Fila do Dia
             </button>
             <button onClick={() => refetch()} className="p-2 rounded-xl transition" style={{ background: AURORA.surface2, color: AURORA.textMuted }}>
@@ -403,7 +403,7 @@ export default function FilaContato() {
                 <p className="font-semibold" style={{ color: AURORA.text }}>Fila vazia para hoje</p>
                 <p className="text-sm mt-1 mb-4" style={{ color: AURORA.textMuted }}>Clique em "Montar Fila do Dia" para sincronizar indicações e carteira.</p>
                 <button onClick={montarFila} disabled={montando}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0B111C' }}>
                   {montando ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} Montar agora
                 </button>
               </>

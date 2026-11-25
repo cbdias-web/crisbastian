@@ -174,9 +174,9 @@ export default function ParcelasVincendasModal({ onClose, user }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pb-6" style={{ background: 'transparent', paddingTop: '128px' }}>
-      <div className="rounded-2xl shadow-2xl w-full max-w-5xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.18)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
+      <div className="rounded-2xl shadow-2xl w-full max-w-5xl max-h-[calc(100vh-140px)] flex flex-col" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.18)', boxShadow: '0 24px 64px rgba(0,0,0,0.6)' }}>
         {/* Header */}
-        <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
+        <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
           <div>
             <h2 className="font-bold text-lg" style={{ color: '#e6edf3' }}>Parcelas Vincendas</h2>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(230,237,243,0.55)' }}>{parcelasFiltradas.length} parcela(s) · Total: {fmtVal(totalFiltrado)}</p>

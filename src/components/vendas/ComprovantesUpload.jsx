@@ -73,7 +73,7 @@ export default function ComprovantesUpload({ comprovantes = [], onChange }) {
         className={`w-full flex items-center justify-center gap-2 px-3 py-4 border-2 border-dashed rounded-md text-sm bg-background transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
           dragging ? 'border-[#00D4AA] bg-[rgba(0,212,170,0.08)] text-[#00D4AA]' : 'border-input hover:bg-gray-50 text-gray-500'
         }`}
-        style={dragging ? { boxShadow: '0 0 0 3px rgba(0,212,170,0.15)' } : undefined}
+        style={dragging ? { boxShadow: '0 0 0 3px rgba(255,255,255,0.08)' } : undefined}
       >
         {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
         {uploading

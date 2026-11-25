@@ -4,7 +4,7 @@ import { Loader2, Search, UserPlus, X, Check } from 'lucide-react';
 import CadastroClienteRapido from '@/components/estudo/CadastroClienteRapido';
 
 const A = {
-  surface2: '#1c2333', border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A', border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
 };

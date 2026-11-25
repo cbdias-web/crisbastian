@@ -10,7 +10,7 @@ import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import { getConfigFila } from '@/lib/listAll';
 import { hojeBrasilia, renderModelo } from '@/lib/leadUtils';
 
-const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const SEG = { quente: '#f87171', morno: '#fbbf24', frio: '#60a5fa' };
 const brl = (v) => (v == null ? '' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
 
@@ -280,7 +280,7 @@ export default function ModoFoco({ vendedor, user, mobile = false, onSair }) {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => setSheet({ canal: 'ligacao' })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0d1117' }}><ClipboardCheck className="w-4 h-4" /> Registrar resultado {!mobile && <span className="opacity-60">(R)</span>}</button>
+                <button onClick={() => setSheet({ canal: 'ligacao' })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0B111C' }}><ClipboardCheck className="w-4 h-4" /> Registrar resultado {!mobile && <span className="opacity-60">(R)</span>}</button>
                 <button onClick={() => setAgenda(true)} className="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5" style={{ background: A.surface2, color: A.accent, border: `1px solid ${A.border}` }}><CalendarPlus className="w-4 h-4" /> Reunião (Meet)</button>
                 <button onClick={gerarLinkAgenda} className="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5" style={{ background: A.surface2, color: A.accent, border: `1px solid ${A.border}` }}><Link2 className="w-4 h-4" /> Link de agendamento</button>
                 <button onClick={gerarBriefing} disabled={carregandoBrief} className="px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 disabled:opacity-40" style={{ background: A.surface2, color: A.accent, border: `1px solid ${A.border}` }}>{carregandoBrief ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Briefing 10s</button>

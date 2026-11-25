@@ -13,10 +13,10 @@ import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',
@@ -25,7 +25,7 @@ const AURORA = {
 
 const STATUS_CONFIG = {
   aguardando_documentacao: { label: 'Aguard. Documentação', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
-  em_andamento: { label: 'Em Andamento', color: '#00D4AA', bg: 'rgba(0,212,170,0.15)' },
+  em_andamento: { label: 'Em Andamento', color: '#00D4AA', bg: 'rgba(255,255,255,0.08)' },
   aguardando_cliente: { label: 'Aguard. Cliente', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
   concluido: { label: 'Concluído', color: '#22c55e', bg: 'rgba(34,197,94,0.15)' },
   concluido_feedback: { label: 'Concluído - Feedback Enviado', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },

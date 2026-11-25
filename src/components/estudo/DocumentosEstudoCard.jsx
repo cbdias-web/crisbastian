@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { checklistDocumentos } from '@/lib/estudoViabilidade';
 
 const A = {
-  surface2: '#1c2333', border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A', border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', danger: '#f87171',
@@ -94,7 +94,7 @@ export default function DocumentosEstudoCard({ produto, tipoCliente, documentos 
       {lista.length > 0 && (
         <ul className="space-y-1">
           {lista.map((d) => (
-            <li key={d.url} className="flex items-start gap-1.5 text-[11px] rounded-lg px-2 py-1.5" style={{ background: '#161b22', border: `1px solid ${A.border}` }}>
+            <li key={d.url} className="flex items-start gap-1.5 text-[11px] rounded-lg px-2 py-1.5" style={{ background: '#111A2B', border: `1px solid ${A.border}` }}>
               <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: A.accent }} />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold truncate" style={{ color: A.text }}>{d.descricao}</p>

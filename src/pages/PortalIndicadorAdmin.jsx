@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import PortalIndicadorAuth from '@/components/portal/PortalIndicadorAuth';
 
 const AURORA = {
-  bg: '#0d1117',
+  bg: '#0B111C',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -53,7 +53,7 @@ export default function PortalIndicadorAdmin() {
         <div className="text-center max-w-sm">
           <p className="font-bold mb-2" style={{ color: AURORA.text }}>{erro}</p>
           <button onClick={() => navigate('/DashParceiro')}
-            className="px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            className="px-4 py-2 rounded-xl text-sm font-semibold" style={{ background: AURORA.accent, color: '#0B111C' }}>
             Voltar
           </button>
         </div>

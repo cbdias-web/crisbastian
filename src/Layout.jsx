@@ -36,14 +36,14 @@ import { confirmar } from '@/lib/confirmar';
 
 // Aurora Borealis color tokens
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
   accentGlow: 'rgba(0,212,170,0.25)',
-  navBg: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 50%, #16213e 100%)',
+  navBg: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 50%, #16213e 100%)',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
   cardBg: 'rgba(28,35,51,0.85)',
@@ -535,7 +535,7 @@ export default function Layout({ children, currentPageName }) {
         className="fixed left-0 right-0 z-50 flex flex-col"
         style={{
           top: impersonating ? '36px' : '0',
-          background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)',
+          background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)',
           borderBottom: `1px solid ${AURORA.border}`,
           boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
         }}

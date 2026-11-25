@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, CalendarPlus, Video, Phone, Clock, Loader2 }
 import AgendaMeetModal from '@/components/agenda/AgendaMeetModal';
 import { hojeBrasilia, somaDiasData, brasiliaParts } from '@/lib/leadUtils';
 
-const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 const segundaDa = (data) => { const [a, m, d] = data.split('-').map(Number); const w = new Date(a, m - 1, d).getDay(); return somaDiasData(data, w === 0 ? -6 : 1 - w); };
@@ -47,7 +47,7 @@ export default function AgendaGerente({ vendedor, user, adminTudo, onSelectFila 
           <button onClick={() => setIni(somaDiasData(ini, 7))} className="p-2 rounded-lg" style={{ background: A.surface, color: A.muted }}><ChevronRight className="w-4 h-4" /></button>
           <span className="text-xs ml-2" style={{ color: A.muted }}>{ini.split('-').reverse().slice(0, 2).join('/')} – {fim.split('-').reverse().slice(0, 2).join('/')}</span>
         </div>
-        {vendedor && <button onClick={() => setNovo(true)} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0d1117' }}><CalendarPlus className="w-4 h-4" /> Nova reunião (Meet)</button>}
+        {vendedor && <button onClick={() => setNovo(true)} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0B111C' }}><CalendarPlus className="w-4 h-4" /> Nova reunião (Meet)</button>}
       </div>
       {isLoading ? <div className="py-12 text-center"><Loader2 className="w-5 h-5 animate-spin mx-auto" style={{ color: A.accent }} /></div> : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">

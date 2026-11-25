@@ -165,7 +165,7 @@ export default function DashNovo(p) {
                     const r = payload.find(x => x.dataKey === 'realizado');
                     const m = payload.find(x => x.dataKey === 'meta');
                     return (
-                      <div className="rounded-xl px-3 py-2 text-xs" style={{ background: '#0d1117', border: '1px solid rgba(0,212,170,0.35)', boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
+                      <div className="rounded-xl px-3 py-2 text-xs" style={{ background: '#0B111C', border: '1px solid rgba(0,212,170,0.35)', boxShadow: '0 10px 30px rgba(0,0,0,.5)' }}>
                         <p style={{ color: T.muted }}>{label}</p>
                         <p className="font-semibold" style={{ color: TEAL }}>Realizado {brl(r?.value)}</p>
                         {m?.value != null && <p style={{ color: GOLD }}>Ritmo da meta {brl(m.value)}</p>}
@@ -173,7 +173,7 @@ export default function DashNovo(p) {
                     );
                   }} />
                   {metaTimeMes > 0 && <Area type="monotone" dataKey="meta" stroke={GOLD} strokeDasharray="5 5" strokeWidth={1.5} fill="none" dot={false} />}
-                  <Area type="monotone" dataKey="realizado" stroke={TEAL} strokeWidth={2.5} fill="url(#vxRitmo)" dot={false} activeDot={{ r: 4, fill: TEAL, stroke: '#0d1117', strokeWidth: 2 }} />
+                  <Area type="monotone" dataKey="realizado" stroke={TEAL} strokeWidth={2.5} fill="url(#vxRitmo)" dot={false} activeDot={{ r: 4, fill: TEAL, stroke: '#0B111C', strokeWidth: 2 }} />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -240,7 +240,7 @@ export default function DashNovo(p) {
                       {v.avatar_url
                         ? <img src={v.avatar_url} alt="" className="rounded-full object-cover" style={{ width: alto ? 64 : 52, height: alto ? 64 : 52, border: `2px solid ${m.cor}` }} />
                         : <span className="rounded-full flex items-center justify-center font-bold" style={{ width: alto ? 64 : 52, height: alto ? 64 : 52, background: m.cor + '22', color: m.cor, border: `2px solid ${m.cor}` }}>{iniciais(v.nome)}</span>}
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: m.cor, color: '#0d1117' }}>{m.label}</span>
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: m.cor, color: '#0B111C' }}>{m.label}</span>
                     </span>
                     <span className="text-xs font-semibold mt-1 truncate max-w-full" style={{ color: T.txt }}>{v.nome}</span>
                     <span className="text-sm font-semibold" style={{ color: m.cor }}>{brlCurto(v.vol)}</span>

@@ -12,10 +12,10 @@ const ORIGENS_SUGESTAO = [
 ];
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -207,7 +207,7 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
               </div>
               <button onClick={salvarEdicao} disabled={salvando}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Salvar Alterações
               </button>
@@ -232,7 +232,7 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
               </select>
               <button onClick={transferirGerente} disabled={salvando || !novoGerenteId}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCog className="w-4 h-4" />}
                 Transferir Conversa
               </button>
@@ -274,7 +274,7 @@ export default function GerenciarConversaModal({ conversa, conversas, vendedores
               )}
               <button onClick={mesclarConversa} disabled={salvando || !conversaDestinoId}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                style={{ background: '#a78bfa', color: '#0d1117' }}>
+                style={{ background: '#a78bfa', color: '#0B111C' }}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitMerge className="w-4 h-4" />}
                 Mesclar e Excluir Origem
               </button>

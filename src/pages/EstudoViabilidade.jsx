@@ -18,8 +18,8 @@ import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  bg: '#0B111C', surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
@@ -111,11 +111,11 @@ function PainelCompartilhar({ estudo }) {
       <p className="text-[11px] font-bold flex items-center gap-1.5" style={{ color: AURORA.accent }}><Link2 className="w-3.5 h-3.5" /> Link do formulário do cliente</p>
       <div className="flex gap-2">
         <input readOnly value={link} style={inputStyle} className="flex-1 px-2 py-1.5 text-[11px] rounded-md" onFocus={e => e.target.select()} />
-        <button onClick={() => { navigator.clipboard.writeText(link); toast.success('Link copiado'); }} className="px-2.5 rounded-md" style={{ background: AURORA.accent, color: '#0d1117' }} title="Copiar"><Copy className="w-3.5 h-3.5" /></button>
+        <button onClick={() => { navigator.clipboard.writeText(link); toast.success('Link copiado'); }} className="px-2.5 rounded-md" style={{ background: AURORA.accent, color: '#0B111C' }} title="Copiar"><Copy className="w-3.5 h-3.5" /></button>
       </div>
       <div className="flex flex-wrap gap-2">
         <a href={`https://wa.me/${telWa}?text=${encodeURIComponent(mensagemWhatsapp(estudo))}`} target="_blank" rel="noreferrer"
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#25D366', color: '#0d1117' }}>
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold" style={{ background: '#25D366', color: '#0B111C' }}>
           <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
         </a>
         <EnviarLinkEmailBotao estudo={estudo} />
@@ -258,7 +258,7 @@ export default function EstudoViabilidade() {
             Envie o formulário ao cliente, receba propósito, expectativas e documentos e encaminhe para a Análise Técnica.
           </p>
         </div>
-        <button onClick={() => setNovoAberto(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+        <button onClick={() => setNovoAberto(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
           <Plus className="w-4 h-4" /> {produtoAtual ? `Iniciar Estudo — ${produtoAtual.nome}` : 'Iniciar Estudo'}
         </button>
       </div>
@@ -271,7 +271,7 @@ export default function EstudoViabilidade() {
           return (
             <button key={p.id} onClick={() => setProdutoSel(ativo ? null : p.id)}
               className="text-left rounded-2xl p-4 transition"
-              style={{ background: ativo ? 'linear-gradient(135deg, rgba(0,212,170,0.16), #1c2333)' : AURORA.surface, border: `1px solid ${ativo ? AURORA.accent : AURORA.border}` }}>
+              style={{ background: ativo ? 'linear-gradient(135deg, rgba(0,212,170,0.16), #17223A)' : AURORA.surface, border: `1px solid ${ativo ? AURORA.accent : AURORA.border}` }}>
               <div className="flex items-center justify-between">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: AURORA.accentDim }}>
                   <Icon className="w-5 h-5" style={{ color: AURORA.accent }} />
@@ -294,7 +294,7 @@ export default function EstudoViabilidade() {
         </div>
         {['todos', ...Object.keys(STATUS_ESTUDO)].map(s => (
           <button key={s} onClick={() => setStatusFiltro(s)} className="px-3 py-1.5 rounded-lg text-[11px] font-semibold"
-            style={statusFiltro === s ? { background: AURORA.accent, color: '#0d1117' } : { background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
+            style={statusFiltro === s ? { background: AURORA.accent, color: '#0B111C' } : { background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
             {s === 'todos' ? 'Todos' : STATUS_ESTUDO[s].label}
           </button>
         ))}
@@ -474,7 +474,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
           <>
             <div className="flex items-center gap-2 text-sm" style={{ color: '#34d399' }}><CheckCircle2 className="w-4 h-4" /> Estudo criado para {criado.cliente_nome}.</div>
             <PainelCompartilhar estudo={criado} />
-            <button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>Concluir</button>
+            <button onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>Concluir</button>
           </>
         ) : (
           <>
@@ -498,7 +498,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
               <div className="grid grid-cols-2 gap-2">
                 {[{ v: 'PF', l: 'Pessoa Física', I: User }, { v: 'PJ', l: 'Pessoa Jurídica', I: Building2 }].map(o => (
                   <button key={o.v} onClick={() => set('tipo_cliente', o.v)} className="flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold"
-                    style={form.tipo_cliente === o.v ? { background: AURORA.accent, color: '#0d1117' } : inputStyle}>
+                    style={form.tipo_cliente === o.v ? { background: AURORA.accent, color: '#0B111C' } : inputStyle}>
                     <o.I className="w-3.5 h-3.5" /> {o.l}
                   </button>
                 ))}
@@ -526,7 +526,7 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
               <textarea value={form.observacoes_internas} onChange={e => set('observacoes_internas', e.target.value)} rows={2}
                 style={inputStyle} className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-none" />
             </div>
-            <button onClick={criar} disabled={salvando} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <button onClick={criar} disabled={salvando} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60" style={{ background: AURORA.accent, color: '#0B111C' }}>
               {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />} Criar e gerar link do formulário
             </button>
           </>
@@ -629,7 +629,7 @@ export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar
         </div>
 
         {estudo.link_token ? <PainelCompartilhar estudo={estudo} /> : (
-          <button onClick={gerarLink} disabled={gerando} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          <button onClick={gerarLink} disabled={gerando} className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
             {gerando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />} Gerar link do formulário
           </button>
         )}
@@ -648,17 +648,17 @@ export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar
           )}
           {['enviado_cliente', 'em_preenchimento'].includes(estudo.status) && (
             <button onClick={() => onAtualizar(estudo, { status: 'recebido', data_recebimento: new Date().toISOString() }, 'Estudo marcado como recebido')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#34d399', color: '#0d1117' }}>
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#34d399', color: '#0B111C' }}>
               <CheckCircle2 className="w-3.5 h-3.5" /> Marcar como recebido
             </button>
           )}
           {estudo.status === 'recebido' && (
-            <button onClick={enviarAnalise} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#a78bfa', color: '#0d1117' }}>
+            <button onClick={enviarAnalise} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: '#a78bfa', color: '#0B111C' }}>
               <Send className="w-3.5 h-3.5" /> Enviar para Análise Técnica
             </button>
           )}
           {(['em_analise_tecnica', 'concluido'].includes(estudo.status) || estudo.proposta_atual_id) && (
-            <button onClick={() => (onIrAnalise ? onIrAnalise() : nav(`/AnaliseTecnica?estudo=${estudo.id}`))} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <button onClick={() => (onIrAnalise ? onIrAnalise() : nav(`/AnaliseTecnica?estudo=${estudo.id}`))} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
               <BrainCircuit className="w-3.5 h-3.5" /> Abrir Análise Técnica{estudo.proposta_versao ? ` (v${estudo.proposta_versao})` : ''}
             </button>
           )}

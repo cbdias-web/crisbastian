@@ -520,7 +520,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
           </div>
           <button onClick={() => setEditando(true)}
             className="flex flex-col items-center gap-1.5 py-3 rounded-2xl text-xs font-semibold transition shadow-sm"
-            style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.85)' }}>
+            style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.85)' }}>
             <Edit2 className="w-5 h-5" />
             Editar
           </button>
@@ -552,8 +552,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         />
 
         {/* Upload de PDF externo */}
-        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
-          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#1c2333' }}>
+        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#17223A' }}>
             <FileUp className="w-4 h-4" style={{ color: 'rgba(230,237,243,0.6)' }} />
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.6)' }}>Arquivo do Contrato (PDF)</p>
           </div>
@@ -573,7 +573,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   <Trash2 className="w-3.5 h-3.5" /> Excluir
                 </button>
                 <label className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl cursor-pointer transition ${uploadandoPDF ? 'opacity-50 pointer-events-none' : ''}`}
-                  style={{ border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.7)', background: '#1c2333' }}>
+                  style={{ border: '1px solid rgba(0,212,170,0.2)', color: 'rgba(230,237,243,0.7)', background: '#17223A' }}>
                   {uploadandoPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                   Substituir
                   <input type="file" accept="application/pdf" className="hidden" onChange={e => e.target.files?.[0] && uploadPDFExterno(e.target.files[0], true)} />
@@ -595,7 +595,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
         </div>
 
         {/* Links de Assinatura (admin) */}
-        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#161b22', border: '1px solid rgba(245,158,11,0.3)' }}>
+        <div className="rounded-2xl shadow-sm overflow-hidden mb-5" style={{ background: '#111A2B', border: '1px solid rgba(245,158,11,0.3)' }}>
           <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.1)' }}>
             <Link2 className="w-4 h-4" style={{ color: '#fbbf24' }} />
             <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#fbbf24' }}>Links de Assinatura Online</p>
@@ -632,7 +632,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                     </a>
                     <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
-                      style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                      style={{ background: '#17223A', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
                       <Copy className="w-3 h-3" /> Copiar
                     </button>
                     <button onClick={consultarStatusZapsign} disabled={consultandoZapsign}
@@ -644,7 +644,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   </div>
                   <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: 'rgba(230,237,243,0.55)' }}>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide"
-                      style={{ background: 'rgba(0,212,170,0.15)', color: '#00D4AA' }}>
+                      style={{ background: 'rgba(255,255,255,0.08)', color: '#00D4AA' }}>
                       <Send className="w-2.5 h-2.5" /> Enviado via ZapSign
                     </span>
                     {contrato.email && <span>para {contrato.email}</span>}
@@ -669,7 +669,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   </a>
                   <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura); toast.success('Link copiado!'); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
-                    style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                    style={{ background: '#17223A', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
                     <Copy className="w-3 h-3" /> Copiar
                   </button>
                 </div>
@@ -724,7 +724,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
                   </a>
                   <button onClick={() => { navigator.clipboard.writeText(contrato.link_assinatura_aditivo); toast.success('Link copiado!'); }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
-                    style={{ background: '#1c2333', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
+                    style={{ background: '#17223A', color: 'rgba(230,237,243,0.8)', border: '1px solid rgba(0,212,170,0.2)' }}>
                     <Copy className="w-3 h-3" /> Copiar
                   </button>
                 </div>
@@ -850,8 +850,8 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
 
 function Section({ title, children }) {
   return (
-    <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
-      <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#1c2333' }}>
+    <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="px-5 py-3" style={{ borderBottom: '1px solid rgba(0,212,170,0.12)', background: '#17223A' }}>
         <p className="text-xs font-bold uppercase tracking-wider" style={{ color: 'rgba(230,237,243,0.55)' }}>{title}</p>
       </div>
       <div className="p-5">{children}</div>

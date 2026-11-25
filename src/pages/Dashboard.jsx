@@ -26,10 +26,10 @@ import { todayBrasilia } from '@/lib/dateUtils';
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.10)',
   accentGlow: '0 0 20px rgba(0,212,170,0.2)',
@@ -517,7 +517,7 @@ export default function Dashboard() {
     return (
       <div className="rounded-xl px-4 py-3 text-xs shadow-2xl"
         style={{
-          background: '#0d1117',
+          background: '#0B111C',
           border: `1px solid ${A.accent}55`,
           color: A.text,
           boxShadow: `0 0 24px rgba(0,212,170,0.2), 0 8px 32px rgba(0,0,0,0.6)`,
@@ -569,7 +569,7 @@ export default function Dashboard() {
                     <button key={p.id} onClick={() => { setDataInicio(p.ini); setDataFim(p.fim); }}
                       className="vx-btn h-8 px-3.5 text-xs"
                       style={presetAtivo === p.id
-                        ? { background: `linear-gradient(135deg, #33e0bf, ${A.accent})`, color: '#0d1117', border: 0, boxShadow: '0 8px 18px -10px rgba(0,212,170,.7)' }
+                        ? { background: `linear-gradient(135deg, #33e0bf, ${A.accent})`, color: '#0B111C', border: 0, boxShadow: '0 8px 18px -10px rgba(0,212,170,.7)' }
                         : { background: 'transparent', color: A.textMuted, border: 0, fontWeight: 500 }}>
                       {p.label}
                     </button>

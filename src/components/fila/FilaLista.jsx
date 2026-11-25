@@ -7,7 +7,7 @@ import { hojeBrasilia, fmtDataBR } from '@/lib/leadUtils';
 import { STATUS_LABEL, horasParadoItem } from './filaContatoUtils';
 import { confirmar } from '@/lib/confirmar';
 
-const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { surface: '#111A2B', surface2: '#17223A', border: 'rgba(255,255,255,0.08)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const SEG = { quente: '#f87171', morno: '#fbbf24', frio: '#60a5fa' };
 const PAGE = 25;
 const STORE = 'fila_smart_views_v1';
@@ -164,7 +164,7 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
           </select>
           {acao === 'reatribuir' && <select value={destino} onChange={e => setDestino(e.target.value)} className="px-2 py-1.5 rounded-lg" style={{ background: A.surface, color: A.text, border: `1px solid ${A.border}` }}><option value="">Gerente…</option>{vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}</select>}
           {acao === 'cadencia' && <select value={destino} onChange={e => setDestino(e.target.value)} className="px-2 py-1.5 rounded-lg" style={{ background: A.surface, color: A.text, border: `1px solid ${A.border}` }}><option value="">Remover cadência</option>{cadencias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}</select>}
-          <button onClick={executar} disabled={!acao || executando || (acao === 'reatribuir' && !destino)} className="px-3 py-1.5 rounded-lg font-bold disabled:opacity-40 flex items-center gap-1" style={{ background: A.accent, color: '#0d1117' }}>{executando && <Loader2 className="w-3 h-3 animate-spin" />} Aplicar</button>
+          <button onClick={executar} disabled={!acao || executando || (acao === 'reatribuir' && !destino)} className="px-3 py-1.5 rounded-lg font-bold disabled:opacity-40 flex items-center gap-1" style={{ background: A.accent, color: '#0B111C' }}>{executando && <Loader2 className="w-3 h-3 animate-spin" />} Aplicar</button>
         </div>
       )}
 

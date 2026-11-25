@@ -789,7 +789,7 @@ export default function Pipeline() {
             {/* Busca */}
             <input type="text" value={busca} onChange={e => setBusca(e.target.value)}
               placeholder="Cliente ou produto..."
-              className="px-3 py-1.5 text-sm rounded-lg focus:outline-none w-40" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
+              className="px-3 py-1.5 text-sm rounded-lg focus:outline-none w-40" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
 
             {/* Temperatura */}
             <div className="flex gap-1">
@@ -797,8 +797,8 @@ export default function Pipeline() {
                 <button key={t} onClick={() => setFiltroTemp(t)}
                   className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition"
                   style={filtroTemp === t
-                    ? { background: 'rgba(0,212,170,0.15)', borderColor: 'rgba(0,212,170,0.4)', color: '#00D4AA' }
-                    : { background: 'transparent', borderColor: 'rgba(0,212,170,0.15)', color: '#7b8495' }}>
+                    ? { background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(0,212,170,0.4)', color: '#00D4AA' }
+                    : { background: 'transparent', borderColor: 'rgba(255,255,255,0.08)', color: '#7b8495' }}>
                   {t}
                 </button>
               ))}
@@ -808,7 +808,7 @@ export default function Pipeline() {
             {isAdmin && (
               <select value={filtroVendedor} onChange={e => setFiltroVendedor(e.target.value)}
                 className="px-3 py-1.5 text-sm rounded-lg focus:outline-none font-medium"
-                style={{ background: '#1c2333', border: `1px solid ${filtroVendedor !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
+                style={{ background: '#17223A', border: `1px solid ${filtroVendedor !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
                 <option value="Todos">Todos os gerentes</option>
                 {vendedores.length > 0
                   ? vendedores.map(v => <option key={v.id} value={v.nome}>{v.nome}</option>)
@@ -819,7 +819,7 @@ export default function Pipeline() {
             {/* Produto */}
             <select value={filtroProduto} onChange={e => setFiltroProduto(e.target.value)}
               className="px-3 py-1.5 text-sm rounded-lg focus:outline-none"
-              style={{ background: '#1c2333', border: `1px solid ${filtroProduto !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
+              style={{ background: '#17223A', border: `1px solid ${filtroProduto !== 'Todos' ? 'rgba(0,212,170,0.4)' : 'rgba(0,212,170,0.2)'}`, color: '#e6edf3' }}>
               <option value="Todos">Todos os produtos</option>
               {produtosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -827,10 +827,10 @@ export default function Pipeline() {
             {/* Período */}
             <div className="flex items-center gap-1.5">
               <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
-                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
+                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
               <span className="text-xs" style={{ color: '#7b8495' }}>até</span>
               <input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)}
-                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
+                className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }} />
             </div>
 
             {/* Contador */}

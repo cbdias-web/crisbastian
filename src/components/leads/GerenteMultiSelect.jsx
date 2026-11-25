@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Check, ChevronDown, Users, X } from 'lucide-react';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.10)',
@@ -71,7 +71,7 @@ export default function GerenteMultiSelect({ vendedores = [], selected = [], onC
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {selected.length > 0 && (
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {selected.length}
             </span>
           )}
@@ -171,7 +171,7 @@ export default function GerenteMultiSelect({ vendedores = [], selected = [], onC
                       background: isSelected ? AURORA.accent : 'transparent',
                       borderColor: isSelected ? AURORA.accent : AURORA.textDim,
                     }}>
-                    {isSelected && <Check className="w-2.5 h-2.5" style={{ color: '#0d1117' }} strokeWidth={3} />}
+                    {isSelected && <Check className="w-2.5 h-2.5" style={{ color: '#0B111C' }} strokeWidth={3} />}
                   </div>
                   {v.avatar_url ? (
                     <img src={v.avatar_url} alt={v.nome} className="w-6 h-6 rounded-full object-cover flex-shrink-0" />

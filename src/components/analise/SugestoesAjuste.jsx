@@ -3,8 +3,8 @@ import { WandSparkles, Loader2, MessageSquarePlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const A = {
-  surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', muted: 'rgba(230,237,243,0.55)',
 };
@@ -52,7 +52,7 @@ export default function SugestoesAjuste({ versao, onGerar, rodando }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-[11px]" style={{ color: A.muted }}>Seja específico: valores, prazos, etapas e o que deve sair da proposta.</p>
         <button onClick={gerar} disabled={ocupado}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0d1117' }}>
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold disabled:opacity-60" style={{ background: A.accent, color: '#0B111C' }}>
           {ocupado ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <WandSparkles className="w-3.5 h-3.5" />}
           {ocupado ? 'Gerando nova versão…' : 'Gerar nova versão com os ajustes'}
         </button>

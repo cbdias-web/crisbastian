@@ -149,7 +149,7 @@ export default function HubInicio({ user, groups, isAdmin }) {
         <button onClick={() => navigate('/Dashboard')}
           className="vx-card-lift flex flex-col items-center text-center gap-3 p-6 rounded-3xl"
           style={{ background: 'rgba(0,212,170,0.09)', border: '1px solid rgba(0,212,170,0.45)', '--vx-acc': TEAL, '--vx-glow': 'rgba(0,212,170,0.5)' }}>
-          <span className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)', border: `2px solid ${TEAL}` }}>
+          <span className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)', border: `2px solid ${TEAL}` }}>
             <BarChart3 className="w-9 h-9" style={{ color: TEAL }} />
           </span>
           <span className="text-base font-semibold" style={{ color: T.txt }}>Dash</span>

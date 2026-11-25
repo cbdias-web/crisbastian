@@ -5,9 +5,9 @@ import { toast } from 'sonner';
 import { confirmar } from '@/lib/confirmar';
 
 const A = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',
@@ -123,7 +123,7 @@ export default function BoletosParcelas({ contrato, onUpdate }) {
         <input ref={inputRef} type="file" accept={ACEITOS} multiple className="hidden" onChange={e => handleFiles(e.target.files)} />
         <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
           className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-60"
-          style={{ background: A.accent, color: '#0d1117' }}>
+          style={{ background: A.accent, color: '#0B111C' }}>
           {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
           {uploading ? 'Enviando...' : 'Anexar boleto(s) (PDF, JPG, PNG)'}
         </button>

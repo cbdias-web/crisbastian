@@ -4,9 +4,9 @@ import { Clock, CheckCircle2, Lock, Loader2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -107,7 +107,7 @@ export default function StatusGerenteWidget({ user }) {
     <div className="rounded-2xl p-4 mb-4" style={{ background: AURORA.surface, border: `1px solid ${isDisponivel ? 'rgba(0,212,170,0.25)' : 'rgba(239,68,68,0.3)'}` }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: isDisponivel ? 'rgba(0,212,170,0.15)' : 'rgba(239,68,68,0.15)' }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: isDisponivel ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.15)' }}>
             {isDisponivel ? <CheckCircle2 className="w-4 h-4" style={{ color: '#00D4AA' }} /> : <Lock className="w-4 h-4" style={{ color: '#f87171' }} />}
           </div>
           <div>
@@ -126,7 +126,7 @@ export default function StatusGerenteWidget({ user }) {
           {!isDisponivel ? (
             <button onClick={liberar} disabled={salvando}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-              style={{ background: 'rgba(0,212,170,0.15)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.3)' }}>
+              style={{ background: 'rgba(255,255,255,0.08)', color: '#00D4AA', border: '1px solid rgba(0,212,170,0.3)' }}>
               {salvando ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
               Liberar agenda
             </button>
@@ -157,7 +157,7 @@ export default function StatusGerenteWidget({ user }) {
                         onChange={e => setDuracaoCustom(e.target.value)}
                         placeholder="ex: 45"
                         className="flex-1 px-2 py-1 text-xs rounded-lg focus:outline-none"
-                        style={{ background: '#0d1117', border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
+                        style={{ background: '#0B111C', border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
                       <button onClick={() => { if (duracaoCustom) bloquear('outro', parseInt(duracaoCustom)); }}
                         className="px-2 py-1 text-xs rounded-lg font-semibold"
                         style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171' }}>OK</button>

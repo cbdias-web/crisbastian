@@ -22,7 +22,7 @@ export function qrUrl(payload, size = 140) {
         if (data[y * n + x]) path += `M${x + quiet},${y + quiet}h1v1h-1z`;
       }
     }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${size}" height="${size}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><path d="${path}" fill="#0d1117"/></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${size}" height="${size}" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#ffffff"/><path d="${path}" fill="#0B111C"/></svg>`;
     uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   } catch (e) { uri = ''; }
   if (cache.size > 300) cache.clear();

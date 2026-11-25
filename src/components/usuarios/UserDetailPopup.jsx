@@ -5,10 +5,10 @@ import { getPageLabel } from '@/lib/pageLabels';
 import { toast } from 'sonner';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3',
@@ -67,7 +67,7 @@ export default function UserDetailPopup({ usuario, onClose }) {
 
         {/* Header com gradiente */}
         <div className="relative px-5 pt-5 pb-4"
-          style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)' }}>
+          style={{ background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)' }}>
           <button onClick={onClose}
             className="absolute top-3 right-3 p-1.5 rounded-lg transition hover:bg-[rgba(0,212,170,0.1)]"
             style={{ color: AURORA.textMuted }}>

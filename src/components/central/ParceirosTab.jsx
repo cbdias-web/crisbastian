@@ -8,9 +8,9 @@ import IndicadorBoxModal from './IndicadorBoxModal';
 import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -222,7 +222,7 @@ export default function ParceirosTab({ readOnly = false }) {
             </button>
             <button onClick={openNovo}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               <Plus className="w-3.5 h-3.5" /> Novo Indicador
             </button>
           </div>
@@ -404,7 +404,7 @@ export default function ParceirosTab({ readOnly = false }) {
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition"
                     style={{ background: sel ? 'rgba(0,212,170,0.10)' : AURORA.surface2, border: `1px solid ${sel ? 'rgba(0,212,170,0.4)' : AURORA.border}` }}>
                     <div className="rounded flex items-center justify-center flex-shrink-0" style={{ width: 18, height: 18, background: sel ? AURORA.accent : 'transparent', border: `1px solid ${sel ? AURORA.accent : 'rgba(230,237,243,0.3)'}` }}>
-                      {sel && <Check className="w-3 h-3" style={{ color: '#0d1117' }} />}
+                      {sel && <Check className="w-3 h-3" style={{ color: '#0B111C' }} />}
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate" style={{ color: AURORA.text }}>{p.nome}</p>
@@ -440,7 +440,7 @@ export default function ParceirosTab({ readOnly = false }) {
                 </button>
                 <button onClick={enviarLinksAtualizados} disabled={enviandoLinks || selecionadosLinks.length === 0}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-40"
-                  style={{ background: AURORA.accent, color: '#0d1117' }}>
+                  style={{ background: AURORA.accent, color: '#0B111C' }}>
                   {enviandoLinks ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                   {enviandoLinks ? 'Enviando...' : 'Enviar'}
                 </button>
@@ -505,7 +505,7 @@ export default function ParceirosTab({ readOnly = false }) {
               </div>
               <button onClick={salvar} disabled={salvando}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
-                style={{ background: AURORA.accent, color: '#0d1117' }}>
+                style={{ background: AURORA.accent, color: '#0B111C' }}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Salvar Indicador
               </button>
             </div>

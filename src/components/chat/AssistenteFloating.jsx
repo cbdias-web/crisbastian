@@ -14,7 +14,7 @@ const LAST_ACTIVITY_KEY = 'jarvis_last_activity';
 const TypingIndicator = () => (
   <div className="flex flex-col items-center gap-1">
     <JarvisAvatar size="sm" />
-    <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.15)' }}>
+    <div className="rounded-2xl px-4 py-3 shadow-sm" style={{ background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)' }}>
       <div className="flex gap-1 items-center h-4">
         {[0, 150, 300].map(d => (
           <div key={d} className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: `${d}ms` }} />
@@ -131,7 +131,7 @@ const Message = ({ message }) => {
   return (
     <div className={`flex flex-col gap-1 ${isUser ? 'items-end' : 'items-center'}`}>
       {!isUser && <JarvisAvatar size="sm" />}
-      <div style={isUser ? { background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' } : { background: '#161b22', border: '1px solid rgba(0,212,170,0.15)', color: '#e6edf3' }} className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
+      <div style={isUser ? { background: 'linear-gradient(135deg,#00D4AA,#0066cc)', color: '#fff' } : { background: '#111A2B', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm shadow-sm ${
         isUser
           ? 'rounded-br-sm'
           : 'rounded-bl-sm'
@@ -149,11 +149,11 @@ const Message = ({ message }) => {
                 </a>
               ),
               table: ({ children }) => (
-                <div className="overflow-x-auto my-2 rounded-lg text-xs" style={{ border: '1px solid rgba(0,212,170,0.15)' }}>
+                <div className="overflow-x-auto my-2 rounded-lg text-xs" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
                   <table className="w-full border-collapse">{children}</table>
                 </div>
               ),
-              thead: ({ children }) => <thead style={{ background: '#1c2333', color: '#00D4AA' }}>{children}</thead>,
+              thead: ({ children }) => <thead style={{ background: '#17223A', color: '#00D4AA' }}>{children}</thead>,
               th: ({ children }) => <th className="px-2.5 py-1.5 text-left font-semibold whitespace-nowrap">{children}</th>,
               td: ({ children }) => <td className="px-2.5 py-1.5" style={{ borderTop: '1px solid rgba(0,212,170,0.1)' }}>{children}</td>,
               tr: ({ children }) => <tr>{children}</tr>,
@@ -163,8 +163,8 @@ const Message = ({ message }) => {
               li: ({ children }) => <li className="my-0.5">{children}</li>,
               strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
               code: ({ inline, children }) => inline
-                ? <code className="px-1 py-0.5 rounded text-xs" style={{ background: '#1c2333', color: '#00D4AA' }}>{children}</code>
-                : <pre className="rounded p-2 overflow-x-auto text-xs my-1" style={{ background: '#0d1117', color: '#e6edf3' }}><code>{children}</code></pre>,
+                ? <code className="px-1 py-0.5 rounded text-xs" style={{ background: '#17223A', color: '#00D4AA' }}>{children}</code>
+                : <pre className="rounded p-2 overflow-x-auto text-xs my-1" style={{ background: '#0B111C', color: '#e6edf3' }}><code>{children}</code></pre>,
             }}
           >
             {message.content}
@@ -662,13 +662,13 @@ export default function AssistenteFloating() {
             <JarvisAvatar size="lg" pulse={!open} />
           )}
           {open && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center z-20" style={{ background: '#1c2333' }}>
+            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center z-20" style={{ background: '#17223A' }}>
               <ChevronDown className="w-3 h-3 text-white" />
             </span>
           )}
         </button>
         {!open && (
-          <div className="text-xs font-medium px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap" style={{ background: '#1c2333', color: '#e6edf3', border: '1px solid rgba(0,212,170,0.15)', pointerEvents: 'none' }}>
+          <div className="text-xs font-medium px-3 py-1.5 rounded-full shadow-lg whitespace-nowrap" style={{ background: '#17223A', color: '#e6edf3', border: '1px solid rgba(255,255,255,0.08)', pointerEvents: 'none' }}>
             Posso te ajudar? 👋
           </div>
         )}
@@ -676,10 +676,10 @@ export default function AssistenteFloating() {
 
       {/* Chat panel */}
       {open && (
-        <div style={{ ...chatStyle, width: '360px', maxWidth: 'calc(100vw - 24px)', height: '520px', background: '#0d1117', border: '1px solid rgba(0,212,170,0.18)' }} className="rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div style={{ ...chatStyle, width: '360px', maxWidth: 'calc(100vw - 24px)', height: '520px', background: '#0B111C', border: '1px solid rgba(0,212,170,0.18)' }} className="rounded-2xl shadow-2xl flex flex-col overflow-hidden">
 
           {/* Header */}
-          <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
+          <div className="px-4 py-3 flex items-center gap-3" style={{ background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
             <JarvisAvatar size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm">Jarvis</p>
@@ -696,7 +696,7 @@ export default function AssistenteFloating() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ background: '#0d1117' }}>
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ background: '#0B111C' }}>
             {/* Mensagens pendentes do admin */}
             {mensagensPendentes.length > 0 && (
               <div className="space-y-2">
@@ -736,7 +736,7 @@ export default function AssistenteFloating() {
                 <div className="flex flex-col gap-1.5 w-full">
                   {(isIndicador ? SUGGESTIONS_INDICADOR : SUGGESTIONS).map(s => (
                     <button key={s} onClick={() => send(s)}
-                      className="text-left text-xs px-3 py-2 rounded-xl transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.15)', color: 'rgba(230,237,243,0.75)' }}>
+                      className="text-left text-xs px-3 py-2 rounded-xl transition" style={{ background: '#17223A', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(230,237,243,0.75)' }}>
                       {s}
                     </button>
                   ))}
@@ -788,7 +788,7 @@ export default function AssistenteFloating() {
           </div>
 
           {/* Input */}
-          <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#0d1117' }}
+          <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#0B111C' }}
             onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); anexar(e.dataTransfer.files); }}>
             {(anexos.length > 0 || subindo) && (
               <div className="flex flex-wrap gap-1.5 mb-2">
@@ -803,7 +803,7 @@ export default function AssistenteFloating() {
                 {subindo && <span className="flex items-center gap-1.5 px-2 py-1 text-[11px]" style={{ color: 'rgba(230,237,243,0.55)' }}><Loader2 className="w-3 h-3 animate-spin" /> Anexando…</span>}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl px-3 py-2 transition" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)' }}>
+            <div className="flex items-end gap-2 rounded-xl px-3 py-2 transition" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)' }}>
               <input ref={fileInputRef} type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx" className="hidden" onChange={e => anexar(e.target.files)} />
               <button onClick={() => fileInputRef.current?.click()} disabled={subindo} title="Anexar documentos (RG, CNH, contrato social, NDA, proposta…)" aria-label="Anexar documentos"
                 className="p-1.5 rounded-lg transition flex-shrink-0 disabled:opacity-40" style={{ color: '#00D4AA', background: 'rgba(0,212,170,0.1)' }}>

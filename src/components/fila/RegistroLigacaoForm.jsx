@@ -6,9 +6,9 @@ import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -206,7 +206,7 @@ export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCan
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                             <div className="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0" style={{ background: sel ? AURORA.accent : 'transparent', borderColor: sel ? AURORA.accent : AURORA.border }}>
-                              {sel && <CheckCircle2 className="w-2.5 h-2.5" style={{ color: '#0d1117' }} />}
+                              {sel && <CheckCircle2 className="w-2.5 h-2.5" style={{ color: '#0B111C' }} />}
                             </div>
                             <span className="font-medium">{v.nome}</span>
                           </button>
@@ -244,7 +244,7 @@ export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCan
       </div>
       <div className="flex gap-2">
         <button onClick={salvar} disabled={salvando}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0d1117' }}>
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition disabled:opacity-40" style={{ background: AURORA.accent, color: '#0B111C' }}>
           {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Salvar
         </button>
         <button onClick={onCancelar}

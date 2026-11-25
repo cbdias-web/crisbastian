@@ -1,12 +1,12 @@
 import { Package, DollarSign, Save, Loader2 } from 'lucide-react';
 
 const AURORA = {
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
-  inputBg: '#0d1117',
+  inputBg: '#0B111C',
 };
 
 const PRODUTOS = [
@@ -58,7 +58,7 @@ export default function NegociacaoLeadBlock({ produto, valor, onProdutoChange, o
           onClick={onSave}
           disabled={saving}
           className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition hover:brightness-110 disabled:opacity-50"
-          style={{ background: AURORA.accent, color: '#0d1117' }}
+          style={{ background: AURORA.accent, color: '#0B111C' }}
         >
           {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           Salvar negociação

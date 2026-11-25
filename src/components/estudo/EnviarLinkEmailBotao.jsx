@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Mail, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const A = { accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)', border: 'rgba(0,212,170,0.15)', text: '#e6edf3' };
+const A = { accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)', border: 'rgba(255,255,255,0.08)', text: '#e6edf3' };
 
 // Envia ao cliente o link do formulário de Estudo de Viabilidade por e-mail.
 export default function EnviarLinkEmailBotao({ estudo, compacto = false, onEnviado }) {

@@ -9,8 +9,8 @@ import { toast } from 'sonner';
 import CampoMascara from '@/components/ui/campo-mascara';
 
 const AURORA = {
-  bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)', borderActive: 'rgba(0,212,170,0.35)',
+  bg: '#0B111C', surface: '#111A2B', surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)', borderActive: 'rgba(0,212,170,0.35)',
   accent: '#00D4AA', accentDim: 'rgba(0,212,170,0.12)',
   text: '#e6edf3', textMuted: 'rgba(230,237,243,0.55)',
   gold: '#fbbf24', goldDim: 'rgba(251,191,36,0.12)', danger: '#f87171',
@@ -49,7 +49,7 @@ const RadioBtns = ({ label, value, onChange, opts }) => (
       {opts.map(o => (
         <button key={o.value} type="button" onClick={() => onChange(o.value)}
           className="px-3 py-1.5 text-xs rounded-lg font-semibold transition"
-          style={value === o.value ? { background: AURORA.accent, color: '#0d1117' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
+          style={value === o.value ? { background: AURORA.accent, color: '#0B111C' } : { ...inputStyle, border: `1px solid ${AURORA.border}` }}>
           {o.label}
         </button>
       ))}
@@ -284,7 +284,7 @@ export default function ContaInternacionalPublicaPage() {
       <div className="max-w-2xl mx-auto space-y-5">
 
         {/* Header */}
-        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #161b22 0%, #1c2333 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
+        <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, #111A2B 0%, #17223A 60%, #16213e 100%)', border: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: AURORA.accentDim }}>
               <Globe className="w-6 h-6" style={{ color: AURORA.accent }} />
@@ -336,7 +336,7 @@ export default function ContaInternacionalPublicaPage() {
             <button key={t.id} onClick={() => setAbas(t.id)}
               className="px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition"
               style={abas === t.id
-                ? { background: AURORA.accent, color: '#0d1117' }
+                ? { background: AURORA.accent, color: '#0B111C' }
                 : { background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}>
               {t.label}
             </button>
@@ -603,7 +603,7 @@ export default function ContaInternacionalPublicaPage() {
           ) : (
             <button onClick={handleSubmit} disabled={salvando}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-50"
-              style={{ background: AURORA.accent, color: '#0d1117' }}>
+              style={{ background: AURORA.accent, color: '#0B111C' }}>
               {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
               {salvando ? 'Enviando...' : 'Enviar Formulário'}
             </button>

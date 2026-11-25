@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { X, CalendarPlus, Clock, AlertTriangle } from 'lucide-react';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
+  surface: '#111A2B',
+  surface2: '#17223A',
   border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
@@ -69,7 +69,7 @@ export default function AgendarRetornoModal({ leadNome, onConfirm, onCancel }) {
             Cancelar
           </button>
           <button onClick={confirmar}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition hover:brightness-110" style={{ background: AURORA.warn, color: '#0d1117' }}>
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition hover:brightness-110" style={{ background: AURORA.warn, color: '#0B111C' }}>
             <CalendarPlus className="w-4 h-4" /> Agendar retorno
           </button>
         </div>

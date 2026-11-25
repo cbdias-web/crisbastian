@@ -4,10 +4,10 @@ import { TrendingUp, TrendingDown, RefreshCw, Clock } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const A = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.5)',
@@ -120,7 +120,7 @@ export default function MarketDashboard() {
     if (!active || !payload?.length) return null;
     const ts = payload[0]?.payload?.ts;
     return (
-      <div className="rounded-lg px-3 py-2 text-xs shadow-2xl" style={{ background: '#0d1117', border: `1px solid ${A.accent}55`, color: A.text }}>
+      <div className="rounded-lg px-3 py-2 text-xs shadow-2xl" style={{ background: '#0B111C', border: `1px solid ${A.accent}55`, color: A.text }}>
         <p className="text-[10px] mb-1" style={{ color: A.textMuted }}>{formatTooltipLabel(ts, range)}</p>
         <p className="font-bold">{fmt(payload[0].value, selected?.prefix)}</p>
       </div>

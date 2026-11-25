@@ -8,9 +8,9 @@ import ParceirosTabelaLeitura from '@/components/portal/ParceirosTabelaLeitura';
 import IndicacoesTabelaLeitura from '@/components/portal/IndicacoesTabelaLeitura';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -34,7 +34,7 @@ export default function DashParceiroSomenteLeitura() {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <Handshake className="w-4 h-4" style={{ color: AURORA.accent }} />
               </div>
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Dash Parceiro</h1>

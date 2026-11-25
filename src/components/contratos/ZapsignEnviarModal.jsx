@@ -9,7 +9,7 @@ export default function ZapsignEnviarModal({ open, contrato, sending, usaPdfAnex
     <div className="fixed inset-0 z-50 flex items-start justify-center px-4"
       style={{ background: 'rgba(13,17,23,0.8)', backdropFilter: 'blur(2px)', paddingTop: 100 }}>
       <div className="w-full max-w-md rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.35)' }}>
+        style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.35)' }}>
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between px-5 py-4"
@@ -36,7 +36,7 @@ export default function ZapsignEnviarModal({ open, contrato, sending, usaPdfAnex
             Enviar o <strong>link de assinatura online</strong> ao cliente por e-mail agora?
           </p>
           <div className="rounded-xl px-4 py-3 space-y-1"
-            style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)' }}>
+            style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)' }}>
             <p className="text-sm font-semibold" style={{ color: '#e6edf3' }}>{contrato?.nome}</p>
             <p className="text-xs" style={{ color: 'rgba(230,237,243,0.55)' }}>
               {contrato?.email?.trim() || '— e-mail do cliente não cadastrado —'}
@@ -52,7 +52,7 @@ export default function ZapsignEnviarModal({ open, contrato, sending, usaPdfAnex
 
         {/* Rodapé */}
         <div className="flex items-center justify-end gap-2 px-5 py-4"
-          style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#1c2333' }}>
+          style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#17223A' }}>
           <button onClick={onCancel} disabled={sending}
             className="px-4 py-2 rounded-xl text-xs font-semibold transition disabled:opacity-50"
             style={{ background: 'transparent', border: '1px solid rgba(0,212,170,0.25)', color: 'rgba(230,237,243,0.7)' }}>

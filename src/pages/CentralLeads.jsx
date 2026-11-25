@@ -12,10 +12,10 @@ import LeadAbordagemModal from '@/components/central/LeadAbordagemModal';
 
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',
@@ -23,7 +23,7 @@ const AURORA = {
 };
 
 const STATUS_COLORS = {
-  ativa: { bg: 'rgba(0,212,170,0.15)', color: '#00D4AA', label: 'Ativo' },
+  ativa: { bg: 'rgba(255,255,255,0.08)', color: '#00D4AA', label: 'Ativo' },
   aguardando: { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24', label: 'Aguardando' },
   qualificado: { bg: 'rgba(139,92,246,0.2)', color: '#a78bfa', label: 'Qualificado' },
   desqualificado: { bg: 'rgba(239,68,68,0.15)', color: '#f87171', label: 'Desqualificado' },
@@ -205,7 +205,7 @@ export default function CentralLeads() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <MessageSquare className="w-4 h-4" style={{ color: AURORA.accent }} />
               </div>
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Central de Leads</h1>
@@ -254,7 +254,7 @@ export default function CentralLeads() {
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
                 style={{
                   background: abaAtiva === aba.key ? AURORA.accent : 'transparent',
-                  color: abaAtiva === aba.key ? '#0d1117' : AURORA.textMuted,
+                  color: abaAtiva === aba.key ? '#0B111C' : AURORA.textMuted,
                 }}>
                 <aba.icon className="w-3.5 h-3.5" /> {aba.label}
               </button>
@@ -381,7 +381,7 @@ export default function CentralLeads() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                   style={{
                     background: modoVisualizacao === 'lista' ? AURORA.accent : 'transparent',
-                    color: modoVisualizacao === 'lista' ? '#0d1117' : AURORA.textMuted,
+                    color: modoVisualizacao === 'lista' ? '#0B111C' : AURORA.textMuted,
                   }}>
                   <List className="w-3.5 h-3.5" /> Lista
                 </button>
@@ -389,7 +389,7 @@ export default function CentralLeads() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                   style={{
                     background: modoVisualizacao === 'kanban' ? AURORA.accent : 'transparent',
-                    color: modoVisualizacao === 'kanban' ? '#0d1117' : AURORA.textMuted,
+                    color: modoVisualizacao === 'kanban' ? '#0B111C' : AURORA.textMuted,
                   }}>
                   <LayoutGrid className="w-3.5 h-3.5" /> Kanban
                 </button>

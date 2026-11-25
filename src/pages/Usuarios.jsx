@@ -418,7 +418,7 @@ export default function Usuarios() {
               <Activity className="w-4 h-4 mr-2" />
               Relatório de Acessos
               {selectedUserIds.length > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#00D4AA] text-[#0d1117]">
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#00D4AA] text-[#0B111C]">
                   {selectedUserIds.length}
                 </span>
               )}
@@ -922,7 +922,7 @@ export default function Usuarios() {
                       style={{
                         background: tipoRoletaSelecionado === 'default' ? 'rgba(0,212,170,0.1)' : 'white',
                         borderColor: tipoRoletaSelecionado === 'default' ? '#00D4AA' : '#e5e7eb',
-                        color: tipoRoletaSelecionado === 'default' ? '#0d1117' : '#6b7280',
+                        color: tipoRoletaSelecionado === 'default' ? '#0B111C' : '#6b7280',
                       }}>
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-base">🎁</span>

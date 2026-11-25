@@ -90,7 +90,7 @@ export default function RoletaWheel({ rotation = 0, spinning = false, size = 440
           </text>
         </g>
       ))}
-      <circle cx={center} cy={center} r={size * 0.058} fill="#0d1117" stroke="#00D4AA" strokeWidth="2.5" />
+      <circle cx={center} cy={center} r={size * 0.058} fill="#0B111C" stroke="#00D4AA" strokeWidth="2.5" />
       <text x={center} y={center} fill="#00D4AA" fontSize={size * 0.052} textAnchor="middle" dominantBaseline="middle">🎁</text>
     </svg>
   );

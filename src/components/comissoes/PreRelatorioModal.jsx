@@ -156,11 +156,11 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
-        style={{ background: '#161b22', border: '1px solid rgba(0,212,170,0.18)' }}>
+        style={{ background: '#111A2B', border: '1px solid rgba(0,212,170,0.18)' }}>
 
         {/* Header */}
         <div className="px-6 py-4 flex items-center justify-between flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(0,212,170,0.15)', background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 60%, #16213e 100%)' }}>
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 60%, #16213e 100%)' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)', color: '#fff' }}>
@@ -191,14 +191,14 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
           <>
             {/* KPIs */}
             <div className="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-3 flex-shrink-0"
-              style={{ borderBottom: '1px solid rgba(0,212,170,0.15)' }}>
+              style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               {[
                 { label: 'Total Vendas', value: String(totalVendas), color: '#e6edf3' },
                 { label: 'Valor Vendido', value: fmt(valorVendido), color: '#e6edf3' },
                 { label: 'Comissão Total', value: fmt(totalComissao), color: '#00D4AA' },
                 { label: 'Pendente', value: fmt(comissaoPendente), color: '#fbbf24' },
               ].map(k => (
-                <div key={k.label} className="rounded-xl p-3" style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.1)' }}>
+                <div key={k.label} className="rounded-xl p-3" style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.1)' }}>
                   <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: '#8b96a3' }}>{k.label}</p>
                   <p className="text-lg font-bold mt-1" style={{ color: k.color }}>{k.value}</p>
                 </div>
@@ -211,7 +211,7 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
                 <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#00D4AA' }}>Por Produto</h4>
                 <div className="space-y-1">
                   {porProduto.map(([prod, dados]) => (
-                    <div key={prod} className="flex items-center justify-between p-2 rounded-lg" style={{ background: '#1c2333' }}>
+                    <div key={prod} className="flex items-center justify-between p-2 rounded-lg" style={{ background: '#17223A' }}>
                       <span className="text-sm font-medium" style={{ color: '#e6edf3' }}>{prod}</span>
                       <div className="flex gap-4 text-xs">
                         <span style={{ color: '#8b96a3' }}>{dados.qtd}x</span>
@@ -229,7 +229,7 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
               <h4 className="text-xs font-bold uppercase tracking-wider mb-2 mt-3" style={{ color: '#00D4AA' }}>Detalhamento por Venda</h4>
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
-                  <tr style={{ background: '#0d1117' }}>
+                  <tr style={{ background: '#0B111C' }}>
                     {['Cliente', 'Produto', 'Data', 'Valor', '% Com.', 'Comissão', 'Status'].map(h => (
                       <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8b96a3' }}>{h}</th>
                     ))}
@@ -277,7 +277,7 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
 
             {/* Footer with actions */}
             <div className="px-6 py-4 flex flex-wrap items-center gap-3 flex-shrink-0"
-              style={{ borderTop: '1px solid rgba(0,212,170,0.15)', background: '#0d1117' }}>
+              style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: '#0B111C' }}>
               <div className="flex-1 flex items-center gap-2 min-w-[200px]">
                 <Mail className="w-4 h-4 flex-shrink-0" style={{ color: '#8b96a3' }} />
                 <input
@@ -286,7 +286,7 @@ export default function PreRelatorioModal({ pessoa, role, dataInicio, dataFim, o
                   onChange={e => setEmailManual(e.target.value)}
                   placeholder={pessoa.email ? pessoa.email : "Digite o e-mail para envio"}
                   className="flex-1 px-3 py-2 text-sm rounded-lg focus:outline-none"
-                  style={{ background: '#1c2333', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }}
+                  style={{ background: '#17223A', border: '1px solid rgba(0,212,170,0.2)', color: '#e6edf3' }}
                 />
               </div>
               <button onClick={handleEnviarEmail} disabled={enviandoEmail || semDados}

@@ -8,9 +8,9 @@ import CampoMoeda from '@/components/ui/campo-moeda';
 import { consultarCep, consultarCnpj, aplicarDados } from '@/lib/autocomplete';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -129,7 +129,7 @@ export default function NovaIndicacaoModal({ parceiro, parceiros, onClose }) {
         {sucesso ? (
           <div className="p-6 overflow-y-auto">
             <div className="text-center mb-4">
-              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)' }}>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(0,212,170,0.3)' }}>
                 <CheckCircle2 className="w-8 h-8" style={{ color: AURORA.accent }} />
               </div>
               <h3 className="text-lg font-bold mb-1" style={{ color: AURORA.text }}>Indicação enviada!</h3>
@@ -148,7 +148,7 @@ export default function NovaIndicacaoModal({ parceiro, parceiros, onClose }) {
                 </div>
               </div>
             </div>
-            <button onClick={onClose} className="w-full mt-5 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <button onClick={onClose} className="w-full mt-5 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
               Ver minhas indicações
             </button>
           </div>
@@ -171,7 +171,7 @@ export default function NovaIndicacaoModal({ parceiro, parceiros, onClose }) {
                 {['PF', 'PJ'].map(t => (
                   <button key={t} onClick={() => setTipo(t)}
                     className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
-                    style={{ background: tipo === t ? AURORA.accent : AURORA.surface2, color: tipo === t ? '#0d1117' : AURORA.text, border: `1px solid ${tipo === t ? AURORA.accent : AURORA.border}` }}>
+                    style={{ background: tipo === t ? AURORA.accent : AURORA.surface2, color: tipo === t ? '#0B111C' : AURORA.text, border: `1px solid ${tipo === t ? AURORA.accent : AURORA.border}` }}>
                     {t === 'PF' ? <User className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
                     {t === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}
                   </button>

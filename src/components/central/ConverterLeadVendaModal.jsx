@@ -6,9 +6,9 @@ import CampoMascara from '@/components/ui/campo-mascara';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -102,7 +102,7 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
               )}
             </div>
             <button onClick={() => { onConcluido?.(); onClose?.(); }}
-              className="w-full px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+              className="w-full px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
               Concluir
             </button>
           </div>
@@ -169,7 +169,7 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
             <div className="flex gap-2 pt-1">
               <button onClick={handleConverter} disabled={salvando || !podeConverter}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition disabled:opacity-40"
-                style={{ background: AURORA.purple, color: '#0d1117' }}>
+                style={{ background: AURORA.purple, color: '#0B111C' }}>
                 {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                 {salvando ? 'Convertendo...' : 'Converter em Contrato'}
               </button>

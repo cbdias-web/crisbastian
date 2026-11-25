@@ -5,10 +5,10 @@ import { toast } from 'sonner';
 import CadastroLeadPanel from './CadastroLeadPanel';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -119,7 +119,7 @@ export default function ChatConversa({ conversa, onClose, onUpdate, isAdmin }) {
             </span>
           )}
           {conversa.produto_interesse && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold hidden sm:inline" style={{ background: 'rgba(0,212,170,0.15)', color: AURORA.accent }}>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold hidden sm:inline" style={{ background: 'rgba(255,255,255,0.08)', color: AURORA.accent }}>
               {conversa.produto_interesse}
             </span>
           )}
@@ -202,14 +202,14 @@ export default function ChatConversa({ conversa, onClose, onUpdate, isAdmin }) {
             return (
               <div key={i} className={`flex ${isEnviada ? 'justify-end' : 'justify-start'}`}>
                 {!isEnviada && (
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0 text-[10px] font-bold" style={{ background: '#1c2333', color: AURORA.textMuted }}>
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2 mt-0.5 flex-shrink-0 text-[10px] font-bold" style={{ background: '#17223A', color: AURORA.textMuted }}>
                     {msg.de?.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="max-w-[75%]">
                   <div className="px-3 py-2 rounded-2xl text-sm leading-relaxed"
                     style={isEnviada
-                      ? { background: 'linear-gradient(135deg, #00D4AA, #00a88a)', color: '#0d1117' }
+                      ? { background: 'linear-gradient(135deg, #00D4AA, #00a88a)', color: '#0B111C' }
                       : { background: AURORA.surface2, color: AURORA.text, border: `1px solid ${AURORA.border}` }}>
                     {msg.texto}
                   </div>
@@ -243,7 +243,7 @@ export default function ChatConversa({ conversa, onClose, onUpdate, isAdmin }) {
           />
           <button onClick={enviar} disabled={enviando || !texto.trim()}
             className="flex items-center justify-center w-10 h-10 self-end rounded-xl transition disabled:opacity-40"
-            style={{ background: AURORA.accent, color: '#0d1117' }}>
+            style={{ background: AURORA.accent, color: '#0B111C' }}>
             {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>

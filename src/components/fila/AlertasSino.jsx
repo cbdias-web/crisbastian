@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { getImpersonatedVendedor } from '@/lib/impersonation';
 import { Bell, BellRing, Check } from 'lucide-react';
 
-const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const A = { surface: '#111A2B', surface2: '#17223A', border: 'rgba(0,212,170,0.2)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const COR = { alta: '#f87171', media: '#fbbf24', baixa: '#60a5fa' };
 
 // Sino de alertas do gerente (AlertaGerente) com notificação do navegador/app instalado.

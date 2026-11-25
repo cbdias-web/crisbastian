@@ -10,10 +10,10 @@ import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   accentDim: 'rgba(0,212,170,0.1)',
   text: '#e6edf3',
@@ -217,7 +217,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 md:p-6" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(3px)' }} onClick={onClose}>
       <div className="w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.55)' }} onClick={e => e.stopPropagation()}>
         {/* Header — barra fixa do cartão (não rola com o conteúdo) */}
-        <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #0d1117 0%, #1a1a2e 55%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
+        <div className="flex-shrink-0 px-6 py-4 flex items-center justify-between gap-3" style={{ background: 'linear-gradient(135deg, #0B111C 0%, #1a1a2e 55%, #16213e 100%)', borderBottom: `1px solid ${AURORA.border}` }}>
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, rgba(0,212,170,0.18), rgba(0,102,204,0.22))', border: `1px solid ${AURORA.border}` }}>
               <Rocket className="w-5 h-5" style={{ color: AURORA.accent }} />

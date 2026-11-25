@@ -14,10 +14,10 @@ import AcoesIndicadoresAdmin from '@/components/portal/AcoesIndicadoresAdmin';
 import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
 
 const AURORA = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surface2: '#1c2333',
-  border: 'rgba(0,212,170,0.15)',
+  bg: '#0B111C',
+  surface: '#111A2B',
+  surface2: '#17223A',
+  border: 'rgba(255,255,255,0.08)',
   accent: '#00D4AA',
   text: '#e6edf3',
   textMuted: 'rgba(230,237,243,0.55)',
@@ -112,7 +112,7 @@ export default function DashParceiro() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0,212,170,0.15)' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <Handshake className="w-4 h-4" style={{ color: AURORA.accent }} />
               </div>
               <h1 className="text-xl font-bold" style={{ color: AURORA.text }}>Dash Parceiro</h1>
@@ -145,7 +145,7 @@ export default function DashParceiro() {
               className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition"
               style={{
                 background: abaAtiva === aba.key ? AURORA.accent : 'transparent',
-                color: abaAtiva === aba.key ? '#0d1117' : AURORA.textMuted,
+                color: abaAtiva === aba.key ? '#0B111C' : AURORA.textMuted,
               }}>
               <aba.icon className="w-3.5 h-3.5" /> {aba.label}
             </button>
