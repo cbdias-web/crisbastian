@@ -125,7 +125,7 @@ function formInicial({ contrato, tipo, cliente, valoresIniciais }) {
   };
   const c = cliente || {};
   const doCliente = Object.fromEntries(['nome', 'cpf_cnpj', 'responsavel_legal', 'cpf_responsavel', 'nascimento', 'nacionalidade', 'profissao', 'estado_civil', 'email', 'telefone', 'cep', 'endereco', 'bairro', 'cidade', 'estado'].filter(k => c[k]).map(k => [k, c[k]]));
-  const vals = Object.fromEntries(Object.entries(valoresIniciais || {}).filter(([, v]) => v !== '' && v != null));
+  const vals = Object.fromEntries(Object.entries(valoresIniciais || {}).filter(([k, v]) => !k.startsWith('_') && v !== '' && v != null));
   return { ...base, ...doCliente, ...vals, ...(c.id ? { cliente_id: c.id } : {}) };
 }
 
@@ -201,6 +201,34 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
   };
 
   const faltando = form ? OBRIGATORIOS.filter(([k]) => !String(form[k] ?? '').trim()) : [];
+
+  // Proposta/análise vigente com valores diferentes do contrato (ex.: nova versão da análise)
+  const ROT_DIF = { valor_total: 'Valor total', valor_adesao: 'Entrada', num_parcelas: 'Nº de parcelas', valor_parcela: 'Parcela', forma_pagamento: 'Forma de pagamento', prazo_implantacao_dias: 'Prazo de implantação (dias)' };
+  const difs = ct && valoresIniciais ? Object.keys(ROT_DIF).filter(k => {
+    const v = valoresIniciais[k];
+    if (v === undefined || v === '' || v === null) return false;
+    const atual = ct[k];
+    return typeof v === 'number' || !isNaN(parseFloat(v)) && k !== 'forma_pagamento'
+      ? Math.abs((parseFloat(v) || 0) - (parseFloat(atual) || 0)) > 0.009
+      : String(v) !== String(atual || '');
+  }) : [];
+  const fmtDif = (k, v) => (['valor_total', 'valor_adesao', 'valor_parcela'].includes(k) ? brl(v) : k === 'num_parcelas' ? (Number(v) ? `${v}x` : 'à vista') : (v || '—'));
+  const aplicarProposta = async () => {
+    const jaAssinado = atingiu(st, 'assinado');
+    const msg = jaAssinado
+      ? 'O contrato já está assinado. Aplicar os novos valores exige novo PDF e nova assinatura (ou um aditivo). Aplicar mesmo assim?'
+      : `Atualizar o contrato com a ${valoresIniciais._origem || 'proposta vigente'}?${ct.pdf_url || ct.link_assinatura ? '\nO PDF e o link de assinatura atuais ficam desatualizados: o contrato volta para "Em elaboração" para você gerar o PDF de novo.' : ''}`;
+    if (!(await confirmar(msg))) return;
+    const campos = Object.fromEntries(difs.map(k => [k, ['valor_total', 'valor_adesao', 'valor_parcela'].includes(k) ? (parseFloat(valoresIniciais[k]) || 0) : k === 'num_parcelas' || k === 'prazo_implantacao_dias' ? (parseInt(valoresIniciais[k]) || 0) : valoresIniciais[k]]));
+    if (ct.pdf_url || ct.link_assinatura || st !== 'rascunho') Object.assign(campos, { status: 'rascunho', pdf_url: null, link_assinatura: null, zapsign_doc_token: null });
+    try {
+      const novo = await aplicar(campos, 'Contrato atualizado com a proposta vigente. Gere o PDF novamente.');
+      setForm(f => ({ ...(f || {}), ...campos }));
+      setLinkAssin('');
+      setAberta(1);
+      return novo;
+    } catch (e) { toast.error(e.message); }
+  };
   const pj = dig(form?.cpf_cnpj).length === 14;
 
   const notificar = (evento, destinatarios) => ct && base44.functions.invoke('notificarStatusContrato', { contrato_id: ct.id, evento, destinatarios }).catch(() => {});
@@ -436,6 +464,22 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
           </select>
         )}
       </div>
+
+      {difs.length > 0 && st !== 'no_pipeline' && (
+        <div role="status" style={{ padding: 14, borderRadius: 16, background: 'rgba(227,201,130,0.08)', border: '1px solid rgba(227,201,130,0.35)', display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <RefreshCw className="w-5 h-5" style={{ color: C.warn, flex: 'none', marginTop: 2 }} />
+          <div style={{ flex: 1, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.txt }}>A {valoresIniciais._origem || 'proposta vigente'} tem valores diferentes do contrato</span>
+            {difs.map(k => (
+              <span key={k} style={{ fontSize: 12, color: C.txt2 }}>{ROT_DIF[k]}: <span style={{ color: C.muted, textDecoration: 'line-through' }}>{fmtDif(k, ct[k])}</span> → <b style={{ color: C.warn }}>{fmtDif(k, valoresIniciais[k])}</b></span>
+            ))}
+            {atingiu(st, 'assinado') && <span style={{ fontSize: 12, color: C.err }}>Contrato já assinado: os novos valores exigem nova assinatura ou um aditivo.</span>}
+          </div>
+          <button onClick={aplicarProposta} className="vx-btn vx-btn-primary" style={{ height: 38, padding: '0 16px', fontSize: 13, alignSelf: 'center' }}>
+            <RefreshCw className="w-4 h-4" /> Usar a proposta no contrato
+          </button>
+        </div>
+      )}
 
       {/* 1. Dados */}
       <Etapa n={1} t={t} titulo="Dados do contrato" estado={ct ? 'feito' : 'atual'} aberta={aberta === 0} onToggle={() => toggle(0)}
