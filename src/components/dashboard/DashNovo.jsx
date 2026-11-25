@@ -9,7 +9,7 @@ import VendasGerentePopup from '@/components/dashboard/VendasGerentePopup';
 const TEAL = '#00D4AA';
 const GOLD = '#D4AF37';
 const T = { txt: '#e6edf3', muted: 'rgba(230,237,243,0.55)', line: 'rgba(255,255,255,0.07)' };
-const CARD = { background: 'linear-gradient(180deg, rgba(28,35,51,0.88) 0%, rgba(18,23,31,0.88) 100%)', border: `1px solid ${T.line}`, backdropFilter: 'blur(8px)' };
+const CARD = { background: 'linear-gradient(180deg, rgba(28,35,51,0.88) 0%, rgba(18,23,31,0.88) 100%)', border: `1px solid ${T.line}`, backdropFilter: 'blur(8px)', minWidth: 0 };
 
 const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v || 0);
 const brlCurto = (v) => {
@@ -139,7 +139,7 @@ export default function DashNovo(p) {
       </div>
 
       {/* Ritmo + Metas individuais */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))' }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))' }}>
         <div className="rounded-3xl p-5" style={CARD}>
           <div className="flex items-center gap-3 mb-1">
             <h3 className="text-sm font-semibold flex-1" style={{ color: T.txt }}>Ritmo de vendas</h3>
@@ -212,7 +212,7 @@ export default function DashNovo(p) {
       </div>
 
       {/* Pódio + Últimas vendas */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))' }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))' }}>
         <div className="rounded-3xl p-5" style={CARD}>
           <div className="flex flex-wrap items-center gap-2 mb-5">
             <Award className="w-4 h-4" style={{ color: GOLD }} />
