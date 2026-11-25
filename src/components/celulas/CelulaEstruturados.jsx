@@ -513,7 +513,7 @@ function Duvidas({ celula, produto, nomeProduto, t, comentarios, setComentarios,
 }
 
 // ───────────── Peças comuns da tela de operação ─────────────
-function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {} }) {
+function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, onFicha }) {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
@@ -521,7 +521,14 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {} }
           <ArrowLeft className="w-4 h-4" /> {jornada.nome}
         </button>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <span style={{ fontSize: 21, fontWeight: 600, color: C.txt }}>{op.cliente}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 21, fontWeight: 600, color: C.txt }}>{op.cliente}</span>
+            {onFicha && (
+              <button onClick={onFicha} className="vx-btn vx-btn-soft" style={{ height: 28, padding: '0 12px', fontSize: 12 }} title="Tudo o que o cliente tem ou teve conosco">
+                <UserRound className="w-3.5 h-3.5" /> Ficha do cliente
+              </button>
+            )}
+          </span>
           <span style={{ fontSize: 13, color: C.muted }}>{subtitulo}</span>
         </div>
         <div style={{ flex: 1 }} />
@@ -678,7 +685,8 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
 }
 
 // ───────────── Operação de Produtos estruturados (estudo) ─────────────
-function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin }) {
+function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin, onFicha }) {
+  const [formModal, setFormModal] = useState(false);
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
   const [modalAssinado, setModalAssinado] = useState(false);
@@ -758,7 +766,8 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
     { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado', arquivo: contrato?.contrato_assinado_url || contrato?.pdf_url || null, nomeArquivo: contrato?.contrato_assinado_nome || `Contrato ${contrato?.numero_contrato || ''}.pdf` },
-    ...(jornada.tipoContrato ? [{ nome: produto === 'offshore' ? 'Formulário da LLC' : 'Formulário de abertura', ok: !!(formPos?.link_preenchido_em), st: formPos ? (formPos.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
+    ...(jornada.tipoContrato ? [{ nome: produto === 'offshore' ? 'Formulário da LLC' : 'Formulário de abertura', ok: !!(formPos?.link_preenchido_em), st: formPos ? (formPos.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura', arquivo: formPos?.pdf_url || null, nomeArquivo: formPos?.pdf_nome,
+      acao: contrato ? { label: formPos ? 'Abrir' : 'Gerar link', onClick: () => setFormModal(true) } : null }] : []),
   ];
   const atalhos = [
     ['Estudo de viabilidade', () => setAba('estudo')],
@@ -776,7 +785,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir}
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} onFicha={onFicha}
         acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), estudo: () => setAba('estudo'), analise: () => setAba('analise'), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'}
@@ -803,6 +812,12 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       )}
       {modalAssinado && (
         <AnexarNdaAssinadoModal estudo={e} t={t} onEnviar={anexarAssinado} onClose={() => setModalAssinado(false)} />
+      )}
+      {formModal && contrato && produto === 'offshore' && (
+        <OffshoreFormModal contrato={contrato} rncId={formPos?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />
+      )}
+      {formModal && contrato && produto !== 'offshore' && (
+        <RncContaInternacionalModal contrato={contrato} rncId={formPos?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />
       )}
     </div>
   );
@@ -907,7 +922,8 @@ function NegociacaoCard({ neg, aberta, t, publicar, operacaoId, recarregar, volt
 }
 
 // ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
-function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp }) {
+function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp, user, onFicha }) {
+  const [formModal, setFormModal] = useState(false);
   const jornada = JORNADAS[produto];
   const ct = op.raw.contrato || null;
   const impl = op.raw.impl || null;
@@ -959,7 +975,8 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
   const docs = [
     { nome: 'Negociação', ok: !!(neg || ct), st: neg ? (neg.temperatura || 'Aberta') : ct ? 'Convertida' : '—' },
     { nome: 'Contrato', ok: !!ct && !['rascunho', 'gerado'].includes(ct.status), st: ct ? (STATUS_CONTRATO[ct.status] || ct.status) : 'Não gerado', arquivo: ct?.contrato_assinado_url || ct?.pdf_url || null, nomeArquivo: ct?.contrato_assinado_nome || `Contrato ${ct?.numero_contrato || ''}.pdf` },
-    ...(produto === 'canal_bancario' ? [{ nome: 'Formulário RNC', ok: !!rnc?.link_preenchido_em, st: rnc ? (rnc.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura' }] : []),
+    ...(produto === 'canal_bancario' ? [{ nome: 'Formulário RNC', ok: !!rnc?.link_preenchido_em, st: rnc ? (rnc.link_preenchido_em ? 'Preenchido' : 'Enviado') : 'Após assinatura', arquivo: rnc?.pdf_url || null, nomeArquivo: rnc?.pdf_nome,
+      acao: ct ? { label: rnc ? 'Abrir' : 'Gerar link', onClick: () => setFormModal(true) } : null }] : []),
     { nome: 'Implantação', ok: !!impl && ['concluido', 'concluido_feedback'].includes(impl.status), st: impl ? String(impl.status || '').replace(/_/g, ' ') : 'Não iniciada' },
   ];
   const atalhos = [
@@ -973,7 +990,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo}
+      <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} onFicha={onFicha}
         acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda'), negociacao: () => setAba('jornada') }} />
       {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!ct} temVenda={ct?.status === 'no_pipeline'} />}
       {aba === 'jornada' ? (
