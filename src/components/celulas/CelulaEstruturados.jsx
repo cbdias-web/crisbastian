@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound } from 'lucide-react';
+import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound, Pencil, Trash2 } from 'lucide-react';
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
 import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 import NovaOperacaoModal from './NovaOperacaoModal';
+import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import LeadsDaJornada from './LeadsDaJornada';
 import { abrirFicha } from './FichaCliente';
 import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
@@ -280,7 +281,8 @@ function Overlay({ cfg, sp, setSp }) {
             ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
                 abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)} />
             : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
-                 recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} user={user} onFicha={() => fichaDe(opSel)} />
+                 recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)}
+                 produtosCelula={cfg.produtos} mudarProduto={(p, id) => { recarregar(); setParam({ produto: p, op: id }); }} />
         ) : (
           <div className="vx-cel-body">
             <main className="vx-cel-main">
@@ -518,7 +520,7 @@ function Duvidas({ celula, produto, nomeProduto, t, comentarios, setComentarios,
 }
 
 // ───────────── Peças comuns da tela de operação ─────────────
-function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, onFicha }) {
+function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, onFicha, gerenciar = [] }) {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
@@ -538,6 +540,12 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, 
         </div>
         <div style={{ flex: 1 }} />
         <span style={{ padding: '6px 12px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 13, fontWeight: 500, border: `1px solid ${t.line}` }}>Etapa atual: {jornada.etapas[op.etapa].titulo}</span>
+        {gerenciar.filter(Boolean).map(g => (
+          <button key={g.label} onClick={g.onClick} className="vx-btn vx-btn-ghost" title={g.label}
+            style={{ height: 38, padding: '0 12px', fontSize: 13, ...(g.perigo ? { color: '#F4A3A3' } : {}) }}>
+            {g.perigo ? <Trash2 className="w-4 h-4" /> : <Pencil className="w-4 h-4" />} {g.label}
+          </button>
+        ))}
         <button onClick={() => (op.acao.acao && acoes[op.acao.acao] ? acoes[op.acao.acao]() : ir(op.acao.to))} className="vx-btn vx-btn-primary" style={{ height: 42, padding: '0 18px', fontSize: 14 }}>
           {op.acao.label} <ChevronRight className="w-4 h-4" />
         </button>
@@ -692,6 +700,7 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
 // ───────────── Operação de Produtos estruturados (estudo) ─────────────
 function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abrirNda, recarregar, user, isAdmin, onFicha }) {
   const [formModal, setFormModal] = useState(false);
+  const [editEstudo, setEditEstudo] = useState(false);
   const { estudo: e, contrato } = op.raw;
   const jornada = JORNADAS[produto];
   const [modalAssinado, setModalAssinado] = useState(false);
@@ -791,6 +800,15 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} onFicha={onFicha}
+        gerenciar={[
+          podeGerenciar(e, user, isAdmin) && { label: 'Editar', onClick: () => setEditEstudo(true) },
+          contrato && podeGerenciar(contrato, user, isAdmin) && contrato.status !== 'no_pipeline' && { label: 'Excluir contrato', perigo: true, onClick: async () => { if (await excluirContratoDaOperacao(contrato)) recarregar?.(); } },
+          podeGerenciar(e, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => {
+            if (contrato) { toast.error('Esta operação tem contrato. Exclua o contrato primeiro (ou cancele a operação).'); return; }
+            if (!confirm(`Excluir a operação ${jornada.nome} de ${e.cliente_nome || 'cliente'}? NDA, estudo e propostas desta operação deixam de aparecer. O cadastro do cliente continua na base.`)) return;
+            try { await excluirEstudo(e); } catch (er) { toast.error(er.message); }
+          } },
+        ]}
         acoes={{ nda: () => abrirNda(e), nda_assinado: () => setModalAssinado(true), estudo: () => setAba('estudo'), analise: () => setAba('analise'), contrato: () => setAba('contrato'), venda: () => setAba('venda') }}
         subtitulo={`${jornada.nome} · ${e.tipo_cliente}${e.cliente_documento ? ` · ${e.cliente_documento}` : ''} · responsável ${e.responsavel_nome || '—'}`} />
       <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!contrato} temVenda={contrato?.status === 'no_pipeline'}
@@ -818,12 +836,99 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       {modalAssinado && (
         <AnexarNdaAssinadoModal estudo={e} t={t} onEnviar={anexarAssinado} onClose={() => setModalAssinado(false)} />
       )}
+      {editEstudo && (
+        <EditarEstudoModal estudo={e} user={user} onClose={() => setEditEstudo(false)}
+          onSalvar={async (dados) => { await atualizarEstudo(e, dados, 'Operação atualizada'); setEditEstudo(false); }} />
+      )}
       {formModal && contrato && produto === 'offshore' && (
         <OffshoreFormModal contrato={contrato} rncId={formPos?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />
       )}
       {formModal && contrato && produto !== 'offshore' && (
         <RncContaInternacionalModal contrato={contrato} rncId={formPos?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />
       )}
+    </div>
+  );
+}
+
+// Quem pode editar/excluir: admin ou quem criou o registro
+const podeGerenciar = (reg, user, isAdmin) => !!reg && (isAdmin || (!!user?.email && String(reg.created_by || '').toLowerCase() === user.email.toLowerCase()));
+
+// Exclui o contrato da operação (bloqueia se já virou venda) e reabre a negociação de origem
+async function excluirContratoDaOperacao(ct) {
+  if (ct.status === 'no_pipeline') { toast.error('Este contrato já foi enviado para Vendas. Estorne a venda em Vendas antes de excluir.'); return false; }
+  const vendas = await base44.entities.Venda.filter({ contrato_id: ct.id }, '-data', 1).catch(() => []);
+  if (vendas?.length) { toast.error('Há venda lançada para este contrato. Estorne a venda em Vendas antes de excluir.'); return false; }
+  if (!confirm(`Excluir o contrato ${ct.numero_contrato || ''} de ${ct.nome || 'cliente'}? Esta ação não pode ser desfeita.`)) return false;
+  await base44.entities.Contrato.delete(ct.id);
+  if (ct.pipeline_id) await base44.entities.Pipeline.update(ct.pipeline_id, { temperatura: 'Quente' }).catch(() => {});
+  toast.success(ct.pipeline_id ? 'Contrato excluído. A negociação voltou a ficar aberta.' : 'Contrato excluído.');
+  return true;
+}
+
+// Edição da negociação: cliente/produto/valores/responsável
+function EditarNegociacaoModal({ neg, t, produtosCelula, isAdmin, onClose, onSalvo }) {
+  const prodAtual = produtosCelula.find(p => pipelineDoProduto(neg, p)) || produtosCelula[0];
+  const [f, setF] = useState({ produto: prodAtual, cliente_nome: neg.cliente_nome || '', cliente_cpf_cnpj: neg.cliente_cpf_cnpj || '', cliente_telefone: neg.cliente_telefone || '', valor_estimado: neg.valor_estimado || '', data_prevista: neg.data_prevista || '', temperatura: neg.temperatura || 'Morno', origem: neg.origem || 'Outro', proximo_contato: neg.proximo_contato || '', descricao: neg.descricao || '', vendedor_id: neg.vendedor_id || '' });
+  const [vendedores, setVendedores] = useState([]);
+  const [salvando, setSalvando] = useState(false);
+  useEffect(() => { if (isAdmin) base44.entities.Vendedor.filter({ ativo: true }, 'nome', 200).then(l => setVendedores(l || [])).catch(() => {}); }, [isAdmin]);
+  const salvar = async () => {
+    if (!f.cliente_nome.trim()) { toast.error('Informe o nome do cliente.'); return; }
+    setSalvando(true);
+    try {
+      const v = vendedores.find(x => x.id === f.vendedor_id);
+      await base44.entities.Pipeline.update(neg.id, {
+        produto: JORNADAS[f.produto].nome, cliente_nome: f.cliente_nome.trim(), cliente_cpf_cnpj: f.cliente_cpf_cnpj, cliente_telefone: f.cliente_telefone,
+        valor_estimado: Number(f.valor_estimado) || 0, data_prevista: f.data_prevista || null, temperatura: f.temperatura, origem: f.origem,
+        proximo_contato: f.proximo_contato || null, descricao: f.descricao,
+        ...(v && v.id !== neg.vendedor_id ? { vendedor_id: v.id, vendedor_nome: v.nome } : {}),
+      });
+      if (neg.cliente_id) {
+        // mantém o cadastro da base coerente (só completa o que estiver vazio)
+        const c = await base44.entities.Cliente.get(neg.cliente_id).catch(() => null);
+        if (c) {
+          const falt = {};
+          if (!c.telefone && f.cliente_telefone) falt.telefone = f.cliente_telefone;
+          if (!c.cpf_cnpj && f.cliente_cpf_cnpj) falt.cpf_cnpj = f.cliente_cpf_cnpj;
+          if (Object.keys(falt).length) await base44.entities.Cliente.update(c.id, falt).catch(() => {});
+        }
+      }
+      toast.success('Negociação atualizada.');
+      onSalvo?.(f.produto);
+    } catch (e) { toast.error(e.message); }
+    setSalvando(false);
+  };
+  const inp = { height: 38, padding: '0 12px', borderRadius: 10, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 13, width: '100%' };
+  const L = ({ l, children, span = 1 }) => <label style={{ fontSize: 11, color: C.muted, display: 'flex', flexDirection: 'column', gap: 4, gridColumn: `span ${span}` }}>{l}{children}</label>;
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Editar negociação"
+      style={{ background: 'rgba(3,6,10,0.7)', backdropFilter: 'blur(4px)' }} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="vx-suspensa w-full max-w-[720px] max-h-[92vh] flex flex-col rounded-3xl overflow-hidden" style={{ background: '#101826', border: `1px solid ${t.acc}55` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 22px', borderBottom: `1px solid ${C.line}` }}>
+          <Pencil className="w-5 h-5" style={{ color: t.acc }} />
+          <span style={{ flex: 1, fontSize: 16, fontWeight: 600, color: C.txt }}>Editar negociação</span>
+          <button onClick={onClose} aria-label="Fechar" className="vx-btn vx-btn-ghost vx-icon-btn"><X className="w-4 h-4" /></button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 22px', display: 'grid', gap: 12, gridTemplateColumns: 'repeat(4, minmax(0,1fr))' }}>
+          {L({ l: 'Produto', children: <select value={f.produto} onChange={e => setF({ ...f, produto: e.target.value })} style={inp}>{produtosCelula.map(p => <option key={p} value={p}>{JORNADAS[p].nome}</option>)}</select> })}
+          {L({ l: 'Cliente', span: 3, children: <input value={f.cliente_nome} onChange={e => setF({ ...f, cliente_nome: e.target.value })} style={inp} /> })}
+          {L({ l: 'CPF/CNPJ', children: <input value={f.cliente_cpf_cnpj} onChange={e => setF({ ...f, cliente_cpf_cnpj: e.target.value })} style={inp} /> })}
+          {L({ l: 'Telefone', children: <input value={f.cliente_telefone} onChange={e => setF({ ...f, cliente_telefone: e.target.value })} style={inp} /> })}
+          {L({ l: 'Valor (R$)', children: <input type="number" min="0" step="0.01" value={f.valor_estimado} onChange={e => setF({ ...f, valor_estimado: e.target.value })} style={inp} /> })}
+          {L({ l: 'Previsão de fechamento', children: <input type="date" value={f.data_prevista} onChange={e => setF({ ...f, data_prevista: e.target.value })} style={inp} /> })}
+          {L({ l: 'Temperatura', children: <select value={f.temperatura} onChange={e => setF({ ...f, temperatura: e.target.value })} style={inp}>{['Frio', 'Morno', 'Quente'].map(x => <option key={x}>{x}</option>)}</select> })}
+          {L({ l: 'Origem', children: <select value={f.origem} onChange={e => setF({ ...f, origem: e.target.value })} style={inp}>{['Carteira', 'Lead', 'Indicação', 'Prospecção Ativa', 'Outro'].map(x => <option key={x}>{x}</option>)}</select> })}
+          {L({ l: 'Próximo contato', children: <input type="date" value={f.proximo_contato} onChange={e => setF({ ...f, proximo_contato: e.target.value })} style={inp} /> })}
+          {isAdmin && L({ l: 'Responsável', children: <select value={f.vendedor_id} onChange={e => setF({ ...f, vendedor_id: e.target.value })} style={inp}><option value="">{neg.vendedor_nome || '—'}</option>{vendedores.map(v => <option key={v.id} value={v.id}>{v.nome}</option>)}</select> })}
+          {L({ l: 'Contexto / condições', span: 4, children: <textarea rows={3} value={f.descricao} onChange={e => setF({ ...f, descricao: e.target.value })} style={{ ...inp, height: 'auto', padding: '8px 12px', resize: 'vertical' }} /> })}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, padding: '14px 22px', borderTop: `1px solid ${C.line}` }}>
+          <button onClick={onClose} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 13 }}>Cancelar</button>
+          <button onClick={salvar} disabled={salvando} className="vx-btn vx-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 13 }}>
+            {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Salvar alterações
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -927,8 +1032,10 @@ function NegociacaoCard({ neg, aberta, t, publicar, operacaoId, recarregar, volt
 }
 
 // ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
-function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp, user, onFicha }) {
+function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp, user, isAdmin, onFicha, produtosCelula = [], mudarProduto }) {
   const [formModal, setFormModal] = useState(false);
+  const [editNeg, setEditNeg] = useState(false);
+  const [editarCt, setEditarCt] = useState(0);
   const jornada = JORNADAS[produto];
   const ct = op.raw.contrato || null;
   const impl = op.raw.impl || null;
@@ -996,6 +1103,21 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo} onFicha={onFicha}
+        gerenciar={ct ? [
+          podeGerenciar(ct, user, isAdmin) && ct.status !== 'no_pipeline' && { label: 'Editar contrato', onClick: () => { setEditarCt(n => n + 1); setAba('contrato'); } },
+          podeGerenciar(ct, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => { if (await excluirContratoDaOperacao(ct)) { recarregar?.(); voltar(); } } },
+        ] : negAberta ? [
+          podeGerenciar(negAberta, user, isAdmin) && { label: 'Editar', onClick: () => setEditNeg(true) },
+          podeGerenciar(negAberta, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => {
+            if (!confirm(`Excluir a negociação ${jornada.nome} de ${negAberta.cliente_nome || 'cliente'}? As abordagens registradas nela também serão apagadas. O cadastro do cliente continua na base.`)) return;
+            try {
+              await base44.entities.Pipeline.delete(negAberta.id);
+              await Promise.all(comentarios.filter(c => idsOp.includes(c.operacao_id)).map(c => base44.entities.CelulaComentario.delete(c.id).catch(() => {})));
+              toast.success('Negociação excluída.');
+              recarregar?.(); voltar();
+            } catch (er) { toast.error(er.message); }
+          } },
+        ] : []}
         acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda'), negociacao: () => setAba('jornada') }} />
       {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!ct} temVenda={ct?.status === 'no_pipeline'} />}
       {aba === 'jornada' ? (
@@ -1007,6 +1129,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
         </div>
       ) : (
         <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
+          key={'ct' + editarCt} editarAoAbrir={editarCt > 0}
           clienteId={neg?.cliente_id || ct?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
           valoresIniciais={negAberta ? { valor_total: negAberta.valor_estimado || '', observacoes: negAberta.descricao || '' } : null}
           clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, email: neg.cliente_email, telefone: neg.cliente_telefone } : null}
@@ -1014,6 +1137,11 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
             if (negAberta) await base44.entities.Pipeline.update(negAberta.id, { temperatura: 'Fechado' }).catch(() => {});
             abrirOp?.(c.id);
           }} />
+      )}
+      {editNeg && negAberta && (
+        <EditarNegociacaoModal neg={negAberta} t={t} produtosCelula={produtosCelula.length ? produtosCelula : [produto]} isAdmin={isAdmin}
+          onClose={() => setEditNeg(false)}
+          onSalvo={(p) => { setEditNeg(false); if (p !== produto) mudarProduto?.(p, op.id); else recarregar?.(); }} />
       )}
       {formModal && ct && (
         <RncCanalBancarioModal contrato={ct} rncId={rnc?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />

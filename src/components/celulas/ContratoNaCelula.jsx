@@ -7,7 +7,7 @@ import ContratoViewer from '@/components/contratos/ContratoViewer';
 // O contrato da operação, dentro da célula: mesmo formulário e mesma tela de acompanhamento da área
 // Contratos (PDF, ZapSign, contrato assinado, boletos, link de pagamento, comprovantes, indicadores,
 // envio para Vendas). A área Contratos continua mostrando o mesmo registro — só espelha.
-export default function ContratoNaCelula({ contrato, tipoContrato, clienteId, clienteFallback, vinculo = {}, valoresIniciais, onSalvo, onAtualizado, onVoltar, onVendaCriada, rotuloVoltar }) {
+export default function ContratoNaCelula({ contrato, tipoContrato, clienteId, clienteFallback, vinculo = {}, valoresIniciais, editarAoAbrir = false, onSalvo, onAtualizado, onVoltar, onVendaCriada, rotuloVoltar }) {
   const [user, setUser] = useState(null);
   const [cliente, setCliente] = useState(null);
   const [pronto, setPronto] = useState(false);
@@ -69,6 +69,7 @@ export default function ContratoNaCelula({ contrato, tipoContrato, clienteId, cl
       onBack={onVoltar}
       onUpdate={() => onAtualizado?.()}
       onVendaCriada={onVendaCriada}
+      editarAoAbrir={editarAoAbrir}
     />
   );
 }

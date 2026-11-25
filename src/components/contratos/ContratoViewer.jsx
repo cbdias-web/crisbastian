@@ -45,9 +45,9 @@ const STATUS_ORDER = ['rascunho', 'gerado', 'assinado', 'aguardando_pagamento', 
 
 // embutido: usado dentro das células (sem ocupar a tela toda); onVendaCriada: em vez de ir para /Vendas,
 // devolve o controle para quem embutiu (a célula mostra a venda e as comissões na própria operação).
-export default function ContratoViewer({ contrato: contratoInicial, onBack, onUpdate, isAdmin, embutido = false, textoVoltar = 'Voltar para Contratos', onVendaCriada }) {
+export default function ContratoViewer({ contrato: contratoInicial, onBack, onUpdate, isAdmin, embutido = false, textoVoltar = 'Voltar para Contratos', onVendaCriada, editarAoAbrir = false }) {
   const [contrato, setContrato] = useState(contratoInicial);
-  const [editando, setEditando] = useState(false);
+  const [editando, setEditando] = useState(editarAoAbrir);
   const [gerando, setGerando] = useState(false);
   const [enviandoVenda, setEnviandoVenda] = useState(false);
   const { dialog: envioDialog, pedirOpcoes } = useEnvioVendasDialog();
