@@ -5,6 +5,7 @@ import { mesmoNome } from '@/lib/nomes';
 import { X, Pencil, Trash2, Save, Check, DollarSign, RotateCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { confirmar } from '@/lib/confirmar';
 
 const fmtVal = (v) => v?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00';
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
@@ -146,18 +147,18 @@ export default function ParcelasVincendasModal({ onClose, user }) {
     updateMutation.mutate({ id: editingId, data: { ...editForm, valor_parcela: parseFloat(editForm.valor_parcela) || 0 } });
   };
 
-  const handleDelete = (parcela) => {
-    if (!confirm(`Excluir a parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"? Esta ação não pode ser desfeita.`)) return;
+  const handleDelete = async (parcela) => {
+    if (!(await confirmar(`Excluir a parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"? Esta ação não pode ser desfeita.`))) return;
     deleteMutation.mutate(parcela);
   };
 
-  const handleReceber = (parcela) => {
-    if (!confirm(`Confirmar recebimento de ${fmtVal(parcela.valor_parcela)} — Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?`)) return;
+  const handleReceber = async (parcela) => {
+    if (!(await confirmar(`Confirmar recebimento de ${fmtVal(parcela.valor_parcela)} — Parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?`))) return;
     receberMutation.mutate(parcela);
   };
 
-  const handleEstornar = (parcela) => {
-    if (!confirm(`Estornar parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?\nA venda e comissão geradas serão removidas e a parcela voltará para "pendente".`)) return;
+  const handleEstornar = async (parcela) => {
+    if (!(await confirmar(`Estornar parcela ${parcela.numero_parcela}/${parcela.total_parcelas} de "${parcela.cliente_nome}"?\nA venda e comissão geradas serão removidas e a parcela voltará para "pendente".`))) return;
     estornarMutation.mutate(parcela);
   };
 

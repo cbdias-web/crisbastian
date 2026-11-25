@@ -8,6 +8,7 @@ import {
 import { toast } from 'sonner';
 import { pendenciasDoContrato } from '@/lib/vendaProducao';
 import { sincronizarDocumentosVenda } from '@/lib/vendaDocumentos';
+import { confirmar } from '@/lib/confirmar';
 
 const ORIGENS_PAGAMENTO = ['Boleto', 'Link de Pagamento', 'PIX', 'TED', 'Outros'];
 
@@ -91,7 +92,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   };
 
   const removerArquivo = async (fieldUrl, fieldNome, statusRetorno) => {
-    if (!confirm('Remover este arquivo? O status voltará para a etapa anterior.')) return;
+    if (!(await confirmar('Remover este arquivo? O status voltará para a etapa anterior.'))) return;
     const campos = { [fieldUrl]: null, [fieldNome]: null };
     if (statusRetorno) campos.status = statusRetorno;
     await salvarCampo(campos);
@@ -146,7 +147,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   };
 
   const removerComprovante = async (url) => {
-    if (!confirm('Remover este comprovante?')) return;
+    if (!(await confirmar('Remover este comprovante?'))) return;
     const arr = Array.isArray(contrato.comprovantes) ? contrato.comprovantes.filter(c => c.url !== url) : [];
     const campos = { comprovantes: arr };
     if (contrato.comprovante_url === url) {
@@ -180,7 +181,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   };
 
   const removerLinkPagamento = async () => {
-    if (!confirm('Remover o link de pagamento?')) return;
+    if (!(await confirmar('Remover o link de pagamento?'))) return;
     // Se não houver boleto, volta o status também
     const campos = { link_pagamento: null };
     if (!contrato.boleto_url && statusAtual === 'aguardando_pagamento') campos.status = 'assinado';
@@ -203,7 +204,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   };
 
   const removerLinkAssinatura = async () => {
-    if (!confirm('Remover o link de assinatura?')) return;
+    if (!(await confirmar('Remover o link de assinatura?'))) return;
     await salvarCampo({ link_assinatura: null });
     setLinkAssinInput('');
     toast.success('Link de assinatura removido.');
@@ -222,7 +223,7 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
   };
 
   const removerLinkAditivo = async () => {
-    if (!confirm('Remover o link de assinatura do aditivo?')) return;
+    if (!(await confirmar('Remover o link de assinatura do aditivo?'))) return;
     await salvarCampo({ link_assinatura_aditivo: null });
     setLinkAditivoInput('');
     toast.success('Link do aditivo removido.');
@@ -244,14 +245,14 @@ export default function FluxoContrato({ contrato, isAdmin, onUpdate }) {
     const label = STATUS_ORDER.includes(novoStatus)
       ? (ETAPAS.find(e => e.key === novoStatus)?.label || novoStatus)
       : novoStatus;
-    if (!confirm(`Retornar para a etapa "${label}"? Dados da etapa atual podem precisar ser reinseridos.`)) return;
+    if (!(await confirmar(`Retornar para a etapa "${label}"? Dados da etapa atual podem precisar ser reinseridos.`))) return;
     await salvarCampo({ status: novoStatus });
     toast.success('Etapa retornada!');
   };
 
   const forcarEtapa = async (novoStatus) => {
     const label = ETAPAS.find(e => e.key === novoStatus)?.label || novoStatus;
-    if (!confirm(`Forçar etapa para "${label}"?`)) return;
+    if (!(await confirmar(`Forçar etapa para "${label}"?`))) return;
     await salvarCampo({ status: novoStatus });
     toast.success('Etapa atualizada!');
 

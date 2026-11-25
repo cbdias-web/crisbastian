@@ -10,6 +10,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { toast } from 'sonner';
 import JornadaCliente from '@/components/portal/JornadaCliente';
+import { confirmar } from '@/lib/confirmar';
 
 const WATERMARK_IMG = 'https://media.base44.com/images/public/698a1739c50002e4d14fa547/ed94a18f2_generated_image.png';
 
@@ -305,7 +306,7 @@ export default function PortalIndicador() {
             <span className="hidden sm:inline">{indicador.receber_notificacoes ? 'Notif. ativas' : 'Notif. desligadas'}</span>
           </button>
           <button onClick={async () => {
-            if (!confirm('Sair do portal?')) return;
+            if (!(await confirmar('Sair do portal?'))) return;
             try {
               const auth = await base44.auth.isAuthenticated();
               if (auth) { await base44.auth.logout(); }

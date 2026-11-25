@@ -5,6 +5,7 @@ import { FileText, CheckCircle, XCircle, TrendingUp, Loader2, Eye, Clock, Send, 
 import { toast } from 'sonner';
 import { fmtBRL } from './usePrecificacaoConfig';
 import useIsAdmin from '@/hooks/useIsAdmin';
+import { confirmar } from '@/lib/confirmar';
 
 const STATUS_CONFIG = {
   rascunho:      { label: 'Rascunho',       color: 'bg-gray-100 text-gray-600',   icon: FileText },
@@ -279,7 +280,7 @@ export default function PropostasGeradas() {
   }
 
   async function handleExcluir(id) {
-    if (!confirm('Excluir esta proposta? Esta acao nao pode ser desfeita.')) return;
+    if (!(await confirmar('Excluir esta proposta? Esta acao nao pode ser desfeita.'))) return;
     await deleteMutation.mutateAsync(id);
     toast.success('Proposta excluida.');
   }

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Search, FileCheck2, Building2, User, Loader2, ChevronRight, CheckCircle2, Circle, Link2, Trash2 } from 'lucide-react';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   bg: '#0d1117',
@@ -37,7 +38,7 @@ export default function RncListModal({ onClose, onOpenRnc }) {
 
   const excluir = async (rnc) => {
     const nome = rnc.nome || 'este formulário';
-    if (!confirm(`Excluir permanentemente a RNC "${nome}"?\nEsta ação não pode ser desfeita.`)) return;
+    if (!(await confirmar(`Excluir permanentemente a RNC "${nome}"?\nEsta ação não pode ser desfeita.`))) return;
     setExcluindo(rnc.id);
     try {
       await base44.entities.RncCanalBancario.delete(rnc.id);

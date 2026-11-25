@@ -15,6 +15,7 @@ import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import EnviarLinkEmailBotao from '@/components/estudo/EnviarLinkEmailBotao';
 import { origemPublica } from '@/lib/appUrl';
 import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -549,7 +550,7 @@ export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar
 
   const excluir = async () => {
     if (excluindo) return;
-    if (!confirm('Excluir definitivamente este estudo? Esta ação não pode ser desfeita.')) return;
+    if (!(await confirmar('Excluir definitivamente este estudo? Esta ação não pode ser desfeita.'))) return;
     setExcluindo(true);
     try { await onExcluido(estudo); } catch { /* tratado no pai */ } finally { setExcluindo(false); }
   };
@@ -581,7 +582,7 @@ export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar
   };
 
   const enviarAnalise = async () => {
-    if (pend.length > 0 && !confirm(`Há ${pend.length} pendência(s) no formulário. Enviar para Análise Técnica mesmo assim?`)) return;
+    if (pend.length > 0 && !(await confirmar(`Há ${pend.length} pendência(s) no formulário. Enviar para Análise Técnica mesmo assim?`))) return;
     await onAtualizar(estudo, { status: 'em_analise_tecnica', data_envio_analise: new Date().toISOString(), observacoes_internas: obs }, 'Enviado para Análise Técnica');
     (onIrAnalise ? onIrAnalise() : nav(`/AnaliseTecnica?estudo=${estudo.id}`));
   };
@@ -672,7 +673,7 @@ export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar
             </button>
           )}
           {estudo.status !== 'cancelado' && estudo.status !== 'concluido' && (
-            <button onClick={() => confirm('Cancelar este estudo? O link do cliente deixará de funcionar.') && onAtualizar(estudo, { status: 'cancelado' }, 'Estudo cancelado')}
+            <button onClick={async () => (await confirmar('Cancelar este estudo? O link do cliente deixará de funcionar.')) && onAtualizar(estudo, { status: 'cancelado' }, 'Estudo cancelado')}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={{ ...inputStyle, color: AURORA.danger }}>
               <Ban className="w-3.5 h-3.5" /> Cancelar
             </button>

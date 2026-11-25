@@ -12,6 +12,7 @@ import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estud
 import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto } from '@/lib/propostaTecnica';
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal';
+import { confirmar } from '@/lib/confirmar';
 
 const A = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', surface3: '#222b3d',
@@ -193,7 +194,7 @@ function Painel() {
   }, []);
 
   const excluirAnalise = async (e) => {
-    if (!confirm(`Excluir a análise técnica de ${e.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`)) return;
+    if (!(await confirmar(`Excluir a análise técnica de ${e.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`))) return;
     try {
       await base44.entities.PropostaTecnica.deleteMany({ estudo_id: e.id });
       await base44.entities.EstudoViabilidade.update(e.id, {
@@ -386,13 +387,13 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
   const setER = (k, v) => set('estrutura_recomendada', { ...(c.estrutura_recomendada || {}), [k]: v });
   const setInv = (k, v) => set('investimento', { ...(c.investimento || {}), [k]: v });
 
-  const selecionar = (v) => {
-    if (dirty && !confirm('Há alterações não salvas. Descartar?')) return;
+  const selecionar = async (v) => {
+    if (dirty && !(await confirmar('Há alterações não salvas. Descartar?'))) return;
     setSelId(v.id); setDraft(JSON.parse(JSON.stringify(v.conteudo || {}))); setDirty(false); setManutencao(false);
   };
 
   const excluirAnalise = async () => {
-    if (!confirm(`Excluir a análise técnica de ${estudo.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`)) return;
+    if (!(await confirmar(`Excluir a análise técnica de ${estudo.cliente_nome}?\n\nTodas as versões da proposta serão apagadas e o estudo volta para "Recebido" (as respostas do cliente são mantidas).`))) return;
     try {
       await base44.entities.PropostaTecnica.deleteMany({ estudo_id: estudoId });
       await base44.entities.EstudoViabilidade.update(estudoId, {
@@ -486,7 +487,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) voltarLista(); }} className="mt-1 p-2 rounded-lg" style={{ background: A.surface, border: `1px solid ${A.border}` }}><ArrowLeft className="w-4 h-4" /></button>
+          <button onClick={async () => { if (!dirty || (await confirmar('Descartar alterações não salvas?'))) voltarLista(); }} className="mt-1 p-2 rounded-lg" style={{ background: A.surface, border: `1px solid ${A.border}` }}><ArrowLeft className="w-4 h-4" /></button>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: A.accentDim }}><Icon className="w-5 h-5" style={{ color: A.accent }} /></div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: A.accent }}>Análise Técnica · {prod?.titulo}</p>
@@ -499,7 +500,7 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) irEstudo(); }}
+          <button onClick={async () => { if (!dirty || (await confirmar('Descartar alterações não salvas?'))) irEstudo(); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
             <ClipboardCheck className="w-3.5 h-3.5" /> Ver estudo de origem
           </button>
@@ -975,7 +976,7 @@ function RevisaoModal({ versao, onClose, onIA, onManual, onReanalisar }) {
             <Copy className="w-3.5 h-3.5" /> Nova versão para editar
           </button>
         </div>
-        <button onClick={() => confirm('Rodar uma análise do zero com os dados atuais do formulário?') && onReanalisar()} className="w-full text-[11px] py-1" style={{ color: A.muted }}>
+        <button onClick={async () => (await confirmar('Rodar uma análise do zero com os dados atuais do formulário?')) && onReanalisar()} className="w-full text-[11px] py-1" style={{ color: A.muted }}>
           ou refazer a análise completa do zero (ex.: cliente reenviou documentos)
         </button>
       </div>

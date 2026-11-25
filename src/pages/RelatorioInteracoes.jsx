@@ -10,6 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
  import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { confirmar } from '@/lib/confirmar';
 
 const today = () => new Date().toISOString().split('T')[0];
 const firstOfMonth = () => {
@@ -116,8 +117,8 @@ export default function RelatorioInteracoes() {
     }
   });
 
-  const handleDeleteInteracao = (id) => {
-    if (confirm('Tem certeza que deseja remover esta interação?')) {
+  const handleDeleteInteracao = async (id) => {
+    if ((await confirmar('Tem certeza que deseja remover esta interação?'))) {
       deleteInteracaoMutation.mutate(id);
     }
   };

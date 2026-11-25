@@ -10,6 +10,7 @@ import {
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 // Canais fixos (não podem ser removidos)
 const CANAIS_FIXOS = [
@@ -176,7 +177,7 @@ function GerenciarMembrosModal({ canal, usuarios, isAdmin, userEmail, onUpdate, 
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Remover o canal "${canal.nome}"? As mensagens serão mantidas no histórico.`)) return;
+    if (!(await confirmar(`Remover o canal "${canal.nome}"? As mensagens serão mantidas no histórico.`))) return;
     await onDelete(canal.id);
     onClose();
   };

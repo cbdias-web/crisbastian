@@ -13,6 +13,7 @@ import CapaContatoPopup from '@/components/fila/CapaContatoPopup';
 import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Calendar, X, Save, Clock, CheckCircle2, XCircle, MinusCircle, Star, Filter, Trash2, Edit2, AlertTriangle, Eye, EyeOff, FolderInput, Video, Copy, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
+import { confirmar } from '@/lib/confirmar';
 
 const tipoIcons = {
   'Ligação': Phone,
@@ -341,7 +342,7 @@ export default function MeusClientes() {
   const handleDevolverLeads = async () => {
     const selecionados = clientesFiltrados.filter(c => selectedIds.has(c.id) && c.origem === 'lead');
     if (selecionados.length === 0) { toast.error('Selecione ao menos um lead para devolver'); return; }
-    if (!confirm(`Devolver ${selecionados.length} lead(s) para "Não Distribuídos"? Eles serão removidos da carteira atual.`)) return;
+    if (!(await confirmar(`Devolver ${selecionados.length} lead(s) para "Não Distribuídos"? Eles serão removidos da carteira atual.`))) return;
     setSalvandoBulk(true);
     try {
       for (const c of selecionados) {
@@ -360,7 +361,7 @@ export default function MeusClientes() {
   const handleExcluirSelecionados = async () => {
     const selecionados = clientesFiltrados.filter(c => selectedIds.has(c.id));
     if (selecionados.length === 0) return;
-    if (!confirm(`Excluir permanentemente ${selecionados.length} registro(s) selecionado(s)? Esta ação não pode ser desfeita.`)) return;
+    if (!(await confirmar(`Excluir permanentemente ${selecionados.length} registro(s) selecionado(s)? Esta ação não pode ser desfeita.`))) return;
     setSalvandoBulk(true);
     try {
       for (const c of selecionados) {
@@ -400,7 +401,7 @@ export default function MeusClientes() {
   const subcarteirasDisponiveis = [...new Set(clientesFiltradosPorVendedor.map(c => c.subcarteira).filter(Boolean))].sort();
 
   const excluirCliente = async (cliente) => {
-    if (!confirm(`Excluir permanentemente "${cliente.nome}"? Esta ação não pode ser desfeita.`)) return;
+    if (!(await confirmar(`Excluir permanentemente "${cliente.nome}"? Esta ação não pode ser desfeita.`))) return;
     setSalvandoCliente(true);
     try {
       const ints = interacoes.filter(i => i.cliente_id === cliente.id);
@@ -416,7 +417,7 @@ export default function MeusClientes() {
   };
 
   const executarDeduplicacao = async () => {
-    if (!confirm('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?')) return;
+    if (!(await confirmar('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?'))) return;
     setDeduplicando(true);
     try {
       const res = await base44.functions.invoke('deduplicarLeads', {});
@@ -939,12 +940,12 @@ export default function MeusClientes() {
                               <Plus className="w-3 h-3" /> Nova Interação
                             </button>
                             {isLead && (
-                              <button onClick={() => {
+                              <button onClick={async () => {
                                 if (!cliente.cpf_cnpj?.trim() || !cliente.telefone?.trim() || !cliente.nome?.trim()) {
                                   toast.error('Cadastro incompleto. Preencha nome, CPF/CNPJ e telefone antes de converter.');
                                   return;
                                 }
-                                if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterLeadMutation.mutate(cliente);
+                                if ((await confirmar(`Converter ${cliente.nome} em cliente cativo?`))) converterLeadMutation.mutate(cliente);
                               }} disabled={converterLeadMutation.isPending}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition"
                                 style={{ color: '#34d399', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)' }}>
@@ -999,7 +1000,7 @@ export default function MeusClientes() {
                                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = AURORA.textMuted; }}>
                                         <Edit2 className="w-3 h-3" />
                                       </button>
-                                      <button onClick={() => { if (confirm('Remover interação?')) deleteMutation.mutate(inter.id); }}
+                                      <button onClick={async () => { if ((await confirmar('Remover interação?'))) deleteMutation.mutate(inter.id); }}
                                         className="p-1 rounded transition" style={{ color: AURORA.textMuted }}
                                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; e.currentTarget.style.color = '#f87171'; }}
                                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = AURORA.textMuted; }}>

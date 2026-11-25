@@ -14,6 +14,7 @@ import FormularioIndicacao from '@/components/portal/FormularioIndicacao';
 import IndicacoesTab from '@/components/central/IndicacoesTab';
 import ParceirosTab from '@/components/central/ParceirosTab';
 import VendasEfetivasModal from '@/components/portal/VendasEfetivasModal';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   bg: '#0d1117',
@@ -305,7 +306,7 @@ export default function PortalIndicadorAuth({ user, parceiro, modoAdmin = false,
           ) : (
             <div className="flex items-center gap-2">
               <AtualizarDashButton compact />
-              <button onClick={() => { if (confirm('Deseja realmente sair?')) base44.auth.logout(); }}
+              <button onClick={async () => { if ((await confirmar('Deseja realmente sair?'))) base44.auth.logout(); }}
                 className="p-2 rounded-xl transition" style={{ background: AURORA.surface, color: AURORA.textMuted, border: `1px solid ${AURORA.border}` }}
                 title="Sair">
                 <LogOut className="w-4 h-4" />

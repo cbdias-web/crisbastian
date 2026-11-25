@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, X, Edit2, Trash2, UserCheck, Download, FileText, Send, CheckCircle2, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 export default function Espelhamentos() {
   const [showForm, setShowForm] = useState(false);
@@ -104,8 +105,8 @@ export default function Espelhamentos() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Tem certeza que deseja remover este indicador?')) {
+  const handleDelete = async (id) => {
+    if ((await confirmar('Tem certeza que deseja remover este indicador?'))) {
       deleteMutation.mutate(id);
     }
   };
@@ -171,7 +172,7 @@ export default function Espelhamentos() {
       toast.error('Indicador não possui e-mail cadastrado');
       return;
     }
-    if (!confirm(`Enviar relatório para ${indicador.email}?`)) return;
+    if (!(await confirmar(`Enviar relatório para ${indicador.email}?`))) return;
     setSendingEmail(indicador.id);
     try {
       await base44.functions.invoke('enviarRelatorioPorEmail', {

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Megaphone, Plus, Trash2, Eye, EyeOff, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 export default function Comunicados() {
   const [showForm, setShowForm] = useState(false);
@@ -202,7 +203,7 @@ export default function Comunicados() {
                         {c.ativo ? <EyeOff className="w-4 h-4 text-gray-400" /> : <Eye className="w-4 h-4 text-emerald-500" />}
                       </button>
                       <button
-                        onClick={() => { if (confirm('Remover este comunicado?')) deleteMutation.mutate(c.id); }}
+                        onClick={async () => { if ((await confirmar('Remover este comunicado?'))) deleteMutation.mutate(c.id); }}
                         className="p-1.5 hover:bg-red-50 rounded-lg transition"
                       >
                         <Trash2 className="w-4 h-4 text-red-400" />

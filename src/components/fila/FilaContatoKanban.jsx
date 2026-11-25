@@ -6,6 +6,7 @@ import { GripVertical } from 'lucide-react';
 import FilaContatoCard from './FilaContatoCard';
 import AgendarRetornoModal from './AgendarRetornoModal';
 import { COLUNAS, destinoPara, carregarOrdem, ORDEN_STORAGE_KEY } from './filaContatoUtils';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   surface: '#161b22',
@@ -201,7 +202,7 @@ export default function FilaContatoKanban({ itens, onSelectItem, onAtualizado, i
     const msg = item.tipo_origem === 'indicacao'
       ? `Excluir "${item.nome}" da esteira?\n\nA conversa de origem na Central de Leads será encerrada para o lead não retornar à fila.`
       : `Excluir "${item.nome}" da esteira?\n\nO agendamento de origem (Agenda do Dia) será marcado como realizado para o item não retornar.`;
-    if (!confirm(msg)) return;
+    if (!(await confirmar(msg))) return;
     try {
       await base44.entities.FilaContato.delete(item.id);
       if (item.tipo_origem === 'indicacao' && item.ref_id) {

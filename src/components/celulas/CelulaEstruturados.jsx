@@ -20,6 +20,7 @@ import OffshoreFormModal from '@/components/contratos/OffshoreFormModal';
 import { DetalheEstudoModal } from '@/pages/EstudoViabilidade';
 import { Workspace as AnaliseWorkspace } from '@/pages/AnaliseTecnica';
 import { valorHonorariosProjeto, somaEtapas } from '@/lib/propostaTecnica';
+import { confirmar } from '@/lib/confirmar';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
@@ -823,7 +824,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
           contrato && podeGerenciar(contrato, user, isAdmin) && contrato.status !== 'no_pipeline' && { label: 'Excluir contrato', perigo: true, onClick: async () => { if (await excluirContratoDaOperacao(contrato)) recarregar?.(); } },
           podeGerenciar(e, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => {
             if (contrato) { toast.error('Esta operação tem contrato. Exclua o contrato primeiro (ou cancele a operação).'); return; }
-            if (!confirm(`Excluir a operação ${jornada.nome} de ${e.cliente_nome || 'cliente'}? NDA, estudo e propostas desta operação deixam de aparecer. O cadastro do cliente continua na base.`)) return;
+            if (!(await confirmar(`Excluir a operação ${jornada.nome} de ${e.cliente_nome || 'cliente'}? NDA, estudo e propostas desta operação deixam de aparecer. O cadastro do cliente continua na base.`))) return;
             try { await excluirEstudo(e); } catch (er) { toast.error(er.message); }
           } },
         ];
@@ -894,7 +895,7 @@ async function excluirContratoDaOperacao(ct) {
   if (ct.status === 'no_pipeline') { toast.error('Este contrato já foi enviado para Vendas. Estorne a venda em Vendas antes de excluir.'); return false; }
   const vendas = await base44.entities.Venda.filter({ contrato_id: ct.id }, '-data', 1).catch(() => []);
   if (vendas?.length) { toast.error('Há venda lançada para este contrato. Estorne a venda em Vendas antes de excluir.'); return false; }
-  if (!confirm(`Excluir o contrato ${ct.numero_contrato || ''} de ${ct.nome || 'cliente'}? Esta ação não pode ser desfeita.`)) return false;
+  if (!(await confirmar(`Excluir o contrato ${ct.numero_contrato || ''} de ${ct.nome || 'cliente'}? Esta ação não pode ser desfeita.`))) return false;
   await base44.entities.Contrato.delete(ct.id);
   if (ct.pipeline_id) await base44.entities.Pipeline.update(ct.pipeline_id, { temperatura: 'Quente' }).catch(() => {});
   toast.success(ct.pipeline_id ? 'Contrato excluído. A negociação voltou a ficar aberta.' : 'Contrato excluído.');
@@ -1142,7 +1143,7 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
         ] : negAberta ? [
           podeGerenciar(negAberta, user, isAdmin) && { label: 'Editar', onClick: () => setEditNeg(true) },
           podeGerenciar(negAberta, user, isAdmin) && { label: 'Excluir', perigo: true, onClick: async () => {
-            if (!confirm(`Excluir a negociação ${jornada.nome} de ${negAberta.cliente_nome || 'cliente'}? As abordagens registradas nela também serão apagadas. O cadastro do cliente continua na base.`)) return;
+            if (!(await confirmar(`Excluir a negociação ${jornada.nome} de ${negAberta.cliente_nome || 'cliente'}? As abordagens registradas nela também serão apagadas. O cadastro do cliente continua na base.`))) return;
             try {
               await base44.entities.Pipeline.delete(negAberta.id);
               await Promise.all(comentarios.filter(c => idsOp.includes(c.operacao_id)).map(c => base44.entities.CelulaComentario.delete(c.id).catch(() => {})));

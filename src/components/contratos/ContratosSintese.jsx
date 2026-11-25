@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Search, Loader2, ChevronRight, UserRound, DatabaseZap, X, ScrollText } from 'lucide-react';
 import { celulaDoProdutoPipeline } from '@/lib/celulas';
 import { abrirFicha } from '@/components/celulas/FichaCliente';
+import { confirmar } from '@/lib/confirmar';
 
 // Contratos no novo portal: SÍNTESE do que foi negociado (cliente, produto, valor, condições, gerente,
 // situação). O recebido em caixa vem de Vendas — o contrato não substitui a venda.
@@ -199,7 +200,7 @@ function MigracaoModal({ onClose, onConcluida }) {
   const [res, setRes] = useState(null);
   const [rodando, setRodando] = useState(null);
   const rodar = async (simular) => {
-    if (!simular && !confirm('Executar a migração agora? Ela vincula clientes, negociações, operações e vendas aos contratos (não altera valores nem datas).')) return;
+    if (!simular && !(await confirmar('Executar a migração agora? Ela vincula clientes, negociações, operações e vendas aos contratos (não altera valores nem datas).'))) return;
     setRodando(simular ? 'sim' : 'exec');
     try {
       const r = await base44.functions.invoke('migrarContratosNovaEstrutura', { simular });

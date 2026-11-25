@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { BarChart3, Send, Loader2, MessageSquare, Trash2, ArrowRight, X, Layers, Image as ImageIcon } from 'lucide-react';
 import { BLOCOS_VISUAL, CELULAS_CAPA } from '@/lib/novoPortal';
 import { ICONE_BLOCO, ICONE_CELULA, BlocoItens } from './HeaderAvatares';
+import { confirmar } from '@/lib/confirmar';
 
 const OURO = '#C9A962';
 const TEAL = '#00D4AA';
@@ -126,7 +127,7 @@ export default function HubInicio({ user, groups, isAdmin }) {
     } catch (e) { toast.error(e.message); }
   };
   const excluir = async (p) => {
-    if (!confirm('Excluir esta publicação?')) return;
+    if (!(await confirmar('Excluir esta publicação?'))) return;
     try { await base44.entities.CelulaComentario.delete(p.id); setItens(l => l.filter(x => x.id !== p.id)); setPostAberto(null); }
     catch (e) { toast.error(e.message); }
   };

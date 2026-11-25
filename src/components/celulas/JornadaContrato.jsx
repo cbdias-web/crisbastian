@@ -14,6 +14,7 @@ import ContratoOffshoreEstrutura, { OFFSHORE_DEFAULTS } from '@/components/contr
 import IndicadoresEditor from '@/components/contratos/IndicadoresEditor';
 import BoletosParcelas from '@/components/contratos/BoletosParcelas';
 import ColetaCliente, { COLETAS } from './ColetaCliente';
+import { confirmar } from '@/lib/confirmar';
 
 // Jornada do contrato no novo ambiente: dados → PDF → assinatura → contrato assinado → cobrança →
 // pagamento → envio para Vendas, tudo dentro da operação. Grava no mesmo registro Contrato
@@ -383,7 +384,7 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
     setOcupado(null);
   };
   const removerComprovante = async (url) => {
-    if (!confirm('Remover este comprovante?')) return;
+    if (!(await confirmar('Remover este comprovante?'))) return;
     const arr = comprovantes.filter(c => c.url !== url);
     const campos = { comprovantes: arr };
     if (ct.comprovante_url === url) { campos.comprovante_url = arr[0]?.url || null; campos.comprovante_nome = arr[0]?.nome || null; }
@@ -407,7 +408,7 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
 
   const ajustarEtapa = async (novo) => {
     if (!novo || novo === st) return;
-    if (!confirm(`Ajustar a etapa do contrato para "${STATUS[novo]}"?`)) return;
+    if (!(await confirmar(`Ajustar a etapa do contrato para "${STATUS[novo]}"?`))) return;
     await aplicar({ status: novo }, 'Etapa ajustada.');
   };
 
@@ -578,7 +579,7 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
       <Etapa n={4} t={t} titulo="Contrato assinado" estado={!ct || !atingiu(st, 'gerado') ? 'bloqueado' : ct.contrato_assinado_url ? 'feito' : 'atual'} aberta={aberta === 3} onToggle={() => toggle(3)}
         sub={ct?.contrato_assinado_url ? ct.contrato_assinado_nome : 'Anexe a via assinada (vai junto para Vendas).'}>
         {ct && (ct.contrato_assinado_url
-          ? <Arquivo nome={ct.contrato_assinado_nome} url={ct.contrato_assinado_url} onRemover={st === 'no_pipeline' ? null : async () => { if (confirm('Remover o contrato assinado?')) await aplicar({ contrato_assinado_url: null, contrato_assinado_nome: null }, 'Arquivo removido.'); }} />
+          ? <Arquivo nome={ct.contrato_assinado_nome} url={ct.contrato_assinado_url} onRemover={st === 'no_pipeline' ? null : async () => { if ((await confirmar('Remover o contrato assinado?'))) await aplicar({ contrato_assinado_url: null, contrato_assinado_nome: null }, 'Arquivo removido.'); }} />
           : <BotaoArquivo label="Anexar o contrato assinado" primario onArquivo={anexarAssinado} carregando={ocupado === 'assinado'} />)}
       </Etapa>
 
@@ -602,7 +603,7 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
               </label>
             </div>
             {ct.boleto_url
-              ? <Arquivo nome={ct.boleto_nome || 'Boleto'} url={ct.boleto_url} onRemover={async () => { if (confirm('Remover o boleto?')) await aplicar({ boleto_url: null, boleto_nome: null }, 'Boleto removido.'); }} />
+              ? <Arquivo nome={ct.boleto_nome || 'Boleto'} url={ct.boleto_url} onRemover={async () => { if ((await confirmar('Remover o boleto?'))) await aplicar({ boleto_url: null, boleto_nome: null }, 'Boleto removido.'); }} />
               : <BotaoArquivo label="Anexar boleto" onArquivo={anexarBoleto} carregando={ocupado === 'boleto'} />}
             {parseInt(ct.num_parcelas) > 0 && (
               <details className="vx-form-escuro" style={{ borderRadius: 12, border: `1px solid ${C.line}`, padding: '8px 12px' }}>

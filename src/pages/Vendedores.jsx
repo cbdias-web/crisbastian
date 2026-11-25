@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
 import { normalizarCelular, formatarCelular } from "@/lib/celular";
+import { confirmar } from '@/lib/confirmar';
 
 const EMPTY = { nome: "", email: "", time: "", percentual_comissao: 10, ativo: true, celular_operadora: "", operadora: "Vivo" };
 
@@ -184,7 +185,7 @@ export default function Vendedores() {
       toast.error('Vendedor não possui e-mail cadastrado');
       return;
     }
-    if (!confirm(`Enviar relatório do período para ${vendedor.email}?`)) return;
+    if (!(await confirmar(`Enviar relatório do período para ${vendedor.email}?`))) return;
     setSendingEmail(vendedor.id);
     try {
       await base44.functions.invoke('enviarRelatorioPorEmail', {

@@ -8,6 +8,7 @@ import RelatorioAcessosModal from '../components/usuarios/RelatorioAcessosModal'
 import RelatorioRoletaModal from '../components/roleta/RelatorioRoletaModal';
 import RoletaPreviewModal from '../components/roleta/RoletaPreviewModal';
 import { normalizarCelular, formatarCelular } from '@/lib/celular';
+import { confirmar } from '@/lib/confirmar';
 
 const menusDisponiveis = [
   { id: 'Dashboard', nome: 'Dashboard', descricao: 'Visão geral e métricas' },
@@ -222,9 +223,9 @@ export default function Usuarios() {
     );
   };
 
-  const toggleAtivo = (usuario) => {
+  const toggleAtivo = async (usuario) => {
     const novoAtivo = usuario.ativo !== false ? false : true;
-    if (!novoAtivo && !confirm(`Bloquear ${usuario.full_name || usuario.email}? O usuário perderá acesso imediatamente.`)) return;
+    if (!novoAtivo && !(await confirmar(`Bloquear ${usuario.full_name || usuario.email}? O usuário perderá acesso imediatamente.`))) return;
     updateUserMutation.mutate({ id: usuario.id, data: { ativo: novoAtivo } });
     toast.success(novoAtivo ? 'Usuário reativado!' : 'Usuário bloqueado!');
   };
@@ -329,7 +330,7 @@ export default function Usuarios() {
   };
 
   const executarMigracao = async () => {
-    if (!confirm('Executar migração de clientes de vendedores inativos? Fernando Huffel → Samuel Fraga; Christiano → Bruna')) return;
+    if (!(await confirmar('Executar migração de clientes de vendedores inativos? Fernando Huffel → Samuel Fraga; Christiano → Bruna'))) return;
     setMigrandoClientes(true);
     try {
       const res = await base44.functions.invoke('migrarClientesVendedoresInativos', {});
@@ -349,7 +350,7 @@ export default function Usuarios() {
       toast.error('Vendedores devem ser diferentes');
       return;
     }
-    if (!confirm('Transferir todos os clientes do vendedor selecionado?')) return;
+    if (!(await confirmar('Transferir todos os clientes do vendedor selecionado?'))) return;
     
     setMigrandoClientes(true);
     try {
@@ -561,8 +562,8 @@ export default function Usuarios() {
                     {enviandoConviteVendedor === v.id ? '...' : 'Enviar Convite'}
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Remover ${v.nome} da lista de pendentes?`)) {
+                    onClick={async () => {
+                      if ((await confirmar(`Remover ${v.nome} da lista de pendentes?`))) {
                         base44.entities.Vendedor.update(v.id, { email: '' });
                         queryClient.invalidateQueries(['vendedores-lista']);
                         toast.success('Vendedor removido da lista!');
@@ -731,7 +732,7 @@ export default function Usuarios() {
                             <Gift className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => { if (confirm(`Remover ${usuario.full_name || usuario.email}?`)) deleteUserMutation.mutate(usuario.id); }}
+                            onClick={async () => { if ((await confirmar(`Remover ${usuario.full_name || usuario.email}?`))) deleteUserMutation.mutate(usuario.id); }}
                             className="p-1.5 hover:bg-red-50 rounded-lg transition text-gray-300 hover:text-red-500"
                             title="Remover usuário"
                           >

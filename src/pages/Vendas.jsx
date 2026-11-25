@@ -19,6 +19,7 @@ import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
@@ -489,14 +490,14 @@ export default function Vendas() {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Tem certeza que deseja excluir esta venda?')) {
+  const handleDelete = async (id) => {
+    if ((await confirmar('Tem certeza que deseja excluir esta venda?'))) {
       deleteMutation.mutate(id);
     }
   };
 
   const handleDuplicate = async (venda) => {
-    if (!confirm(`Duplicar a venda de "${venda.cliente || venda.produto}"?`)) return;
+    if (!(await confirmar(`Duplicar a venda de "${venda.cliente || venda.produto}"?`))) return;
     const { id, created_date, updated_date, created_by, ...dados } = venda;
     createMutation.mutate({ ...dados, data: new Date().toISOString().split('T')[0] });
   };
@@ -606,7 +607,7 @@ export default function Vendas() {
 
   const limparSelecao = async () => {
     if (vendasSelecionadas.length === 0) return;
-    if (!confirm(`Limpar a seleção de ${vendasSelecionadas.length} venda(s)?`)) return;
+    if (!(await confirmar(`Limpar a seleção de ${vendasSelecionadas.length} venda(s)?`))) return;
     await Promise.all(vendasSelecionadas.map(v => base44.entities.Venda.update(v.id, { selecionada_relatorio: false })));
     queryClient.invalidateQueries(['vendas']);
     toast.success('Seleção limpa.');

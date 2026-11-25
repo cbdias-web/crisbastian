@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2, Settings, Plus, Trash2, Save, Download, ShieldCheck } from 'lucide-react';
 import { ROTEIROS, FAQ } from '@/components/fila/roteirosPadrao';
 import { PESOS_PADRAO } from '@/lib/leadUtils';
+import { confirmar } from '@/lib/confirmar';
 
 const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const inp = { background: A.surface2, color: A.text, border: `1px solid ${A.border}` };
@@ -80,7 +81,7 @@ function Parametros({ qc }) {
   };
 
   const carregarPadroes = async () => {
-    if (!confirm('Criar parâmetros, modelos de mensagem, cadências, roteiros e FAQ padrão? (Itens já existentes não são duplicados por nome.)')) return;
+    if (!(await confirmar('Criar parâmetros, modelos de mensagem, cadências, roteiros e FAQ padrão? (Itens já existentes não são duplicados por nome.)'))) return;
     setCarregando(true);
     try {
       if (!cfg) await base44.entities.ConfigFila.create({ chave: 'padrao', cap_carteira_dia: 40, novos_por_dia: 15, backlog_max_por_gerente: 60, liberacao_automatica_ativa: true, toques_dia: 80, limite_primeiro_whatsapp_dia: 40, janela_inicio: '09:00', janela_fim: '18:00', sla_inbound_alerta_min: 5, sla_inbound_escalonar_min: 10, horas_inercia: 48, dias_sem_contato: 5, texto_descadastro: 'Se preferir não receber contato, responda SAIR.', score_pesos: PESOS_PADRAO, email_plano_dia: true });
@@ -148,7 +149,7 @@ function Cadencias({ qc }) {
     const { id, created_date, updated_date, created_by, created_by_id, is_sample, ...d } = ed;
     try { id ? await base44.entities.Cadencia.update(id, d) : await base44.entities.Cadencia.create(d); toast.success('Cadência salva.'); setEd(null); qc.invalidateQueries({ queryKey: ['cad-admin'] }); qc.invalidateQueries({ queryKey: ['cadencias-ativas'] }); } catch (e) { toast.error(e.message); }
   };
-  const apagar = async (c) => { if (!confirm(`Excluir a cadência "${c.nome}"? Leads já nela perdem o vínculo.`)) return; await base44.entities.Cadencia.delete(c.id); qc.invalidateQueries({ queryKey: ['cad-admin'] }); };
+  const apagar = async (c) => { if (!(await confirmar(`Excluir a cadência "${c.nome}"? Leads já nela perdem o vínculo.`))) return; await base44.entities.Cadencia.delete(c.id); qc.invalidateQueries({ queryKey: ['cad-admin'] }); };
   const setPasso = (i, k, v) => setEd(e => ({ ...e, passos: e.passos.map((p, j) => (j === i ? { ...p, [k]: v } : p)) }));
   return (
     <div className="space-y-3">
@@ -194,7 +195,7 @@ function Modelos({ qc }) {
   const { data: itens = [] } = useQuery({ queryKey: ['mod-admin'], queryFn: () => base44.entities.ModeloMensagem.list('nome', 200) });
   const [ed, setEd] = useState(null);
   const salvar = async () => { const { id, created_date, updated_date, created_by, created_by_id, is_sample, ...d } = ed; try { id ? await base44.entities.ModeloMensagem.update(id, { ...d, versao: (d.versao || 1) + 1 }) : await base44.entities.ModeloMensagem.create({ ...d, versao: 1 }); toast.success('Modelo salvo.'); setEd(null); qc.invalidateQueries({ queryKey: ['mod-admin'] }); qc.invalidateQueries({ queryKey: ['modelos-wa'] }); } catch (e) { toast.error(e.message); } };
-  const apagar = async (m) => { if (!confirm('Excluir modelo?')) return; await base44.entities.ModeloMensagem.delete(m.id); qc.invalidateQueries({ queryKey: ['mod-admin'] }); };
+  const apagar = async (m) => { if (!(await confirmar('Excluir modelo?'))) return; await base44.entities.ModeloMensagem.delete(m.id); qc.invalidateQueries({ queryKey: ['mod-admin'] }); };
   return (
     <div className="space-y-3">
       <button onClick={() => setEd({ nome: '', canal: 'whatsapp', publico: 'geral', texto: '', ativo: true, primeiro_contato: false, aprovado_compliance: false })} className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5" style={{ background: A.accent, color: '#0d1117' }}><Plus className="w-4 h-4" /> Novo modelo</button>
@@ -240,7 +241,7 @@ function Roteiros({ qc }) {
       toast.success('Salvo.'); setEd(null); qc.invalidateQueries({ queryKey: ['rot-admin'] }); qc.invalidateQueries({ queryKey: ['faq-admin'] }); qc.invalidateQueries({ queryKey: ['roteiros-db'] }); qc.invalidateQueries({ queryKey: ['faq-db'] });
     } catch (e) { toast.error(e.message); }
   };
-  const apagar = async (tipo, id) => { if (!confirm('Excluir?')) return; await (tipo === 'rot' ? base44.entities.RoteiroProduto : base44.entities.FaqItem).delete(id); qc.invalidateQueries({ queryKey: ['rot-admin'] }); qc.invalidateQueries({ queryKey: ['faq-admin'] }); };
+  const apagar = async (tipo, id) => { if (!(await confirmar('Excluir?'))) return; await (tipo === 'rot' ? base44.entities.RoteiroProduto : base44.entities.FaqItem).delete(id); qc.invalidateQueries({ queryKey: ['rot-admin'] }); qc.invalidateQueries({ queryKey: ['faq-admin'] }); };
   return (
     <div className="space-y-4">
       <p className="text-[11px]" style={{ color: A.muted }}>Enquanto não houver registros, o app usa os roteiros e o FAQ padrão do código. A IA responde somente com base no que está aqui. Marque o que o compliance aprovou.</p>
@@ -275,7 +276,7 @@ function Supressao({ qc }) {
   const { data: itens = [] } = useQuery({ queryKey: ['sup-admin'], queryFn: () => base44.entities.ListaSupressao.list('-created_date', 500) });
   const [nome, setNome] = useState(''); const [doc, setDoc] = useState(''); const [tel, setTel] = useState('');
   const add = async () => { try { await base44.entities.ListaSupressao.create({ nome, cpf_cnpj: doc.replace(/\D/g, ''), telefone_e164: tel ? `+55${tel.replace(/\D/g, '').replace(/^55/, '')}` : '', motivo: 'opt_out', criado_por: 'admin' }); setNome(''); setDoc(''); setTel(''); qc.invalidateQueries({ queryKey: ['sup-admin'] }); toast.success('Adicionado à supressão.'); } catch (e) { toast.error(e.message); } };
-  const rem = async (i) => { if (!confirm('Remover da lista de supressão?')) return; await base44.entities.ListaSupressao.delete(i.id); qc.invalidateQueries({ queryKey: ['sup-admin'] }); };
+  const rem = async (i) => { if (!(await confirmar('Remover da lista de supressão?'))) return; await base44.entities.ListaSupressao.delete(i.id); qc.invalidateQueries({ queryKey: ['sup-admin'] }); };
   return (
     <div className="space-y-3">
       <p className="text-[11px]" style={{ color: A.muted }}>Quem pediu para não ser contatado nunca volta à fila nem a importações. Entradas são criadas automaticamente pelo botão “Não quer contato”.</p>

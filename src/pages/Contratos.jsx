@@ -21,6 +21,7 @@ import KanbanContratos from '@/components/contratos/KanbanContratos';
 import { useEnvioVendasDialog } from '@/components/contratos/EnviarVendasDialog';
 import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
 import { Table2, Columns3 } from 'lucide-react';
+import { confirmar } from '@/lib/confirmar';
 
 const TIPO_CONFIG = {
   'CONTA GLOBAL': { color: 'bg-[#0f1e35]', light: 'bg-blue-500/15 text-blue-300 border-blue-500/30', icon: Globe, desc: 'Conta em moeda estrangeira para câmbio e investimentos internacionais' },
@@ -630,7 +631,7 @@ function ContratosLegado() {
                             {enviandoPipelineId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                           </button>
                           {isAdmin && (
-                            <button onClick={() => { if (confirm('Excluir este contrato?')) deleteMutation.mutate(c.id); }}
+                            <button onClick={async () => { if ((await confirmar('Excluir este contrato?'))) deleteMutation.mutate(c.id); }}
                               className="p-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg transition" title="Excluir">
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>

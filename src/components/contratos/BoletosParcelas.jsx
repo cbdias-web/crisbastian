@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Receipt, Upload, X, Loader2, ExternalLink, Copy } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 const A = {
   surface: '#161b22',
@@ -50,7 +51,7 @@ export default function BoletosParcelas({ contrato, onUpdate }) {
   };
 
   const remover = async (idx) => {
-    if (!confirm('Remover este boleto?')) return;
+    if (!(await confirmar('Remover este boleto?'))) return;
     await persistir(boletos.filter((_, i) => i !== idx));
     toast.success('Boleto removido');
   };

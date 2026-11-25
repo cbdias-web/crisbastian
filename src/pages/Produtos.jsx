@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Pencil, Trash2, X, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 export default function Produtos() {
   const [showForm, setShowForm] = useState(false);
@@ -171,8 +172,8 @@ export default function Produtos() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => {
-                            if (confirm('Tem certeza que deseja excluir este produto?')) {
+                          onClick={async () => {
+                            if ((await confirmar('Tem certeza que deseja excluir este produto?'))) {
                               deleteMutation.mutate(produto.id);
                             }
                           }}

@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { useAcessoDashParceiro } from '@/hooks/useAcessoDashParceiro';
+import { confirmar } from '@/lib/confirmar';
 
 // Aurora Borealis color tokens
 const AURORA = {
@@ -455,8 +456,8 @@ export default function Layout({ children, currentPageName }) {
   })();
   const mostrarCapa = novoPortal && (currentPageName === 'Inicio' || location.pathname === '/');
 
-  const handleLogout = () => {
-    if (confirm('Deseja realmente sair?')) base44.auth.logout();
+  const handleLogout = async () => {
+    if ((await confirmar('Deseja realmente sair?'))) base44.auth.logout();
   };
 
   return (

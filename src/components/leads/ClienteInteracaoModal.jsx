@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, Save, Star, Phone, Mail, MapPin, Clock, CheckCircle2, XCircle, MinusCircle, MessageSquare, Users, Calendar, Plus, TrendingUp, AlertCircle, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
+import { confirmar } from '@/lib/confirmar';
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -176,7 +177,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
   };
 
   const descartarAgendada = async (inter) => {
-    if (!confirm('Descartar este contato agendado?')) return;
+    if (!(await confirmar('Descartar este contato agendado?'))) return;
     try {
       await base44.entities.InteracaoCliente.delete(inter.id);
       queryClient.invalidateQueries(['interacoes-modal', clienteId]);
@@ -258,12 +259,12 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
               </Button>
             )}
             {cliente?.origem === 'lead' && !showForm && (
-              <Button size="sm" variant="outline" onClick={() => {
+              <Button size="sm" variant="outline" onClick={async () => {
                 if (!cliente.cpf_cnpj?.trim() || !cliente.telefone?.trim()) {
                   toast.error('Cadastro incompleto. Preencha CPF/CNPJ e telefone antes de converter.');
                   return;
                 }
-                if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterMutation.mutate();
+                if ((await confirmar(`Converter ${cliente.nome} em cliente cativo?`))) converterMutation.mutate();
               }} disabled={converterMutation.isPending} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                 <Star className="w-3.5 h-3.5 mr-1.5" /> Converter em Cliente
               </Button>
@@ -367,8 +368,8 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                   <Button size="sm" variant="outline" onClick={() => {
                     if (!form.descricao.trim()) { toast.error('Salve a interação antes de converter'); return; }
                     handleSave();
-                    setTimeout(() => {
-                      if (confirm(`Converter ${cliente.nome} em cliente cativo?`)) converterMutation.mutate();
+                    setTimeout(async () => {
+                      if ((await confirmar(`Converter ${cliente.nome} em cliente cativo?`))) converterMutation.mutate();
                     }, 500);
                   }} disabled={isPending} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                     <Star className="w-3.5 h-3.5 mr-1.5" /> Salvar e Converter

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Plus, Edit2, Trash2, X, Save, BookOpen, PlayCircle, FileText, Link2, ChevronDown, ChevronRight, Users, BarChart2, Paperclip, Shield, Image, Printer, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 const TIPOS = [
   { value: 'video', label: 'Vídeo', icon: PlayCircle },
@@ -277,7 +278,7 @@ export default function TreinamentoAdmin() {
                       </button>
                       <button onClick={() => { setFormModulo({ ...modulo }); setModalModulo(modulo); }}
                         className="p-1.5 hover:bg-gray-100 rounded-lg transition"><Edit2 className="w-4 h-4 text-gray-400" /></button>
-                      <button onClick={() => { if (confirm('Excluir módulo e todas suas aulas?')) deleteModulo.mutate(modulo.id); }}
+                      <button onClick={async () => { if ((await confirmar('Excluir módulo e todas suas aulas?'))) deleteModulo.mutate(modulo.id); }}
                         className="p-1.5 hover:bg-red-50 rounded-lg transition"><Trash2 className="w-4 h-4 text-red-400" /></button>
                       <button onClick={() => setModuloAberto(aberto ? null : modulo.id)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
                         {aberto ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
@@ -302,7 +303,7 @@ export default function TreinamentoAdmin() {
                               <div className="flex gap-1">
                                 <button onClick={() => { setFormAula({ ...aula }); setModalAula({ moduloId: modulo.id, aula }); }}
                                   className="p-1.5 hover:bg-gray-100 rounded-lg transition"><Edit2 className="w-3.5 h-3.5 text-gray-400" /></button>
-                                <button onClick={() => { if (confirm('Excluir aula?')) deleteAula.mutate(aula.id); }}
+                                <button onClick={async () => { if ((await confirmar('Excluir aula?'))) deleteAula.mutate(aula.id); }}
                                   className="p-1.5 hover:bg-red-50 rounded-lg transition"><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
                               </div>
                             </div>

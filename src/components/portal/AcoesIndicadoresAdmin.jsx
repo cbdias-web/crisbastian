@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Link2, UserX, Loader2, QrCode as QrCodeIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import QrCodeIndicadoresModal from '@/components/portal/QrCodeIndicadoresModal.jsx';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   surface2: '#1c2333',
@@ -35,7 +36,7 @@ export default function AcoesIndicadoresAdmin({ parceiros = [] }) {
 
   const inativarTodos = async () => {
     if (ativos.length === 0) { toast.info('Todos os indicadores já estão inativos.'); return; }
-    if (!confirm(`Inativar ${ativos.length} indicador(es) ativo(s)?\n\nEles deixam de poder enviar indicações pelos links atuais. Quem se cadastrar novamente pelo link genérico será reativado automaticamente.`)) return;
+    if (!(await confirmar(`Inativar ${ativos.length} indicador(es) ativo(s)?\n\nEles deixam de poder enviar indicações pelos links atuais. Quem se cadastrar novamente pelo link genérico será reativado automaticamente.`))) return;
     setInativando(true);
     try {
       await base44.entities.Parceiro.updateMany({ ativo: { $ne: false } }, { $set: { ativo: false } });

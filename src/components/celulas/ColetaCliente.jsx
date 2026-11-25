@@ -10,6 +10,7 @@ import { buildDocInicial as docsCanal } from '@/components/contratos/RncCanalBan
 import OffshoreFormModal from '@/components/contratos/OffshoreFormModal';
 import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
 import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
+import { confirmar } from '@/lib/confirmar';
 
 // Links de coleta enviados ao cliente (dados + documentos): Offshore/LLC, Conta internacional e
 // Canal bancário (RNC). Mesmos registros, funções e páginas públicas do modelo anterior.
@@ -189,7 +190,7 @@ export function LinksDeColeta({ tipo, user, t }) {
   const visiveis = (lista || []).filter(r => filtro === 'todos' || (filtro === 'aguardando' && !preenchido(r)) || (filtro === 'preenchidos' && preenchido(r)) || (filtro === 'parados' && parado(r)));
 
   const revogar = async (r) => {
-    if (!confirm(`Revogar o link de ${r.cliente_nome || r.nome || 'cliente'}? Ele deixa de abrir para o cliente; o formulário e o que já foi enviado continuam salvos.`)) return;
+    if (!(await confirmar(`Revogar o link de ${r.cliente_nome || r.nome || 'cliente'}? Ele deixa de abrir para o cliente; o formulário e o que já foi enviado continuam salvos.`))) return;
     try { await base44.entities[cfg.ent].update(r.id, { link_token: null }); toast.success('Link revogado.'); setRecarga(n => n + 1); }
     catch (e) { toast.error(e.message); }
   };
@@ -198,7 +199,7 @@ export function LinksDeColeta({ tipo, user, t }) {
     const msg = lista.length === 1
       ? `Excluir o formulário de ${lista[0].cliente_nome || lista[0].nome || 'cliente'}?${comDados ? ' ATENÇÃO: o cliente já preencheu — respostas e documentos serão apagados.' : ''} Esta ação não pode ser desfeita.`
       : `Excluir ${lista.length} formulários?${comDados ? ` ATENÇÃO: ${comDados} já foram preenchidos pelo cliente.` : ''} Esta ação não pode ser desfeita.`;
-    if (!confirm(msg)) return;
+    if (!(await confirmar(msg))) return;
     setOcupado(true);
     let ok = 0;
     for (const r of lista) { try { await base44.entities[cfg.ent].delete(r.id); ok++; } catch { /* segue */ } }

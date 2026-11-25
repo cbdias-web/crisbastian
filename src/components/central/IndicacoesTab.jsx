@@ -8,6 +8,7 @@ import NovaIndicacaoModal from './NovaIndicacaoModal';
 import DetalheJornadaIndicacao from './DetalheJornadaIndicacao';
 import KanbanIndicacoes from './KanbanIndicacoes';
 import { periodoRange, dentroPeriodo } from '../portal/FiltroIndicadores';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   surface: '#161b22',
@@ -153,7 +154,7 @@ export default function IndicacoesTab({ vendedores, parceiroIdFixo, modoIndicado
 
   const excluir = async (lead, e) => {
     if (e) e.stopPropagation();
-    if (!confirm(`Excluir a indicação de "${getNome(lead)}"?`)) return;
+    if (!(await confirmar(`Excluir a indicação de "${getNome(lead)}"?`))) return;
     try {
       await base44.entities.LeadIndicacao.delete(lead.id);
       queryClient.invalidateQueries({ queryKey: ['lead-indicacoes'] });

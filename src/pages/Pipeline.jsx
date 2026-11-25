@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { usaNovoPortal } from '@/lib/novoPortal';
 import { CELULAS, JORNADAS, celulaDoProdutoPipeline } from '@/lib/celulas';
+import { confirmar } from '@/lib/confirmar';
 
 const TEMPERATURAS = [
   { value: 'Frio', dot: 'bg-blue-500', emoji: '🧊' },
@@ -394,7 +395,7 @@ export default function Pipeline() {
 
   // Receber parcela de venda parcelada
   const receberParcela = async (n) => {
-    if (!confirm(`Confirmar recebimento da parcela de ${fmtVal(n.valor_estimado)} de "${n.cliente_nome}"? Uma venda será criada e ela contará na meta do mês.`)) return;
+    if (!(await confirmar(`Confirmar recebimento da parcela de ${fmtVal(n.valor_estimado)} de "${n.cliente_nome}"? Uma venda será criada e ela contará na meta do mês.`))) return;
     setRecebenndoParcela(n.id);
     try {
       // Buscar a ParcelaVenda vinculada a este pipeline e baixar pelo caminho único (servidor)
@@ -447,7 +448,7 @@ export default function Pipeline() {
     const nomeCelula = CELULAS[destino.celula].nome;
     const nomeProduto = JORNADAS[destino.produto].nome;
     const acao = destino.celula === 'estruturados' ? 'um estudo de viabilidade será aberto (começando pelo NDA)' : 'um contrato em rascunho será criado';
-    if (!confirm(`"${n.cliente_nome}" será enviado para a célula ${nomeCelula} · ${nomeProduto}: ${acao} e a operação será aberta na célula.`)) return;
+    if (!(await confirmar(`"${n.cliente_nome}" será enviado para a célula ${nomeCelula} · ${nomeProduto}: ${acao} e a operação será aberta na célula.`))) return;
     setConvertendo(n.id);
     try {
       const cd = await buscarClienteData(n);
@@ -525,7 +526,7 @@ export default function Pipeline() {
     const ehContrato = isProdutoContrato(n.produto);
 
     if (ehContrato) {
-      if (!confirm(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Um contrato em rascunho será criado e você será direcionado para a aba Contratos.`)) return;
+      if (!(await confirmar(`"${n.cliente_nome}" negocia um produto que requer contrato (${n.produto}). Um contrato em rascunho será criado e você será direcionado para a aba Contratos.`))) return;
       setConvertendo(n.id);
       try {
         // Buscar dados do cliente para pré-preencher o contrato
@@ -587,7 +588,7 @@ export default function Pipeline() {
     }
 
     // Fluxo normal: criar venda e ir para Vendas
-    if (!confirm(`Converter "${n.cliente_nome}" em venda? Você será direcionado para a página de Vendas para completar os detalhes.`)) return;
+    if (!(await confirmar(`Converter "${n.cliente_nome}" em venda? Você será direcionado para a página de Vendas para completar os detalhes.`))) return;
     setConvertendo(n.id);
     try {
       const vendedorNome = n.vendedor_nome || '';
@@ -1040,7 +1041,7 @@ export default function Pipeline() {
                                       <button onClick={() => openEdit(n)} title="Editar completo" className="p-0.5 text-gray-400 hover:text-blue-600">
                                         <Settings className="w-3 h-3" />
                                       </button>
-                                      <button onClick={() => { if (confirm('Remover este negócio?')) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
+                                      <button onClick={async () => { if ((await confirmar('Remover este negócio?'))) deleteMutation.mutate(n.id); }} title="Remover" className="p-0.5 text-gray-400 hover:text-red-500">
                                         <Trash2 className="w-3 h-3" />
                                       </button>
                                     </div>

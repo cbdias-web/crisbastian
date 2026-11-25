@@ -4,6 +4,7 @@ import { Target, ChevronDown, Check, Edit2, Save, X, Plus, Loader2, Trash2, Doll
 import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { mesmoNome } from "@/lib/nomes";
 import { toast } from "sonner";
+import { confirmar } from '@/lib/confirmar';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -239,14 +240,14 @@ export default function Metas() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Excluir esta meta?")) return;
+    if (!(await confirmar("Excluir esta meta?"))) return;
     await base44.entities.Meta.delete(id);
     toast.success("Meta excluída!");
     load();
   };
 
   const processarBonusDoMes = async () => {
-    if (!confirm(`Processar bônus de todos os vendedores que atingiram a meta em ${mesLabel}?`)) return;
+    if (!(await confirmar(`Processar bônus de todos os vendedores que atingiram a meta em ${mesLabel}?`))) return;
     setProcessandoBonus(true);
     try {
       const response = await base44.functions.invoke('processarBonusTodosVendedores', { mes });

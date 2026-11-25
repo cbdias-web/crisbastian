@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import ImportadorLeadsWizard from '@/components/leads/ImportadorLeadsWizard';
 import { Pause, Play, Zap as ZapIcon } from 'lucide-react';
 import { listAll, getConfigFila } from '@/lib/listAll';
+import { confirmar } from '@/lib/confirmar';
 
 const parseCSV = (text) => {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
@@ -299,7 +300,7 @@ export default function Leads() {
   };
 
   const executarDeduplicacao = async () => {
-    if (!confirm('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?')) return;
+    if (!(await confirmar('Isso vai remover leads duplicados (sem nenhuma interação registrada), mantendo apenas um por CPF/CNPJ ou nome. Continuar?'))) return;
     setDeduplicando(true);
     try {
       const res = await base44.functions.invoke('deduplicarLeads', {});
@@ -317,7 +318,7 @@ export default function Leads() {
     const msg = vendedor
       ? `Reverter os leads de "${vendedor.nome}" no lote "${lote.nome}"? Os leads voltarão para pendente e os clientes criados serão removidos.`
       : `Reverter TODA a distribuição do lote "${lote.nome}"? Todos os leads voltarão para pendente.`;
-    if (!confirm(msg)) return;
+    if (!(await confirmar(msg))) return;
     setRevertendo(lote.id);
     try {
       const payload = { loteId: lote.id };
@@ -332,7 +333,7 @@ export default function Leads() {
   };
 
   const excluirLote = async (lote) => {
-    if (!confirm(`Excluir o lote "${lote.nome}"? Os clientes já convertidos em carteira serão mantidos.`)) return;
+    if (!(await confirmar(`Excluir o lote "${lote.nome}"? Os clientes já convertidos em carteira serão mantidos.`))) return;
     setExcluindo(lote.id);
     try {
       const leadsDoLote = leads.filter(l => l.lote_id === lote.id);

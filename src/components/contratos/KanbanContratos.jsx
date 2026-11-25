@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 import { Link2, User, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   surface: '#161b22',
@@ -50,7 +51,7 @@ export default function KanbanContratos({ contratos, onSelectContrato, isAdmin, 
     if (novoStatus === source.droppableId && destination.index === source.index) return;
 
     const ct = contratos.find(c => c.id === draggableId);
-    const colunaLabel = COLUNAS.find(c => c.key === novoStatus)?.label || novoStatus;
+    const colunaLabel = COLUNAS.find(async c => c.key === novoStatus)?.label || novoStatus;
 
     // No Pipeline é atingível apenas pelo fluxo "Enviar para Vendas" (cria a Venda)
     if (novoStatus === 'no_pipeline') {
@@ -62,7 +63,7 @@ export default function KanbanContratos({ contratos, onSelectContrato, isAdmin, 
 
     // Cancelamento é irreversível nesta esteira — pede confirmação antes
     if (novoStatus === 'cancelado' && ct?.status !== 'cancelado') {
-      if (!confirm(`Cancelar o contrato de "${ct?.nome}"? Contratos cancelados saem do fluxo comercial.`)) {
+      if (!(await confirmar(`Cancelar o contrato de "${ct?.nome}"? Contratos cancelados saem do fluxo comercial.`))) {
         onRefresh();
         return;
       }

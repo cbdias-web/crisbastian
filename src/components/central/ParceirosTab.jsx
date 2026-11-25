@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Users, Plus, Link as LinkIcon, Copy, Trash2, X, Loader2, Send, Mail, Bell, BellOff, CheckCircle2, Eye, EyeOff, Eye as EyeIcon, Check, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import IndicadorBoxModal from './IndicadorBoxModal';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   surface: '#161b22',
@@ -93,7 +94,7 @@ export default function ParceirosTab({ readOnly = false }) {
   };
 
   const excluir = async (p) => {
-    if (!confirm(`Excluir o indicador "${p.nome}"? O acesso ao portal também será removido.`)) return;
+    if (!(await confirmar(`Excluir o indicador "${p.nome}"? O acesso ao portal também será removido.`))) return;
     try {
       await base44.entities.Parceiro.delete(p.id);
       // Limpa o User correspondente criado no convite, se for um User indicador.

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import ConverterLeadVendaModal from './ConverterLeadVendaModal';
 import CadastroLeadPanel from './CadastroLeadPanel';
+import { confirmar } from '@/lib/confirmar';
 
 const AURORA = {
   bg: '#0d1117',
@@ -160,7 +161,7 @@ export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, 
   };
 
   const descartarAgendada = async (inter) => {
-    if (!confirm('Descartar este contato agendado?')) return;
+    if (!(await confirmar('Descartar este contato agendado?'))) return;
     try {
       await base44.entities.InteracaoCliente.delete(inter.id);
       queryClient.invalidateQueries({ queryKey: ['interacoes-lead', leadKey] });

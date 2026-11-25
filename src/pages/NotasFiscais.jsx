@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { confirmar } from '@/lib/confirmar';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -422,7 +423,7 @@ export default function NotasFiscais() {
                             className="p-1.5 hover:bg-gray-100 rounded-lg transition" title="Editar">
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />
                           </button>
-                          <button onClick={() => { if (confirm('Excluir esta NF?')) deleteMutation.mutate(nf); }}
+                          <button onClick={async () => { if ((await confirmar('Excluir esta NF?'))) deleteMutation.mutate(nf); }}
                             className="p-1.5 hover:bg-red-50 rounded-lg transition" title="Excluir">
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                           </button>

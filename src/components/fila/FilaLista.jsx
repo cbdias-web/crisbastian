@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Loader2, Search, ChevronLeft, ChevronRight, Save, Trash2, Flame } from 'lucide-react';
 import { hojeBrasilia, fmtDataBR } from '@/lib/leadUtils';
 import { STATUS_LABEL, horasParadoItem } from './filaContatoUtils';
+import { confirmar } from '@/lib/confirmar';
 
 const A = { surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
 const SEG = { quente: '#f87171', morno: '#fbbf24', frio: '#60a5fa' };
@@ -86,7 +87,7 @@ export default function FilaLista({ vendedor, isAdmin, adminTudo, vendedores = [
   const executar = async () => {
     const itens = rows.filter(r => sel.has(r.id));
     if (!itens.length || !acao) return;
-    if (acao === 'opt_out' && !confirm(`Registrar OPT-OUT para ${itens.length} contato(s)? Eles serão colocados na lista de supressão.`)) return;
+    if (acao === 'opt_out' && !(await confirmar(`Registrar OPT-OUT para ${itens.length} contato(s)? Eles serão colocados na lista de supressão.`))) return;
     setExecutando(true);
     let ok = 0;
     for (const f of itens) {

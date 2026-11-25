@@ -15,6 +15,7 @@ import ValoresContratoEditor from './ValoresContratoEditor';
 import ZapsignEnviarModal from './ZapsignEnviarModal';
 import { useEnvioVendasDialog } from './EnviarVendasDialog';
 import { resolverVendedorDoContrato, MSG_VENDEDOR_NAO_VINCULADO } from '@/lib/vendedorContrato';
+import { confirmar } from '@/lib/confirmar';
 
 const TIPO_COLOR = {
   'CONTA GLOBAL': '#0f1e35',
@@ -78,7 +79,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   });
 
   const alterarStatus = async (novoStatus) => {
-    if (!confirm(`Alterar status para "${STATUS_CONFIG[novoStatus]?.label}"?`)) return;
+    if (!(await confirmar(`Alterar status para "${STATUS_CONFIG[novoStatus]?.label}"?`))) return;
     setAlterandoStatus(true);
     setStatusDropdownOpen(false);
     try {
@@ -191,7 +192,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
       toast.error('Por favor, selecione um arquivo PDF.');
       return;
     }
-    if (substituindo && !confirm('Substituir o PDF atual por este novo arquivo? O arquivo anterior será removido.')) {
+    if (substituindo && !(await confirmar('Substituir o PDF atual por este novo arquivo? O arquivo anterior será removido.'))) {
       return;
     }
     setUploadandoPDF(true);
@@ -210,7 +211,7 @@ export default function ContratoViewer({ contrato: contratoInicial, onBack, onUp
   };
 
   const excluirPDF = async () => {
-    if (!confirm('Excluir o PDF anexado? Esta ação não pode ser desfeita.')) return;
+    if (!(await confirmar('Excluir o PDF anexado? Esta ação não pode ser desfeita.'))) return;
     try {
       await base44.entities.Contrato.update(contrato.id, { pdf_url: null });
       handleUpdate({ ...contrato, pdf_url: null });

@@ -5,6 +5,7 @@ import { DollarSign, CheckCircle, Download, ChevronDown, Check, Pencil, X, Save,
 import { format, parseISO, startOfMonth } from "date-fns";
 import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { toast } from "sonner";
+import { confirmar } from '@/lib/confirmar';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -223,7 +224,7 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                               {c.pago ? "Pend." : "Pago"}
                             </button>
                             {c.tipo === 'bonus' && (
-                              <button onClick={() => { if (confirm("Remover este bônus?")) deleteMutation.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg transition">
+                              <button onClick={async () => { if ((await confirmar("Remover este bônus?"))) deleteMutation.mutate(c.id); }} className="p-1.5 hover:bg-red-50 rounded-lg transition">
                                 <Trash2 className="w-3.5 h-3.5 text-red-400" />
                               </button>
                             )}

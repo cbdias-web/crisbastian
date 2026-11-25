@@ -8,6 +8,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { mensagemNaoDiaUtil } from '@/lib/diaUtil';
+import { confirmar } from '@/lib/confirmar';
 
 const CONNECTOR_ID = '69fb9176f017da4e4ddd9ff8';
 
@@ -164,7 +165,7 @@ export default function AgendaCard({ item, onAction, onDelete, onPipeline, onCli
             style={{ color: 'rgba(230,237,243,0.7)' }}>
             <Calendar className="w-2.5 h-2.5" /> Editar data
           </button>
-          <button onClick={(e) => { e.stopPropagation(); setMenuOpen(false); if (confirm(`Excluir agendamento de "${item.lead_nome}"?`)) onDelete(item); }}
+          <button onClick={async (e) => { e.stopPropagation(); setMenuOpen(false); if ((await confirmar(`Excluir agendamento de "${item.lead_nome}"?`))) onDelete(item); }}
             className="w-full text-left px-2.5 py-1.5 text-[10px] transition flex items-center gap-1.5"
             style={{ color: '#f87171' }}>
             <X className="w-2.5 h-2.5" /> Excluir

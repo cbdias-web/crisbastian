@@ -6,6 +6,7 @@ import {
   BookOpen, Search, Filter, Trash2, Eye, EyeOff, RefreshCw, ScrollText, Link2, Calculator, Rocket
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { confirmar } from '@/lib/confirmar';
 
 const formatCurrency = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 const formatDate = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
@@ -434,7 +435,7 @@ export default function Notificacoes() {
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium text-sm disabled:opacity-50">
                           <Check className="w-4 h-4" /> Marcar como resolvido
                         </button>
-                        <button onClick={() => { if (confirm('Remover esta notificação?')) excluirMutation.mutate(notif.id); }}
+                        <button onClick={async () => { if ((await confirmar('Remover esta notificação?'))) excluirMutation.mutate(notif.id); }}
                           className="px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition text-sm">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -477,7 +478,7 @@ export default function Notificacoes() {
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition font-medium text-sm disabled:opacity-50">
                           <Check className="w-4 h-4" /> Marcar como resolvido
                         </button>
-                        <button onClick={() => { if (confirm('Remover esta notificação?')) excluirMutation.mutate(notif.id); }}
+                        <button onClick={async () => { if ((await confirmar('Remover esta notificação?'))) excluirMutation.mutate(notif.id); }}
                           className="px-4 py-2.5 border border-gray-200 text-gray-500 rounded-xl hover:bg-gray-50 transition text-sm">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -605,7 +606,7 @@ export default function Notificacoes() {
                       </button>
                     )}
                     <button
-                      onClick={() => { if (confirm('Remover esta notificação do histórico?')) excluirMutation.mutate(notif.id); }}
+                      onClick={async () => { if ((await confirmar('Remover esta notificação do histórico?'))) excluirMutation.mutate(notif.id); }}
                       className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-600 font-medium px-3 py-1.5 border border-red-100 rounded-lg hover:bg-red-50 transition ml-auto">
                       <Trash2 className="w-3.5 h-3.5" /> Remover
                     </button>
