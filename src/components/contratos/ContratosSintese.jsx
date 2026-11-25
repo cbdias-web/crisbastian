@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { Search, Loader2, ChevronRight, UserRound, DatabaseZap, X, ScrollText } from 'lucide-react';
-import { celulaDoProdutoPipeline, JORNADAS } from '@/lib/celulas';
+import { celulaDoProdutoPipeline } from '@/lib/celulas';
 import { abrirFicha } from '@/components/celulas/FichaCliente';
 
 // Contratos no novo portal: SÍNTESE do que foi negociado (cliente, produto, valor, condições, gerente,

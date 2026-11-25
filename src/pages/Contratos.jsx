@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { FileText, Eye, Trash2, Search, Globe, Globe2, DollarSign, FilePlus, Edit2, ShoppingCart, Loader2, Link2, Building2, ChevronDown, X, BarChart3, FileCheck2 } from 'lucide-react';
 import RelatorioContratosModal from '@/components/contratos/RelatorioContratosModal';
+import ContratosSintese from '@/components/contratos/ContratosSintese';
+import { usaNovoPortal } from '@/lib/novoPortal';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { todayBrasilia } from '@/lib/dateUtils';
@@ -48,7 +50,18 @@ const STATUS_CONFIG = {
 const fmtVal = (v) => v != null ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
 
+// Novo portal: a página Contratos mostra a síntese do negociado; o operacional fica nas células.
+// Administradores ainda podem abrir a visão antiga com ?legado=1.
 export default function Contratos() {
+  const [usuario, setUsuario] = useState(undefined);
+  useEffect(() => { base44.auth.me().then(setUsuario).catch(() => setUsuario(null)); }, []);
+  const legado = new URLSearchParams(window.location.search).get('legado') === '1';
+  if (usuario === undefined) return <div className="min-h-screen flex items-center justify-center" style={{ background: '#0B111C' }}><Loader2 className="w-6 h-6 animate-spin" style={{ color: '#C9A962' }} /></div>;
+  if (usaNovoPortal(usuario) && !legado) return <ContratosSintese user={usuario} />;
+  return <ContratosLegado />;
+}
+
+function ContratosLegado() {
   const [user, setUser] = useState(null);
   const [view, setView] = useState('lista');
   const [viewMode, setViewMode] = useState('lista');
