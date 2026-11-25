@@ -6,6 +6,7 @@ import {
   History, Loader2, Plus, Send, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   surface: '#161b22',
@@ -84,7 +85,7 @@ export default function PainelInteracoesCliente({
     tipo: 'Ligação',
     descricao: '',
     resultado: 'Positivo',
-    data_interacao: new Date().toISOString().split('T')[0],
+    data_interacao: todayBrasilia(),
     proximo_contato: '',
   });
 
@@ -164,7 +165,7 @@ export default function PainelInteracoesCliente({
       queryClient.invalidateQueries({ queryKey: ['detalhe-jornada-indicacao'] });
       setForm({
         tipo: 'Ligação', descricao: '', resultado: 'Positivo',
-        data_interacao: new Date().toISOString().split('T')[0], proximo_contato: '',
+        data_interacao: todayBrasilia(), proximo_contato: '',
       });
       setShowForm(false);
       toast.success('Interação registrada!');

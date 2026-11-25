@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Loader2, Save, X, Phone, Video, Copy, CheckCircle2, Users, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { isDiaUtil, mensagemNaoDiaUtil } from '@/lib/diaUtil';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   surface: '#161b22',
@@ -13,7 +14,7 @@ const AURORA = {
   textMuted: 'rgba(230,237,243,0.55)',
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 export default function RegistroLigacaoForm({ fila, vendedor, onConcluido, onCancelar, agenda = null }) {
   const [form, setForm] = useState({ tipo: 'Ligação', descricao: '', data_interacao: today(), proximo_contato: '', resultado: 'Positivo' });

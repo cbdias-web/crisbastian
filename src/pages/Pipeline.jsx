@@ -286,7 +286,7 @@ export default function Pipeline() {
             vendedor_nome: data.vendedor_nome || '',
             tipo: data.tipo_contato || 'Outro',
             descricao: data.descricao,
-            data_interacao: data.data_contato || new Date().toISOString().split('T')[0],
+            data_interacao: data.data_contato || todayBrasilia(),
             proximo_contato: data.proximo_contato || '',
             resultado: data.resultado_contato || 'Neutro',
           });
@@ -600,7 +600,7 @@ export default function Pipeline() {
         cliente: n.cliente_nome || '',
         cpf_cnpj: n.cliente_cpf_cnpj || '',
         valor: n.valor_estimado || 0,
-        data: new Date().toISOString().split('T')[0],
+        data: todayBrasilia(),
         tipo_venda: 'nova',
         observacao: `Originado do Pipeline. ${n.descricao || ''}`.trim(),
       });
@@ -913,7 +913,7 @@ export default function Pipeline() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {[...parcelasParaExibir].sort((a, b) => (a.data_vencimento || '').localeCompare(b.data_vencimento || '')).map(p => {
-                      const vencido = p.data_vencimento && p.data_vencimento < new Date().toISOString().split('T')[0];
+                      const vencido = p.data_vencimento && p.data_vencimento < todayBrasilia();
                       return (
                         <tr key={p.id} className={`hover:bg-gray-50 transition ${vencido ? 'bg-red-50' : ''}`}>
                           <td className="px-4 py-3">
@@ -939,7 +939,7 @@ export default function Pipeline() {
                             <button
                               onClick={() => {
                                 setModalReceber(p);
-                                setRecebimentoForm({ data: new Date().toISOString().split('T')[0], valor: String(p.valor_parcela || '') });
+                                setRecebimentoForm({ data: todayBrasilia(), valor: String(p.valor_parcela || '') });
                               }}
                               disabled={recebenndoParcela === p.id}
                               className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition disabled:opacity-50"

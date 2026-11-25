@@ -11,6 +11,7 @@ import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 // Canais fixos (não podem ser removidos)
 const CANAIS_FIXOS = [
@@ -430,7 +431,7 @@ export default function ChatPage() {
   const gerarMeet = async () => {
     setCriandoMeet(true);
     try {
-      const dataHoje = new Date().toISOString().split('T')[0];
+      const dataHoje = todayBrasilia();
       const horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const nomeLocal = active.type === 'canal' ? `Chat #${active.id}` : `DM com ${active.nome}`;
       const agendaTemp = await base44.entities.AgendaContato.create({

@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Loader2, CheckCircle2, FileText, UserCheck, Package, User, AlertTriangle } from 'lucide-react';
 import CampoMascara from '@/components/ui/campo-mascara';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   surface: '#161b22',
@@ -16,7 +17,7 @@ const AURORA = {
   green: '#34d399',
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido }) {
   const [valor, setValor] = useState('');

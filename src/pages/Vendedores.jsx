@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import RelatorioConsolidadoModal from "@/components/vendedores/RelatorioConsolidadoModal";
 import { normalizarCelular, formatarCelular } from "@/lib/celular";
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const EMPTY = { nome: "", email: "", time: "", percentual_comissao: 10, ativo: true, celular_operadora: "", operadora: "Vivo" };
 
@@ -301,7 +302,7 @@ export default function Vendedores() {
           valor_venda: 0,
           percentual: 0,
           valor_comissao: valor,
-          data_venda: new Date().toISOString().split('T')[0],
+          data_venda: todayBrasilia(),
           pago: false,
           tipo: 'bonus',
           mes_referencia: mesFiltro

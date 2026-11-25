@@ -10,6 +10,7 @@ import KanbanImplantacoes from '@/components/implantacoes/KanbanImplantacoes';
 import PadrinhosModal from '@/components/implantacoes/PadrinhosModal';
 import MultiSelectFiltro from '@/components/ui/MultiSelectFiltro';
 import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -189,7 +190,7 @@ export default function Implantacoes() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-implantacoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `relatorio-implantacoes-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatório gerado!');

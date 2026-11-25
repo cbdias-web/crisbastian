@@ -15,6 +15,7 @@ import { consultarCep } from "@/lib/autocomplete";
 import CampoMoeda from "@/components/ui/campo-moeda";
 import PainelRecorrencia from "./PainelRecorrencia";
 import { produtoSemContrato } from "@/lib/vendaProducao";
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const formasPagamento = [
   "DÉBITO EM CONTA", "CARTÃO DE CRÉDITO", "BOLETO", "PIX", "TRANSFERÊNCIA", "DINHEIRO"
@@ -120,7 +121,7 @@ export default function VendaForm({ venda, onSave, onCancel, isLoading, isAdmin 
     setCriandoCliente(false);
   };
 
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = todayBrasilia();
 
   const [formData, setFormData] = useState(venda ?? {
     produto: '', assessor_comercial: '', time: '', valor: '', data: hoje,

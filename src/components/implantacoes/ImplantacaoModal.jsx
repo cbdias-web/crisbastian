@@ -7,6 +7,7 @@ import PainelInteracoesCliente from './PainelInteracoesCliente';
 import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
 import { requerAberturaCC } from '@/lib/implantacaoCC';
 import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -84,7 +85,7 @@ export default function ImplantacaoModal({ implantacao, isAdmin, canEdit, user, 
       let statusFinal = form.status;
       let dataConclusao = form.data_conclusao;
       if (statusFinal === 'concluido' && !dataConclusao) {
-        dataConclusao = new Date().toISOString().split('T')[0];
+        dataConclusao = todayBrasilia();
       }
       if (statusFinal !== 'concluido') {
         dataConclusao = '';

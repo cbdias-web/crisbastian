@@ -5,6 +5,7 @@ import { Calendar, Phone, CheckCircle2, XCircle, Clock, RotateCcw, ChevronDown, 
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const statusConfig = {
   pendente: { label: 'Pendente', color: 'bg-amber-100 text-amber-700', icon: Clock },
@@ -13,7 +14,7 @@ const statusConfig = {
   reagendado: { label: 'Reagendado', color: 'bg-blue-100 text-blue-600', icon: RotateCcw },
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 function getLabelData(dateStr) {
   try {

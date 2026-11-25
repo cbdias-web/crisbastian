@@ -22,6 +22,7 @@ import { usaNovoPortal } from "@/lib/novoPortal";
 import { SlidersHorizontal } from "lucide-react";
 import DashNovo from "@/components/dashboard/DashNovo";
 import VendasGerentePopup from "@/components/dashboard/VendasGerentePopup";
+import { todayBrasilia } from '@/lib/dateUtils';
 
 // ─── Aurora tokens ──────────────────────────────────────────────────────────
 const A = {
@@ -253,7 +254,7 @@ export default function Dashboard() {
     try {
       if (!vendedorId) return;
       const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendedorId }, '-data_interacao');
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = todayBrasilia();
       const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendedorId });
       const agendaMap = new Set(agendas.map(a => `${a.lead_id}-${a.data_agendada}`));
       for (const inter of interacoes) {
@@ -333,7 +334,7 @@ export default function Dashboard() {
         if (vendedorAtivo) {
           setVendedor(vendedorAtivo);
           setTimeout(() => sincronizarAgenda(vendedorAtivo.id), 500);
-          const hoje = new Date().toISOString().split('T')[0];
+          const hoje = todayBrasilia();
           base44.entities.AgendaContato.filter({ vendedor_id: vendedorAtivo.id })
             .then(agenda => {
               const pendentes = agenda.filter(a => a.data_agendada === hoje && a.status === 'pendente').length;

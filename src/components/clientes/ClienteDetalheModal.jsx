@@ -12,8 +12,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
+import { todayBrasilia } from '@/lib/dateUtils';
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 const resultadoConfig = {
   'Positivo': { color: 'text-emerald-600 bg-emerald-50 border-emerald-100', icon: CheckCircle2 },
@@ -167,7 +168,7 @@ function AbaInteracoes({ clienteId, cliente, vendedor, user }) {
   });
 
   const removeAgendaFutura = async () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayBrasilia();
     const agendas = await base44.entities.AgendaContato.filter({ lead_id: clienteId });
     const futuras = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
     for (const a of futuras) await base44.entities.AgendaContato.delete(a.id);

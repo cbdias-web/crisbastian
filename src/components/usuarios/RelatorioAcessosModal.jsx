@@ -6,6 +6,7 @@ import { X, FileDown, Loader2, Wifi, Clock, Shield, Activity, Users, Search, Che
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
 import UserDetailPopup from './UserDetailPopup';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -19,7 +20,7 @@ const AURORA = {
   textDim: 'rgba(230,237,243,0.35)',
 };
 
-const hoje = new Date().toISOString().split('T')[0];
+const hoje = todayBrasilia();
 
 const formatDataHora = (iso) => {
   if (!iso) return { data: 'Nunca acessou', hora: '—', relativo: '—' };
@@ -256,7 +257,7 @@ export default function RelatorioAcessosModal({ usuarios, preSelecionados = [], 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-acessos-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `relatorio-acessos-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatorio PDF gerado!');

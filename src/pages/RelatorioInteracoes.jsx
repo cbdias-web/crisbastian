@@ -11,8 +11,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
  import { toast } from 'sonner';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 const firstOfMonth = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
@@ -356,7 +357,7 @@ export default function RelatorioInteracoes() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-interacoes-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `relatorio-interacoes-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatório gerado!');

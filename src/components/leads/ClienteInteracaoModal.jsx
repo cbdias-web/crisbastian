@@ -6,8 +6,9 @@ import { X, Save, Star, Phone, Mail, MapPin, Clock, CheckCircle2, XCircle, Minus
 import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 const resultadoConfig = {
   'Positivo': { style: { background: 'rgba(16,185,129,0.15)', color: '#10b981' }, icon: CheckCircle2 },
@@ -65,7 +66,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
   }, [interacoes]);
 
   const removeAgendaFutura = async () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = todayBrasilia();
     const agendas = await base44.entities.AgendaContato.filter({ lead_id: clienteId });
     const futuras = agendas.filter(a => a.status === 'pendente' && a.data_agendada >= todayStr);
     for (const a of futuras) await base44.entities.AgendaContato.delete(a.id);

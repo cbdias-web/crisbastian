@@ -15,9 +15,10 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const WEEK_DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-const todayStr = () => new Date().toISOString().split('T')[0];
+const todayStr = () => todayBrasilia();
 
 // ── Mini Calendar ────────────────────────────────────────────────────────────
 

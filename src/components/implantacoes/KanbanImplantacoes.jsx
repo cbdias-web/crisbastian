@@ -6,6 +6,7 @@ import { User, Calendar, Link2, FileWarning, Clock, AlertTriangle, Crown } from 
 import { format } from 'date-fns';
 import { registrarRejeicaoComplianceLead } from '@/lib/implantacaoCompliance';
 import { requerAberturaCC } from '@/lib/implantacaoCC';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -78,7 +79,7 @@ export default function KanbanImplantacoes({ implantacoes, onSelectImplantacao, 
       };
 
       if ((novoStatus === 'concluido' || novoStatus === 'concluido_feedback') && !impl.data_conclusao) {
-        updateData.data_conclusao = new Date().toISOString().split('T')[0];
+        updateData.data_conclusao = todayBrasilia();
       }
       if (novoStatus !== 'concluido' && novoStatus !== 'concluido_feedback') {
         updateData.data_conclusao = '';

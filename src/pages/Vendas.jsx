@@ -20,6 +20,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
@@ -499,7 +500,7 @@ export default function Vendas() {
   const handleDuplicate = async (venda) => {
     if (!(await confirmar(`Duplicar a venda de "${venda.cliente || venda.produto}"?`))) return;
     const { id, created_date, updated_date, created_by, ...dados } = venda;
-    createMutation.mutate({ ...dados, data: new Date().toISOString().split('T')[0] });
+    createMutation.mutate({ ...dados, data: todayBrasilia() });
   };
 
   const filteredVendas = vendas.filter(venda => {
@@ -545,7 +546,7 @@ export default function Vendas() {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `vendas_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `vendas_${todayBrasilia()}.csv`;
     link.click();
     toast.success('Vendas exportadas!');
   };
@@ -565,7 +566,7 @@ export default function Vendas() {
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `clientes_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    link.download = `clientes_${todayBrasilia()}.csv`;
     link.click();
     toast.success('Clientes exportados!');
   };
@@ -595,7 +596,7 @@ export default function Vendas() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-vendas-selecionadas-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `relatorio-vendas-selecionadas-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`Relatório gerado com ${vendasSelecionadas.length} venda(s) selecionada(s)!`);
@@ -627,7 +628,7 @@ export default function Vendas() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-vendas-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `relatorio-vendas-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatório gerado!');

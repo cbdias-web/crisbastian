@@ -10,6 +10,7 @@ import {
 import ConverterLeadVendaModal from './ConverterLeadVendaModal';
 import CadastroLeadPanel from './CadastroLeadPanel';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117',
@@ -40,7 +41,7 @@ const TIPO_ICON = {
   'Outro': MessageSquare,
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 export default function LeadAbordagemModal({ conversa, user, vendedor, isAdmin, onAbrirChat, onGerenciar, onClose, onAtualizado }) {
   const leadKey = conversa.lead_id || conversa.id;

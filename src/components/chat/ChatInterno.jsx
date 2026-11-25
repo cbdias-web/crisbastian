@@ -8,6 +8,7 @@ import {
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const CANAIS_PADRAO = [
   { id: 'geral', nome: 'Geral', icone: '🏢', descricao: 'Canal geral da equipe' },
@@ -188,7 +189,7 @@ export default function ChatInterno() {
     setCriandoMeet(true);
     try {
       // Cria evento simples no Google Calendar com Meet
-      const dataHoje = new Date().toISOString().split('T')[0];
+      const dataHoje = todayBrasilia();
       const horaAgora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       
       // Usa um ID temporário para o agendamento

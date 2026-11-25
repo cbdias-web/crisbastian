@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import CampoMascara from '@/components/ui/campo-mascara';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 /**
  * Modal de agendamento com Meet integrado.
@@ -34,7 +35,7 @@ export default function AgendaMeetModal({
   onClose,
   onSaved,
 }) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayBrasilia();
 
   const [form, setForm] = useState({
     nome: clienteNome,

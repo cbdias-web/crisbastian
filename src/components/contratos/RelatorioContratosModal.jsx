@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, FileDown, Loader2, FileText, DollarSign, CheckCircle, ShoppingCart, Link2, Search, TrendingUp, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { toast } from 'sonner';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const AURORA = {
   bg: '#0d1117', surface: '#161b22', surface2: '#1c2333',
@@ -113,7 +114,7 @@ export default function RelatorioContratosModal({ onClose }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-contratos-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `relatorio-contratos-${todayBrasilia()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Relatório PDF gerado!');

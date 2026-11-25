@@ -14,6 +14,7 @@ import { Users, MessageSquare, Plus, ChevronDown, ChevronRight, Phone, Mail, Cal
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const tipoIcons = {
   'Ligação': Phone,
@@ -31,7 +32,7 @@ const resultadoConfig = {
   'Sem resposta': { color: 'text-gray-500 bg-gray-100', icon: Clock },
 };
 
-const today = () => new Date().toISOString().split('T')[0];
+const today = () => todayBrasilia();
 
 export default function MeusClientes() {
   const [user, setUser] = useState(null);
@@ -74,7 +75,7 @@ export default function MeusClientes() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const queryClient = useQueryClient();
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = todayBrasilia();
 
   // Sincronizar agenda ao entrar na página
   const sincronizarAgenda = async () => {
@@ -84,7 +85,7 @@ export default function MeusClientes() {
       
       // Buscar todas as interações do vendedor com próximo_contato definido
       const interacoes = await base44.entities.InteracaoCliente.filter({ vendedor_id: vendId }, '-data_interacao');
-      const hoje = new Date().toISOString().split('T')[0];
+      const hoje = todayBrasilia();
       
       // Agendar novos contatos a partir do próximo_contato das interações
       const agendas = await base44.entities.AgendaContato.filter({ vendedor_id: vendId });
@@ -203,7 +204,7 @@ export default function MeusClientes() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.InteracaoCliente.create(data),
     onSuccess: async (_, variables) => {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = todayBrasilia();
 
       if (variables.cliente_id) {
         const agendas = await base44.entities.AgendaContato.filter({ lead_id: variables.cliente_id });
@@ -608,7 +609,7 @@ export default function MeusClientes() {
       let fila = candidatas[0] || null;
 
       if (!fila) {
-        const hojeStr = new Date().toISOString().split('T')[0];
+        const hojeStr = todayBrasilia();
         fila = await base44.entities.FilaContato.create({
           tipo_origem: 'carteira',
           ref_id: refId,

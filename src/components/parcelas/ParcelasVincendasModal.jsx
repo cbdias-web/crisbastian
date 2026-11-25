@@ -6,6 +6,7 @@ import { X, Pencil, Trash2, Save, Check, DollarSign, RotateCcw } from 'lucide-re
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const fmtVal = (v) => v?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? 'R$ 0,00';
 const fmtDate = (d) => d ? format(new Date(d + 'T00:00:00'), 'dd/MM/yyyy') : '—';
@@ -237,7 +238,7 @@ export default function ParcelasVincendasModal({ onClose, user }) {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {parcelasFiltradas.map(p => {
-                  const vencida = p.data_vencimento && p.data_vencimento < new Date().toISOString().split('T')[0] && p.status === 'pendente';
+                  const vencida = p.data_vencimento && p.data_vencimento < todayBrasilia() && p.status === 'pendente';
                   const isEditing = editingId === p.id;
 
                   return (

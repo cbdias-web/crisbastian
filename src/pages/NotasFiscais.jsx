@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { confirmar } from '@/lib/confirmar';
+import { todayBrasilia } from '@/lib/dateUtils';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -21,7 +22,7 @@ const STATUS_FLAGS = [
 
 const EMPTY_FORM = {
   cliente_parceiro: '', valor_liquido: '', produto: '',
-  data_emissao: new Date().toISOString().split('T')[0],
+  data_emissao: todayBrasilia(),
   id_cobranca: '', observacao: '',
   mapa_producao_url: '', mapa_producao_nome: '',
   nf_url: '', nf_nome: '',
@@ -117,7 +118,7 @@ export default function NotasFiscais() {
           assessor_comercial: 'NOTA FISCAL',
           cliente: nf.cliente_parceiro,
           valor: nf.valor_liquido,
-          data: nf.data_emissao || new Date().toISOString().split('T')[0],
+          data: nf.data_emissao || todayBrasilia(),
           observacao: `Lançamento automático via NF. ID Cobrança: ${nf.id_cobranca || '-'}`,
           forma_pagamento: 'TRANSFERÊNCIA',
         });
@@ -212,7 +213,7 @@ export default function NotasFiscais() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `notas-fiscais-${format(new Date(), 'yyyy-MM-dd')}.html`;
+    a.download = `notas-fiscais-${todayBrasilia()}.html`;
     a.click();
     URL.revokeObjectURL(url);
     setGerandoPDF(false);
