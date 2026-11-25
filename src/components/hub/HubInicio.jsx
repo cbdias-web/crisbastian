@@ -59,7 +59,8 @@ function Popup({ titulo, cor = TEAL, Icone, onClose, children, largura = 720 }) 
 export default function HubInicio({ user, groups, isAdmin }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [blocoAberto, setBlocoAberto] = useState(null);
+  // ?bloco=Apoio (vindo do caminho "Portal › Bloco" das páginas) reabre o menu de origem
+  const [blocoAberto, setBlocoAberto] = useState(() => new URLSearchParams(location.search).get('bloco'));
   const [postAberto, setPostAberto] = useState(null);
   const [itens, setItens] = useState([]);
   const [estudosAbertos, setEstudosAbertos] = useState(null);

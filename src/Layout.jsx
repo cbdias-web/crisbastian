@@ -26,6 +26,7 @@ import ProspeccaoOverlay from '@/components/hub/ProspeccaoOverlay.jsx';
 import CelulaLauncher from '@/components/celulas/CelulaLauncher.jsx';
 import HubInicio from '@/components/hub/HubInicio.jsx';
 import HeaderAvatares from '@/components/hub/HeaderAvatares.jsx';
+import BarraNavegacao from '@/components/layout/BarraNavegacao.jsx';
 import { usaNovoPortal } from '@/lib/novoPortal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -51,6 +52,14 @@ const AURORA = {
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const location = useLocation();
+  // Tela de origem (para o "Voltar" da barra de navegação quando não há histórico)
+  const ultimaRotaRef = useRef(null);
+  const [rotaOrigem, setRotaOrigem] = useState(null);
+  useEffect(() => {
+    const atual = location.pathname + location.search;
+    if (ultimaRotaRef.current && ultimaRotaRef.current.split('?')[0] !== location.pathname) setRotaOrigem(ultimaRotaRef.current);
+    ultimaRotaRef.current = atual;
+  }, [location.pathname, location.search]);
   const [user, setUser] = useState(null);
   const [parceiroByEmail, setParceiroByEmail] = useState(null);
   const [darkMode, setDarkMode] = useState(true);
@@ -753,6 +762,10 @@ export default function Layout({ children, currentPageName }) {
           </div>
         )}
         <BannerAlertaSistema user={user} />
+        {!mostrarCapa && !isIndicador && (
+          <BarraNavegacao grupos={novoPortal ? navGroupsPortal : navGroups} currentPageName={currentPageName} origem={rotaOrigem}
+            novoPortal={novoPortal} home={novoPortal ? '/Inicio' : '/'} />
+        )}
         {mostrarCapa ? <HubInicio user={user} groups={navGroupsPortal} isAdmin={isAdmin} /> : children}
       </main>
 
