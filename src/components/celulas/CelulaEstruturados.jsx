@@ -1010,6 +1010,9 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
             abrirOp?.(c.id);
           }} />
       )}
+      {formModal && ct && (
+        <RncCanalBancarioModal contrato={ct} rncId={rnc?.id || null} user={user} onClose={() => { setFormModal(false); recarregar?.(); }} />
+      )}
     </div>
   );
 }
