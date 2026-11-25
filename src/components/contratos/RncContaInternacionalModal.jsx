@@ -346,6 +346,16 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <CardSection title="Envio ao cliente" icon={MessageSquare} open={sDestOpen} onToggle={() => setSDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="conta" valor={destinatario}
+              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
+              onSelecionarCliente={(c) => {
+                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
+                setS1(f => ({ ...f, secao1_email: f.secao1_email || c.email || '', secao1_celular: f.secao1_celular || c.telefone || '', secao1_pj_razao_social: f.secao1_pj_razao_social || c.nome || '' }));
+                setS3(f => ({ ...f, secao3_nome: f.secao3_nome || c.nome || '', secao3_cpf: f.secao3_cpf || c.cpf_cnpj || '', secao3_email: f.secao3_email || c.email || '' }));
+              }} />
+          </CardSection>
 
           {/* Tipo PF / PJ */}
           <div className="grid grid-cols-2 gap-3">
@@ -374,16 +384,6 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
           />
 
           {/* SEÇÃO 1 — INFORMAÇÕES DA CONTA */}
-          <CardSection title="Envio ao cliente" icon={MessageSquare} open={sDestOpen} onToggle={() => setSDestOpen(p => !p)}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo="conta" valor={destinatario}
-              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
-              onSelecionarCliente={(c) => {
-                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
-                setS1(f => ({ ...f, secao1_email: f.secao1_email || c.email || '', secao1_celular: f.secao1_celular || c.telefone || '', secao1_pj_razao_social: f.secao1_pj_razao_social || c.nome || '' }));
-                setS3(f => ({ ...f, secao3_nome: f.secao3_nome || c.nome || '', secao3_cpf: f.secao3_cpf || c.cpf_cnpj || '', secao3_email: f.secao3_email || c.email || '' }));
-              }} />
-          </CardSection>
           <CardSection title="Seção 1 — Informações da Conta" icon={Globe} open={s1Open} onToggle={() => setS1Open(p => !p)}>
             <div className="space-y-3">
               <RadioBtns label="Tipo de Conta"

@@ -270,6 +270,12 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <CardSection title="Envio ao cliente" icon={MessageSquare} open={open.dest} onToggle={() => toggle('dest')}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="offshore" valor={destinatario}
+              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
+              onSelecionarCliente={aplicarCliente} />
+          </CardSection>
           {pendencias.length > 0 ? (
             <div className="rounded-xl p-3" style={{ background: AURORA.goldDim, border: '1px solid rgba(251,191,36,0.25)' }}>
               <p className="text-xs font-bold flex items-center gap-1.5 mb-1" style={{ color: AURORA.gold }}>
@@ -284,12 +290,6 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
             </div>
           )}
 
-          <CardSection title="Envio ao cliente" icon={MessageSquare} open={open.dest} onToggle={() => toggle('dest')}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo="offshore" valor={destinatario}
-              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
-              onSelecionarCliente={aplicarCliente} />
-          </CardSection>
           <CardSection title="Seção 1 — Dados do Contratante" icon={User} open={open.ct} onToggle={() => toggle('ct')}
             badge={ct.contratante_nome ? ct.contratante_nome.split(' ')[0] : 'definir cliente'}>
             <div className="mb-3"><ClienteEstudoPicker onSelecionar={aplicarCliente} /></div>

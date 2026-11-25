@@ -508,6 +508,12 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <CardSection title="Envio ao cliente" icon={MessageSquare}
+            open={secaoDestOpen} onToggle={() => setSecaoDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo={msgKey} valor={destinatario} onChange={updateDestinatario}
+              onSelecionarCliente={(c) => selecionarCliente(c)} />
+          </CardSection>
           {/* Buscar cliente (apenas standalone) */}
           {!contrato?.id && (
             <div className="rounded-xl p-4" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
@@ -592,12 +598,6 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
           </div>
 
           {/* Dados cadastrais */}
-          <CardSection title="Envio ao cliente" icon={MessageSquare}
-            open={secaoDestOpen} onToggle={() => setSecaoDestOpen(p => !p)}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo={msgKey} valor={destinatario} onChange={updateDestinatario}
-              onSelecionarCliente={(c) => selecionarCliente(c)} />
-          </CardSection>
           <CardSection title={`Dados Cadastrais — ${tipoCanal === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}`} icon={User}
             open={secaoDadosOpen} onToggle={() => setSecaoDadosOpen(p => !p)}>
             <div className="grid grid-cols-2 gap-3">
