@@ -2,13 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
+import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound } from 'lucide-react';
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal from './NdaGeradorModal';
 import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 import NovaOperacaoModal from './NovaOperacaoModal';
+import LeadsDaJornada from './LeadsDaJornada';
+import { abrirFicha } from './FichaCliente';
+import RncCanalBancarioModal from '@/components/contratos/RncCanalBancarioModal';
+import RncContaInternacionalModal from '@/components/contratos/RncContaInternacionalModal';
+import OffshoreFormModal from '@/components/contratos/OffshoreFormModal';
 import { DetalheEstudoModal } from '@/pages/EstudoViabilidade';
 import { Workspace as AnaliseWorkspace } from '@/pages/AnaliseTecnica';
 import { valorHonorariosProjeto, somaEtapas } from '@/lib/propostaTecnica';
@@ -79,6 +84,8 @@ function Overlay({ cfg, sp, setSp }) {
   const [etapaFiltro, setEtapaFiltro] = useState(null);
   const [ndaModal, setNdaModal] = useState(null); // { estudo } | null
   const [novaOp, setNovaOp] = useState(false);
+  const [modoLista, setModoLista] = useState('operacoes'); // operacoes | leads
+  const fichaDe = (o) => abrirFicha(setSp, sp, { clienteId: o.raw.estudo?.cliente_id || o.raw.contrato?.cliente_id || o.raw.neg?.cliente_id, doc: o.doc });
   const [recarga, setRecarga] = useState(0);
   const recarregar = () => setRecarga(n => n + 1);
 
@@ -122,7 +129,7 @@ function Overlay({ cfg, sp, setSp }) {
       .finally(() => setLoading(false));
   }, [cfg.id, recarga]);
 
-  useEffect(() => { setEtapaFiltro(null); setBusca(''); }, [produto]);
+  useEffect(() => { setEtapaFiltro(null); setBusca(''); setModoLista('operacoes'); }, [produto]);
 
   // Operações normalizadas: { id, kind, cliente, sub, responsavel, etapa, acao, quando, raw }
   const operacoes = useMemo(() => {
@@ -271,9 +278,9 @@ function Overlay({ cfg, sp, setSp }) {
         ) : opSel ? (
           opSel.kind === 'estudo'
             ? <OperacaoEstudo op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
-                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} />
+                abrirNda={(estudo) => setNdaModal({ estudo })} recarregar={recarregar} user={user} isAdmin={isAdmin} onFicha={() => fichaDe(opSel)} />
             : <OperacaoContrato op={opSel} produto={produto} t={t} comentarios={comentarios} publicar={publicar} voltar={() => setParam({ op: null })} ir={ir}
-                 recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} />
+                 recarregar={recarregar} abrirOp={(id) => { recarregar(); setParam({ op: id }); }} user={user} onFicha={() => fichaDe(opSel)} />
         ) : (
           <div className="vx-cel-body">
             <main className="vx-cel-main">
@@ -336,7 +343,12 @@ function Overlay({ cfg, sp, setSp }) {
                     <span><span style={{ padding: '4px 10px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 12, border: `1px solid ${t.line}` }}>{jornada.etapas[o.etapa].titulo}</span></span>
                     <span className="vx-hide" style={{ color: '#B8C0CC' }}>{o.responsavel || '—'}</span>
                     <span className="vx-hide" style={{ color: C.muted }}>{o.acao.label}</span>
-                    <ChevronRight className="w-4 h-4" style={{ color: t.acc }} aria-hidden="true" />
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <button onClick={(ev) => { ev.stopPropagation(); fichaDe(o); }} title="Ficha do cliente" aria-label={`Ficha de ${o.cliente}`} className="vx-btn vx-btn-ghost" style={{ width: 28, height: 28, padding: 0, border: 0 }}>
+                        <UserRound className="w-4 h-4" style={{ color: t.txt }} />
+                      </button>
+                      <ChevronRight className="w-4 h-4" style={{ color: t.acc }} aria-hidden="true" />
+                    </span>
                   </div>
                 ))}
               </div>
