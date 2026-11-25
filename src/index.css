@@ -254,10 +254,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* ── Esconde o Jarvis quando um modal overlay estiver aberto ── */
-body:has(.fixed.inset-0.z-50) [data-jarvis-root],
-body:has(.fixed.inset-0.z-\[80\]) [data-jarvis-root],
-body:has(.fixed.inset-0.z-\[90\]) [data-jarvis-root],
-body:has(.fixed.inset-0.z-\[100\]) [data-jarvis-root] {
+/* (as células e a ficha do cliente são telas de trabalho, não modais: marcadas com data-manter-jarvis) */
+body:has(.fixed.inset-0.z-50:not([data-manter-jarvis])) [data-jarvis-root],
+body:has(.fixed.inset-0.z-\[80\]:not([data-manter-jarvis])) [data-jarvis-root],
+body:has(.fixed.inset-0.z-\[90\]:not([data-manter-jarvis])) [data-jarvis-root],
+body:has(.fixed.inset-0.z-\[100\]:not([data-manter-jarvis])) [data-jarvis-root] {
   display: none !important;
 }
 

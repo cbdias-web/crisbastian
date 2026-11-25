@@ -220,7 +220,7 @@ function Overlay({ cfg, sp, setSp }) {
   const temaVars = { '--vx-acc': t.acc, '--vx-acc2': t.acc2, '--vx-txt': t.txt, '--vx-dim': t.dim, '--vx-line': t.line, '--vx-glow': t.glow, '--vx-on-acc': t.onAcc };
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 md:p-7" role="dialog" aria-modal="true" aria-label={cfg.nome}
+    <div data-manter-jarvis className="fixed inset-0 z-[80] flex items-center justify-center p-3 md:p-7" role="dialog" aria-modal="true" aria-label={cfg.nome}
       style={{ background: 'rgba(3,6,10,0.62)', backdropFilter: 'blur(6px)', ...temaVars }}
       onMouseDown={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <style>{`

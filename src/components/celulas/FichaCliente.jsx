@@ -282,7 +282,7 @@ function Ficha({ alvo, sp, setSp }) {
   const cli = d?.cliente;
 
   return (
-    <div className="fixed inset-0 z-[95] flex justify-end" role="dialog" aria-modal="true" aria-label="Ficha do cliente"
+    <div data-manter-jarvis className="fixed inset-0 z-[95] flex justify-end" role="dialog" aria-modal="true" aria-label="Ficha do cliente"
       style={{ background: 'rgba(3,6,10,0.55)', backdropFilter: 'blur(3px)' }} onMouseDown={e => { if (e.target === e.currentTarget) fechar(); }}>
       <aside className="vx-suspensa h-full w-full flex flex-col" style={{ maxWidth: 1180, background: C.bg, borderLeft: `1px solid ${C.line2}`, boxShadow: '-40px 0 100px rgba(0,0,0,.6)', color: C.txt2 }}>
         {/* Cabeçalho */}
