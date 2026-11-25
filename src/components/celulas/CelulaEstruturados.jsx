@@ -8,6 +8,7 @@ import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
 import { VendaDaOperacao } from './ContratoNaCelula';
 import JornadaContrato from './JornadaContrato';
+import { LinksDeColeta, COLETAS } from './ColetaCliente';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 import NovaOperacaoModal from './NovaOperacaoModal';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
@@ -383,6 +384,7 @@ function Overlay({ cfg, sp, setSp }) {
                 <BuscaCliente acc={t.acc} onEscolher={(c) => abrirFicha(setSp, sp, { clienteId: c.id })} vazioTexto="Nenhum cliente encontrado na base." />
                 <span style={{ fontSize: 12, color: C.muted2, lineHeight: 1.45 }}>Negociações, interações, contratos, vendas, parcelas e documentos de qualquer cliente.</span>
               </div>
+              {COLETAS[jornada.tipoContrato] && <LinksDeColeta tipo={jornada.tipoContrato} user={user} t={t} />}
               <Duvidas celula={cfg.id} produto={produto} nomeProduto={jornada.nome} t={t} comentarios={comentarios} setComentarios={setComentarios} publicar={publicar} user={user} isAdmin={isAdmin} />
               <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, padding: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, marginBottom: 4 }}>Atividade</span>

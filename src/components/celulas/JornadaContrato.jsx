@@ -13,6 +13,7 @@ import { useEnvioVendasDialog } from '@/components/contratos/EnviarVendasDialog'
 import ContratoOffshoreEstrutura, { OFFSHORE_DEFAULTS } from '@/components/contratos/ContratoOffshoreEstrutura';
 import IndicadoresEditor from '@/components/contratos/IndicadoresEditor';
 import BoletosParcelas from '@/components/contratos/BoletosParcelas';
+import ColetaCliente, { COLETAS } from './ColetaCliente';
 
 // Jornada do contrato no novo ambiente: dados → PDF → assinatura → contrato assinado → cobrança →
 // pagamento → envio para Vendas, tudo dentro da operação. Grava no mesmo registro Contrato
@@ -648,6 +649,8 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
           </>
         ))}
       </Etapa>
+      {/* Coleta de dados e documentos do cliente (links públicos de CI, Offshore/LLC e Canal bancário) */}
+      {ct && COLETAS[tipo] && <ColetaCliente tipo={tipo} contrato={ct} user={user} t={t} />}
       {envioDialog}
     </div>
   );
