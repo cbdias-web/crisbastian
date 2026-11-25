@@ -760,6 +760,40 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
                       </button>
                     )}
                   </div>
+                  {/* Parcelamento estruturado: segue direto para o contrato da operação */}
+                  <div className="grid md:grid-cols-4 gap-3 items-end">
+                    <div>
+                      <p className="mb-1" style={label}>Entrada (R$)</p>
+                      {editavel ? (
+                        <CampoMoeda asString value={inv.entrada ?? ''} onChange={v => setInv('entrada', v === '' ? '' : Number(v))}
+                          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle} />
+                      ) : <p className="text-sm font-semibold">{inv.entrada ? brl(inv.entrada) : '—'}</p>}
+                    </div>
+                    <div>
+                      <p className="mb-1" style={label}>Nº de parcelas</p>
+                      {editavel ? (
+                        <select value={inv.num_parcelas ?? ''} onChange={e => setInv('num_parcelas', e.target.value === '' ? '' : Number(e.target.value))}
+                          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                          <option value="">À vista</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 18, 24, 36].map(n => <option key={n} value={n}>{n}x</option>)}
+                        </select>
+                      ) : <p className="text-sm font-semibold">{inv.num_parcelas ? `${inv.num_parcelas}x` : 'À vista'}</p>}
+                    </div>
+                    <div>
+                      <p className="mb-1" style={label}>Valor da parcela</p>
+                      <p className="text-sm font-semibold py-2">{inv.num_parcelas ? brl(Math.max(0, (Number(inv.valor) || valorHonorarios || 0) - (Number(inv.entrada) || 0)) / Number(inv.num_parcelas)) : '—'}</p>
+                    </div>
+                    <div>
+                      <p className="mb-1" style={label}>Forma de pagamento</p>
+                      {editavel ? (
+                        <select value={inv.forma_pagamento ?? ''} onChange={e => setInv('forma_pagamento', e.target.value)}
+                          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle}>
+                          <option value="">—</option>
+                          {['PIX', 'TED/DOC', 'BOLETO', 'CARTÃO DE CRÉDITO', 'DÉBITO EM CONTA'].map(f => <option key={f}>{f}</option>)}
+                        </select>
+                      ) : <p className="text-sm font-semibold">{inv.forma_pagamento || '—'}</p>}
+                    </div>
+                  </div>
                   <TextoEd titulo="Composição do valor" value={inv.justificativa} onChange={v => setInv('justificativa', v)} rows={3} readOnly={!editavel} placeholder="Como o valor foi composto: escopo, complexidade, horas e riscos." />
                   <TextoEd titulo="Forma de pagamento e negociação" value={inv.condicoes} onChange={v => setInv('condicoes', v)} rows={3} readOnly={!editavel} placeholder="Ex.: 30% na assinatura e o saldo em até 3 parcelas mensais; valor negociável conforme escopo." />
                 </Cartao>
