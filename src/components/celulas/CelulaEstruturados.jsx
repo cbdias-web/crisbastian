@@ -231,8 +231,15 @@ function Overlay({ cfg, sp, setSp }) {
         .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 124px;gap:12px;align-items:center}
         .vx-tab{transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
         .vx-tab:hover{transform:translateY(-1px);color:${C.txt}}
+        .vx-lista{overflow:hidden}
+        .vx-lista>.vx-cel-main{min-height:0;overflow:hidden}
+        .vx-lista>.vx-cel-aside{min-height:0;overflow-y:auto;padding-right:4px;scrollbar-gutter:stable}
+        .vx-lista-card{flex:1;min-height:220px}
+        .vx-lista-rolagem{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+        .vx-lista .vx-cel-aside::-webkit-scrollbar,.vx-lista-rolagem::-webkit-scrollbar{width:8px}
+        .vx-lista .vx-cel-aside::-webkit-scrollbar-thumb,.vx-lista-rolagem::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
         .vx-crumb{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font:inherit}.vx-crumb:hover{color:${C.txt};text-decoration:underline}
-        @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        @media (max-width:1180px){.vx-lista{overflow:auto}.vx-lista>.vx-cel-main,.vx-lista>.vx-cel-aside{overflow:visible}.vx-lista-card{flex:none}.vx-lista-rolagem{max-height:65vh}.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
         @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 124px}.vx-row .vx-hide{display:none}}
       `}</style>
       <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${veu(t.bg, 0.82)}, ${veu(t.bg, 0.92)}), url("${FUNDO_PORTAL}") center / cover no-repeat ${t.bg}`, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
@@ -288,7 +295,7 @@ function Overlay({ cfg, sp, setSp }) {
                  produtosCelula={cfg.produtos} mudarProduto={(p, id) => { recarregar(); setParam({ produto: p, op: id }); }}
                  acaoInicial={sp.get('acao')} limparAcao={() => setParam({ acao: null })} />
         ) : (
-          <div className="vx-cel-body">
+          <div className="vx-cel-body vx-lista">
             <main className="vx-cel-main">
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: 240 }}>
@@ -326,11 +333,13 @@ function Overlay({ cfg, sp, setSp }) {
                 ))}
               </div>
               {modoLista === 'leads' ? (
-                <LeadsDaJornada celula={cfg} produto={produto} t={t} user={user} isAdmin={isAdmin}
-                  onIniciada={(id) => { recarregar(); setModoLista('operacoes'); setParam({ op: id }); }}
-                  onFicha={(cliente_id, doc) => abrirFicha(setSp, sp, { clienteId: cliente_id, doc })} />
+                <div className="vx-lista-card vx-lista-rolagem">
+                  <LeadsDaJornada celula={cfg} produto={produto} t={t} user={user} isAdmin={isAdmin}
+                    onIniciada={(id) => { recarregar(); setModoLista('operacoes'); setParam({ op: id }); }}
+                    onFicha={(cliente_id, doc) => abrirFicha(setSp, sp, { clienteId: cliente_id, doc })} />
+                </div>
               ) : (
-              <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', minHeight: 200, overflow: 'hidden' }}>
+              <div className="vx-lista-card" style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderBottom: `1px solid ${C.line}`, gap: 12 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, flex: 1 }}>
                     Operações {etapaFiltro !== null ? `· ${jornada.etapas[etapaFiltro].titulo}` : 'em andamento'}
@@ -343,6 +352,7 @@ function Overlay({ cfg, sp, setSp }) {
                 <div className="vx-row" style={{ padding: '10px 18px', fontSize: 11, color: C.muted2, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                   <span>Cliente</span><span>Etapa</span><span className="vx-hide">Responsável</span><span className="vx-hide">Próxima ação</span><span />
                 </div>
+                <div className="vx-lista-rolagem">
                 {lista.length === 0 && (
                   <div style={{ padding: '28px 18px', fontSize: 14, color: C.muted, textAlign: 'center' }}>
                     Nenhuma operação {jornada.nome} {etapaFiltro !== null ? 'nesta etapa' : 'ainda'}.
@@ -374,6 +384,7 @@ function Overlay({ cfg, sp, setSp }) {
                     </span>
                   </div>
                 ))}
+                </div>
               </div>
               )}
             </main>
