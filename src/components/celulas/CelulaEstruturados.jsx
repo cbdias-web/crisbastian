@@ -87,6 +87,9 @@ function Overlay({ cfg, sp, setSp }) {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [etapaFiltro, setEtapaFiltro] = useState(null);
+  // Lista ou quadro (kanban) por etapa — a escolha fica guardada neste navegador
+  const [visao, setVisaoBruta] = useState(() => { try { return localStorage.getItem('vx_visao_celula') || 'lista'; } catch { return 'lista'; } });
+  const setVisao = (v) => { setVisaoBruta(v); try { localStorage.setItem('vx_visao_celula', v); } catch { /* sem armazenamento */ } };
   const [ndaModal, setNdaModal] = useState(null); // { estudo } | null
   const [novaOp, setNovaOp] = useState(false);
   const [modoLista, setModoLista] = useState('operacoes'); // operacoes | leads
@@ -170,12 +173,13 @@ function Overlay({ cfg, sp, setSp }) {
   }, [operacoes]);
 
   const lista = useMemo(() => operacoes.filter(o => {
+    // Sem filtro de etapa: todos os clientes da jornada (inclusive concluídas)
     if (etapaFiltro !== null && o.etapa !== etapaFiltro) return false;
-    // Sem filtro, a lista mostra só o que está em andamento (as concluídas ficam no cartão "Concluída")
-    if (etapaFiltro === null && !busca && cfg.fonte === 'contrato' && o.etapa === 5) return false;
     if (!busca) return true;
     return `${o.cliente} ${o.doc || ''} ${o.responsavel || ''} ${o.sub}`.toLowerCase().includes(busca.toLowerCase());
   }), [operacoes, etapaFiltro, busca]);
+  // Quadro: todas as etapas lado a lado (a busca vale; a etapa clicada só fica em destaque)
+  const listaQuadro = useMemo(() => operacoes.filter(o => !busca || `${o.cliente} ${o.doc || ''} ${o.responsavel || ''} ${o.sub}`.toLowerCase().includes(busca.toLowerCase())), [operacoes, busca]);
 
   const opSel = opId ? operacoes.find(o => o.id === opId) || null : null;
   const idsVisiveis = useMemo(() => new Set(operacoes.map(o => o.id)), [operacoes]);
@@ -352,13 +356,23 @@ function Overlay({ cfg, sp, setSp }) {
               <div className="vx-lista-card" style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderBottom: `1px solid ${C.line}`, gap: 12 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, flex: 1 }}>
-                    Operações {etapaFiltro !== null ? `· ${jornada.etapas[etapaFiltro].titulo}` : 'em andamento'}
+                    {etapaFiltro !== null && visao === 'lista' ? `Clientes · ${jornada.etapas[etapaFiltro].titulo}` : `Todos os clientes · ${jornada.nome}`}
                   </span>
                   {etapaFiltro !== null && (
-                    <button onClick={() => setEtapaFiltro(null)} className="vx-btn vx-btn-soft" style={{ height: 28, padding: '0 12px', fontSize: 12 }}>Limpar filtro</button>
+                    <button onClick={() => setEtapaFiltro(null)} className="vx-btn vx-btn-soft" style={{ height: 28, padding: '0 12px', fontSize: 12 }}>Ver todos</button>
                   )}
-                  <span style={{ fontSize: 12, color: C.muted2 }}>{lista.length}</span>
+                  <span style={{ fontSize: 12, color: C.muted2 }}>{visao === 'lista' ? lista.length : listaQuadro.length}</span>
+                  <div role="tablist" aria-label="Forma de exibição" style={{ display: 'flex', gap: 2, padding: 3, borderRadius: 999, background: C.input, border: `1px solid ${C.line}` }}>
+                    {[['lista', 'Lista'], ['quadro', 'Quadro']].map(([k, l]) => (
+                      <button key={k} role="tab" aria-selected={visao === k} onClick={() => setVisao(k)}
+                        style={{ height: 26, padding: '0 12px', borderRadius: 999, border: 0, cursor: 'pointer', fontSize: 12, fontWeight: visao === k ? 600 : 500, background: visao === k ? t.dim : 'transparent', color: visao === k ? t.txt : C.muted }}>{l}</button>
+                    ))}
+                  </div>
                 </div>
+                {visao === 'quadro' ? (
+                  <QuadroJornada etapas={jornada.etapas} ops={listaQuadro} t={t} destaque={etapaFiltro}
+                    onAbrir={(o) => setParam({ op: o.id })} onFicha={fichaDe} />
+                ) : (<>
                 <div className="vx-row" style={{ padding: '10px 18px', fontSize: 11, color: C.muted2, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                   <span>Cliente</span><span>Etapa</span><span className="vx-hide">Responsável</span><span className="vx-hide">Próxima ação</span><span />
                 </div>
@@ -395,6 +409,7 @@ function Overlay({ cfg, sp, setSp }) {
                   </div>
                 ))}
                 </div>
+                </>)}
               </div>
               )}
             </main>
@@ -445,6 +460,51 @@ function Overlay({ cfg, sp, setSp }) {
           onClose={() => setNdaModal(null)}
           onGerado={(id) => { setNdaModal(null); recarregar(); setParam({ op: id }); }} />
       )}
+    </div>
+  );
+}
+
+// ───────────── Quadro (kanban) da jornada ─────────────
+const valorOp = (o) => Number(o.raw?.contrato?.valor_total || o.raw?.neg?.valor_estimado || 0);
+const brlQ = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function QuadroJornada({ etapas, ops, t, destaque, onAbrir, onFicha }) {
+  return (
+    <div className="vx-lista-rolagem" style={{ display: 'flex', gap: 12, padding: 14, overflowX: 'auto', overflowY: 'hidden', alignItems: 'stretch' }}>
+      {etapas.map((et, i) => {
+        const col = ops.filter(o => o.etapa === i);
+        const total = col.reduce((s, o) => s + valorOp(o), 0);
+        const on = destaque === i;
+        return (
+          <section key={i} aria-label={et.titulo} style={{ width: 270, flex: 'none', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 16, background: on ? t.dim : 'rgba(255,255,255,0.02)', border: `1px solid ${on ? t.acc : C.line}` }}>
+            <header style={{ padding: '12px 14px', borderBottom: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 22, height: 22, borderRadius: 11, background: t.dim, color: t.txt, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${t.line}` }}>{i + 1}</span>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: C.txt }}>{et.titulo}</span>
+                <span style={{ fontSize: 12, color: C.muted }}>{col.length}</span>
+              </span>
+              {total > 0 && <span style={{ fontSize: 11, color: C.muted2 }}>{brlQ(total)}</span>}
+            </header>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {col.length === 0 && <span style={{ fontSize: 12, color: C.muted2, padding: '8px 4px' }}>Nenhum cliente nesta etapa.</span>}
+              {col.map(o => (
+                <div key={o.id} role="button" tabIndex={0} onClick={() => onAbrir(o)} onKeyDown={e => { if (e.key === 'Enter') onAbrir(o); }} className="vx-card-lift"
+                  style={{ padding: 12, borderRadius: 12, background: C.card2, border: `1px solid ${C.line}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 5, flex: 'none' }}>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: C.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.cliente}</span>
+                    <button onClick={(e) => { e.stopPropagation(); onFicha(o); }} title="Ficha do cliente" aria-label={`Ficha de ${o.cliente}`} style={{ background: 'transparent', border: 0, padding: 0, cursor: 'pointer', color: t.txt }}><UserRound className="w-3.5 h-3.5" /></button>
+                  </span>
+                  <span style={{ fontSize: 11, color: C.muted2 }}>{o.sub}</span>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 11 }}>
+                    <span style={{ flex: 1, color: '#B8C0CC', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.responsavel || '—'}</span>
+                    {valorOp(o) > 0 && <span style={{ color: C.txt2 }}>{brlQ(valorOp(o))}</span>}
+                  </span>
+                  <span style={{ fontSize: 11, color: t.txt, display: 'flex', alignItems: 'center', gap: 4 }}><ChevronRight className="w-3 h-3" />{o.acao.label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
