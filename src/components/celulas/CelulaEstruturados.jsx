@@ -235,6 +235,7 @@ function Overlay({ cfg, sp, setSp }) {
         .vx-lista>.vx-cel-main{min-height:0;overflow:hidden}
         .vx-lista>.vx-cel-aside{min-height:0;overflow-y:auto;padding-right:4px;scrollbar-gutter:stable}
         .vx-lista-card{flex:1;min-height:220px}
+        .vx-lista>.vx-cel-aside>*,.vx-lista>.vx-cel-main>*:not(.vx-lista-card){flex-shrink:0}
         .vx-lista-rolagem{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain}
         .vx-lista .vx-cel-aside::-webkit-scrollbar,.vx-lista-rolagem::-webkit-scrollbar{width:8px}
         .vx-lista .vx-cel-aside::-webkit-scrollbar-thumb,.vx-lista-rolagem::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px}
