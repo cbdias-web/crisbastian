@@ -8,7 +8,7 @@ import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 // Gera o NDA (modelo validado Villela Exchange · Estruturação Internacional) como 1º passo
 // da operação Offshore. Sem `estudo`, cria a operação (estudo em rascunho) e gera o NDA nela.
 
-const dig = (s) => String(s || '').replace(/\D/g, '');
+export const dig = (s) => String(s || '').replace(/\D/g, '');
 const NATUREZAS = ['sociedade empresária limitada', 'sociedade simples limitada', 'sociedade anônima', 'sociedade limitada unipessoal', 'empresário individual', 'pessoa jurídica de direito privado'];
 const ESTADO_CIVIL = ['solteiro(a)', 'casado(a)', 'divorciado(a)', 'viúvo(a)', 'em união estável'];
 
@@ -20,7 +20,7 @@ function Campo({ label, children, span = 1 }) {
   return <label style={{ ...LBL, gridColumn: `span ${span}` }}>{label}{children}</label>;
 }
 
-const fmtDoc = (s) => {
+export const fmtDoc = (s) => {
   const d = dig(s);
   if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
@@ -41,7 +41,7 @@ const parteDoCliente = (c) => ({
 });
 
 // Busca na base de clientes (nome, CPF/CNPJ, e-mail ou telefone)
-function BuscaCliente({ onEscolher, acc }) {
+export function BuscaCliente({ onEscolher, acc, vazioTexto }) {
   const [termo, setTermo] = useState('');
   const [res, setRes] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -79,7 +79,7 @@ function BuscaCliente({ onEscolher, acc }) {
               <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: acc + '22', color: acc }}>{c.tipo_pessoa || '—'}</span>
             </button>
           ))}
-          {res.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: '#8E97A8' }}>Nenhum cliente encontrado. Preencha abaixo: o cadastro será criado na base ao gerar o NDA.</p>}
+          {res.length === 0 && <p className="px-3 py-2.5 text-xs" style={{ color: '#8E97A8' }}>{vazioTexto || 'Nenhum cliente encontrado. Preencha abaixo: o cadastro será criado na base ao gerar o NDA.'}</p>}
         </div>
       )}
     </div>

@@ -8,15 +8,15 @@
       "type": "string"
     },
     "celula": {
-      "description": "C\u00e9lula do portal (estruturados, internacional, cross) ou 'geral' para o mural da capa",
+      "description": "Célula do portal (estruturados, internacional, cross) ou 'geral' para o mural da capa",
       "type": "string"
     },
     "estudo_id": {
-      "description": "Opera\u00e7\u00e3o baseada em EstudoViabilidade (Produtos estruturados)",
+      "description": "Operação baseada em EstudoViabilidade (Produtos estruturados)",
       "type": "string"
     },
     "operacao_id": {
-      "description": "Opera\u00e7\u00e3o baseada em Contrato (id do contrato) ou em Pipeline (p_<id>)",
+      "description": "Operação baseada em Contrato (id do contrato) ou em Pipeline (p_<id>)",
       "type": "string"
     },
     "origem": {
@@ -28,11 +28,11 @@
       "type": "string"
     },
     "pai_id": {
-      "description": "D\u00favida ou post respondido (para tipo resposta)",
+      "description": "Dúvida ou post respondido (para tipo resposta)",
       "type": "string"
     },
     "produto": {
-      "description": "Produto da c\u00e9lula (ex.: offshore, conta_internacional, holding, rof, canal_bancario, conta_global, dolarize, cambio, score, rating, diagnostico, monitore)",
+      "description": "Produto da célula (ex.: offshore, conta_internacional, holding, rof, canal_bancario, conta_global, dolarize, cambio, score, rating, diagnostico, monitore)",
       "type": "string"
     },
     "resolvida": {
@@ -44,14 +44,19 @@
     },
     "tipo": {
       "default": "comentario",
-      "description": "comentario = linha do tempo de uma opera\u00e7\u00e3o; duvida = pergunta da c\u00e9lula; resposta = resposta a uma d\u00favida ou post; post = publica\u00e7\u00e3o no mural da capa",
+      "description": "comentario = linha do tempo de uma operação; duvida = pergunta da célula; resposta = resposta a uma dúvida ou post; post = publicação no mural da capa; abordagem = contato registrado na negociação (ligação, WhatsApp, reunião, e-mail)",
       "enum": [
         "comentario",
         "duvida",
         "resposta",
-        "post"
+        "post",
+        "abordagem"
       ],
       "type": "string"
+    },
+    "canal": {
+      "type": "string",
+      "description": "Canal da abordagem: ligacao, whatsapp, reuniao, email, outro"
     }
   },
   "required": [
