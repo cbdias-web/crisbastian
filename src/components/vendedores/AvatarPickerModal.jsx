@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Upload } from 'lucide-react';
@@ -52,7 +53,7 @@ export default function AvatarPickerModal({ onSelect, onClose }) {
       onSelect(file_url);
       onClose();
     } catch (e) {
-      alert('Erro ao fazer upload da imagem.');
+      toast.error('Erro ao fazer upload da imagem.');
     }
     setUploading(false);
   };
