@@ -125,8 +125,13 @@ function Painel({ grupo, user, isAdmin, fechar }) {
         .vx-pr-aside{width:360px;flex:none;display:flex;flex-direction:column;gap:14px;overflow-y:auto;padding-right:4px}
         .vx-pr-aside>*,.vx-pr-main>*{flex-shrink:0}
         .vx-pr-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-        .vx-pr-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-        @media (max-width:1180px){.vx-pr-body{flex-direction:column;overflow:auto}.vx-pr-main,.vx-pr-aside{overflow:visible;width:auto}.vx-pr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-pr-tools{grid-template-columns:repeat(2,minmax(0,1fr))}}
+        .vx-pr-tools-bar{display:flex;gap:10px;padding:12px 24px;border-bottom:1px solid rgba(255,255,255,0.07);overflow-x:auto;scrollbar-width:thin}
+        .vx-pr-tool{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:999px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.08);text-decoration:none;flex:none;max-width:300px;transition:transform .2s ease,background .2s ease,box-shadow .2s ease,border-color .2s ease}
+        .vx-pr-tool:hover{transform:translateY(-2px);background:rgba(96,165,250,0.10);border-color:rgba(96,165,250,0.45);box-shadow:0 10px 24px -14px rgba(96,165,250,.7)}
+        .vx-pr-tool-ic{width:36px;height:36px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex:none}
+        .vx-pr-tool-desc{font-size:11px;color:#7D8799;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+        @media (max-width:1400px){.vx-pr-tool-desc{display:none}}
+        @media (max-width:1180px){.vx-pr-body{flex-direction:column;overflow:auto}.vx-pr-main,.vx-pr-aside{overflow:visible;width:auto}.vx-pr-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
       `}</style>
       <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${AZ.bg}ee, ${AZ.bg}f5)`, border: `1px solid ${AZ.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 80px -40px ${AZ.glow}` }}>
         <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: AZ.head, flexWrap: 'wrap' }}>
@@ -149,6 +154,24 @@ function Painel({ grupo, user, isAdmin, fechar }) {
           )}
           <button onClick={fechar} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14 }}><X className="w-4 h-4" /> Voltar ao portal</button>
         </header>
+
+        {/* Ferramentas da prospecção — atalhos em linha, logo abaixo do cabeçalho */}
+        <nav aria-label="Ferramentas da prospecção" className="vx-pr-tools-bar">
+          {grupo.items.map(it => {
+            const f = FERRAMENTAS[it.page] || { Icon: it.icon || Users, desc: '', cor: AZ.acc };
+            const Icon = f.Icon;
+            return (
+              <Link key={it.page} to={urlItem(it)} onClick={fechar} title={f.desc} className="vx-pr-tool">
+                <span className="vx-pr-tool-ic" style={{ background: f.cor + '1f', border: `1.5px solid ${f.cor}` }}><Icon className="w-[18px] h-[18px]" style={{ color: f.cor }} /></span>
+                <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: C.txt, whiteSpace: 'nowrap' }}>{it.name}</span>
+                  <span className="vx-pr-tool-desc">{f.desc}</span>
+                </span>
+                {it.badge > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: '#ef4444', color: '#fff' }}>{it.badge}</span>}
+              </Link>
+            );
+          })}
+        </nav>
 
         <div className="vx-pr-body">
           <main className="vx-pr-main">
@@ -217,25 +240,6 @@ function Painel({ grupo, user, isAdmin, fechar }) {
               </>
             )}
 
-            {/* Ferramentas */}
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: C.txt, marginBottom: 10 }}>Ferramentas da prospecção</div>
-              <div className="vx-pr-tools">
-                {grupo.items.map(it => {
-                  const f = FERRAMENTAS[it.page] || { Icon: it.icon || Users, desc: '', cor: AZ.acc };
-                  const Icon = f.Icon;
-                  return (
-                    <Link key={it.page} to={urlItem(it)} onClick={fechar} className="vx-card-lift"
-                      style={{ position: 'relative', padding: 16, borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 132, textDecoration: 'none' }}>
-                      <span style={{ width: 44, height: 44, borderRadius: 22, background: f.cor + '1f', border: `1.5px solid ${f.cor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon className="w-5 h-5" style={{ color: f.cor }} /></span>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: C.txt }}>{it.name}</span>
-                      <span style={{ fontSize: 12, color: C.muted, lineHeight: 1.45 }}>{f.desc}</span>
-                      {it.badge > 0 && <span style={{ position: 'absolute', top: 12, right: 12, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#ef4444', color: '#fff' }}>{it.badge}</span>}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
           </main>
 
           <aside className="vx-pr-aside">
