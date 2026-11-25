@@ -784,12 +784,112 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   );
 }
 
+const CANAIS = { ligacao: 'Ligação', whatsapp: 'WhatsApp', reuniao: 'Reunião', email: 'E-mail', visita: 'Visita', outro: 'Outro' };
+const brlN = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+// Negociação da operação (registro do Pipeline): valor, prazo, temperatura, próximo contato e abordagens
+function NegociacaoCard({ neg, aberta, t, publicar, operacaoId, recarregar, voltar, gerarContrato }) {
+  const [f, setF] = useState({ valor_estimado: neg.valor_estimado || '', data_prevista: neg.data_prevista || '', temperatura: neg.temperatura || 'Morno', proximo_contato: neg.proximo_contato || '', descricao: neg.descricao || '' });
+  const [salvando, setSalvando] = useState(false);
+  const [canal, setCanal] = useState('ligacao');
+  const [texto, setTexto] = useState('');
+  const [registrando, setRegistrando] = useState(false);
+  useEffect(() => { setF({ valor_estimado: neg.valor_estimado || '', data_prevista: neg.data_prevista || '', temperatura: neg.temperatura || 'Morno', proximo_contato: neg.proximo_contato || '', descricao: neg.descricao || '' }); }, [neg.id, neg.updated_date]);
+  const mudou = String(f.valor_estimado) !== String(neg.valor_estimado || '') || f.data_prevista !== (neg.data_prevista || '') || f.temperatura !== (neg.temperatura || 'Morno') || f.proximo_contato !== (neg.proximo_contato || '') || f.descricao !== (neg.descricao || '');
+
+  const salvar = async () => {
+    setSalvando(true);
+    try {
+      await base44.entities.Pipeline.update(neg.id, { ...f, valor_estimado: Number(f.valor_estimado) || 0, data_prevista: f.data_prevista || null, proximo_contato: f.proximo_contato || null });
+      toast.success('Negociação atualizada.');
+      recarregar?.();
+    } catch (er) { toast.error(er.message); }
+    setSalvando(false);
+  };
+  const registrar = async () => {
+    if (!texto.trim()) { toast.error('Descreva a abordagem.'); return; }
+    setRegistrando(true);
+    try { await publicar({ tipo: 'abordagem', canal, operacao_id: operacaoId, texto: texto.trim() }); setTexto(''); toast.success('Abordagem registrada.'); }
+    catch (er) { toast.error(er.message); }
+    setRegistrando(false);
+  };
+  const perder = async () => {
+    const motivo = prompt('Motivo da perda (opcional):');
+    if (motivo === null) return;
+    try {
+      await base44.entities.Pipeline.update(neg.id, { temperatura: 'Perdido', observacao: [neg.observacao, motivo && `Perdida: ${motivo}`].filter(Boolean).join('\n') });
+      toast.success('Negociação marcada como perdida.');
+      recarregar?.(); voltar?.();
+    } catch (er) { toast.error(er.message); }
+  };
+
+  const inp = { height: 36, padding: '0 10px', borderRadius: 10, background: C.input, border: `1px solid ${C.line2}`, color: C.txt, fontSize: 13, width: '100%' };
+  const lbl = { fontSize: 11, color: C.muted, display: 'flex', flexDirection: 'column', gap: 4 };
+
+  if (!aberta) {
+    return (
+      <div style={{ padding: 14, borderRadius: 16, background: C.card, border: `1px solid ${C.line}`, display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
+        <span style={{ fontWeight: 600, color: C.txt }}>Negociação de origem</span>
+        <span>Valor estimado: <b style={{ color: C.txt }}>{brlN(neg.valor_estimado)}</b></span>
+        <span>Origem: {neg.origem || '—'}</span>
+        <span>Aberta em {fmtData(neg.created_date)}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: 16, borderRadius: 18, background: C.card2, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 16, fontWeight: 600, color: C.txt, flex: 1 }}>Negociação</span>
+        <span style={{ fontSize: 12, color: C.muted }}>Origem: {neg.origem || '—'} · aberta em {fmtData(neg.created_date)}</span>
+      </div>
+      <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
+        <label style={lbl}>Valor negociado (R$)<input type="number" min="0" step="0.01" value={f.valor_estimado} onChange={ev => setF({ ...f, valor_estimado: ev.target.value })} style={inp} /></label>
+        <label style={lbl}>Previsão de fechamento<input type="date" value={f.data_prevista} onChange={ev => setF({ ...f, data_prevista: ev.target.value })} style={inp} /></label>
+        <label style={lbl}>Temperatura
+          <select value={f.temperatura} onChange={ev => setF({ ...f, temperatura: ev.target.value })} style={inp}>{['Frio', 'Morno', 'Quente'].map(x => <option key={x}>{x}</option>)}</select>
+        </label>
+        <label style={lbl}>Próximo contato<input type="date" value={f.proximo_contato} onChange={ev => setF({ ...f, proximo_contato: ev.target.value })} style={inp} /></label>
+      </div>
+      <label style={lbl}>Condições / contexto (prazo, parcelamento, o que foi combinado)
+        <textarea rows={2} value={f.descricao} onChange={ev => setF({ ...f, descricao: ev.target.value })} style={{ ...inp, height: 'auto', padding: '8px 10px', resize: 'vertical' }} />
+      </label>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button onClick={salvar} disabled={!mudou || salvando} className="vx-btn vx-btn-soft" style={{ height: 36, padding: '0 14px', fontSize: 13, opacity: mudou ? 1 : 0.5 }}>
+          {salvando ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Salvar negociação
+        </button>
+        {gerarContrato && (
+          <button onClick={async () => { if (mudou) await salvar(); gerarContrato(); }} className="vx-btn vx-btn-primary" style={{ height: 36, padding: '0 16px', fontSize: 13 }}>
+            Fechar e gerar contrato <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+        <div style={{ flex: 1 }} />
+        <button onClick={perder} className="vx-btn vx-btn-ghost" style={{ height: 36, padding: '0 14px', fontSize: 13, color: '#F4A3A3' }}>Marcar como perdida</button>
+      </div>
+      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: C.txt }}>Registrar abordagem</span>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <select value={canal} onChange={ev => setCanal(ev.target.value)} aria-label="Canal da abordagem" style={{ ...inp, width: 140 }}>
+            {Object.entries(CANAIS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
+          <input value={texto} onChange={ev => setTexto(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') registrar(); }}
+            placeholder="O que foi tratado, objeções, próximos passos…" aria-label="Descrição da abordagem" style={{ ...inp, flex: 1, minWidth: 220 }} />
+          <button onClick={registrar} disabled={registrando} className="vx-btn vx-btn-primary" style={{ height: 36, padding: '0 14px', fontSize: 13 }}>
+            {registrando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ───────────── Operação de Área internacional / Operações cross (contrato ou pipeline) ─────────────
 function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, recarregar, abrirOp }) {
   const jornada = JORNADAS[produto];
   const ct = op.raw.contrato || null;
   const impl = op.raw.impl || null;
-  const neg = op.raw.neg || null;
+  const negAberta = op.raw.neg || null;          // negociação em andamento (ainda sem contrato)
+  const neg = negAberta || op.raw.negOrigem || null; // ou a negociação que originou o contrato
+  const idsOp = [op.id, ...(neg ? ['p_' + neg.id] : [])]; // registros feitos na fase de negociação seguem com a operação
   const [rnc, setRnc] = useState(null);
   const [aba, setAba] = useState('jornada');
   useEffect(() => { setAba('jornada'); }, [op.id]);
@@ -806,8 +906,8 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
     const ev = [];
     const add = (quando, quem, idx, txt, link) => { if (quando) ev.push({ quando, quem, etapa: idx != null ? jornada.etapas[idx]?.titulo : null, txt, link }); };
     if (neg) {
-      add(neg.created_date, neg.vendedor_nome || 'Gerente', 0, `Negociação aberta no Pipeline${neg.valor_estimado ? ` · valor estimado ${Number(neg.valor_estimado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}.${neg.descricao ? `\n${neg.descricao}` : ''}`, { label: 'Abrir Pipeline', to: '/Pipeline' });
-      if (neg.proximo_contato) add(neg.proximo_contato, neg.vendedor_nome || 'Gerente', 0, 'Próximo contato agendado.');
+      add(neg.created_date, neg.vendedor_nome || 'Gerente', 0, `Negociação aberta no Pipeline${neg.valor_estimado ? ` · valor estimado ${Number(neg.valor_estimado).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}.${neg.descricao ? `\n${neg.descricao}` : ''}`, null);
+      if (negAberta && neg.proximo_contato) add(neg.proximo_contato, neg.vendedor_nome || 'Gerente', 0, 'Próximo contato agendado.');
     }
     if (ct) {
       add(ct.created_date, ct.vendedor_nome || 'Gerente', 1, `Contrato ${ct.numero_contrato || ''} criado${ct.valor_total ? ` · ${Number(ct.valor_total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}` : ''}. Situação atual: ${STATUS_CONTRATO[ct.status] || ct.status}.`, { label: 'Abrir contrato', aba: 'contrato' });
@@ -827,8 +927,8 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
       });
       add(impl.data_conclusao, impl.padrinho_nome || 'Implantação', 5, 'Implantação concluída.');
     }
-    comentarios.filter(c => c.tipo === 'comentario' && c.operacao_id === op.id)
-      .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', etapa: 'Comentário', txt: c.texto, comentario: true }));
+    comentarios.filter(c => ['comentario', 'abordagem'].includes(c.tipo) && idsOp.includes(c.operacao_id))
+      .forEach(c => ev.push({ quando: c.created_date, quem: c.autor_nome || 'Usuário', etapa: c.tipo === 'abordagem' ? `Abordagem · ${CANAIS[c.canal] || 'Contato'}` : 'Comentário', txt: c.texto, comentario: true }));
     return ev.sort((a, b) => new Date(b.quando) - new Date(a.quando));
   }, [ct, impl, neg, rnc, comentarios]);
 
@@ -839,7 +939,6 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
     { nome: 'Implantação', ok: !!impl && ['concluido', 'concluido_feedback'].includes(impl.status), st: impl ? String(impl.status || '').replace(/_/g, ' ') : 'Não iniciada' },
   ];
   const atalhos = [
-    ...(neg ? [['Negociação no Pipeline', '/Pipeline']] : []),
     ...(jornada.tipoContrato ? [[ct ? 'Contrato da operação' : 'Gerar contrato', () => setAba('contrato')], ['Venda e comissões', () => setAba('venda')]] : [['Contratos', listaContratos]]),
     ['Implantações', '/Implantacoes'],
   ];
@@ -851,19 +950,22 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <CabecalhoOperacao op={op} jornada={jornada} t={t} voltar={voltar} ir={ir} subtitulo={subtitulo}
-        acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda') }} />
+        acoes={{ contrato: () => setAba('contrato'), venda: () => setAba('venda'), negociacao: () => setAba('jornada') }} />
       {jornada.tipoContrato && <AbasOperacao aba={aba} setAba={setAba} t={t} temContrato={!!ct} temVenda={ct?.status === 'no_pipeline'} />}
       {aba === 'jornada' ? (
         <div className="vx-cel-body">
-          <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ operacao_id: op.id }} ir={irAba} setAba={setAba} />
+          <LinhaDoTempo eventos={eventos} t={t} publicar={publicar} extra={{ operacao_id: op.id }} ir={irAba} setAba={setAba}
+            topo={neg ? <NegociacaoCard neg={neg} aberta={!!negAberta} t={t} publicar={publicar} operacaoId={op.id} recarregar={recarregar} voltar={voltar}
+              gerarContrato={jornada.tipoContrato ? () => setAba('contrato') : null} /> : null} />
           <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={irAba} />
         </div>
       ) : (
         <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
-          clienteId={neg?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
+          clienteId={neg?.cliente_id || ct?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
+          valoresIniciais={negAberta ? { valor_total: negAberta.valor_estimado || '', observacoes: negAberta.descricao || '' } : null}
           clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, email: neg.cliente_email, telefone: neg.cliente_telefone } : null}
           onCriado={async (c) => {
-            if (neg) await base44.entities.Pipeline.update(neg.id, { temperatura: 'Fechado' }).catch(() => {});
+            if (negAberta) await base44.entities.Pipeline.update(negAberta.id, { temperatura: 'Fechado' }).catch(() => {});
             abrirOp?.(c.id);
           }} />
       )}
