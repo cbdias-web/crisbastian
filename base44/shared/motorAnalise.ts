@@ -87,7 +87,7 @@ REGRAS DE REDAÇÃO:
 - Profundidade mínima: diagnóstico com 5 ou mais achados; riscos com 4 ou mais itens; benefícios com 4 ou mais; próximos passos com 4 ou mais; premissas com 3 ou mais; alternativas com 2 ou mais. Use os números informados pelo cliente (valores de mercado vs. valores no IR, renda de aluguéis, débitos) para quantificar impactos e estimativas de economia quando possível, deixando claro que são estimativas.
 - Linguagem: use "proteção patrimonial" e "organização patrimonial"; não use "blindagem".
 - Etapas: OBRIGATORIAMENTE de 4 a 6 fases sequenciais (ex.: Diagnóstico e planejamento → Constituição/estruturação → Transferência/integralização ou abertura → Governança/sucessão → Acompanhamento), cada uma com objetivo, atividades, entregáveis e prazo em dias corridos. NUNCA atribua honorários por etapa.
-- Investimento: preencha conteudo.investimento com valor_sugerido (número inteiro em BRL, valor ÚNICO do projeto), justificativa (como o valor foi composto: escopo, complexidade, horas e riscos) e condicoes (forma de pagamento sugerida, com parcelamento — ex.: 30% na assinatura e saldo em até 3 parcelas mensais — deixando claro que o valor é negociável). O cliente vê apenas o valor único, nunca a distribuição por etapa.
+- Investimento: preencha conteudo.investimento com valor_sugerido (número inteiro em BRL, valor ÚNICO do projeto), justificativa (como o valor foi composto: escopo, complexidade, horas e riscos) e condicoes (forma de pagamento sugerida, com parcelamento — ex.: 30% na assinatura e saldo em até 3 parcelas mensais — deixando claro que o valor é negociável). Preencha também entrada_percentual e num_parcelas exatamente coerentes com condicoes (se a instrução do consultor pedir outro parcelamento, use o pedido). O cliente vê apenas o valor único, nunca a distribuição por etapa.
 - Custos de terceiros (ITBI, ITCMD, cartórios, juntas, agentes no exterior) vão em custos_recorrentes ou premissas, nunca somados aos honorários.
 - Riscos com nível e mitigação concreta. Diagnóstico com impacto.
 - base_legal: liste apenas normas efetivamente pertinentes.
@@ -161,6 +161,11 @@ export function normalizarConteudo(c: any) {
     valor: Math.max(0, Math.round(Number(inv.valor) || 0)),
     justificativa: inv.justificativa || '',
     condicoes: inv.condicoes || '',
+    // Parcelamento estruturado (vai direto para o contrato): mantém o que o consultor definiu
+    ...(inv.entrada !== undefined && inv.entrada !== '' ? { entrada: Math.max(0, Number(inv.entrada) || 0) } : {}),
+    ...(inv.entrada_percentual !== undefined && inv.entrada_percentual !== '' ? { entrada_percentual: Math.min(100, Math.max(0, Number(inv.entrada_percentual) || 0)) } : {}),
+    ...(inv.num_parcelas !== undefined && inv.num_parcelas !== '' ? { num_parcelas: Math.max(0, Math.round(Number(inv.num_parcelas) || 0)) } : {}),
+    ...(inv.forma_pagamento ? { forma_pagamento: inv.forma_pagamento } : {}),
   };
   if (!conteudo.condicoes_gerais) conteudo.condicoes_gerais = CONDICOES_GERAIS_PADRAO;
   return conteudo;

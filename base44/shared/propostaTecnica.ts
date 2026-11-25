@@ -123,6 +123,8 @@ export const SCHEMA_ANALISE = {
             valor_sugerido: { type: 'number', description: 'Honorários totais sugeridos em BRL — valor único do projeto (nunca por etapa)' },
             justificativa: { type: 'string', description: 'Como o valor foi composto: escopo, complexidade, horas e riscos' },
             condicoes: { type: 'string', description: 'Condições de pagamento sugeridas: parcelamento, marcos e margem de negociação' },
+            entrada_percentual: { type: 'number', description: 'Percentual de entrada (0 a 100) coerente com as condições; 0 se não houver entrada' },
+            num_parcelas: { type: 'number', description: 'Número de parcelas do saldo após a entrada; 0 se pagamento único à vista' },
           },
         },
         custos_recorrentes: {

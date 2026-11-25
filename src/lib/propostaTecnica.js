@@ -70,6 +70,44 @@ export const valorHonorariosProjeto = (conteudo) => {
     .reduce((s, e) => s + (Number(e.investimento_max) || Number(e.investimento_min) || 0), 0);
 };
 
+// Parcelamento da proposta: campos estruturados (entrada, num_parcelas) ou, na falta deles, lido do texto
+// de condições ("30% de entrada e saldo em 4 vezes", "entrada de R$ 20.000 + 5x", "em 3 parcelas").
+const _num = (s) => Number(String(s).replace(/\./g, '').replace(',', '.')) || 0;
+export function extrairParcelamento(texto, total) {
+  const t = String(texto || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  if (!t.trim()) return {};
+  const out = {};
+  const pct = t.match(/(\d{1,3}(?:[.,]\d+)?)\s*%\s*(?:de\s+)?(?:entrada|sinal|na\s+assinatura|no\s+ato|a\s+vista|na\s+contratacao)/)
+    || t.match(/(?:entrada|sinal)\s+(?:de\s+)?(\d{1,3}(?:[.,]\d+)?)\s*%/);
+  const reais = t.match(/(?:entrada|sinal)\s+(?:de\s+)?r\$\s*([\d.]+(?:,\d{1,2})?)/);
+  if (pct && total) out.entrada = Math.round(Number(total) * _num(pct[1].replace('.', ',')) / 100 * 100) / 100;
+  else if (reais) out.entrada = _num(reais[1]);
+  const parc = t.match(/(?:saldo|restante|remanescente|demais)[^.;]*?(?:em|de)\s+(?:ate\s+)?(\d{1,2})\s*(?:x\b|vezes|parcelas|prestac)/)
+    || t.match(/(\d{1,2})\s*(?:x\b|vezes|parcelas\s+(?:mensais|iguais|fixas)?)/);
+  if (parc) out.num_parcelas = Number(parc[1]);
+  else if (/(a\s+vista|pagamento\s+unico|parcela\s+unica)/.test(t) && !pct) out.num_parcelas = 0;
+  return out;
+}
+// Valor, entrada, parcelas e forma de pagamento da proposta, prontos para o contrato
+export function parcelamentoDaProposta(conteudo) {
+  const inv = conteudo?.investimento || {};
+  const total = valorHonorariosProjeto(conteudo);
+  const lido = extrairParcelamento(inv.condicoes, total);
+  const temEntrada = inv.entrada !== undefined && inv.entrada !== '' && inv.entrada !== null;
+  const temParc = inv.num_parcelas !== undefined && inv.num_parcelas !== '' && inv.num_parcelas !== null;
+  const entrada = temEntrada ? Number(inv.entrada) || 0
+    : inv.entrada_percentual ? Math.round(total * Number(inv.entrada_percentual)) / 100 : lido.entrada;
+  const num_parcelas = temParc ? Number(inv.num_parcelas) || 0 : lido.num_parcelas;
+  const r = { valor_total: total };
+  if (entrada !== undefined) r.valor_adesao = entrada;
+  if (num_parcelas !== undefined) {
+    r.num_parcelas = num_parcelas;
+    r.valor_parcela = num_parcelas > 0 ? Math.round((Math.max(0, total - (entrada || 0)) / num_parcelas) * 100) / 100 : 0;
+  }
+  if (inv.forma_pagamento) r.forma_pagamento = inv.forma_pagamento;
+  return r;
+}
+
 // JSON schema da saída do motor de IA (conteúdo da proposta + avaliação)
 export const SCHEMA_ANALISE = {
   type: 'object',
@@ -124,6 +162,8 @@ export const SCHEMA_ANALISE = {
             valor_sugerido: { type: 'number', description: 'Honorários totais sugeridos em BRL — valor único do projeto (nunca por etapa)' },
             justificativa: { type: 'string', description: 'Como o valor foi composto: escopo, complexidade, horas e riscos' },
             condicoes: { type: 'string', description: 'Condições de pagamento sugeridas: parcelamento, marcos e margem de negociação' },
+            entrada_percentual: { type: 'number', description: 'Percentual de entrada (0 a 100) coerente com as condições; 0 se não houver entrada' },
+            num_parcelas: { type: 'number', description: 'Número de parcelas do saldo após a entrada; 0 se pagamento único à vista' },
           },
         },
         custos_recorrentes: {
