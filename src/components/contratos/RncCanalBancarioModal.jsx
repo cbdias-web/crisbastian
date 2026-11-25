@@ -28,7 +28,7 @@ const DOC_CONFIG = {
 
 const ESTADOS_CIVIS = ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'];
 
-function buildDocInicial(tipoCanal, operarAcima270k) {
+export function buildDocInicial(tipoCanal, operarAcima270k) {
   return DOC_CONFIG[tipoCanal].map(d => ({
     tipo: d.tipo,
     descricao: d.descricao,

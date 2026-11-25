@@ -27,7 +27,7 @@ const DOC_CONFIG_PJ = [
   { tipo: 'faturamento', descricao: 'Faturamento dos últimos 12 meses', obrigatorio: false },
 ];
 
-function buildDocInicial(tipo) {
+export function buildDocInicial(tipo) {
   const cfg = tipo === 'PJ' ? DOC_CONFIG_PJ : DOC_CONFIG_PF;
   return cfg.map(d => ({ ...d, recebido: false, url: '', nome_arquivo: '' }));
 }
