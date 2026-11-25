@@ -468,6 +468,11 @@ function Overlay({ cfg, sp, setSp }) {
 const valorOp = (o) => Number(o.raw?.contrato?.valor_total || o.raw?.neg?.valor_estimado || 0);
 const brlQ = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 function QuadroJornada({ etapas, ops, t, destaque, onAbrir, onFicha }) {
+  // Clicou num bloco de etapa: leva a coluna correspondente para a vista
+  useEffect(() => {
+    if (destaque == null) return;
+    document.getElementById(`vx-col-${destaque}`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [destaque]);
   return (
     <div className="vx-lista-rolagem" style={{ display: 'flex', gap: 12, padding: 14, overflowX: 'auto', overflowY: 'hidden', alignItems: 'stretch' }}>
       {etapas.map((et, i) => {
@@ -475,7 +480,7 @@ function QuadroJornada({ etapas, ops, t, destaque, onAbrir, onFicha }) {
         const total = col.reduce((s, o) => s + valorOp(o), 0);
         const on = destaque === i;
         return (
-          <section key={i} aria-label={et.titulo} style={{ width: 270, flex: 'none', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 16, background: on ? t.dim : 'rgba(255,255,255,0.02)', border: `1px solid ${on ? t.acc : C.line}` }}>
+          <section key={i} id={`vx-col-${i}`} aria-label={et.titulo} style={{ width: 270, flex: 'none', display: 'flex', flexDirection: 'column', minHeight: 0, borderRadius: 16, background: on ? t.dim : 'rgba(255,255,255,0.02)', border: `1px solid ${on ? t.acc : C.line}` }}>
             <header style={{ padding: '12px 14px', borderBottom: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 22, height: 22, borderRadius: 11, background: t.dim, color: t.txt, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${t.line}` }}>{i + 1}</span>
