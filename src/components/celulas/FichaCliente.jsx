@@ -194,7 +194,7 @@ function Ficha({ alvo, sp, setSp }) {
     d.conversas.forEach(w => add(w.ultima_mensagem_em || w.created_date, 'interacao', `Conversa de WhatsApp (${w.status || 'ativa'})${w.ultima_mensagem ? `: “${String(w.ultima_mensagem).slice(0, 120)}”` : ''}`, w.vendedor_nome));
     d.estudos.forEach(e => {
       add(e.created_date, 'operacao', `Operação ${JORNADAS[e.produto]?.nome || e.produto} aberta.`, e.responsavel_nome);
-      add(e.nda_assinado_em || (e.nda_origem !== 'gerado' ? null : null), 'documento', 'NDA assinado anexado.', e.responsavel_nome);
+      add(e.nda_assinado_em, 'documento', 'NDA assinado anexado.', e.responsavel_nome);
       add(e.cliente_devolveu_em || e.data_recebimento, 'operacao', 'Cliente devolveu o estudo de viabilidade.', d.nome);
     });
     d.propostas.forEach(p => {

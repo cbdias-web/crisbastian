@@ -21,6 +21,7 @@ import MarketTicker from '@/components/MarketTicker.jsx';
 import HeaderNav from '@/components/layout/HeaderNav.jsx';
 import GoogleCalendarConectarModal from '@/components/GoogleCalendarConectarModal.jsx';
 import CelulaEstruturados from '@/components/celulas/CelulaEstruturados.jsx';
+import FichaClienteOverlay from '@/components/celulas/FichaCliente.jsx';
 import CelulaLauncher from '@/components/celulas/CelulaLauncher.jsx';
 import HubInicio from '@/components/hub/HubInicio.jsx';
 import HeaderAvatares from '@/components/hub/HeaderAvatares.jsx';
@@ -762,6 +763,7 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Célula imersiva (?celula=estruturados) */}
       {novoPortal && <CelulaEstruturados />}
+      {novoPortal && <FichaClienteOverlay />}
     </div>
   );
 }
