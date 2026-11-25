@@ -502,6 +502,10 @@
     "estudo_id": {
       "type": "string",
       "description": "Operação de Produtos estruturados (EstudoViabilidade) que originou o contrato"
+    },
+    "migrado_nova_estrutura_em": {
+      "type": "string",
+      "description": "Quando o contrato foi migrado/vinculado à nova estrutura (células)"
     }
   },
   "required": [

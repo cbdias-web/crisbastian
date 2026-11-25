@@ -234,6 +234,10 @@
     "nda_assinado_em": {
       "type": "string",
       "format": "date-time"
+    },
+    "origem_operacao": {
+      "type": "string",
+      "description": "Como a operação nasceu: portal (padrão) ou migracao (migrada de um contrato antigo)"
     }
   },
   "required": [
