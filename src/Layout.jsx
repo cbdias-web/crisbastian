@@ -27,6 +27,7 @@ import CelulaLauncher from '@/components/celulas/CelulaLauncher.jsx';
 import HubInicio from '@/components/hub/HubInicio.jsx';
 import HeaderAvatares from '@/components/hub/HeaderAvatares.jsx';
 import BarraNavegacao from '@/components/layout/BarraNavegacao.jsx';
+import NovoRapido, { useAcionarNovo } from '@/components/hub/NovoRapido.jsx';
 import { usaNovoPortal } from '@/lib/novoPortal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -53,6 +54,8 @@ const AURORA = {
 export default function Layout({ children, currentPageName }) {
   const navigate = useNavigate();
   const location = useLocation();
+  // "+ Novo" do cabeçalho: ?novo=1 aciona o botão de inserção padrão da página
+  useAcionarNovo();
   // Tela de origem (para o "Voltar" da barra de navegação quando não há histórico)
   const ultimaRotaRef = useRef(null);
   const [rotaOrigem, setRotaOrigem] = useState(null);
@@ -558,7 +561,10 @@ export default function Layout({ children, currentPageName }) {
 
           {/* Navigation menus (desktop) — drag-and-drop para admin reordenar */}
           {!isMobile && novoPortal && (
-            <HeaderAvatares groups={navGroupsPortal} currentPageName={currentPageName} />
+            <>
+              <HeaderAvatares groups={navGroupsPortal} currentPageName={currentPageName} />
+              <NovoRapido />
+            </>
           )}
           {!isMobile && !novoPortal && (
             <HeaderNav
