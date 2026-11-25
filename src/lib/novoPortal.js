@@ -2,7 +2,7 @@
 // Só os e-mails abaixo veem a novidade. Para liberar a um usuário específico,
 // inclua o e-mail aqui ou marque `novo_portal: true` no cadastro dele.
 // Para liberar a todos, troque LIBERADO_PARA_TODOS para true.
-export const LIBERADO_PARA_TODOS = false;
+export const LIBERADO_PARA_TODOS = true;
 
 export const NOVO_PORTAL_EMAILS = [
   'cris.morais@grupovillela.com',
