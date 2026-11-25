@@ -2,16 +2,24 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Loader2, BarChart3, Download, Timer, PhoneCall, CalendarCheck, Trophy, Ban } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 import { listAll, getConfigFila } from '@/lib/listAll';
 import { hojeBrasilia, somaDiasData } from '@/lib/leadUtils';
 
-const A = { bg: '#0d1117', surface: '#161b22', surface2: '#1c2333', border: 'rgba(0,212,170,0.15)', accent: '#00D4AA', text: '#e6edf3', muted: 'rgba(230,237,243,0.55)' };
+const P = { bg: '#0B111C', card: 'rgba(255,255,255,0.03)', line: 'rgba(255,255,255,0.07)', acc: '#60A5FA', acc2: '#93C5FD', dim: 'rgba(96,165,250,0.12)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
 const CONTATO = ['atendeu_interessado', 'atendeu_retorno', 'atendeu_sem_interesse'];
 const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '—');
 
-function Kpi({ ic: Ic, l, v, sub, cor = A.accent }) {
-  return <div className="rounded-2xl p-4" style={{ background: A.surface, border: `1px solid ${A.border}` }}><div className="flex items-center gap-2 mb-1"><Ic className="w-4 h-4" style={{ color: cor }} /><p className="text-[11px]" style={{ color: A.muted }}>{l}</p></div><p className="text-2xl font-bold" style={{ color: cor }}>{v}</p>{sub && <p className="text-[10px] mt-0.5" style={{ color: A.muted }}>{sub}</p>}</div>;
+function Kpi({ ic: Ic, l, v, sub, cor = P.acc }) {
+  return (
+    <div style={{ borderRadius: 20, background: P.card, border: `1px solid ${P.line}`, padding: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, color: P.muted }}>
+        <span style={{ width: 34, height: 34, borderRadius: 17, background: cor + '1f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Ic className="w-4 h-4" style={{ color: cor }} /></span>{l}
+      </span>
+      <span style={{ fontSize: 30, fontWeight: 600, color: P.txt, lineHeight: 1.1 }}>{v}</span>
+      {sub && <span style={{ fontSize: 12, color: P.muted2 }}>{sub}</span>}
+    </div>
+  );
 }
 
 export default function PainelProspeccao() {
@@ -63,7 +71,7 @@ export default function PainelProspeccao() {
     for (const r of regs) { if (!r.cadencia_id) continue; const k = `${r.cadencia_id}|${(r.passo_cadencia ?? 0) + 1}`; const o = cadRows[k] || (cadRows[k] = { cad: cadMap[r.cadencia_id] || '—', passo: (r.passo_cadencia ?? 0) + 1, toques: 0, contatos: 0, reunioes: 0 }); o.toques++; if (CONTATO.includes(r.resultado) || r.resultado === 'respondeu') o.contatos++; if (r.resultado === 'reuniao_marcada') o.reunioes++; }
     const segs = ['quente', 'morno', 'frio', 'sem'].map(s => { const fs = fila.filter(f => (f.segmento || 'sem') === s); const c = (st) => fs.filter(f => f.status === st).length; return { seg: s, total: fs.length, pendente: c('pendente'), atendeu: c('atendeu'), reuniao: c('reuniao_marcada'), qualificado: c('qualificado'), convertido: c('convertido'), nutricao: c('nutricao'), descartado: c('descartado') }; });
     const emAtraso = fila.filter(f => f.status === 'atendeu' && f.alerta_stale).length;
-    return { total: regs.length, ligacoes: ligacoes.length, contatoTxt: pct(contatos.length, ligacoes.length), tocados: tocados.size, qualTxt: pct(interessados.size, tocados.size), reunioes, mediaMin, dentro5, nInbound: inbound.length, convertidos, optouts, optTxt: pct(optouts, regs.length), porGerente, cadRows: Object.values(cadRows).sort((a, b) => a.cad.localeCompare(b.cad) || a.passo - b.passo), segs, emAtraso };
+    return { contatosN: contatos.length, interessadosN: interessados.size, total: regs.length, ligacoes: ligacoes.length, contatoTxt: pct(contatos.length, ligacoes.length), tocados: tocados.size, qualTxt: pct(interessados.size, tocados.size), reunioes, mediaMin, dentro5, nInbound: inbound.length, convertidos, optouts, optTxt: pct(optouts, regs.length), porGerente, cadRows: Object.values(cadRows).sort((a, b) => a.cad.localeCompare(b.cad) || a.passo - b.passo), segs, emAtraso };
   }, [data, ini, hoje]);
 
   const exportar = () => {
@@ -72,61 +80,195 @@ export default function PainelProspeccao() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `painel_prospeccao_${hoje}.csv`; a.click();
   };
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center" style={{ background: A.bg }}><Loader2 className="w-6 h-6 animate-spin" style={{ color: A.accent }} /></div>;
-  if (!isAdmin) return <div className="min-h-screen flex items-center justify-center text-sm" style={{ background: A.bg, color: A.muted }}>Acesso restrito a administradores.</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center" style={{ background: P.bg }}><Loader2 className="w-6 h-6 animate-spin" style={{ color: P.acc }} /></div>;
+  if (!isAdmin) return <div className="min-h-screen flex items-center justify-center text-sm" style={{ background: P.bg, color: P.muted }}>Acesso restrito a administradores.</div>;
+
+  const funil = m ? [
+    ['Toques', m.total, P.acc], ['Ligações', m.ligacoes, '#7FB0FF'], ['Conversas', m.contatosN, '#A78BFA'],
+    ['Interessados', m.interessadosN, '#F472B6'], ['Reuniões', m.reunioes, '#F59E0B'], ['Convertidos', m.convertidos, '#34D399'],
+  ] : [];
+  const SEG_CORES = { pendente: '#64748B', atendeu: P.acc, reuniao: '#F59E0B', qualificado: '#A78BFA', convertido: '#34D399', nutricao: '#2DD4BF', descartado: '#F87171' };
+  const SEG_ROT = { pendente: 'Na fila', atendeu: 'Em contato', reuniao: 'Reunião', qualificado: 'Qualificado', convertido: 'Convertido', nutricao: 'Nutrição', descartado: 'Descartado' };
+  const card = { borderRadius: 20, background: P.card, border: `1px solid ${P.line}`, padding: 18 };
 
   return (
-    <div className="min-h-screen p-4 md:p-6" style={{ background: A.bg, color: A.text }}>
-      <div className="max-w-6xl mx-auto space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2"><BarChart3 className="w-5 h-5" style={{ color: A.accent }} /><h1 className="text-xl font-bold">Painel de Prospecção</h1></div>
-          <div className="flex gap-1.5 items-center">
-            {[[1, 'Hoje'], [7, '7 dias'], [30, '30 dias']].map(([d, l]) => <button key={d} onClick={() => setDias(d)} className="px-3 py-1.5 rounded-xl text-xs font-bold" style={{ background: dias === d ? 'rgba(0,212,170,0.18)' : A.surface, color: dias === d ? A.accent : A.muted, border: `1px solid ${dias === d ? A.accent : A.border}` }}>{l}</button>)}
-            {m && <button onClick={exportar} className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1" style={{ background: A.surface, color: A.accent, border: `1px solid ${A.border}` }}><Download className="w-3.5 h-3.5" /> CSV</button>}
+    <div className="min-h-screen p-4 md:p-7" style={{ background: P.bg, color: P.txt2 }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <span style={{ width: 52, height: 52, borderRadius: 26, background: P.dim, border: `2px solid ${P.acc}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BarChart3 className="w-6 h-6" style={{ color: P.acc }} /></span>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <h1 style={{ fontSize: 26, fontWeight: 600, color: P.txt }}>Painel de Prospecção</h1>
+            <p style={{ fontSize: 14, color: P.muted, marginTop: 2 }}>Toques, conversas e conversões da equipe — por gerente, cadência e segmento.</p>
           </div>
-        </div>
-
-        {isLoading || !m ? <div className="py-20 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto" style={{ color: A.accent }} /></div> : (<>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Kpi ic={PhoneCall} l="Toques no período" v={m.total.toLocaleString('pt-BR')} sub={`${m.ligacoes} ligações · taxa de contato ${m.contatoTxt}`} />
-            <Kpi ic={Timer} l="Tempo até 1º toque (inbound)" v={m.mediaMin == null ? '—' : `${m.mediaMin} min`} sub={m.nInbound ? `${m.dentro5}/${m.nInbound} dentro de 5 min` : 'sem inbound no período'} cor="#fbbf24" />
-            <Kpi ic={CalendarCheck} l="Reuniões marcadas" v={m.reunioes} sub={`qualificação (interessados/tocados): ${m.qualTxt}`} cor="#2dd4bf" />
-            <Kpi ic={Trophy} l="Convertidos" v={m.convertidos} sub={`${m.tocados} leads tocados · ${m.emAtraso} em atraso`} cor="#34d399" />
+          <div role="tablist" aria-label="Período" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: 'rgba(0,0,0,.28)', border: `1px solid ${P.line}` }}>
+            {[[1, 'Hoje'], [7, '7 dias'], [30, '30 dias']].map(([d, l]) => (
+              <button key={d} role="tab" aria-selected={dias === d} onClick={() => setDias(d)}
+                style={{ height: 34, padding: '0 16px', borderRadius: 999, border: 0, cursor: 'pointer', fontSize: 13, fontWeight: dias === d ? 600 : 500, background: dias === d ? `linear-gradient(135deg, ${P.acc2}, ${P.acc})` : 'transparent', color: dias === d ? '#06122A' : '#B8C0CC' }}>{l}</button>
+            ))}
           </div>
+          {m && <button onClick={exportar} className="vx-btn vx-btn-soft" style={{ height: 40, padding: '0 16px', fontSize: 13 }}><Download className="w-4 h-4" /> Exportar CSV</button>}
+        </header>
 
-          <div className="grid lg:grid-cols-2 gap-3">
-            <div className="rounded-2xl p-4" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-              <p className="text-xs font-bold mb-2" style={{ color: A.accent }}>Toques por gerente</p>
-              <div style={{ height: 220 }}><ResponsiveContainer><BarChart data={m.porGerente}><CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" /><XAxis dataKey="nome" tick={{ fill: A.muted, fontSize: 11 }} /><YAxis tick={{ fill: A.muted, fontSize: 11 }} /><Tooltip contentStyle={{ background: A.surface2, border: 'none', color: A.text }} /><Bar dataKey="ligacoes" stackId="a" fill="#60a5fa" name="Ligações" /><Bar dataKey="whatsapps" stackId="a" fill="#34d399" name="WhatsApp" /></BarChart></ResponsiveContainer></div>
-            </div>
-            <div className="rounded-2xl p-4 overflow-x-auto" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-              <p className="text-xs font-bold mb-2" style={{ color: A.accent }}>Meta de hoje por gerente</p>
-              {m.porGerente.length === 0 && <p className="text-xs" style={{ color: A.muted }}>Sem toques registrados.</p>}
-              {m.porGerente.map(g => <div key={g.id} className="mb-2"><div className="flex justify-between text-[11px]"><span>{g.nomeCompleto}</span><span style={{ color: A.muted }}>{g.hoje}/{g.meta} · contato {g.contato} · {g.reunioes} reuniões</span></div><div className="h-1.5 rounded-full overflow-hidden mt-1" style={{ background: A.surface2 }}><div className="h-full" style={{ width: `${Math.min(100, (g.hoje / g.meta) * 100)}%`, background: g.hoje >= g.meta ? '#34d399' : A.accent }} /></div></div>)}
-            </div>
+        {isLoading || !m ? <div style={{ padding: 80, display: 'flex', justifyContent: 'center' }}><Loader2 className="w-6 h-6 animate-spin" style={{ color: P.acc }} /></div> : (<>
+          {/* Números principais */}
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            <Kpi ic={PhoneCall} l="Toques no período" v={m.total.toLocaleString('pt-BR')} sub={`${m.ligacoes} ligações · contato ${m.contatoTxt}`} cor={P.acc} />
+            <Kpi ic={Timer} l="Tempo até o 1º toque (inbound)" v={m.mediaMin == null ? '—' : `${m.mediaMin} min`} sub={m.nInbound ? `${m.dentro5} de ${m.nInbound} em até 5 min` : 'sem inbound no período'} cor="#F59E0B" />
+            <Kpi ic={CalendarCheck} l="Reuniões marcadas" v={m.reunioes} sub={`qualificação ${m.qualTxt} dos leads tocados`} cor="#A78BFA" />
+            <Kpi ic={Trophy} l="Convertidos" v={m.convertidos} sub={`${m.tocados} leads tocados · ${m.emAtraso} em atraso`} cor="#34D399" />
           </div>
 
-          <div className="rounded-2xl p-4 overflow-x-auto" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-            <p className="text-xs font-bold mb-2" style={{ color: A.accent }}>Desempenho por cadência e passo</p>
-            <table className="w-full text-xs"><thead><tr style={{ color: A.muted }}>{['Cadência', 'Passo', 'Toques', 'Contatos/respostas', 'Taxa', 'Reuniões'].map(h => <th key={h} className="text-left p-1.5">{h}</th>)}</tr></thead>
-              <tbody>{m.cadRows.length === 0 && <tr><td colSpan={6} className="p-3" style={{ color: A.muted }}>Sem toques vinculados a cadências ainda.</td></tr>}{m.cadRows.map((r, i) => <tr key={i} style={{ borderTop: `1px solid ${A.border}` }}><td className="p-1.5">{r.cad}</td><td className="p-1.5">{r.passo}</td><td className="p-1.5">{r.toques}</td><td className="p-1.5">{r.contatos}</td><td className="p-1.5">{pct(r.contatos, r.toques)}</td><td className="p-1.5">{r.reunioes}</td></tr>)}</tbody></table>
+          {/* Funil */}
+          <div style={card}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 16, fontWeight: 600, color: P.txt }}>Funil do período</span>
+              <span style={{ fontSize: 12, color: m.optouts ? '#F87171' : P.muted, display: 'flex', alignItems: 'center', gap: 5 }}><Ban className="w-3.5 h-3.5" /> {m.optouts} opt-outs ({m.optTxt} dos toques)</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {funil.map(([l, v, cor], i) => {
+                const max = funil[0][1] || 1;
+                const w = Math.max(6, (v / max) * 100);
+                const ant = i > 0 ? funil[i - 1][1] : null;
+                return (
+                  <div key={l} style={{ display: 'grid', gridTemplateColumns: '120px 1fr 120px', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 13, color: P.txt2 }}>{l}</span>
+                    <div style={{ height: 26, borderRadius: 8, background: 'rgba(255,255,255,.04)', overflow: 'hidden' }}>
+                      <div style={{ width: `${w}%`, height: '100%', borderRadius: 8, background: `linear-gradient(90deg, ${cor}55, ${cor})`, display: 'flex', alignItems: 'center', paddingLeft: 10, fontSize: 12, fontWeight: 600, color: '#0B1322' }}>{v.toLocaleString('pt-BR')}</div>
+                    </div>
+                    <span style={{ fontSize: 12, color: P.muted, textAlign: 'right' }}>{ant ? `${pct(v, ant)} da etapa anterior` : ''}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-3">
-            <div className="rounded-2xl p-4 overflow-x-auto" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-              <p className="text-xs font-bold mb-2" style={{ color: A.accent }}>Funil por segmento (itens atualizados no período)</p>
-              <table className="w-full text-xs"><thead><tr style={{ color: A.muted }}>{['Segmento', 'Total', 'Fila', 'Em contato', 'Reunião', 'Qualif.', 'Conv.', 'Nutrição', 'Desq.'].map(h => <th key={h} className="text-left p-1.5">{h}</th>)}</tr></thead>
-                <tbody>{m.segs.map(s => <tr key={s.seg} style={{ borderTop: `1px solid ${A.border}` }}><td className="p-1.5 capitalize">{s.seg === 'sem' ? 'sem score' : s.seg}</td><td className="p-1.5">{s.total}</td><td className="p-1.5">{s.pendente}</td><td className="p-1.5">{s.atendeu}</td><td className="p-1.5">{s.reuniao}</td><td className="p-1.5">{s.qualificado}</td><td className="p-1.5">{s.convertido}</td><td className="p-1.5">{s.nutricao}</td><td className="p-1.5">{s.descartado}</td></tr>)}</tbody></table>
+          {/* Gerentes */}
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,1fr)' }} className="vx-pp-grid">
+            <div style={card}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: P.txt, marginBottom: 10 }}>Toques por gerente</p>
+              <div style={{ height: 260 }}>
+                <ResponsiveContainer>
+                  <BarChart data={m.porGerente} barSize={22}>
+                    <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="nome" tick={{ fill: P.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: P.muted2, fontSize: 11 }} axisLine={false} tickLine={false} width={36} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} contentStyle={{ background: '#162033', border: `1px solid ${P.line}`, borderRadius: 10, color: P.txt }} />
+                    <Legend wrapperStyle={{ fontSize: 12, color: P.muted }} />
+                    <Bar dataKey="ligacoes" stackId="a" fill={P.acc} name="Ligações" />
+                    <Bar dataKey="whatsapps" stackId="a" fill="#34D399" name="WhatsApp" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="rounded-2xl p-4 overflow-x-auto" style={{ background: A.surface, border: `1px solid ${A.border}` }}>
-              <p className="text-xs font-bold mb-2" style={{ color: A.accent }}>Modelos de mensagem (acumulado)</p>
-              <table className="w-full text-xs"><thead><tr style={{ color: A.muted }}>{['Modelo', 'Envios', 'Respostas', 'Taxa'].map(h => <th key={h} className="text-left p-1.5">{h}</th>)}</tr></thead>
-                <tbody>{data.modelos.filter(x => (x.envios || 0) > 0).sort((a, b) => (b.respostas || 0) / (b.envios || 1) - (a.respostas || 0) / (a.envios || 1)).map(x => <tr key={x.id} style={{ borderTop: `1px solid ${A.border}` }}><td className="p-1.5">{x.nome}</td><td className="p-1.5">{x.envios}</td><td className="p-1.5">{x.respostas || 0}</td><td className="p-1.5">{pct(x.respostas || 0, x.envios)}</td></tr>)}{!data.modelos.some(x => (x.envios || 0) > 0) && <tr><td colSpan={4} className="p-3" style={{ color: A.muted }}>Sem envios com modelo registrados.</td></tr>}</tbody></table>
-              <p className="text-[11px] mt-3 flex items-center gap-1.5" style={{ color: m.optouts ? '#f87171' : A.muted }}><Ban className="w-3.5 h-3.5" /> Opt-outs no período: {m.optouts} ({m.optTxt} dos toques)</p>
+            <div style={{ ...card, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: P.txt }}>Meta de hoje</p>
+              {m.porGerente.length === 0 && <p style={{ fontSize: 13, color: P.muted }}>Sem toques registrados.</p>}
+              {m.porGerente.map(g => {
+                const pc = Math.min(100, Math.round((g.hoje / (g.meta || 1)) * 100));
+                return (
+                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <Anel pct={pc} cor={g.hoje >= g.meta ? '#34D399' : P.acc} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', gap: 8, fontSize: 13 }}>
+                        <span style={{ flex: 1, color: P.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.nomeCompleto}</span>
+                        <b style={{ color: P.txt }}>{g.hoje}<span style={{ color: P.muted, fontWeight: 400 }}>/{g.meta}</span></b>
+                      </div>
+                      <span style={{ fontSize: 11, color: P.muted2 }}>contato {g.contato} · {g.reunioes} reuniões · {g.toques} toques no período</span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          {/* Cadências */}
+          <div style={card}>
+            <p style={{ fontSize: 16, fontWeight: 600, color: P.txt, marginBottom: 10 }}>Desempenho por cadência e passo</p>
+            {m.cadRows.length === 0 ? <p style={{ fontSize: 13, color: P.muted }}>Sem toques vinculados a cadências ainda.</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1.6fr 90px', gap: 12, fontSize: 11, color: P.muted2, textTransform: 'uppercase', letterSpacing: '.05em', padding: '0 4px 8px' }}>
+                  <span>Cadência</span><span>Passo</span><span>Toques</span><span>Taxa de resposta</span><span>Reuniões</span>
+                </div>
+                {m.cadRows.map((r, i) => {
+                  const tx = r.toques ? Math.round((r.contatos / r.toques) * 100) : 0;
+                  return (
+                    <div key={i} className="vx-row-hover" style={{ display: 'grid', gridTemplateColumns: '2fr 70px 90px 1.6fr 90px', gap: 12, alignItems: 'center', padding: '9px 4px', borderTop: `1px solid ${P.line}`, fontSize: 13 }}>
+                      <span style={{ color: P.txt }}>{r.cad}</span>
+                      <span><span style={{ padding: '2px 9px', borderRadius: 999, background: P.dim, color: P.acc2, fontSize: 12 }}>{r.passo}º</span></span>
+                      <span>{r.toques}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,.06)' }}><span style={{ display: 'block', width: `${tx}%`, height: '100%', borderRadius: 3, background: tx >= 30 ? '#34D399' : tx >= 15 ? '#F59E0B' : '#F87171' }} /></span>
+                        <span style={{ width: 40, textAlign: 'right', color: P.txt2 }}>{tx}%</span>
+                      </span>
+                      <span>{r.reunioes}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'minmax(0,1.2fr) minmax(0,1fr)' }} className="vx-pp-grid">
+            {/* Segmentos */}
+            <div style={card}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: P.txt }}>Funil por segmento</p>
+              <p style={{ fontSize: 12, color: P.muted, marginBottom: 12 }}>Leads da fila atualizados no período</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {m.segs.map(sg => (
+                  <div key={sg.seg}>
+                    <div style={{ display: 'flex', fontSize: 13, marginBottom: 5 }}>
+                      <span style={{ flex: 1, color: P.txt, textTransform: 'capitalize' }}>{sg.seg === 'sem' ? 'Sem score' : sg.seg}</span>
+                      <span style={{ color: P.muted }}>{sg.total} leads</span>
+                    </div>
+                    <div style={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,.04)' }}>
+                      {Object.keys(SEG_CORES).map(st => {
+                        const v = sg[st] || 0;
+                        return v ? <span key={st} title={`${SEG_ROT[st]}: ${v}`} style={{ width: `${(v / (sg.total || 1)) * 100}%`, background: SEG_CORES[st] }} /> : null;
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, fontSize: 11, color: P.muted }}>
+                  {Object.entries(SEG_ROT).map(([k, l]) => <span key={k} style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 8, height: 8, borderRadius: 4, background: SEG_CORES[k] }} />{l}</span>)}
+                </div>
+              </div>
+            </div>
+            {/* Modelos */}
+            <div style={card}>
+              <p style={{ fontSize: 16, fontWeight: 600, color: P.txt }}>Modelos de mensagem</p>
+              <p style={{ fontSize: 12, color: P.muted, marginBottom: 12 }}>Taxa de resposta acumulada</p>
+              {!data.modelos.some(x => (x.envios || 0) > 0) && <p style={{ fontSize: 13, color: P.muted }}>Sem envios com modelo registrados.</p>}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {data.modelos.filter(x => (x.envios || 0) > 0).sort((a, b) => (b.respostas || 0) / (b.envios || 1) - (a.respostas || 0) / (a.envios || 1)).map(x => {
+                  const tx = Math.round(((x.respostas || 0) / (x.envios || 1)) * 100);
+                  return (
+                    <div key={x.id}>
+                      <div style={{ display: 'flex', fontSize: 13, gap: 8 }}>
+                        <span style={{ flex: 1, color: P.txt, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nome}</span>
+                        <span style={{ color: P.muted }}>{x.respostas || 0}/{x.envios}</span>
+                        <b style={{ color: P.txt, width: 40, textAlign: 'right' }}>{tx}%</b>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: 'rgba(255,255,255,.06)', marginTop: 4 }}><div style={{ width: `${tx}%`, height: '100%', borderRadius: 3, background: '#34D399' }} /></div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <style>{`@media (max-width:1000px){.vx-pp-grid{grid-template-columns:1fr !important}}`}</style>
         </>)}
       </div>
     </div>
+  );
+}
+
+function Anel({ pct: p, cor }) {
+  const r = 16, c = 2 * Math.PI * r;
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" style={{ flex: 'none' }}>
+      <circle cx="20" cy="20" r={r} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="4" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke={cor} strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - p / 100)} transform="rotate(-90 20 20)" />
+      <text x="20" y="24" textAnchor="middle" fontSize="10" fill="#F4EFE3" fontWeight="600">{p}%</text>
+    </svg>
   );
 }
