@@ -182,7 +182,7 @@ body {
 
 /* ── Emerald / Green ── */
 .text-emerald-400, .text-emerald-500, .text-emerald-600 { color: #34d399 !important; }
-.text-emerald-700 { color: #6ee7b7 !important; }
+.text-emerald-700, .text-emerald-800, .text-emerald-900 { color: #6ee7b7 !important; }
 .text-green-500, .text-green-600 { color: #34d399 !important; }
 .text-green-700 { color: #6ee7b7 !important; }
 

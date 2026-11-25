@@ -610,7 +610,7 @@ function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, cl
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
       {aba === 'contrato' && (
-        <div style={!contrato ? { background: '#F5F6F8', borderRadius: 18, padding: 12 } : undefined}>
+        <div style={!contrato ? { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: 12 } : undefined}>
           <ContratoNaCelula contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo}
             onVoltar={() => setAba('jornada')}
             onSalvo={(c) => { onCriado ? onCriado(c) : recarregar?.(); }}
