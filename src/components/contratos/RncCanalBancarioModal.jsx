@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import {
@@ -100,6 +100,27 @@ function slotFromRnc(rnc) {
     },
   };
 }
+
+// Fora do componente: definido dentro, era recriado a cada tecla e os campos perdiam o foco.
+const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
+  <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
+    <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 transition"
+      style={{ background: AURORA.surface2 }}>
+      <div className="flex items-center gap-2">
+        <Icon className="w-4 h-4" style={{ color: AURORA.accent }} />
+        <span className="text-sm font-semibold" style={{ color: AURORA.text }}>{title}</span>
+        {badge && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: AURORA.accentDim, color: AURORA.accent }}>
+            {badge}
+          </span>
+        )}
+      </div>
+      {open ? <ChevronUp className="w-4 h-4" style={{ color: AURORA.textMuted }} /> : <ChevronDown className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
+    </button>
+    {open && <div className="p-4">{children}</div>}
+  </div>
+);
+
 
 // produto: CANAL BANCÁRIO (padrão), ROF ou DOLARIZE — mesmo formulário RNC, títulos e mensagem do produto
 export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, produto: produtoProp }) {
@@ -447,37 +468,25 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
     setGerandoLink(false);
   };
 
-  const CardSection = ({ title, icon: Icon, children, open, onToggle, badge }) => (
-    <div className="rounded-xl overflow-hidden" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}` }}>
-      <button onClick={onToggle} className="w-full flex items-center justify-between px-4 py-3 transition"
-        style={{ background: AURORA.surface2 }}>
-        <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4" style={{ color: AURORA.accent }} />
-          <span className="text-sm font-semibold" style={{ color: AURORA.text }}>{title}</span>
-          {badge && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: AURORA.accentDim, color: AURORA.accent }}>
-              {badge}
-            </span>
-          )}
-        </div>
-        {open ? <ChevronUp className="w-4 h-4" style={{ color: AURORA.textMuted }} /> : <ChevronDown className="w-4 h-4" style={{ color: AURORA.textMuted }} />}
-      </button>
-      {open && <div className="p-4">{children}</div>}
-    </div>
-  );
-
-  const LabeledInput = ({ label, field, mascara, ...props }) => (
-    <div>
-      <label className="block mb-1" style={labelStyle}>{label}</label>
-      {mascara ? (
-        <CampoMascara tipo={mascara} value={form[field] || ''} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
-          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
-      ) : (
-        <input value={form[field]} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
-          className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
-      )}
-    </div>
-  );
+  // LabeledInput com identidade estável (useMemo) lendo o formulário atual por ref:
+  // antes era recriado a cada render e o campo perdia o foco a cada letra digitada.
+  const formRef = useRef(null);
+  formRef.current = { form, updateForm };
+  const LabeledInput = useMemo(() => function LabeledInput({ label, field, mascara, ...props }) {
+    const { form, updateForm } = formRef.current;
+    return (
+      <div>
+        <label className="block mb-1" style={labelStyle}>{label}</label>
+        {mascara ? (
+          <CampoMascara tipo={mascara} value={form[field] || ''} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
+            className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
+        ) : (
+          <input value={form[field] ?? ''} onChange={e => updateForm(field, e.target.value)} style={inputStyle}
+            className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" {...props} />
+        )}
+      </div>
+    );
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
