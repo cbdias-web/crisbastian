@@ -333,8 +333,11 @@ function Painel() {
 // ───────────── Workspace do estudo ─────────────
 const ETAPAS_IA = ['Lendo formulário e documentos', 'Avaliando viabilidade e riscos', 'Desenhando a estrutura recomendada', 'Estimando etapas, prazos e investimento', 'Redigindo a proposta executiva'];
 
-function Workspace({ estudoId }) {
+// embutido: dentro da operação na célula; onVoltar/onIrEstudo substituem a navegação para as páginas antigas
+export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) {
   const nav = useNavigate();
+  const voltarLista = () => (onVoltar ? onVoltar() : voltarLista());
+  const irEstudo = () => (onIrEstudo ? onIrEstudo() : irEstudo());
   const [user, setUser] = useState(null);
   const [estudo, setEstudo] = useState(null);
   const [versoes, setVersoes] = useState([]);
@@ -398,7 +401,7 @@ function Workspace({ estudoId }) {
         analise_gerada_em: null, status: 'recebido',
       });
       toast.success('Análise excluída. O estudo permanece disponível para uma nova análise.');
-      nav('/AnaliseTecnica');
+      voltarLista();
     } catch (e) { toast.error('Erro ao excluir: ' + e.message); }
   };
 
@@ -479,11 +482,11 @@ function Workspace({ estudoId }) {
   ];
 
   return (
-    <div className="p-4 md:p-6 space-y-4 pb-24" style={{ color: A.text }}>
+    <div className={embutido ? 'space-y-4 pb-8' : 'p-4 md:p-6 space-y-4 pb-24'} style={{ color: A.text }}>
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) nav('/AnaliseTecnica'); }} className="mt-1 p-2 rounded-lg" style={{ background: A.surface, border: `1px solid ${A.border}` }}><ArrowLeft className="w-4 h-4" /></button>
+          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) voltarLista(); }} className="mt-1 p-2 rounded-lg" style={{ background: A.surface, border: `1px solid ${A.border}` }}><ArrowLeft className="w-4 h-4" /></button>
           <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: A.accentDim }}><Icon className="w-5 h-5" style={{ color: A.accent }} /></div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: A.accent }}>Análise Técnica · {prod?.titulo}</p>
@@ -496,7 +499,7 @@ function Workspace({ estudoId }) {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) nav(`/EstudoViabilidade?estudo=${estudoId}`); }}
+          <button onClick={() => { if (!dirty || confirm('Descartar alterações não salvas?')) irEstudo(); }}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold" style={inputStyle}>
             <ClipboardCheck className="w-3.5 h-3.5" /> Ver estudo de origem
           </button>
@@ -561,7 +564,7 @@ function Workspace({ estudoId }) {
                 <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                 A análise começa quando o cliente devolve as respostas do estudo.
               </p>
-              <button onClick={() => nav(`/EstudoViabilidade?estudo=${estudoId}`)} className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={inputStyle}>
+              <button onClick={() => irEstudo()} className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold" style={inputStyle}>
                 <ClipboardCheck className="w-4 h-4" /> Ver estudo / link do cliente
               </button>
             </div>

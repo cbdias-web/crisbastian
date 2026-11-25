@@ -535,8 +535,13 @@ function NovoEstudoModal({ produtoInicial, user, onClose, onCriado }) {
   );
 }
 
-function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExcluido }) {
+// embutido: renderizado dentro da operação na célula (sem modal); onIrAnalise: abre a análise na própria célula
+const CascaEmbutida = ({ children }) => (
+  <div className="w-full rounded-2xl" style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }}>{children}</div>
+);
+export function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExcluido, embutido = false, onIrAnalise }) {
   const nav = useNavigate();
+  const Casca = embutido ? CascaEmbutida : Modal;
   const [obs, setObs] = useState(estudo.observacoes_internas || '');
   const [gerando, setGerando] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -578,11 +583,11 @@ function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExc
   const enviarAnalise = async () => {
     if (pend.length > 0 && !confirm(`Há ${pend.length} pendência(s) no formulário. Enviar para Análise Técnica mesmo assim?`)) return;
     await onAtualizar(estudo, { status: 'em_analise_tecnica', data_envio_analise: new Date().toISOString(), observacoes_internas: obs }, 'Enviado para Análise Técnica');
-    nav(`/AnaliseTecnica?estudo=${estudo.id}`);
+    (onIrAnalise ? onIrAnalise() : nav(`/AnaliseTecnica?estudo=${estudo.id}`));
   };
 
   return (
-    <Modal onClose={onClose} largo>
+    <Casca onClose={onClose} largo>
       <div className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -652,7 +657,7 @@ function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExc
             </button>
           )}
           {(['em_analise_tecnica', 'concluido'].includes(estudo.status) || estudo.proposta_atual_id) && (
-            <button onClick={() => nav(`/AnaliseTecnica?estudo=${estudo.id}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
+            <button onClick={() => (onIrAnalise ? onIrAnalise() : nav(`/AnaliseTecnica?estudo=${estudo.id}`))} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold" style={{ background: AURORA.accent, color: '#0d1117' }}>
               <BrainCircuit className="w-3.5 h-3.5" /> Abrir Análise Técnica{estudo.proposta_versao ? ` (v${estudo.proposta_versao})` : ''}
             </button>
           )}
@@ -762,6 +767,6 @@ function DetalheEstudoModal({ estudo, user, isAdmin, onClose, onAtualizar, onExc
         <EditarEstudoModal estudo={estudo} user={user} onClose={() => setEditando(false)}
           onSalvar={async (dados) => { await onAtualizar(estudo, dados, 'Estudo atualizado'); setEditando(false); }} />
       )}
-    </Modal>
+    </Casca>
   );
 }
