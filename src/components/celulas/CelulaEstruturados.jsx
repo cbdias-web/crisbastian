@@ -851,7 +851,12 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
 }
 
 // Quem pode editar/excluir: admin ou quem criou o registro
-const podeGerenciar = (reg, user, isAdmin) => !!reg && (isAdmin || (!!user?.email && String(reg.created_by || '').toLowerCase() === user.email.toLowerCase()));
+const podeGerenciar = (reg, user, isAdmin) => {
+  if (!reg) return false;
+  if (isAdmin) return true;
+  const em = String(user?.email || '').toLowerCase();
+  return !!em && [reg.created_by, reg.responsavel_email].some(x => String(x || '').toLowerCase() === em);
+};
 
 // Exclui o contrato da operação (bloqueia se já virou venda) e reabre a negociação de origem
 async function excluirContratoDaOperacao(ct) {
