@@ -392,9 +392,8 @@ export default function Vendedores() {
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition shadow-sm">
                 <Send className="w-4 h-4" /> Enviar Relatórios
               </button>
-              <button onClick={openCreate}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition shadow-sm">
-                <Plus className="w-4 h-4" /> Novo Vendedor
+              <button data-novo onClick={openCreate} className="vx-novo">
+                <Plus className="w-4 h-4" /> Novo gerente
               </button>
             </div>
           )}

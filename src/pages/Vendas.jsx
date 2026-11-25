@@ -715,10 +715,10 @@ export default function Vendas() {
                   setShowCodigo(true);
                 }
               }}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="vx-novo" data-novo
             >
-              <Plus className="w-4 h-4 mr-2" />
-              {isAdmin ? 'Nova Venda' : 'Nova Venda (com código)'}
+              <Plus className="w-4 h-4" />
+              {isAdmin ? 'Nova venda' : 'Nova venda (com código)'}
             </Button>
           </div>
         </div>

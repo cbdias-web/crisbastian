@@ -346,10 +346,9 @@ export default function Metas() {
                   <DollarSign className="w-4 h-4" />
                   {processandoBonus ? "Processando..." : "Processar Bônus"}
                 </button>
-                <button onClick={() => { setModalEditing(null); setShowModal(true); }}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-[#1a3150] text-white text-sm rounded-xl hover:bg-[#0f1e35] transition font-medium">
+                <button data-novo onClick={() => { setModalEditing(null); setShowModal(true); }} className="vx-novo">
                   <Plus className="w-4 h-4" />
-                  Nova Meta
+                  Nova meta
                 </button>
               </>
             )}

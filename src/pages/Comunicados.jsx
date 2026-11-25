@@ -91,10 +91,9 @@ export default function Comunicados() {
           </div>
           <button
             onClick={() => { setShowForm(!showForm); setEditingId(null); setForm({ titulo: '', mensagem: '', ativo: true }); }}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-xl transition shadow-sm hover:opacity-90"
-            style={{ background: 'linear-gradient(90deg, #0f1e35 0%, #1a3150 100%)' }}
+            className="vx-novo" data-novo
           >
-            <Plus className="w-4 h-4" /> Novo Comunicado
+            <Plus className="w-4 h-4" /> Novo comunicado
           </button>
         </div>
 

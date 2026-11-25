@@ -88,9 +88,9 @@ export default function Produtos() {
             <h1 className="text-3xl font-bold text-gray-900">Produtos</h1>
             <p className="text-gray-600 mt-1">Gerencie seu catálogo de produtos</p>
           </div>
-          <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
+          <Button data-novo onClick={() => setShowForm(true)} className="vx-novo">
+            <Plus className="w-4 h-4" />
+            Novo produto
           </Button>
         </div>
 

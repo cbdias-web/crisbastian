@@ -718,10 +718,8 @@ export default function MeusClientes() {
                 Remover Duplicados
               </button>
             )}
-            <button onClick={() => setShowNovoLeadModal(true)}
-              className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-white rounded-lg transition"
-              style={{ background: 'linear-gradient(135deg, #00D4AA, #0066cc)' }}>
-              <Plus className="w-3 h-3" /> Novo Lead
+            <button data-novo onClick={() => setShowNovoLeadModal(true)} className="vx-novo">
+              <Plus className="w-3 h-3" /> Novo lead
             </button>
             <button onClick={() => setMostrarClientes(p => !p)}
               className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg transition"

@@ -276,8 +276,8 @@ export default function NotasFiscais() {
             <Button variant="outline" onClick={() => gerarRelatorio('pdf')} disabled={gerandoPDF || notasSelecionadas.length === 0}>
               <Download className="w-4 h-4 mr-2" /> Exportar
             </Button>
-            <Button className="bg-[#1a3150] hover:bg-[#0f1e35]" onClick={() => { setEditingNF(null); setFormData(EMPTY_FORM); setShowForm(true); }}>
-              <Plus className="w-4 h-4 mr-2" /> Nova NF
+            <Button data-novo className="vx-novo" onClick={() => { setEditingNF(null); setFormData(EMPTY_FORM); setShowForm(true); }}>
+              <Plus className="w-4 h-4" /> Nova nota fiscal
             </Button>
           </div>
         </div>

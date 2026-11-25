@@ -306,8 +306,8 @@ export default function Espelhamentos() {
                 <Send className="w-4 h-4" /> Enviar Relatórios
               </button>
               <button onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0f1e35] to-[#1a3150] text-white text-sm font-medium rounded-xl hover:opacity-90 transition shadow-sm">
-                <Plus className="w-4 h-4" /> Novo Indicador
+                data-novo className="vx-novo">
+                <Plus className="w-4 h-4" /> Novo indicador
               </button>
             </div>
           )}

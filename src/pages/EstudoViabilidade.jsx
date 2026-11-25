@@ -14,6 +14,7 @@ import DocumentosEstudoCard from '@/components/estudo/DocumentosEstudoCard';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
 import EnviarLinkEmailBotao from '@/components/estudo/EnviarLinkEmailBotao';
 import { origemPublica } from '@/lib/appUrl';
+import { usaNovoPortal } from '@/lib/novoPortal';
 import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 import { confirmar } from '@/lib/confirmar';
 
@@ -258,8 +259,8 @@ export default function EstudoViabilidade() {
             Envie o formulário ao cliente, receba propósito, expectativas e documentos e encaminhe para a Análise Técnica.
           </p>
         </div>
-        <button onClick={() => setNovoAberto(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: AURORA.accent, color: '#0B111C' }}>
-          <Plus className="w-4 h-4" /> {produtoAtual ? `Iniciar Estudo — ${produtoAtual.nome}` : 'Iniciar Estudo'}
+        <button data-novo onClick={() => (usaNovoPortal(user) ? navigate(`?celula=estruturados&produto=${produtoSel || 'offshore'}&nova=1`) : setNovoAberto(true))} className="vx-novo">
+          <Plus className="w-4 h-4" /> {produtoAtual ? `Nova operação — ${produtoAtual.nome}` : 'Nova operação'}
         </button>
       </div>
 

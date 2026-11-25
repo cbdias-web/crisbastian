@@ -542,8 +542,8 @@ export default function Clientes() {
               <Download className="w-4 h-4 mr-2" /> CSV
             </Button>
             {isAdmin && (
-              <Button onClick={() => setModal("new")} className="bg-[#1a3150] hover:bg-[#0f1e35] text-sm">
-                <Plus className="w-4 h-4 mr-2" /> Novo Cliente
+              <Button data-novo onClick={() => setModal("new")} className="vx-novo">
+                <Plus className="w-4 h-4" /> Novo cliente
               </Button>
             )}
           </div>

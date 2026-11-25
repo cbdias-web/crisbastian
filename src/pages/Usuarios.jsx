@@ -460,10 +460,10 @@ export default function Usuarios() {
             </Button>
             <Button
               onClick={() => setShowConviteModal(true)}
-              className="bg-[#0f1e35] hover:bg-[#1a3150] text-white px-5"
+              className="vx-novo" data-novo
             >
-              <UserPlus className="w-4 h-4 mr-2" />
-              + Convidar Usuário
+              <UserPlus className="w-4 h-4" />
+              Convidar usuário
             </Button>
           </div>
         </div>

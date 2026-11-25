@@ -724,8 +724,8 @@ export default function Pipeline() {
               className="border-amber-500/40 text-amber-500 hover:bg-amber-500/10">
               <AlertTriangle className="w-4 h-4 mr-2" /> Vencidos
             </Button>
-            <Button onClick={openNew} className="bg-[#0f1e35] hover:bg-[#1a3150] text-white">
-              <Plus className="w-4 h-4 mr-2" /> Nova Prospecção
+            <Button data-novo onClick={openNew} className="vx-novo">
+              <Plus className="w-4 h-4" /> Nova negociação
             </Button>
           </div>
         </div>
