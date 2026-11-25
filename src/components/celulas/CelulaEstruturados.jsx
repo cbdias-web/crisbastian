@@ -313,6 +313,17 @@ function Overlay({ cfg, sp, setSp }) {
                 })}
               </ol>
 
+              <div role="tablist" aria-label="Lista da jornada" style={{ display: 'flex', gap: 6 }}>
+                {[['operacoes', 'Operações'], ['leads', 'Leads e indicações']].map(([k, l]) => (
+                  <button key={k} role="tab" aria-selected={modoLista === k} onClick={() => setModoLista(k)} className="vx-btn"
+                    style={{ height: 34, padding: '0 16px', fontSize: 13, borderRadius: 999, background: modoLista === k ? t.dim : 'transparent', color: modoLista === k ? t.txt : C.muted, border: `1px solid ${modoLista === k ? t.acc : C.line}` }}>{l}</button>
+                ))}
+              </div>
+              {modoLista === 'leads' ? (
+                <LeadsDaJornada celula={cfg} produto={produto} t={t} user={user} isAdmin={isAdmin}
+                  onIniciada={(id) => { recarregar(); setModoLista('operacoes'); setParam({ op: id }); }}
+                  onFicha={(cliente_id, doc) => abrirFicha(setSp, sp, { clienteId: cliente_id, doc })} />
+              ) : (
               <div style={{ borderRadius: 18, background: C.card, border: `1px solid ${C.line}`, display: 'flex', flexDirection: 'column', minHeight: 200, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '14px 18px', borderBottom: `1px solid ${C.line}`, gap: 12 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: C.txt, flex: 1 }}>
@@ -352,6 +363,7 @@ function Overlay({ cfg, sp, setSp }) {
                   </div>
                 ))}
               </div>
+              )}
             </main>
 
             <aside className="vx-cel-aside">
