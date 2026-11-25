@@ -491,3 +491,30 @@ tbody tr:hover { box-shadow: inset 3px 0 0 rgba(0,212,170,0.55), 0 10px 22px -18
 @keyframes vxSuspensa { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 .vx-suspensa { animation: vxSuspensa .28s cubic-bezier(.2,.8,.2,1); }
 @media (prefers-reduced-motion: reduce) { .vx-suspensa { animation: none; } .vx-lift:hover, .vx-card-lift:hover, .vx-btn:hover { transform: none; } }
+/* ── Formulário de contrato dentro das células: mesmo formulário, no visual escuro do novo ambiente ── */
+.vx-form-escuro { color: #C8D0DC; }
+.vx-form-escuro .bg-white, .vx-form-escuro .bg-gray-50, .vx-form-escuro .bg-gray-100,
+.vx-form-escuro [class*="bg-gray-50/"], .vx-form-escuro [class*="bg-white/"] { background-color: rgba(255,255,255,0.035) !important; }
+.vx-form-escuro .bg-gray-200 { background-color: rgba(255,255,255,0.08) !important; }
+.vx-form-escuro .hover\:bg-gray-50:hover, .vx-form-escuro .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.07) !important; }
+.vx-form-escuro .text-gray-900, .vx-form-escuro .text-gray-800, .vx-form-escuro .text-gray-700 { color: #F4EFE3 !important; }
+.vx-form-escuro .text-gray-600 { color: #C8D0DC !important; }
+.vx-form-escuro .text-gray-500 { color: #A3ACBA !important; }
+.vx-form-escuro .text-gray-400, .vx-form-escuro .text-gray-300 { color: #8E97A8 !important; }
+.vx-form-escuro .border-gray-50, .vx-form-escuro .border-gray-100, .vx-form-escuro .border-gray-200, .vx-form-escuro .border-gray-300 { border-color: rgba(255,255,255,0.09) !important; }
+.vx-form-escuro .bg-emerald-50 { background-color: rgba(52,211,153,0.1) !important; }
+.vx-form-escuro .bg-blue-50, .vx-form-escuro [class*="bg-blue-50/"] { background-color: rgba(96,165,250,0.1) !important; }
+.vx-form-escuro .bg-amber-50 { background-color: rgba(251,191,36,0.1) !important; }
+.vx-form-escuro .bg-red-50 { background-color: rgba(248,113,113,0.1) !important; }
+.vx-form-escuro .border-emerald-200, .vx-form-escuro .border-blue-100, .vx-form-escuro .border-blue-200, .vx-form-escuro .border-amber-200 { border-color: rgba(255,255,255,0.12) !important; }
+.vx-form-escuro .text-emerald-700, .vx-form-escuro .text-emerald-800, .vx-form-escuro .text-emerald-600 { color: #8FD9B0 !important; }
+.vx-form-escuro .text-blue-700, .vx-form-escuro .text-blue-600 { color: #93B8F7 !important; }
+.vx-form-escuro .text-amber-700, .vx-form-escuro .text-amber-800, .vx-form-escuro .text-amber-600 { color: #E3C982 !important; }
+.vx-form-escuro .text-red-600, .vx-form-escuro .text-rose-700 { color: #F4A3A3 !important; }
+.vx-form-escuro input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.vx-form-escuro select, .vx-form-escuro textarea, .vx-form-escuro [role="combobox"] {
+  background-color: rgba(0,0,0,0.28) !important; color: #F4EFE3 !important; border-color: rgba(255,255,255,0.12) !important;
+}
+.vx-form-escuro input::placeholder, .vx-form-escuro textarea::placeholder { color: #6F7888 !important; }
+.vx-form-escuro option { background: #101826; color: #F4EFE3; }
+.vx-form-escuro .shadow-sm, .vx-form-escuro .shadow { box-shadow: none !important; }

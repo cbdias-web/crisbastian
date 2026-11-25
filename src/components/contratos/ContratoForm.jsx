@@ -78,7 +78,8 @@ function calcProgress(form, aba) {
   return Math.round((filled / fields.length) * 100);
 }
 
-export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado, embutido = false }) {
+// valoresIniciais: valores já negociados/definidos na operação (valor, parcelas, prazo) entram pré-preenchidos
+export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoExistente, clientePreSelecionado, embutido = false, textoVoltar = 'Voltar para Contratos', valoresIniciais }) {
   const [form, setForm] = useState(() => {
     // Contrato OFFSHORE: campos do modelo nº 000142/2026 com padrões (Porto Alegre, Wyoming, 90 dias...)
     const base = tipo === 'OFFSHORE' ? { ...EMPTY, ...OFFSHORE_DEFAULTS } : EMPTY;
@@ -112,6 +113,18 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     return base;
   });
   const isOffshore = (form._tipoOverride || tipo) === 'OFFSHORE';
+  // Valores vindos da operação: só preenchem campos ainda vazios (num_parcelas 1 é o padrão)
+  useEffect(() => {
+    if (!valoresIniciais || contratoExistente) return;
+    setForm(f => {
+      const n = { ...f };
+      Object.entries(valoresIniciais).forEach(([k, v]) => {
+        if (v === '' || v == null) return;
+        if (f[k] === '' || f[k] == null || (k === 'num_parcelas' && Number(f[k]) === 1)) n[k] = v;
+      });
+      return n;
+    });
+  }, []);
 
   const queryClient = useQueryClient();
   const [buscaCliente, setBuscaCliente] = useState('');
@@ -654,7 +667,7 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
     <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen p-4 md:p-6'}>
       <div className="max-w-4xl mx-auto">
         <button onClick={onCancel} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-5 transition group">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Voltar para Contratos
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> {textoVoltar}
         </button>
 
         {/* Header */}
