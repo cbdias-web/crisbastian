@@ -21,6 +21,7 @@ import { DetalheEstudoModal } from '@/pages/EstudoViabilidade';
 import { Workspace as AnaliseWorkspace } from '@/pages/AnaliseTecnica';
 import { valorHonorariosProjeto, somaEtapas } from '@/lib/propostaTecnica';
 import { confirmar } from '@/lib/confirmar';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 // Neutros comuns às células; as cores de destaque vêm do tema de cada célula.
 const C = { card: 'rgba(255,255,255,0.025)', card2: 'rgba(255,255,255,0.045)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.1)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799' };
@@ -958,7 +959,7 @@ function EditarNegociacaoModal({ neg, t, produtosCelula, isAdmin, onClose, onSal
           {L({ l: 'Cliente', span: 3, children: <input value={f.cliente_nome} onChange={e => setF({ ...f, cliente_nome: e.target.value })} style={inp} /> })}
           {L({ l: 'CPF/CNPJ', children: <input value={f.cliente_cpf_cnpj} onChange={e => setF({ ...f, cliente_cpf_cnpj: e.target.value })} style={inp} /> })}
           {L({ l: 'Telefone', children: <input value={f.cliente_telefone} onChange={e => setF({ ...f, cliente_telefone: e.target.value })} style={inp} /> })}
-          {L({ l: 'Valor (R$)', children: <input type="number" min="0" step="0.01" value={f.valor_estimado} onChange={e => setF({ ...f, valor_estimado: e.target.value })} style={inp} /> })}
+          {L({ l: 'Valor (R$)', children: <CampoMoeda asString value={f.valor_estimado} onChange={v => setF({ ...f, valor_estimado: v })} style={inp} /> })}
           {L({ l: 'Previsão de fechamento', children: <input type="date" value={f.data_prevista} onChange={e => setF({ ...f, data_prevista: e.target.value })} style={inp} /> })}
           {L({ l: 'Temperatura', children: <select value={f.temperatura} onChange={e => setF({ ...f, temperatura: e.target.value })} style={inp}>{['Frio', 'Morno', 'Quente'].map(x => <option key={x}>{x}</option>)}</select> })}
           {L({ l: 'Origem', children: <select value={f.origem} onChange={e => setF({ ...f, origem: e.target.value })} style={inp}>{['Carteira', 'Lead', 'Indicação', 'Prospecção Ativa', 'Outro'].map(x => <option key={x}>{x}</option>)}</select> })}
@@ -1036,7 +1037,7 @@ function NegociacaoCard({ neg, aberta, t, publicar, operacaoId, recarregar, volt
         <span style={{ fontSize: 12, color: C.muted }}>Origem: {neg.origem || '—'} · aberta em {fmtData(neg.created_date)}</span>
       </div>
       <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-        <label style={lbl}>Valor negociado (R$)<input type="number" min="0" step="0.01" value={f.valor_estimado} onChange={ev => setF({ ...f, valor_estimado: ev.target.value })} style={inp} /></label>
+        <label style={lbl}>Valor negociado (R$)<CampoMoeda asString value={f.valor_estimado} onChange={ev => setF({ ...f, valor_estimado: ev.target.value })} style={inp} /></label>
         <label style={lbl}>Previsão de fechamento<input type="date" value={f.data_prevista} onChange={ev => setF({ ...f, data_prevista: ev.target.value })} style={inp} /></label>
         <label style={lbl}>Temperatura
           <select value={f.temperatura} onChange={ev => setF({ ...f, temperatura: ev.target.value })} style={inp}>{['Frio', 'Morno', 'Quente'].map(x => <option key={x}>{x}</option>)}</select>

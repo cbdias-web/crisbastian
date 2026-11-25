@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const today = () => todayBrasilia();
 
@@ -285,8 +286,7 @@ export default function ClienteInteracaoModal({ clienteId, vendedor, user, onClo
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">Valor Estimado</label>
-                  <input type="number" value={pipelineForm.valor_estimado} onChange={e => setPipelineForm(p => ({ ...p, valor_estimado: e.target.value }))}
-                    placeholder="0,00" min="0" step="0.01"
+                  <CampoMoeda asString value={pipelineForm.valor_estimado} onChange={v => setPipelineForm(p => ({ ...p, valor_estimado: v }))}
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:border-[#1a3150]" />
                 </div>
                 <div>

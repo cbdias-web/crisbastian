@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Save, Plus, Trash2 } from 'lucide-react';
 import { loadConfig, saveConfig } from './usePrecificacaoConfig';
 import { toast } from 'sonner';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 function Field({ label, children }) {
   return (
@@ -319,7 +320,7 @@ export default function ConfigPrecificacao() {
                         className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
                     </td>
                     <td className="px-3 py-2">
-                      <input type="number" value={row.mensalidade} onChange={e => updateRow('exito', i, 'mensalidade', parseFloat(e.target.value) || 0)}
+                      <CampoMoeda asString value={row.mensalidade} onChange={v => updateRow('exito', i, 'mensalidade', Number(v) || 0)}
                         className="w-full border border-gray-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-blue-400" />
                     </td>
                     <td className="px-3 py-2">

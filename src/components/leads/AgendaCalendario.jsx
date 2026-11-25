@@ -16,6 +16,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { todayBrasilia } from '@/lib/dateUtils';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const WEEK_DAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 const todayStr = () => todayBrasilia();
@@ -130,7 +131,7 @@ function PipelineModal({ item, vendedor, user, onClose, onSaved }) {
           <div className="flex gap-2">
             <div className="flex-1">
               <label className="text-xs mb-1 block font-medium" style={{ color: 'rgba(230,237,243,0.5)' }}>Valor estimado</label>
-              <input type="number" value={form.valor_estimado} onChange={e => setForm(p => ({ ...p, valor_estimado: e.target.value }))}
+              <CampoMoeda asString value={form.valor_estimado} onChange={v => setForm(p => ({ ...p, valor_estimado: v }))}
                 placeholder="R$ 0"
                 className="w-full px-3 py-2 text-sm rounded-xl focus:outline-none"
                 style={{ background: '#0B111C', border: '1px solid rgba(255,255,255,0.08)', color: '#e6edf3' }} />

@@ -5,6 +5,7 @@ import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { mesmoNome } from "@/lib/nomes";
 import { toast } from "sonner";
 import { confirmar } from '@/lib/confirmar';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -113,13 +114,13 @@ function MetaFormModal({ vendedores, onSave, onClose, editingMeta }) {
           )}
           <div>
             <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor da Meta</label>
-            <input type="number" step="0.01" value={formData.valor_meta} onChange={e => setFormData(f => ({ ...f, valor_meta: e.target.value }))}
+            <CampoMoeda asString value={formData.valor_meta} onChange={v => setFormData(f => ({ ...f, valor_meta: v }))}
               className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
           </div>
           {formData.tipo === "individual" && (
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Valor do Bônus (100% da Meta)</label>
-              <input type="number" step="0.01" value={formData.valor_bonus || ""} onChange={e => setFormData(f => ({ ...f, valor_bonus: e.target.value }))}
+              <CampoMoeda asString value={formData.valor_bonus || ""} onChange={v => setFormData(f => ({ ...f, valor_bonus: v }))}
                 placeholder="R$ 0,00"
                 className="mt-1 w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150]" />
               <p className="text-xs text-gray-400 mt-1">Bônus concedido ao atingir 100% da meta</p>
@@ -454,10 +455,9 @@ export default function Metas() {
                       <td className="px-5 py-4">
                         {inlineEditing?.vendedor_id === v.id ? (
                           <div className="flex items-center gap-1">
-                            <input
-                              type="number"
+                            <CampoMoeda asString
                               value={inlineEditing.value}
-                              onChange={e => setInlineEditing(p => ({ ...p, value: e.target.value }))}
+                              onChange={v => setInlineEditing(p => ({ ...p, value: v }))}
                               className="w-28 px-2 py-1 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#1a3150]"
                               autoFocus
                             />
@@ -488,11 +488,9 @@ export default function Metas() {
                               if (editingBonusId === v.id) {
                                 return (
                                   <div className="flex items-center gap-1 mt-1">
-                                    <input
-                                      type="number"
-                                      step="0.01"
+                                    <CampoMoeda asString
                                       value={bonusValue}
-                                      onChange={e => setBonusValue(e.target.value)}
+                                      onChange={v => setBonusValue(v)}
                                       placeholder="Valor do bônus"
                                       className="w-24 px-2 py-1 text-xs border border-gray-200 rounded-lg focus:outline-none focus:border-amber-500"
                                       autoFocus

@@ -13,6 +13,7 @@ import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, br
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal';
 import { confirmar } from '@/lib/confirmar';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const A = {
   bg: '#0B111C', surface: '#111A2B', surface2: '#17223A', surface3: '#222b3d',
@@ -747,8 +748,8 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
                     <div>
                       <p className="mb-1" style={label}>Valor definido (R$)</p>
                       {editavel ? (
-                        <input type="number" min={0} value={inv.valor ?? ''} placeholder={sugestaoValor ? String(sugestaoValor) : '0'}
-                          onChange={e => setInv('valor', e.target.value === '' ? '' : Number(e.target.value))}
+                        <CampoMoeda asString value={inv.valor ?? ''} placeholder={sugestaoValor ? String(sugestaoValor) : '0'}
+                          onChange={v => setInv('valor', v === '' ? '' : Number(v))}
                           className="w-full px-3 py-2 text-sm font-bold rounded-lg focus:outline-none" style={inputStyle} />
                       ) : <p className="text-lg font-bold" style={{ color: A.accent }}>{valorHonorarios ? brl(valorHonorarios) : '—'}</p>}
                     </div>

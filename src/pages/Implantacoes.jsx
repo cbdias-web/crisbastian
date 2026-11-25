@@ -11,6 +11,7 @@ import PadrinhosModal from '@/components/implantacoes/PadrinhosModal';
 import MultiSelectFiltro from '@/components/ui/MultiSelectFiltro';
 import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 import { todayBrasilia } from '@/lib/dateUtils';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const AURORA = {
   bg: '#0B111C',
@@ -300,10 +301,10 @@ export default function Implantacoes() {
             options={TIPOS_CONTRATO} />
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Valor:</span>
-            <input type="number" min="0" step="0.01" value={filtroValorMin} onChange={e => setFiltroValorMin(e.target.value)}
+            <CampoMoeda asString value={filtroValorMin} onChange={v => setFiltroValorMin(v)}
               placeholder="mín." className="w-24 px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
             <span className="text-xs" style={{ color: AURORA.textMuted }}>até</span>
-            <input type="number" min="0" step="0.01" value={filtroValorMax} onChange={e => setFiltroValorMax(e.target.value)}
+            <CampoMoeda asString value={filtroValorMax} onChange={v => setFiltroValorMax(v)}
               placeholder="máx." className="w-24 px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
             {(filtroValorMin !== '' || filtroValorMax !== '') && (
               <button onClick={() => { setFiltroValorMin(''); setFiltroValorMax(''); }}

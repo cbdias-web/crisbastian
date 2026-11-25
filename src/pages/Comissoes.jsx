@@ -6,6 +6,7 @@ import { format, parseISO, startOfMonth } from "date-fns";
 import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { toast } from "sonner";
 import { confirmar } from '@/lib/confirmar';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -184,7 +185,7 @@ function TabelaComissoes({ comissoes, entity, queryKey, isAdmin, tipo }) {
                     {editingId === c.id
                       ? formatCurrency((c.valor_venda * parseFloat(editPercentual || 0)) / 100)
                       : editingBonusId === c.id
-                      ? <input type="number" step="0.01" value={editBonusValue} onChange={e => setEditBonusValue(e.target.value)}
+                      ? <CampoMoeda asString value={editBonusValue} onChange={v => setEditBonusValue(v)}
                           className="w-24 px-2 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a3150]" />
                       : formatCurrency(c.valor_comissao)}
                   </td>

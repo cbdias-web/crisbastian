@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { X, Plus, Trash2, Loader2, FileText, Eye, ChevronDown, Search, Check, Database } from 'lucide-react';
 import { consultarCnpj, consultarCep } from '@/lib/autocomplete';
 import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 // Gera o NDA (modelo validado Villela Exchange · Estruturação Internacional) como 1º passo
 // da operação Offshore. Sem `estudo`, cria a operação (estudo em rascunho) e gera o NDA nela.
@@ -341,7 +342,7 @@ export default function NdaGeradorModal({ estudo, produto = 'offshore', t, onClo
             </button>
             {verCond && (
               <div className="grid gap-3 px-4 pb-4" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-                <Campo label="Multa por infração (R$)"><input style={inp} type="number" value={cfg.multa} onChange={e => setCfg(c => ({ ...c, multa: Number(e.target.value) }))} /></Campo>
+                <Campo label="Multa por infração (R$)"><CampoMoeda asString style={inp} value={cfg.multa} onChange={v => setCfg(c => ({ ...c, multa: Number(v) }))} /></Campo>
                 <Campo label="Vigência (meses)"><input style={inp} type="number" value={cfg.vigencia_meses} onChange={e => setCfg(c => ({ ...c, vigencia_meses: Number(e.target.value) }))} /></Campo>
                 <Campo label="Sigilo após término (anos)"><input style={inp} type="number" value={cfg.sigilo_anos} onChange={e => setCfg(c => ({ ...c, sigilo_anos: Number(e.target.value) }))} /></Campo>
                 <Campo label="Não evasão (meses)"><input style={inp} type="number" value={cfg.nao_evasao_meses} onChange={e => setCfg(c => ({ ...c, nao_evasao_meses: Number(e.target.value) }))} /></Campo>

@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -497,8 +498,8 @@ export default function NotasFiscais() {
                 </div>
                 <div>
                   <Label>Valor Líquido (R$) *</Label>
-                  <Input type="number" step="0.01" min="0" value={formData.valor_liquido}
-                    onChange={e => setFormData(f => ({ ...f, valor_liquido: e.target.value }))} required />
+                  <CampoMoeda asString value={formData.valor_liquido}
+                    onChange={v => setFormData(f => ({ ...f, valor_liquido: v }))} required />
                 </div>
                 <div>
                   <Label>Data de Emissão *</Label>

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { X, Loader2, CheckCircle2, FileText, UserCheck, Package, User, AlertTriangle } from 'lucide-react';
 import CampoMascara from '@/components/ui/campo-mascara';
 import { todayBrasilia } from '@/lib/dateUtils';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 const AURORA = {
   surface: '#111A2B',
@@ -150,7 +151,7 @@ export default function ConverterLeadVendaModal({ conversa, onClose, onConcluido
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] mb-1 block" style={{ color: AURORA.textMuted }}>Valor da venda (R$)</label>
-                <input type="number" value={valor} onChange={e => setValor(e.target.value)} placeholder="0,00" min="0" step="0.01"
+                <CampoMoeda asString value={valor} onChange={v => setValor(v)}
                   className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
                   style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
               </div>

@@ -6,6 +6,7 @@ import { consultarCnpj } from '@/lib/autocomplete';
 import { resolverVendedorDoUsuarioLogado } from '@/lib/vendedorContrato';
 import { JORNADAS } from '@/lib/celulas';
 import { BuscaCliente, dig, fmtDoc } from './NdaGeradorModal';
+import CampoMoeda from '@/components/ui/campo-moeda';
 
 // Abertura de uma operação dentro da célula: o cliente nasce (ou é escolhido) na base, já na carteira
 // de quem cadastrou, e a operação começa pela negociação (Pipeline) ou pelo estudo de viabilidade.
@@ -180,7 +181,7 @@ export default function NovaOperacaoModal({ celula, produto, t, onClose, onCriad
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(4, minmax(0,1fr))' }}>
               {!porEstudo && (
                 <>
-                  <Campo label="Valor estimado (R$)"><input type="number" min="0" step="0.01" value={neg.valor_estimado} onChange={e => setG({ valor_estimado: e.target.value })} style={inp} /></Campo>
+                  <Campo label="Valor estimado (R$)"><CampoMoeda asString value={neg.valor_estimado} onChange={v => setG({ valor_estimado: v })} style={inp} /></Campo>
                   <Campo label="Previsão de fechamento"><input type="date" value={neg.data_prevista} onChange={e => setG({ data_prevista: e.target.value })} style={inp} /></Campo>
                   <Campo label="Temperatura">
                     <select value={neg.temperatura} onChange={e => setG({ temperatura: e.target.value })} style={inp}>{TEMPERATURAS.map(x => <option key={x}>{x}</option>)}</select>
