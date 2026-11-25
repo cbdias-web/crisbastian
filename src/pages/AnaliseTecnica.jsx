@@ -336,8 +336,8 @@ const ETAPAS_IA = ['Lendo formulário e documentos', 'Avaliando viabilidade e ri
 // embutido: dentro da operação na célula; onVoltar/onIrEstudo substituem a navegação para as páginas antigas
 export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) {
   const nav = useNavigate();
-  const voltarLista = () => (onVoltar ? onVoltar() : voltarLista());
-  const irEstudo = () => (onIrEstudo ? onIrEstudo() : irEstudo());
+  const voltarLista = () => (onVoltar ? onVoltar() : nav('/AnaliseTecnica'));
+  const irEstudo = () => (onIrEstudo ? onIrEstudo() : nav(`/EstudoViabilidade?estudo=${estudoId}`));
   const [user, setUser] = useState(null);
   const [estudo, setEstudo] = useState(null);
   const [versoes, setVersoes] = useState([]);
