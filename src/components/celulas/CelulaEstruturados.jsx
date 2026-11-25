@@ -225,12 +225,12 @@ function Overlay({ cfg, sp, setSp }) {
         .vx-cel-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:18px}
         .vx-cel-aside{width:340px;flex:none;display:flex;flex-direction:column;gap:14px}
         .vx-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
-        .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 28px;gap:12px;align-items:center}
+        .vx-row{display:grid;grid-template-columns:2fr 1.2fr 1.1fr 2fr 60px;gap:12px;align-items:center}
         .vx-tab{transition:background .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease}
         .vx-tab:hover{transform:translateY(-1px);color:${C.txt}}
         .vx-crumb{background:transparent;border:0;padding:0;color:inherit;cursor:pointer;font:inherit}.vx-crumb:hover{color:${C.txt};text-decoration:underline}
         @media (max-width:1180px){.vx-cel-body{flex-direction:column}.vx-cel-aside{width:auto}.vx-steps{grid-template-columns:repeat(3,minmax(0,1fr))}}
-        @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 28px}.vx-row .vx-hide{display:none}}
+        @media (max-width:720px){.vx-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.vx-row{grid-template-columns:1fr 1fr 60px}.vx-row .vx-hide{display:none}}
       `}</style>
       <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${veu(t.bg, 0.82)}, ${veu(t.bg, 0.92)}), url("${FUNDO_PORTAL}") center / cover no-repeat ${t.bg}`, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
         {/* Cabeçalho */}
