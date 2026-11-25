@@ -20,7 +20,10 @@ const dig = (s) => String(s || '').replace(/\D/g, '');
 export const COLETAS = {
   'OFFSHORE': { ent: 'RncOffshore', fn: 'gerarLinkOffshore', pdf: 'gerarOffshorePDF', path: '/offshore-publica', titulo: 'Formulário da LLC (Offshore)', msg: 'offshore', Modal: OffshoreFormModal, novo: () => ({ documentos: docsOffshore({}, []) }) },
   'CONTA INTERNACIONAL': { ent: 'RncContaInternacional', fn: 'gerarLinkContaInternacional', pdf: 'gerarContaInternacionalPDF', path: '/conta-internacional-publica', titulo: 'Formulário da conta internacional', msg: 'conta', Modal: RncContaInternacionalModal, novo: (tp) => ({ tipo_conta: tp, documentos: docsCI(tp) }) },
-  'CANAL BANCÁRIO': { ent: 'RncCanalBancario', fn: 'gerarLinkRnc', pdf: 'gerarRncCanalBancarioPDF', path: '/rnc-publica', titulo: 'Formulário RNC do canal bancário', msg: 'canal', Modal: RncCanalBancarioModal, novo: (tp) => ({ tipo_canal: tp, documentos: docsCanal(tp, false) }) },
+  'CANAL BANCÁRIO': { ent: 'RncCanalBancario', produto: 'CANAL BANCÁRIO', fn: 'gerarLinkRnc', pdf: 'gerarRncCanalBancarioPDF', path: '/rnc-publica', titulo: 'Formulário RNC do canal bancário', msg: 'canal', Modal: RncCanalBancarioModal, novo: (tp) => ({ tipo_canal: tp, produto: 'CANAL BANCÁRIO', documentos: docsCanal(tp, false) }) },
+  // ROF e Dolarize usam a mesma estrutura do RNC (dados cadastrais, sócios e documentos)
+  'ROF': { ent: 'RncCanalBancario', produto: 'ROF', fn: 'gerarLinkRnc', pdf: 'gerarRncCanalBancarioPDF', path: '/rnc-publica', titulo: 'Formulário de cadastro do ROF', msg: 'rof', Modal: RncCanalBancarioModal, novo: (tp) => ({ tipo_canal: tp, produto: 'ROF', documentos: docsCanal(tp, false) }) },
+  'DOLARIZE': { ent: 'RncCanalBancario', produto: 'DOLARIZE', fn: 'gerarLinkRnc', pdf: 'gerarRncCanalBancarioPDF', path: '/rnc-publica', titulo: 'Formulário de cadastro do Dolarize', msg: 'dolarize', Modal: RncCanalBancarioModal, novo: (tp) => ({ tipo_canal: tp, produto: 'DOLARIZE', documentos: docsCanal(tp, false) }) },
 };
 
 export const situacaoColeta = (r) => {
@@ -142,7 +145,7 @@ export default function ColetaCliente({ tipo, contrato, user, t, compacto = fals
           </div>
         </>
       )}
-      {modal && reg && <cfg.Modal contrato={contrato} rncId={reg.id} user={user} onClose={() => { setModal(false); setRecarga(n => n + 1); }} />}
+      {modal && reg && <cfg.Modal contrato={contrato} rncId={reg.id} user={user} produto={cfg.produto} onClose={() => { setModal(false); setRecarga(n => n + 1); }} />}
     </div>
   );
 }
@@ -167,7 +170,9 @@ export function LinksDeColeta({ tipo, user, t }) {
 
   useEffect(() => {
     if (!cfg) return;
-    base44.entities[cfg.ent].list('-created_date', 300).then(l => setLista(l || [])).catch(() => setLista([]));
+    base44.entities[cfg.ent].list('-created_date', 300)
+      .then(l => setLista((l || []).filter(r => !cfg.produto || (r.produto || 'CANAL BANCÁRIO') === cfg.produto)))
+      .catch(() => setLista([]));
     setSel(new Set());
   }, [tipo, recarga]);
   useEffect(() => {
@@ -260,7 +265,7 @@ export function LinksDeColeta({ tipo, user, t }) {
           );
         })}
       </div>
-      {aberto && <cfg.Modal contrato={{}} rncId={aberto.id || null} user={user} onClose={() => { setAberto(null); setRecarga(n => n + 1); }} />}
+      {aberto && <cfg.Modal contrato={{}} rncId={aberto.id || null} user={user} produto={cfg.produto} onClose={() => { setAberto(null); setRecarga(n => n + 1); }} />}
     </div>
   );
 }
