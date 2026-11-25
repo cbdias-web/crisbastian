@@ -21,7 +21,7 @@ const quando = (d) => {
   if (diff < 1440) return `há ${Math.floor(diff / 60)} h`;
   return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 };
-const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const corAutor = (nome) => {
   const cores = ['#00D4AA', '#60A5FA', '#A78BFA', '#F59E0B', '#F472B6', '#34D399', '#C9A962'];
   let h = 0; for (const ch of String(nome || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;

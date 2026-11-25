@@ -10,9 +10,10 @@ import { TrendingUp, Users, Calendar, FileText, DollarSign, Target, Activity, Ph
 import { format, subMonths, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import FiltrosDesempenho, { buildDateRange } from '@/components/desempenho/FiltrosDesempenho';
+import { brlCompacto } from '@/lib/moeda';
 
 const COLORS = ['#0f1e35', '#1a73e8', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
-const fmtBRL = (v) => v >= 1000000 ? `R$ ${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`;
+const fmtBRL = (v) => brlCompacto(v);
 
 function StatCard({ icon: Icon, label, value, sub, color = 'bg-[#0f1e35]' }) {
   return (
@@ -465,7 +466,7 @@ export default function Desempenho() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={produtoChart} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `R$ ${(v / 1000).toFixed(0)}k`} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => brlCompacto(v)} />
                   <YAxis type="category" dataKey="produto" tick={{ fontSize: 10 }} width={100} />
                   <Tooltip formatter={(v) => [`R$ ${v.toLocaleString('pt-BR')}`, 'Receita']} />
                   <Bar dataKey="total" name="Receita" fill="#0f1e35" radius={[0, 4, 4, 0]}>

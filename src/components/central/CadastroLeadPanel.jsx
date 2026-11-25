@@ -15,7 +15,7 @@ const AURORA = {
   textMuted: 'rgba(230,237,243,0.55)',
 };
 
-const fmtMoeda = (v) => v != null && v !== '' ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtMoeda = (v) => v != null && v !== '' ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
 const fmtData = (v) => v ? new Date(v).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 const fmtDate = (v) => v ? new Date(v).toLocaleDateString('pt-BR') : '—';
 

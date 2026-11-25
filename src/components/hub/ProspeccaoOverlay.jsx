@@ -29,7 +29,7 @@ const CONVERSA = ['atendeu_interessado', 'atendeu_retorno', 'atendeu_sem_interes
 const POSITIVO = ['atendeu_interessado', 'reuniao_marcada'];
 const hojeBR = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10);
 const diaMenos = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
-const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const hora = (d) => (d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
 const iniciais = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 

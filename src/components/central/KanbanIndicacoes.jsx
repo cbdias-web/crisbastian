@@ -21,7 +21,7 @@ const COLUNAS = [
   { key: 'rejeitado_compliance', label: 'Rejeitado Compliance', color: '#f87171', bg: 'rgba(248,113,113,0.12)' },
 ];
 
-const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
 const fmtData = (d) => {
   if (!d) return '';
   const dt = new Date(d);

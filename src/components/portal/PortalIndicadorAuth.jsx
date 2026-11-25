@@ -54,7 +54,7 @@ A Villela Exchange poderá bloquear o acesso em caso de uso indevido, informaç�
 Ao aceitar, o Indicador concorda integralmente com os termos acima.
 `;
 
-const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
 
 const STATUS_CHART = {
   novo: { label: 'Novo', color: '#00D4AA' },

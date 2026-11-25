@@ -12,7 +12,7 @@ import { confirmar } from '@/lib/confirmar';
 // Todo o operacional (PDF, assinatura, cobrança, pagamento, envio para Vendas) fica nas células.
 
 const C = { bg: '#0B111C', card: 'rgba(255,255,255,0.03)', card2: 'rgba(255,255,255,0.05)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.11)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799', acc: '#C9A962', ok: '#8FD9B0', warn: '#E3C982', err: '#F4A3A3' };
-const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const dataBR = (d) => (d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—');
 const SITUACAO = {
   negociacao: { l: 'Em formalização', st: ['rascunho', 'gerado'], cor: C.muted },

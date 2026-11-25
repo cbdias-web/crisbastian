@@ -11,7 +11,7 @@ const CARD = {
   border: `1px solid ${T.line}`,
 };
 
-const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v || 0);
+const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
 const dataCurta = (s) => (s ? s.split('-').reverse().slice(0, 2).join('/') : '—');
 const iniciais = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 const corDe = (nome) => {

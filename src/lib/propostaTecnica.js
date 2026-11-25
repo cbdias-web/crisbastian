@@ -58,7 +58,7 @@ export const somaEtapas = (etapas) => {
   return { prazo: l.reduce((s, e) => s + (Number(e.prazo_dias) || 0), 0) };
 };
 
-export const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+export const brl = (v) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // Valor único de honorários do projeto: o definido pelo consultor, a sugestão da IA ou,
 // em versões antigas (que traziam valores por etapa), a soma das etapas como valor único.

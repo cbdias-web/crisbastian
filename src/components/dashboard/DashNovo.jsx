@@ -11,7 +11,7 @@ const GOLD = '#D4AF37';
 const T = { txt: '#e6edf3', muted: 'rgba(230,237,243,0.55)', line: 'rgba(255,255,255,0.07)' };
 const CARD = { background: 'linear-gradient(180deg, rgba(28,35,51,0.88) 0%, rgba(18,23,31,0.88) 100%)', border: `1px solid ${T.line}`, backdropFilter: 'blur(8px)', minWidth: 0 };
 
-const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v || 0);
+const brl = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
 const brlCurto = (v) => {
   const n = Number(v || 0);
   if (n >= 1e6) return `R$ ${(n / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;

@@ -19,7 +19,7 @@ const AURORA = {
   green: '#34d399',
 };
 
-const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
 
 export default function ConsolidadoIndicadores({ periodo, parceiroId, parceiros: parceirosProp }) {
   const queryClient = useQueryClient();

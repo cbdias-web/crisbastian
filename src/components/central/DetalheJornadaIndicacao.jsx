@@ -29,7 +29,7 @@ const STATUS_CFG = {
   descartado: { label: 'Descartado' },
 };
 
-const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+const fmtMoeda = (v) => v != null ? `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—';
 const fmtData = (d) => d ? new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
 
 // Carrega a jornada completa do lead: contrato, venda, parcelas, interações, conversa e implantação.

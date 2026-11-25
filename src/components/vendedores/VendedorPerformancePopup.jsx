@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { mesmoNome } from '@/lib/nomes';
+import { brlCompacto } from '@/lib/moeda';
 
 const fmtFull = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-const fmtK = (v) => v >= 1000000 ? `R$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : fmtFull(v);
+const fmtK = (v) => brlCompacto(v);
 const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
 export default function VendedorPerformancePopup({ vendedor, vendas, metas, mesFiltro, dateFrom, dateTo, style, className, onGerarRelatorio, geratingPDF }) {
