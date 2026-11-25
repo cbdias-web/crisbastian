@@ -218,6 +218,13 @@ function Overlay({ cfg, sp, setSp }) {
     setNovaOp(true);
   };
 
+  // ?nova=1 (vindo do "+ Novo" do cabeçalho ou de páginas espelho): abre a criação da operação
+  useEffect(() => {
+    if (loading || sp.get('nova') !== '1') return;
+    setParam({ nova: null });
+    novaOperacao();
+  }, [loading, sp]);
+
   const temaVars = { '--vx-acc': t.acc, '--vx-acc2': t.acc2, '--vx-txt': t.txt, '--vx-dim': t.dim, '--vx-line': t.line, '--vx-glow': t.glow, '--vx-on-acc': t.onAcc };
 
   return (

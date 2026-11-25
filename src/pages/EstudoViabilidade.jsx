@@ -148,6 +148,7 @@ function ValorResposta({ v }) {
 
 export default function EstudoViabilidade() {
   const loc = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [estudos, setEstudos] = useState([]);
   const [loading, setLoading] = useState(true);
