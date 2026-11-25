@@ -44,7 +44,7 @@ function Anel({ pct, cor, tamanho = 132, espessura = 12, children }) {
 
 function Kpi({ icon: Icon, cor, label, valor, sub }) {
   return (
-    <div className="vx-card-lift rounded-3xl p-5 flex flex-col gap-3" style={{ ...CARD, '--vx-acc': cor + '88', '--vx-glow': cor + '55' }}>
+    <div className="vx-card-lift rounded-3xl p-4 flex flex-col gap-2.5" style={{ ...CARD, '--vx-acc': cor + '88', '--vx-glow': cor + '55' }}>
       <span className="w-11 h-11 rounded-2xl flex items-center justify-center" style={{ background: cor + '1F', border: `1px solid ${cor}55` }}>
         <Icon className="w-5 h-5" style={{ color: cor }} />
       </span>
@@ -111,7 +111,7 @@ export default function DashNovo(p) {
 
       {/* Destaque + KPIs */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div className="vx-card-lift rounded-3xl p-6 flex items-center gap-6 flex-wrap"
+        <div className="vx-card-lift rounded-3xl p-5 flex items-center gap-6 flex-wrap"
           style={{ background: 'radial-gradient(120% 140% at 0% 0%, rgba(0,212,170,0.22) 0%, rgba(0,102,204,0.14) 45%, rgba(18,23,31,0.92) 100%)', border: '1px solid rgba(0,212,170,0.35)', '--vx-acc': TEAL, '--vx-glow': 'rgba(0,212,170,0.45)' }}>
           <div className="flex-1 min-w-[220px]">
             <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: TEAL }}><TrendingUp className="w-3.5 h-3.5" /> Total vendido no período</p>
@@ -121,7 +121,7 @@ export default function DashNovo(p) {
               <span className="text-xs px-3 py-1.5 rounded-full" style={{ background: 'rgba(0,0,0,0.25)', color: T.txt }}>Recorrência <b style={{ color: '#60A5FA' }}>{brlCurto(valorRecorrencia)}</b> · {totalRecorrencias} parc.</span>
             </div>
           </div>
-          <Anel pct={metaTimePct ?? 0} cor={metaTimeAtingida ? '#34d399' : TEAL}>
+          <Anel pct={metaTimePct ?? 0} cor={metaTimeAtingida ? '#34d399' : TEAL} tamanho={116} espessura={11}>
             {metaTimeMes > 0 ? (
               <>
                 <span className="text-2xl font-semibold" style={{ color: T.txt }}>{metaTimePct}%</span>
@@ -139,17 +139,17 @@ export default function DashNovo(p) {
       </div>
 
       {/* Ritmo + Metas individuais */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))' }}>
-        <div className="rounded-3xl p-5" style={CARD}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))' }}>
+        <div className="rounded-3xl p-4" style={CARD}>
           <div className="flex items-center gap-3 mb-1">
             <h3 className="text-sm font-semibold flex-1" style={{ color: T.txt }}>Ritmo de vendas</h3>
             {metaTimeMes > 0 && <span className="text-xs" style={{ color: T.muted }}>Meta de {periodoMesLabel}: <b style={{ color: T.txt }}>{brlCurto(metaTimeMes)}</b></span>}
           </div>
-          <p className="text-xs mb-4" style={{ color: T.muted }}>Produção acumulada no período{metaTimeMes > 0 ? ' comparada ao ritmo necessário para a meta' : ''}.</p>
+          <p className="text-xs mb-2" style={{ color: T.muted }}>Produção acumulada no período{metaTimeMes > 0 ? ' comparada ao ritmo necessário para a meta' : ''}.</p>
           {ritmo.length === 0
-            ? <div className="h-56 flex items-center justify-center text-sm" style={{ color: T.muted }}>Sem dados no período</div>
+            ? <div className="h-40 flex items-center justify-center text-sm" style={{ color: T.muted }}>Sem dados no período</div>
             : (
-              <ResponsiveContainer width="100%" height={230}>
+              <ResponsiveContainer width="100%" height={168}>
                 <AreaChart data={ritmo} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="vxRitmo" x1="0" y1="0" x2="0" y2="1">
@@ -186,7 +186,7 @@ export default function DashNovo(p) {
             <Link to="/Metas" className="vx-btn vx-btn-soft h-7 px-3 text-[11px]">Metas <ArrowUpRight className="w-3 h-3" /></Link>
           </div>
           {metasInd.length === 0 && <p className="text-sm py-6 text-center" style={{ color: T.muted }}>Nenhuma meta ou venda no período</p>}
-          <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-2.5">
             {metasInd.map(r => {
               const pct = r.meta > 0 ? Math.min(100, Math.round(r.volume / r.meta * 100)) : null;
               const ok = r.meta > 0 && r.volume >= r.meta;
@@ -199,7 +199,7 @@ export default function DashNovo(p) {
                       <span className="font-medium truncate" style={{ color: T.txt }}>{r.nome}</span>
                       <span style={{ color: T.muted }}><b style={{ color: T.txt }}>{brlCurto(r.volume)}</b>{r.meta > 0 ? ` / ${brlCurto(r.meta)}` : ''}</span>
                     </div>
-                    <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
                       <div className="h-full rounded-full" style={{ width: `${pct ?? 100}%`, background: ok ? 'linear-gradient(90deg,#34d399,#059669)' : `linear-gradient(90deg, ${cor}, ${cor}99)`, opacity: pct == null ? 0.35 : 1, transition: 'width .8s ease' }} />
                     </div>
                   </div>
@@ -212,9 +212,9 @@ export default function DashNovo(p) {
       </div>
 
       {/* Pódio + Últimas vendas */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))' }}>
-        <div className="rounded-3xl p-5" style={CARD}>
-          <div className="flex flex-wrap items-center gap-2 mb-5">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))' }}>
+        <div className="rounded-3xl p-4" style={CARD}>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
             <Award className="w-4 h-4" style={{ color: GOLD }} />
             <h3 className="text-sm font-semibold flex-1" style={{ color: T.txt }}>Ranking de gerentes</h3>
             {parcelasMes.length > 0 && (
