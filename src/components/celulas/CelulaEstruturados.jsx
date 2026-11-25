@@ -6,7 +6,8 @@ import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
-import ContratoNaCelula, { VendaDaOperacao } from './ContratoNaCelula';
+import { VendaDaOperacao } from './ContratoNaCelula';
+import JornadaContrato from './JornadaContrato';
 import AnexarNdaAssinadoModal from './AnexarNdaAssinadoModal';
 import NovaOperacaoModal from './NovaOperacaoModal';
 import EditarEstudoModal from '@/components/estudo/EditarEstudoModal';
@@ -680,17 +681,15 @@ function AbasOperacao({ aba, setAba, t, temContrato, temVenda, extras = [], comC
 }
 
 // Corpo das abas Contrato / Venda (ocupa a largura toda; o formulário de criação é claro, o acompanhamento é escuro)
-function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, clienteFallback, vinculo, valoresIniciais, t, recarregar, onCriado }) {
+function CorpoContratoVenda({ aba, setAba, contrato, tipoContrato, clienteId, clienteFallback, vinculo, valoresIniciais, t, recarregar, onCriado, user, isAdmin, editarAoAbrir }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '18px 24px' }}>
       {aba === 'contrato' && (
-        <div style={!contrato ? { background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, padding: 12 } : undefined}>
-          <ContratoNaCelula contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo} valoresIniciais={valoresIniciais}
-            onVoltar={() => setAba('jornada')}
-            onSalvo={(c) => { onCriado ? onCriado(c) : recarregar?.(); }}
-            onAtualizado={() => recarregar?.()}
-            onVendaCriada={() => { recarregar?.(); setAba('venda'); }} />
-        </div>
+        <JornadaContrato contrato={contrato} tipoContrato={tipoContrato} clienteId={clienteId} clienteFallback={clienteFallback} vinculo={vinculo} valoresIniciais={valoresIniciais}
+          t={t} user={user} isAdmin={isAdmin} editarAoAbrir={editarAoAbrir}
+          onCriado={(c) => { onCriado ? onCriado(c) : recarregar?.(); }}
+          onAtualizado={() => recarregar?.()}
+          onVendaCriada={() => { recarregar?.(); setAba('venda'); }} />
       )}
       {aba === 'venda' && <VendaDaOperacao contrato={contrato} t={t} />}
     </div>
@@ -829,7 +828,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
             arquivos={(e.documentos || []).filter(d => d.url).map(d => ({ ref: d.url, nome: d.nome_arquivo || d.descricao || 'Documento', descricao: d.descricao }))} />
         </div>
       ) : (
-        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={contrato} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
+        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={contrato} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar} user={user} isAdmin={isAdmin}
           clienteId={e.cliente_id} vinculo={{ estudo_id: e.id }} valoresIniciais={valoresDaProposta}
           clienteFallback={{ nome: e.cliente_nome, cpf_cnpj: e.cliente_documento, email: e.cliente_email, telefone: e.cliente_telefone }} />
       )}
@@ -1133,11 +1132,11 @@ function OperacaoContrato({ op, produto, t, comentarios, publicar, voltar, ir, r
           <PainelLateral t={t} docs={docs} atalhos={atalhos} ir={irAba} />
         </div>
       ) : (
-        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar}
+        <CorpoContratoVenda aba={aba} setAba={setAba} contrato={ct} tipoContrato={jornada.tipoContrato} t={t} recarregar={recarregar} user={user} isAdmin={isAdmin}
           key={'ct' + editarCt} editarAoAbrir={editarCt > 0}
           clienteId={neg?.cliente_id || ct?.cliente_id} vinculo={{ pipeline_id: neg?.id }}
           valoresIniciais={negAberta ? { valor_total: negAberta.valor_estimado || '', observacoes: negAberta.descricao || '' } : null}
-          clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, email: neg.cliente_email, telefone: neg.cliente_telefone } : null}
+          clienteFallback={neg ? { nome: neg.cliente_nome, cpf_cnpj: neg.cliente_cpf_cnpj, telefone: neg.cliente_telefone } : ct ? { nome: ct.nome, cpf_cnpj: ct.cpf_cnpj, email: ct.email, telefone: ct.telefone } : null}
           onCriado={async (c) => {
             if (negAberta) await base44.entities.Pipeline.update(negAberta.id, { temperatura: 'Fechado' }).catch(() => {});
             abrirOp?.(c.id);
