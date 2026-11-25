@@ -61,7 +61,7 @@ export default function ColetaCliente({ tipo, contrato, user, t, compacto = fals
         const tp = dig(contrato.cpf_cnpj).length === 11 ? 'PF' : 'PJ';
         r = await base44.entities[cfg.ent].create({
           contrato_id: contrato.id, cliente_nome: contrato.nome || '', status: 'rascunho',
-          mensagem_cliente: mensagemPadrao(cfg.msg), responsavel_nome: contrato.vendedor_nome || user?.nome_tratamento || user?.full_name || '',
+          mensagem_cliente: mensagemPadrao(cfg.msg, contrato.nome), responsavel_nome: contrato.vendedor_nome || user?.nome_tratamento || user?.full_name || '',
           preenchido_por: user?.nome_tratamento || user?.full_name || user?.email || '',
           ...cfg.novo(tp),
         });
@@ -96,7 +96,8 @@ export default function ColetaCliente({ tipo, contrato, user, t, compacto = fals
   };
   const whatsapp = () => {
     const tel = dig(contrato.telefone);
-    const txt = encodeURIComponent(`${reg?.mensagem_cliente || mensagemPadrao(cfg.msg)}\n\n${link}`);
+    const corpo = reg?.mensagem_cliente || mensagemPadrao(cfg.msg, contrato.nome);
+    const txt = encodeURIComponent(`${/^\s*ol[aá]\b/i.test(corpo) ? '' : `Olá${contrato.nome ? ', ' + String(contrato.nome).split(' ')[0] : ''}! `}${corpo}\n\n${link}`);
     window.open(`https://wa.me/${tel ? (tel.startsWith('55') ? tel : '55' + tel) : ''}?text=${txt}`, '_blank', 'noopener');
   };
 

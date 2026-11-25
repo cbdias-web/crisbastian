@@ -137,7 +137,7 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
   const textoConvite = () => {
     const nome = destinatario.cliente_nome || form.nome || '';
     const corpo = msgFinal(destinatario.mensagem_cliente);
-    return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${corpo}\n\n${linkRnc}`;
+    { const corpo_ = corpo; return `${/^\s*ol[aá]\b/i.test(corpo_) ? '' : `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! `}${corpo_}\n\n${linkRnc}`; }
   };
   const telWhats = (() => {
     const t = String(form.telefone || '').replace(/\D/g, '');
@@ -592,6 +592,12 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
           </div>
 
           {/* Dados cadastrais */}
+          <CardSection title="Envio ao cliente" icon={MessageSquare}
+            open={secaoDestOpen} onToggle={() => setSecaoDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo={msgKey} valor={destinatario} onChange={updateDestinatario}
+              onSelecionarCliente={(c) => selecionarCliente(c)} />
+          </CardSection>
           <CardSection title={`Dados Cadastrais — ${tipoCanal === 'PF' ? 'Pessoa Física' : 'Pessoa Jurídica'}`} icon={User}
             open={secaoDadosOpen} onToggle={() => setSecaoDadosOpen(p => !p)}>
             <div className="grid grid-cols-2 gap-3">
@@ -788,12 +794,6 @@ export default function RncCanalBancarioModal({ contrato, user, onClose, rncId, 
           )}
 
           {/* Destinatário do link + mensagem personalizada */}
-          <CardSection title="Envio ao cliente" icon={MessageSquare}
-            open={secaoDestOpen} onToggle={() => setSecaoDestOpen(p => !p)}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo="canal" valor={destinatario} onChange={updateDestinatario}
-              onSelecionarCliente={(c) => selecionarCliente(c)} />
-          </CardSection>
 
           {/* Observações */}
           <CardSection title="Observações" icon={FileText} open={secaoObsOpen} onToggle={() => setSecaoObsOpen(p => !p)}>

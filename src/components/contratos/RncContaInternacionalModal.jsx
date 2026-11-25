@@ -313,7 +313,7 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
   const textoConvite = () => {
     const nome = destinatario.cliente_nome || s3.secao3_nome || s1.secao1_pj_razao_social || '';
     const corpo = destinatario.mensagem_cliente || mensagemPadrao('conta');
-    return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${corpo}\n\n${linkRnc}`;
+    { const corpo_ = corpo; return `${/^\s*ol[aá]\b/i.test(corpo_) ? '' : `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! `}${corpo_}\n\n${linkRnc}`; }
   };
   const telWhats = (() => {
     const t = String(s1.secao1_celular || s3.secao3_telefone || '').replace(/\D/g, '');
@@ -374,6 +374,16 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
           />
 
           {/* SEÇÃO 1 — INFORMAÇÕES DA CONTA */}
+          <CardSection title="Envio ao cliente" icon={MessageSquare} open={sDestOpen} onToggle={() => setSDestOpen(p => !p)}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="conta" valor={destinatario}
+              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
+              onSelecionarCliente={(c) => {
+                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
+                setS1(f => ({ ...f, secao1_email: f.secao1_email || c.email || '', secao1_celular: f.secao1_celular || c.telefone || '', secao1_pj_razao_social: f.secao1_pj_razao_social || c.nome || '' }));
+                setS3(f => ({ ...f, secao3_nome: f.secao3_nome || c.nome || '', secao3_cpf: f.secao3_cpf || c.cpf_cnpj || '', secao3_email: f.secao3_email || c.email || '' }));
+              }} />
+          </CardSection>
           <CardSection title="Seção 1 — Informações da Conta" icon={Globe} open={s1Open} onToggle={() => setS1Open(p => !p)}>
             <div className="space-y-3">
               <RadioBtns label="Tipo de Conta"
@@ -643,16 +653,6 @@ export default function RncContaInternacionalModal({ contrato, user, onClose, rn
           </CardSection>
 
           {/* ENVIO AO CLIENTE */}
-          <CardSection title="Envio ao cliente" icon={MessageSquare} open={sDestOpen} onToggle={() => setSDestOpen(p => !p)}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo="conta" valor={destinatario}
-              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
-              onSelecionarCliente={(c) => {
-                setDestinatario(d => ({ ...d, cliente_nome: c.nome || '' }));
-                setS1(f => ({ ...f, secao1_email: f.secao1_email || c.email || '', secao1_celular: f.secao1_celular || c.telefone || '', secao1_pj_razao_social: f.secao1_pj_razao_social || c.nome || '' }));
-                setS3(f => ({ ...f, secao3_nome: f.secao3_nome || c.nome || '', secao3_cpf: f.secao3_cpf || c.cpf_cnpj || '', secao3_email: f.secao3_email || c.email || '' }));
-              }} />
-          </CardSection>
 
           {/* OBSERVAÇÕES */}
           <CardSection title="Observações" icon={FileText} open={sObsOpen} onToggle={() => setSObsOpen(p => !p)}>

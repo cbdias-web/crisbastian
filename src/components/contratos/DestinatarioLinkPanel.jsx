@@ -22,13 +22,33 @@ export const MENSAGENS_PADRAO = {
   dolarize: acolhimento('abertura da sua conta Dolarize'),
 };
 
-export const mensagemPadrao = (tipo) => MENSAGENS_PADRAO[tipo] || MENSAGENS_PADRAO.canal;
+// Com o cliente identificado, a mensagem já sai personalizada: "Olá, Fulano! Seja bem-vindo(a)…"
+const primeiroNome = (n) => {
+  const p = String(n || '').trim().split(/\s+/)[0] || '';
+  return p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : '';
+};
+export const mensagemPadrao = (tipo, nomeCliente) => {
+  const base = MENSAGENS_PADRAO[tipo] || MENSAGENS_PADRAO.canal;
+  const n = primeiroNome(nomeCliente);
+  return n ? `Olá, ${n}! ${base}` : base;
+};
+// A mensagem ainda é a padrão (com ou sem saudação)? Então pode ser regenerada quando o nome muda.
+export const ehMensagemPadrao = (tipo, m) => {
+  const base = MENSAGENS_PADRAO[tipo] || MENSAGENS_PADRAO.canal;
+  const t = String(m || '').trim();
+  return !t || t === base || (/^Olá, [^!]{1,40}! /.test(t) && t.replace(/^Olá, [^!]{1,40}! /, '') === base)
+    || Object.values(MENSAGENS_PADRAO).includes(t);
+};
+// Na página pública: só acrescenta "Olá, nome." se a mensagem ainda não cumprimenta.
+export const mensagemJaCumprimenta = (m) => /^\s*ol[aá]\b/i.test(String(m || ''));
 
 // Destinatário do link + mensagem personalizada do formulário público.
 // O cliente escolhido aqui é quem recebe o link e já sai preenchido no formulário.
 export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange, onSelecionarCliente }) {
   const v = valor || {};
-  const mensagem = v.mensagem_cliente !== undefined ? v.mensagem_cliente : mensagemPadrao(tipo);
+  const mensagem = v.mensagem_cliente !== undefined && v.mensagem_cliente !== '' ? v.mensagem_cliente : mensagemPadrao(tipo, v.cliente_nome);
+  // Trocou o cliente e a mensagem ainda é a padrão → personaliza com o novo nome
+  const mudarNome = (nome) => onChange(ehMensagemPadrao(tipo, mensagem) ? { cliente_nome: nome, mensagem_cliente: mensagemPadrao(tipo, nome) } : { cliente_nome: nome });
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
@@ -47,7 +67,7 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
   }, [busca]);
 
   const escolher = (c) => {
-    onChange({ cliente_nome: c.nome || '' });
+    mudarNome(c.nome || '');
     onSelecionarCliente?.(c);
     setBusca('');
     setResultados([]);
@@ -57,7 +77,7 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
     <div className="space-y-3">
       <div>
         <label className="block mb-1" style={label}>Cliente destinatário *</label>
-        <input value={v.cliente_nome || ''} onChange={e => onChange({ cliente_nome: e.target.value })}
+        <input value={v.cliente_nome || ''} onChange={e => mudarNome(e.target.value)}
           placeholder="Nome do cliente que vai receber o link"
           className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle} />
         <div className="relative mt-1.5">
@@ -95,14 +115,15 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
       <div>
         <div className="flex items-center justify-between mb-1">
           <label style={label}>Mensagem para o cliente</label>
-          <button onClick={() => onChange({ mensagem_cliente: mensagemPadrao(tipo) })}
+          <button onClick={() => onChange({ mensagem_cliente: mensagemPadrao(tipo, v.cliente_nome) })}
             className="flex items-center gap-1 text-[10.5px] font-semibold" style={{ color: A.accent }}>
             <RotateCcw className="w-3 h-3" /> Restaurar padrão
           </button>
         </div>
         <textarea value={mensagem} onChange={e => onChange({ mensagem_cliente: e.target.value })} rows={5}
-          placeholder="Mensagem personalizada que o cliente verá no topo do formulário"
+          placeholder="Mensagem que o cliente verá no topo do formulário"
           className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none resize-y" style={inputStyle} />
+        <p className="mt-1 text-[11px]" style={{ color: A.muted }}>É exatamente o que o cliente vê no topo do formulário, assinada pelo consultor abaixo.</p>
       </div>
 
       <div>
@@ -112,18 +133,6 @@ export default function DestinatarioLinkPanel({ tipo = 'canal', valor, onChange,
           className="w-full px-3 py-2 text-sm rounded-lg focus:outline-none" style={inputStyle} />
       </div>
 
-      <div className="rounded-lg p-3" style={{ background: A.accentDim, border: `1px solid ${A.border}` }}>
-        <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5 flex items-center gap-1.5" style={{ color: A.accent }}>
-          <MessageSquare className="w-3 h-3" /> Prévia do cabeçalho do cliente
-        </p>
-        <p className="text-xs leading-relaxed" style={{ color: A.text }}>
-          {v.cliente_nome ? <>Olá, <strong>{v.cliente_nome}</strong>. </> : null}
-          {mensagem}
-          {v.responsavel_nome ? (
-            <><br /><span style={{ color: A.muted }}>{v.responsavel_nome} · Villela Exchange</span></>
-          ) : null}
-        </p>
-      </div>
     </div>
   );
 }

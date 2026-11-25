@@ -185,7 +185,7 @@ export default function RncPublicaPage() {
           </div>
           {(rnc.cliente_nome || rnc.mensagem_cliente) && (
             <p className="text-xs mt-4 leading-relaxed" style={{ color: AURORA.textMuted }}>
-              {rnc.cliente_nome ? <>Olá, <strong style={{ color: AURORA.text }}>{rnc.cliente_nome}</strong>. </> : null}
+              {rnc.cliente_nome && !/^\s*ol[aá]\b/i.test(rnc.mensagem_cliente || '') ? <>Olá, <strong style={{ color: AURORA.text }}>{rnc.cliente_nome}</strong>. </> : null}
               {rnc.mensagem_cliente}
               {rnc.responsavel_nome ? (
                 <><br /><span style={{ color: AURORA.accent }}>{rnc.responsavel_nome} · Villela Exchange</span></>

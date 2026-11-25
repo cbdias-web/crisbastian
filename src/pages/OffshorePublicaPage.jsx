@@ -226,7 +226,7 @@ export default function OffshorePublicaPage() {
             </div>
           </div>
           <p className="text-xs mt-4 leading-relaxed" style={{ color: AURORA.textMuted }}>
-            {nomeSaudacao ? <>Olá, <strong style={{ color: AURORA.text }}>{nomeSaudacao}</strong>. </> : null}
+            {nomeSaudacao && !/^\s*ol[aá]\b/i.test(rnc.mensagem_cliente || '') ? <>Olá, <strong style={{ color: AURORA.text }}>{nomeSaudacao}</strong>. </> : null}
             {rnc.mensagem_cliente}
             {rnc.responsavel_nome ? <><br /><span style={{ color: AURORA.accent }}>{rnc.responsavel_nome} · Villela Exchange</span></> : null}
           </p>

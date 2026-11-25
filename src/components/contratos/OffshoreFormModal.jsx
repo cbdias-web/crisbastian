@@ -232,7 +232,7 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
 
   const textoConvite = () => {
     const nome = destinatario.cliente_nome || ct.contratante_nome || '';
-    return `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! ${destinatario.mensagem_cliente || mensagemPadrao('offshore')}\n\n${linkRnc}`;
+    { const corpo_ = destinatario.mensagem_cliente || mensagemPadrao('offshore'); return `${/^\s*ol[aá]\b/i.test(corpo_) ? '' : `Olá${nome ? ', ' + nome.split(' ')[0] : ''}! `}${corpo_}\n\n${linkRnc}`; }
   };
   const telWhats = (() => {
     const t = String(ct.contratante_telefone || '').replace(/\D/g, '');
@@ -284,6 +284,12 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
             </div>
           )}
 
+          <CardSection title="Envio ao cliente" icon={MessageSquare} open={open.dest} onToggle={() => toggle('dest')}
+            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
+            <DestinatarioLinkPanel tipo="offshore" valor={destinatario}
+              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
+              onSelecionarCliente={aplicarCliente} />
+          </CardSection>
           <CardSection title="Seção 1 — Dados do Contratante" icon={User} open={open.ct} onToggle={() => toggle('ct')}
             badge={ct.contratante_nome ? ct.contratante_nome.split(' ')[0] : 'definir cliente'}>
             <div className="mb-3"><ClienteEstudoPicker onSelecionar={aplicarCliente} /></div>
@@ -427,12 +433,6 @@ export default function OffshoreFormModal({ contrato, user, onClose, rncId }) {
             </div>
           </CardSection>
 
-          <CardSection title="Envio ao cliente" icon={MessageSquare} open={open.dest} onToggle={() => toggle('dest')}
-            badge={destinatario.cliente_nome ? destinatario.cliente_nome.split(' ')[0] : 'definir cliente'}>
-            <DestinatarioLinkPanel tipo="offshore" valor={destinatario}
-              onChange={(patch) => setDestinatario(d => ({ ...d, ...patch }))}
-              onSelecionarCliente={aplicarCliente} />
-          </CardSection>
 
           <CardSection title="Observações internas" icon={FileText} open={open.obs} onToggle={() => toggle('obs')}>
             <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3}
