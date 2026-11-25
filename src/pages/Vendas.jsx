@@ -21,6 +21,7 @@ import { createPageUrl } from '../utils';
 import { toast } from 'sonner';
 import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 export default function Vendas() {
   const [showForm, setShowForm] = useState(false);
@@ -821,6 +822,7 @@ export default function Vendas() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4"><AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} /></div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label>Data Início</Label>

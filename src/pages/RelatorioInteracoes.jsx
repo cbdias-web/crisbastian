@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 const today = () => todayBrasilia();
 const firstOfMonth = () => {
@@ -416,6 +417,7 @@ export default function RelatorioInteracoes() {
 
         {/* Filtros em linha horizontal */}
         <div className="flex items-end gap-3 flex-wrap">
+          <div className="vx-linha-periodo"><AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} /></div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Data início</label>
             <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}

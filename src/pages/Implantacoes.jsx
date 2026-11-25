@@ -12,6 +12,7 @@ import MultiSelectFiltro from '@/components/ui/MultiSelectFiltro';
 import { TIPOS_CONTRATO } from '@/lib/tiposContrato';
 import { todayBrasilia } from '@/lib/dateUtils';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 const AURORA = {
   bg: '#0B111C',
@@ -313,6 +314,7 @@ export default function Implantacoes() {
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium" style={{ color: AURORA.textMuted }}>Período:</span>
+            <AtalhosPeriodo inicio={filtroDataInicio} fim={filtroDataFim} onChange={(i, f) => { setFiltroDataInicio(i); setFiltroDataFim(f); }} />
             <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}
               className="px-2 py-1.5 text-xs rounded-lg focus:outline-none" style={{ background: AURORA.surface2, border: `1px solid ${AURORA.border}`, color: AURORA.text }} />
             <span className="text-xs" style={{ color: AURORA.textMuted }}>até</span>

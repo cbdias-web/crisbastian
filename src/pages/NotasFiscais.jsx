@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { confirmar } from '@/lib/confirmar';
 import { todayBrasilia } from '@/lib/dateUtils';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -292,6 +293,7 @@ export default function NotasFiscais() {
                 placeholder="Buscar por cliente, produto, ID de cobrança..."
                 className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#1a3150]" />
             </div>
+            <div className="vx-linha-periodo"><AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} /></div>
             <div>
               <Label className="text-xs">Data Início</Label>
               <Input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />

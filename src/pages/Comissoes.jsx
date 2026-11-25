@@ -7,6 +7,7 @@ import { filtrarGerentesConsulta } from "@/lib/gerentesConsulta";
 import { toast } from "sonner";
 import { confirmar } from '@/lib/confirmar';
 import CampoMoeda from '@/components/ui/campo-moeda';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 const formatCurrency = (v) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
@@ -463,6 +464,7 @@ export default function Comissoes() {
         {/* Filtro de período e seleção de pessoas */}
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-gray-100 shadow-sm">
+            <AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} />
             <Calendar className="w-4 h-4 text-gray-400 ml-1" />
             <input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)}
               className="px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-[#1a3150] bg-white" />

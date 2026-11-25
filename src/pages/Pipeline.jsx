@@ -20,6 +20,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { usaNovoPortal } from '@/lib/novoPortal';
 import { CELULAS, JORNADAS, celulaDoProdutoPipeline } from '@/lib/celulas';
 import { confirmar } from '@/lib/confirmar';
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 const TEMPERATURAS = [
   { value: 'Frio', dot: 'bg-blue-500', emoji: '🧊' },
@@ -824,6 +825,7 @@ export default function Pipeline() {
               {produtosUnicos.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
 
+            <AtalhosPeriodo inicio={filtroDataInicio} fim={filtroDataFim} onChange={(i, f) => { setFiltroDataInicio(i); setFiltroDataFim(f); }} />
             {/* Período */}
             <div className="flex items-center gap-1.5">
               <input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)}

@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { FileText, Download, Calendar, Users, Mail, X, Send, Eye } from "lucide-react";
 import PreRelatorioModal from '@/components/comissoes/PreRelatorioModal';
 import { toast } from "sonner";
+import AtalhosPeriodo from '@/components/padrao/AtalhosPeriodo';
 
 export default function RelatorioComissoes() {
   const [vendedores, setVendedores] = useState([]);
@@ -214,6 +215,7 @@ export default function RelatorioComissoes() {
             <h3 className="font-semibold text-gray-900 text-sm">Período</h3>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} />
             <input
               type="date"
               value={dataInicio}
