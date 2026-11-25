@@ -12,6 +12,7 @@ import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estud
 import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto } from '@/lib/propostaTecnica';
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal';
+import { usaNovoPortal } from '@/lib/novoPortal';
 import { confirmar } from '@/lib/confirmar';
 import CampoMoeda from '@/components/ui/campo-moeda';
 
@@ -247,8 +248,8 @@ function Painel() {
           <h1 className="text-2xl font-bold flex items-center gap-2"><BrainCircuit className="w-6 h-6" style={{ color: A.accent }} /> Análise Técnica e Propostas</h1>
           <p className="text-xs mt-1 max-w-3xl" style={{ color: A.muted }}>A análise nasce do Estudo de Viabilidade — o cliente devolve as respostas e os documentos — ou direto de um cadastro, com as informações digitadas pelo consultor. Em ambos os casos o motor de IA segue as premissas do sistema, e uma análise já criada pode servir de base para outro cliente.</p>
         </div>
-        <button onClick={() => setNovaAberta(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold" style={{ background: A.accent, color: '#0B111C' }}>
-          <Plus className="w-4 h-4" /> Nova análise manual
+        <button data-novo onClick={() => (usaNovoPortal(user) ? nav('?celula=estruturados&nova=1') : setNovaAberta(true))} className="vx-novo">
+          <Plus className="w-4 h-4" /> {usaNovoPortal(user) ? 'Nova operação' : 'Nova análise manual'}
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">

@@ -455,6 +455,10 @@ export default function Layout({ children, currentPageName }) {
       if (!dash && isAdmin) dash = { name: 'Dash Parceiro', icon: Handshake, page: 'DashParceiro' };
       if (dash) prosp.items.push({ ...dash, badge: novasIndicacoes.length, search: novasIndicacoes.length > 0 ? '?aba=indicacoes' : '' });
     }
+    // Estudo e Análise técnica agora acontecem dentro de Produtos estruturados (células):
+    // saem do menu para não haver dois caminhos de criação (continuam acessíveis pelos atalhos da célula).
+    const com = gs.find(g => g.label === 'Comercial');
+    if (com) com.items = com.items.filter(i => !['EstudoViabilidade', 'AnaliseTecnica'].includes(i.page));
     return gs.filter(g => g.items.length > 0);
   })();
   const mostrarCapa = novoPortal && (currentPageName === 'Inicio' || location.pathname === '/');
