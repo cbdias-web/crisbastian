@@ -833,7 +833,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       const ent = produto === 'offshore' ? base44.entities.RncOffshore : base44.entities.RncContaInternacional;
       ent.filter({ contrato_id: contrato.id }, '-created_date', 1).then(l => setFormPos((l || [])[0] || null)).catch(() => {});
     }
-  }, [e.id, contrato?.id]);
+  }, [e.id, contrato?.id, aba]); // recarrega ao trocar de aba: uma nova versão da análise reflete no contrato
 
   const eventos = useMemo(() => {
     const ev = [];
@@ -886,8 +886,15 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
   const irAba = (to) => (typeof to === 'function' ? to() : ir(to));
   // Valores definidos na análise/proposta seguem para o contrato
   const propostaBase = propostas.find(p => p.id === e.proposta_atual_id) || propostas.find(p => p.status === 'aceita') || propostas[0] || null;
+  const invBase = propostaBase?.conteudo?.investimento || {};
+  const totalBase = propostaBase ? valorHonorariosProjeto(propostaBase.conteudo) || 0 : 0;
+  const nParc = Number(invBase.num_parcelas) || 0;
   const valoresDaProposta = propostaBase ? {
-    valor_total: valorHonorariosProjeto(propostaBase.conteudo) || '',
+    _origem: `${propostaBase.codigo || 'Proposta'} · v${propostaBase.versao}`,
+    valor_total: totalBase || '',
+    ...(invBase.entrada !== undefined && invBase.entrada !== '' ? { valor_adesao: Number(invBase.entrada) || 0 } : {}),
+    ...(invBase.num_parcelas !== undefined && invBase.num_parcelas !== '' ? { num_parcelas: nParc, valor_parcela: nParc > 0 ? Number((Math.max(0, totalBase - (Number(invBase.entrada) || 0)) / nParc).toFixed(2)) : 0 } : {}),
+    ...(invBase.forma_pagamento ? { forma_pagamento: invBase.forma_pagamento } : {}),
     ...(jornada.tipoContrato === 'OFFSHORE' ? { prazo_implantacao_dias: somaEtapas(propostaBase.conteudo?.etapas).prazo || '' } : {}),
     observacoes: propostaBase.conteudo?.investimento?.condicoes ? `Condições da proposta ${propostaBase.codigo || 'v' + propostaBase.versao}: ${propostaBase.conteudo.investimento.condicoes}` : '',
   } : null;
