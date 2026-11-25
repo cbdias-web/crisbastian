@@ -108,20 +108,20 @@ export function proximaAcao(estudo, etapa, contrato, produto) {
         if (!estudo.nda_url) return { label: 'Gerar o NDA', acao: 'nda', to: '' };
         if (estudo.nda_origem === 'gerado') return { label: 'Anexar o NDA assinado', acao: 'nda_assinado', to: '' };
       }
-      return { label: 'Anexar o NDA ao estudo', to: `/EstudoViabilidade?estudo=${estudo.id}` };
+      return { label: 'Anexar o NDA ao estudo', acao: 'estudo', to: '' };
     case 1: {
-      if (estudo.status === 'rascunho') return { label: 'Enviar o link do estudo ao cliente', to: `/EstudoViabilidade?estudo=${estudo.id}` };
-      if (estudo.status === 'recebido' || estudo.cliente_devolveu_em) return { label: 'Enviar para análise técnica', to: `/EstudoViabilidade?estudo=${estudo.id}` };
-      return { label: 'Acompanhar o preenchimento do cliente', to: `/EstudoViabilidade?estudo=${estudo.id}` };
+      if (estudo.status === 'rascunho') return { label: 'Enviar o link do estudo ao cliente', acao: 'estudo', to: '' };
+      if (estudo.status === 'recebido' || estudo.cliente_devolveu_em) return { label: 'Enviar para análise técnica', acao: 'estudo', to: '' };
+      return { label: 'Acompanhar o preenchimento do cliente', acao: 'estudo', to: '' };
     }
-    case 2: return { label: estudo.proposta_atual_id ? 'Revisar e aprovar a proposta' : 'Gerar a análise técnica', to: `/AnaliseTecnica?estudo=${estudo.id}` };
-    case 3: return { label: 'Registrar a decisão do cliente', to: `/AnaliseTecnica?estudo=${estudo.id}` };
+    case 2: return { label: estudo.proposta_atual_id ? 'Revisar e aprovar a proposta' : 'Gerar a análise técnica', acao: 'analise', to: '' };
+    case 3: return { label: 'Registrar a decisão do cliente', acao: 'analise', to: '' };
     case 4:
       if (contrato) return { label: contrato.status === 'rascunho' ? 'Gerar o PDF do contrato' : 'Assinatura e pagamento', acao: 'contrato', to: '' };
-      return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Gerar o contrato', to: '/Contratos' };
+      return tipo ? { label: 'Gerar o contrato', acao: 'contrato', to: '' } : { label: 'Gerar o contrato', acao: 'contrato', to: '' };
     default:
       if (contrato && contrato.status !== 'no_pipeline') return { label: 'Pagamento e envio para Vendas', acao: 'contrato', to: '' };
-      return tipo ? { label: 'Ver venda e comissões', acao: 'venda', to: '' } : { label: 'Acompanhar a constituição', to: '/Implantacoes' };
+      return tipo ? { label: 'Ver venda e comissões', acao: 'venda', to: '' } : { label: 'Acompanhar a constituição', acao: 'venda', to: '' };
   }
 }
 
