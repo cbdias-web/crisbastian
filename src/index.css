@@ -519,3 +519,31 @@ tbody tr:hover { box-shadow: inset 3px 0 0 rgba(0,212,170,0.55), 0 10px 22px -18
 .vx-form-escuro input::placeholder, .vx-form-escuro textarea::placeholder { color: #6F7888 !important; }
 .vx-form-escuro option { background: #101826; color: #F4EFE3; }
 .vx-form-escuro .shadow-sm, .vx-form-escuro .shadow { box-shadow: none !important; }
+
+/* ═══ PADRÃO DO PORTAL ═══ */
+/* Botão de inserção ("+ Novo …") — o mesmo em todas as páginas */
+.vx-novo {
+  display: inline-flex !important; align-items: center !important; gap: 8px !important;
+  height: 40px !important; padding: 0 18px !important; border-radius: 999px !important; border: 0 !important;
+  background: linear-gradient(135deg, #E3C982, #C9A962) !important; color: #1A1508 !important;
+  font-size: 13px !important; font-weight: 600 !important; white-space: nowrap; cursor: pointer;
+  box-shadow: 0 10px 24px -14px rgba(201,169,98,.85) !important;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease !important;
+}
+.vx-novo:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 14px 28px -14px rgba(201,169,98,.95) !important; }
+.vx-novo:disabled { opacity: .6; transform: none; }
+.vx-novo svg { width: 16px !important; height: 16px !important; margin: 0 !important; color: #1A1508 !important; }
+
+/* Caixas de busca — mesmo formato em todas as páginas */
+main input[placeholder^="Buscar"], main input[placeholder^="Pesquisar"], main input[placeholder^="Procurar"] {
+  border-radius: 999px !important; min-height: 40px;
+  background-color: rgba(0,0,0,0.28) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #F4EFE3 !important;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+main input[placeholder^="Buscar"]:focus, main input[placeholder^="Pesquisar"]:focus, main input[placeholder^="Procurar"]:focus {
+  outline: none !important; border-color: rgba(201,169,98,0.6) !important; box-shadow: 0 0 0 3px rgba(201,169,98,0.15) !important;
+}
+main input[placeholder^="Buscar"]::placeholder, main input[placeholder^="Pesquisar"]::placeholder { color: #6F7888 !important; }
+
+/* Selects e campos de data dos filtros — arredondados e no mesmo tom */
+main select, main input[type="date"] { border-radius: 12px !important; }
