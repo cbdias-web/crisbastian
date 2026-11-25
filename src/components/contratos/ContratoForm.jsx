@@ -651,7 +651,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
   };
 
   return (
-    <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6'}>
+    <div className={embutido ? 'p-1 rounded-2xl' : 'min-h-screen p-4 md:p-6'}
+      style={embutido ? undefined : { background: 'linear-gradient(160deg, #0b1017 0%, #101a24 55%, #0b1017 100%)' }}>
       <div className="max-w-4xl mx-auto">
         <button onClick={onCancel} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-5 transition group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Voltar para Contratos
@@ -875,7 +876,8 @@ export default function ContratoForm({ tipo, user, onSaved, onCancel, contratoEx
               <div className="space-y-5">
                 {/* Resumo financeiro visual */}
                 {(form.valor_total || form.valor_adesao) && (
-                  <div className="grid grid-cols-3 gap-3 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 border border-gray-200">
+                  <div className="grid grid-cols-3 gap-3 rounded-xl p-4 border border-gray-200"
+                    style={{ background: 'linear-gradient(160deg, #161d28 0%, #111823 100%)' }}>
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Valor do Contrato</p>
                       <p className="text-lg font-bold text-[#1a3150] mt-0.5">

@@ -139,6 +139,9 @@ body {
 .bg-sky-50 { background-color: rgba(14,165,233,0.10) !important; }
 .bg-sky-100 { background-color: rgba(14,165,233,0.15) !important; }
 
+.bg-cyan-50 { background-color: rgba(6,182,212,0.10) !important; }
+.bg-cyan-100 { background-color: rgba(6,182,212,0.15) !important; }
+
 .bg-green-50 { background-color: rgba(34,197,94,0.10) !important; }
 .bg-green-100 { background-color: rgba(34,197,94,0.15) !important; }
 
