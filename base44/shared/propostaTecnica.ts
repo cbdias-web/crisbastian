@@ -69,6 +69,61 @@ export const valorHonorariosProjeto = (conteudo: any) => {
     .reduce((s: number, e: any) => s + (Number(e.investimento_max) || Number(e.investimento_min) || 0), 0);
 };
 
+const brlTexto = (v: any) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Parcelamento efetivo: valor único + entrada + parcelas definidos no investimento.
+const parcelamentoAtual = (conteudo: any) => {
+  const inv = conteudo?.investimento || {};
+  const total = valorHonorariosProjeto(conteudo);
+  const temEntrada = inv.entrada !== undefined && inv.entrada !== null && inv.entrada !== '';
+  const entrada = temEntrada ? Number(inv.entrada) || 0
+    : (Number(inv.entrada_percentual) ? Math.round(total * Number(inv.entrada_percentual)) / 100 : 0);
+  const temParcelas = inv.num_parcelas !== undefined && inv.num_parcelas !== null && inv.num_parcelas !== '';
+  const num_parcelas = temParcelas ? Number(inv.num_parcelas) || 0 : null;
+  const saldo = Math.max(0, total - entrada);
+  const parcela = num_parcelas ? Math.round((saldo / num_parcelas) * 100) / 100 : 0;
+  return { total, entrada, num_parcelas, saldo, parcela, temEntrada, temParcelas };
+};
+
+// Texto da forma de pagamento montado a partir do valor e do parcelamento definidos no investimento.
+// Vazio quando o consultor não definiu entrada nem parcelas (nesse caso vale o texto livre).
+export const textoFormaPagamento = (conteudo: any) => {
+  const { total, entrada, num_parcelas, saldo, parcela, temEntrada, temParcelas } = parcelamentoAtual(conteudo);
+  if (!total || (!temEntrada && !temParcelas)) return '';
+  const pct = entrada > 0 ? Math.round((entrada / total) * 100) : 0;
+  const entradaTxt = `com entrada de ${brlTexto(entrada)}${pct ? ` (${pct}%)` : ''} na assinatura`;
+  let frase: string;
+  if (num_parcelas && num_parcelas > 0) {
+    const parcelasTxt = `${num_parcelas} ${num_parcelas === 1 ? 'parcela mensal' : 'parcelas mensais'} de ${brlTexto(parcela)}`;
+    frase = entrada > 0
+      ? `Honorários de ${brlTexto(total)}, ${entradaTxt} e saldo de ${brlTexto(saldo)} em ${parcelasTxt}`
+      : `Honorários de ${brlTexto(total)}, divididos em ${parcelasTxt}`;
+  } else if (num_parcelas === 0) {
+    frase = entrada > 0
+      ? `Honorários de ${brlTexto(total)}, ${entradaTxt} e saldo de ${brlTexto(saldo)} na assinatura do contrato`
+      : `Honorários de ${brlTexto(total)}, com pagamento à vista na assinatura do contrato`;
+  } else {
+    frase = entrada > 0
+      ? `Honorários de ${brlTexto(total)}, ${entradaTxt} e saldo conforme cronograma acordado`
+      : `Honorários de ${brlTexto(total)}, com saldo conforme cronograma acordado`;
+  }
+  const fp = String(conteudo?.investimento?.forma_pagamento || '').trim();
+  return `${frase}.${fp ? ` Pagamento via ${fp}.` : ''}`;
+};
+
+// O texto livre de condições cita valor que não corresponde ao parcelamento atual (texto antigo da IA).
+export const condicoesDesatualizadas = (conteudo: any) => {
+  const texto = String(conteudo?.investimento?.condicoes || '');
+  if (!texto.trim()) return false;
+  const citados = (texto.match(/r\$\s*[\d.]+(?:,\d{1,2})?/gi) || [])
+    .map((s) => Number(s.replace(/r\$\s*/i, '').replace(/\./g, '').replace(',', '.')) || 0)
+    .filter(Boolean);
+  if (!citados.length) return false;
+  const { total, entrada, parcela } = parcelamentoAtual(conteudo);
+  const permitidos = [total, entrada, parcela].filter((v) => v > 0);
+  return citados.some((v) => !permitidos.some((p) => Math.abs(p - v) < 1));
+};
+
 // JSON schema da saída do motor de IA (conteúdo da proposta + avaliação)
 export const SCHEMA_ANALISE = {
   type: 'object',

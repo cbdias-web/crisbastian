@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PRODUTOS_ESTUDO, STATUS_ESTUDO, checklistDocumentos } from '@/lib/estudoViabilidade';
-import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto } from '@/lib/propostaTecnica';
+import { STATUS_PROPOSTA, CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, brl, valorHonorariosProjeto, textoFormaPagamento, condicoesDesatualizadas } from '@/lib/propostaTecnica';
 import SugestoesAjuste from '@/components/analise/SugestoesAjuste';
 import NovaAnaliseManualModal from '@/components/analise/NovaAnaliseManualModal';
 import { usaNovoPortal } from '@/lib/novoPortal';
@@ -387,7 +387,18 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
 
   const set = (k, v) => { setDraft(d => ({ ...d, [k]: v })); setDirty(true); };
   const setER = (k, v) => set('estrutura_recomendada', { ...(c.estrutura_recomendada || {}), [k]: v });
-  const setInv = (k, v) => set('investimento', { ...(c.investimento || {}), [k]: v });
+  // Ao mudar valor/entrada/parcelas/forma de pagamento, o texto de condições acompanha o novo
+  // parcelamento (o texto antigo da IA citava valores que deixavam de valer).
+  const setInv = (k, v) => {
+    const inv = { ...(c.investimento || {}), [k]: v };
+    const proximo = { ...c, investimento: inv };
+    if (['valor', 'entrada', 'num_parcelas', 'forma_pagamento'].includes(k)
+      && (!String(inv.condicoes || '').trim() || condicoesDesatualizadas(proximo))) {
+      const gerado = textoFormaPagamento(proximo);
+      if (gerado) inv.condicoes = gerado;
+    }
+    set('investimento', inv);
+  };
 
   const selecionar = async (v) => {
     if (dirty && !(await confirmar('Há alterações não salvas. Descartar?'))) return;
@@ -472,6 +483,8 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
   const inv = c.investimento || {};
   const valorHonorarios = valorHonorariosProjeto(c);
   const sugestaoValor = Number(inv.valor_sugerido) || valorHonorarios;
+  const pagamentoGerado = textoFormaPagamento(c);
+  const pagamentoDesatualizado = !!pagamentoGerado && condicoesDesatualizadas(c);
   const cl = CLASSIFICACAO[sel?.classificacao];
   const docs = estudo.documentos || [];
   const notas = sel?.notas_internas_ia || {};
@@ -796,6 +809,17 @@ export function Workspace({ estudoId, embutido = false, onVoltar, onIrEstudo }) 
                   </div>
                   <TextoEd titulo="Composição do valor" value={inv.justificativa} onChange={v => setInv('justificativa', v)} rows={3} readOnly={!editavel} placeholder="Como o valor foi composto: escopo, complexidade, horas e riscos." />
                   <TextoEd titulo="Forma de pagamento e negociação" value={inv.condicoes} onChange={v => setInv('condicoes', v)} rows={3} readOnly={!editavel} placeholder="Ex.: 30% na assinatura e o saldo em até 3 parcelas mensais; valor negociável conforme escopo." />
+                  {editavel && pagamentoDesatualizado && (
+                    <div className="flex items-start gap-2 text-[11px] rounded-lg px-3 py-2"
+                      style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', color: '#fbbf24' }}>
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                      <span className="flex-1 leading-relaxed">
+                        Este texto cita valores diferentes do parcelamento definido acima. O PDF traz: <strong>{pagamentoGerado}</strong>
+                      </span>
+                      <button type="button" onClick={() => setInv('condicoes', pagamentoGerado)}
+                        className="font-bold underline flex-shrink-0">Usar este texto</button>
+                    </div>
+                  )}
                 </Cartao>
                 <Cartao titulo="Cronograma" icon={ChartGantt}
                   acao={<span className="text-xs font-bold" style={{ color: A.accent }}>{tot.prazo} dias · {(c.etapas || []).length} etapas</span>}>
