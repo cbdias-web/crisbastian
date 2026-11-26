@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound, Pencil, Trash2 } from 'lucide-react';
+import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
 import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
@@ -258,17 +258,22 @@ function Overlay({ cfg, sp, setSp }) {
       `}</style>
       <section className="vx-suspensa" style={{ width: '100%', maxWidth: 1680, height: '100%', borderRadius: 24, background: `linear-gradient(${veu(t.bg, 0.82)}, ${veu(t.bg, 0.92)}), url("${FUNDO_PORTAL}") center / cover no-repeat ${t.bg}`, border: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: C.txt2, boxShadow: `0 50px 120px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03), 0 0 80px -40px ${t.glow}` }}>
         {/* Cabeçalho */}
-        <header style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '16px 24px', borderBottom: `1px solid ${C.line}`, background: t.head, flexWrap: 'wrap' }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: opSel ? 12 : 18, padding: opSel ? '10px 24px' : '16px 24px', borderBottom: `1px solid ${C.line}`, background: t.head, flexWrap: 'wrap' }}>
+          {opSel && (
+            <button onClick={() => setParam({ op: null })} aria-label={`Voltar para ${jornada.nome}`} title={`Voltar para ${jornada.nome}`} className="vx-btn vx-btn-ghost" style={{ width: 34, height: 34, padding: 0 }}>
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 200 }}>
-            <nav aria-label="Você está em" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted, flexWrap: 'wrap' }}>
+            <nav aria-label="Você está em" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: opSel ? 13 : 12, color: C.muted, flexWrap: 'wrap' }}>
               <button onClick={fechar} className="vx-crumb">Portal</button>
               <ChevronRight className="w-3 h-3" aria-hidden="true" />
               <button onClick={() => setParam({ op: null })} className="vx-crumb" style={{ color: opSel ? C.muted : t.acc }}>{cfg.nome} · {jornada.nome}</button>
               {opSel && <><ChevronRight className="w-3 h-3" aria-hidden="true" /><span style={{ color: t.acc }}>{opSel.cliente}</span></>}
             </nav>
-            <span style={{ fontSize: 24, fontWeight: 600, color: C.txt }}>{cfg.nome}</span>
+            {!opSel && <span style={{ fontSize: 24, fontWeight: 600, color: C.txt }}>{cfg.nome}</span>}
           </div>
-          <nav aria-label="Produtos" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
+          {!opSel && <nav aria-label="Produtos" style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
             {cfg.produtos.map(p => {
               const ativo = p === produto;
               return (
@@ -278,7 +283,7 @@ function Overlay({ cfg, sp, setSp }) {
                 </button>
               );
             })}
-          </nav>
+          </nav>}
           <div style={{ flex: 1 }} />
           {!opSel && (
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 14px', borderRadius: 999, background: C.input, border: `1px solid ${C.line}`, width: 270, maxWidth: '100%' }}>
@@ -287,12 +292,18 @@ function Overlay({ cfg, sp, setSp }) {
                 style={{ flex: 1, background: 'transparent', border: 0, outline: 0, color: C.txt, fontSize: 14 }} />
             </label>
           )}
-          <button aria-label="Abrir em nova aba" title="Abrir em nova aba" className="vx-btn vx-btn-ghost vx-icon-btn" onClick={() => window.open(window.location.href, '_blank')}>
+          <button aria-label="Abrir em nova aba" title="Abrir em nova aba" className="vx-btn vx-btn-ghost vx-icon-btn" style={opSel ? { width: 34, height: 34 } : undefined} onClick={() => window.open(window.location.href, '_blank')}>
             <ExternalLink className="w-4 h-4" />
           </button>
-          <button onClick={fechar} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14 }}>
-            <X className="w-4 h-4" /> Voltar ao portal
-          </button>
+          {opSel ? (
+            <button onClick={fechar} aria-label="Voltar ao portal" title="Voltar ao portal" className="vx-btn vx-btn-ghost" style={{ width: 34, height: 34, padding: 0 }}>
+              <X className="w-4 h-4" />
+            </button>
+          ) : (
+            <button onClick={fechar} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 16px', fontSize: 14 }}>
+              <X className="w-4 h-4" /> Voltar ao portal
+            </button>
+          )}
         </header>
 
         {loading ? (
@@ -617,45 +628,73 @@ function Duvidas({ celula, produto, nomeProduto, t, comentarios, setComentarios,
 }
 
 // ───────────── Peças comuns da tela de operação ─────────────
+function MenuGerenciar({ itens }) {
+  const [aberto, setAberto] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e) => { if (ref.current && !ref.current.contains(e.target)) setAberto(false); };
+    const esc = (e) => { if (e.key === 'Escape') setAberto(false); };
+    document.addEventListener('mousedown', fora); document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', fora); document.removeEventListener('keydown', esc); };
+  }, [aberto]);
+  if (!itens.length) return null;
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setAberto(a => !a)} aria-label="Mais ações da operação" aria-haspopup="menu" aria-expanded={aberto} title="Editar ou excluir"
+        className="vx-btn vx-btn-ghost" style={{ width: 38, height: 38, padding: 0 }}>
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+      {aberto && (
+        <div role="menu" style={{ position: 'absolute', right: 0, top: 44, zIndex: 20, minWidth: 190, padding: 6, borderRadius: 14, background: '#111A2B', border: `1px solid ${C.line2}`, boxShadow: '0 20px 40px -18px rgba(0,0,0,.9)' }}>
+          {itens.map(g => (
+            <button key={g.label} role="menuitem" onClick={() => { setAberto(false); g.onClick(); }} className="vx-row-hover"
+              style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 10, background: 'transparent', border: 0, fontSize: 13, textAlign: 'left', color: g.perigo ? '#F4A3A3' : C.txt2 }}>
+              {g.perigo ? <Trash2 className="w-4 h-4" /> : <Pencil className="w-4 h-4" />} {g.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Ações que só levam a uma aba já visível (ex.: Venda e comissões) não viram botão principal.
+const ACOES_SO_NAVEGACAO = new Set(['venda']);
+
 function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, onFicha, gerenciar = [] }) {
+  const itens = gerenciar.filter(Boolean);
+  const mostrarAcao = op.acao && !ACOES_SO_NAVEGACAO.has(op.acao.acao);
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
-        <button onClick={voltar} className="vx-btn vx-btn-ghost" style={{ height: 38, padding: '0 14px', fontSize: 13 }}>
-          <ArrowLeft className="w-4 h-4" /> {jornada.nome}
-        </button>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 21, fontWeight: 600, color: C.txt }}>{op.cliente}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px 10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 20, fontWeight: 600, color: C.txt }}>{op.cliente}</span>
             {onFicha && (
-              <button onClick={onFicha} className="vx-btn vx-btn-soft" style={{ height: 28, padding: '0 12px', fontSize: 12 }} title="Tudo o que o cliente tem ou teve conosco">
-                <UserRound className="w-3.5 h-3.5" /> Ficha do cliente
+              <button onClick={onFicha} className="vx-btn vx-btn-ghost" style={{ width: 28, height: 28, padding: 0 }} title="Ficha do cliente — tudo o que ele tem ou teve conosco" aria-label="Ficha do cliente">
+                <UserRound className="w-3.5 h-3.5" />
               </button>
             )}
           </span>
           <span style={{ fontSize: 13, color: C.muted }}>{subtitulo}</span>
         </div>
         <div style={{ flex: 1 }} />
-        <span style={{ padding: '6px 12px', borderRadius: 999, background: t.dim, color: t.txt, fontSize: 13, fontWeight: 500, border: `1px solid ${t.line}` }}>Etapa atual: {jornada.etapas[op.etapa].titulo}</span>
-        {gerenciar.filter(Boolean).map(g => (
-          <button key={g.label} onClick={g.onClick} className="vx-btn vx-btn-ghost" title={g.label}
-            style={{ height: 38, padding: '0 12px', fontSize: 13, ...(g.perigo ? { color: '#F4A3A3' } : {}) }}>
-            {g.perigo ? <Trash2 className="w-4 h-4" /> : <Pencil className="w-4 h-4" />} {g.label}
+        <MenuGerenciar itens={itens} />
+        {mostrarAcao && (
+          <button onClick={() => (op.acao.acao && acoes[op.acao.acao] ? acoes[op.acao.acao]() : ir(op.acao.to))} className="vx-btn vx-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 14 }}>
+            {op.acao.label} <ChevronRight className="w-4 h-4" />
           </button>
-        ))}
-        <button onClick={() => (op.acao.acao && acoes[op.acao.acao] ? acoes[op.acao.acao]() : ir(op.acao.to))} className="vx-btn vx-btn-primary" style={{ height: 42, padding: '0 18px', fontSize: 14 }}>
-          {op.acao.label} <ChevronRight className="w-4 h-4" />
-        </button>
+        )}
       </div>
-      <ol aria-label="Jornada da operação" className="vx-steps" style={{ listStyle: 'none', margin: 0, padding: '16px 24px', borderBottom: `1px solid ${C.line}` }}>
+      <ol aria-label="Jornada da operação" className="vx-steps" style={{ listStyle: 'none', margin: 0, padding: '4px 24px 12px', gap: 8 }}>
         {jornada.etapas.map((et, i) => {
           const feito = i < op.etapa, atual = i === op.etapa;
           return (
-            <li key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <span style={{ height: 4, borderRadius: 2, background: feito ? t.acc : atual ? t.line : C.line }} />
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 22, height: 22, flex: 'none', borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, background: feito ? t.acc : atual ? t.dim : 'rgba(255,255,255,.05)', color: feito ? t.onAcc : atual ? t.txt : C.muted2, border: atual ? `1px solid ${t.acc}` : 0 }}>{feito ? '✓' : i + 1}</span>
-                <span style={{ fontSize: 13, color: feito || atual ? C.txt : C.muted2, fontWeight: feito || atual ? 500 : 400 }}>{et.titulo}</span>
+            <li key={i} aria-current={atual ? 'step' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <span style={{ height: 3, borderRadius: 2, background: feito ? `linear-gradient(90deg, ${t.acc2}, ${t.acc})` : atual ? t.line : C.line }} />
+              <span style={{ fontSize: 12, color: atual ? t.txt : feito ? C.txt2 : C.muted2, fontWeight: atual ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {feito ? '✓ ' : atual ? `${i + 1} · ` : ''}{et.titulo}
               </span>
             </li>
           );
@@ -683,7 +722,7 @@ function LinhaDoTempo({ eventos, t, publicar, extra, ir, setAba, topo = null }) 
         <input value={texto} onChange={ev => setTexto(ev.target.value)} onKeyDown={ev => { if (ev.key === 'Enter') comentar(); }}
           placeholder="Comente na operação — a equipe acompanha por aqui" aria-label="Comentar na operação"
           style={{ flex: 1, height: 40, background: 'transparent', border: 0, outline: 0, color: C.txt, fontSize: 14 }} />
-        <button onClick={comentar} disabled={enviando} className="vx-btn vx-btn-primary" style={{ height: 40, padding: '0 18px', fontSize: 13 }}>
+        <button onClick={comentar} disabled={enviando} className="vx-btn vx-btn-ghost" style={{ height: 40, padding: '0 18px', fontSize: 13 }}>
           {enviando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Publicar
         </button>
       </div>
@@ -721,11 +760,11 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
               <span style={{ padding: '3px 9px', borderRadius: 999, fontSize: 12, background: d.ok ? 'rgba(52,211,153,.12)' : 'rgba(255,255,255,.05)', color: d.ok ? '#8FD9B0' : C.muted }}>{d.st}</span>
             )}
             {d.acao && (
-              <button onClick={d.acao.onClick} className="vx-btn vx-btn-primary" style={{ height: 26, padding: '0 10px', fontSize: 11 }}>{d.acao.label}</button>
+              <button onClick={d.acao.onClick} className="vx-btn vx-btn-ghost" style={{ height: 26, padding: '0 10px', fontSize: 11 }}>{d.acao.label}</button>
             )}
             {d.arquivo && (
               <>
-                <button onClick={() => abrirArquivo(d.arquivo)} className="vx-btn vx-btn-soft" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Abrir ${d.nome}`}>Abrir</button>
+                <button onClick={() => abrirArquivo(d.arquivo)} className="vx-btn vx-btn-ghost" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Abrir ${d.nome}`}>Abrir</button>
                 <button onClick={() => abrirArquivo(d.arquivo, d.nomeArquivo || `${d.nome}.pdf`)} className="vx-btn vx-btn-ghost" style={{ height: 26, padding: '0 10px', fontSize: 11 }} title={`Baixar ${d.nome}`}>Baixar</button>
               </>
             )}
@@ -762,12 +801,12 @@ function PainelLateral({ t, docs, atalhos, ir, arquivos = [] }) {
 function AbasOperacao({ aba, setAba, t, temContrato, temVenda, extras = [], comContrato = true }) {
   const abas = [['jornada', 'Linha do tempo'], ...extras, ...(comContrato ? [['contrato', temContrato ? 'Contrato' : 'Gerar contrato'], ['venda', 'Venda e comissões']] : [])];
   return (
-    <div role="tablist" aria-label="Seções da operação" style={{ display: 'flex', gap: 6, padding: '10px 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
+    <div role="tablist" aria-label="Seções da operação" style={{ display: 'flex', gap: 22, padding: '0 24px', borderBottom: `1px solid ${C.line}`, flexWrap: 'wrap' }}>
       {abas.map(([id, l]) => {
         const on = aba === id;
         return (
-          <button key={id} role="tab" aria-selected={on} onClick={() => setAba(id)} className="vx-btn"
-            style={{ height: 34, padding: '0 14px', fontSize: 13, borderRadius: 999, background: on ? t.dim : 'transparent', color: on ? t.txt : C.muted, border: `1px solid ${on ? t.acc : C.line}` }}>
+          <button key={id} role="tab" aria-selected={on} onClick={() => setAba(id)} className="vx-aba-sub"
+            style={{ height: 40, padding: '0 2px', fontSize: 13, fontWeight: on ? 600 : 500, background: 'transparent', border: 0, borderBottom: `2px solid ${on ? t.acc : 'transparent'}`, marginBottom: -1, color: on ? C.txt : C.muted, cursor: 'pointer' }}>
             {l}{id === 'venda' && temVenda ? ' ✓' : ''}
           </button>
         );
