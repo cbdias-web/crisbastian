@@ -17,6 +17,7 @@ import { confirmar } from '@/lib/confirmar';
 
 const C = { card: 'rgba(255,255,255,0.03)', card2: 'rgba(255,255,255,0.05)', input: 'rgba(0,0,0,0.28)', line: 'rgba(255,255,255,0.07)', line2: 'rgba(255,255,255,0.11)', txt: '#F4EFE3', txt2: '#C8D0DC', muted: '#8E97A8', muted2: '#7D8799', ok: '#8FD9B0', warn: '#E3C982' };
 const dig = (s) => String(s || '').replace(/\D/g, '');
+const nomeChave = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase();
 
 export const COLETAS = {
   'OFFSHORE': { ent: 'RncOffshore', fn: 'gerarLinkOffshore', pdf: 'gerarOffshorePDF', path: '/offshore-publica', titulo: 'Formulário da LLC (Offshore)', msg: 'offshore', Modal: OffshoreFormModal, novo: () => ({ documentos: docsOffshore({}, []) }) },
@@ -45,7 +46,25 @@ export default function ColetaCliente({ tipo, contrato, user, t, compacto = fals
 
   useEffect(() => {
     if (!cfg || !contrato?.id) { setReg(null); return; }
-    base44.entities[cfg.ent].filter({ contrato_id: contrato.id }, '-created_date', 1).then(l => setReg((l || [])[0] || null)).catch(() => setReg(null));
+    let cancelado = false;
+    (async () => {
+      const l = await base44.entities[cfg.ent].filter({ contrato_id: contrato.id }, '-created_date', 1);
+      let r = (l || [])[0] || null;
+      // Link gerado antes do contrato (avulso): recupera pelo mesmo cliente e vincula a esta operação,
+      // para o link já enviado ao cliente continuar acessível.
+      if (!r) {
+        const todos = await base44.entities[cfg.ent].list('-created_date', 300);
+        const doc = dig(contrato.cpf_cnpj);
+        const nome = nomeChave(contrato.nome);
+        const candidatos = (todos || []).filter(x => !x.contrato_id && (
+          (doc && [x.contratante_cpf, x.cpf_cnpj, x.secao3_cpf, x.secao1_pj_cnpj].some(v => dig(v) === doc))
+          || (nome && nomeChave(x.cliente_nome) === nome)
+        ));
+        if (candidatos.length === 1) r = await base44.entities[cfg.ent].update(candidatos[0].id, { contrato_id: contrato.id });
+      }
+      if (!cancelado) setReg(r);
+    })().catch(() => { if (!cancelado) setReg(null); });
+    return () => { cancelado = true; };
   }, [contrato?.id, recarga]);
 
   if (!cfg) return null;
