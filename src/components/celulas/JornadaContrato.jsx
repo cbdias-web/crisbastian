@@ -89,15 +89,46 @@ function Arquivo({ nome, url, onRemover }) {
   );
 }
 
+// Confere o arquivo contra o `accept` (extensões e/ou tipos MIME), também para o que chega arrastado.
+function aceitaArquivo(f, accept) {
+  if (!accept) return true;
+  const nome = (f.name || '').toLowerCase();
+  return accept.split(',').map(s => s.trim().toLowerCase()).filter(Boolean).some(a =>
+    a.startsWith('.') ? nome.endsWith(a) : a.endsWith('/*') ? (f.type || '').startsWith(a.slice(0, -1)) : f.type === a || (a === 'application/pdf' && nome.endsWith('.pdf')));
+}
+
+// Área de anexo: clique para buscar o arquivo ou arraste e solte em cima.
 function BotaoArquivo({ label, onArquivo, carregando, accept = '.pdf,.png,.jpg,.jpeg', primario }) {
   const ref = useRef(null);
+  const [arrastando, setArrastando] = useState(false);
+  const formatos = accept === 'application/pdf' ? 'PDF' : accept.split(',').map(s => s.trim().replace(/^\./, '').replace(/^.*\//, '').toUpperCase()).filter((v, i, a) => v && a.indexOf(v) === i).join(', ');
+  const receber = (f) => {
+    if (!f || carregando) return;
+    if (!aceitaArquivo(f, accept)) { toast.error(`Formato não aceito aqui. Use ${formatos}.`); return; }
+    onArquivo(f);
+  };
   return (
-    <>
-      <input ref={ref} type="file" accept={accept} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onArquivo(f); e.target.value = ''; }} />
-      <button onClick={() => ref.current?.click()} disabled={carregando} className={`vx-btn ${primario ? 'vx-btn-primary' : 'vx-btn-soft'}`} style={{ height: 36, padding: '0 14px', fontSize: 13, alignSelf: 'flex-start' }}>
-        {carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {label}
-      </button>
-    </>
+    <div role="button" tabIndex={0} aria-label={`${label} — clique ou arraste o arquivo`} aria-busy={carregando || undefined}
+      onClick={() => !carregando && ref.current?.click()}
+      onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && !carregando) { e.preventDefault(); ref.current?.click(); } }}
+      onDragEnter={e => { e.preventDefault(); setArrastando(true); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if (!arrastando) setArrastando(true); }}
+      onDragLeave={e => { if (!e.currentTarget.contains(e.relatedTarget)) setArrastando(false); }}
+      onDrop={e => { e.preventDefault(); setArrastando(false); receber(e.dataTransfer.files?.[0]); }}
+      className="vx-drop"
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, cursor: carregando ? 'progress' : 'pointer', width: '100%', maxWidth: 520,
+        background: arrastando ? 'var(--vx-dim, rgba(217,190,127,.12))' : 'rgba(255,255,255,.025)',
+        border: `1px dashed ${arrastando ? 'var(--vx-acc, #CFAE68)' : primario ? 'var(--vx-line, rgba(217,190,127,.4))' : 'rgba(255,255,255,.14)'}`,
+        transition: 'background .15s ease, border-color .15s ease' }}>
+      <input ref={ref} type="file" accept={accept} className="hidden" onClick={e => e.stopPropagation()} onChange={e => { receber(e.target.files?.[0]); e.target.value = ''; }} />
+      <span style={{ width: 34, height: 34, flex: 'none', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--vx-dim, rgba(217,190,127,.12))', color: 'var(--vx-txt, #D9BE7F)' }}>
+        {carregando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+      </span>
+      <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--vx-txt, #D9BE7F)' }}>{carregando ? 'Enviando…' : arrastando ? 'Solte o arquivo aqui' : label}</span>
+        <span style={{ fontSize: 12, color: C.muted }}>Arraste o arquivo aqui ou clique para selecionar ({formatos})</span>
+      </span>
+    </div>
   );
 }
 
