@@ -65,6 +65,8 @@ export async function enviarContratoParaVendas({ contrato, isAdmin, pedirOpcoes 
     autorizacao_status: 'autorizada',
     exige_documentos: true,
   };
+  const pctVendedor = Number(vendedor.percentual_comissao) || 0;
+  if (pctVendedor > 0) venda.percentual_comissao = pctVendedor;
   if (c.indicadores?.length > 0) {
     venda.indicadores = c.indicadores;
     venda.espelhamento = c.indicadores[0]?.nome || '';
@@ -72,11 +74,51 @@ export async function enviarContratoParaVendas({ contrato, isAdmin, pedirOpcoes 
     venda.percentual_comissao_espelhamento = c.indicadores[0]?.percentual || 0;
   }
   const gerada = await base44.entities.Venda.create(venda);
+  let avisoComissoes = null;
+  try { await lancarComissoesDaVenda(gerada, { vendedor, pctVendedor, indicadores: c.indicadores || [] }); }
+  catch (e) { avisoComissoes = e.message; }
   let avisoParcelas = null;
   try {
     await base44.functions.invoke('criarParcelasContrato', { contrato_id: c.id, venda_id: gerada.id, valor_recebido: opcoes.overrideRecebido ? opcoes.valorRecebido : undefined, cronograma: opcoes.cronograma });
   } catch (e) { avisoParcelas = e.message; }
   await base44.entities.Contrato.update(c.id, { status: 'no_pipeline' });
   notificar('no_pipeline', 'todos');
-  return { ok: true, venda: gerada, avisoParcelas, contrato: { ...c, status: 'no_pipeline' } };
+  return { ok: true, venda: gerada, avisoParcelas, avisoComissoes, contrato: { ...c, status: 'no_pipeline' } };
+}
+
+const pausa = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Mesma regra da tela Vendas (lançamento): comissão do vendedor sobre o valor recebido (se ele tiver %),
+// e cada indicador do contrato — vendedor usado como indicador vira Comissão; parceiro/indicador vira
+// ComissãoEspelhamento. Idempotente: não duplica quem já tem comissão nesta venda.
+export async function lancarComissoesDaVenda(venda, { vendedor, pctVendedor = 0, indicadores = [] }) {
+  const valor = Number(venda.valor) || 0;
+  if (valor <= 0) return;
+  const [jaCom, jaEsp] = await Promise.all([
+    base44.entities.Comissao.filter({ venda_id: venda.id }).catch(() => []),
+    base44.entities.ComissaoEspelhamento.filter({ venda_id: venda.id }).catch(() => []),
+  ]);
+  const temCom = new Set(jaCom.filter(x => x.tipo !== 'bonus').map(x => x.vendedor_id));
+  const temEsp = new Set(jaEsp.map(x => x.vendedor_id));
+  const base = (pct) => ({ venda_id: venda.id, valor_venda: valor, percentual: pct, valor_comissao: Math.round(valor * pct) / 100, data_venda: venda.data, pago: false });
+
+  if (vendedor?.id && pctVendedor > 0 && !temCom.has(vendedor.id)) {
+    await base44.entities.Comissao.create({ ...base(pctVendedor), vendedor_id: vendedor.id, vendedor_nome: vendedor.nome });
+    temCom.add(vendedor.id);
+    await pausa(300);
+  }
+  for (const ind of indicadores) {
+    const pct = Number(ind?.percentual) || 0;
+    if (!ind?.id || pct <= 0) continue;
+    if (ind.tipo === 'vendedor') {
+      if (temCom.has(ind.id)) continue;
+      await base44.entities.Comissao.create({ ...base(pct), vendedor_id: ind.id, vendedor_nome: ind.nome, tipo: 'comissao' });
+      temCom.add(ind.id);
+    } else {
+      if (temEsp.has(ind.id)) continue;
+      await base44.entities.ComissaoEspelhamento.create({ ...base(pct), vendedor_id: ind.id, vendedor_nome: ind.nome });
+      temEsp.add(ind.id);
+    }
+    await pausa(300);
+  }
 }
