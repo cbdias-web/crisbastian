@@ -652,63 +652,42 @@ export default function Vendas() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 vx-pagina-padrao">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-3">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Gestão de Vendas</h1>
             <p className="text-gray-600 mt-1">Controle completo das suas vendas</p>
           </div>
-          <div className="flex gap-3">
-            {isAdmin && (
-              <Link to={createPageUrl('Dashboard')}>
-                <Button variant="outline">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
-              </Link>
+          <div className="flex gap-2 items-center">
+            {isAdmin && vendasSelecionadas.length > 0 && (
+              <button type="button" onClick={gerarRelatorioSelecionadasPDF} disabled={gerandoRelatorioSelecionadas} className="vx-contorno">
+                {gerandoRelatorioSelecionadas ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckSquare className="w-4 h-4" />}
+                Relatório das selecionadas ({vendasSelecionadas.length})
+              </button>
             )}
             {isAdmin && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowImportar(true)}
-                >
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
-                  Importar Histórico
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={gerarRelatorioVendasPDF}
-                  disabled={gerandoRelatorioPDF}
-                >
-                  {gerandoRelatorioPDF ? (
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
-                  ) : (
-                    <FileText className="w-4 h-4 mr-2" />
-                  )}
-                  Relatório PDF
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={gerarRelatorioSelecionadasPDF}
-                  disabled={gerandoRelatorioSelecionadas}
-                  style={vendasSelecionadas.length > 0 ? { borderColor: '#00D4AA', color: '#00D4AA' } : undefined}
-                >
-                  {gerandoRelatorioSelecionadas ? (
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
-                  ) : (
-                    <CheckSquare className="w-4 h-4 mr-2" />
-                  )}
-                  Selecionadas ({vendasSelecionadas.length})
-                </Button>
-              </>
-            )}
-            {isAdmin && (
-              <Button variant="outline" onClick={() => setShowCodigos(true)}>
-                <KeyRound className="w-4 h-4 mr-2" />
-                Códigos de liberação
-              </Button>
+              <div ref={ferramentasRef} className="relative">
+                <button type="button" onClick={() => setMenuFerramentas(o => !o)} className="vx-contorno" aria-haspopup="menu" aria-expanded={menuFerramentas}>
+                  <MoreHorizontal className="w-4 h-4" /> Ferramentas <ChevronDown className={`w-3.5 h-3.5 transition-transform ${menuFerramentas ? 'rotate-180' : ''}`} />
+                </button>
+                {menuFerramentas && (
+                  <div role="menu" className="vx-menu-flutuante">
+                    {[
+                      ['Dashboard', BarChart3, null, createPageUrl('Dashboard')],
+                      ['Importar histórico', FileSpreadsheet, () => setShowImportar(true)],
+                      [gerandoRelatorioPDF ? 'Gerando relatório…' : 'Relatório PDF do período', FileText, gerarRelatorioVendasPDF, null, gerandoRelatorioPDF],
+                      ['Exportar vendas (CSV)', Download, exportarVendas],
+                      ['Exportar clientes (CSV)', Download, exportarClientes],
+                      ['Códigos de liberação', KeyRound, () => setShowCodigos(true)],
+                    ].map(([rotulo, Icone, acao, link, ocupado]) => link ? (
+                      <Link key={rotulo} to={link} role="menuitem" className="vx-menu-item" onClick={() => setMenuFerramentas(false)}><Icone className="w-4 h-4" /> {rotulo}</Link>
+                    ) : (
+                      <button key={rotulo} type="button" role="menuitem" disabled={!!ocupado} className="vx-menu-item" onClick={() => { setMenuFerramentas(false); acao(); }}><Icone className="w-4 h-4" /> {rotulo}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
             <Button
               onClick={() => {
