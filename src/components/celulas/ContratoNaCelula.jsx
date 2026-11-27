@@ -133,7 +133,7 @@ export function VendaDaOperacao({ contrato, t }) {
                 ['Valor total do contrato', brl(v.valor_total_contrato)],
                 ['Forma de pagamento', v.forma_pagamento || '—'],
                 ['Parcelas', v.num_parcelas ? `${v.num_parcelas}x` : 'À vista'],
-                ['Estrutura', v.estrutura_pagamento || '—'],
+                ['Estrutura', ({ entrada_parcelas: 'Entrada + parcelas', a_vista: 'À vista', parcelado: 'Parcelado', parcela: 'Parcela' })[v.estrutura_pagamento] || (v.estrutura_pagamento ? String(v.estrutura_pagamento).replace(/_/g, ' ') : '—')],
                 [(v.indicadores?.length || 0) > 1 ? 'Indicadores' : 'Indicador', v.indicadores?.length ? v.indicadores.map(i => `${i.nome}${i.percentual ? ` (${i.percentual}%)` : ''}`).join(' · ') : v.espelhamento ? `${v.espelhamento}${v.percentual_comissao_espelhamento ? ` (${v.percentual_comissao_espelhamento}%)` : ''}` : '—'],
                 ['Comissão total', brl(totalCom)],
               ].map(([l, val]) => (
