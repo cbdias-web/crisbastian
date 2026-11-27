@@ -43,9 +43,10 @@ export function ArrastarArquivosGlobal() {
 
     const onOver = (e) => {
       if (!temArquivos(e)) return;
+      const proprio = e.defaultPrevented; // a tela já cuida do arrastar nessa área
       // Sempre impede o navegador de abrir o arquivo numa aba nova se ele cair fora de uma área de anexo.
       e.preventDefault();
-      if (e.defaultPrevented && e.__vxProprio) return;
+      if (proprio) { limpar(); return; }
       const alvo = alvoDoDrop(e.target);
       e.dataTransfer.dropEffect = alvo ? 'copy' : 'none';
       marcar(alvo?.caixa || null);
