@@ -472,6 +472,8 @@ tbody tr:hover { box-shadow: inset 3px 0 0 rgba(0,212,170,0.55), 0 10px 22px -18
   background: linear-gradient(135deg, color-mix(in srgb, var(--vx-acc2, #33e0bf) 82%, #fff) 0%, var(--vx-acc, #00D4AA) 52%, color-mix(in srgb, var(--vx-acc, #00D4AA) 74%, #000) 100%);
   box-shadow: 0 10px 22px -14px var(--vx-glow, rgba(0,212,170,.6)), inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(0,0,0,.12); }
 .vx-aba-sub { transition: color .18s ease, border-color .18s ease; }
+/* Área de anexo recebendo um arquivo arrastado (ArrastarArquivosGlobal) */
+.vx-drop-alvo { outline: 2px dashed var(--vx-acc, #CFAE68) !important; outline-offset: 3px; border-radius: 12px; background-color: rgba(217,190,127,.10) !important; transition: outline-color .15s ease; }
 .vx-aba-sub:hover { color: #E8ECF3 !important; }
 .vx-aba-sub:focus-visible { outline: 2px solid var(--vx-acc, #00D4AA); outline-offset: 2px; border-radius: 4px; }
 .vx-btn-primary:hover:not(:disabled) { box-shadow: 0 16px 30px -12px var(--vx-glow, rgba(0,212,170,.6)), inset 0 1px 0 rgba(255,255,255,.45); filter: brightness(1.05); }
