@@ -463,6 +463,7 @@ export default function JornadaContrato({ contrato: inicial, tipoContrato, clien
       const r = await enviarContratoParaVendas({ contrato: ct, isAdmin, pedirOpcoes });
       if (r?.cancelado) { setOcupado(null); return; }
       setCt(r.contrato);
+      if (r.avisoComissoes) toast.warning('Venda criada, mas as comissões não foram lançadas: ' + r.avisoComissoes + '. Abra a venda em Vendas e salve para lançá-las.');
       if (r.avisoParcelas) toast.warning('Venda criada, mas houve falha ao gerar as parcelas vincendas: ' + r.avisoParcelas);
       toast.success(r.recorrencia ? (r.jaRecebida ? 'Esta parcela já havia sido recebida — nada foi duplicado.' : 'Recebimento de parcela registrado em Vendas.') : 'Venda registrada! Ela já conta no Dash e em Vendas.');
       onVendaCriada?.();
