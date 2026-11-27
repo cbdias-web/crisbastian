@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { X, Search, ExternalLink, Plus, ArrowLeft, MessageSquare, Send, Sparkles, Loader2, CheckCircle2, FileText, ChevronRight, UserRound, Pencil, Trash2, MoreHorizontal } from 'lucide-react';
-import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente } from '@/lib/celulas';
+import { CELULAS, JORNADAS, contratoDoEstudo, etapaDaOperacao, proximaAcao, etapaContrato, proximaAcaoContrato, pipelineDoProduto, mesmoCliente, ndaObrigatorio } from '@/lib/celulas';
 import { STATUS_ESTUDO } from '@/lib/estudoViabilidade';
 import NdaGeradorModal, { BuscaCliente } from './NdaGeradorModal';
 import { VendaDaOperacao } from './ContratoNaCelula';
@@ -694,7 +694,7 @@ function CabecalhoOperacao({ op, jornada, t, voltar, ir, subtitulo, acoes = {}, 
             <li key={i} aria-current={atual ? 'step' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <span style={{ height: 3, borderRadius: 2, background: feito ? `linear-gradient(90deg, ${t.acc2}, ${t.acc})` : atual ? t.line : C.line }} />
               <span style={{ fontSize: 12, color: atual ? t.txt : feito ? C.txt2 : C.muted2, fontWeight: atual ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {feito ? '✓ ' : atual ? `${i + 1} · ` : ''}{et.titulo}
+                {feito ? '✓ ' : atual ? `${i + 1} · ` : ''}{et.titulo}{i === 0 && jornada.ndaObrigatorio === false ? ' (opcional)' : ''}
               </span>
             </li>
           );
@@ -882,7 +882,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
       add(e.nda_gerado_em, e.responsavel_nome || 'Gerente', 0, `NDA gerado no portal${(e.nda_partes || []).length > 1 ? ` (${e.nda_partes.length} partes do cliente)` : ''} e enviado para assinatura.`);
       add(e.nda_assinado_em, e.responsavel_nome || 'Gerente', 0, `Via assinada do NDA anexada${e.nda_assinado_nome ? ` (${e.nda_assinado_nome})` : ''}.`);
     } else {
-      add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : 'Operação aberta — NDA ainda não anexado.');
+      add(e.created_date, e.responsavel_nome || 'Gerente', 0, e.nda_url ? `Operação aberta com o NDA ${e.nda_nome ? `(${e.nda_nome}) ` : ''}anexado.` : ndaObrigatorio(produto) ? 'Operação aberta — NDA ainda não anexado.' : 'Operação aberta sem NDA (opcional neste produto).');
     }
     add(e.data_envio_cliente || e.link_gerado_em, e.responsavel_nome || 'Gerente', 1, 'Link do estudo de viabilidade enviado ao cliente.');
     add(e.cliente_devolveu_em || e.data_recebimento, e.cliente_nome || 'Cliente', 1, 'Estudo devolvido com propósito, expectativas e documentos.', { label: 'Abrir estudo', aba: 'estudo' });
@@ -910,7 +910,7 @@ function OperacaoEstudo({ op, produto, t, comentarios, publicar, voltar, ir, abr
           { nome: 'NDA (gerado)', ok: true, st: 'Gerado', arquivo: e.nda_url, nomeArquivo: e.nda_nome, acao: produto === 'offshore' ? { label: 'Refazer', onClick: () => abrirNda(e) } : null },
           { nome: 'NDA assinado', ok: !!e.nda_assinado_url, st: e.nda_assinado_url ? 'Assinado' : 'Aguardando', arquivo: e.nda_assinado_url || null, nomeArquivo: e.nda_assinado_nome, onStatus: () => setModalAssinado(true), acao: { label: e.nda_assinado_url ? 'Substituir' : 'Anexar', onClick: () => setModalAssinado(true) } },
         ]
-      : [{ nome: 'NDA', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : 'Pendente', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome, acao: !e.nda_url && produto === 'offshore' ? { label: 'Gerar', onClick: () => abrirNda(e) } : null }]),
+      : [{ nome: ndaObrigatorio(produto) ? 'NDA' : 'NDA (opcional)', ok: !!e.nda_url, st: e.nda_url ? 'Anexado' : ndaObrigatorio(produto) ? 'Pendente' : 'Opcional', arquivo: e.nda_url || null, nomeArquivo: e.nda_nome, acao: !e.nda_url && produto === 'offshore' ? { label: 'Gerar', onClick: () => abrirNda(e) } : null }]),
     { nome: 'Estudo de viabilidade', ok: !!(e.cliente_devolveu_em || e.data_recebimento), st: STATUS_ESTUDO[e.status]?.label || e.status },
     { nome: 'Análise / proposta', ok: ['aprovada', 'enviada_cliente', 'aceita'].includes(e.proposta_status), st: e.proposta_status ? `v${e.proposta_versao || 1} · ${e.proposta_status}` : 'Não gerada' },
     { nome: 'Contrato', ok: !!contrato && ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeline'].includes(contrato.status), st: contrato ? (STATUS_CONTRATO[contrato.status] || contrato.status) : 'Não gerado', arquivo: contrato?.contrato_assinado_url || contrato?.pdf_url || null, nomeArquivo: contrato?.contrato_assinado_nome || `Contrato ${contrato?.numero_contrato || ''}.pdf` },

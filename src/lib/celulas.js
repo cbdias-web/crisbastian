@@ -39,9 +39,11 @@ export const JORNADAS = {
     ],
   },
   conta_internacional: {
-    nome: 'Conta internacional', lead: 'NDA, estudo e KYC específico antes da proposta e do contrato.', tipoContrato: 'CONTA INTERNACIONAL',
+    nome: 'Conta internacional', lead: 'Estudo e KYC específico antes da proposta e do contrato (NDA opcional).', tipoContrato: 'CONTA INTERNACIONAL',
+    // Conta internacional não exige NDA para avançar: a etapa NDA é opcional.
+    ndaObrigatorio: false,
     etapas: [
-      { titulo: 'NDA', sub: 'Confidencialidade antes do KYC' },
+      { titulo: 'NDA', sub: 'Opcional — a operação avança sem o NDA' },
       { titulo: 'Estudo e KYC', sub: 'Perfil, objetivo e origem de recursos' },
       { titulo: 'Análise técnica', sub: 'Proposta técnica executiva' },
       { titulo: 'Proposta', sub: 'Condições comerciais' },
@@ -88,6 +90,8 @@ const CONTRATO_FECHADO = ['assinado', 'aguardando_pagamento', 'pago', 'no_pipeli
 
 // NDA concluído: anexado (fluxo antigo) ou gerado no portal E com a via assinada anexada.
 export const ndaConcluido = (e) => !!e.nda_url && (e.nda_origem !== 'gerado' || !!e.nda_assinado_url);
+// O NDA só trava a jornada nos produtos que o exigem (conta internacional não exige).
+export const ndaObrigatorio = (produto) => JORNADAS[produto]?.ndaObrigatorio !== false;
 
 export function etapaDaOperacao(estudo, contrato) {
   if (contrato && CONTRATO_FECHADO.includes(contrato.status)) return 5;
@@ -96,7 +100,7 @@ export function etapaDaOperacao(estudo, contrato) {
   if (ps === 'aceita') return 4;
   if (ps === 'aprovada' || ps === 'enviada_cliente') return 3;
   if (estudo.status === 'em_analise_tecnica' || estudo.status === 'concluido' || estudo.proposta_atual_id) return 2;
-  if (ndaConcluido(estudo)) return 1;
+  if (ndaConcluido(estudo) || !ndaObrigatorio(estudo.produto)) return 1;
   return 0;
 }
 
