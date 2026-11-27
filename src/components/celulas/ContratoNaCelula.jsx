@@ -87,7 +87,16 @@ export function VendaDaOperacao({ contrato, t }) {
       if (!contrato?.id) { setVendas([]); return; }
       const vs = await base44.entities.Venda.filter({ contrato_id: contrato.id }, '-data', 50).catch(() => []);
       const cm = {};
-      await Promise.all((vs || []).map(async v => { cm[v.id] = await base44.entities.Comissao.filter({ venda_id: v.id }, '-created_date', 50).catch(() => []); }));
+      await Promise.all((vs || []).map(async v => {
+        const [com, esp] = await Promise.all([
+          base44.entities.Comissao.filter({ venda_id: v.id }, '-created_date', 50).catch(() => []),
+          base44.entities.ComissaoEspelhamento.filter({ venda_id: v.id }, '-created_date', 50).catch(() => []),
+        ]);
+        cm[v.id] = [
+          ...(com || []).map(c => ({ ...c, _tipo: c.tipo === 'bonus' ? 'Bônus' : c.vendedor_id === v.vendedor_id ? 'Vendedor' : 'Indicador (vendedor)' })),
+          ...(esp || []).map(c => ({ ...c, _tipo: 'Indicador' })),
+        ].filter(c => (Number(c.valor_comissao) || 0) > 0 || c.tipo === 'bonus');
+      }));
       if (vivo) { setVendas(vs || []); setComissoes(cm); }
     })();
     return () => { vivo = false; };
@@ -125,7 +134,7 @@ export function VendaDaOperacao({ contrato, t }) {
                 ['Forma de pagamento', v.forma_pagamento || '—'],
                 ['Parcelas', v.num_parcelas ? `${v.num_parcelas}x` : 'À vista'],
                 ['Estrutura', v.estrutura_pagamento || '—'],
-                ['Indicador', v.espelhamento ? `${v.espelhamento}${v.percentual_comissao_espelhamento ? ` (${v.percentual_comissao_espelhamento}%)` : ''}` : '—'],
+                [(v.indicadores?.length || 0) > 1 ? 'Indicadores' : 'Indicador', v.indicadores?.length ? v.indicadores.map(i => `${i.nome}${i.percentual ? ` (${i.percentual}%)` : ''}`).join(' · ') : v.espelhamento ? `${v.espelhamento}${v.percentual_comissao_espelhamento ? ` (${v.percentual_comissao_espelhamento}%)` : ''}` : '—'],
                 ['Comissão total', brl(totalCom)],
               ].map(([l, val]) => (
                 <div key={l}><p className="text-[11px]" style={{ color: '#8E97A8' }}>{l}</p><p style={{ color: '#F4EFE3' }}>{val}</p></div>
@@ -143,7 +152,7 @@ export function VendaDaOperacao({ contrato, t }) {
                       {cms.map(c => (
                         <tr key={c.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', color: '#F4EFE3' }}>
                           <td className="px-3 py-2">{c.vendedor_nome || '—'}</td>
-                          <td className="px-3 py-2" style={{ color: '#C8D0DC' }}>{c.tipo || '—'}</td>
+                          <td className="px-3 py-2" style={{ color: '#C8D0DC' }}>{c._tipo}</td>
                           <td className="px-3 py-2 text-right">{c.percentual != null ? `${c.percentual}%` : '—'}</td>
                           <td className="px-3 py-2 text-right">{brl(c.valor_comissao)}</td>
                           <td className="px-3 py-2 text-right" style={{ color: c.pago ? '#8FD9B0' : '#E3C982' }}>{c.pago ? 'Paga' : 'A pagar'}</td>
