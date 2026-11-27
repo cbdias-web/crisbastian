@@ -111,6 +111,18 @@ export const textoFormaPagamento = (conteudo: any) => {
   return `${frase}.${fp ? ` Pagamento via ${fp}.` : ''}`;
 };
 
+// Frases do texto livre de condições que NÃO repetem o parcelamento (entrada, %, parcelas, saldo, valores,
+// assinatura, à vista). Usado quando a forma de pagamento já é montada a partir do investimento, para não
+// dizer duas vezes "30% na assinatura e saldo em 4 parcelas".
+const RE_TERMO_PAGAMENTO = /\d+(?:[.,]\d+)?\s*%|\bentrada\b|parcel|\bsaldo\b|assinatura|[àa]\s+vista|r\$|\b\d+\s*x\b|honor[áa]rios? de|pagamento [úu]nico|mensais|mensal/i;
+export const condicoesComplementares = (conteudo: any) => {
+  const texto = String(conteudo?.investimento?.condicoes || '').replace(/\s+/g, ' ').trim();
+  if (!texto) return '';
+  const frases = texto.match(/[^.!?;]+(?:[.!?;]+|$)/g) || [texto];
+  return frases.map((f) => f.trim()).filter((f) => f && !RE_TERMO_PAGAMENTO.test(f))
+    .map((f) => (/[.!?]$/.test(f) ? f : `${f.replace(/;$/, '')}.`)).join(' ').trim();
+};
+
 // O texto livre de condições cita valor que não corresponde ao parcelamento atual (texto antigo da IA).
 export const condicoesDesatualizadas = (conteudo: any) => {
   const texto = String(conteudo?.investimento?.condicoes || '');
