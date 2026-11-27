@@ -797,15 +797,33 @@ export default function Vendas() {
           </div>
         </div>
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="w-5 h-5" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4"><AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} /></div>
+        {/* Barra de busca e filtros (compacta, no padrão das células) */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="vx-busca-pill">
+              <Search className="w-4 h-4" style={{ color: '#6F7888' }} aria-hidden="true" />
+              <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Cliente, CPF/CNPJ, produto ou vendedor" aria-label="Buscar vendas" />
+              {searchTerm && <button type="button" onClick={() => setSearchTerm('')} aria-label="Limpar busca" style={{ color: '#8E97A8' }}><X className="w-3.5 h-3.5" /></button>}
+            </label>
+            <AtalhosPeriodo inicio={dataInicio} fim={dataFim} onChange={(i, f) => { setDataInicio(i); setDataFim(f); }} />
+            <div className="flex-1" />
+            <button type="button" onClick={() => setMostrarFiltros(o => !o)} className={`vx-contorno ${mostrarFiltros ? 'ativo' : ''}`} aria-expanded={mostrarFiltros}>
+              <SlidersHorizontal className="w-4 h-4" /> Filtros
+              {(vendedoresFiltro.length + produtosFiltro.length) > 0 && <span className="vx-contador">{vendedoresFiltro.length + produtosFiltro.length}</span>}
+            </button>
+          </div>
+          {(vendedoresFiltro.length > 0 || produtosFiltro.length > 0) && (
+            <div className="flex flex-wrap gap-2">
+              {vendedoresFiltro.map(n => (
+                <button key={`v-${n}`} type="button" className="vx-etiqueta" onClick={() => setVendedoresFiltro(p => p.filter(x => x !== n))} title="Remover filtro">Vendedor: {n} <X className="w-3 h-3" /></button>
+              ))}
+              {produtosFiltro.map(n => (
+                <button key={`p-${n}`} type="button" className="vx-etiqueta" onClick={() => setProdutosFiltro(p => p.filter(x => x !== n))} title="Remover filtro">Produto: {n} <X className="w-3 h-3" /></button>
+              ))}
+            </div>
+          )}
+          {mostrarFiltros && (
+          <div className="vx-painel-filtros">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div>
                 <Label>Data Início</Label>
@@ -898,40 +916,18 @@ export default function Vendas() {
                     setVendedoresFiltro([]);
                   }}
                 >
-                  Limpar Filtros
+                  Limpar filtros
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          )}
+        </div>
 
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Todas as Vendas ({filteredVendas.length})</CardTitle>
-              <div className="flex items-center gap-3">
-                {isAdmin && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={exportarClientes}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Clientes
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={exportarVendas}>
-                      <Download className="w-4 h-4 mr-2" />
-                      Vendas
-                    </Button>
-                  </>
-                )}
-                <div className="flex items-center gap-2">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Buscar por produto, vendedor, cliente..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-80"
-                  />
-                </div>
-              </div>
+              <CardTitle>Vendas ({filteredVendas.length})</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
