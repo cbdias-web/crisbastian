@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import VendaForm from '../components/vendas/VendaForm';
 import ModalCodigoLiberacao from '../components/vendas/ModalCodigoLiberacao';
 import GerenciarCodigosModal from '../components/vendas/GerenciarCodigosModal';
-import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning, KeyRound } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, BarChart3, Loader2, ExternalLink, Download, Filter, FileSpreadsheet, FileText, ChevronDown, Check, CheckSquare, Square, ShieldCheck, ShieldX, FileWarning, KeyRound, SlidersHorizontal, MoreHorizontal, X } from 'lucide-react';
 import { vendaContaProducao, tipoContratoDoProduto, produtoSemContrato } from '@/lib/vendaProducao';
 import { filtrarGerentesConsulta } from '@/lib/gerentesConsulta';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -41,11 +41,15 @@ export default function Vendas() {
   const [produtoDropOpen, setProdutoDropOpen] = useState(false);
   const vendedorDropRef = useRef(null);
   const produtoDropRef = useRef(null);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [menuFerramentas, setMenuFerramentas] = useState(false);
+  const ferramentasRef = useRef(null);
 
   useEffect(() => {
     const handler = (e) => {
       if (vendedorDropRef.current && !vendedorDropRef.current.contains(e.target)) setVendedorDropOpen(false);
       if (produtoDropRef.current && !produtoDropRef.current.contains(e.target)) setProdutoDropOpen(false);
+      if (ferramentasRef.current && !ferramentasRef.current.contains(e.target)) setMenuFerramentas(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
