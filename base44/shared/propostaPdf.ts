@@ -59,6 +59,9 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     const W = 210, H = 297, M = 18, CW = W - 2 * M, TOP = 26, BOTTOM = 278;
     let y = TOP;
 
+    // Padrão único do texto corrido (descrições, parágrafos, listas, caixas): mesmo corpo, mesma entrelinha
+    // e mesmo espaço entre blocos em todo o documento. Tabelas e rótulos têm tamanho próprio.
+    const TXT = 9.5, LH = 4.8, GAP = 3.2;
     const font = (sz: number, style = 'normal', color: [number, number, number] = INK) => {
       doc.setFontSize(sz); doc.setFont('helvetica', style); doc.setTextColor(...color);
     };
@@ -94,7 +97,8 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     const bloco = (s: any, sz: number, color: [number, number, number], lh: number, x: number, w: number) => {
       font(sz, 'normal', color);
       const paragrafos = String(s ?? '').split(/\n+/).map(t => lines(t, w)).filter(b => b.length);
-      for (const b of paragrafos) {
+      paragrafos.forEach((b, pi) => {
+        if (pi > 0) y += GAP * 0.6; // respiro entre parágrafos do mesmo bloco
         // evita parágrafo órfão no pé da página (mínimo de 3 linhas para começar)
         if (b.length > 1) ensure(Math.min(b.length, 3) * lh);
         b.forEach((ln, i) => {
@@ -102,11 +106,11 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
           if (i < b.length - 1) linhaJustificada(ln, x, y, w); else doc.text(ln, x, y);
           y += lh;
         });
-      }
+      });
     };
-    const para = (s: any, sz = 9.5, color = INK, lh = 4.7, x = M, w = CW) => {
+    const para = (s: any, sz = TXT, color = INK, lh = LH, x = M, w = CW) => {
       bloco(s, sz, color, lh, x, w);
-      y += 1.5;
+      y += GAP;
     };
     // Cada capítulo começa sempre no topo de uma nova página.
     const secao = (num: string, titulo: string) => {
@@ -118,17 +122,17 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
       doc.setLineWidth(0.2); y += 6;
     };
     // Subtítulo não fica sozinho no pé da página
-    const sub = (t: string) => { ensure(26); font(10, 'bold', NAVY); doc.text(T(t), M, y); y += 5; };
-    const bullets = (arr: any[], sz = 9.2, x = M) => {
+    const sub = (t: string) => { ensure(26); y += 1.8; font(10.5, 'bold', NAVY); doc.text(T(t), M, y); y += 5.6; };
+    const bullets = (arr: any[], sz = TXT, x = M) => {
       for (const it of (arr || []).filter(Boolean)) {
         const ls = lines(it, CW - (x - M) - 5);
-        ensure(ls.length * 4.5 + 1);
+        ensure(ls.length * LH + 1);
         doc.setFillColor(...TEAL); doc.circle(x + 1.2, y - 1.2, 0.8, 'F');
         font(sz, 'normal', INK);
-        linhasJustificadas(ls, x + 4.5, y, CW - (x - M) - 5, 4.5);
-        y += ls.length * 4.5 + 1.2;
+        linhasJustificadas(ls, x + 4.5, y, CW - (x - M) - 5, LH);
+        y += ls.length * LH + 1.4;
       }
-      y += 1.5;
+      y += GAP - 1.4;
     };
     // tabela com quebra de linha e de página
     const tabela = (cols: { label: string; w: number; align?: string }[], rows: any[][], opts: any = {}) => {
@@ -316,18 +320,19 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     doc.setFillColor(...LINE); doc.roundedRect(M, y, CW, 2.4, 1.2, 1.2, 'F');
     doc.setFillColor(...crgb); doc.roundedRect(M, y, Math.max(2, CW * (Number(p.score_viabilidade) || 0) / 100), 2.4, 1.2, 1.2, 'F');
     y += 9;
-    para(c.sumario_executivo || '—', 10, INK, 5);
+    para(c.sumario_executivo || '—');
     if (c.justificativa_score) {
+      font(TXT, 'normal', INK);
       const ls = lines(c.justificativa_score, CW - 10);
-      ensure(ls.length * 4.4 + 10);
-      doc.setFillColor(232, 247, 243); doc.roundedRect(M, y - 2, CW, ls.length * 4.4 + 9, 2, 2, 'F');
+      ensure(ls.length * LH + 10);
+      doc.setFillColor(232, 247, 243); doc.roundedRect(M, y - 2, CW, ls.length * LH + 9, 2, 2, 'F');
       font(7.5, 'bold', TEAL); doc.text('LEITURA DA VIABILIDADE', M + 5, y + 3);
-      font(8.8, 'normal', INK);
+      font(TXT, 'normal', INK);
       ls.forEach((l, i) => {
-        const yy = y + 8 + i * 4.4;
+        const yy = y + 8 + i * LH;
         if (i < ls.length - 1) linhaJustificada(l, M + 5, yy, CW - 10); else doc.text(l, M + 5, yy);
       });
-      y += ls.length * 4.4 + 12;
+      y += ls.length * LH + 9 + GAP;
     }
 
     // ───────────────── 02 CONTEXTO ─────────────────
@@ -352,18 +357,19 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
       font(12, 'bold', [255, 255, 255]);
       // O título quebra em linhas e nunca invade a jurisdição (alinhada à direita).
       const tituloLs: string[] = doc.splitTextToSize(T(er.nome || c.titulo_estrutura || prod.nome), CW - 10 - (jurW ? jurW + 6 : 0));
+      font(TXT, 'normal', INK);
       const descLs = lines(er.descricao || '', CW - 10);
       const lhT = 5.6;
       const hTitulo = Math.max(1, tituloLs.length) * lhT;
-      const h = 11 + hTitulo + Math.max(0, descLs.length - 1) * 4.6;
+      const h = 11 + hTitulo + Math.max(0, descLs.length - 1) * LH;
       ensure(h + 4);
       doc.setFillColor(...NAVY); doc.roundedRect(M, y - 2, CW, h, 2.5, 2.5, 'F');
       font(12, 'bold', [255, 255, 255]);
       tituloLs.forEach((l: string, i: number) => doc.text(l, M + 5, y + 5 + i * lhT));
       if (jur) { font(8.5, 'bold', GOLD); doc.text(jur, M + CW - 5, y + 5, { align: 'right' }); }
-      font(9, 'normal', [210, 225, 242]);
-      linhasJustificadas(descLs, M + 5, y + 6 + hTitulo, CW - 10, 4.6);
-      y += h + 5;
+      font(TXT, 'normal', [210, 225, 242]);
+      linhasJustificadas(descLs, M + 5, y + 6 + hTitulo, CW - 10, LH);
+      y += h + GAP + 1;
     }
     if ((er.componentes || []).length) { sub('Componentes da estrutura'); bullets(er.componentes); }
     if ((c.alternativas || []).length) {
@@ -375,12 +381,13 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     // ───────────────── 05 BENEFÍCIOS ─────────────────
     secao('05', 'Benefícios esperados');
     for (const b of (c.beneficios || [])) {
+      font(TXT, 'normal', INK);
       const ls = lines(b.descricao, CW - 8);
-      ensure(ls.length * 4.5 + 8);
-      doc.setFillColor(...TEAL_L); doc.rect(M, y - 3.5, 1.2, ls.length * 4.5 + 5.5, 'F');
-      font(9.5, 'bold', NAVY); doc.text(T(b.titulo), M + 4, y);
-      font(9, 'normal', INK); linhasJustificadas(ls, M + 4, y + 5, CW - 8, 4.5);
-      y += ls.length * 4.5 + 9;
+      ensure(ls.length * LH + 8);
+      doc.setFillColor(...TEAL_L); doc.rect(M, y - 3.5, 1.2, ls.length * LH + 5.5, 'F');
+      font(10, 'bold', NAVY); doc.text(T(b.titulo), M + 4, y);
+      font(TXT, 'normal', INK); linhasJustificadas(ls, M + 4, y + 5.2, CW - 8, LH);
+      y += ls.length * LH + 5.2 + GAP + 1;
     }
 
     // ───────────────── 06 RISCOS ─────────────────
@@ -419,41 +426,42 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
       // Detalhe de cada etapa
       etapas.forEach((e: any, i: number) => {
         const colW = (CW - 6) / 2;
+        font(TXT, 'normal', INK);
         const objLs = e.objetivo ? lines(e.objetivo, CW) : [];
         const at = (e.atividades || []).flatMap((a: any) => lines('• ' + a, colW - 2));
         const en = (e.entregaveis || []).flatMap((a: any) => lines('• ' + a, colW - 2));
         const n = Math.max(at.length, en.length);
         // o bloco da etapa (cabeçalho + objetivo + listas) não é cortado entre páginas
-        const hBloco = 10 + (objLs.length ? objLs.length * 4.5 + 1.5 : 0) + (n ? 8 + n * 4.2 + 4 : 0);
+        const hBloco = 10 + (objLs.length ? objLs.length * LH + GAP : 0) + (n ? 8 + n * LH + GAP : 0);
         if (y + hBloco > BOTTOM && hBloco <= BOTTOM - TOP) novaPagina();
         doc.setFillColor(...ZEBRA); doc.roundedRect(M, y - 4, CW, 9, 1.5, 1.5, 'F');
         font(9.5, 'bold', NAVY); doc.text(T(`${e.fase || 'Fase ' + (i + 1)}  ·  ${e.titulo || ''}`), M + 3, y + 1.8);
         font(8, 'bold', TEAL);
         doc.text(T(`${e.prazo_dias || 0} dias`), M + CW - 3, y + 1.8, { align: 'right' });
         y += 10;
-        if (objLs.length) { font(9, 'normal', INK); objLs.forEach((l: string) => { ensure(4.5); doc.text(l, M, y); y += 4.5; }); y += 1.5; }
+        if (objLs.length) { font(TXT, 'normal', INK); objLs.forEach((l: string) => { ensure(LH); doc.text(l, M, y); y += LH; }); y += GAP; }
         if (n) {
           ensure(8);
-          font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 4.5;
-          font(8.5, 'normal', INK);
+          font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 5;
+          font(TXT, 'normal', INK);
           for (let k = 0; k < n; k++) {
-            if (y + 4.2 > BOTTOM) {
+            if (y + LH > BOTTOM) {
               novaPagina();
-              font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 4.5;
-              font(8.5, 'normal', INK);
+              font(7.5, 'bold', TEAL); doc.text('ATIVIDADES', M, y); doc.text('ENTREGÁVEIS', M + colW + 6, y); y += 5;
+              font(TXT, 'normal', INK);
             }
             if (at[k]) doc.text(at[k], M, y);
             if (en[k]) doc.text(en[k], M + colW + 6, y);
-            y += 4.2;
+            y += LH;
           }
-          y += 4;
+          y += GAP + 1;
         }
       });
     } else para('Etapas a definir.');
 
     // ───────────────── 08 INVESTIMENTO ─────────────────
     secao('08', 'Investimento');
-    para('Os honorários da equipe técnica RNC são apresentados como valor único de projeto, dimensionado pelo escopo e pela complexidade da estrutura, sem valores individualizados por etapa.', 9, MUTED);
+    para('Os honorários da equipe técnica RNC são apresentados como valor único de projeto, dimensionado pelo escopo e pela complexidade da estrutura, sem valores individualizados por etapa.', TXT, MUTED);
     ensure(34);
     doc.setFillColor(...ZEBRA); doc.roundedRect(M, y, CW, 26, 2, 2, 'F');
     doc.setFillColor(...TEAL); doc.rect(M, y, 1.6, 26, 'F');
@@ -478,35 +486,37 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
         c.custos_recorrentes.map((r: any) => [r.item, r.valor, r.periodicidade]));
     }
     if (c.success_fee?.aplicavel && c.success_fee?.descricao) {
+      font(TXT, 'normal', INK);
       const ls = lines(c.success_fee.descricao, CW - 10);
-      ensure(ls.length * 4.5 + 12);
-      doc.setFillColor(255, 248, 225); doc.roundedRect(M, y - 2, CW, ls.length * 4.5 + 10, 2, 2, 'F');
+      ensure(ls.length * LH + 12);
+      doc.setFillColor(255, 248, 225); doc.roundedRect(M, y - 2, CW, ls.length * LH + 9, 2, 2, 'F');
       font(7.5, 'bold', [146, 100, 0]); doc.text('SUCCESS FEE (OPCIONAL)', M + 5, y + 3);
-      font(8.8, 'normal', [90, 62, 0]); linhasJustificadas(ls, M + 5, y + 8, CW - 10, 4.5);
-      y += ls.length * 4.5 + 13;
+      font(TXT, 'normal', [90, 62, 0]); linhasJustificadas(ls, M + 5, y + 8, CW - 10, LH);
+      y += ls.length * LH + 9 + GAP;
     }
 
     // ───────────────── 09 PREMISSAS ─────────────────
     secao('09', 'Premissas e documentação');
     if ((c.premissas || []).length) { sub('Premissas adotadas'); bullets(c.premissas); }
     if ((c.documentos_pendentes || []).length) { sub('Documentos e informações pendentes'); bullets(c.documentos_pendentes); }
-    if ((c.base_legal || []).length) { sub('Referências normativas'); bullets(c.base_legal, 8.5); }
+    if ((c.base_legal || []).length) { sub('Referências normativas'); bullets(c.base_legal); }
 
     // ───────────────── 10 PRÓXIMOS PASSOS ─────────────────
     secao('10', 'Próximos passos');
     (c.proximos_passos || []).forEach((s: any, i: number) => {
+      font(TXT, 'normal', INK);
       const ls = lines(s, CW - 12);
-      ensure(ls.length * 4.6 + 3);
+      ensure(ls.length * LH + 3);
       doc.setFillColor(...NAVY); doc.circle(M + 3, y - 1.3, 3, 'F');
       font(8, 'bold', [255, 255, 255]); doc.text(String(i + 1), M + 3, y - 0.2, { align: 'center' });
-      font(9.3, 'normal', INK); linhasJustificadas(ls, M + 9, y, CW - 12, 4.6);
-      y += ls.length * 4.6 + 3.5;
+      font(TXT, 'normal', INK); linhasJustificadas(ls, M + 9, y, CW - 12, LH);
+      y += ls.length * LH + GAP;
     });
 
     // ───────────────── 11 CONDIÇÕES E ACEITE ─────────────────
     secao('11', 'Condições gerais e aceite');
     bullets([...(c.condicoes_gerais && c.condicoes_gerais.length ? c.condicoes_gerais : CONDICOES_GERAIS_PADRAO),
-      `Proposta válida até ${fmtD(validade)} (${Number(p.validade_dias) || 15} dias a partir da emissão).`], 8.6);
+      `Proposta válida até ${fmtD(validade)} (${Number(p.validade_dias) || 15} dias a partir da emissão).`]);
     ensure(40);
     y = Math.max(y + 14, Math.min(BOTTOM - 22, y + 14));
     doc.setDrawColor(...MUTED);
