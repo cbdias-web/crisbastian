@@ -27,6 +27,7 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
   const [showBusca, setShowBusca] = useState(false);
   const [novoPct, setNovoPct] = useState(10);
   const [busca, setBusca] = useState('');
+  const [criando, setCriando] = useState(false);
 
   const { data: vendedoresList = [] } = useQuery({
     queryKey: ['vendedores-contrato-viewer'],
@@ -56,14 +57,14 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
   const totalPct = indicadores.reduce((s, i) => s + (parseFloat(i.percentual) || 0), 0);
   const limiteExcedido = totalPct > 50;
 
-  const persistir = async (novos) => {
+  const persistir = async (novos, msg = 'Espelhamentos atualizados!') => {
     setSalvando(true);
     try {
       const atualizado = await base44.entities.Contrato.update(contrato.id, { indicadores: novos });
       setIndicadores(novos);
       queryClient.invalidateQueries(['contratos']);
       onUpdate({ ...contrato, indicadores: novos });
-      toast.success('Espelhamentos atualizados!');
+      toast.success(msg);
     } catch (err) {
       toast.error('Erro ao salvar espelhamentos: ' + err.message);
     }
@@ -77,6 +78,27 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
     setBusca('');
     setNovoPct(10);
     persistir(novos);
+  };
+
+  // Beneficiário que ainda não existe na base: cadastra o indicador a partir do nome digitado
+  // (identificação) e já o inclui no contrato.
+  const criarIndicador = async () => {
+    const nome = busca.trim();
+    if (nome.length < 2) { toast.error('Informe o nome do indicador.'); return; }
+    const pct = novoPct || 10;
+    setCriando(true);
+    try {
+      const novo = await base44.entities.Espelhamento.create({ nome, percentual_comissao: pct, ativo: true });
+      queryClient.invalidateQueries(['espelhamentos-contrato-viewer']);
+      const novos = [...indicadores, { id: novo.id, nome: novo.nome, percentual: pct, tipo: 'indicador' }];
+      setShowBusca(false);
+      setBusca('');
+      setNovoPct(10);
+      await persistir(novos, `Indicador "${nome}" cadastrado na base e adicionado.`);
+    } catch (err) {
+      toast.error('Erro ao cadastrar indicador: ' + err.message);
+    }
+    setCriando(false);
   };
 
   const remover = (idx) => {
@@ -139,7 +161,7 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
                 type="text"
                 value={busca}
                 onChange={e => setBusca(e.target.value)}
-                placeholder="Buscar indicador ou vendedor..."
+                placeholder="Buscar indicador ou vendedor (ou digite o nome para cadastrar)"
                 autoFocus
                 className="w-full pl-8 pr-2 py-1.5 text-xs rounded-lg"
                 style={{ background: AURORA.surface, border: `1px solid ${AURORA.border}`, color: AURORA.text }}
@@ -160,7 +182,7 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
           <div className="max-h-44 overflow-y-auto rounded-lg" style={{ background: AURORA.surface }}>
             {filtrados.length === 0 ? (
               <p className="px-3 py-2 text-xs" style={{ color: AURORA.textMuted }}>
-                {busca.length >= 2 ? `Nenhum resultado para "${busca}"` : 'Digite para buscar...'}
+                {busca.length >= 2 ? `Nenhum resultado para "${busca}" — cadastre abaixo.` : 'Digite para buscar...'}
               </p>
             ) : filtrados.map(p => (
               <button key={p.id} type="button" onClick={() => adicionar(p)}
@@ -178,6 +200,17 @@ export default function IndicadoresEditor({ contrato, onUpdate }) {
                 <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{p.percentual_comissao}%</span>
               </button>
             ))}
+            {busca.trim().length >= 2 && (
+              <button type="button" onClick={criarIndicador} disabled={criando}
+                className="w-full text-left px-3 py-2 transition flex items-center gap-2 border-t"
+                style={{ borderColor: AURORA.border, color: AURORA.accent }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,212,170,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                {criando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                <span className="text-xs font-semibold flex-1 truncate">Cadastrar “{busca.trim()}” como novo indicador</span>
+                <span className="text-[10px]" style={{ color: AURORA.textMuted }}>{novoPct || 10}%</span>
+              </button>
+            )}
           </div>
         </div>
       ) : (
