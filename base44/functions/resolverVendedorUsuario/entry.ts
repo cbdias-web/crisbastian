@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     const r = acharVendedor(vendedores, { vendedor_id: body.vendedor_id, email: body.email, user, nome: body.nome });
     if (!r.vendedor) return Response.json({ success: true, encontrado: false });
     const v = r.vendedor;
-    return Response.json({ success: true, encontrado: true, via: r.via, ambiguo: !!r.ambiguo, vendedor: { id: v.id, nome: v.nome, email: v.email || '', time: v.time || '', ativo: v.ativo !== false } });
+    return Response.json({ success: true, encontrado: true, via: r.via, ambiguo: !!r.ambiguo, vendedor: { id: v.id, nome: v.nome, email: v.email || '', time: v.time || '', ativo: v.ativo !== false, percentual_comissao: Number(v.percentual_comissao) || 0 } });
   } catch (error: any) {
     return Response.json({ error: String(error?.message || error).slice(0, 300) }, { status: 500 });
   }
