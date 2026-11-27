@@ -125,6 +125,7 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     const sub = (t: string) => { ensure(26); y += 1.8; font(10.5, 'bold', NAVY); doc.text(T(t), M, y); y += 5.6; };
     const bullets = (arr: any[], sz = TXT, x = M) => {
       for (const it of (arr || []).filter(Boolean)) {
+        font(sz, 'normal', INK); // a quebra de linha depende do corpo da fonte
         const ls = lines(it, CW - (x - M) - 5);
         ensure(ls.length * LH + 1);
         doc.setFillColor(...TEAL); doc.circle(x + 1.2, y - 1.2, 0.8, 'F');
