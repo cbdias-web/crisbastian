@@ -120,7 +120,8 @@ export const condicoesComplementares = (conteudo: any) => {
   if (!texto) return '';
   const frases = texto.match(/[^.!?;]+(?:[.!?;]+|$)/g) || [texto];
   return frases.map((f) => f.trim()).filter((f) => f && !RE_TERMO_PAGAMENTO.test(f))
-    .map((f) => (/[.!?]$/.test(f) ? f : `${f.replace(/;$/, '')}.`)).join(' ').trim();
+    .map((f) => (/[.!?]$/.test(f) ? f : `${f.replace(/;$/, '')}.`))
+    .map((f) => f.charAt(0).toUpperCase() + f.slice(1)).join(' ').trim();
 };
 
 // O texto livre de condições cita valor que não corresponde ao parcelamento atual (texto antigo da IA).
