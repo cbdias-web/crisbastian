@@ -1,7 +1,7 @@
 import { jsPDF } from 'npm:jspdf@4.0.0';
 import { winAnsi } from './pdfWinAnsi.ts';
 import { PRODUTOS_ESTUDO } from './estudoViabilidade.ts';
-import { CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, valorHonorariosProjeto, textoFormaPagamento, condicoesDesatualizadas } from './propostaTecnica.ts';
+import { CLASSIFICACAO, CONDICOES_GERAIS_PADRAO, somaEtapas, valorHonorariosProjeto, textoFormaPagamento, condicoesComplementares } from './propostaTecnica.ts';
 
 // Gera o PDF executivo da Proposta Técnica (identidade Villela Exchange / RNC).
 const NAVY: [number, number, number] = [10, 31, 53];
@@ -464,12 +464,13 @@ export function montarPdfProposta(p: any, user: any, logoDataUrl?: string, estud
     y += 31;
     if (inv.justificativa) { sub('Composição do valor'); para(inv.justificativa); }
     // Forma de pagamento: sempre montada a partir do valor e do parcelamento definidos no investimento.
-    // O texto livre só entra quando não cita valores diferentes do parcelamento atual.
+    // Do texto livre entram só as frases que não repetem o parcelamento (ex.: "Condições flexíveis e abertas
+    // à negociação.") — antes o PDF repetia "30% na assinatura e saldo em 4 parcelas" duas vezes.
     const formaPagamento = textoFormaPagamento(c);
     if (formaPagamento) {
       sub('Forma de pagamento e negociação');
-      para(formaPagamento);
-      if (inv.condicoes && !condicoesDesatualizadas(c)) para(inv.condicoes);
+      const extra = condicoesComplementares(c);
+      para(extra ? `${formaPagamento} ${extra}` : formaPagamento);
     } else if (inv.condicoes) { sub('Forma de pagamento e negociação'); para(inv.condicoes); }
     if ((c.custos_recorrentes || []).length) {
       sub('Custos recorrentes e de terceiros (não inclusos nos honorários)');
